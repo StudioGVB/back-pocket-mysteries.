@@ -1,42 +1,20 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { type NextRequest } from 'next/server'
+import { updateSession } from '@/utils/supabase/middleware'
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Placeholder for auth check
-  // In a real app, you would check for a session cookie or JWT here
-  const isAuthenticated = true; // Simulating authenticated state for Phase 1
-
-  // Protected routes for the builder
-  if (pathname.startsWith('/builder')) {
-    if (!isAuthenticated) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  // Protected routes for the service (customer account)
-  if (pathname.startsWith('/account')) {
-    if (!isAuthenticated) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  // If authenticated and trying to access auth pages, redirect to dashboard or portal
-  if (isAuthenticated && (pathname === '/login' || pathname === '/signup')) {
-    // For now, let's just stay on the login/signup pages or optionally redirect
-    // return NextResponse.redirect(new URL('/mysteries', request.url));
-  }
-
-  return NextResponse.next();
+export async function middleware(request: NextRequest) {
+  return await updateSession(request)
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
   matcher: [
-    '/builder/:path*',
-    '/account/:path*',
-    '/login',
-    '/signup',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
+}
+

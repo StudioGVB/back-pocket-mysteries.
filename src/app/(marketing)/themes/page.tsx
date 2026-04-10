@@ -4,105 +4,168 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Mystery Themes | Back Pocket Mysteries',
-  description: 'Explore our collection of professionally crafted interactive mystery themes.',
+  description: 'Choose your murder mystery theme. Every pack is fully personalised with your guest names, relationships, and drama — print-ready in under 20 minutes.',
 };
 
 export default function ThemesPage() {
   const themes = [
     {
-      title: 'The Emerald Heist',
-      desc: 'A high-stakes robbery at a prestigious gala. Who among the elite is the thief?',
+      title: 'Love on the Rocks',
+      desc: 'Toxic exes, secret affairs, and a suspicious death at the hen weekend. Your guests will never look at each other the same way again.',
       difficulty: 'Medium',
-      players: '8-12',
-      category: 'Noir',
-      slug: 'emerald-heist',
-      accent: 'bg-emerald-50 text-emerald-600'
+      players: '6-12',
+      category: 'Drama / Romance',
+      slug: 'love-on-the-rocks',
+      accent: 'text-brand-pink bg-brand-pink/10',
+      tone: 'Chaotic & Spicy',
+      bestFor: 'Hens, Birthdays, Girls\' Nights'
     },
     {
-      title: 'Midnight at Manor',
-      desc: 'The patriarch is dead, and the inheritance is up for grabs. A classic whodunnit.',
+      title: 'The Inheritance',
+      desc: 'A wealthy patriarch is dead. The family has gathered. The will is missing. Everyone had motive — including your guests.',
       difficulty: 'Easy',
       players: '6-10',
       category: 'Classic',
-      slug: 'midnight-manor',
-      accent: 'bg-amber-50 text-amber-600'
+      slug: 'the-inheritance',
+      accent: 'text-amber-500 bg-amber-500/10',
+      tone: 'Dramatic & Suspenseful',
+      bestFor: 'Dinner Parties, Mixed Groups'
     },
     {
-      title: 'Nebula Station Beta',
-      desc: 'Sci-fi espionage on a remote space station. Trust no one in zero gravity.',
+      title: 'The Gala Heist',
+      desc: 'A priceless diamond vanishes during a black-tie charity gala. Every guest was there. Anyone could have taken it.',
+      difficulty: 'Medium',
+      players: '8-14',
+      category: 'Noir',
+      slug: 'the-gala-heist',
+      accent: 'text-emerald-500 bg-emerald-500/10',
+      tone: 'Sophisticated & Sharp',
+      bestFor: 'Corporate Events, Farewell Parties'
+    },
+    {
+      title: 'Dead Space',
+      desc: 'A locked-room murder on a remote research satellite. The killer is still on board — and might be sitting next to you.',
       difficulty: 'Hard',
-      players: '10-15',
+      players: '10-16',
       category: 'Sci-Fi',
-      slug: 'nebula-station',
-      accent: 'bg-indigo-50 text-indigo-600'
+      slug: 'dead-space',
+      accent: 'text-indigo-500 bg-indigo-500/10',
+      tone: 'Tense & Cerebral',
+      bestFor: 'Game Nights, Large Friend Groups'
     },
     {
-      title: 'Jazz Age Jeopardy',
-      desc: '1920s speakeasy mystery filled with music, mobsters, and a missing singer.',
+      title: 'The Speakeasy Scandal',
+      desc: '1920s Chicago. Jazz, bootleg gin, and a body in the back room. The mob is involved. Your guests are suspects.',
       difficulty: 'Medium',
       players: '8-14',
       category: 'Historical',
-      slug: 'jazz-age',
-      accent: 'bg-rose-50 text-rose-600'
+      slug: 'speakeasy-scandal',
+      accent: 'text-orange-500 bg-orange-500/10',
+      tone: 'Stylish & Atmospheric',
+      bestFor: 'Themed Parties, Decade Nights'
+    },
+    {
+      title: 'Off The Grid',
+      desc: 'A weekend wellness retreat turns deadly. Someone brought more than their yoga mat. Suspects: everyone. Evidence: plenty.',
+      difficulty: 'Medium',
+      players: '6-12',
+      category: 'Modern',
+      slug: 'off-the-grid',
+      accent: 'text-teal-500 bg-teal-500/10',
+      tone: 'Funny & Relatable',
+      bestFor: 'Friend Getaways, Bucks Nights'
     }
   ];
 
   return (
-    <div className="py-20 lg:py-32">
+    <div className="py-24 lg:py-40 bg-white">
       <div className="container mx-auto px-6">
-        <div className="max-w-3xl mb-20">
-          <h1 className="text-5xl lg:text-6xl font-black text-slate-900 mb-8 tracking-tight">
-            Infinite worlds, <span className="text-indigo-600">one click away.</span>
+        <div className="max-w-4xl mb-24">
+          <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
+            Choose Your Theme
+          </div>
+          <h1 className="text-6xl lg:text-8xl font-black text-brand-dark mb-10 tracking-tighter uppercase leading-[0.9]">
+            Pick the vibe. <br />
+            <span className="text-brand-pink italic">We handle the rest.</span>
           </h1>
-          <p className="text-xl text-slate-500 leading-relaxed font-medium">
-            Every theme is professionally written and tested to ensure a balanced, thrilling experience for every guest.
+          <p className="text-xl lg:text-2xl text-gray-500 leading-relaxed font-bold max-w-2xl border-l-4 border-brand-pink pl-6">
+            Every theme is a complete mystery engine — plot, characters, clues, and evidence — all personalised with your guest list. New themes added regularly.
           </p>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-10">
+        <div className="grid lg:grid-cols-2 gap-12">
           {themes.map((theme, i) => (
-            <Link key={i} href={`/themes/${theme.slug}`} className="group relative bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col md:flex-row h-full">
-              <div className="md:w-2/5 aspect-square md:aspect-auto bg-slate-100 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-700">
-                <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Theme Art</span>
-              </div>
-              <div className="md:w-3/5 p-8 lg:p-10 flex flex-col justify-between">
-                <div>
-                  <div className="flex gap-3 mb-6">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${theme.accent}`}>
-                      {theme.category}
-                    </span>
-                    <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest">
-                      {theme.difficulty}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4 group-hover:text-indigo-600 transition-colors">
-                    {theme.title}
-                  </h3>
-                  <p className="text-slate-500 font-medium text-sm leading-relaxed mb-8">
-                    {theme.desc}
-                  </p>
+            <Link 
+              key={i} 
+              href={`/themes/${theme.slug}`} 
+              className="group card-branded p-10 lg:p-12 flex flex-col gap-6"
+            >
+              {/* Theme image placeholder */}
+              <div className="w-full aspect-video bg-brand-gray rounded-[24px] flex items-center justify-center shadow-inner overflow-hidden border-2 border-gray-50 group-hover:border-brand-pink transition-colors relative">
+                <div className="w-16 h-16 bg-brand-dark rounded-full flex items-center justify-center text-white font-black text-xs uppercase tracking-widest group-hover:rotate-12 transition-transform duration-500">
+                  Art
                 </div>
+                <div className="absolute top-4 right-4 px-3 py-1.5 bg-brand-dark/80 backdrop-blur-sm rounded-full">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white">{theme.tone}</span>
+                </div>
+              </div>
+              
+              <div className="flex flex-col flex-grow">
+                <div className="flex flex-wrap gap-2 mb-5">
+                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${theme.accent}`}>
+                    {theme.category}
+                  </span>
+                  <span className="px-4 py-1.5 bg-gray-100 text-gray-400 rounded-full text-[10px] font-black uppercase tracking-widest">
+                    {theme.difficulty}
+                  </span>
+                </div>
+                <h3 className="text-3xl lg:text-4xl font-black text-brand-dark mb-4 uppercase tracking-tight group-hover:text-brand-pink transition-colors leading-[1.1]">
+                  {theme.title}
+                </h3>
+                <p className="text-gray-500 font-bold text-base mb-6 leading-snug flex-grow">
+                  {theme.desc}
+                </p>
                 
-                <div className="flex items-center justify-between pt-8 border-t border-slate-50">
-                  <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">
-                    {theme.players} Players
+                <div className="bg-brand-gray rounded-2xl px-5 py-4 mb-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">Best for</p>
+                  <p className="text-sm font-black text-brand-dark">{theme.bestFor}</p>
+                </div>
+
+                <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                  <span className="text-gray-400 text-[11px] font-black uppercase tracking-[0.15em]">
+                    {theme.players} Guests
                   </span>
-                  <span className="text-indigo-600 font-bold text-sm flex items-center gap-2 group-hover:gap-3 transition-all">
-                    Explore Theme <span>→</span>
-                  </span>
+                  <div className="flex items-center gap-2 text-brand-pink font-black text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
+                    View Theme
+                    <div className="w-10 h-10 rounded-full bg-brand-dark text-white flex items-center justify-center group-hover:bg-brand-pink transition-all group-hover:translate-x-1">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </div>
             </Link>
           ))}
         </div>
         
-        {/* Suggestion CTA */}
-        <div className="mt-40 text-center">
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-8">Can't find the perfect theme?</p>
-          <Link href="/contact" className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-full font-bold hover:bg-indigo-600 transition-all">
-            Request a Custom Story
-            <span className="text-xl">✍️</span>
-          </Link>
+        {/* Custom theme callout */}
+        <div className="mt-32">
+          <div className="bg-brand-gray rounded-[4rem] p-16 lg:p-24 text-center border-4 border-dashed border-gray-200 hover:border-brand-pink transition-colors group">
+            <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px] mb-6">Can't find what you're looking for?</p>
+            <h2 className="text-4xl lg:text-5xl font-black text-brand-dark mb-6 uppercase tracking-tighter">
+              Every theme is <span className="text-brand-pink italic">built around you.</span>
+            </h2>
+            <p className="text-gray-500 font-bold max-w-xl mx-auto mb-12 text-lg leading-relaxed">
+              Remember — whichever theme you pick, we personalise the whole thing with your actual guests. Names, relationships, rivalries. It's not a template — it's built for your party.
+            </p>
+            <Link href="/how-it-works" className="inline-flex items-center gap-4 px-12 py-6 bg-brand-dark text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-pink transition-all shadow-xl hover:translate-y-[-4px] active:scale-95">
+              See How It Works
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -1,36 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a1a1a;
   
-  /* Brand Colors */
-  --brand-pink: #ff00ff;
-  --brand-blue: #0000ff;
+  /* Brand Colors from Backpocketgames.com */
+  --brand-pink: #FF2D55;
+  --brand-blue: #007AFF;
+  --brand-dark: #1a1a1a;
+  --brand-gray: #F8FAFC;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Outfit', var(--font-geist-sans);
   
   /* Add brand colors to tailwind theme */
   --color-brand-pink: var(--brand-pink);
   --color-brand-blue: var(--brand-blue);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-gray: var(--brand-gray);
+
+  /* Rounded Corners */
+  --radius-pill: 9999px;
+  --radius-card: 32px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Keeping it light-mode focused as per the reference, but defining dark tokens just in case */
+    --background: #ffffff;
+    --foreground: #1a1a1a;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Custom Utilities */
@@ -44,3 +54,16 @@ body {
 .bg-gradient-brand {
   background: linear-gradient(135deg, var(--brand-pink), var(--brand-blue));
 }
+
+.shadow-premium {
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-pill {
+  @apply rounded-full font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95;
+}
+
+.card-branded {
+  @apply rounded-[32px] border border-gray-100 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-2xl hover:translate-y-[-4px];
+}
+
