@@ -14,7 +14,7 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata(props: { params: Promise<{ locale: Locale; slug: string }> }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const params = await props.params;
   const post = blogPosts.find((p) => p.slug === params.slug);
   
@@ -34,7 +34,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: Locale
 }
 
 export default async function BlogPostPage(props: {
-  params: Promise<{ locale: Locale; slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
   const params = await props.params;
   const locale = params.locale;

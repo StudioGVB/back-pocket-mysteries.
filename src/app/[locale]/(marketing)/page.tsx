@@ -6,7 +6,7 @@ import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 
-export async function generateMetadata(props: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
   const locale = params.locale;
   const dict = await getDictionary(locale);
@@ -18,7 +18,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: Locale
 }
 
 export default async function HomePage(props: {
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }) {
   const params = await props.params;
   const locale = params.locale;

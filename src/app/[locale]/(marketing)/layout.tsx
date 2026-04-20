@@ -7,7 +7,7 @@ import LanguageSwitcher from '@/components/marketing/LanguageSwitcher';
 
 export default async function MarketingLayout(props: {
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }) {
   const params = await props.params;
   const locale = params.locale;

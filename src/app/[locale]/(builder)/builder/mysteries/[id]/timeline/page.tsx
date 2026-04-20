@@ -7,7 +7,7 @@ import { Locale } from '@/lib/i18n-config';
 export default async function MysteryTimelinePage({
   params,
 }: {
-  params: Promise<{ id: string; locale: Locale }>;
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
   const [mystery, beats, characters] = await Promise.all([

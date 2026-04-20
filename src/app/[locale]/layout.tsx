@@ -70,7 +70,7 @@ const websiteSchema = {
 
 export default async function RootLayout(props: {
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }) {
   const params = await props.params;
   const locale = params.locale;

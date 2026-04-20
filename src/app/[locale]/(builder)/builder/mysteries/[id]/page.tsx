@@ -6,7 +6,7 @@ import { Locale } from '@/lib/i18n-config';
 export default async function MysteryOverviewPage({
   params,
 }: {
-  params: Promise<{ id: string; locale: Locale }>;
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
   const mystery = await getMysteryById(id);
