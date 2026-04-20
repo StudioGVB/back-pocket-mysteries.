@@ -5,7 +5,7 @@ import { MotiveManager } from '../characters/_components/MotiveManager';
 export default async function MysteryRelationshipsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
   const [mystery, characters] = await Promise.all([

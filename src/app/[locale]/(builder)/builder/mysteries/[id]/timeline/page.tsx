@@ -6,7 +6,7 @@ import { MainMurderConfig } from './_components/MainMurderConfig';
 export default async function MysteryTimelinePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
   const [mystery, beats, characters] = await Promise.all([

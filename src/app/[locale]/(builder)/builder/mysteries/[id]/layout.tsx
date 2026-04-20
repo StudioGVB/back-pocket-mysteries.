@@ -8,7 +8,7 @@ export default async function MysteryStudioLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
   const mystery = await getMysteryById(id);

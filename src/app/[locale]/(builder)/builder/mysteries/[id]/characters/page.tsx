@@ -6,7 +6,7 @@ import { CharacterCard } from './_components/CharacterCard';
 export default async function MysteryCharactersPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
   const [mystery, characters] = await Promise.all([
@@ -25,25 +25,28 @@ export default async function MysteryCharactersPage({
   const optionalCount = optionalSuspects.length;
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      {/* Header & Stats */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8">
-        <div>
-          <div className="flex flex-wrap items-center gap-4 mb-4">
-            <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tight">Characters ({characters.length})</h1>
-            <div className="flex gap-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
-                {mandatoryCount} mandatory
-              </span>
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
-                {optionalCount} optional
-              </span>
+    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      {/* Page Header */}
+      <div className="space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="flex flex-wrap items-center gap-4 mb-2">
+              <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tight">Characters ({characters.length})</h1>
+              <div className="flex gap-2">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
+                  {mandatoryCount} mandatory
+                </span>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
+                  {optionalCount} optional
+                </span>
+              </div>
             </div>
+            <p className="text-slate-500 font-medium text-lg">Build your ensemble of suspects, victims, and assistants.</p>
           </div>
-          <p className="text-slate-500 font-medium text-lg">Build your ensemble of suspects, victims, and assistants.</p>
         </div>
-        
-        <div className="w-full xl:w-auto">
+
+        {/* Action Bar / Quick Add */}
+        <div className="bg-slate-50/50 p-1 rounded-[2.5rem] border border-slate-100 shadow-inner">
           <AddCharacterQuickForm mysteryId={id} />
         </div>
       </div>

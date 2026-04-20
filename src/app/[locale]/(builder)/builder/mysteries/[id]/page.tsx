@@ -5,7 +5,7 @@ import { updateMysteryAction } from '../actions';
 export default async function MysteryOverviewPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
   const mystery = await getMysteryById(id);

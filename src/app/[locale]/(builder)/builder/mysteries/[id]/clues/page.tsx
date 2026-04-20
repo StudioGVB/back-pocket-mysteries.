@@ -5,7 +5,7 @@ import { ClueGrid } from './_components/ClueGrid';
 export default async function MysteryCluesPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
   const [mystery, clues, beats, characters] = await Promise.all([

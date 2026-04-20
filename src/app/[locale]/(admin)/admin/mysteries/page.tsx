@@ -6,7 +6,7 @@ import { CreateMysteryBaseButton } from './_components/CreateMysteryBaseButton';
 export default async function AdminMysteries({
   params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   const mysteries = await getMysteries();

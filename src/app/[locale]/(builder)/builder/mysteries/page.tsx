@@ -6,7 +6,7 @@ import { CreateMysteryButton } from './_components/CreateMysteryButton';
 export default async function BuilderMysteriesPage({
   params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   const mysteries = await getUserMysteries();
