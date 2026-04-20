@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { upsertRelationship, deleteRelationship } from '@/services/relationships';
+import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
+import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 
 export async function upsertRelationshipAction(mysteryId: string, relationship: any) {
   try {
@@ -9,7 +11,7 @@ export async function upsertRelationshipAction(mysteryId: string, relationship: 
       ...relationship,
       mystery_id: mysteryId
     });
-    revalidatePath(`/builder/mysteries/${mysteryId}/relationships`);
+    revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
   } catch (error) {
     console.error('Action Error: upsertRelationshipAction', error);
     throw error;
@@ -19,9 +21,122 @@ export async function upsertRelationshipAction(mysteryId: string, relationship: 
 export async function removeRelationshipAction(mysteryId: string, relationshipId: string) {
   try {
     await deleteRelationship(relationshipId);
-    revalidatePath(`/builder/mysteries/${mysteryId}/relationships`);
+    revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
   } catch (error) {
     console.error('Action Error: removeRelationshipAction', error);
+    throw error;
+  }
+}
+
+export async function generateRelationshipsAction(mysteryId: string, overwrite: boolean) {
+  try {
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) throw new Error('Google Generative AI API Key is missing from environment variables.');
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // Fetch characters & mystery context
+    const [mystery, characters] = await Promise.all([
+      getMysteryById(mysteryId),
+      getCharactersByMysteryId(mysteryId)
+    ]);
+
+    if (!characters || characters.length < 2) {
+      throw new Error('Not enough characters to form relationships.');
+    }
+
+    // Build the AI prompt payload
+    const castData = characters.map(c => ({
+      id: c.id,
+      name: c.name,
+      archetype: c.archetype,
+      role: c.plot_role,
+      is_mandatory: c.is_mandatory,
+      is_victim: c.is_victim
+    }));
+
+    const responseSchema: Schema = {
+      type: SchemaType.OBJECT,
+      properties: {
+        relationships: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              source_character_id: { type: SchemaType.STRING },
+              target_character_id: { type: SchemaType.STRING },
+              dynamics: { 
+                type: SchemaType.ARRAY, 
+                items: { type: SchemaType.STRING } 
+              },
+              notes: { type: SchemaType.STRING }
+            },
+            required: ['source_character_id', 'target_character_id', 'dynamics']
+          }
+        }
+      },
+      required: ['relationships']
+    };
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema,
+      }
+    });
+
+    const prompt = `
+      You are a plot architect for a murder mystery party game.
+      Theme: ${mystery?.theme || 'General Mystery'}
+      
+      I am providing a list of characters. You must return an array of compelling, dramatic relationships between them.
+      
+      RULES:
+      1. Every relationship has two people. Use exact IDs provided. Do not invent IDs.
+      2. You can invent the 'dynamics' array (e.g. ["married", "secret affair"], ["business partners", "rivals"], ["best friends"]).
+      3. **The Web**: Connect the VICTIM to almost everyone.
+      4. **The Core**: Mandatory/Primary characters (killers, accomplices, important innocents) should interlink tightly with each other.
+      5. **The Spokes**: If a character is NOT mandatory (e.g., is_mandatory = false), they should act as a dead-end spoke. They should only connect to the Victim or ONE other major character. They MUST NOT connect to multiple people. This ensures they can be removed from the game without breaking the core relationship web.
+      
+      CHARACTERS JSON:
+      ${JSON.stringify(castData, null, 2)}
+    `;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    const parsed = JSON.parse(responseText);
+
+    const generatedRels = parsed.relationships || [];
+
+    // Clear existing if overwrite
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabase = await createClient();
+    
+    if (overwrite) {
+      await supabase.from('relationships').delete().eq('mystery_id', mysteryId);
+    }
+
+    // Insert new ones
+    for (const rel of generatedRels) {
+      // Ensure source != target
+      if (rel.source_character_id !== rel.target_character_id) {
+        await upsertRelationship({
+          mystery_id: mysteryId,
+          character_a_id: rel.source_character_id,
+          character_b_id: rel.target_character_id,
+          know_each_other: true,
+          dynamics: rel.dynamics,
+          notes: rel.notes || 'Generated by AI'
+        });
+      }
+    }
+
+    // Bust cache to update Matrix and Diagram
+    revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+    
+  } catch (error) {
+    console.error('Action Error: generateRelationshipsAction', error);
     throw error;
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo, useRef, useEffect, useState } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { Database } from '@/types/database';
 
 type Character = Database['public']['Tables']['characters']['Row'];
@@ -14,6 +14,7 @@ interface RelationshipGraphProps {
 
 export function RelationshipGraph({ characters, relationships }: RelationshipGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const fgRef = useRef<ForceGraphMethods>();
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
@@ -28,6 +29,13 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
       });
       resizeObserver.observe(containerRef.current);
       return () => resizeObserver.disconnect();
+    }
+  }, []);
+
+  // Tighten up the graph physics so nodes are closer together
+  const handleEngineStop = useCallback(() => {
+    if (fgRef.current) {
+      fgRef.current.zoomToFit(400, 100); // 100 padding
     }
   }, []);
 
@@ -50,6 +58,15 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
 
     return { nodes, links };
   }, [characters, relationships]);
+
+  useEffect(() => {
+    if (fgRef.current) {
+      // Significantly increase repulsion to prevent overlapping text and nodes
+      fgRef.current.d3Force('charge')?.strength(-800); 
+      // Lengthen links so the dense AI connections have room to breathe
+      fgRef.current.d3Force('link')?.distance(160); 
+    }
+  }, [graphData]);
 
   // Color mapping based on role
   const getColor = (node: any) => {
@@ -112,34 +129,42 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
       </div>
 
       <ForceGraph2D
+        ref={fgRef}
         width={dimensions.width}
         height={dimensions.height}
         graphData={graphData}
         nodeColor={getColor}
-        nodeLabel="name"
+        nodeLabel="" // Disable default hover label since we permanently render it
+        onEngineStop={handleEngineStop}
         nodeCanvasObject={(node: any, ctx, globalScale) => {
           const label = node.initials;
-          const fontSize = 14/globalScale;
-          ctx.font = `${fontSize}px "Outfit", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
+          const bgRadius = 14; // Larger circle
 
           // Circle background
           ctx.fillStyle = getColor(node);
           ctx.beginPath();
-          ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI, false);
+          ctx.arc(node.x, node.y, bgRadius, 0, 2 * Math.PI, false);
           ctx.fill();
 
-          // White text
+          // Initials
+          const fontSize = Math.max(10 / globalScale, 10); // Don't let it get too small relative to circle
+          ctx.font = `bold ${fontSize}px "Outfit", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
           ctx.fillStyle = '#FFFFFF';
           ctx.fillText(label, node.x, node.y);
 
-          // Name below
-          if (globalScale > 1.5) {
-            ctx.fillStyle = '#64748b'; // slate-500
-            ctx.font = `${8/globalScale}px "Outfit", sans-serif`;
-            ctx.fillText(node.name, node.x, node.y + 14);
-          }
+          // Full Name always visible below
+          const nameFontSize = Math.max(12 / globalScale, 10);
+          ctx.fillStyle = '#1e293b'; // slate-800
+          ctx.font = `bold ${nameFontSize}px "Outfit", sans-serif`;
+          ctx.fillText(node.name, node.x, node.y + bgRadius + 8);
+          
+          // Role Subtitle
+          const roleFontSize = Math.max(8 / globalScale, 6);
+          ctx.fillStyle = '#94a3b8'; // slate-400
+          ctx.font = `600 ${roleFontSize}px "Outfit", sans-serif`;
+          ctx.fillText((node.role || 'Innocent').toUpperCase(), node.x, node.y + bgRadius + 8 + nameFontSize);
         }}
         linkColor={getLinkColor}
         linkWidth={link => {

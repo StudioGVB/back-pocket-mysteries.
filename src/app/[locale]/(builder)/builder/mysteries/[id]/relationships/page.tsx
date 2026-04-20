@@ -5,7 +5,7 @@ import { getRelationshipsByMysteryId } from '@/services/relationships';
 import { RelationshipGraph } from './_components/RelationshipGraph';
 import { RelationshipMatrix } from './_components/RelationshipMatrix';
 import { MotiveManager } from '../characters/_components/MotiveManager';
-import { Locale } from '@/lib/i18n-config';
+import { AIGenerateButton } from './_components/AIGenerateButton';
 
 export default async function MysteryRelationshipsPage({
   params,
@@ -13,7 +13,7 @@ export default async function MysteryRelationshipsPage({
   params: Promise<{ id: string; locale: string }>;
 }) {
   const { id } = await params;
-  const [mystery, characters, relationships] = await Promise.all([
+  const [mystery, rowCharacters, relationships] = await Promise.all([
     getMysteryById(id),
     getCharactersByMysteryId(id),
     getRelationshipsByMysteryId(id)
@@ -21,33 +21,47 @@ export default async function MysteryRelationshipsPage({
 
   if (!mystery) return null;
 
+  // Syncing with Characters Page logic: Strip out hidden/duplicate victims or broken rows
+  const victim = rowCharacters.find(c => c.is_victim);
+  const mandatorySuspects = rowCharacters.filter(c => c.is_mandatory && !c.is_victim);
+  const optionalSuspects = rowCharacters.filter(c => !c.is_mandatory && !c.is_victim);
+  
+  const activeCharacters = [
+    ...(victim ? [victim] : []),
+    ...mandatorySuspects,
+    ...optionalSuspects
+  ];
+
   return (
     <div className="space-y-16 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
-      {/* 1. Header & Summary */}
-      {/* 1. Summary Stats */}
+      {/* 1. Summary Stats & AI Actions */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
           <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-1">Relationship Map</h2>
-          <p className="text-slate-400 font-medium text-sm">Mapping {characters.length} characters and their secrets.</p>
+          <p className="text-slate-400 font-medium text-sm">Mapping {activeCharacters.length} characters and their secrets.</p>
         </div>
         
-        <div className="flex gap-4">
-           <div className="bg-white border border-slate-100 px-6 py-4 rounded-[2rem] shadow-sm">
-             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Total Bonds</div>
-             <div className="text-2xl font-black text-slate-900 leading-none">
-               {relationships.filter(r => r.know_each_other).length}
+        <div className="flex items-center gap-6">
+           <AIGenerateButton mysteryId={id} />
+           
+           <div className="flex gap-4">
+             <div className="bg-white border border-slate-100 px-6 py-4 rounded-[2rem] shadow-sm">
+               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Total Bonds</div>
+               <div className="text-2xl font-black text-slate-900 leading-none">
+                 {relationships.filter(r => r.know_each_other).length}
+               </div>
              </div>
-           </div>
-           <div className="bg-white border border-slate-100 px-6 py-4 rounded-[2rem] shadow-sm">
-             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1 text-brand-pink">Lethal Motives</div>
-             <div className="text-2xl font-black text-slate-900 leading-none">
-               {characters.reduce((acc, char) => acc + (char.motives?.length || 0), 0)}
+             <div className="bg-white border border-slate-100 px-6 py-4 rounded-[2rem] shadow-sm">
+               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1 text-brand-pink">Lethal Motives</div>
+               <div className="text-2xl font-black text-slate-900 leading-none">
+                 {activeCharacters.reduce((acc, char) => acc + (char.motives?.length || 0), 0)}
+               </div>
              </div>
            </div>
         </div>
       </div>
 
-      {characters.length < 2 ? (
+      {activeCharacters.length < 2 ? (
         <div className="border-2 border-dashed border-slate-100 rounded-[3rem] p-24 flex flex-col items-center justify-center text-center opacity-50 bg-white/50">
           <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center text-4xl mb-6 shadow-sm">🎭</div>
           <h3 className="text-2xl font-black text-slate-900 mb-2">Cast is Missing</h3>
@@ -56,24 +70,30 @@ export default async function MysteryRelationshipsPage({
           </p>
         </div>
       ) : (
-        <div className="space-y-16">
-          {/* 2. The Relationship Map (Visual) */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-brand-pink" />
-              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Relationship Map</h2>
+        <div className="space-y-24">
+          
+          {/* Split Layout: Graph (Left) / Matrix (Right) */}
+          <div className="grid grid-cols-1 xl:grid-cols-[45%_55%] gap-12 items-start relative">
+            
+            {/* Left: Sticky Relationship Graph */}
+            <div className="sticky top-8 space-y-6">
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-brand-pink" />
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Relationship Web</h2>
+              </div>
+              <RelationshipGraph characters={activeCharacters} relationships={relationships} />
             </div>
-            <RelationshipGraph characters={characters} relationships={relationships} />
-          </section>
 
-          {/* 3. The Relationship Matrix (Settings) */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-slate-300" />
-              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Relationship Matrix</h2>
+            {/* Right: Scrollable Matrix */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-slate-300" />
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Relationship Actions</h2>
+              </div>
+              <RelationshipMatrix mysteryId={id} characters={activeCharacters} relationships={relationships} />
             </div>
-            <RelationshipMatrix mysteryId={id} characters={characters} relationships={relationships} />
-          </section>
+
+          </div>
 
           {/* 4. Murder Motives (Stakes) */}
           <section className="space-y-10 pt-10 border-t border-slate-100">
@@ -83,7 +103,7 @@ export default async function MysteryRelationshipsPage({
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {characters.filter(c => !c.is_victim).map((character) => (
+              {activeCharacters.map((character) => (
                 <div key={character.id} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm space-y-8 hover:shadow-xl hover:shadow-slate-200/20 transition-all">
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">👤</div>
@@ -97,7 +117,7 @@ export default async function MysteryRelationshipsPage({
                     mysteryId={id}
                     characterId={character.id}
                     existingMotives={character.motives || []}
-                    allCharacters={characters}
+                    allCharacters={activeCharacters}
                   />
                 </div>
               ))}

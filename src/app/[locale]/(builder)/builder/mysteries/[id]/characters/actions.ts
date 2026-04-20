@@ -24,22 +24,23 @@ export async function addCharacterAction(mysteryId: string, formData: FormData) 
     is_victim
   });
 
-  revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
+    // Clear cache for the entire mystery studio
+    revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function updateCharacterAction(mysteryId: string, id: string, updates: any) {
   await updateCharacter(id, updates);
-  revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function removeCharacterAction(mysteryId: string, id: string) {
   await deleteCharacter(id);
-  revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function toggleVictimAction(mysteryId: string, id: string, isVictim: boolean) {
   await updateCharacter(id, { is_victim: isVictim });
-  revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function addMotiveAction(mysteryId: string, characterId: string, formData: FormData) {
@@ -61,8 +62,7 @@ export async function addMotiveAction(mysteryId: string, characterId: string, fo
     }) as any);
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
-  revalidatePath(`/builder/mysteries/${mysteryId}/relationships`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function removeMotiveAction(mysteryId: string, motiveId: string) {
@@ -73,6 +73,5 @@ export async function removeMotiveAction(mysteryId: string, motiveId: string) {
     .eq('id', motiveId);
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
-  revalidatePath(`/builder/mysteries/${mysteryId}/relationships`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }

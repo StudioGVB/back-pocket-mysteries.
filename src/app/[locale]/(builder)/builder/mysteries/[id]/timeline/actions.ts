@@ -16,17 +16,17 @@ export async function addBeatAction(mysteryId: string, currentCount: number) {
     is_required: true,
   });
 
-  revalidatePath(`/builder/mysteries/${mysteryId}/timeline`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function updateBeatAction(mysteryId: string, id: string, updates: any) {
   await updatePlotBeat(id, updates);
-  revalidatePath(`/builder/mysteries/${mysteryId}/timeline`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function removeBeatAction(mysteryId: string, id: string) {
   await deletePlotBeat(id);
-  revalidatePath(`/builder/mysteries/${mysteryId}/timeline`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function reorderBeatsAction(mysteryId: string, beats: { id: string, sort_order: number }[]) {
@@ -40,5 +40,5 @@ export async function reorderBeatsAction(mysteryId: string, beats: { id: string,
       .eq('id', beat.id);
   }
 
-  revalidatePath(`/builder/mysteries/${mysteryId}/timeline`);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }

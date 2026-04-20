@@ -164,8 +164,8 @@ export default async function PricingPage(props: {
                 ))}
               </ul>
               
-              <Link href={`/${locale}/signup`} className={`btn-pill w-full py-6 text-center text-sm ${tier.featured ? 'bg-brand-pink text-white hover:bg-white hover:text-brand-pink shadow-2xl' : 'bg-brand-dark text-white hover:bg-brand-pink hover:text-white'}`}>
-                {tier.cta}
+              <Link href={`/${locale}/coming-soon`} className={`btn-pill w-full py-6 text-center text-sm ${tier.featured ? 'bg-brand-pink text-white hover:bg-white hover:text-brand-pink shadow-2xl' : 'bg-brand-dark text-white hover:bg-brand-pink hover:text-white'}`}>
+                Coming Soon
               </Link>
             </div>
           ))}

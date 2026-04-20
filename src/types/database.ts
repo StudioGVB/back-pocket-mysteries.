@@ -367,6 +367,82 @@ export interface Database {
           }
         ]
       }
+      subplots: {
+        Row: {
+          id: string
+          mystery_id: string
+          title: string
+          description: string | null
+          primary_character_id: string | null
+          secondary_character_id: string | null
+          theme: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          mystery_id: string
+          title: string
+          description?: string | null
+          primary_character_id?: string | null
+          secondary_character_id?: string | null
+          theme?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          mystery_id?: string
+          title?: string
+          description?: string | null
+          primary_character_id?: string | null
+          secondary_character_id?: string | null
+          theme?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
+      }
+      subplot_beats: {
+        Row: {
+          id: string
+          subplot_id: string
+          beat_number: number
+          description: string
+          linked_plot_beat_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          subplot_id: string
+          beat_number: number
+          description: string
+          linked_plot_beat_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          subplot_id?: string
+          beat_number?: number
+          description?: string
+          linked_plot_beat_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
+      }
       motives: {
         Row: {
           id: string

@@ -76,7 +76,7 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
                  <option value="innocent">Innocent</option>
                  <option value="killer">Killer</option>
                  <option value="assistant">Assistant</option>
-                 <option value="victim">Victim (Not Playable)</option>
+                 <option value="victim">Victim</option>
                </select>
                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
