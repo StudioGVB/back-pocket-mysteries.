@@ -1,0 +1,278 @@
+{
+  "common": {
+    "siteTitle": "Back Pocket Mysteries | AI-Personalised Murder Mystery Packs",
+    "howItWorks": "How it Works",
+    "themes": "Themes",
+    "pricing": "Pricing",
+    "blog": "Blog",
+    "login": "Login",
+    "getStarted": "COMING SOON",
+    "signup": "COMING SOON",
+    "buildYourMystery": "COMING SOON",
+    "browseThemes": "COMING SOON",
+    "pickATheme": "COMING SOON",
+    "product": "Product",
+    "company": "Company",
+    "aboutUs": "About Us",
+    "contact": "Contact",
+    "footer": {
+      "desc": "Personalised murder mystery kits built for your crowd, ready in under 20 minutes. Part of Back Pocket Games.",
+      "rights": "Back Pocket Games. All rights reserved.",
+      "admin": "Admin Access"
+    },
+    "newsletter": {
+      "title": "Stay in the loop",
+      "desc": "Get notified when new themes drop.",
+      "placeholder": "Enter your email"
+    }
+  },
+  "home": {
+    "hero": {
+      "badge": "Your party, sorted in 20 minutes",
+      "title": "Murder mystery, built around, your people.",
+      "subtitle": "Real names. Real relationships. Real drama. We workshop a fully personalised, print-ready murder mystery pack — in minutes, not days.",
+      "ctaPick": "COMING SOON",
+      "ctaHow": "How it Works",
+      "priceLabel": "From {{price}}",
+      "readyBadge": "Ready in <20 min"
+    },
+    "why": {
+      "title": "Not just a kit. Your kit.",
+      "desc": "Every other mystery pack gives you a fixed story with blank spaces to fill in. We generate the whole thing around your actual guest list — names, relationships, and all the drama — so every clue, character, and confession feels like it was written just for your party.",
+      "features": {
+        "guestStory": {
+          "title": "Guest-Specific Story",
+          "desc": "Tell us who's coming and their relationships. We weave real names, dynamics, and 'vibes' directly into the narrative.",
+          "badge": "Personalised"
+        },
+        "evidence": {
+          "title": "Real Evidence Images",
+          "desc": "Fake texts, DM screenshots, and 'receipts' — all generated to match your story. Evidence that actually names your guests.",
+          "badge": "AI-Generated"
+        },
+        "instant": {
+          "title": "Print-Ready in Minutes",
+          "desc": "Download your complete pack — host guide, character packets, and evidence assets — all formatted and ready to print.",
+          "badge": "Instant Download"
+        }
+      }
+    },
+    "steps": {
+      "title": "Your party is sorted in 3 steps.",
+      "subtitle": "No planning. No stress. No spoilers for the host.",
+      "step1": {
+        "title": "Pick a theme that fits your crowd",
+        "desc": "Celebrity gossip scandal? 1920s speakeasy? Toxic ex drama? Choose the vibe — we handle the rest."
+      },
+      "step2": {
+        "title": "Tell us who's coming",
+        "desc": "Add your guest names and their relationships. The more detail you give, the funnier and more personal the mystery gets."
+      },
+      "step3": {
+        "title": "Download and play",
+        "desc": "Your complete, print-ready pack is ready in under 20 minutes. Share digitally or print at home."
+      },
+      "cta": "See the full process"
+    },
+    "occasions": {
+      "title": "Perfect for every occasion.",
+      "items": {
+        "birthdays": "Birthdays",
+        "hens": "Hens & Bucks Nights",
+        "dinner": "Dinner Parties",
+        "corporate": "Corporate Team Days",
+        "friends": "Friend Group Traditions",
+        "engagement": "Engagement Parties"
+      }
+    },
+    "compare": {
+      "title": "Etsy takes weeks. We take 20 minutes.",
+      "subtitle": "The same level of personalisation — without the wait, the Canva faff, or the £150 price tag.",
+      "table": {
+        "feature": "Feature",
+        "bpm": "Back Pocket Mysteries",
+        "etsy": "Etsy Custom Kits",
+        "ai": "Generic AI Tools",
+        "f1": "Guest names in the story",
+        "f2": "AI-generated evidence images",
+        "f3": "Print-ready pack, all docs",
+        "f4": "Delivery time",
+        "f5": "Price (6–12 guests)",
+        "f6": "Host plays along too"
+      }
+    },
+    "ctaSection": {
+      "title": "Your party deserves better than a blank template.",
+      "desc": "Get a mystery that's actually about your people. Packs from {{price}}.",
+      "meta": "Rated 16+ · UK, US & AU friendly · Print or share digitally"
+    }
+  },
+  "pricing": {
+    "title": "One pack. Your whole night.",
+    "subtitle": "Pay once per event. No subscriptions, no per-player fees, no hidden extras. Just a complete, personalised mystery pack ready to go.",
+    "mostPopular": "Most Popular",
+    "event": "/ event",
+    "bestFor": "Best for:",
+    "faq": {
+      "title": "Need Answers?",
+      "subtitle": "Frequently Asked Questions"
+    },
+    "tiers": {
+      "basic": {
+        "name": "Basic",
+        "tagline": "Quick setup, sorted party.",
+        "desc": "Best for small groups, casual hosts, or first-timers who want to see what we're about.",
+        "cta": "COMING SOON",
+        "bestFor": "Casual dinner parties, friend nights"
+      },
+      "premium": {
+        "name": "Premium",
+        "tagline": "The main event pack.",
+        "desc": "Best for birthdays, hens and bucks parties, and 'main event' evenings where you want it to feel really special.",
+        "cta": "COMING SOON",
+        "bestFor": "Hens nights, milestone birthdays"
+      },
+      "deluxe": {
+        "name": "Deluxe",
+        "tagline": "All the drama. All the props.",
+        "desc": "Best for high-effort hosts, content creators, or corporate buyers who want everything dialled up.",
+        "cta": "COMING SOON",
+        "bestFor": "Corporate events, content creators"
+      }
+    }
+  },
+  "howItWorks": {
+    "title": "Your party sorted, in under 20 minutes.",
+    "subtitle": "You've got enough on your plate. We handle the script, the evidence, the character packets, and the host guide — all personalised to your actual guest list.",
+    "badge": "The Process",
+    "steps": {
+      "pick": {
+        "title": "Pick a theme that fits your crowd",
+        "desc": "Browse our themes and pick the one that matches your event energy. Every theme comes with a full plot, structured rounds, and a final reveal.",
+        "bullets": [
+          "Themes for every vibe — classic, modern, chaotic",
+          "Rated 16+ by default",
+          "New themes added regularly"
+        ]
+      },
+      "guests": {
+        "title": "Tell us who's coming",
+        "desc": "This is where the magic happens. Add your guests' names and their relationships. Our AI engine builds a full conflict graph and weaves your people into every clue.",
+        "bullets": [
+          "Guest names appear throughout the story",
+          "Relationship dynamics shape character motivations",
+          "Even the host can play — no spoilers required"
+        ]
+      },
+      "download": {
+        "title": "Download your complete pack",
+        "desc": "In under 20 minutes, your personalised murder mystery pack is ready. Print at home or share digitally with guests.",
+        "bullets": [
+          "Host guide runs the evening",
+          "Per-guest character packets",
+          "AI-generated evidence images",
+          "Printable or digital ready"
+        ]
+      }
+    },
+    "packContents": {
+      "title": "What's in, the pack?",
+      "subtitle": "Everything you need to run a seamless, memorable night — all formatted, all personalised.",
+      "items": {
+        "hostGuide": { "title": "Host Guide", "desc": "Step-by-step facilitation script." },
+        "characterPackets": { "title": "Character Packets", "desc": "Sealed per-guest envelopes." },
+        "clues": { "title": "Clue Drops", "desc": "Structured reveals across 4 rounds." },
+        "evidence": { "title": "AI Evidence", "desc": "Fake texts, DMs, and receipts." },
+        "reveal": { "title": "Final Reveal", "desc": "A satisfying, dramatic conclusion." },
+        "ready": { "title": "Ready to Print", "desc": "No design skills required." }
+      }
+    },
+    "cta": {
+      "title": "Ready to build, your mystery?",
+      "desc": "Pick a theme, add your guests, and download your personalised pack. From {{price}}.",
+      "ctaThemes": "COMING SOON",
+      "ctaPricing": "See Pricing"
+    }
+  },
+  "blog": {
+    "title": "The, Gazette.",
+    "subtitle": "Tips, trends, and stories from the world of immersive entertainment.",
+    "badge": "The Latest Stories",
+    "featured": {
+      "badge": "Featured",
+      "title": "The Anatomy of, a Perfect Clue",
+      "desc": "Learn the secrets behind crafting clues that are challenging but fair.",
+      "cta": "Read the Story"
+    },
+    "newsletter": {
+      "title": "Stay in, The Loop.",
+      "desc": "Get tips for your next mystery and be the first to know about new themes.",
+      "placeholder": "Enter your email",
+      "button": "Subscribe"
+    }
+  },
+  "themes": {
+    "title": "Pick the vibe. We handle the rest.",
+    "subtitle": "Every theme is a complete mystery engine — plot, characters, clues, and evidence — all personalised with your guest list. New themes added regularly.",
+    "badge": "Choose Your Theme",
+    "viewTheme": "View Theme",
+    "guests": "{{count}} Guests",
+    "bestFor": "Best for",
+    "list": {
+      "loveOnTheRocks": {
+        "title": "Love on the Rocks",
+        "desc": "Toxic exes, secret affairs, and a suspicious death at the hen weekend.",
+        "difficulty": "Medium",
+        "category": "Drama / Romance",
+        "tone": "Chaotic & Spicy",
+        "bestFor": "Hens, Birthdays"
+      },
+      "inheritance": {
+        "title": "The Inheritance",
+        "desc": "A wealthy patriarch is dead. The family has gathered. The will is missing.",
+        "difficulty": "Easy",
+        "category": "Classic",
+        "tone": "Dramatic",
+        "bestFor": "Dinner Parties"
+      },
+      "galaHeist": {
+        "title": "The Gala Heist",
+        "desc": "A priceless diamond vanishes during a black-tie charity gala.",
+        "difficulty": "Medium",
+        "category": "Noir",
+        "tone": "Sophisticated",
+        "bestFor": "Corporate Events"
+      },
+      "deadSpace": {
+        "title": "Dead Space",
+        "desc": "A locked-room murder on a remote research satellite.",
+        "difficulty": "Hard",
+        "category": "Sci-Fi",
+        "tone": "Tense",
+        "bestFor": "Game Nights"
+      },
+      "speakeasy": {
+        "title": "The Speakeasy Scandal",
+        "desc": "1920s Chicago. Jazz, bootleg gin, and a body in the back room.",
+        "difficulty": "Medium",
+        "category": "Historical",
+        "tone": "Atmospheric",
+        "bestFor": "Themed Parties"
+      },
+      "offTheGrid": {
+        "title": "Off The Grid",
+        "desc": "A weekend wellness retreat turns deadly. Someone brought more than their yoga mat.",
+        "difficulty": "Medium",
+        "category": "Modern",
+        "tone": "Relatable",
+        "bestFor": "Bucks Nights"
+      }
+    },
+    "custom": {
+      "badge": "Can't find what you're looking for?",
+      "title": "Every theme is built around you.",
+      "desc": "Whichever theme you pick, we personalise the whole thing with your actual guests.",
+      "cta": "COMING SOON"
+    }
+  }
+}

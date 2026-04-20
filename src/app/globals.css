@@ -5,11 +5,11 @@
   --background: #ffffff;
   --foreground: #1a1a1a;
   
-  /* Brand Colors from Backpocketgames.com */
-  --brand-pink: #FF2D55;
-  --brand-blue: #007AFF;
+  /* Redesigned Brand Colors: Sophisticated Cinematic Noir */
+  --brand-pink: #8B0000; /* Deep Blood Red */
+  --brand-blue: #0A0A0B; /* Midnight Black/Navy */
   --brand-dark: #1a1a1a;
-  --brand-gray: #F8FAFC;
+  --brand-gray: #F5F5DC; /* Parchment/Bone */
 }
 
 @theme inline {
@@ -52,11 +52,11 @@ body {
 }
 
 .bg-gradient-brand {
-  background: linear-gradient(135deg, var(--brand-pink), var(--brand-blue));
+  background: linear-gradient(135deg, #1A1A1A, #8B0000);
 }
 
 .shadow-premium {
-  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.4);
 }
 
 .btn-pill {
@@ -67,3 +67,43 @@ body {
   @apply rounded-[32px] border border-gray-100 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-2xl hover:translate-y-[-4px];
 }
 
+/* Blog Content Styling */
+.blog-content {
+  @apply max-w-none;
+}
+
+.blog-content h2 {
+  @apply text-4xl lg:text-5xl font-black text-brand-dark mt-16 mb-8 uppercase tracking-tighter;
+}
+
+.blog-content h3 {
+  @apply text-2xl lg:text-3xl font-black text-brand-dark mt-12 mb-6 uppercase tracking-tight;
+}
+
+.blog-content h4 {
+  @apply text-xl font-black text-brand-dark mt-8 mb-4 uppercase tracking-wider;
+}
+
+.blog-content p {
+  @apply text-lg lg:text-xl text-gray-500 font-bold leading-relaxed mb-8;
+}
+
+.blog-content a {
+  @apply text-brand-pink underline hover:text-brand-dark transition-colors;
+}
+
+.blog-content ul {
+  @apply list-disc list-inside mb-8 space-y-4 text-gray-500 font-bold;
+}
+
+.blog-content li {
+  @apply text-lg;
+}
+
+.blog-content blockquote {
+  @apply border-l-8 border-brand-pink bg-[#EEEBDA] p-10 rounded-r-3xl italic my-12;
+}
+
+.blog-content blockquote p {
+  @apply mb-0 text-brand-dark/80;
+}

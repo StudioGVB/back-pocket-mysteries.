@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { i18n } from '@/lib/i18n-config'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -35,16 +36,16 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    (request.nextUrl.pathname.startsWith('/builder') || request.nextUrl.pathname.startsWith('/account'))
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  const pathname = request.nextUrl.pathname
+  const locale = i18n.locales.find(loc => pathname.startsWith(`/${loc}/`) || pathname === `/${loc}`)
+  const pathWithoutLocale = locale ? pathname.replace(`/${locale}`, '') || '/' : pathname
+
+  const isAuthPage = ['/login', '/signup', '/auth'].some(p => pathWithoutLocale.startsWith(p))
+  const isProtectedPage = ['/builder', '/account', '/admin'].some(p => pathWithoutLocale.startsWith(p))
+
+  if (!user && !isAuthPage && isProtectedPage) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = locale ? `/${locale}/login` : '/login'
     return NextResponse.redirect(url)
   }
 

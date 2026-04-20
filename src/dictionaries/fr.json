@@ -1,0 +1,278 @@
+{
+  "common": {
+    "siteTitle": "Back Pocket Mysteries | Packs d'Enquête Personnalisés par IA",
+    "siteDescription": "Votre liste d'invités. Vos relations. Votre drame — tissé dans un pack d'enquête prêt à imprimer en moins de 20 minutes.",
+    "howItWorks": "Comment ça marche",
+    "themes": "Thèmes",
+    "pricing": "Tarifs",
+    "blog": "Blog",
+    "login": "Connexion",
+    "getStarted": "BIENTÔT DISPONIBLE",
+    "signup": "BIENTÔT DISPONIBLE",
+    "buildYourMystery": "BIENTÔT DISPONIBLE",
+    "browseThemes": "BIENTÔT DISPONIBLE",
+    "footer": {
+      "desc": "Kits d'enquête personnalisés pour votre groupe, prêts en moins de 20 minutes. Une création Back Pocket Games.",
+      "rights": "Back Pocket Games. Tous droits réservés.",
+      "admin": "Accès Admin"
+    },
+    "product": "Produit",
+    "company": "Entreprise",
+    "aboutUs": "À propos",
+    "contact": "Contact",
+    "newsletter": {
+      "title": "Restez informé",
+      "desc": "Soyez averti en premier lors de la sortie de nouveaux thèmes.",
+      "placeholder": "Votre email"
+    }
+  },
+  "home": {
+    "hero": {
+      "badge": "Votre fête organisée en 20 minutes",
+      "title": "Une enquête, construite autour, de vos proches.",
+      "subtitle": "Vrais noms. Vraies relations. Vrai drame. Nous créons un pack d'enquête entièrement personnalisé et prêt à imprimer — en quelques minutes.",
+      "ctaPick": "BIENTÔT DISPONIBLE",
+      "ctaHow": "Comment ça marche",
+      "priceLabel": "À partir de {{price}}",
+      "readyBadge": "Prêt en <20 min"
+    },
+    "why": {
+      "title": "Pas juste un kit. Votre kit.",
+      "desc": "Tous les autres packs d'enquête vous donnent une histoire fixe avec des espaces vides à remplir. Nous générons l'ensemble autour de votre liste d'invités réelle — noms, relations et tout le drame — afin que chaque indice, personnage et confession semble avoir été écrit juste pour votre fête.",
+      "features": {
+        "guestStory": {
+          "title": "Histoire spécifique aux invités",
+          "desc": "Dites-nous qui vient et leurs relations. Nous intégrons les vrais noms et dynamiques directement dans le récit.",
+          "badge": "Personnalisé"
+        },
+        "evidence": {
+          "title": "Images de preuves réelles",
+          "desc": "Faux SMS, captures d'écran DM et reçus — tous générés pour correspondre à votre histoire. Des preuves qui nomment réellement vos invités.",
+          "badge": "Généré par IA"
+        },
+        "instant": {
+          "title": "Prêt à imprimer en quelques minutes",
+          "desc": "Téléchargez votre pack complet — guide de l'hôte, livrets de personnages et preuves — tout est formaté et prêt à imprimer.",
+          "badge": "Téléchargement Instantané"
+        }
+      }
+    },
+    "steps": {
+      "title": "Votre fête est organisée en 3 étapes.",
+      "subtitle": "Pas de planification. Pas de stress. Pas de spoilers pour l'hôte.",
+      "step1": {
+        "title": "Choisissez un thème qui convient à votre groupe",
+        "desc": "Scandale de célébrités ? Speakeasy des années 1920 ? Drame d'ex ? Choisissez l'ambiance — on s'occupe du reste."
+      },
+      "step2": {
+        "title": "Dites-nous qui vient",
+        "desc": "Ajoutez vos noms d'invités et leurs relations. Plus vous donnez de détails, plus l'enquête devient drôle et personnelle."
+      },
+      "step3": {
+        "title": "Téléchargez et jouez",
+        "desc": "Votre pack complet est prêt en moins de 20 minutes. Partagez-le numériquement ou imprimez-le à la maison."
+      },
+      "cta": "Voir tout le processus"
+    },
+    "occasions": {
+      "title": "Parfait pour chaque occasion.",
+      "items": {
+        "birthdays": "Anniversaires",
+        "hens": "Enterrements de vie de jeune fille/garçon",
+        "dinner": "Dîners",
+        "corporate": "Team Buildings",
+        "friends": "Traditions entre amis",
+        "engagement": "Fiançailles"
+      }
+    },
+    "compare": {
+      "title": "Etsy prend des semaines. Nous prenons 20 minutes.",
+      "subtitle": "Le même niveau de personnalisation — sans l'attente, les outils de design, ou le prix élevé.",
+      "table": {
+        "feature": "Fonctionnalité",
+        "bpm": "Back Pocket Mysteries",
+        "etsy": "Kits Personnalisés Etsy",
+        "ai": "Outils IA Génériques",
+        "f1": "Noms des invités dans l'histoire",
+        "f2": "Images de preuves par IA",
+        "f3": "Pack prêt à imprimer",
+        "f4": "Délai de livraison",
+        "f5": "Prix (6–12 invités)",
+        "f6": "L'hôte peut aussi jouer"
+      }
+    },
+    "ctaSection": {
+      "title": "Votre fête mérite mieux qu'un modèle vide.",
+      "desc": "Obtenez une enquête qui parle vraiment de vos invités. Packs à partir de {{price}}.",
+      "meta": "Classé 16+ · Impression ou partage numérique"
+    }
+  },
+  "pricing": {
+    "title": "Un pack. Toute votre soirée.",
+    "subtitle": "Payez une seule fois par événement. Pas d'abonnement, pas de frais par joueur, pas de suppléments cachés. Juste un pack d'enquête complet et personnalisé.",
+    "mostPopular": "Le Plus Populaire",
+    "event": "/ événement",
+    "bestFor": "Idéal pour :",
+    "faq": {
+      "title": "Une question ?",
+      "subtitle": "Foire Aux Questions"
+    },
+    "tiers": {
+      "basic": {
+        "name": "Basique",
+        "tagline": "Installation rapide, fête organisée.",
+        "desc": "Idéal pour les petits groupes ou les hôtes occasionnels.",
+        "cta": "BIENTÔT DISPONIBLE",
+        "bestFor": "Petits dîners entre amis"
+      },
+      "premium": {
+        "name": "Premium",
+        "tagline": "Le pack événementiel principal.",
+        "desc": "Idéal pour les anniversaires et les occasions spéciales où vous voulez marquer le coup.",
+        "cta": "BIENTÔT DISPONIBLE",
+        "bestFor": "Anniversaires, EVJF/EVG"
+      },
+      "deluxe": {
+        "name": "Deluxe",
+        "tagline": "Tout le drame. Tous les accessoires.",
+        "desc": "Idéal pour les hôtes exigeants et les événements d'entreprise.",
+        "cta": "BIENTÔT DISPONIBLE",
+        "bestFor": "Événements d'entreprise, créateurs"
+      }
+    }
+  },
+  "howItWorks": {
+    "title": "Votre fête organisée, en moins de 20 minutes.",
+    "subtitle": "On s'occupe de tout : scénario, preuves, livrets de personnages et guide de l'hôte — tout est personnalisé pour votre liste d'invités.",
+    "badge": "Le Processus",
+    "steps": {
+      "pick": {
+        "title": "Choisissez un thème",
+        "desc": "Parcourez nos thèmes et choisissez celui qui correspond à l'énergie de votre événement.",
+        "bullets": [
+          "Thèmes pour toutes les ambiances",
+          "Classé 16+ par défaut",
+          "Nouveaux thèmes réguliers"
+        ]
+      },
+      "guests": {
+        "title": "Dites-nous qui vient",
+        "desc": "C'est là que la magie opère. Ajoutez vos noms d'invités et leurs relations.",
+        "bullets": [
+          "Noms des invités partout dans l'histoire",
+          "Dynamiques de relations personnalisées",
+          "L'hôte peut aussi jouer"
+        ]
+      },
+      "download": {
+        "title": "Téléchargez votre pack",
+        "desc": "En moins de 20 minutes, votre pack est prêt. Imprimez à la maison ou partagez numériquement.",
+        "bullets": [
+          "Guide de l'hôte inclus",
+          "Livrets individuels",
+          "Preuves générées par IA",
+          "Format PDF prêt"
+        ]
+      }
+    },
+    "packContents": {
+      "title": "Qu'y a-t-il, dans le pack ?",
+      "subtitle": "Tout ce dont vous avez besoin pour une soirée mémorable — tout est formaté et personnalisé.",
+      "items": {
+        "hostGuide": { "title": "Guide de l'hôte", "desc": "Instructions étape par étape." },
+        "characterPackets": { "title": "Livrets Personnages", "desc": "Enveloppes scellées pour chaque invité." },
+        "clues": { "title": "Indices", "desc": "Révélations structurées sur 4 rounds." },
+        "evidence": { "title": "Preuves IA", "desc": "Faux SMS, DMs et reçus." },
+        "reveal": { "title": "Révélation Finale", "desc": "Une conclusion dramatique." },
+        "ready": { "title": "Prêt à imprimer", "desc": "Aucune compétence en design requise." }
+      }
+    },
+    "cta": {
+      "title": "Prêt à créer, votre enquête ?",
+      "desc": "Choisissez un thème, ajoutez vos invités et téléchargez votre pack. À partir de {{price}}.",
+      "ctaThemes": "BIENTÔT DISPONIBLE",
+      "ctaPricing": "Voir les tarifs"
+    }
+  },
+  "blog": {
+    "title": "La, Gazette.",
+    "subtitle": "Conseils, tendances et histoires du monde du divertissement immersif.",
+    "badge": "Dernières Histoires",
+    "featured": {
+      "badge": "À la une",
+      "title": "L'Anatomie d'un, Indice Parfait",
+      "desc": "Apprenez les secrets de la création d'indices stimulants mais justes.",
+      "cta": "Lire l'histoire"
+    },
+    "newsletter": {
+      "title": "Restez dans, la Boucle.",
+      "desc": "Recevez des conseils pour votre prochaine enquête et soyez informé des nouveaux thèmes.",
+      "placeholder": "Votre email",
+      "button": "S'abonner"
+    }
+  },
+  "themes": {
+    "title": "Choisissez l'ambiance. On gère le reste.",
+    "subtitle": "Chaque thème est un moteur de mystère complet — intrigue, personnages, indices et preuves — le tout personnalisé avec votre liste d'invités.",
+    "badge": "Choisissez Votre Thème",
+    "viewTheme": "Voir le Thème",
+    "guests": "{{count}} Invités",
+    "bestFor": "Idéal pour",
+    "list": {
+      "loveOnTheRocks": {
+        "title": "L'Amour sur les Rochers",
+        "desc": "Ex toxiques, affaires secrètes et une mort suspecte lors du week-end d'enterrement de vie de jeune fille.",
+        "difficulty": "Moyen",
+        "category": "Drame / Romance",
+        "tone": "Chaotique",
+        "bestFor": "EVJF, Anniversaires"
+      },
+      "inheritance": {
+        "title": "L'Héritage",
+        "desc": "Un riche patriarche est mort. La famille est réunie. Le testament a disparu.",
+        "difficulty": "Facile",
+        "category": "Classique",
+        "tone": "Dramatique",
+        "bestFor": "Dîners"
+      },
+      "galaHeist": {
+        "title": "Le Casse du Gala",
+        "desc": "Un diamant inestimable disparaît lors d'un gala de charité.",
+        "difficulty": "Moyen",
+        "category": "Noir",
+        "tone": "Sophistiqué",
+        "bestFor": "Événements d'entreprise"
+      },
+      "deadSpace": {
+        "title": "Espace Mort",
+        "desc": "Un meurtre en chambre close sur un satellite de recherche éloigné.",
+        "difficulty": "Difficile",
+        "category": "Sci-Fi",
+        "tone": "Tendu",
+        "bestFor": "Soirées Jeux"
+      },
+      "speakeasy": {
+        "title": "Le Scandale du Speakeasy",
+        "desc": "Chicago, années 1920. Jazz, gin de contrebande et un corps dans l'arrière-boutique.",
+        "difficulty": "Moyen",
+        "category": "Historique",
+        "tone": "Atmosphérique",
+        "bestFor": "Fêtes à thème"
+      },
+      "offTheGrid": {
+        "title": "Hors Réseau",
+        "desc": "Une retraite de bien-être tourne au drame. Quelqu'un a apporté plus que son tapis de yoga.",
+        "difficulty": "Moyen",
+        "category": "Moderne",
+        "tone": "Amusant",
+        "bestFor": "EVG"
+      }
+    },
+    "custom": {
+      "badge": "Vous ne trouvez pas votre bonheur ?",
+      "title": "Chaque thème est construit pour vous.",
+      "desc": "Quel que soit le thème que vous choisissez, nous personnalisons l'ensemble avec vos invités réels.",
+      "cta": "BIENTÔT DISPONIBLE"
+    }
+  }
+}
