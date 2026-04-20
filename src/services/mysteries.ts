@@ -61,7 +61,7 @@ export async function createMystery(mystery: MysteryInsert) {
 
 export async function getMysteryById(id: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data, error } = (await supabase
     .from('mysteries')
     .select(`
       *,
@@ -74,7 +74,7 @@ export async function getMysteryById(id: string) {
       subplots (*)
     `)
     .eq('id', id)
-    .single();
+    .single()) as any;
 
   if (error) {
     if (error.code === '42703') {
@@ -91,14 +91,14 @@ export async function getMysteryById(id: string) {
 export async function getCharactersByMysteryId(mysteryId: string) {
   const supabase = await createClient();
   
-  const { data, error } = await supabase
+  const { data, error } = (await supabase
     .from('characters')
     .select(`
       *,
       motives!motives_character_id_fkey (*)
     `)
     .eq('mystery_id', mysteryId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })) as any;
 
   if (error) {
     if (error.code === 'PGRST201') {

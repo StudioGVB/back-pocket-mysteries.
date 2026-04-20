@@ -52,14 +52,14 @@ export async function updateMystery(id: string, updates: Partial<Mystery>) {
 
 export async function getTransactions() {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data, error } = (await supabase
     .from('orders')
     .select(`
       *,
       profiles:user_id (full_name),
       mysteries:mystery_id (title)
     `)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })) as any;
 
   if (error) {
     console.error('Error fetching transactions:', error);

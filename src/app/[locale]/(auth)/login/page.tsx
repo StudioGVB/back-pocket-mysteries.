@@ -51,7 +51,7 @@ export default async function LoginPage({
               <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400" htmlFor="password">
                 Password
               </label>
-              <Link href="/reset-password" name="reset-password-link" className="text-[10px] font-black uppercase tracking-[0.15em] text-brand-pink hover:underline mr-4">
+              <Link href="/reset-password" className="text-[10px] font-black uppercase tracking-[0.15em] text-brand-pink hover:underline mr-4">
                 Forgot?
               </Link>
             </div>
@@ -90,7 +90,7 @@ export default async function LoginPage({
       <div className="pt-6 border-t border-slate-50 text-center">
         <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">
            Don't have an account?{' '}
-          <Link href="/signup" name="sign-up-link" className="text-brand-pink hover:underline">
+          <Link href="/signup" className="text-brand-pink hover:underline">
             Get Started
           </Link>
         </p>

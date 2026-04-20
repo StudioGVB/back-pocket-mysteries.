@@ -6,6 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type UserRoleType = 'admin' | 'superadmin' | 'customer' | string
 export type MysteryStatus = 'draft' | 'published' | 'archived'
 export type Archetype = 'hero' | 'villain' | 'sidekick' | 'victim' | 'witness' | 'investigator'
 export type VictimRelationship = 'spouse' | 'sibling' | 'friend' | 'enemy' | 'stranger' | 'colleague'
@@ -47,6 +48,15 @@ export interface Database {
           avatar_url?: string | null
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
       user_roles: {
         Row: {
@@ -64,6 +74,44 @@ export interface Database {
           user_id?: string
           role?: UserRoleType
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
+      }
+      leads: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          full_name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
       mysteries: {
         Row: {
@@ -108,6 +156,15 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
       plot_beats: {
         Row: {
@@ -164,6 +221,15 @@ export interface Database {
           is_crime_adjacent?: boolean | null
           sort_order?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
       characters: {
         Row: {
@@ -211,6 +277,15 @@ export interface Database {
           is_victim?: boolean
           plot_role?: PlotRole | null
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
       clues: {
         Row: {
@@ -282,6 +357,15 @@ export interface Database {
           template_text?: string | null
           linked_subplot_beat_id?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
       motives: {
         Row: {
@@ -311,6 +395,15 @@ export interface Database {
           linked_character_id?: string | null
           notes?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
       relationships: {
         Row: {
@@ -346,6 +439,15 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
       orders: {
         Row: {
@@ -378,7 +480,28 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
       }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

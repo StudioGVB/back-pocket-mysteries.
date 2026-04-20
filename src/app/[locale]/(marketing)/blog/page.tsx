@@ -10,7 +10,7 @@ import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
   const locale = params.locale;
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
   
   return {
     title: `${dict.common.blog} | ${dict.common.siteTitle}`,
@@ -21,7 +21,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
 export default async function BlogPage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;
   const locale = params.locale;
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
 
   const featuredPost = blogPosts[0]; // First post as featured
   const otherPosts = blogPosts.slice(1);

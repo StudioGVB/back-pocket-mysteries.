@@ -48,13 +48,16 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, onCl
                 const is_victim = plot_role === 'victim';
                 const is_mandatory = formData.get('is_mandatory') === 'on' || is_victim;
 
+                const archetypeValue = formData.get('archetype');
+                const relationshipValue = formData.get('victim_relationship');
+
                 const updates = {
                   name: formData.get('name') as string,
-                  archetype: formData.get('archetype') as Archetype,
+                  archetype: (archetypeValue ? archetypeValue : null) as Archetype | null,
                   is_mandatory,
                   is_victim,
                   plot_role,
-                  victim_relationship: formData.get('victim_relationship') as VictimRelationship,
+                  victim_relationship: (relationshipValue ? relationshipValue : null) as VictimRelationship | null,
                 };
                 await updateCharacterAction(mysteryId, character.id, updates);
                 setIsSaving(false);

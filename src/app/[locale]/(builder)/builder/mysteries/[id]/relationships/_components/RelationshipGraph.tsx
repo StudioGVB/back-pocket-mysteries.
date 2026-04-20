@@ -59,24 +59,55 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
     return '#10B981'; // Green-500 (Innocent)
   };
 
+  // Color mapping for relationships based on dynamics
+  const getLinkColor = (link: any) => {
+    const dynamics = link.dynamics?.split(', ') || [];
+    if (dynamics.some((d: string) => ['dating', 'married', 'affair'].includes(d))) return '#FF3366'; // Romantic
+    if (dynamics.some((d: string) => ['siblings', 'parents', 'cousins'].includes(d))) return '#3B82F6'; // Family
+    if (dynamics.some((d: string) => ['besties', 'rivals'].includes(d))) return '#F59E0B'; // Social
+    if (dynamics.some((d: string) => ['co-workers', 'boss', 'competitors'].includes(d))) return '#94A3B8'; // Professional
+    return '#CBD5E1'; // Default (slate-300)
+  };
+
   return (
     <div ref={containerRef} className="w-full h-[600px] bg-slate-50/30 rounded-[3rem] border border-slate-100 overflow-hidden relative shadow-inner">
-      <div className="absolute top-8 left-8 z-10 flex gap-4">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#FF3366]" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Victim</span>
+      <div className="absolute top-8 left-8 z-10 space-y-4">
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#FF3366]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Victim</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Killer</span>
+          </div>
+          <div className="flex items-center gap-2">
+             <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accomplice</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Innocent</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Killer</span>
-        </div>
-        <div className="flex items-center gap-2">
-           <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accomplice</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Innocent</span>
+
+        <div className="flex gap-4 border-t border-slate-100 pt-3">
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-[1px] bg-[#FF3366]" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">Romantic</span>
+          </div>
+          <div className="flex items-center gap-2">
+             <span className="w-4 h-[1px] bg-[#3B82F6]" />
+             <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">Family</span>
+          </div>
+          <div className="flex items-center gap-2">
+             <span className="w-4 h-[1px] bg-[#F59E0B]" />
+             <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">Social</span>
+          </div>
+          <div className="flex items-center gap-2">
+             <span className="w-4 h-[1px] bg-[#94A3B8]" />
+             <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">Work</span>
+          </div>
         </div>
       </div>
 
@@ -110,8 +141,12 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
             ctx.fillText(node.name, node.x, node.y + 14);
           }
         }}
-        linkColor={() => '#CBD5E1'} // slate-300
-        linkWidth={1}
+        linkColor={getLinkColor}
+        linkWidth={link => {
+          const dynamics = (link as any).dynamics?.split(', ') || [];
+          if (dynamics.includes('married') || dynamics.includes('siblings')) return 2;
+          return 1;
+        }}
         linkDirectionalParticles={1}
         linkDirectionalParticleSpeed={0.01}
         linkCanvasObjectMode={() => 'after'}

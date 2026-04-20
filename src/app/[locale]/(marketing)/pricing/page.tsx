@@ -9,7 +9,7 @@ import JsonLd from '@/components/marketing/JsonLd';
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
   const locale = params.locale;
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
   
   return {
     title: `${dict.common.pricing} | Back Pocket Mysteries`,
@@ -22,7 +22,7 @@ export default async function PricingPage(props: {
 }) {
   const params = await props.params;
   const locale = params.locale;
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
 
   const tiers = [
     {
@@ -139,7 +139,7 @@ export default async function PricingPage(props: {
                 <div className="flex items-baseline gap-2 mb-6">
                   <PriceDisplay 
                     tier={tier.id} 
-                    locale={locale} 
+                    locale={locale as Locale} 
                     className={`text-7xl font-black tracking-tighter ${tier.featured ? 'text-white' : 'text-brand-dark'}`} 
                   />
                   <span className={`text-xs font-black uppercase tracking-[0.2em] ${tier.featured ? 'text-gray-500' : 'text-gray-400'}`}>{dict.pricing.event}</span>

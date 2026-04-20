@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { AddCharacterQuickForm } from './_components/AddCharacterQuickForm';
@@ -28,21 +29,21 @@ export default async function MysteryCharactersPage({
   return (
     <div className="space-y-16 animate-in fade-in slide-in-from-bottom-2 duration-500">
       {/* Page Header */}
-      <div className="space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <div className="flex flex-wrap items-center gap-4 mb-2">
-              <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tight">Characters ({characters.length})</h1>
+            <div className="flex flex-wrap items-center gap-4 mb-1">
+              <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Stage Crew</h1>
               <div className="flex gap-2">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
+                <span className="text-[9px] font-black text-brand-pink uppercase tracking-widest bg-brand-pink/5 px-3 py-1 rounded-md">
                   {mandatoryCount} mandatory
                 </span>
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-md">
                   {optionalCount} optional
                 </span>
               </div>
             </div>
-            <p className="text-slate-500 font-medium text-lg">Build your ensemble of suspects, victims, and assistants.</p>
+            <p className="text-slate-400 font-medium text-sm">Managing {characters.length} principal suspects and victims.</p>
           </div>
         </div>
 

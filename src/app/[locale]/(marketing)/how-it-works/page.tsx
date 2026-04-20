@@ -6,7 +6,7 @@ import { Locale } from '@/lib/i18n-config';
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
   const locale = params.locale;
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
   
   return {
     title: `${dict.common.howItWorks} | ${dict.common.siteTitle}`,
@@ -17,7 +17,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
 export default async function HowItWorksPage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;
   const locale = params.locale;
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
 
   const steps = [
     {

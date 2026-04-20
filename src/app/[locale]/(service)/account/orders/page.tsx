@@ -7,7 +7,7 @@ export default async function OrdersPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const orders = [
+  const orders: any[] = [
     // Placeholder for now, will eventually come from the database
     // { id: 'ORD-123', date: '2024-04-10', title: 'The Gilded Age Murder', status: 'ready', price: '£29.99' }
   ];

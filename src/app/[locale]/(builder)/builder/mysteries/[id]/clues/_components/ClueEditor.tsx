@@ -19,9 +19,9 @@ interface ClueEditorProps {
 export function ClueEditor({ clue, mysteryId, beats, characters, onClose }: ClueEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
 
-  const clueTypes: ClueType[] = ['physical', 'testimonial', 'scientific', 'document', 'hearsay', 'other'];
-  const implications: ImplicationType[] = ['pointing_to', 'red_herring', 'innocent', 'motive_link', 'other'];
-  const statuses: EvidenceStatus[] = ['hidden', 'found', 'analyzed'];
+  const clueTypes: ClueType[] = ['physical', 'testimony', 'background', 'secret'];
+  const implications: ImplicationType[] = ['direct', 'circumstantial', 'red_herring'];
+  const statuses: EvidenceStatus[] = ['real', 'fake', 'planted'];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">

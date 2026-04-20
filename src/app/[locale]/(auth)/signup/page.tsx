@@ -80,7 +80,7 @@ export default async function SignupPage({
       <div className="pt-6 border-t border-slate-50 text-center">
         <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">
           Already have an account?{' '}
-          <Link href="/login" name="login-link" className="text-brand-pink hover:underline">
+          <Link href="/login" className="text-brand-pink hover:underline">
             Log In
           </Link>
         </p>

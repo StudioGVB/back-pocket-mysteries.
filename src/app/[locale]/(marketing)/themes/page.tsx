@@ -8,7 +8,7 @@ import JsonLd from '@/components/marketing/JsonLd';
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
   const locale = params.locale;
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
   
   return {
     title: `${dict.common.themes} | Back Pocket Mysteries`,
@@ -21,7 +21,7 @@ export default async function ThemesPage(props: {
 }) {
   const params = await props.params;
   const locale = params.locale;
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
 
   const productSchema = {
     "@context": "https://schema.org",

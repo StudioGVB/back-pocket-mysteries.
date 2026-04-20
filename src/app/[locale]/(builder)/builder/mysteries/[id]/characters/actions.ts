@@ -6,8 +6,12 @@ import { createCharacter, updateCharacter, deleteCharacter } from '@/services/my
 
 export async function addCharacterAction(mysteryId: string, formData: FormData) {
   const name = formData.get('name') as string;
-  const archetype = formData.get('archetype') as string;
-  const plot_role = formData.get('plot_role') as any;
+  const rawArchetype = formData.get('archetype');
+  const archetype = (rawArchetype ? rawArchetype : null) as any;
+  
+  const rawPlotRole = formData.get('plot_role');
+  const plot_role = (rawPlotRole ? rawPlotRole : null) as any;
+  
   const is_mandatory = formData.get('importance') === 'mandatory';
   const is_victim = plot_role === 'victim';
 
@@ -45,7 +49,7 @@ export async function addMotiveAction(mysteryId: string, characterId: string, fo
   const strength = formData.get('strength') as any;
   const notes = formData.get('notes') as string;
 
-  const { error } = await supabase
+  const { error } = await (supabase
     .from('motives')
     .insert({
       mystery_id: mysteryId,
@@ -54,7 +58,7 @@ export async function addMotiveAction(mysteryId: string, characterId: string, fo
       linked_character_id,
       strength,
       notes
-    });
+    }) as any);
 
   if (error) throw new Error(error.message);
   revalidatePath(`/builder/mysteries/${mysteryId}/characters`);

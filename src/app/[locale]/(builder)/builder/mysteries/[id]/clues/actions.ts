@@ -11,7 +11,7 @@ export async function addClueAction(mysteryId: string, formData: FormData) {
     mystery_id: mysteryId,
     title,
     clue_type: 'physical',
-    evidence_status: 'hidden',
+    evidence_status: 'real',
     is_essential: false,
   });
 

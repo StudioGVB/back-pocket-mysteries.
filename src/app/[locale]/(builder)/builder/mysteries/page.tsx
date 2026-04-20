@@ -13,7 +13,7 @@ export default async function BuilderMysteriesPage({
   const mysteries = await getUserMysteries();
 
   return (
-    <div>
+    <div className="p-12 max-w-6xl mx-auto h-full">
       <div className="flex justify-between items-center mb-10">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Your Mysteries</h1>

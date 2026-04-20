@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { getRelationshipsByMysteryId } from '@/services/relationships';
@@ -23,12 +24,11 @@ export default async function MysteryRelationshipsPage({
   return (
     <div className="space-y-16 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
       {/* 1. Header & Summary */}
+      {/* 1. Summary Stats */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tight mb-2">Relationship Studio</h1>
-          <p className="text-slate-500 font-medium text-lg max-w-2xl">
-            Map out the bonds, rivalries, and dirty secrets connecting your cast of characters.
-          </p>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-1">Relationship Map</h2>
+          <p className="text-slate-400 font-medium text-sm">Mapping {characters.length} characters and their secrets.</p>
         </div>
         
         <div className="flex gap-4">

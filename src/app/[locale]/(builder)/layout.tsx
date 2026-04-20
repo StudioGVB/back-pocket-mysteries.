@@ -71,11 +71,8 @@ export default async function BuilderLayout({
             </div>
           </div>
         </header>
-        
-        <main className="flex-grow p-12 overflow-auto custom-scrollbar">
-          <div className="max-w-6xl mx-auto h-full">
-            {children}
-          </div>
+        <main className="flex-grow overflow-auto custom-scrollbar bg-[#f8fafc]">
+          {children}
         </main>
       </div>
     </div>

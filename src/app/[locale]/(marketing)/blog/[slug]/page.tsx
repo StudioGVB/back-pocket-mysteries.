@@ -39,7 +39,7 @@ export default async function BlogPostPage(props: {
   const params = await props.params;
   const locale = params.locale;
   const post = blogPosts.find((p) => p.slug === params.slug);
-  const dict = await getDictionary(locale);
+  const dict = await getDictionary(locale as Locale);
 
   if (!post) {
     notFound();

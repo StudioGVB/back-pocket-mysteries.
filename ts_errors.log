@@ -1,0 +1,129 @@
+src/app/[locale]/(admin)/admin/admin-data.ts(19,68): error TS2339: Property 'amount' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/admin-data.ts(81,11): error TS2339: Property 'mystery_id' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/admin-data.ts(81,32): error TS2339: Property 'mystery_id' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/admin-data.ts(86,13): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/admin-data.ts(87,23): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/admin-data.ts(136,22): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/[locale]/(admin)/admin/admin-data.ts(168,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+    Argument of type '{ user_id: string; role: any; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/app/[locale]/(admin)/admin/mysteries/page.tsx(49,31): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/mysteries/page.tsx(51,76): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/mysteries/page.tsx(53,37): error TS2339: Property 'created_at' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/mysteries/page.tsx(53,64): error TS2339: Property 'created_at' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/mysteries/page.tsx(57,76): error TS2339: Property 'theme' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/mysteries/page.tsx(60,118): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/mysteries/page.tsx(61,29): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/mysteries/page.tsx(66,66): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/users/page.tsx(21,15): error TS2339: Property 'user_id' does not exist on type 'never'.
+src/app/[locale]/(admin)/admin/users/page.tsx(21,37): error TS2339: Property 'user_id' does not exist on type 'never'.
+src/app/[locale]/(auth)/login/login-action.ts(41,27): error TS2339: Property 'role' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/characters/actions.ts(54,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "motives", never, "POST">', gave the following error.
+    Argument of type '{ mystery_id: string; character_id: string; motive_type: any; linked_character_id: string; strength: any; notes: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "motives", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'mystery_id' does not exist in type 'never[]'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/characters/page.tsx(21,34): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/characters/page.tsx(22,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/characters/page.tsx(23,46): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/characters/page.tsx(82,37): error TS7006: Parameter 'character' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/characters/page.tsx(102,36): error TS7006: Parameter 'character' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/clues/_components/ClueCard.tsx(39,55): error TS2367: This comparison appears to be unintentional because the types '"testimony" | "background" | "secret" | null' and '"document"' have no overlap.
+src/app/[locale]/(builder)/builder/mysteries/[id]/clues/_components/ClueEditor.tsx(24,39): error TS2322: Type '"hidden"' is not assignable to type 'EvidenceStatus'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/clues/_components/ClueEditor.tsx(24,49): error TS2322: Type '"found"' is not assignable to type 'EvidenceStatus'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/clues/_components/ClueEditor.tsx(24,58): error TS2322: Type '"analyzed"' is not assignable to type 'EvidenceStatus'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/clues/actions.ts(14,5): error TS2322: Type '"hidden"' is not assignable to type 'EvidenceStatus | null | undefined'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/clues/page.tsx(37,37): error TS2339: Property 'is_essential' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipMatrix.tsx(61,26): error TS7031: Binding element 'charA' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipMatrix.tsx(61,33): error TS7031: Binding element 'charB' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipMatrix.tsx(130,46): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/relationships/page.tsx(37,45): error TS2339: Property 'know_each_other' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/relationships/page.tsx(43,36): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/relationships/page.tsx(43,41): error TS7006: Parameter 'char' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/relationships/page.tsx(85,34): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/relationships/page.tsx(85,58): error TS7006: Parameter 'character' implicitly has an 'any' type.
+src/app/[locale]/(builder)/builder/mysteries/[id]/timeline/actions.ts(39,15): error TS2345: Argument of type '{ sort_order: number; }' is not assignable to parameter of type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/[id]/timeline/page.tsx(37,37): error TS2339: Property 'beat_type' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/actions.ts(18,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "mysteries", never, "POST">', gave the following error.
+    Argument of type '{ title: string; theme: string; created_by: string; status: string; min_players: number; max_players: number; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "mysteries", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'title' does not exist in type 'never[]'.
+src/app/[locale]/(builder)/builder/mysteries/actions.ts(35,39): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/actions.ts(55,13): error TS2345: Argument of type '{ title: string; theme: string; description: string; min_players: number; max_players: number; complexity: any; spice_level: any; status: any; updated_at: string; }' is not assignable to parameter of type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/page.tsx(28,31): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/page.tsx(34,128): error TS2339: Property 'title' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/page.tsx(36,36): error TS2339: Property 'min_players' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/page.tsx(36,58): error TS2339: Property 'max_players' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/page.tsx(38,53): error TS2339: Property 'created_at' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/page.tsx(44,119): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/page.tsx(45,28): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/[locale]/(builder)/builder/mysteries/page.tsx(48,65): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/[locale]/(marketing)/blog/[slug]/page.tsx(42,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/blog/actions.ts(24,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "leads", never, "POST">', gave the following error.
+    Argument of type '{ email: string; full_name: string | null; marketing_consent: boolean; }[]' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "leads", never, "POST">', gave the following error.
+    Type '{ email: string; full_name: string | null; marketing_consent: boolean; }' is not assignable to type 'never'.
+src/app/[locale]/(marketing)/blog/page.tsx(13,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/blog/page.tsx(24,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/how-it-works/page.tsx(9,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/how-it-works/page.tsx(20,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/layout.tsx(14,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/layout.tsx(39,31): error TS2322: Type 'string' is not assignable to type '"en" | "fr"'.
+src/app/[locale]/(marketing)/page.tsx(12,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/page.tsx(25,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/page.tsx(56,44): error TS2322: Type 'string' is not assignable to type '"en" | "fr"'.
+src/app/[locale]/(marketing)/page.tsx(240,84): error TS2322: Type 'string' is not assignable to type '"en" | "fr"'.
+src/app/[locale]/(marketing)/page.tsx(267,97): error TS2322: Type 'string' is not assignable to type '"en" | "fr"'.
+src/app/[locale]/(marketing)/pricing/page.tsx(12,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/pricing/page.tsx(25,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/pricing/page.tsx(142,21): error TS2322: Type 'string' is not assignable to type '"en" | "fr"'.
+src/app/[locale]/(marketing)/themes/page.tsx(11,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(marketing)/themes/page.tsx(24,36): error TS2345: Argument of type 'string' is not assignable to parameter of type '"en" | "fr"'.
+src/app/[locale]/(service)/account/orders/page.tsx(10,9): error TS7034: Variable 'orders' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/app/[locale]/(service)/account/orders/page.tsx(24,12): error TS7005: Variable 'orders' implicitly has an 'any[]' type.
+src/services/admin.ts(26,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "mysteries", never, "POST">', gave the following error.
+    Argument of type '{ id?: string | undefined; title: string; theme?: string | null | undefined; status?: MysteryStatus | undefined; min_players?: number | undefined; max_players?: number | undefined; ... 5 more ...; updated_at?: string | undefined; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "mysteries", never, "POST">', gave the following error.
+    Argument of type '{ id?: string | undefined; title: string; theme?: string | null | undefined; status?: MysteryStatus | undefined; min_players?: number | undefined; max_players?: number | undefined; ... 5 more ...; updated_at?: string | undefined; }' is not assignable to parameter of type 'never[]'.
+      Type '{ id?: string | undefined; title: string; theme?: string | null | undefined; status?: MysteryStatus | undefined; min_players?: number | undefined; max_players?: number | undefined; ... 5 more ...; updated_at?: string | undefined; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more.
+src/services/admin.ts(41,13): error TS2345: Argument of type 'Partial<{ id: string; title: string; theme: string | null; status: MysteryStatus; min_players: number; max_players: number; complexity: MysteryComplexity | null; ... 4 more ...; updated_at: string; }>' is not assignable to parameter of type 'never'.
+src/services/admin.ts(76,13): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/services/mysteries.ts(48,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "mysteries", never, "POST">', gave the following error.
+    Argument of type '{ created_by: string | undefined; id?: string; title: string; theme?: string | null; status?: MysteryStatus; min_players?: number; max_players?: number; complexity?: MysteryComplexity | null; spice_level?: MysterySpiceLevel | null; description?: string | null; created_at?: string; updated_at?: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "mysteries", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'created_by' does not exist in type 'never[]'.
+src/services/mysteries.ts(121,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "characters", never, "POST">', gave the following error.
+    Argument of type '{ id?: string | undefined; mystery_id: string; name: string; archetype?: Archetype | null | undefined; is_mandatory?: boolean | undefined; min_player_count?: number | null | undefined; ... 6 more ...; plot_role?: PlotRole | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "characters", never, "POST">', gave the following error.
+    Argument of type '{ id?: string | undefined; mystery_id: string; name: string; archetype?: Archetype | null | undefined; is_mandatory?: boolean | undefined; min_player_count?: number | null | undefined; ... 6 more ...; plot_role?: PlotRole | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never[]'.
+      Type '{ id?: string | undefined; mystery_id: string; name: string; archetype?: Archetype | null | undefined; is_mandatory?: boolean | undefined; min_player_count?: number | null | undefined; ... 6 more ...; plot_role?: PlotRole | ... 1 more ... | undefined; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more.
+src/services/mysteries.ts(136,13): error TS2345: Argument of type '{ id?: string | undefined; mystery_id?: string | undefined; name?: string | undefined; archetype?: Archetype | null | undefined; is_mandatory?: boolean | undefined; min_player_count?: number | ... 1 more ... | undefined; ... 6 more ...; plot_role?: PlotRole | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never'.
+src/services/mysteries.ts(178,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "plot_beats", never, "POST">', gave the following error.
+    Argument of type '{ id?: string | undefined; mystery_id: string; beat_number: number; event_title: string; description?: string | null | undefined; characters_involved?: string[] | undefined; is_required?: boolean | undefined; ... 8 more ...; sort_order?: number | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "plot_beats", never, "POST">', gave the following error.
+    Argument of type '{ id?: string | undefined; mystery_id: string; beat_number: number; event_title: string; description?: string | null | undefined; characters_involved?: string[] | undefined; is_required?: boolean | undefined; ... 8 more ...; sort_order?: number | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never[]'.
+      Type '{ id?: string | undefined; mystery_id: string; beat_number: number; event_title: string; description?: string | null | undefined; characters_involved?: string[] | undefined; is_required?: boolean | undefined; ... 8 more ...; sort_order?: number | ... 1 more ... | undefined; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more.
+src/services/mysteries.ts(193,13): error TS2345: Argument of type '{ id?: string | undefined; mystery_id?: string | undefined; beat_number?: number | undefined; event_title?: string | undefined; description?: string | null | undefined; characters_involved?: string[] | undefined; ... 9 more ...; sort_order?: number | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never'.
+src/services/mysteries.ts(221,13): error TS2345: Argument of type '{ sort_order: number; }' is not assignable to parameter of type 'never'.
+src/services/mysteries.ts(249,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "clues", never, "POST">', gave the following error.
+    Argument of type '{ id?: string | undefined; mystery_id: string; title: string; clue_type?: ClueType | null | undefined; implication_type?: ImplicationType | null | undefined; ... 15 more ...; linked_subplot_beat_id?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "clues", never, "POST">', gave the following error.
+    Argument of type '{ id?: string | undefined; mystery_id: string; title: string; clue_type?: ClueType | null | undefined; implication_type?: ImplicationType | null | undefined; ... 15 more ...; linked_subplot_beat_id?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never[]'.
+      Type '{ id?: string | undefined; mystery_id: string; title: string; clue_type?: ClueType | null | undefined; implication_type?: ImplicationType | null | undefined; ... 15 more ...; linked_subplot_beat_id?: string | ... 1 more ... | undefined; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more.
+src/services/mysteries.ts(264,13): error TS2345: Argument of type '{ id?: string | undefined; mystery_id?: string | undefined; title?: string | undefined; clue_type?: ClueType | null | undefined; implication_type?: ImplicationType | null | undefined; ... 15 more ...; linked_subplot_beat_id?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type 'never'.
+src/services/relationships.ts(37,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+    Argument of type '{ character_a_id: string; character_b_id: string; id?: string; mystery_id: string; know_each_other?: boolean; dynamics?: string[] | null; notes?: string | null; created_at?: string; updated_at?: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ character_a_id: string; character_b_id: string; id?: string; mystery_id: string; know_each_other?: boolean; dynamics?: string[] | null; notes?: string | null; created_at?: string; updated_at?: string; }' is not assignable to parameter of type 'never[]'.
+      Type '{ character_a_id: string; character_b_id: string; id?: string | undefined; mystery_id: string; know_each_other?: boolean | undefined; dynamics?: string[] | null | undefined; notes?: string | null | undefined; created_at?: string | undefined; updated_at?: string | undefined; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 35 more.
+test-types.ts(13,25): error TS2339: Property 'amount' does not exist on type 'never'.
