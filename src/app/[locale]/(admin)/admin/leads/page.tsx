@@ -1,7 +1,12 @@
 import React from 'react';
 import { getLeads } from '../admin-data';
 
-export default async function AdminLeadsPage() {
+export default async function AdminLeadsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const leads = await getLeads();
 
   return (

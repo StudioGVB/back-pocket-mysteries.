@@ -2,11 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function BuilderLayout({
+export default async function BuilderLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const navItems = [
     { label: 'Mysteries', href: '/builder/mysteries', icon: '🔍' },
     { label: 'Content Assets', href: '/builder/content', icon: '📁' },

@@ -2,7 +2,12 @@ import React from 'react';
 import { getCustomers } from '../admin-data';
 import { createClient } from '@/utils/supabase/server';
 
-export default async function AdminUsers() {
+export default async function AdminUsers({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const customers = await getCustomers();
   const supabase = await createClient();
 

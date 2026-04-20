@@ -2,11 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 relative overflow-hidden">
       {/* Background Decorative Elements */}

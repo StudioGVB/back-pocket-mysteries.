@@ -3,10 +3,13 @@ import Link from 'next/link';
 import { signInAction } from './login-action';
 
 export default async function LoginPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ message?: string; error?: string }>;
 }) {
+  const { locale } = await params;
   const { message, error } = await searchParams;
   return (
     <div className="space-y-8">

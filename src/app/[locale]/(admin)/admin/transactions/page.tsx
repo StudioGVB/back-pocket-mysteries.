@@ -2,7 +2,12 @@ import React from 'react';
 import { getTransactions } from '@/services/admin';
 import { refundOrderAction } from './actions';
 
-export default async function AdminTransactions() {
+export default async function AdminTransactions({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const transactions: any[] = await getTransactions();
 
   return (

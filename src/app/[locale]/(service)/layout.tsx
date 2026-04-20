@@ -2,11 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function ServiceLayout({
+export default async function ServiceLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">

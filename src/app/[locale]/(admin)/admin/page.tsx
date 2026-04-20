@@ -1,7 +1,12 @@
 import React from 'react';
 import { getAdminStats, getRecentTransactions, getTopMysteries } from './admin-data';
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const [stats, transactions, topMysteries] = await Promise.all([
     getAdminStats(),
     getRecentTransactions(),

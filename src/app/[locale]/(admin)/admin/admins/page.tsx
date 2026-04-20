@@ -2,7 +2,12 @@ import React from 'react';
 import { getAdmins } from '../admin-data';
 import { AdminInviteForm } from './AdminInviteForm';
 
-export default async function AdminSuperAdminsPage() {
+export default async function AdminSuperAdminsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const admins = await getAdmins();
 
   return (

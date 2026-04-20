@@ -3,10 +3,13 @@ import Link from 'next/link';
 import { signup } from '../actions';
 
 export default async function SignupPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const { locale } = await params;
   const { error } = await searchParams;
   return (
     <div className="space-y-8">

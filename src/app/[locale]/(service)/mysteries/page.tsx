@@ -1,7 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
 
-export default function ServiceMysteriesPage() {
+export default async function ServiceMysteriesPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const mysteries = [
     {
       title: 'The Emerald Heist',

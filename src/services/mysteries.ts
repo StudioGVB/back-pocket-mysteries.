@@ -116,11 +116,6 @@ export async function getCharactersByMysteryId(mysteryId: string) {
 export async function createCharacter(character: Database['public']['Tables']['characters']['Insert']) {
   const supabase = await createClient();
   
-  // DIAGNOSTIC - Check User Session
-  const { data: { user } } = await supabase.auth.getUser();
-  console.log('DEBUG [createCharacter] User:', user?.id || 'NOT LOGGED IN');
-  console.log('DEBUG [createCharacter] Mystery ID:', character.mystery_id);
-
   const { data, error } = await supabase
     .from('characters')
     .insert(character)
@@ -128,7 +123,6 @@ export async function createCharacter(character: Database['public']['Tables']['c
     .single();
 
   if (error) {
-    console.error('DEBUG [createCharacter] Error Detail:', error);
     throw new Error(`Error creating character: ${error.message}`);
   }
 

@@ -1,7 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
 
-export default function OrdersPage() {
+export default async function OrdersPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const orders = [
     // Placeholder for now, will eventually come from the database
     // { id: 'ORD-123', date: '2024-04-10', title: 'The Gilded Age Murder', status: 'ready', price: '£29.99' }
