@@ -1,11 +1,12 @@
 import React from 'react';
 import { getMysteryById } from '@/services/mysteries';
 import { updateMysteryAction } from '../actions';
+import { Locale } from '@/lib/i18n-config';
 
 export default async function MysteryOverviewPage({
   params,
 }: {
-  params: Promise<{ id: string; locale: string }>;
+  params: Promise<{ id: string; locale: Locale }>;
 }) {
   const { id } = await params;
   const mystery = await getMysteryById(id);

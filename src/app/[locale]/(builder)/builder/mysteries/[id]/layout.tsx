@@ -2,13 +2,14 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { getMysteryById } from '@/services/mysteries';
 import { MysteryStudioNav } from '@/components/builder/MysteryStudioNav';
+import { Locale } from '@/lib/i18n-config';
 
 export default async function MysteryStudioLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ id: string; locale: string }>;
+  params: Promise<{ id: string; locale: Locale }>;
 }) {
   const { id } = await params;
   const mystery = await getMysteryById(id);

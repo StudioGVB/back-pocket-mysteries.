@@ -2,11 +2,12 @@ import React from 'react';
 import Link from 'next/link';
 import { getUserMysteries } from '@/services/mysteries';
 import { CreateMysteryButton } from './_components/CreateMysteryButton';
+import { Locale } from '@/lib/i18n-config';
 
 export default async function BuilderMysteriesPage({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
   const mysteries = await getUserMysteries();

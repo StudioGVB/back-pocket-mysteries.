@@ -1,0 +1,154 @@
+'use client';
+
+import React, { useMemo, useRef, useEffect, useState } from 'react';
+import ForceGraph2D from 'react-force-graph-2d';
+import { Database } from '@/types/database';
+
+type Character = Database['public']['Tables']['characters']['Row'];
+type Relationship = Database['public']['Tables']['relationships']['Row'];
+
+interface RelationshipGraphProps {
+  characters: any[];
+  relationships: any[];
+}
+
+export function RelationshipGraph({ characters, relationships }: RelationshipGraphProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          setDimensions({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height
+          });
+        }
+      });
+      resizeObserver.observe(containerRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, []);
+
+  const graphData = useMemo(() => {
+    const nodes = characters.map(char => ({
+      id: char.id,
+      name: char.name,
+      role: char.plot_role,
+      isVictim: char.is_victim,
+      initials: char.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
+    }));
+
+    const links = relationships
+      .filter(rel => rel.know_each_other)
+      .map(rel => ({
+        source: rel.character_a_id,
+        target: rel.character_b_id,
+        dynamics: Array.isArray(rel.dynamics) ? rel.dynamics.join(', ') : ''
+      }));
+
+    return { nodes, links };
+  }, [characters, relationships]);
+
+  // Color mapping based on role
+  const getColor = (node: any) => {
+    if (node.isVictim) return '#FF3366'; // Brand Pink / Blood Red
+    if (node.role === 'killer') return '#EF4444'; // Red-500
+    if (node.role === 'assistant') return '#F59E0B'; // Amber-500
+    return '#10B981'; // Green-500 (Innocent)
+  };
+
+  return (
+    <div ref={containerRef} className="w-full h-[600px] bg-slate-50/30 rounded-[3rem] border border-slate-100 overflow-hidden relative shadow-inner">
+      <div className="absolute top-8 left-8 z-10 flex gap-4">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#FF3366]" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Victim</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Killer</span>
+        </div>
+        <div className="flex items-center gap-2">
+           <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accomplice</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Innocent</span>
+        </div>
+      </div>
+
+      <ForceGraph2D
+        width={dimensions.width}
+        height={dimensions.height}
+        graphData={graphData}
+        nodeColor={getColor}
+        nodeLabel="name"
+        nodeCanvasObject={(node: any, ctx, globalScale) => {
+          const label = node.initials;
+          const fontSize = 14/globalScale;
+          ctx.font = `${fontSize}px "Outfit", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          // Circle background
+          ctx.fillStyle = getColor(node);
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, 8, 0, 2 * Math.PI, false);
+          ctx.fill();
+
+          // White text
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(label, node.x, node.y);
+
+          // Name below
+          if (globalScale > 1.5) {
+            ctx.fillStyle = '#64748b'; // slate-500
+            ctx.font = `${8/globalScale}px "Outfit", sans-serif`;
+            ctx.fillText(node.name, node.x, node.y + 14);
+          }
+        }}
+        linkColor={() => '#CBD5E1'} // slate-300
+        linkWidth={1}
+        linkDirectionalParticles={1}
+        linkDirectionalParticleSpeed={0.01}
+        linkCanvasObjectMode={() => 'after'}
+        linkCanvasObject={(link: any, ctx, globalScale) => {
+          if (globalScale < 1.5) return;
+          const MAX_FONT_SIZE = 4;
+          const LABEL_NODE_MARGIN = 4;
+
+          const start = link.source;
+          const end = link.target;
+
+          if (typeof start !== 'object' || typeof end !== 'object') return;
+
+          // text pos
+          const textPos = {
+            x: start.x + (end.x - start.x) / 2,
+            y: start.y + (end.y - start.y) / 2
+          };
+
+          const relLink = link as any;
+          const label = relLink.dynamics || '';
+
+          const fontSize = Math.min(MAX_FONT_SIZE, 12 / globalScale);
+          ctx.font = `${fontSize}px "Outfit", sans-serif`;
+
+          // Draw text background
+          const textWidth = ctx.measureText(label).width;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.fillRect(textPos.x - textWidth / 2 - 2, textPos.y - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
+
+          // Draw text
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#94a3b8'; // slate-400
+          ctx.fillText(label, textPos.x, textPos.y);
+        }}
+      />
+    </div>
+  );
+}

@@ -2,11 +2,12 @@ import React from 'react';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { AddCharacterQuickForm } from './_components/AddCharacterQuickForm';
 import { CharacterCard } from './_components/CharacterCard';
+import { Locale } from '@/lib/i18n-config';
 
 export default async function MysteryCharactersPage({
   params,
 }: {
-  params: Promise<{ id: string; locale: string }>;
+  params: Promise<{ id: string; locale: Locale }>;
 }) {
   const { id } = await params;
   const [mystery, characters] = await Promise.all([

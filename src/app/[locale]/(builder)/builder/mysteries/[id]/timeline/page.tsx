@@ -2,11 +2,12 @@ import React from 'react';
 import { getPlotBeatsByMysteryId, getMysteryById, getCharactersByMysteryId } from '@/services/mysteries';
 import { TimelineEditor } from './_components/TimelineEditor';
 import { MainMurderConfig } from './_components/MainMurderConfig';
+import { Locale } from '@/lib/i18n-config';
 
 export default async function MysteryTimelinePage({
   params,
 }: {
-  params: Promise<{ id: string; locale: string }>;
+  params: Promise<{ id: string; locale: Locale }>;
 }) {
   const { id } = await params;
   const [mystery, beats, characters] = await Promise.all([

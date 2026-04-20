@@ -312,6 +312,41 @@ export interface Database {
           notes?: string | null
         }
       }
+      relationships: {
+        Row: {
+          id: string
+          mystery_id: string
+          character_a_id: string
+          character_b_id: string
+          know_each_other: boolean
+          dynamics: string[] | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          mystery_id: string
+          character_a_id: string
+          character_b_id: string
+          know_each_other?: boolean
+          dynamics?: string[] | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          mystery_id?: string
+          character_a_id?: string
+          character_b_id?: string
+          know_each_other?: boolean
+          dynamics?: string[] | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       orders: {
         Row: {
           id: string

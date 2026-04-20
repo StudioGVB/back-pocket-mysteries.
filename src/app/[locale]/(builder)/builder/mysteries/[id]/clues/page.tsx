@@ -1,11 +1,12 @@
 import React from 'react';
 import { getCluesByMysteryId, getMysteryById, getPlotBeatsByMysteryId, getCharactersByMysteryId } from '@/services/mysteries';
 import { ClueGrid } from './_components/ClueGrid';
+import { Locale } from '@/lib/i18n-config';
 
 export default async function MysteryCluesPage({
   params,
 }: {
-  params: Promise<{ id: string; locale: string }>;
+  params: Promise<{ id: string; locale: Locale }>;
 }) {
   const { id } = await params;
   const [mystery, clues, beats, characters] = await Promise.all([

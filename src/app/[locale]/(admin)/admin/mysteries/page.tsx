@@ -2,11 +2,12 @@ import React from 'react';
 import Link from 'next/link';
 import { getMysteries } from '@/services/admin';
 import { CreateMysteryBaseButton } from './_components/CreateMysteryBaseButton';
+import { Locale } from '@/lib/i18n-config';
 
 export default async function AdminMysteries({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
   const mysteries = await getMysteries();
