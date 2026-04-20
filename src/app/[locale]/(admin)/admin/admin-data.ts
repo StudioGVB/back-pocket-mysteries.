@@ -101,3 +101,72 @@ export async function getLeads() {
 
   return data || [];
 }
+
+export async function getCustomers() {
+  const supabase = await createClient();
+
+  // Fetch all profiles
+  const { data: profiles, error: profileError } = await supabase
+    .from('profiles')
+    .select(`
+      id,
+      full_name,
+      created_at,
+      user_roles!inner(role)
+    `);
+
+  // We filter for role = 'user' or where there's no role assigned (defaulting to user)
+  // Actually, we'll fetch profiles and then left join user_roles
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(`
+      *,
+      user_roles(role)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching customers:', error);
+    return [];
+  }
+
+  // Filter out any that have admin roles
+  return data.filter(p => {
+    const roles = p.user_roles as any[];
+    const hasAdminRole = roles?.some(r => ['admin', 'superadmin', 'super_admin'].includes(r.role.toLowerCase()));
+    return !hasAdminRole;
+  });
+}
+
+export async function getAdmins() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(`
+      *,
+      user_roles!inner(role)
+    `)
+    .in('user_roles.role', ['admin', 'superadmin', 'super_admin'])
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching admins:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function grantAdminStatus(userId: string, role: string = 'admin') {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('user_roles')
+    .upsert({ 
+      user_id: userId, 
+      role: role.toLowerCase() 
+    }, { onConflict: 'user_id' });
+
+  if (error) throw new Error(error.message);
+}

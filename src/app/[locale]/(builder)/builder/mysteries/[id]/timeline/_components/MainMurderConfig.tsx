@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Database } from '@/types/database';
-import { updateMysteryAction } from '../../actions';
+import { updateMysteryAction } from '@/app/[locale]/(builder)/builder/mysteries/actions';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type Character = Database['public']['Tables']['characters']['Row'];
