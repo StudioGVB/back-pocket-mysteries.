@@ -31,6 +31,9 @@ export default async function MysteryCharactersPage({
   const mandatoryCount = remainingMandatory.length + topCharacterIds.size;
   const optionalCount = remainingOptional.length;
 
+  const maxCharacters = mystery.complexity === 'easy' ? 10 : mystery.complexity === 'medium' ? 12 : mystery.complexity === 'hard' ? 16 : 10;
+  const isAtLimit = characters.length >= maxCharacters;
+
   return (
     <div className="space-y-16 animate-in fade-in slide-in-from-bottom-2 duration-500">
       {/* Page Header */}
@@ -40,6 +43,9 @@ export default async function MysteryCharactersPage({
             <div className="flex flex-wrap items-center gap-4 mb-1">
               <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Stage Crew</h1>
               <div className="flex gap-2">
+                <span className="text-[9px] font-black text-slate-900 uppercase tracking-widest bg-slate-200 px-3 py-1 rounded-md">
+                  {characters.length} / {maxCharacters} total
+                </span>
                 <span className="text-[9px] font-black text-brand-pink uppercase tracking-widest bg-brand-pink/5 px-3 py-1 rounded-md">
                   {mandatoryCount} mandatory
                 </span>
@@ -48,14 +54,21 @@ export default async function MysteryCharactersPage({
                 </span>
               </div>
             </div>
-            <p className="text-slate-400 font-medium text-sm">Managing {characters.length} principal suspects and victims.</p>
+            <p className="text-slate-400 font-medium text-sm">Managing {characters.length} out of {maxCharacters} principal suspects and victims.</p>
           </div>
         </div>
 
         {/* Action Bar / Quick Add */}
-        <div className="bg-slate-50/50 p-1 rounded-[2.5rem] border border-slate-100 shadow-inner">
-          <AddCharacterQuickForm mysteryId={id} />
-        </div>
+        {!isAtLimit ? (
+          <div className="bg-slate-50/50 p-1 rounded-[2.5rem] border border-slate-100 shadow-inner">
+            <AddCharacterQuickForm mysteryId={id} />
+          </div>
+        ) : (
+          <div className="bg-red-50 p-6 rounded-[2rem] border border-red-100 text-center flex flex-col items-center justify-center">
+             <div className="text-red-400 font-black text-xl mb-1">CAST FULL</div>
+             <p className="text-red-500 font-bold text-xs uppercase tracking-widest">You've reached the maximum of {maxCharacters} cast members for this tier.</p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-16 pb-20">

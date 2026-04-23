@@ -13,9 +13,9 @@ export default function PricingComparison() {
       category: 'Core Experience',
       items: [
         { name: 'Difficulty / Length', basic: 'Easy (1-2 Hours)', premium: 'Standard (2-3 Hours)', grand: 'Epic (3-4 Hours)', subscribe: 'All Levels' },
-        { name: 'Included Players', basic: 'Up to 6', premium: 'Up to 8', grand: 'Up to 10', subscribe: 'Up to 20' },
+        { name: 'Included Players', basic: 'Up to 6', premium: 'Up to 8', grand: 'Up to 10', subscribe: 'Up to 16' },
         { name: 'Extra Player Fee', basic: '+$3 / player', premium: '+$4 / player', grand: '+$5 / player', subscribe: 'Included' },
-        { name: 'Logic Cap (Max Players)', basic: '10', premium: '12', grand: '16', subscribe: '20' },
+        { name: 'Logic Cap (Max Players)', basic: '10', premium: '12', grand: '16', subscribe: '16' },
         { name: 'Clues / Photos', basic: '~15', premium: '~22', grand: '~30', subscribe: 'Unlimited' },
         { name: 'Mysteries Included', basic: '1', premium: '1', grand: '1', subscribe: 'Unlimited (1/day)' },
         { name: 'Host Guide & Packets', basic: true, premium: true, grand: true, subscribe: true },

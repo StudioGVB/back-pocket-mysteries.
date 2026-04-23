@@ -92,7 +92,7 @@ export function MysteryStudioNav({ mysteryId }: MysteryStudioNavProps) {
 
       {/* Sub Navigation Bar */}
       {activeMainItem && activeMainItem.subItems && activeMainItem.subItems.length > 0 ? (
-        <nav className="w-full bg-[#f8fafc]">
+        <nav className="w-full bg-[#f8fafc] shadow-sm relative z-10">
           <div className="max-w-[1600px] mx-auto w-full px-12 py-3 flex items-center gap-6">
             <div className="px-6 flex items-center gap-6 w-full">
               {activeMainItem.subItems.map(sub => {
@@ -119,7 +119,7 @@ export function MysteryStudioNav({ mysteryId }: MysteryStudioNavProps) {
           </div>
         </nav>
       ) : (
-        <div className="w-full bg-[#f8fafc] h-3"></div>
+        <div className="w-full bg-[#f8fafc] h-3 shadow-sm relative z-10"></div>
       )}
     </div>
   );

@@ -188,7 +188,7 @@ export async function generateRoleSuggestionsAction(mysteryId: string): Promise<
     });
 
     const existingTitles = characters
-      .map(c => c.name.includes('|') ? c.name.split('|')[1] : null)
+      .map((c: any) => c.name.includes('|') ? c.name.split('|')[1] : null)
       .filter(Boolean)
       .join(', ');
 

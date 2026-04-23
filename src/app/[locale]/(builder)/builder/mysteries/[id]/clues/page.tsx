@@ -42,6 +42,7 @@ export default async function MysteryCluesPage({
       </div>
 
       <ClueGrid 
+        mystery={mystery}
         mysteryId={id} 
         clues={clues} 
         beats={beats}

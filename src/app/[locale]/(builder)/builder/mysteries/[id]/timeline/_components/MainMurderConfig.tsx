@@ -58,7 +58,7 @@ export function MainMurderConfig({ mystery, characters }: MainMurderConfigProps)
         ) : (
           <form 
             action={async (formData) => {
-              await updateMysteryAction.bind(null, mystery.id)(formData);
+              await updateMysteryAction(mystery.id, null, formData);
               setIsEditing(false);
             }} 
             className="space-y-6"

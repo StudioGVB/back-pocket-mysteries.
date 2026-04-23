@@ -43,9 +43,10 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
     // Build the AI/Mock payload
     const castData = characters.map((c: any) => ({
       id: c.id,
-      name: c.name,
+      name: c.name.split('|')[0],
+      title_or_role: c.name.includes('|') ? c.name.split('|')[1] : null,
       archetype: c.archetype,
-      role: c.plot_role,
+      plot_role: c.plot_role,
       is_mandatory: c.is_mandatory,
       is_victim: c.is_victim
     }));
@@ -136,7 +137,7 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
         
         RULES:
         1. Every relationship has two people. Use exact IDs provided. Do not invent IDs.
-        2. You can invent the 'dynamics' array (e.g. ["married", "secret affair"], ["business partners", "rivals"], ["best friends"]).
+        2. Analyze the 'title_or_role' field for both characters. The 'dynamics' array you invent MUST logically match their occupations/titles. For example, if one is 'Captain' and the other is 'Charter Guest', they should have an 'employee-guest' dynamic, not 'business partners' or 'siblings' unless highly justified by the plot. If one is 'Maid' and the other 'Billionaire', their dynamic is 'employer-employee'. Do not start from scratch—use their explicit titles to determine their relationship!
         3. **No Floaters**: EVERY single character in the list MUST be connected to at least one other character. Do not leave anyone isolated.
         4. **The Core**: Mandatory/Primary characters (is_mandatory: true) MUST be connected to at least 2 other characters to form a tight web. Connect the VICTIM to almost everyone.
         5. **The Spokes**: If a character is NOT mandatory (e.g., is_mandatory = false), they should act as a dead-end spoke. They should only connect to the Victim or ONE other major character. They MUST NOT connect to multiple people. This ensures they can be removed from the game without breaking the core relationship web.
@@ -201,9 +202,10 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
     // Build the AI payload context
     const castData = characters.map((c: any) => ({
       id: c.id,
-      name: c.name,
+      name: c.name.split('|')[0],
+      title_or_role: c.name.includes('|') ? c.name.split('|')[1] : null,
       archetype: c.archetype,
-      role: c.plot_role,
+      plot_role: c.plot_role,
       is_mandatory: c.is_mandatory,
       is_victim: c.is_victim
     }));

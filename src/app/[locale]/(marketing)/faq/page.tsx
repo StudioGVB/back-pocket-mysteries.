@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import JsonLd from '@/components/marketing/JsonLd';
+import FAQSearch from '@/components/marketing/FAQSearch';
+import { faqsData } from '@/data/faqs';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -12,7 +14,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   
   return {
     title: `${dict.common.faq} | Back Pocket Mysteries`,
-    description: dict.faqPage.seoDescription,
+    description: dict.faqPage?.seoDescription || "Frequently Asked Questions about our custom murder mystery parties.",
   }
 }
 
@@ -23,12 +25,10 @@ export default async function FAQPage(props: {
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
 
-  const faqs = dict.faqPage.questions;
-
   const jsonLdData = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": faqs.map((faq: {q: string, a: string}) => ({
+    "mainEntity": faqsData.map((faq) => ({
       "@type": "Question",
       "name": faq.q,
       "acceptedAnswer": {
@@ -51,32 +51,21 @@ export default async function FAQPage(props: {
               {dict.common.faq}
             </div>
             <h1 className="text-5xl lg:text-7xl font-black text-white mb-8 tracking-tighter uppercase leading-[0.9]">
-              {dict.faqPage.title.replace('Questions.', '')} <br className="hidden md:block" />
+              {dict.faqPage?.title ? dict.faqPage.title.replace('Questions.', '') : 'Frequently Asked '} <br className="hidden md:block" />
               <span className="text-brand-pink italic">Questions.</span>
             </h1>
             <p className="text-lg lg:text-xl text-gray-400 font-bold max-w-2xl mx-auto text-center">
-              {dict.faqPage.subtitle}
+              {dict.faqPage?.subtitle || 'Everything you need to know about hosting.'}
             </p>
           </div>
         </div>
       </div>
 
       {/* FAQ content */}
-      <div className="container mx-auto px-6 py-24 lg:py-32">
-        <div className="max-w-4xl mx-auto">
-          <div className="space-y-8">
-            {faqs.map((faq: {q: string, a: string}, index: number) => (
-              <div key={index} className="card-branded p-8 lg:p-12 group hover:border-brand-pink transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 bg-white">
-                <h3 className="font-black text-brand-dark mb-4 uppercase tracking-tight text-2xl lg:text-3xl group-hover:text-brand-pink transition-colors">
-                  {faq.q}
-                </h3>
-                <div className="w-12 h-1 bg-brand-pink mb-6 opacity-20 group-hover:opacity-100 transition-opacity"></div>
-                <p className="text-gray-600 font-bold text-lg leading-relaxed">
-                  {faq.a}
-                </p>
-              </div>
-            ))}
-          </div>
+      <div className="container mx-auto px-6 py-16 lg:py-24">
+        <div className="max-w-5xl mx-auto">
+          
+          <FAQSearch faqs={faqsData} />
 
           {/* CTA Section */}
           <div className="mt-32 text-center p-12 lg:p-16 rounded-[3rem] bg-gray-50 border-2 border-gray-100 relative overflow-hidden group">

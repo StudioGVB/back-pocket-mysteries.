@@ -37,11 +37,11 @@ export async function createMysteryAction(formData: FormData) {
   redirect(`/builder/mysteries/${data.id}`);
 }
 
-export async function updateMysteryAction(id: string, formData: FormData) {
+export async function updateMysteryAction(id: string, prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error('Unauthorized');
+  if (!user) return { error: 'Unauthorized' };
 
   const title = formData.get('title') as string;
   const theme = formData.get('theme') as string;
@@ -65,16 +65,20 @@ export async function updateMysteryAction(id: string, formData: FormData) {
       status,
       updated_at: new Date().toISOString()
     })
-    .eq('id', id)
-    .eq('created_by', user.id);
+    .eq('id', id);
 
   if (error) {
     console.error('Error updating mystery:', error);
-    throw new Error(error.message);
+    require('fs').appendFileSync('actions_log.txt', new Date().toISOString() + ' ERROR: ' + JSON.stringify(error) + '\n');
+    return { error: error.message };
   }
+  
+  require('fs').appendFileSync('actions_log.txt', new Date().toISOString() + ' SUCCESS updating ' + id + '\n');
 
   revalidatePath(`/builder/mysteries/${id}`);
   revalidatePath(`/builder/mysteries/${id}/core`);
+  
+  return { success: true };
 }
 
 export async function generateDescriptionAction(mysteryId: string) {

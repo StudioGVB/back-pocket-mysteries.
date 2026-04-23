@@ -146,7 +146,7 @@ export default async function PricingPage(props: {
       features: [
         'Unlimited mysteries (1/day)',
         'Choose any difficulty level',
-        'Up to 20 players included per mystery',
+        'Up to 16 players included per mystery',
         'Tailored to your specific events',
         'Custom character appearances (hair, eyes, style)',
         'Inside jokes & character traits',
@@ -161,32 +161,7 @@ export default async function PricingPage(props: {
     }
   ];
 
-  const faqs = [
-    {
-      q: 'Can I still play as the host?',
-      a: 'Yes — and that\'s by design. The host guide tells you exactly when to reveal each clue, so you don\'t need to read spoilers in advance. You can play along as a character.'
-    },
-    {
-      q: 'Do I need to print everything?',
-      a: 'Nope. You can share character packets and clues digitally, or print at home. Everything comes as formatted PDFs ready for either format.'
-    },
-    {
-      q: 'What if my guest list changes last minute?',
-      a: 'Reach out within 24 hours of your download and we\'ll help you re-generate with updated guests. It happens — we\'ve got you.'
-    },
-    {
-      q: 'How long does it actually take?',
-      a: 'Under 20 minutes from start to download. Pick a theme, add your guests, and your pack is generated and ready. No waiting, no queue.'
-    },
-    {
-      q: 'Is this suitable for work events?',
-      a: 'Yes. Our themes are rated 16+ by default with mature-but-not-offensive content. The Gala Heist and The Inheritance work particularly well for corporate groups — no cringe, no awkward icebreakers.'
-    },
-    {
-      q: 'Can I buy a pack as a gift?',
-      a: 'Absolutely. Gift it to the organiser — they add their guest list and download the pack themselves. Perfect present for a birthday or hens night.'
-    }
-  ];
+
 
   return (
     <div className="bg-white">
@@ -272,19 +247,23 @@ export default async function PricingPage(props: {
         
         <PricingComparison />
         
-        {/* FAQ */}
+        {/* FAQ CTA */}
         <div className="mt-48 pt-32 max-w-5xl mx-auto border-t-2 border-gray-100">
-          <div className="text-center mb-24">
-             <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">{dict.pricing.faq.title.split(' ')[0]} <span className="text-brand-pink italic">{dict.pricing.faq.title.split(' ')[1]}</span></h2>
-             <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px]">{dict.pricing.faq.subtitle}</p>
+          <div className="text-center mb-12">
+             <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
+               Have a <span className="text-brand-pink italic">Question?</span>
+             </h2>
+             <p className="text-gray-500 font-bold text-lg max-w-xl mx-auto">
+               We've compiled answers to the most common questions. If you can't find what you're looking for, our team is ready to help.
+             </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-10 text-left">
-            {faqs.map((faq, i) => (
-              <div key={i} className="card-branded p-10 group hover:border-brand-pink">
-                <h4 className="font-black text-brand-dark mb-4 uppercase tracking-tight text-xl group-hover:text-brand-pink transition-colors">{faq.q}</h4>
-                <p className="text-gray-500 font-bold text-base leading-relaxed">{faq.a}</p>
-              </div>
-            ))}
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <Link href={`/${locale}/faq`} className="px-10 py-5 bg-brand-dark text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-brand-pink transition-all shadow-xl hover:translate-y-[-2px] active:scale-95 text-center">
+              Read the FAQs
+            </Link>
+            <Link href={`/${locale}/contact`} className="px-10 py-5 bg-white border-2 border-gray-200 text-brand-dark rounded-full font-black uppercase tracking-[0.2em] text-sm hover:border-brand-pink hover:text-brand-pink transition-all shadow-sm hover:translate-y-[-2px] active:scale-95 text-center">
+              Contact Us
+            </Link>
           </div>
         </div>
 
