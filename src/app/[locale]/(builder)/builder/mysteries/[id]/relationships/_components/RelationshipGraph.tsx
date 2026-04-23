@@ -14,7 +14,7 @@ interface RelationshipGraphProps {
 
 export function RelationshipGraph({ characters, relationships }: RelationshipGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const fgRef = useRef<ForceGraphMethods>();
+  const fgRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
@@ -42,10 +42,12 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
   const graphData = useMemo(() => {
     const nodes = characters.map(char => ({
       id: char.id,
-      name: char.name,
+      name: char.name.split('|')[0],
+      title: char.name.includes('|') ? char.name.split('|')[1] : null,
+      prefix: char.name.split('|')[2] || null,
       role: char.plot_role,
       isVictim: char.is_victim,
-      initials: char.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
+      initials: char.name.split('|')[0].split(' ').map((n: string) => n[0]).join('').toUpperCase()
     }));
 
     const links = relationships
@@ -61,10 +63,12 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
 
   useEffect(() => {
     if (fgRef.current) {
-      // Significantly increase repulsion to prevent overlapping text and nodes
+      // Use moderate repulsion so the physics engine remains stable
       fgRef.current.d3Force('charge')?.strength(-800); 
-      // Lengthen links so the dense AI connections have room to breathe
-      fgRef.current.d3Force('link')?.distance(160); 
+      // Lengthen links so the nodes have room to breathe
+      fgRef.current.d3Force('link')?.distance(200); 
+      // Re-warm the simulation so forces take effect
+      fgRef.current.d3ReheatSimulation();
     }
   }, [graphData]);
 
@@ -146,25 +150,30 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
           ctx.arc(node.x, node.y, bgRadius, 0, 2 * Math.PI, false);
           ctx.fill();
 
-          // Initials
-          const fontSize = Math.max(10 / globalScale, 10); // Don't let it get too small relative to circle
-          ctx.font = `bold ${fontSize}px "Outfit", sans-serif`;
+          // Initials (Static size relative to graph)
+          ctx.font = `bold 12px "Outfit", sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillStyle = '#FFFFFF';
           ctx.fillText(label, node.x, node.y);
 
           // Full Name always visible below
-          const nameFontSize = Math.max(12 / globalScale, 10);
+          const nameY = node.y + bgRadius + 12;
+          ctx.font = `bold 12px "Outfit", sans-serif`;
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+          const displayName = node.prefix ? `${node.prefix} ${node.name}` : node.name;
+          ctx.strokeText(displayName, node.x, nameY);
           ctx.fillStyle = '#1e293b'; // slate-800
-          ctx.font = `bold ${nameFontSize}px "Outfit", sans-serif`;
-          ctx.fillText(node.name, node.x, node.y + bgRadius + 8);
+          ctx.fillText(displayName, node.x, nameY);
           
           // Role Subtitle
-          const roleFontSize = Math.max(8 / globalScale, 6);
+          const roleY = node.y + bgRadius + 24;
+          const displaySubtitle = node.title ? node.title.toUpperCase() : (node.role || 'Innocent').toUpperCase();
+          ctx.font = `600 8px "Outfit", sans-serif`;
+          ctx.strokeText(displaySubtitle, node.x, roleY);
           ctx.fillStyle = '#94a3b8'; // slate-400
-          ctx.font = `600 ${roleFontSize}px "Outfit", sans-serif`;
-          ctx.fillText((node.role || 'Innocent').toUpperCase(), node.x, node.y + bgRadius + 8 + nameFontSize);
+          ctx.fillText(displaySubtitle, node.x, roleY);
         }}
         linkColor={getLinkColor}
         linkWidth={link => {
@@ -176,9 +185,7 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
         linkDirectionalParticleSpeed={0.01}
         linkCanvasObjectMode={() => 'after'}
         linkCanvasObject={(link: any, ctx, globalScale) => {
-          if (globalScale < 1.5) return;
-          const MAX_FONT_SIZE = 4;
-          const LABEL_NODE_MARGIN = 4;
+          if (globalScale < 0.3) return; // Hide text when zoomed out too far
 
           const start = link.source;
           const end = link.target;
@@ -194,13 +201,13 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
           const relLink = link as any;
           const label = relLink.dynamics || '';
 
-          const fontSize = Math.min(MAX_FONT_SIZE, 12 / globalScale);
+          const fontSize = 8; // Larger text for link dynamics
           ctx.font = `${fontSize}px "Outfit", sans-serif`;
 
           // Draw text background
           const textWidth = ctx.measureText(label).width;
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-          ctx.fillRect(textPos.x - textWidth / 2 - 2, textPos.y - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // More opaque background
+          ctx.fillRect(textPos.x - textWidth / 2 - 4, textPos.y - fontSize / 2 - 4, textWidth + 8, fontSize + 8);
 
           // Draw text
           ctx.textAlign = 'center';

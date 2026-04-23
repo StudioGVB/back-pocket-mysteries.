@@ -2,6 +2,9 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
+import { headers, cookies } from 'next/headers';
+import { resolveCurrency } from '@/utils/localization';
+import PriceDisplay from '@/components/marketing/PriceDisplay';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -18,6 +21,12 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
   const params = await props.params;
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
+
+  const headersList = await headers();
+  const cookiesList = await cookies();
+  const countryCode = headersList.get('x-vercel-ip-country');
+  const cookieCurrency = cookiesList.get('NEXT_CURRENCY')?.value;
+  const currency = resolveCurrency(countryCode, cookieCurrency, locale as Locale);
 
   const steps = [
     {
@@ -41,23 +50,25 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
   ];
 
   return (
-    <div className="py-20 lg:py-32 bg-white">
-      <div className="container mx-auto px-6">
-
-        {/* Page Header */}
-        <div className="max-w-3xl mb-24">
-          <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
-            {dict.howItWorks.badge}
+    <div className="bg-white">
+      <div className="relative pt-8 pb-12 lg:pt-16 lg:pb-20 overflow-hidden bg-white">
+        <div className="container mx-auto px-6">
+          <div className="max-w-3xl mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
+              {dict.howItWorks.badge}
+            </div>
+            <h1 className="text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.95]">
+              {dict.howItWorks.title.split(',')[0]}<br />
+              <span className="text-brand-pink italic">{dict.howItWorks.title.split(',')[1]}</span>
+            </h1>
+            <p className="text-xl text-gray-500 leading-relaxed font-medium max-w-2xl">
+              {dict.howItWorks.subtitle}
+            </p>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.95]">
-            {dict.howItWorks.title.split(',')[0]}<br />
-            <span className="text-brand-pink italic">{dict.howItWorks.title.split(',')[1]}</span>
-          </h1>
-          <p className="text-xl text-gray-500 leading-relaxed font-medium max-w-2xl">
-            {dict.howItWorks.subtitle}
-          </p>
         </div>
-        
+      </div>
+
+      <div className="container mx-auto px-6 pb-24 lg:pb-32">
         {/* Steps */}
         <div className="space-y-32">
           {steps.map((item, i) => (
@@ -123,7 +134,9 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
               <span className="text-brand-pink italic">{dict.howItWorks.cta.title.split(',')[1]}</span>
             </h2>
             <p className="text-lg text-gray-400 mb-12 max-w-xl mx-auto font-bold">
-              {dict.howItWorks.cta.desc.replace('{{price}}', '$19')}
+              {dict.howItWorks.cta.desc.split('{{price}}')[0]}
+              <PriceDisplay tier="basic" locale={locale as Locale} currency={currency} />
+              {dict.howItWorks.cta.desc.split('{{price}}')[1]}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href={`/${locale}/themes`} className="px-10 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-white hover:text-brand-pink transition-all shadow-xl hover:translate-y-[-4px] active:scale-95">

@@ -18,7 +18,7 @@ export function MotiveManager({ mysteryId, characterId, existingMotives, allChar
   const [isAdding, setIsAdding] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
-  const motiveTypes: MotiveType[] = ['revenge', 'greed', 'love', 'fear', 'justice', 'power'];
+  const motiveTypes: MotiveType[] = ['revenge', 'greed', 'love', 'fear', 'justice', 'power', 'jealousy', 'betrayal', 'heartbreak', 'desperation', 'blackmail', 'hatred'];
   const strengths: MotiveStrength[] = ['low', 'moderate', 'high', 'critical'];
 
   const otherCharacters = allCharacters.filter(c => c.id !== characterId);
@@ -104,16 +104,16 @@ export function MotiveManager({ mysteryId, characterId, existingMotives, allChar
           existingMotives.map((motive) => {
             const target = allCharacters.find(c => c.id === motive.linked_character_id);
             return (
-              <div key={motive.id} className="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-2xl group shadow-sm hover:border-brand-pink/20 transition-all">
-                <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-sm">🗯️</div>
-                  <div>
-                    <div className="flex items-center gap-2">
+              <div key={motive.id} className="flex justify-between items-start p-5 bg-white border border-slate-100 rounded-2xl group shadow-sm hover:border-brand-pink/20 transition-all">
+                <div className="flex gap-4 w-full">
+                  <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-sm flex-shrink-0">🗯️</div>
+                  <div className="w-full pr-4">
+                    <div className="flex items-center gap-2 mb-1">
                        <span className="text-xs font-black text-slate-900 capitalize">{motive.motive_type}</span>
                        <span className="text-[8px] font-black uppercase text-slate-300">against</span>
                        <span className="text-xs font-black text-brand-pink">{target?.name || 'Unknown'}</span>
                     </div>
-                    {motive.notes && <p className="text-[10px] text-slate-400 font-medium line-clamp-1">{motive.notes}</p>}
+                    {motive.notes && <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{motive.notes}</p>}
                   </div>
                 </div>
                 <button 

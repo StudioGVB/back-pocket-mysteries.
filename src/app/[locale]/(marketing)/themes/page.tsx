@@ -80,21 +80,25 @@ export default async function ThemesPage(props: {
   ];
 
   return (
-    <div className="py-24 lg:py-40 bg-white">
-      <div className="container mx-auto px-6">
-        <div className="max-w-4xl mb-24">
-          <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
-            {dict.themes.badge}
+    <div className="bg-white">
+      <div className="relative pt-8 pb-12 lg:pt-16 lg:pb-20 overflow-hidden bg-white">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
+              {dict.themes.badge}
+            </div>
+            <h1 className="text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.9]">
+              {dict.themes.title.split('.')[0]}. <br />
+              <span className="text-brand-pink italic">{dict.themes.title.split('.')[1]}</span>.
+            </h1>
+            <p className="text-xl lg:text-2xl text-gray-500 leading-relaxed font-bold max-w-2xl border-l-4 border-brand-pink pl-6">
+              {dict.themes.subtitle}
+            </p>
           </div>
-          <h1 className="text-6xl lg:text-8xl font-black text-brand-dark mb-10 tracking-tighter uppercase leading-[0.9]">
-            {dict.themes.title.split('.')[0]}. <br />
-            <span className="text-brand-pink italic">{dict.themes.title.split('.')[1]}</span>.
-          </h1>
-          <p className="text-xl lg:text-2xl text-gray-500 leading-relaxed font-bold max-w-2xl border-l-4 border-brand-pink pl-6">
-            {dict.themes.subtitle}
-          </p>
         </div>
+      </div>
         
+      <div className="container mx-auto px-6 pb-24 lg:pb-32">
         <div className="grid lg:grid-cols-2 gap-12">
           {themes.map((theme, i) => (
             <Link 

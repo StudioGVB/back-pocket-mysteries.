@@ -5,6 +5,9 @@ import Image from 'next/image';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import LanguageSwitcher from '@/components/marketing/LanguageSwitcher';
+import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
+import { headers, cookies } from 'next/headers';
+import { resolveCurrency } from '@/utils/localization';
 
 export default async function MarketingLayout(props: {
   children: React.ReactNode;
@@ -14,17 +17,23 @@ export default async function MarketingLayout(props: {
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
 
+  const headersList = await headers();
+  const cookiesList = await cookies();
+  const countryCode = headersList.get('x-vercel-ip-country');
+  const cookieCurrency = cookiesList.get('NEXT_CURRENCY')?.value;
+  const currency = resolveCurrency(countryCode, cookieCurrency, locale as Locale);
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="border-b border-gray-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 py-2">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <Link href={`/${locale}`} className="group flex items-center">
             <Image 
               src="/logo-horizontal.png" 
               alt="Back Pocket Mysteries" 
               width={240} 
-              height={48} 
-              className="h-12 w-auto object-contain group-hover:scale-105 transition-all duration-300 origin-left"
+              height={40} 
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-all duration-300 origin-left"
               priority
             />
           </Link>
@@ -33,11 +42,14 @@ export default async function MarketingLayout(props: {
             <Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.howItWorks}</Link>
             <Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.themes}</Link>
             <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.pricing}</Link>
-            <Link href={`/${locale}/blog`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.blog}</Link>
+            <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.contact}</Link>
           </nav>
           
           <div className="flex gap-4 items-center">
-            <LanguageSwitcher currentLocale={locale} />
+            <div className="flex gap-2 items-center">
+              <LanguageSwitcher currentLocale={locale as Locale} />
+              <CurrencySwitcher currentCurrency={currency} />
+            </div>
 
             <Link href={`/${locale}/login`} className="text-xs font-black uppercase tracking-widest text-brand-dark/60 hover:text-brand-pink px-4 py-2 transition-colors">
               {dict.common.login}
@@ -83,6 +95,7 @@ export default async function MarketingLayout(props: {
               <ul className="space-y-4 text-sm font-bold text-gray-400">
                 <li><Link href={`/${locale}/blog`} className="hover:text-brand-pink transition-colors">{dict.common.blog}</Link></li>
                 <li><Link href={`/${locale}/about`} className="hover:text-brand-pink transition-colors">{dict.common.aboutUs}</Link></li>
+                <li><Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-colors">{dict.common.faq}</Link></li>
                 <li><Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-colors">{dict.common.contact}</Link></li>
               </ul>
             </div>

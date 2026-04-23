@@ -53,8 +53,10 @@ export function SubplotManager({ mysteryId, characters, subplots }: props) {
                     {character.name[0]}
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 leading-tight">{character.name}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">{character.archetype}</p>
+                    <h3 className="text-xl font-black text-slate-900 leading-tight">{character.name.split('|')[0]}</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
+                      {character.name.includes('|') ? character.name.split('|')[1] : (character.archetype || 'Suspect')}
+                    </p>
                   </div>
                 </div>
 

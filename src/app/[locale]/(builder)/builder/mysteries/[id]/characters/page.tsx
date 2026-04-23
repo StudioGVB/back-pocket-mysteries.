@@ -20,11 +20,16 @@ export default async function MysteryCharactersPage({
 
   // Group characters by importance and role
   const victim = characters.find(c => c.is_victim);
-  const mandatorySuspects = characters.filter(c => c.is_mandatory && !c.is_victim);
-  const optionalSuspects = characters.filter(c => !c.is_mandatory && !c.is_victim);
+  const killer = characters.find(c => c.plot_role === 'killer' && !c.is_victim);
+  const assistant = characters.find(c => c.plot_role === 'assistant' && !c.is_victim);
 
-  const mandatoryCount = mandatorySuspects.length + (victim ? 1 : 0);
-  const optionalCount = optionalSuspects.length;
+  const topCharacterIds = new Set([victim?.id, killer?.id, assistant?.id].filter(Boolean));
+
+  const remainingMandatory = characters.filter(c => c.is_mandatory && !topCharacterIds.has(c.id));
+  const remainingOptional = characters.filter(c => !c.is_mandatory && !topCharacterIds.has(c.id));
+
+  const mandatoryCount = remainingMandatory.length + topCharacterIds.size;
+  const optionalCount = remainingOptional.length;
 
   return (
     <div className="space-y-16 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -54,44 +59,57 @@ export default async function MysteryCharactersPage({
       </div>
 
       <div className="space-y-16 pb-20">
-        {/* THE VICTIM SECTION */}
+        {/* CORE ROLES SECTION */}
         <section className="space-y-6">
           <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">The Victim</h2>
+             <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">The Core Roles</h2>
           </div>
-          <div className="grid grid-cols-1">
-            {victim ? (
-              <div className="max-w-2xl">
-                <CharacterCard character={victim} mysteryId={id} allCharacters={characters} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {victim && (
+              <CharacterCard character={victim} mysteryId={id} allCharacters={characters} />
+            )}
+            {!victim && (
+              <div className="bg-red-50/30 border border-dashed border-red-100 rounded-[2.5rem] p-10 text-center flex flex-col items-center justify-center">
+                <p className="text-red-400 font-black text-xs uppercase tracking-widest">No victim selected</p>
               </div>
-            ) : (
-              <div className="bg-red-50/30 border border-dashed border-red-100 rounded-[2.5rem] p-10 text-center max-w-2xl">
-                <p className="text-red-400 font-black text-xs uppercase tracking-widest">No victim selected — a crime must be committed!</p>
+            )}
+            
+            {killer && (
+              <CharacterCard character={killer} mysteryId={id} allCharacters={characters} />
+            )}
+            {!killer && (
+              <div className="border-2 border-dashed border-brand-pink/20 rounded-[2.5rem] p-10 text-center flex flex-col items-center justify-center opacity-70">
+                <p className="text-brand-pink font-black text-xs uppercase tracking-widest">No killer assigned</p>
+              </div>
+            )}
+
+            {assistant && (
+              <CharacterCard character={assistant} mysteryId={id} allCharacters={characters} />
+            )}
+            {!assistant && (
+              <div className="border-2 border-dashed border-orange-500/20 rounded-[2.5rem] p-10 text-center flex flex-col items-center justify-center opacity-50">
+                <p className="text-orange-500 font-black text-xs uppercase tracking-widest">No assistant assigned</p>
+                <p className="text-orange-400/70 font-bold text-[9px] uppercase tracking-widest mt-2">(Optional)</p>
               </div>
             )}
           </div>
         </section>
 
-        {/* MANDATORY CHARACTERS SECTION */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-3">
-             <span className="w-2 h-2 rounded-full bg-brand-pink" />
-             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Mandatory Characters</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mandatorySuspects.map((character) => (
-              <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} />
-            ))}
-            {mandatorySuspects.length < 3 && (
-              <div className="border-2 border-dashed border-slate-50 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center opacity-30">
-                <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest leading-loose">
-                  Mandatory Slot <br /> {3 - mandatorySuspects.length} Remaining
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
+        {/* OTHER MANDATORY CHARACTERS SECTION */}
+        {remainingMandatory.length > 0 && (
+          <section className="space-y-6">
+            <div className="flex items-center gap-3">
+               <span className="w-2 h-2 rounded-full bg-brand-pink" />
+               <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Other Mandatory Characters</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {remainingMandatory.map((character) => (
+                <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* OPTIONAL CHARACTERS SECTION */}
         <section className="space-y-6">
@@ -100,10 +118,10 @@ export default async function MysteryCharactersPage({
              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Optional Characters (5+ Players)</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {optionalSuspects.map((character) => (
+            {remainingOptional.map((character) => (
               <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} />
             ))}
-            <div className="border-2 border-dashed border-slate-50 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center opacity-20">
+            <div className="border-2 border-dashed border-slate-50 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center opacity-20 h-full min-h-[200px]">
                <span className="text-2xl mb-2">➕</span>
                <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Add suspect for larger parties</p>
             </div>

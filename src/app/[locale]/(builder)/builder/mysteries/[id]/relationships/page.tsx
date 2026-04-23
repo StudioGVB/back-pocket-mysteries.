@@ -2,9 +2,8 @@
 import React from 'react';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { getRelationshipsByMysteryId } from '@/services/relationships';
-import { RelationshipGraph } from './_components/RelationshipGraph';
+import { RelationshipGraphDynamic as RelationshipGraph } from './_components/RelationshipGraphDynamic';
 import { RelationshipMatrix } from './_components/RelationshipMatrix';
-import { MotiveManager } from '../characters/_components/MotiveManager';
 import { AIGenerateButton } from './_components/AIGenerateButton';
 
 export default async function MysteryRelationshipsPage({
@@ -94,35 +93,6 @@ export default async function MysteryRelationshipsPage({
             </div>
 
           </div>
-
-          {/* 4. Murder Motives (Stakes) */}
-          <section className="space-y-10 pt-10 border-t border-slate-100">
-            <div className="flex items-center gap-3">
-               <span className="w-3 h-3 rounded-full bg-red-500 shadow-lg shadow-red-500/20" />
-               <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-slate-900">The Stakes: Murder Motives</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {activeCharacters.map((character) => (
-                <div key={character.id} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm space-y-8 hover:shadow-xl hover:shadow-slate-200/20 transition-all">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">👤</div>
-                    <div>
-                      <h3 className="text-xl font-black text-slate-900 leading-tight">{character.name}</h3>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">{character.archetype}</p>
-                    </div>
-                  </div>
-
-                  <MotiveManager 
-                    mysteryId={id}
-                    characterId={character.id}
-                    existingMotives={character.motives || []}
-                    allCharacters={activeCharacters}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
       )}
     </div>

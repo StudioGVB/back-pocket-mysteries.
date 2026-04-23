@@ -147,9 +147,19 @@ export async function updateCharacter(id: string, updates: Database['public']['T
 
 export async function deleteCharacter(id: string) {
   const supabase = await createClient();
+  
+  // 1. Delete motives where the character is the owner or the target
+  await supabase.from('motives').delete().or(`character_id.eq.${id},linked_character_id.eq.${id}`);
+  
+  // 2. Delete relationships involving this character
+  await supabase.from('relationships').delete().or(`character_a_id.eq.${id},character_b_id.eq.${id}`);
+
+  // 3. Delete the character
   const { error } = await supabase
     .from('characters')
     .delete()
+    .eq('id', id);
+    
   if (error) {
     throw new Error(`Error deleting character: ${error.message}`);
   }

@@ -8,17 +8,25 @@ interface AddCharacterQuickFormProps {
   mysteryId: string;
 }
 
+import { AIGenerateCharacterButton } from './AIGenerateCharacterButton';
+
+import { RoleTitleInput } from './RoleTitleInput';
+
 export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, setIsPending] = useState(false);
 
   return (
     <div className="bg-white p-1 rounded-[2.4rem] shadow-sm">
-      <div className="flex items-center gap-4 px-8 pt-6 pb-2">
-        <div className="w-8 h-8 rounded-full bg-brand-pink/10 flex items-center justify-center">
-          <span className="text-brand-pink text-xs">🎭</span>
+      <div className="flex items-center justify-between px-8 pt-6 pb-2">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 rounded-full bg-brand-pink/10 flex items-center justify-center">
+            <span className="text-brand-pink text-xs">🎭</span>
+          </div>
+          <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">Enroll New Cast Member</h3>
         </div>
-        <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">Enroll New Cast Member</h3>
+        
+        <AIGenerateCharacterButton mysteryId={mysteryId} />
       </div>
 
       <form 
@@ -35,19 +43,38 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
         className="p-4"
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 bg-slate-50/50 p-6 rounded-[1.8rem] border border-slate-100">
-          {/* Name Field */}
-          <div className="md:col-span-4">
-            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Full Name</label>
+          {/* Prefix Field */}
+          <div className="md:col-span-2">
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Prefix</label>
             <input 
-              name="name"
-              required
-              placeholder="e.g. Professor Plum"
+              name="prefix"
+              placeholder="e.g. Captain"
               className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
+            />
+          </div>
+
+          {/* Name Field */}
+          <div className="md:col-span-2">
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Placeholder Name</label>
+            <input 
+              name="base_name"
+              required
+              placeholder="e.g. Maria"
+              className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
+            />
+          </div>
+
+          {/* Title Field */}
+          <div className="md:col-span-2">
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Role / Title</label>
+            <RoleTitleInput 
+              mysteryId={mysteryId}
+              inputClassName="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
             />
           </div>
           
           {/* Importance Field */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Importance</label>
              <div className="relative">
                <select 
@@ -65,7 +92,7 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
           </div>
 
           {/* Plot Role Field */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Plot Role</label>
              <div className="relative">
                <select 

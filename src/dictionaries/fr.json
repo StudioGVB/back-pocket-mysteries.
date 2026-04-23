@@ -5,6 +5,7 @@
     "howItWorks": "Comment ça marche",
     "themes": "Thèmes",
     "pricing": "Tarifs",
+    "faq": "FAQ",
     "blog": "Blog",
     "login": "Connexion",
     "getStarted": "BIENTÔT DISPONIBLE",
@@ -125,6 +126,13 @@
         "cta": "BIENTÔT DISPONIBLE",
         "bestFor": "Petits dîners entre amis"
       },
+      "basicPlus": {
+        "name": "Basique+",
+        "tagline": "Basique, mais visuellement vous.",
+        "desc": "Tout le Basique, plus une personnalisation complète de l'apparence des personnages.",
+        "cta": "BIENTÔT DISPONIBLE",
+        "bestFor": "Dîners immersifs"
+      },
       "premium": {
         "name": "Premium",
         "tagline": "Le pack événementiel principal.",
@@ -132,12 +140,12 @@
         "cta": "BIENTÔT DISPONIBLE",
         "bestFor": "Anniversaires, EVJF/EVG"
       },
-      "deluxe": {
-        "name": "Deluxe",
-        "tagline": "Tout le drame. Tous les accessoires.",
-        "desc": "Idéal pour les hôtes exigeants et les événements d'entreprise.",
+      "premiumPlus": {
+        "name": "Premium+",
+        "tagline": "L'expérience sur mesure ultime.",
+        "desc": "Tout le Premium, plus une personnalisation visuelle complète pour chaque image.",
         "cta": "BIENTÔT DISPONIBLE",
-        "bestFor": "Événements d'entreprise, créateurs"
+        "bestFor": "Événements spéciaux, créateurs"
       }
     }
   },
@@ -274,5 +282,52 @@
       "desc": "Quel que soit le thème que vous choisissez, nous personnalisons l'ensemble avec vos invités réels.",
       "cta": "BIENTÔT DISPONIBLE"
     }
+  },
+  "faqPage": {
+    "title": "Frequently Asked Questions.",
+    "subtitle": "Everything you need to know about hosting a personalized murder mystery.",
+    "seoDescription": "Got questions about our custom murder mystery parties? Read our FAQ to learn how our games work, how to customize characters, and more.",
+    "questions": [
+      {
+        "q": "What exactly is a custom murder mystery party?",
+        "a": "Unlike generic kits, our mysteries are generated specifically for your guest list. We take the names, relationships, and dynamics of your real-life friends and weave them into a unique story where everyone gets a character, motives, and secrets tailored to them."
+      },
+      {
+        "q": "How does the process work?",
+        "a": "First, you pick a theme (like 1920s Speakeasy or Gala Heist). Then, you enter your guests' names and how they know each other. Within 20 minutes, our platform generates a complete, print-ready pack including a host guide, character packets, clues, and AI-generated evidence."
+      },
+      {
+        "q": "Can I still play as the host?",
+        "a": "Yes — and that's by design. The host guide tells you exactly when to reveal each clue without spoiling the ending for you. You get to play along as a character and solve the mystery with everyone else."
+      },
+      {
+        "q": "Do I need to print everything?",
+        "a": "Nope! You can share character packets and clues digitally via PDF. If you prefer the tactile experience, everything comes formatted and ready to print at home."
+      },
+      {
+        "q": "What if my guest list changes last minute?",
+        "a": "Reach out to us within 24 hours of your download, and we'll help you re-generate your pack with the updated guest list at no extra cost."
+      },
+      {
+        "q": "How long does a game typically last?",
+        "a": "Depending on the complexity you choose, our games typically last between 1.5 to 3 hours. This makes them perfect for dinner parties, hens nights, or weekend getaways."
+      },
+      {
+        "q": "Is this suitable for work events or corporate team building?",
+        "a": "Absolutely. Our themes are rated 16+ by default and focus on drama, intrigue, and fun without inappropriate content. Themes like 'The Gala Heist' work exceptionally well for corporate groups."
+      },
+      {
+        "q": "Can I buy a pack as a gift?",
+        "a": "Yes! You can purchase a pack and give it to the organizer. They can then input their own guest list and download the customized mystery."
+      },
+      {
+        "q": "Do you ship physical kits?",
+        "a": "We are a fully digital platform. This means you don't have to wait for shipping, and you receive your completely customized, high-quality digital assets in under 20 minutes."
+      },
+      {
+        "q": "How do you handle character appearances in the evidence?",
+        "a": "On our Premium and Grand tiers, you can customize character appearances (hair, eyes, style) so that the AI-generated evidence images perfectly match your group."
+      }
+    ]
   }
 }

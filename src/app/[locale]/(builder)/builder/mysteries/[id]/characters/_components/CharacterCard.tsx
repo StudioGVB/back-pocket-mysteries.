@@ -26,7 +26,7 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
     killer: { label: 'Killer', bg: 'bg-brand-pink', text: 'text-white' },
     assistant: { label: 'Assisted Murder', bg: 'bg-orange-500', text: 'text-white' },
     innocent: { label: 'Completely Innocent', bg: 'bg-emerald-500', text: 'text-white' },
-    victim: { label: 'Victim — Not Playable', bg: 'bg-brand-pink/10', text: 'text-brand-pink border border-brand-pink/20' },
+    victim: { label: 'The Victim', bg: 'bg-red-500', text: 'text-white' },
   };
 
   const currentRole = isVictim ? roleConfig.victim : roleConfig[role as keyof typeof roleConfig] || roleConfig.innocent;
@@ -45,9 +45,16 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
               {isVictim ? '💀' : '👤'}
             </div>
             <div>
-              <h4 className="text-xl font-black text-slate-900 leading-tight">{character.name}</h4>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                {character.archetype || 'Mystery Guest'}
+              <h4 className="text-xl font-black text-slate-900 leading-tight">
+                {character.name.split('|')[2] && (
+                  <span className="text-slate-400 mr-1.5">{character.name.split('|')[2]}</span>
+                )}
+                {character.name.split('|')[0]}
+              </h4>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                {character.name.includes('|') && character.name.split('|')[1] 
+                  ? character.name.split('|')[1] 
+                  : 'Mystery Guest'}
               </p>
             </div>
           </div>
@@ -64,7 +71,12 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
               onClick={async () => {
                 if (confirm('Delete this character profile?')) {
                   setIsDeleting(true);
-                  await removeCharacterAction(mysteryId, character.id);
+                  try {
+                    await removeCharacterAction(mysteryId, character.id);
+                  } catch (e: any) {
+                    alert(`Failed to delete character: ${e.message}`);
+                    setIsDeleting(false);
+                  }
                 }
               }}
               disabled={isDeleting}
@@ -78,12 +90,12 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
 
         {/* Badges Section */}
         <div className="flex flex-wrap gap-2 mb-6">
-          {character.is_mandatory && !isVictim && (
+          {character.is_mandatory && (
             <span className="px-3 py-1 bg-brand-pink text-white rounded-full text-[9px] font-black uppercase tracking-widest">
               Mandatory
             </span>
           )}
-          {!character.is_mandatory && !isVictim && (
+          {!character.is_mandatory && (
             <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[9px] font-black uppercase tracking-widest">
               5+ players
             </span>
@@ -95,21 +107,30 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
 
         {/* Detail/Story Section */}
         <div className="mt-auto pt-6 border-t border-slate-50 space-y-3">
-          <div className="flex items-center gap-2">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Relationship:</span>
-             <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
-               {character.victim_relationship || 'Unknown'}
-             </span>
-          </div>
+          {!isVictim && (
+            <div className="flex items-center gap-2">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Relationship:</span>
+               <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md capitalize">
+                 {character.victim_relationship || 'Unknown'}
+               </span>
+            </div>
+          )}
           
           {character.motives && character.motives.length > 0 && (
             <div className="flex items-start gap-2">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight whitespace-nowrap mt-0.5">Motive:</span>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-col gap-2 w-full">
                 {character.motives.map((m, idx) => (
-                  <span key={idx} className="text-[10px] font-bold text-slate-600 italic">
-                    {m.notes || m.motive_type}{idx < (character.motives?.length || 0) - 1 ? ',' : ''}
-                  </span>
+                  <div key={idx} className="flex flex-col gap-1 border-l-2 border-brand-pink/20 pl-2">
+                    <span className="text-[9px] font-black text-brand-pink uppercase tracking-widest bg-brand-pink/10 px-2 py-0.5 rounded w-fit">
+                      {m.motive_type}
+                    </span>
+                    {m.notes && (
+                      <span className="text-[10px] font-bold text-slate-600 italic">
+                        "{m.notes}"
+                      </span>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

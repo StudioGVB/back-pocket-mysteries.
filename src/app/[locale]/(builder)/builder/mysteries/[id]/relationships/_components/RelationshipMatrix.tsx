@@ -71,7 +71,15 @@ export function RelationshipMatrix({ mysteryId, characters, relationships }: Rel
                       <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] font-bold">
                         {charA.name[0]}
                       </div>
-                      <span className="text-xs font-black text-slate-900">{charA.name}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-slate-900">
+                          {charA.name.split('|')[2] && <span className="text-slate-400 mr-1">{charA.name.split('|')[2]}</span>}
+                          {charA.name.split('|')[0]}
+                        </span>
+                        {charA.name.includes('|') && charA.name.split('|')[1] && (
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{charA.name.split('|')[1]}</span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-8 py-4">
@@ -79,7 +87,15 @@ export function RelationshipMatrix({ mysteryId, characters, relationships }: Rel
                       <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] font-bold">
                         {charB.name[0]}
                       </div>
-                      <span className="text-xs font-black text-slate-900">{charB.name}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-slate-900">
+                          {charB.name.split('|')[2] && <span className="text-slate-400 mr-1">{charB.name.split('|')[2]}</span>}
+                          {charB.name.split('|')[0]}
+                        </span>
+                        {charB.name.includes('|') && charB.name.split('|')[1] && (
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{charB.name.split('|')[1]}</span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-8 py-4 text-center">

@@ -27,26 +27,30 @@ export default async function BlogPage(props: { params: Promise<{ locale: string
   const otherPosts = blogPosts.slice(1);
 
   return (
-    <div className="py-24 lg:py-48 bg-white">
-      <div className="container mx-auto px-6">
-        <div className="max-w-4xl mx-auto text-center mb-32">
-          <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
-            {dict.blog.badge}
+    <div className="bg-white">
+      <div className="relative pt-8 pb-12 lg:pt-16 lg:pb-20 overflow-hidden bg-white">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
+              {dict.blog.badge}
+            </div>
+            <h1 className="text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.9]">
+              {dict.blog.title.split(',').map((part, i) => (
+                <React.Fragment key={i}>
+                  {part}
+                  {i === 0 && <br />}
+                  {i === 1 && <span className="text-brand-pink italic">{part}</span>}
+                </React.Fragment>
+              ))}
+            </h1>
+            <p className="text-lg lg:text-xl text-gray-500 font-bold max-w-xl mx-auto border-l-4 border-brand-pink pl-6 text-left leading-relaxed">
+              {dict.blog.subtitle}
+            </p>
           </div>
-          <h1 className="text-6xl lg:text-8xl font-black text-brand-dark mb-10 tracking-tighter uppercase leading-[0.9]">
-            {dict.blog.title.split(',').map((part, i) => (
-              <React.Fragment key={i}>
-                {part}
-                {i === 0 && <br />}
-                {i === 1 && <span className="text-brand-pink italic">{part}</span>}
-              </React.Fragment>
-            ))}
-          </h1>
-          <p className="text-xl lg:text-2xl text-gray-500 font-bold max-w-xl mx-auto border-l-4 border-brand-pink pl-6 text-left leading-relaxed">
-            {dict.blog.subtitle}
-          </p>
         </div>
+      </div>
 
+      <div className="container mx-auto px-6 pb-24 lg:pb-32">
         {/* Featured Post */}
         <div className="mb-32">
           <Link href={`/${locale}/blog/${featuredPost.slug}`} className="group block relative bg-brand-dark rounded-[4rem] overflow-hidden shadow-2xl border-8 border-white hover:scale-[1.01] transition-all duration-500">

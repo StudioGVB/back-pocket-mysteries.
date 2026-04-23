@@ -4,13 +4,17 @@ import { getFormattedPrice } from '@/utils/localization'
 export default function PriceDisplay({ 
   tier, 
   locale, 
+  currency,
+  isPro = false,
   className = "" 
 }: { 
-  tier: 'basic' | 'premium' | 'deluxe', 
+  tier: 'basic' | 'premium' | 'grand' | 'subscribe', 
   locale: Locale,
+  currency?: string,
+  isPro?: boolean,
   className?: string
 }) {
-  const price = getFormattedPrice(tier, locale)
+  const price = getFormattedPrice(tier, locale, currency, isPro)
   
   return (
     <span className={className}>

@@ -13,6 +13,8 @@ interface CharacterDetailPanelProps {
   onClose: () => void;
 }
 
+import { RoleTitleInput } from './RoleTitleInput';
+
 export function CharacterDetailPanel({ character, mysteryId, allCharacters, onClose }: CharacterDetailPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
 
@@ -48,12 +50,16 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, onCl
                 const is_victim = plot_role === 'victim';
                 const is_mandatory = formData.get('is_mandatory') === 'on' || is_victim;
 
-                const archetypeValue = formData.get('archetype');
                 const relationshipValue = formData.get('victim_relationship');
 
+                const base_name = formData.get('base_name') as string;
+                const title = formData.get('title') as string;
+                const prefix = formData.get('prefix') as string;
+                const name = `${base_name || ''}|${title || ''}|${prefix || ''}`;
+
                 const updates = {
-                  name: formData.get('name') as string,
-                  archetype: (archetypeValue ? archetypeValue : null) as Archetype | null,
+                  name,
+                  archetype: null, // Hardcode to null or omit, setting to null clears old data
                   is_mandatory,
                   is_victim,
                   plot_role,
@@ -69,29 +75,36 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, onCl
               <div className="space-y-6">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50 pb-2">Identity</h3>
                 <div className="grid gap-6">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-2">Character Name</label>
-                    <input 
-                      name="name"
-                      defaultValue={character.name}
-                      required
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all"
-                    />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2">Prefix</label>
+                      <input 
+                        name="prefix"
+                        defaultValue={character.name.split('|')[2] || ''}
+                        placeholder="e.g. Captain"
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all placeholder:text-slate-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2">Placeholder Name</label>
+                      <input 
+                        name="base_name"
+                        defaultValue={character.name.split('|')[0]}
+                        required
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2">Role / Title</label>
+                      <RoleTitleInput 
+                        mysteryId={mysteryId}
+                        defaultValue={character.name.includes('|') ? character.name.split('|')[1] : ''}
+                        inputClassName="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all placeholder:text-slate-300"
+                      />
+                    </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2">Archetype</label>
-                      <select 
-                        name="archetype"
-                        defaultValue={character.archetype || ''}
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all appearance-none"
-                      >
-                        {archetypes.map(a => (
-                          <option key={a} value={a}>{a.charAt(0).toUpperCase() + a.slice(1)}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="flex items-center gap-4">
                     <div className="flex items-end pb-1">
                       <label className="flex items-center gap-3 cursor-pointer p-1">
                         <input 

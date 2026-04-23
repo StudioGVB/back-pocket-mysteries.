@@ -5,7 +5,11 @@ import { revalidatePath } from 'next/cache';
 import { createCharacter, updateCharacter, deleteCharacter } from '@/services/mysteries';
 
 export async function addCharacterAction(mysteryId: string, formData: FormData) {
-  const name = formData.get('name') as string;
+  const base_name = formData.get('base_name') as string;
+  const title = formData.get('title') as string;
+  const prefix = formData.get('prefix') as string;
+  const name = `${base_name || ''}|${title || ''}|${prefix || ''}`;
+  
   const rawArchetype = formData.get('archetype');
   const archetype = (rawArchetype ? rawArchetype : null) as any;
   
@@ -75,3 +79,138 @@ export async function removeMotiveAction(mysteryId: string, motiveId: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
+
+import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
+
+export async function generateAICharacterAction(mysteryId: string) {
+  try {
+    const [mystery, characters] = await Promise.all([
+      getMysteryById(mysteryId),
+      getCharactersByMysteryId(mysteryId)
+    ]);
+
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) throw new Error('Google Generative AI API Key is missing from environment variables.');
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const responseSchema: Schema = {
+      type: SchemaType.OBJECT,
+      properties: {
+        name: { type: SchemaType.STRING },
+        title: { type: SchemaType.STRING },
+        prefix: { type: SchemaType.STRING },
+        plot_role: { 
+          type: SchemaType.STRING, 
+          enum: ['killer', 'assistant', 'innocent', 'victim'],
+          format: 'enum'
+        },
+        is_mandatory: { type: SchemaType.BOOLEAN }
+      },
+      required: ['name', 'title', 'prefix', 'plot_role', 'is_mandatory']
+    };
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema,
+      }
+    });
+
+    const existingNames = characters.map((c: any) => c.name.split('|')[0]).join(', ');
+    const hasVictim = characters.some((c: any) => c.is_victim);
+    const hasKiller = characters.some((c: any) => c.plot_role === 'killer');
+
+    const prompt = `
+      You are generating a new character for a murder mystery party game.
+      Theme: ${mystery?.theme || 'General Mystery'}
+      
+      Existing Characters: ${existingNames || 'None yet'}
+      
+      RULES:
+      1. Invent a unique name. CRITICAL: Analyze the 'Existing Characters' list. If the existing names are normal/modern (e.g. "Matt", "Gabby", "Luke"), generate a normal modern name (e.g. "Sarah", "David"). Match the tone perfectly! Do not reuse existing names.
+      2. Invent a highly thematic 'title' or occupation based on the theme. For example, if the theme is "Yacht", you might generate "Chief Stew", "Primary Guest", "Chef", "Cheeky Friend", etc.
+      3. Invent a 'prefix' that would appear before the guest's name if applicable (e.g. "Captain", "Doctor", "Mr.", "Mrs.", "Sir", "Lady", etc.). If none makes sense, leave it as an empty string.
+      4. Assign a plot_role:
+         - If there is no victim yet (${!hasVictim}), you MUST make them the 'victim'.
+         - If there is a victim but no killer (${hasVictim && !hasKiller}), you MUST make them the 'killer'.
+         - Otherwise, pick 'innocent' or 'assistant'.
+      5. If they are the victim or killer, they MUST be mandatory (is_mandatory: true).
+    `;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    const parsed = JSON.parse(responseText);
+
+    const finalName = `${parsed.name || ''}|${parsed.title || ''}|${parsed.prefix || ''}`;
+
+    await createCharacter({
+      mystery_id: mysteryId,
+      name: finalName,
+      archetype: null,
+      plot_role: parsed.plot_role,
+      is_mandatory: parsed.is_mandatory || parsed.plot_role === 'victim',
+      is_victim: parsed.plot_role === 'victim'
+    });
+
+    revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+    
+  } catch (error) {
+    console.error('Action Error: generateAICharacterAction', error);
+    throw error;
+  }
+}
+
+export async function generateRoleSuggestionsAction(mysteryId: string): Promise<string[]> {
+  try {
+    const [mystery, characters] = await Promise.all([
+      getMysteryById(mysteryId),
+      getCharactersByMysteryId(mysteryId)
+    ]);
+
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) throw new Error('Google Generative AI API Key is missing.');
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const responseSchema: Schema = {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description: "List of 5 unique character roles/titles."
+    };
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema,
+      }
+    });
+
+    const existingTitles = characters
+      .map(c => c.name.includes('|') ? c.name.split('|')[1] : null)
+      .filter(Boolean)
+      .join(', ');
+
+    const prompt = `
+      You are an expert murder mystery party game designer. 
+      The theme of the mystery is: ${mystery?.theme || 'General Mystery'}.
+      
+      Suggest exactly 5 unique, highly thematic character roles or titles for guests to play.
+      (e.g., if the theme is "Yacht", roles might be "Chief Stew", "Primary Charter Guest", "Deckhand", etc.)
+      
+      CRITICAL RULE: DO NOT suggest any of these roles as they are already taken: ${existingTitles || 'None yet'}.
+      
+      Return a JSON array of exactly 5 strings. Each string should be the role/title.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const parsed = JSON.parse(result.response.text());
+    
+    return parsed as string[];
+  } catch (error) {
+    console.error('Error generating role suggestions', error);
+    return [];
+  }
+}
+
