@@ -5,7 +5,7 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mysteries.backpocke
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const locales = i18n.locales
-  const paths = ['', '/themes', '/pricing', '/how-it-works', '/blog']
+  const paths = ['', '/themes', '/pricing', '/how-it-works', '/blog', '/faq']
   
   const routes = paths.flatMap((path) => 
     locales.map((locale) => ({
