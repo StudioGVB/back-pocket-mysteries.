@@ -17,11 +17,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Back Pocket Mysteries | AI-Personalised Murder Mystery Packs",
+    default: "Custom Murder Mystery Games | Back Pocket Mysteries",
     template: "%s | Back Pocket Mysteries",
   },
-  description: "Your guest list. Your relationships. Your drama — woven into a print-ready murder mystery pack in under 20 minutes. Perfect for birthdays, hens parties, and team nights.",
-  keywords: ["murder mystery", "party game", "personalised mystery", "AI mystery", "printable games", "dinner party", "hen party activities"],
+  description: "Host a custom murder mystery party built around your actual guest list. Personalised murder mystery packs ready to print in under 20 minutes. Perfect for birthdays and dinner parties.",
+  keywords: ["custom murder mystery", "murder mystery party", "personalised mystery", "printable games", "dinner party games", "murder mystery kit", "custom party game"],
   authors: [{ name: "Back Pocket Games" }],
   creator: "Back Pocket Games",
   openGraph: {
@@ -29,14 +29,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://mysteries.backpocketgames.com",
     siteName: "Back Pocket Mysteries",
-    title: "Back Pocket Mysteries | AI-Personalised Murder Mystery Packs",
-    description: "Personalised murder mystery packs ready in 20 minutes.",
+    title: "Custom Murder Mystery Games | Back Pocket Mysteries",
+    description: "Host a custom murder mystery party built around your actual guest list. Ready in 20 minutes.",
     images: [{ url: "/og-image.png" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Back Pocket Mysteries | AI-Personalised Murder Mystery Packs",
-    description: "Personalised murder mystery packs ready in 20 minutes.",
+    title: "Custom Murder Mystery Games | Back Pocket Mysteries",
+    description: "Host a custom murder mystery party built around your actual guest list. Ready in 20 minutes.",
     images: ["/og-image.png"],
   },
   metadataBase: new URL("https://mysteries.backpocketgames.com"),

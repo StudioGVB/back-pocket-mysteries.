@@ -1,6 +1,6 @@
 {
   "common": {
-    "siteTitle": "Back Pocket Mysteries | Packs d'Enquête Personnalisés par IA",
+    "siteTitle": "Back Pocket Mysteries | Packs d'Enquête Personnalisés et Créés par des Humains",
     "siteDescription": "Votre liste d'invités. Vos relations. Votre drame — tissé dans un pack d'enquête prêt à imprimer en moins de 20 minutes.",
     "howItWorks": "Comment ça marche",
     "themes": "Thèmes",
@@ -48,8 +48,8 @@
         },
         "evidence": {
           "title": "Images de preuves réelles",
-          "desc": "Faux SMS, captures d'écran DM et reçus — tous générés pour correspondre à votre histoire. Des preuves qui nomment réellement vos invités.",
-          "badge": "Généré par IA"
+          "desc": "Faux SMS, captures d'écran DM et reçus — enrichis pour correspondre à votre histoire. Des preuves qui nomment réellement vos invités.",
+          "badge": "Graphismes Sur Mesure"
         },
         "instant": {
           "title": "Prêt à imprimer en quelques minutes",
@@ -95,7 +95,7 @@
         "etsy": "Kits Personnalisés Etsy",
         "ai": "Outils IA Génériques",
         "f1": "Noms des invités dans l'histoire",
-        "f2": "Images de preuves par IA",
+        "f2": "Graphismes de preuves personnalisés",
         "f3": "Pack prêt à imprimer",
         "f4": "Délai de livraison",
         "f5": "Prix (6–12 invités)",
@@ -178,7 +178,7 @@
         "bullets": [
           "Guide de l'hôte inclus",
           "Livrets individuels",
-          "Preuves générées par IA",
+          "Preuves sur mesure",
           "Format PDF prêt"
         ]
       }
@@ -190,7 +190,7 @@
         "hostGuide": { "title": "Guide de l'hôte", "desc": "Instructions étape par étape." },
         "characterPackets": { "title": "Livrets Personnages", "desc": "Enveloppes scellées pour chaque invité." },
         "clues": { "title": "Indices", "desc": "Révélations structurées sur 4 rounds." },
-        "evidence": { "title": "Preuves IA", "desc": "Faux SMS, DMs et reçus." },
+        "evidence": { "title": "Preuves Sur Mesure", "desc": "Faux SMS, DMs et reçus." },
         "reveal": { "title": "Révélation Finale", "desc": "Une conclusion dramatique." },
         "ready": { "title": "Prêt à imprimer", "desc": "Aucune compétence en design requise." }
       }
@@ -294,7 +294,7 @@
       },
       {
         "q": "How does the process work?",
-        "a": "First, you pick a theme (like 1920s Speakeasy or Gala Heist). Then, you enter your guests' names and how they know each other. Within 20 minutes, our platform generates a complete, print-ready pack including a host guide, character packets, clues, and AI-generated evidence."
+        "a": "First, you pick a theme (like 1920s Speakeasy or Gala Heist). Then, you enter your guests' names and how they know each other. Within 20 minutes, our platform takes our human-written stories and personalizes them to generate a complete, print-ready pack including a host guide, character packets, clues, and custom evidence."
       },
       {
         "q": "Can I still play as the host?",
@@ -329,5 +329,22 @@
         "a": "On our Premium and Grand tiers, you can customize character appearances (hair, eyes, style) so that the AI-generated evidence images perfectly match your group."
       }
     ]
+  },
+  "seoLanding": {
+    "title": "Host a Custom Murder Mystery Party.",
+    "subtitle": "Get a fully personalized, print-ready murder mystery game built around your actual guest list in under 20 minutes.",
+    "seoDescription": "Host a custom murder mystery party personalized for your guests. We take your guest list and weave them into a unique story with custom evidence and characters.",
+    "whyCustomTitle": "Why choose a custom murder mystery?",
+    "whyCustomDesc": "Generic games are fun, but nothing beats the excitement of finding out your best friend is the prime suspect, or that your partner has a secret fictional motive. Our platform takes our human-crafted mystery plots and adapts them entirely around your actual guest list — names, relationships, and all the drama.",
+    "features": {
+      "f1": "Guest Names in the Story",
+      "f1Desc": "Your actual guests are the suspects and victims.",
+      "f2": "Custom Evidence",
+      "f2Desc": "AI-generated evidence that matches your guests' descriptions.",
+      "f3": "Instant Delivery",
+      "f3Desc": "Ready to print or play digitally in under 20 minutes."
+    },
+    "ctaTitle": "Ready to host your custom party?",
+    "ctaButton": "View Pricing"
   }
 }

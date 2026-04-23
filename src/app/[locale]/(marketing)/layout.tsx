@@ -8,6 +8,7 @@ import LanguageSwitcher from '@/components/marketing/LanguageSwitcher';
 import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
 import { headers, cookies } from 'next/headers';
 import { resolveCurrency } from '@/utils/localization';
+import GlobalSpotlight from '@/components/marketing/GlobalSpotlight';
 
 export default async function MarketingLayout(props: {
   children: React.ReactNode;
@@ -25,6 +26,7 @@ export default async function MarketingLayout(props: {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
+      <GlobalSpotlight />
       <header className="border-b border-gray-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 py-2">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <Link href={`/${locale}`} className="group flex items-center">
@@ -39,6 +41,7 @@ export default async function MarketingLayout(props: {
           </Link>
           
           <nav className="hidden lg:flex items-center gap-8 text-xs font-black uppercase tracking-[0.15em] text-brand-dark/60">
+            <Link href={`/${locale}/custom-murder-mystery`} className="text-brand-pink hover:text-brand-dark transition-all hover:scale-110">Custom Murder Mystery</Link>
             <Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.howItWorks}</Link>
             <Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.themes}</Link>
             <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.pricing}</Link>
@@ -84,6 +87,7 @@ export default async function MarketingLayout(props: {
             <div>
               <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">{dict.common.product}</h4>
               <ul className="space-y-4 text-sm font-bold text-gray-400">
+                <li><Link href={`/${locale}/custom-murder-mystery`} className="text-brand-pink hover:text-white transition-colors">Custom Murder Mystery</Link></li>
                 <li><Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-colors">{dict.common.themes}</Link></li>
                 <li><Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-colors">{dict.common.howItWorks}</Link></li>
                 <li><Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-colors">{dict.common.pricing}</Link></li>

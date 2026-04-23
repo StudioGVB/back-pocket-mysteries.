@@ -1,6 +1,6 @@
 {
   "common": {
-    "siteTitle": "Back Pocket Mysteries | AI-Personalised Murder Mystery Packs",
+    "siteTitle": "Back Pocket Mysteries | Human-Crafted, Personalised Murder Mystery Packs",
     "howItWorks": "How it Works",
     "themes": "Themes",
     "pricing": "Pricing",
@@ -39,7 +39,7 @@
     },
     "why": {
       "title": "Not just a kit. Your kit.",
-      "desc": "Every other mystery pack gives you a fixed story with blank spaces to fill in. We generate the whole thing around your actual guest list — names, relationships, and all the drama — so every clue, character, and confession feels like it was written just for your party.",
+      "desc": "Every other mystery pack gives you a fixed story with blank spaces to fill in. We take our human-crafted mystery plots and adapt them entirely around your actual guest list — names, relationships, and all the drama — so every clue, character, and confession feels like it was written just for your party.",
       "features": {
         "guestStory": {
           "title": "Guest-Specific Story",
@@ -48,8 +48,8 @@
         },
         "evidence": {
           "title": "Real Evidence Images",
-          "desc": "Fake texts, DM screenshots, and 'receipts' — all generated to match your story. Evidence that actually names your guests.",
-          "badge": "AI-Generated"
+          "desc": "Fake texts, DM screenshots, and 'receipts' — enhanced by AI to match your exact story. Evidence that actually names your guests.",
+          "badge": "Custom Graphics"
         },
         "instant": {
           "title": "Print-Ready in Minutes",
@@ -95,7 +95,7 @@
         "etsy": "Etsy Custom Kits",
         "ai": "Generic AI Tools",
         "f1": "Guest names in the story",
-        "f2": "AI-generated evidence images",
+        "f2": "Custom evidence graphics",
         "f3": "Print-ready pack, all docs",
         "f4": "Delivery time",
         "f5": "Price (6–12 guests)",
@@ -129,7 +129,7 @@
       "basicPlus": {
         "name": "Basic+",
         "tagline": "Basic, but visually you.",
-        "desc": "Everything in Basic, plus full character appearance customisation so AI generated clues actually look like your group.",
+        "desc": "Everything in Basic, plus full character appearance customisation so the generated evidence actually looks like your group.",
         "cta": "COMING SOON",
         "bestFor": "Immersive dinner parties"
       },
@@ -165,7 +165,7 @@
       },
       "guests": {
         "title": "Tell us who's coming",
-        "desc": "This is where the magic happens. Add your guests' names and their relationships. Our AI engine builds a full conflict graph and weaves your people into every clue.",
+        "desc": "This is where the magic happens. Add your guests' names and their relationships. Our system adapts our human-written plots, building a custom conflict graph that weaves your people into every clue.",
         "bullets": [
           "Guest names appear throughout the story",
           "Relationship dynamics shape character motivations",
@@ -178,7 +178,7 @@
         "bullets": [
           "Host guide runs the evening",
           "Per-guest character packets",
-          "AI-generated evidence images",
+          "Custom evidence images",
           "Printable or digital ready"
         ]
       }
@@ -190,7 +190,7 @@
         "hostGuide": { "title": "Host Guide", "desc": "Step-by-step facilitation script." },
         "characterPackets": { "title": "Character Packets", "desc": "Sealed per-guest envelopes." },
         "clues": { "title": "Clue Drops", "desc": "Structured reveals across 4 rounds." },
-        "evidence": { "title": "AI Evidence", "desc": "Fake texts, DMs, and receipts." },
+        "evidence": { "title": "Custom Evidence", "desc": "Fake texts, DMs, and receipts." },
         "reveal": { "title": "Final Reveal", "desc": "A satisfying, dramatic conclusion." },
         "ready": { "title": "Ready to Print", "desc": "No design skills required." }
       }
@@ -294,7 +294,7 @@
       },
       {
         "q": "How does the process work?",
-        "a": "First, you pick a theme (like 1920s Speakeasy or Gala Heist). Then, you enter your guests' names and how they know each other. Within 20 minutes, our platform generates a complete, print-ready pack including a host guide, character packets, clues, and AI-generated evidence."
+        "a": "First, you pick a theme (like 1920s Speakeasy or Gala Heist). Then, you enter your guests' names and how they know each other. Within 20 minutes, our platform takes our human-written stories and personalizes them to generate a complete, print-ready pack including a host guide, character packets, clues, and custom evidence."
       },
       {
         "q": "Can I still play as the host?",
@@ -329,5 +329,22 @@
         "a": "On our Premium and Grand tiers, you can customize character appearances (hair, eyes, style) so that the AI-generated evidence images perfectly match your group."
       }
     ]
+  },
+  "seoLanding": {
+    "title": "Host a Custom Murder Mystery Party.",
+    "subtitle": "Get a fully personalized, print-ready murder mystery game built around your actual guest list in under 20 minutes.",
+    "seoDescription": "Host a custom murder mystery party personalized for your guests. We take your guest list and weave them into a unique story with custom evidence and characters.",
+    "whyCustomTitle": "Why choose a custom murder mystery?",
+    "whyCustomDesc": "Generic games are fun, but nothing beats the excitement of finding out your best friend is the prime suspect, or that your partner has a secret fictional motive. Our platform takes our human-crafted mystery plots and adapts them entirely around your actual guest list — names, relationships, and all the drama.",
+    "features": {
+      "f1": "Guest Names in the Story",
+      "f1Desc": "Your actual guests are the suspects and victims.",
+      "f2": "Custom Evidence",
+      "f2Desc": "AI-generated evidence that matches your guests' descriptions.",
+      "f3": "Instant Delivery",
+      "f3Desc": "Ready to print or play digitally in under 20 minutes."
+    },
+    "ctaTitle": "Ready to host your custom party?",
+    "ctaButton": "View Pricing"
   }
 }
