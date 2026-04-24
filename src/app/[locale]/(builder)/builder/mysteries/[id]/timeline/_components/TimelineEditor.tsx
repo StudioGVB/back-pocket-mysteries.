@@ -16,9 +16,12 @@ interface TimelineEditorProps {
   allCharacters: Character[];
 }
 
+import { useRouter } from 'next/navigation';
+
 export function TimelineEditor({ mystery, mysteryId, initialBeats, allCharacters }: TimelineEditorProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showGeneratorModal, setShowGeneratorModal] = useState(false);
+  const router = useRouter();
 
   let targetBeats = 4;
   if (mystery?.complexity === 'medium') targetBeats = 6;
@@ -109,7 +112,10 @@ export function TimelineEditor({ mystery, mysteryId, initialBeats, allCharacters
           targetBeats={targetBeats}
           allCharacters={allCharacters}
           onClose={() => setShowGeneratorModal(false)}
-          onSuccess={() => setShowGeneratorModal(false)}
+          onSuccess={() => {
+            setShowGeneratorModal(false);
+            router.refresh();
+          }}
         />
       )}
     </div>

@@ -20,7 +20,7 @@ export function AdminSidebar() {
         </div>
       </div>
 
-      <nav className="flex-grow px-4 mt-4">
+      <nav className="flex-grow px-4 mt-4 overflow-y-auto">
         <div className="space-y-6 pb-6">
           {/* Main */}
           <div>

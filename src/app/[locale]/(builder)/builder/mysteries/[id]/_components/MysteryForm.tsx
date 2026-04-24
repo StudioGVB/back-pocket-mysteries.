@@ -3,6 +3,7 @@
 import React, { useActionState } from 'react';
 import { updateMysteryAction } from '../../actions';
 import { AIGenerateDescriptionButton } from './AIGenerateDescriptionButton';
+import { AIGenerateCoverButton } from './AIGenerateCoverButton';
 import { MysterySettings } from './MysterySettings';
 import { SubmitButton } from './SubmitButton';
 
@@ -101,6 +102,10 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
           className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl focus:border-brand-pink outline-none font-medium transition-all resize-none shadow-sm"
           placeholder="Brief synopsis..."
         />
+      </div>
+
+      <div className="pt-2">
+        <AIGenerateCoverButton mysteryId={mysteryId} currentImageUrl={mystery.image_url} />
       </div>
 
       <MysterySettings 

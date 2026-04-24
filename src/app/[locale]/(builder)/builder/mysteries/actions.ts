@@ -103,7 +103,7 @@ export async function generateDescriptionAction(mysteryId: string) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-pro",
     });
 
     const prompt = `
@@ -136,5 +136,61 @@ export async function generateDescriptionAction(mysteryId: string) {
   } catch (error) {
     console.error('generateDescriptionAction error:', error);
     throw error;
+  }
+}
+
+export async function generateMysteryCoverAction(mysteryId: string) {
+  try {
+    const [mystery, characters] = await Promise.all([
+      getMysteryById(mysteryId),
+      getCharactersByMysteryId(mysteryId)
+    ]);
+
+    if (!mystery) throw new Error('Mystery not found');
+
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) throw new Error('Google Generative AI API Key is missing.');
+
+    const characterNames = characters.map((c: any) => c.name).join(', ');
+    const theme = mystery.theme || 'Cinematic Noir Mystery';
+    const description = mystery.description || 'A dramatic murder mystery.';
+    
+    // We use a highly descriptive prompt to ensure the output matches the "Cinematic Noir" style.
+    // Explicitly ask for diversity and younger adults (20-40) based on user preference.
+    const prompt = `A highly cinematic, gritty noir photograph. 5 characters standing together at the scene of the crime. Wide angle shot, full body or medium-full framing, leave plenty of headroom above the characters so no heads are cropped out. Theme: ${theme}. Context: ${description}. Characters: ${characterNames}. The characters are young adults (ages 20 to 40) and feature a highly diverse mix of ethnicities (e.g., Black, Asian, Hispanic, White). Dramatic low-key lighting, deep shadows, sepia or desaturated tones, mystery, suspense. Professional photography, sharp focus, 8k resolution.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+    const payload = {
+      instances: [{ prompt }],
+      parameters: { sampleCount: 1, aspectRatio: "16:9", outputOptions: { mimeType: "image/jpeg" } }
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!data.predictions || !data.predictions[0]) {
+      throw new Error('Failed to generate image: ' + JSON.stringify(data.error || data));
+    }
+
+    const base64Image = data.predictions[0].bytesBase64Encoded;
+    const dataUri = `data:image/jpeg;base64,${base64Image}`;
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('mysteries')
+      .update({ image_url: dataUri, updated_at: new Date().toISOString() })
+      .eq('id', mysteryId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/builder/mysteries/${mysteryId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('generateMysteryCoverAction error:', error);
+    return { error: error.message };
   }
 }

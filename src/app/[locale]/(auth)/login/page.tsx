@@ -70,7 +70,8 @@ export default async function LoginPage({
           <label className="flex items-center gap-3 cursor-pointer group">
             <input 
               type="checkbox" 
-              name="remember" 
+              name="remember"
+              value="true"
               className="w-5 h-5 rounded-lg border-2 border-slate-200 text-brand-pink focus:ring-brand-pink accent-brand-pink cursor-pointer"
             />
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors cursor-pointer">

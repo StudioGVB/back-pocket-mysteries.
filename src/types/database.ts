@@ -124,6 +124,7 @@ export interface Database {
           complexity: MysteryComplexity | null
           spice_level: MysterySpiceLevel | null
           description: string | null
+          image_url: string | null
           created_by: string | null
           created_at: string
           updated_at: string
@@ -138,6 +139,7 @@ export interface Database {
           complexity?: MysteryComplexity | null
           spice_level?: MysterySpiceLevel | null
           description?: string | null
+          image_url?: string | null
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -152,6 +154,7 @@ export interface Database {
           complexity?: MysteryComplexity | null
           spice_level?: MysterySpiceLevel | null
           description?: string | null
+          image_url?: string | null
           created_by?: string | null
           created_at?: string
           updated_at?: string

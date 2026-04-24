@@ -116,6 +116,22 @@ export async function submitReview(formData: FormData) {
       } else {
         console.log(`[EMAIL NOTIFICATION] Sent review email from ${name}`);
       }
+
+      // Send Customer Confirmation Email
+      const email = formData.get('email') as string;
+      if (email) {
+        const { render } = await import('@react-email/components');
+        const CustomerReviewEmail = (await import('@/emails/CustomerReviewEmail')).default;
+        const customerHtml = await render(CustomerReviewEmail({ name, rating }));
+        
+        await resend.emails.send({
+          from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+          to: email,
+          subject: 'Thank you for your review!',
+          html: customerHtml,
+        });
+        console.log(`[EMAIL NOTIFICATION] Sent review confirmation to ${email}`);
+      }
     } else {
       console.warn('RESEND_API_KEY is not set. Email notification was not sent.');
     }

@@ -113,6 +113,19 @@ export async function submitContactForm(formData: FormData) {
         `
       });
       console.log(`[EMAIL NOTIFICATION] Sent inquiry email from ${name} (${email})`);
+
+      // Send Customer Confirmation Email
+      const { render } = await import('@react-email/components');
+      const CustomerEnquiryEmail = (await import('@/emails/CustomerEnquiryEmail')).default;
+      const customerHtml = await render(CustomerEnquiryEmail({ name, message }));
+      
+      await resend.emails.send({
+        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+        to: email,
+        subject: 'We have received your enquiry',
+        html: customerHtml,
+      });
+      console.log(`[EMAIL NOTIFICATION] Sent customer confirmation to ${email}`);
     } else {
       console.warn('RESEND_API_KEY is not set. Email notification was not sent.');
       console.log(`[EMAIL NOTIFICATION] New Inquiry from ${name} (${email}): ${message}`);

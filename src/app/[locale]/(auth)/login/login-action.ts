@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 
 // Helper to extract the current locale from the request headers
 async function getLocaleFromHeaders(): Promise<string> {
@@ -14,7 +14,14 @@ async function getLocaleFromHeaders(): Promise<string> {
 }
 
 export async function signInAction(formData: FormData) {
-  const isPermanent = formData.get('remember') === 'on'
+  const isPermanent = formData.get('remember') === 'true' || formData.get('remember') === 'on'
+  
+  const cookieStore = await cookies()
+  cookieStore.set('sb-keep-logged-in', isPermanent ? 'true' : 'false', {
+    path: '/',
+    maxAge: isPermanent ? 60 * 60 * 24 * 30 : undefined,
+  })
+
   const supabase = await createClient(isPermanent)
   const locale = await getLocaleFromHeaders()
 

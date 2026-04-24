@@ -315,3 +315,54 @@ export async function updateCharacterProfileAction(mysteryId: string, characterI
   revalidatePath(`/[locale]/builder/mysteries/${mysteryId}/characters/${characterId}`);
 }
 
+export async function generateCharacterOutfitPhotoAction(mysteryId: string, characterId: string, outfitAdvice: string, characterTitle: string, theme: string) {
+  try {
+    const prompt = `A cinematic, moody noir portrait of a ${characterTitle} wearing: ${outfitAdvice}. The aesthetic is ${theme}. Professional lighting, 8k resolution, highly detailed character concept art.`;
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{ prompt }],
+        parameters: { sampleCount: 1 }
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Imagen API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const base64Str = data.predictions?.[0]?.bytesBase64Encoded;
+    
+    if (!base64Str) {
+      throw new Error('No image bytes returned from API');
+    }
+    
+    const supabase = await createClient();
+    const fileName = `${mysteryId}/${characterId}_${Date.now()}.png`;
+    
+    const imageBuffer = Buffer.from(base64Str, 'base64');
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('character-images')
+      .upload(fileName, imageBuffer, {
+        contentType: 'image/png',
+        upsert: true
+      });
+      
+    if (uploadError) {
+      throw new Error(`Failed to upload to Supabase: ${uploadError.message}`);
+    }
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('character-images')
+      .getPublicUrl(fileName);
+      
+    return publicUrl;
+    
+  } catch (err: any) {
+    console.error('Error generating photo', err);
+    throw new Error(err.message || 'Failed to generate photo');
+  }
+}

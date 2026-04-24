@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { generatePlotAIAction, savePlotBeatsBulkAction } from '../actions';
-import { TimelinePhase } from '@/types/database';
+import { generateNarrativePlotAction, generateBeatsFromNarrativeAction, savePlotBeatsBulkAction } from '../actions';
 
 interface PlotGeneratorModalProps {
   mysteryId: string;
@@ -14,34 +13,56 @@ interface PlotGeneratorModalProps {
 }
 
 export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCharacters, onClose, onSuccess }: PlotGeneratorModalProps) {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [userIdeas, setUserIdeas] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [narrativePlot, setNarrativePlot] = useState('');
   const [generatedBeats, setGeneratedBeats] = useState<any[]>([]);
+  
+  const [isEditingNarrative, setIsEditingNarrative] = useState(false);
+  const [isGeneratingNarrative, setIsGeneratingNarrative] = useState(false);
+  const [isGeneratingBeats, setIsGeneratingBeats] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
+  const handleGenerateNarrative = async () => {
+    setIsGeneratingNarrative(true);
     try {
-      const beats = await generatePlotAIAction(mysteryId, currentCount, userIdeas);
-      setGeneratedBeats(beats);
+      const story = await generateNarrativePlotAction(mysteryId, userIdeas);
+      setNarrativePlot(story);
       setStep(2);
     } catch (err) {
       console.error(err);
-      alert('Failed to generate plot beats.');
+      alert('Failed to generate plot narrative.');
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingNarrative(false);
+    }
+  };
+
+  const handleGenerateBeats = async () => {
+    setIsGeneratingBeats(true);
+    try {
+      const beats = await generateBeatsFromNarrativeAction(mysteryId, currentCount, narrativePlot);
+      setGeneratedBeats(beats);
+      setStep(3);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate beats from narrative.');
+    } finally {
+      setIsGeneratingBeats(false);
     }
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await savePlotBeatsBulkAction(mysteryId, generatedBeats);
+      const result = await savePlotBeatsBulkAction(mysteryId, generatedBeats);
+      if (!result?.success) {
+        alert(result?.error || 'Failed to save plot beats.');
+        return;
+      }
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to save plot beats.');
+      alert('Failed: ' + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -57,6 +78,40 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
   const victim = allCharacters?.find(c => c.is_victim || c.plot_role === 'victim');
   const assistant = allCharacters?.find(c => c.plot_role === 'assistant');
 
+  const renderHighlightedNarrative = (text: string) => {
+    if (!text) return null;
+    
+    // Extract first names
+    const names = allCharacters?.map(c => c.name.split('|')[0].trim()).filter(Boolean) || [];
+    if (names.length === 0) return <span className="whitespace-pre-wrap font-mono text-sm">{text}</span>;
+
+    // Sort by length descending to match longest names first
+    names.sort((a, b) => b.length - a.length);
+    
+    // Escape for regex
+    const escapedNames = names.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`\\b(${escapedNames.join('|')})\\b`, 'gi');
+
+    const parts = text.split(regex);
+    
+    return (
+      <div className="whitespace-pre-wrap font-mono text-sm">
+        {parts.map((part, i) => {
+          // Check if part is one of the names (case-insensitive)
+          const charMatch = allCharacters?.find(c => c.name.split('|')[0].trim().toLowerCase() === part.toLowerCase());
+          if (charMatch) {
+            let colorClass = 'text-brand-blue';
+            if (charMatch.is_victim || charMatch.plot_role === 'victim') colorClass = 'text-brand-pink';
+            else if (charMatch.plot_role === 'killer') colorClass = 'text-brand-red';
+            
+            return <strong key={i} className={colorClass}>{part}</strong>;
+          }
+          return <span key={i}>{part}</span>;
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div className="bg-white rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
@@ -64,11 +119,13 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
         {/* Header */}
         <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 font-serif">
-              {step === 1 ? 'Auto-Generate Plot' : 'Review Plot Beats'}
+            <h2 className="text-2xl font-black text-slate-900">
+              {step === 1 ? 'Step 1: Ideation' : step === 2 ? 'Step 2: Review Narrative Storyline' : 'Step 3: Review Plot Beats'}
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              {step === 1 ? `Targeting ${targetBeats} beats based on mystery complexity.` : 'Edit the generated beats before cementing them into the timeline.'}
+              {step === 1 && `Give the AI some directives, or leave blank to let it decide.`}
+              {step === 2 && `Edit the full storyline. Once perfect, we'll chop it into exactly ${targetBeats} game beats.`}
+              {step === 3 && `Edit the discrete timeline events before cementing them into your mystery.`}
             </p>
           </div>
           <button 
@@ -83,7 +140,7 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
         <div className="flex flex-row overflow-hidden flex-grow">
           {/* Left Sidebar (Key Characters) */}
           <div className="w-1/3 bg-slate-50 border-r border-slate-100 p-8 overflow-y-auto hidden md:block">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Key Characters</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Key Characters Context</h3>
             <div className="space-y-6">
               {[victim, killer, assistant].filter(Boolean).map((char, idx) => (
                 <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
@@ -100,6 +157,10 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
                     {char.name?.split('|').filter(Boolean).join(' ')}
                   </p>
                   
+                  {char.archetype && (
+                    <p className="text-xs text-slate-500 mt-1">{char.archetype}</p>
+                  )}
+
                   {char.motives && char.motives.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-slate-100">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Motive</p>
@@ -132,6 +193,39 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
             )}
 
             {step === 2 && (
+              <div className="space-y-6 h-full flex flex-col">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                      Master Storyline Outline
+                    </label>
+                    <p className="text-xs text-slate-500 mb-4">
+                      Review the direct outline of the plot. Names are color-coded based on their roles.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setIsEditingNarrative(!isEditingNarrative)}
+                    className="px-4 py-2 text-xs font-bold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors flex-shrink-0"
+                  >
+                    {isEditingNarrative ? 'View Outline' : 'Edit Outline'}
+                  </button>
+                </div>
+                
+                {isEditingNarrative ? (
+                  <textarea
+                    value={narrativePlot}
+                    onChange={(e) => setNarrativePlot(e.target.value)}
+                    className="w-full flex-grow min-h-[300px] rounded-xl border border-slate-200 p-6 text-sm leading-relaxed resize-none focus:ring-2 focus:ring-brand-red focus:border-brand-red transition-all shadow-inner bg-slate-50 font-mono"
+                  />
+                ) : (
+                  <div className="w-full flex-grow min-h-[300px] rounded-xl border border-slate-200 p-6 leading-relaxed bg-white overflow-y-auto">
+                    {renderHighlightedNarrative(narrativePlot)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {step === 3 && (
               <div className="space-y-6">
                 {generatedBeats.map((beat, index) => (
                   <div key={index} className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-4">
@@ -167,7 +261,7 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-between gap-3">
           <button
             onClick={onClose}
             className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors"
@@ -175,23 +269,46 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
             Cancel
           </button>
           
-          {step === 1 ? (
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="px-8 py-3 rounded-xl font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition-colors flex items-center gap-2"
-            >
-              {isGenerating ? 'Generating...' : 'Generate Beats ✨'}
-            </button>
-          ) : (
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-brand-pink to-brand-red shadow-lg hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-2"
-            >
-              {isSaving ? 'Saving...' : 'Cement Plot'}
-            </button>
-          )}
+          <div className="flex gap-3">
+            {step === 1 && (
+              <button
+                onClick={handleGenerateNarrative}
+                disabled={isGeneratingNarrative}
+                className="px-8 py-3 rounded-xl font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                {isGeneratingNarrative ? 'Writing Story...' : 'Write Storyline ✨'}
+              </button>
+            )}
+
+            {step === 2 && (
+              <>
+                <button
+                  onClick={handleGenerateNarrative}
+                  disabled={isGeneratingNarrative || isGeneratingBeats}
+                  className="px-6 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {isGeneratingNarrative ? 'Rewriting...' : 'Regenerate'}
+                </button>
+                <button
+                  onClick={handleGenerateBeats}
+                  disabled={isGeneratingBeats || isGeneratingNarrative || !narrativePlot.trim()}
+                  className="px-8 py-3 rounded-xl font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {isGeneratingBeats ? 'Slicing into Beats...' : 'Extract Game Beats ⚡'}
+                </button>
+              </>
+            )}
+
+            {step === 3 && (
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-brand-pink to-brand-red shadow-lg hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-2"
+              >
+                {isSaving ? 'Saving...' : 'Cement Plot'}
+              </button>
+            )}
+          </div>
         </div>
 
       </div>

@@ -52,6 +52,7 @@ export function ReviewForm() {
             setRating(5);
             if(document.getElementById('review_text')) (document.getElementById('review_text') as HTMLTextAreaElement).value = '';
             if(document.getElementById('name')) (document.getElementById('name') as HTMLInputElement).value = '';
+            if(document.getElementById('email')) (document.getElementById('email') as HTMLInputElement).value = '';
           }}
           className="mt-8 text-xs font-black uppercase tracking-widest text-brand-pink hover:text-brand-dark transition-colors"
         >
@@ -106,6 +107,17 @@ export function ReviewForm() {
           required
           className="w-full bg-brand-gray border-2 border-transparent rounded-full px-6 py-4 text-brand-dark font-medium focus:outline-none focus:border-brand-pink transition-colors"
           placeholder="e.g. Detective Sarah"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-widest text-brand-dark mb-2 pl-4">Your Email (to receive a thank you gift!)</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          className="w-full bg-brand-gray border-2 border-transparent rounded-full px-6 py-4 text-brand-dark font-medium focus:outline-none focus:border-brand-pink transition-colors"
+          placeholder="e.g. detective@agency.com"
         />
       </div>
       

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { generateCharacterProfileAIAction, updateCharacterProfileAction, updateCharacterAction } from '../../actions';
+import { generateCharacterProfileAIAction, updateCharacterProfileAction, updateCharacterAction, generateCharacterOutfitPhotoAction } from '../../actions';
 import { getCharacterColor } from '@/utils/colors';
 
 interface CharacterProfileClientProps {
@@ -14,6 +14,7 @@ interface CharacterProfileClientProps {
 export function CharacterProfileClient({ mystery, character, allCharacters }: CharacterProfileClientProps) {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -81,6 +82,46 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
       alert('Failed to save profile');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    setIsGeneratingImage(true);
+    try {
+      const outfitAdvice = currentPresentation.outfit_advice;
+      if (!outfitAdvice) {
+        alert("Please generate outfit advice first before generating a photo.");
+        setIsGeneratingImage(false);
+        return;
+      }
+      
+      const imageUrl = await generateCharacterOutfitPhotoAction(
+        mystery.id,
+        character.id,
+        outfitAdvice,
+        characterTitle,
+        mystery.theme || 'Cinematic Noir'
+      );
+      
+      updateField('outfit_image_url', imageUrl);
+      
+      const newProfileData = { ...profileData };
+      if (isAdaptable) {
+        const presentationKey = activeTab === 'male' ? 'presentation_male' : 'presentation_female';
+        newProfileData[presentationKey] = {
+          ...(newProfileData[presentationKey] || {}),
+          outfit_image_url: imageUrl
+        };
+      } else {
+        newProfileData.outfit_image_url = imageUrl;
+      }
+      await updateCharacterProfileAction(mystery.id, character.id, newProfileData);
+      
+    } catch (err: any) {
+      console.error(err);
+      alert('Failed to generate image: ' + err.message);
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -268,9 +309,31 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
 
             <div className="space-y-6">
               <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
-                  Outfit Advice
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+                    Outfit Advice
+                  </label>
+                  <button 
+                    onClick={handleGenerateImage} 
+                    disabled={isGeneratingImage || !currentPresentation.outfit_advice}
+                    className="text-xs font-bold hover:opacity-80 flex items-center gap-1 disabled:opacity-50 transition-opacity"
+                    style={{ color: charColor }}
+                  >
+                    {isGeneratingImage ? 'Generating Photo...' : '✨ Generate Photo'}
+                  </button>
+                </div>
+                
+                {currentPresentation.outfit_image_url && (
+                  <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 relative bg-slate-50">
+                    <img 
+                      src={currentPresentation.outfit_image_url} 
+                      alt="Outfit Reference" 
+                      className="w-full object-cover"
+                      style={{ maxHeight: '400px' }}
+                    />
+                  </div>
+                )}
+                
                 <textarea
                   value={currentPresentation.outfit_advice || ''}
                   onChange={(e) => updateField('outfit_advice', e.target.value)}
