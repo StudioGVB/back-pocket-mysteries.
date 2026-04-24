@@ -73,21 +73,49 @@ export async function submitReview(formData: FormData) {
         ? `<p><strong>Attached Photos:</strong><br/>${attachment_urls.map(url => `<a href="${url}">${url}</a>`).join('<br/>')}</p>`
         : '';
         
-      await resend.emails.send({
+      const result = await resend.emails.send({
         from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
         to: 'Hello@backpocketgames.com',
         subject: `New Review from ${name} (${rating}/5 Stars)`,
         html: `
-          <h3>New Customer Review</h3>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Rating:</strong> ${rating}/5 Stars</p>
-          <p><strong>Review:</strong><br/>${review_text.replace(/\n/g, '<br/>')}</p>
-          ${attachmentsHtml}
-          <hr/>
-          <p><em>Log in to your Admin Dashboard to publish or manage this review.</em></p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 8px; border-top: 4px solid #F02882;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #1a1a1a; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Back Pocket Mysteries</h2>
+              <p style="color: #F02882; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">New Customer Review</p>
+            </div>
+            
+            <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div>
+                  <strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Name</strong><br/>
+                  <span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${name}</span>
+                </div>
+                <div style="text-align: right;">
+                  <strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Rating</strong><br/>
+                  <span style="color: #F02882; font-size: 16px; font-weight: bold;">${rating}/5 Stars</span>
+                </div>
+              </div>
+              
+              <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; position: relative;">
+                <span style="color: #e0e0e0; font-size: 40px; font-family: serif; position: absolute; top: 10px; left: 10px; line-height: 1;">"</span>
+                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6; font-style: italic; position: relative; z-index: 10; padding-top: 10px;">${review_text.replace(/\n/g, '<br/>')}</p>
+              </div>
+              
+              ${attachmentsHtml ? `<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">${attachmentsHtml}</div>` : ''}
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+              <p style="color: #888; font-size: 12px; font-style: italic;">Log in to your Admin Dashboard to publish or manage this review.</p>
+            </div>
+          </div>
         `
       });
-      console.log(`[EMAIL NOTIFICATION] Sent review email from ${name}`);
+      
+      if (result.error) {
+        console.error('[EMAIL NOTIFICATION] Resend API Error:', result.error);
+      } else {
+        console.log(`[EMAIL NOTIFICATION] Sent review email from ${name}`);
+      }
     } else {
       console.warn('RESEND_API_KEY is not set. Email notification was not sent.');
     }
