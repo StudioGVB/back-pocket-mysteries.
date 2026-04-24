@@ -18,6 +18,10 @@ export default async function MysteryTimelinePage({
 
   if (!mystery) return null;
 
+  let targetBeats = 4;
+  if (mystery.complexity === 'medium') targetBeats = 6;
+  if (mystery.complexity === 'hard') targetBeats = 8;
+
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex justify-between items-end">
@@ -28,7 +32,7 @@ export default async function MysteryTimelinePage({
         
         <div className="bg-white border border-slate-100 px-6 py-3 rounded-2xl flex items-center gap-6 shadow-sm">
           <div className="text-center">
-             <div className="text-lg font-black text-slate-900 leading-none mb-1">{beats.length}</div>
+             <div className="text-lg font-black text-slate-900 leading-none mb-1">{beats.length} <span className="text-slate-300 text-sm">/ {targetBeats}</span></div>
              <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Beats</div>
           </div>
           <div className="w-px h-6 bg-slate-100"></div>
@@ -45,6 +49,7 @@ export default async function MysteryTimelinePage({
         <MainMurderConfig mystery={mystery} characters={characters} />
         
         <TimelineEditor 
+          mystery={mystery}
           mysteryId={id} 
           initialBeats={beats} 
           allCharacters={characters}

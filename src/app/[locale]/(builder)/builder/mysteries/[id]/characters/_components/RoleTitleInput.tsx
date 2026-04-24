@@ -5,12 +5,21 @@ import { generateRoleSuggestionsAction } from '../actions';
 
 interface RoleTitleInputProps {
   mysteryId: string;
+  value?: string;
+  onChange?: (val: string) => void;
   defaultValue?: string;
   inputClassName?: string;
 }
 
-export function RoleTitleInput({ mysteryId, defaultValue = '', inputClassName = '' }: RoleTitleInputProps) {
-  const [value, setValue] = useState(defaultValue);
+export function RoleTitleInput({ mysteryId, value, onChange, defaultValue = '', inputClassName = '' }: RoleTitleInputProps) {
+  const [internalValue, setInternalValue] = useState(defaultValue);
+  
+  const currentValue = value !== undefined ? value : internalValue;
+  
+  const handleChange = (val: string) => {
+    setInternalValue(val);
+    if (onChange) onChange(val);
+  };
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -51,8 +60,8 @@ export function RoleTitleInput({ mysteryId, defaultValue = '', inputClassName = 
       <div className="relative flex items-center">
         <input 
           name="title"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
+          value={currentValue}
+          onChange={(e) => handleChange(e.target.value)}
           onFocus={() => { if (suggestions.length > 0) setIsOpen(true); }}
           placeholder="e.g. Chief Stew"
           className={`${inputClassName} pr-12`}
@@ -94,7 +103,7 @@ export function RoleTitleInput({ mysteryId, defaultValue = '', inputClassName = 
                   key={suggestion}
                   type="button"
                   onClick={() => {
-                    setValue(suggestion);
+                    handleChange(suggestion);
                     setIsOpen(false);
                   }}
                   className="w-full text-left px-5 py-3 hover:bg-slate-50 text-sm font-bold text-slate-700 transition-colors flex items-center gap-3 group"

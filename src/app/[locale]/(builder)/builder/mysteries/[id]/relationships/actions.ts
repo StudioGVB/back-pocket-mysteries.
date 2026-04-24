@@ -51,6 +51,27 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
       is_victim: c.is_victim
     }));
 
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabase = await createClient();
+
+    let existingRelationships: any[] = [];
+    if (!overwrite) {
+      const { data } = await supabase.from('relationships').select('character_a_id, character_b_id').eq('mystery_id', mysteryId);
+      existingRelationships = data || [];
+    }
+
+    const charactersWithRelationships = new Set<string>();
+    existingRelationships.forEach(r => {
+      charactersWithRelationships.add(r.character_a_id);
+      charactersWithRelationships.add(r.character_b_id);
+    });
+
+    const charactersNeedingRelationships = castData.filter((c: any) => !charactersWithRelationships.has(c.id));
+
+    if (!overwrite && charactersNeedingRelationships.length === 0) {
+      return; // Everyone already has a relationship
+    }
+
     const USE_MOCK_AI = false; // Toggle this once billing is fixed
     let generatedRels: any[] = [];
 
@@ -130,17 +151,19 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
       });
   
       const prompt = `
-        You are a plot architect for a murder mystery party game.
+        You are an expert plot architect and relationship weaver for a murder mystery party game.
         Theme: ${mystery?.theme || 'General Mystery'}
         
         I am providing a list of characters. You must return an array of compelling, dramatic relationships between them.
         
-        RULES:
-        1. Every relationship has two people. Use exact IDs provided. Do not invent IDs.
-        2. Analyze the 'title_or_role' field for both characters. The 'dynamics' array you invent MUST logically match their occupations/titles. For example, if one is 'Captain' and the other is 'Charter Guest', they should have an 'employee-guest' dynamic, not 'business partners' or 'siblings' unless highly justified by the plot. If one is 'Maid' and the other 'Billionaire', their dynamic is 'employer-employee'. Do not start from scratch—use their explicit titles to determine their relationship!
-        3. **No Floaters**: EVERY single character in the list MUST be connected to at least one other character. Do not leave anyone isolated.
-        4. **The Core**: Mandatory/Primary characters (is_mandatory: true) MUST be connected to at least 2 other characters to form a tight web. Connect the VICTIM to almost everyone.
-        5. **The Spokes**: If a character is NOT mandatory (e.g., is_mandatory = false), they should act as a dead-end spoke. They should only connect to the Victim or ONE other major character. They MUST NOT connect to multiple people. This ensures they can be removed from the game without breaking the core relationship web.
+        CRITICAL RULES:
+        1. **BE EXTREMELY METHODICAL**: Go character by character. For each character, evaluate their logical relationship to EVERY OTHER character based on their occupations, titles, and roles. 
+        2. **Logical Foundation First**: Establish all obvious, expected connections first. If two characters logically work together, live together, or would interact based on their titles (e.g., "Captain" and "Ship's Doctor", or "Maid" and "Billionaire"), they MUST have a relationship line connecting them (e.g., "Coworkers", "Employer-Employee"). Do not ignore obvious professional or thematic ties.
+        3. **Secret Dynamics On Top**: On top of the logical foundations, inject juicy, dramatic, and secret "made up" dynamics to create conflict (e.g., "Secret Lovers", "Blackmailing", "Hidden Rivals", "Unpaid Debts", "Jealousy").
+        4. **Every ID is Sacred**: Use the EXACT character IDs provided. Do not invent or hallucinate IDs.
+        5. **No Floaters**: EVERY single character in the list MUST be connected to at least one other character. Do not leave anyone isolated.
+        ${!overwrite ? `6. **UPDATE MODE**: ONLY generate relationships that involve AT LEAST ONE character from the following list (who are currently missing relationships): ${charactersNeedingRelationships.map((c: any) => c.id).join(', ')}. Do not generate relationships between two characters who are NOT in this list.` : `6. **The Core Web**: Mandatory/Primary characters (is_mandatory: true) MUST be connected to at least 2 other characters to form a tight web. The VICTIM should be connected to almost everyone.`}
+        7. **The Spokes (Crucial)**: If a character is NOT mandatory (e.g., is_mandatory = false), they act as a "dead-end spoke." They MUST ONLY connect to the Victim and/or ONE other major character. They MUST NOT have a wide web of connections. This ensures they can be removed from the game without breaking the plot.
         
         CHARACTERS JSON:
         ${JSON.stringify(castData, null, 2)}
@@ -153,10 +176,6 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
       generatedRels = parsed.relationships || [];
     }
 
-    // Clear existing if overwrite
-    const { createClient } = await import('@/utils/supabase/server');
-    const supabase = await createClient();
-    
     if (overwrite) {
       await supabase.from('relationships').delete().eq('mystery_id', mysteryId);
     }
@@ -165,6 +184,14 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
     for (const rel of generatedRels) {
       // Ensure source != target
       if (rel.source_character_id !== rel.target_character_id) {
+        // If not overwriting, only add if at least one character needs relationships
+        if (!overwrite) {
+          const involvesNeededCharacter = charactersNeedingRelationships.some(
+            (c: any) => c.id === rel.source_character_id || c.id === rel.target_character_id
+          );
+          if (!involvesNeededCharacter) continue;
+        }
+
         await upsertRelationship({
           mystery_id: mysteryId,
           character_a_id: rel.source_character_id,
@@ -209,6 +236,22 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
       is_mandatory: c.is_mandatory,
       is_victim: c.is_victim
     }));
+
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabase = await createClient();
+
+    let existingMotives: any[] = [];
+    if (!overwrite) {
+      const { data } = await supabase.from('motives').select('character_id').eq('mystery_id', mysteryId);
+      existingMotives = data || [];
+    }
+    const charactersWithMotives = new Set(existingMotives.map(m => m.character_id));
+    
+    const charactersNeedingMotives = castData.filter((c: any) => !charactersWithMotives.has(c.id) && !c.is_victim);
+
+    if (!overwrite && charactersNeedingMotives.length === 0) {
+      return; // Everyone already has motives
+    }
 
     const relationshipGraph = relationships.filter(r => r.know_each_other).map(r => {
       const charA = characters.find((c: any) => c.id === r.character_a_id)?.name.split('|')[0];
@@ -266,7 +309,7 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
       You must return an array of compelling motives for WHY these characters might want to murder the Victim (or rarely, someone else if they are covering up a crime or being blackmailed).
 
       RULES:
-      1. Every character (except the victim) should ideally have ONE primary motive against the victim.
+      ${!overwrite ? `1. ONLY generate motives for the following character IDs: ${charactersNeedingMotives.map((c: any) => c.id).join(', ')}. Do not generate motives for anyone else.` : `1. Every character (except the victim) should ideally have ONE primary motive against the victim.`}
       2. If a character is the 'killer', give them a 'critical' or 'high' strength motive.
       3. If a character is 'innocent', give them a 'low' or 'moderate' strength motive (red herrings).
       4. Use the Relationship Graph to inform the notes. If two people are "rivals", mention it in the notes.
@@ -285,9 +328,6 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
     const parsed = JSON.parse(responseText);
 
     const generatedMotives = parsed.motives || [];
-
-    const { createClient } = await import('@/utils/supabase/server');
-    const supabase = await createClient();
     
     if (overwrite) {
       await supabase.from('motives').delete().eq('mystery_id', mysteryId);
@@ -296,6 +336,11 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
     // Insert new ones
     for (const mot of generatedMotives) {
       if (mot.character_id !== mot.linked_character_id) {
+        if (!overwrite) {
+          const needsMotive = charactersNeedingMotives.some((c: any) => c.id === mot.character_id);
+          if (!needsMotive) continue;
+        }
+
         await supabase.from('motives').insert({
           mystery_id: mysteryId,
           character_id: mot.character_id,

@@ -5,15 +5,17 @@ import { generateAICharacterAction } from '../actions';
 
 interface AIGenerateCharacterButtonProps {
   mysteryId: string;
+  onGenerated: (character: any) => void;
 }
 
-export function AIGenerateCharacterButton({ mysteryId }: AIGenerateCharacterButtonProps) {
+export function AIGenerateCharacterButton({ mysteryId, onGenerated }: AIGenerateCharacterButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      await generateAICharacterAction(mysteryId);
+      const generated = await generateAICharacterAction(mysteryId);
+      onGenerated(generated);
     } catch (error: any) {
       alert(`Failed to generate character: ${error.message}`);
     } finally {

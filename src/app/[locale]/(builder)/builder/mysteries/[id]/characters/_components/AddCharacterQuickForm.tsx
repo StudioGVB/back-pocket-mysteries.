@@ -15,6 +15,21 @@ import { RoleTitleInput } from './RoleTitleInput';
 export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, setIsPending] = useState(false);
+  const [prefix, setPrefix] = useState('');
+  const [name, setName] = useState('');
+  const [title, setTitle] = useState('');
+  const [importance, setImportance] = useState('optional');
+  const [plotRole, setPlotRole] = useState('innocent');
+  const [gender, setGender] = useState('adaptable');
+
+  const handleGenerated = (character: any) => {
+    setPrefix(character.prefix || '');
+    setName(character.name || '');
+    setTitle(character.title || '');
+    setImportance(character.is_mandatory ? 'mandatory' : 'optional');
+    setPlotRole(character.plot_role || 'innocent');
+    setGender(character.gender || 'adaptable');
+  };
 
   return (
     <div className="bg-white p-1 rounded-[2.4rem] shadow-sm">
@@ -26,7 +41,7 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
           <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">Enroll New Cast Member</h3>
         </div>
         
-        <AIGenerateCharacterButton mysteryId={mysteryId} />
+        <AIGenerateCharacterButton mysteryId={mysteryId} onGenerated={handleGenerated} />
       </div>
 
       <form 
@@ -35,7 +50,12 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
           setIsPending(true);
           try {
             await addCharacterAction(mysteryId, formData);
-            formRef.current?.reset();
+            setPrefix('');
+            setName('');
+            setTitle('');
+            setImportance('optional');
+            setPlotRole('innocent');
+            setGender('adaptable');
           } finally {
             setIsPending(false);
           }
@@ -48,6 +68,8 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
             <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Prefix</label>
             <input 
               name="prefix"
+              value={prefix}
+              onChange={(e) => setPrefix(e.target.value)}
               placeholder="e.g. Captain"
               className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
             />
@@ -59,6 +81,8 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
             <input 
               name="base_name"
               required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Maria"
               className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
             />
@@ -69,6 +93,8 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
             <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Role / Title</label>
             <RoleTitleInput 
               mysteryId={mysteryId}
+              value={title}
+              onChange={setTitle}
               inputClassName="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
             />
           </div>
@@ -80,6 +106,8 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
                <select 
                  name="importance"
                  required
+                 value={importance}
+                 onChange={(e) => setImportance(e.target.value)}
                  className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all appearance-none text-sm cursor-pointer shadow-sm"
                >
                  <option value="mandatory">Mandatory</option>
@@ -98,6 +126,8 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
                <select 
                  name="plot_role"
                  required
+                 value={plotRole}
+                 onChange={(e) => setPlotRole(e.target.value)}
                  className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all appearance-none text-sm cursor-pointer shadow-sm"
                >
                  <option value="innocent">Innocent</option>
@@ -111,8 +141,29 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
              </div>
           </div>
 
+          {/* Gender Field */}
+          <div className="md:col-span-2">
+             <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Gender</label>
+             <div className="relative">
+               <select 
+                 name="gender"
+                 required
+                 value={gender}
+                 onChange={(e) => setGender(e.target.value)}
+                 className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all appearance-none text-sm cursor-pointer shadow-sm"
+               >
+                 <option value="adaptable">Adaptable ⚧</option>
+                 <option value="female">Female ♀</option>
+                 <option value="male">Male ♂</option>
+               </select>
+               <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+               </div>
+             </div>
+          </div>
+
           {/* Submit Button */}
-          <div className="md:col-span-2 flex items-end">
+          <div className="md:col-span-12 flex items-end">
             <button 
               disabled={isPending}
               className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-brand-pink transition-all shadow-xl shadow-slate-900/10 active:scale-95 disabled:opacity-50 h-[56px]"

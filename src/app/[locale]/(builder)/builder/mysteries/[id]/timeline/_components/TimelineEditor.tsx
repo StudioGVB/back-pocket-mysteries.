@@ -4,18 +4,25 @@ import React, { useState } from 'react';
 import { Database, TimelinePhase } from '@/types/database';
 import { addBeatAction } from '../actions';
 import { TimelineBeatCard } from './TimelineBeatCard';
+import { PlotGeneratorModal } from './PlotGeneratorModal';
 
 type Beat = Database['public']['Tables']['plot_beats']['Row'];
 type Character = Database['public']['Tables']['characters']['Row'];
 
 interface TimelineEditorProps {
+  mystery: any;
   mysteryId: string;
   initialBeats: Beat[];
   allCharacters: Character[];
 }
 
-export function TimelineEditor({ mysteryId, initialBeats, allCharacters }: TimelineEditorProps) {
+export function TimelineEditor({ mystery, mysteryId, initialBeats, allCharacters }: TimelineEditorProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [showGeneratorModal, setShowGeneratorModal] = useState(false);
+
+  let targetBeats = 4;
+  if (mystery?.complexity === 'medium') targetBeats = 6;
+  if (mystery?.complexity === 'hard') targetBeats = 8;
 
   const phases: TimelinePhase[] = ['pre_crime', 'crime', 'investigation', 'resolution'];
 
@@ -72,7 +79,16 @@ export function TimelineEditor({ mysteryId, initialBeats, allCharacters }: Timel
       })}
 
       {/* Global Add Button */}
-      <div className="flex justify-center pt-10">
+      <div className="flex justify-center pt-10 gap-4">
+        {initialBeats.length === 0 && (
+          <button 
+            onClick={() => setShowGeneratorModal(true)}
+            disabled={isAdding}
+            className="px-10 py-5 bg-gradient-to-r from-brand-pink to-brand-red text-white rounded-[2rem] font-black flex items-center gap-3 hover:opacity-90 transition-all shadow-2xl shadow-brand-red/20 active:scale-95 disabled:opacity-50"
+          >
+            ✨ Auto-Generate Plot ({targetBeats} Beats)
+          </button>
+        )}
         <button 
           onClick={async () => {
             setIsAdding(true);
@@ -85,6 +101,17 @@ export function TimelineEditor({ mysteryId, initialBeats, allCharacters }: Timel
           {isAdding ? 'Plotting...' : '+ New Story Beat'}
         </button>
       </div>
+
+      {showGeneratorModal && (
+        <PlotGeneratorModal
+          mysteryId={mysteryId}
+          currentCount={initialBeats.length}
+          targetBeats={targetBeats}
+          allCharacters={allCharacters}
+          onClose={() => setShowGeneratorModal(false)}
+          onSuccess={() => setShowGeneratorModal(false)}
+        />
+      )}
     </div>
   );
 }

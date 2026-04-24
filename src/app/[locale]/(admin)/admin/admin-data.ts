@@ -173,3 +173,19 @@ export async function grantAdminStatus(userId: string, role: string = 'admin') {
 
   if (error) throw new Error(error.message);
 }
+
+export async function getEnquiries() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('inquiries')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching enquiries:', error);
+    return [];
+  }
+
+  return data || [];
+}

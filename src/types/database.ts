@@ -246,6 +246,8 @@ export interface Database {
           created_at: string
           is_victim: boolean
           plot_role: PlotRole | null
+          profile_data: Json | null
+          gender: 'male' | 'female' | 'adaptable' | null
         }
         Insert: {
           id?: string
@@ -261,6 +263,8 @@ export interface Database {
           created_at?: string
           is_victim?: boolean
           plot_role?: PlotRole | null
+          profile_data?: Json | null
+          gender?: 'male' | 'female' | 'adaptable' | null
         }
         Update: {
           id?: string
@@ -276,6 +280,8 @@ export interface Database {
           created_at?: string
           is_victim?: boolean
           plot_role?: PlotRole | null
+          profile_data?: Json | null
+          gender?: 'male' | 'female' | 'adaptable' | null
         }
         Relationships: [
           {

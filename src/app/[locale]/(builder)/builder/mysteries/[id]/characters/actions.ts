@@ -15,6 +15,7 @@ export async function addCharacterAction(mysteryId: string, formData: FormData) 
   
   const rawPlotRole = formData.get('plot_role');
   const plot_role = (rawPlotRole ? rawPlotRole : null) as any;
+  const gender = formData.get('gender') as any || 'adaptable';
   
   const is_mandatory = formData.get('importance') === 'mandatory';
   const is_victim = plot_role === 'victim';
@@ -24,6 +25,7 @@ export async function addCharacterAction(mysteryId: string, formData: FormData) 
     name,
     archetype,
     plot_role,
+    gender,
     is_mandatory: is_mandatory || is_victim, // Victims are always mandatory in this system
     is_victim
   });
@@ -105,9 +107,14 @@ export async function generateAICharacterAction(mysteryId: string) {
           enum: ['killer', 'assistant', 'innocent', 'victim'],
           format: 'enum'
         },
+        gender: {
+          type: SchemaType.STRING,
+          enum: ['male', 'female', 'adaptable'],
+          format: 'enum'
+        },
         is_mandatory: { type: SchemaType.BOOLEAN }
       },
-      required: ['name', 'title', 'prefix', 'plot_role', 'is_mandatory']
+      required: ['name', 'title', 'prefix', 'plot_role', 'gender', 'is_mandatory']
     };
 
     const model = genAI.getGenerativeModel({
@@ -137,24 +144,14 @@ export async function generateAICharacterAction(mysteryId: string) {
          - If there is a victim but no killer (${hasVictim && !hasKiller}), you MUST make them the 'killer'.
          - Otherwise, pick 'innocent' or 'assistant'.
       5. If they are the victim or killer, they MUST be mandatory (is_mandatory: true).
+      6. Assign a gender ('male', 'female', or 'adaptable'). If 'adaptable', MUST generate a unisex name (e.g., Alex, Riley) and a gender-neutral title.
     `;
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
     const parsed = JSON.parse(responseText);
 
-    const finalName = `${parsed.name || ''}|${parsed.title || ''}|${parsed.prefix || ''}`;
-
-    await createCharacter({
-      mystery_id: mysteryId,
-      name: finalName,
-      archetype: null,
-      plot_role: parsed.plot_role,
-      is_mandatory: parsed.is_mandatory || parsed.plot_role === 'victim',
-      is_victim: parsed.plot_role === 'victim'
-    });
-
-    revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+    return parsed;
     
   } catch (error) {
     console.error('Action Error: generateAICharacterAction', error);
@@ -212,5 +209,109 @@ export async function generateRoleSuggestionsAction(mysteryId: string): Promise<
     console.error('Error generating role suggestions', error);
     return [];
   }
+}
+
+export async function generateCharacterProfileAIAction(mysteryId: string, character: any, mystery: any) {
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
+    
+    const isAdaptable = character.gender === 'adaptable';
+
+    const presentationSchema = {
+      type: SchemaType.OBJECT,
+      properties: {
+        outfit_advice: {
+          type: SchemaType.STRING,
+          description: "Specific clothing suggestions matching the theme and their vibe."
+        },
+        act_summary: {
+          type: SchemaType.STRING,
+          description: "A short, 2-3 sentence summary of how they should act and behave in the room."
+        },
+        act_bullets: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          description: "3-5 specific, punchy bullet points on their demeanor (e.g. 'Speak slowly and deliberately', 'Never raise your voice')."
+        }
+      },
+      required: ["outfit_advice", "act_summary", "act_bullets"]
+    };
+
+    const responseSchema = isAdaptable ? {
+      type: SchemaType.OBJECT,
+      properties: {
+        bio: {
+          type: SchemaType.STRING,
+          description: "A compelling backstory and personality description (1-2 paragraphs)."
+        },
+        presentation_male: {
+          ...presentationSchema,
+          description: "Outfit and acting advice specifically tailored for a masculine/male guest playing the role."
+        },
+        presentation_female: {
+          ...presentationSchema,
+          description: "Outfit and acting advice specifically tailored for a feminine/female guest playing the role."
+        }
+      },
+      required: ["bio", "presentation_male", "presentation_female"],
+    } : {
+      type: SchemaType.OBJECT,
+      properties: {
+        bio: {
+          type: SchemaType.STRING,
+          description: "A compelling backstory and personality description (1-2 paragraphs)."
+        },
+        outfit_advice: presentationSchema.properties.outfit_advice,
+        act_summary: presentationSchema.properties.act_summary,
+        act_bullets: presentationSchema.properties.act_bullets,
+      },
+      required: ["bio", "outfit_advice", "act_summary", "act_bullets"],
+    };
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema as any,
+      }
+    });
+
+    const characterName = character.name.split('|')[0] || character.name;
+    const characterRole = character.name.includes('|') ? character.name.split('|')[1] : 'Guest';
+    const roleStatus = character.is_victim ? 'The Victim' : (character.plot_role === 'killer' ? 'The Killer' : 'A Guest');
+    const genderInstructions = isAdaptable 
+      ? "CRITICAL: This character is 'adaptable' (gender-neutral). You MUST use They/Them pronouns. Keep the bio completely gender-neutral. Provide TWO SETS of advice: one tailored for a male guest playing the role (presentation_male), and one for a female guest playing the role (presentation_female)."
+      : `CRITICAL: This character's gender is '${character.gender}'. Use appropriate pronouns and provide outfit/acting advice tailored to this gender.`;
+
+    const prompt = `
+      You are an expert murder mystery party game designer writing a character dossier.
+      
+      Mystery Theme: ${mystery?.theme || 'General Mystery'}
+      Character Name: ${characterName}
+      Character Role/Title: ${characterRole}
+      Status: ${roleStatus}
+      
+      ${genderInstructions}
+      
+      Generate a rich, immersive profile for this character that will be printed in their personal packet. 
+      The tone should match the Noir/Cinematic style of the platform: sharp, dramatic, and engaging.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const parsed = JSON.parse(result.response.text());
+    
+    return parsed;
+  } catch (error) {
+    console.error('Error generating character profile', error);
+    throw new Error('Failed to generate profile');
+  }
+}
+
+export async function updateCharacterProfileAction(mysteryId: string, characterId: string, profileData: any) {
+  await updateCharacter(characterId, {
+    profile_data: profileData
+  });
+  revalidatePath(`/[locale]/builder/mysteries/${mysteryId}/characters`);
+  revalidatePath(`/[locale]/builder/mysteries/${mysteryId}/characters/${characterId}`);
 }
 

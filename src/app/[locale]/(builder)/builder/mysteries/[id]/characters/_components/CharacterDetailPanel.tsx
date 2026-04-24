@@ -49,6 +49,7 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, onCl
                 const plot_role = formData.get('plot_role') as any;
                 const is_victim = plot_role === 'victim';
                 const is_mandatory = formData.get('is_mandatory') === 'on' || is_victim;
+                const gender = formData.get('gender') as any;
 
                 const relationshipValue = formData.get('victim_relationship');
 
@@ -63,6 +64,7 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, onCl
                   is_mandatory,
                   is_victim,
                   plot_role,
+                  gender,
                   victim_relationship: (relationshipValue ? relationshipValue : null) as VictimRelationship | null,
                 };
                 await updateCharacterAction(mysteryId, character.id, updates);
@@ -75,7 +77,7 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, onCl
               <div className="space-y-6">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50 pb-2">Identity</h3>
                 <div className="grid gap-6">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-2">Prefix</label>
                       <input 
@@ -101,6 +103,18 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, onCl
                         defaultValue={character.name.includes('|') ? character.name.split('|')[1] : ''}
                         inputClassName="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all placeholder:text-slate-300"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2">Gender</label>
+                      <select 
+                        name="gender"
+                        defaultValue={character.gender || 'adaptable'}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all appearance-none"
+                      >
+                         <option value="adaptable">Adaptable ⚧</option>
+                         <option value="female">Female ♀</option>
+                         <option value="male">Male ♂</option>
+                      </select>
                     </div>
                   </div>
                   

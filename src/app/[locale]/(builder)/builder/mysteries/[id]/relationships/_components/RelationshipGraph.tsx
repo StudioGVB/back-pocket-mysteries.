@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { Database } from '@/types/database';
+import { getCharacterColor } from '@/utils/colors';
 
 type Character = Database['public']['Tables']['characters']['Row'];
 type Relationship = Database['public']['Tables']['relationships']['Row'];
@@ -40,33 +41,69 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
   }, []);
 
   const graphData = useMemo(() => {
-    const nodes = characters.map(char => ({
-      id: char.id,
-      name: char.name.split('|')[0],
-      title: char.name.includes('|') ? char.name.split('|')[1] : null,
-      prefix: char.name.split('|')[2] || null,
-      role: char.plot_role,
-      isVictim: char.is_victim,
-      initials: char.name.split('|')[0].split(' ').map((n: string) => n[0]).join('').toUpperCase()
-    }));
+    const nodes = characters.map((char, index) => {
+      // Pre-spread nodes in a wide circle to prevent initial (0,0) clumping singularity
+      const angle = (index / Math.max(characters.length, 1)) * 2 * Math.PI;
+      const radius = 300; 
+      
+      return {
+        id: char.id,
+        name: char.name.split('|')[0],
+        title: char.name.includes('|') ? char.name.split('|')[1] : null,
+        prefix: char.name.split('|')[2] || null,
+        role: char.plot_role,
+        isVictim: char.is_victim,
+        initials: char.name.split('|')[0].split(' ').map((n: string) => n[0]).join('').toUpperCase(),
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius
+      };
+    });
 
-    const links = relationships
+    const linksMap = new Map();
+    relationships
       .filter(rel => rel.know_each_other)
-      .map(rel => ({
-        source: rel.character_a_id,
-        target: rel.character_b_id,
-        dynamics: Array.isArray(rel.dynamics) ? rel.dynamics.join(', ') : ''
-      }));
+      .forEach(rel => {
+        // Create a directionless key to find duplicates between the same two characters
+        const id1 = rel.character_a_id < rel.character_b_id ? rel.character_a_id : rel.character_b_id;
+        const id2 = rel.character_a_id < rel.character_b_id ? rel.character_b_id : rel.character_a_id;
+        const key = `${id1}-${id2}`;
+        
+        const dynamicsStr = Array.isArray(rel.dynamics) ? rel.dynamics.join(', ') : (rel.dynamics || '');
+
+        if (!linksMap.has(key)) {
+          linksMap.set(key, {
+            source: rel.character_a_id,
+            target: rel.character_b_id,
+            dynamics: dynamicsStr
+          });
+        } else {
+          // Append unique dynamics to the existing link
+          const existing = linksMap.get(key);
+          if (dynamicsStr && !existing.dynamics.includes(dynamicsStr)) {
+            existing.dynamics = existing.dynamics ? `${existing.dynamics}, ${dynamicsStr}` : dynamicsStr;
+          }
+        }
+      });
+
+    const links = Array.from(linksMap.values());
 
     return { nodes, links };
   }, [characters, relationships]);
 
   useEffect(() => {
     if (fgRef.current) {
-      // Use moderate repulsion so the physics engine remains stable
-      fgRef.current.d3Force('charge')?.strength(-800); 
-      // Lengthen links so the nodes have room to breathe
-      fgRef.current.d3Force('link')?.distance(200); 
+      // Increase repulsion, but not so high it causes NaN velocity crashes
+      const chargeForce = fgRef.current.d3Force('charge');
+      if (chargeForce) {
+        chargeForce.strength(-800);
+      }
+
+      // Lengthen links so the nodes have more room to breathe
+      const linkForce = fgRef.current.d3Force('link');
+      if (linkForce) {
+        linkForce.distance(250); 
+      }
+
       // Re-warm the simulation so forces take effect
       fgRef.current.d3ReheatSimulation();
     }
@@ -74,10 +111,11 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
 
   // Color mapping based on role
   const getColor = (node: any) => {
-    if (node.isVictim) return '#FF3366'; // Brand Pink / Blood Red
-    if (node.role === 'killer') return '#EF4444'; // Red-500
-    if (node.role === 'assistant') return '#F59E0B'; // Amber-500
-    return '#10B981'; // Green-500 (Innocent)
+    return getCharacterColor({
+      id: node.id,
+      is_victim: node.isVictim,
+      plot_role: node.role
+    }, characters);
   };
 
   // Color mapping for relationships based on dynamics
@@ -95,20 +133,20 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
       <div className="absolute top-8 left-8 z-10 space-y-4">
         <div className="flex gap-4">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#FF3366]" />
+            <span className="w-2 h-2 rounded-full bg-[#ff00cf]" />
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Victim</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+            <span className="w-2 h-2 rounded-full bg-[#ff4545]" />
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Killer</span>
           </div>
           <div className="flex items-center gap-2">
-             <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+             <span className="w-2 h-2 rounded-full bg-[#ffb92c]" />
              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accomplice</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Innocent</span>
+            <span className="w-2 h-2 rounded-full bg-gradient-to-r from-[#48c3ff] to-[#da60ff]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Other Roles</span>
           </div>
         </div>
 
@@ -139,6 +177,8 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
         graphData={graphData}
         nodeColor={getColor}
         nodeLabel="" // Disable default hover label since we permanently render it
+        warmupTicks={50}
+        cooldownTicks={200}
         onEngineStop={handleEngineStop}
         nodeCanvasObject={(node: any, ctx, globalScale) => {
           const label = node.initials;

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Database, PlotRole } from '@/types/database';
 import { toggleVictimAction, removeCharacterAction } from '../actions';
 import { CharacterDetailPanel } from './CharacterDetailPanel';
@@ -14,6 +15,8 @@ interface CharacterCardProps {
   allCharacters: Character[];
 }
 
+import { getCharacterColor } from '@/utils/colors';
+
 export function CharacterCard({ character, mysteryId, allCharacters }: CharacterCardProps) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -22,11 +25,13 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
   const role = character.plot_role || 'innocent';
   const isVictim = character.is_victim;
 
-  const roleConfig: Record<string, { label: string; bg: string; text: string }> = {
-    killer: { label: 'Killer', bg: 'bg-brand-pink', text: 'text-white' },
-    assistant: { label: 'Assisted Murder', bg: 'bg-orange-500', text: 'text-white' },
-    innocent: { label: 'Completely Innocent', bg: 'bg-emerald-500', text: 'text-white' },
-    victim: { label: 'The Victim', bg: 'bg-red-500', text: 'text-white' },
+  const charColor = getCharacterColor({ id: character.id, is_victim: isVictim, plot_role: role }, allCharacters);
+
+  const roleConfig: Record<string, { label: string; text: string }> = {
+    killer: { label: 'Killer', text: 'text-white' },
+    assistant: { label: 'Assisted Murder', text: 'text-white' },
+    innocent: { label: 'Innocent', text: 'text-white' },
+    victim: { label: 'The Victim', text: 'text-white' },
   };
 
   const currentRole = isVictim ? roleConfig.victim : roleConfig[role as keyof typeof roleConfig] || roleConfig.innocent;
@@ -34,14 +39,18 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
   return (
     <>
       <div className={`p-8 rounded-[2rem] border transition-all duration-300 group relative flex flex-col h-full ${
-        isVictim ? 'bg-red-50/50 border-red-100 shadow-sm' : 'bg-white border-slate-100 shadow-sm hover:shadow-xl'
+        isVictim ? 'bg-brand-pink/5 border-brand-pink/20 shadow-sm' : 'bg-white border-slate-100 shadow-sm hover:shadow-xl'
       }`}>
         {/* Header Section */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110 ${
-              isVictim ? 'bg-white text-red-400' : 'bg-slate-50 text-slate-400'
-            }`}>
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
+              style={{ 
+                backgroundColor: isVictim ? 'white' : `${charColor}20`,
+                color: charColor 
+              }}
+            >
               {isVictim ? '💀' : '👤'}
             </div>
             <div>
@@ -91,7 +100,7 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
         {/* Badges Section */}
         <div className="flex flex-wrap gap-2 mb-6">
           {character.is_mandatory && (
-            <span className="px-3 py-1 bg-brand-pink text-white rounded-full text-[9px] font-black uppercase tracking-widest">
+            <span className="px-3 py-1 bg-slate-800 text-white rounded-full text-[9px] font-black uppercase tracking-widest">
               Mandatory
             </span>
           )}
@@ -100,9 +109,17 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
               5+ players
             </span>
           )}
-          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${currentRole.bg} ${currentRole.text}`}>
+          <span 
+            className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-white`}
+            style={{ backgroundColor: charColor }}
+          >
             {currentRole.label}
           </span>
+          {(character.gender || 'adaptable') && (
+            <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200">
+              {(character.gender || 'adaptable') === 'adaptable' ? 'Adaptable ⚧' : character.gender === 'female' ? 'Female ♀' : 'Male ♂'}
+            </span>
+          )}
         </div>
 
         {/* Detail/Story Section */}
@@ -136,6 +153,16 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
             </div>
           )}
         </div>
+        
+        <Link 
+          href={`/builder/mysteries/${mysteryId}/characters/${character.id}`}
+          className="mt-6 flex w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors items-center justify-center gap-2"
+        >
+          {character.profile_data && typeof character.profile_data === 'object' && Object.keys(character.profile_data).length > 0 && (
+            <span className="text-emerald-400 text-sm leading-none mt-[-2px]">✓</span>
+          )}
+          Visuals & Personality ✨
+        </Link>
       </div>
 
       {isEditing && (

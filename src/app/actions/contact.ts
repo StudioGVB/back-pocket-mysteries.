@@ -2,6 +2,9 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function submitContactForm(formData: FormData) {
   const name = formData.get('name') as string;
@@ -39,9 +42,27 @@ export async function submitContactForm(formData: FormData) {
     }
   }
 
-  // TODO: Send email notification
-  // A service like Resend or SendGrid can be integrated here.
-  console.log(`[EMAIL NOTIFICATION] New Inquiry from ${name} (${email}): ${message}`);
+  try {
+    if (process.env.RESEND_API_KEY) {
+      await resend.emails.send({
+        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+        to: 'Hello@backpocketgames.com',
+        subject: `New Inquiry from ${name}`,
+        html: `
+          <h3>New Contact Form Submission</h3>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Message:</strong><br/>${message.replace(/\n/g, '<br/>')}</p>
+        `
+      });
+      console.log(`[EMAIL NOTIFICATION] Sent inquiry email from ${name} (${email})`);
+    } else {
+      console.warn('RESEND_API_KEY is not set. Email notification was not sent.');
+      console.log(`[EMAIL NOTIFICATION] New Inquiry from ${name} (${email}): ${message}`);
+    }
+  } catch (err) {
+    console.error('Failed to send email notification:', err);
+  }
 
   return { success: true };
 }

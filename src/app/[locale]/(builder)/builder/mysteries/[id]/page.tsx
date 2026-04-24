@@ -14,11 +14,7 @@ export default async function MysteryOverviewPage({
   const { id } = await params;
   const mystery = await getMysteryById(id);
 
-  const updateWithId = async (formData: FormData) => {
-    "use server";
-    await updateMysteryAction(id, null, formData);
-  };
-  
+
   if (!mystery) return null;
 
 

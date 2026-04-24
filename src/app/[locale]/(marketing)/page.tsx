@@ -7,7 +7,6 @@ import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import { resolveCurrency } from '@/utils/localization';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
-import HeroSpotlight from '@/components/marketing/HeroSpotlight';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -36,7 +35,7 @@ export default async function HomePage(props: {
   return (
     <div className="relative overflow-hidden bg-white">
       {/* Hero Section */}
-      <HeroSpotlight>
+      <section className="relative pt-8 pb-12 lg:pt-16 lg:pb-20 overflow-hidden bg-white">
         <div className="container mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="max-w-2xl">
@@ -86,7 +85,7 @@ export default async function HomePage(props: {
             </div>
           </div>
         </div>
-      </HeroSpotlight>
+      </section>
 
       {/* Social proof bar */}
       <section className="py-6 bg-brand-dark border-y-4 border-brand-pink overflow-hidden">

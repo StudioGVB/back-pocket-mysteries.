@@ -41,7 +41,6 @@ export default async function MarketingLayout(props: {
           </Link>
           
           <nav className="hidden lg:flex items-center gap-8 text-xs font-black uppercase tracking-[0.15em] text-brand-dark/60">
-            <Link href={`/${locale}/custom-murder-mystery`} className="text-brand-pink hover:text-brand-dark transition-all hover:scale-110">Custom Murder Mystery</Link>
             <Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.howItWorks}</Link>
             <Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.themes}</Link>
             <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.pricing}</Link>
