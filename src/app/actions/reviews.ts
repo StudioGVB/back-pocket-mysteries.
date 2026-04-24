@@ -57,10 +57,42 @@ export async function submitReview(formData: FormData) {
   if (error) {
     if (error.code === 'PGRST205') {
       console.warn('Reviews table is missing. Faking success for now.');
-      return { success: true };
+    } else {
+      console.error('Review submission error:', error);
+      return { error: 'Failed to submit review. Please try again later.' };
     }
-    console.error('Review submission error:', error);
-    return { error: 'Failed to submit review. Please try again later.' };
+  }
+
+  // Send email notification for new review
+  try {
+    if (process.env.RESEND_API_KEY) {
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      const attachmentsHtml = attachment_urls.length > 0 
+        ? `<p><strong>Attached Photos:</strong><br/>${attachment_urls.map(url => `<a href="${url}">${url}</a>`).join('<br/>')}</p>`
+        : '';
+        
+      await resend.emails.send({
+        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+        to: 'Hello@backpocketgames.com',
+        subject: `New Review from ${name} (${rating}/5 Stars)`,
+        html: `
+          <h3>New Customer Review</h3>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Rating:</strong> ${rating}/5 Stars</p>
+          <p><strong>Review:</strong><br/>${review_text.replace(/\n/g, '<br/>')}</p>
+          ${attachmentsHtml}
+          <hr/>
+          <p><em>Log in to your Admin Dashboard to publish or manage this review.</em></p>
+        `
+      });
+      console.log(`[EMAIL NOTIFICATION] Sent review email from ${name}`);
+    } else {
+      console.warn('RESEND_API_KEY is not set. Email notification was not sent.');
+    }
+  } catch (err) {
+    console.error('Failed to send email notification:', err);
   }
 
   return { success: true };
