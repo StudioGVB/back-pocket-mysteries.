@@ -43,19 +43,19 @@ export default async function HomePage(props: {
                 <span className="w-1.5 h-1.5 bg-brand-pink rounded-full"></span>
                 {dict.home.hero.badge}
               </div>
-              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter text-brand-dark mb-4 leading-tight uppercase">
+              <h1 className="text-4xl sm:text-5xl xl:text-6xl font-black tracking-tighter text-brand-dark mb-4 leading-tight uppercase">
                 {dict.home.hero.title.split(',')[0]},<br />
                 <span className="text-brand-pink italic">{dict.home.hero.title.split(',')[1]}</span> <br />
                 {dict.home.hero.title.split(',')[2]}
               </h1>
-              <p className="text-lg lg:text-xl text-gray-500 mb-8 leading-relaxed font-medium">
+              <p className="text-base sm:text-lg lg:text-xl text-gray-500 mb-8 leading-relaxed font-medium">
                 {dict.home.hero.subtitle}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href={`/${locale}/themes`} className="px-8 py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-dark transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 text-center">
+              <div className="flex flex-col sm:flex-row gap-4 w-full">
+                <Link href={`/${locale}/themes`} className="px-8 py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-dark transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 w-full sm:w-auto text-center">
                   {dict.home.hero.ctaPick}
                 </Link>
-                <Link href={`/${locale}/how-it-works`} className="px-8 py-4 bg-white text-brand-dark border-2 border-gray-100 rounded-full font-black uppercase tracking-widest text-sm hover:border-brand-pink transition-all hover:translate-y-[-4px] active:scale-95 text-center">
+                <Link href={`/${locale}/how-it-works`} className="px-8 py-4 bg-white text-brand-dark border-2 border-gray-100 rounded-full font-black uppercase tracking-widest text-sm hover:border-brand-pink transition-all hover:translate-y-[-4px] active:scale-95 w-full sm:w-auto text-center">
                   {dict.home.hero.ctaHow}
                 </Link>
               </div>
@@ -106,7 +106,7 @@ export default async function HomePage(props: {
         <div className="absolute top-0 right-0 w-1/2 h-full bg-brand-pink/5 skew-x-12 translate-x-1/2"></div>
         <div className="container mx-auto px-6 relative">
           <div className="text-center mb-24">
-            <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
               {dict.home.why.title.split('.')[0]}. <span className="text-brand-pink">{dict.home.why.title.split('.')[1]}</span>.
             </h2>
             <p className="text-gray-500 max-w-2xl mx-auto font-bold text-lg px-4 border-l-4 border-brand-pink text-left">
@@ -115,7 +115,7 @@ export default async function HomePage(props: {
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="card-branded p-12 hover:border-brand-pink group">
+            <div className="card-branded p-8 md:p-12 hover:border-brand-pink group">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-brand-dark text-white rounded-2xl flex items-center justify-center group-hover:bg-brand-pink transition-colors duration-300">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +128,7 @@ export default async function HomePage(props: {
               <p className="text-gray-500 leading-relaxed font-semibold">{dict.home.why.features.guestStory.desc}</p>
             </div>
 
-            <div className="card-branded p-12 hover:border-brand-pink group">
+            <div className="card-branded p-8 md:p-12 hover:border-brand-pink group">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-brand-dark text-white rounded-2xl flex items-center justify-center group-hover:bg-brand-pink transition-colors duration-300">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,7 +141,7 @@ export default async function HomePage(props: {
               <p className="text-gray-500 leading-relaxed font-semibold">{dict.home.why.features.evidence.desc}</p>
             </div>
 
-            <div className="card-branded p-12 hover:border-brand-pink group">
+            <div className="card-branded p-8 md:p-12 hover:border-brand-pink group">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-brand-dark text-white rounded-2xl flex items-center justify-center group-hover:bg-brand-pink transition-colors duration-300">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,16 +161,16 @@ export default async function HomePage(props: {
       <section className="py-16 lg:py-24 bg-white">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-20">
-              <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
+            <div className="text-center mb-16 lg:mb-20">
+              <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
                 {dict.home.steps.title.split('is')[0]} is <span className="text-brand-pink italic">sorted</span> {dict.home.steps.title.split('sorted')[1]}
               </h2>
               <p className="text-gray-400 font-black uppercase tracking-[0.15em] text-xs">{dict.home.steps.subtitle}</p>
             </div>
             <div className="space-y-6">
               {[dict.home.steps.step1, dict.home.steps.step2, dict.home.steps.step3].map((step, i) => (
-                <div key={i} className="card-branded p-10 lg:p-14 flex gap-10 items-start group hover:border-brand-pink">
-                  <span className="text-7xl lg:text-8xl font-black text-gray-100 leading-none group-hover:text-brand-pink/20 transition-colors shrink-0">0{i+1}</span>
+                <div key={i} className="card-branded p-8 md:p-10 lg:p-14 flex flex-col sm:flex-row gap-6 lg:gap-10 items-start group hover:border-brand-pink">
+                  <span className="text-6xl lg:text-8xl font-black text-gray-100 leading-none group-hover:text-brand-pink/20 transition-colors shrink-0">0{i+1}</span>
                   <div>
                     <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-3">{step.title}</h3>
                     <p className="text-gray-500 font-semibold text-lg leading-relaxed">{step.desc}</p>
@@ -193,8 +193,8 @@ export default async function HomePage(props: {
       {/* Occasions Section */}
       <section className="py-16 lg:py-24 bg-brand-gray">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
+          <div className="text-center mb-16 lg:mb-20">
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
               {dict.home.occasions.title.split('every')[0]} every <span className="text-brand-pink italic">occasion.</span>
             </h2>
           </div>
@@ -207,7 +207,7 @@ export default async function HomePage(props: {
               { title: dict.home.occasions.items.friends, emoji: '🎲' },
               { title: dict.home.occasions.items.engagement, emoji: '🥂' },
             ].map((occ, i) => (
-              <div key={i} className="card-branded p-10 group hover:border-brand-pink">
+              <div key={i} className="card-branded p-8 lg:p-10 group hover:border-brand-pink">
                 <div className="text-4xl mb-6">{occ.emoji}</div>
                 <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight mb-3 group-hover:text-brand-pink transition-colors">{occ.title}</h3>
                 <p className="text-gray-500 font-semibold leading-relaxed">
@@ -223,14 +223,15 @@ export default async function HomePage(props: {
       {/* Compare Section */}
       <section className="py-16 lg:py-24 bg-white">
         <div className="container mx-auto px-6 max-w-5xl">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
+          <div className="text-center mb-16 lg:mb-20">
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
               {dict.home.compare.title.split('.')[0]}. <br /><span className="text-brand-pink italic">{dict.home.compare.title.split('.')[1]}</span>.
             </h2>
-            <p className="text-gray-500 font-bold text-lg max-w-xl mx-auto">{dict.home.compare.subtitle}</p>
+            <p className="text-gray-500 font-bold text-base sm:text-lg max-w-xl mx-auto">{dict.home.compare.subtitle}</p>
           </div>
           <div className="overflow-hidden rounded-[2rem] border-2 border-gray-100 shadow-xl">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr className="bg-brand-dark text-white">
                   <th className="py-6 px-8 text-left font-black uppercase tracking-widest text-[10px]">{dict.home.compare.table.feature}</th>
@@ -257,6 +258,7 @@ export default async function HomePage(props: {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </section>
@@ -264,9 +266,9 @@ export default async function HomePage(props: {
       {/* CTA Section */}
       <section className="py-16 lg:py-24">
         <div className="container mx-auto px-6">
-          <div className="bg-brand-dark rounded-[3rem] p-12 lg:p-24 text-center relative overflow-hidden shadow-2xl">
+          <div className="bg-brand-dark rounded-[2rem] lg:rounded-[3rem] p-8 sm:p-12 lg:p-24 text-center relative overflow-hidden shadow-2xl">
             <div className="relative z-10 max-w-3xl mx-auto">
-              <h2 className="text-5xl lg:text-7xl font-black text-white mb-8 uppercase tracking-tighter leading-[0.9]">
+              <h2 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white mb-8 uppercase tracking-tighter leading-[0.9]">
                 {dict.home.ctaSection.title.split('deserves')[0]} <br />
                 <span className="text-brand-pink italic">deserves better</span><br/>
                 {dict.home.ctaSection.title.split('better')[1]}

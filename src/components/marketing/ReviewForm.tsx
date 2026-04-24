@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react';
 import { submitReview } from '@/app/actions/reviews';
+import { FileUpload } from '@/components/marketing/FileUpload';
 
 export function ReviewForm() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [rating, setRating] = useState(5);
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [files, setFiles] = useState<File[]>([]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -15,6 +17,9 @@ export function ReviewForm() {
     
     const formData = new FormData(e.currentTarget);
     formData.append('rating', rating.toString());
+    files.forEach((file) => {
+      formData.append('attachments', file);
+    });
     
     try {
       const result = await submitReview(formData);
@@ -40,6 +45,18 @@ export function ReviewForm() {
         </div>
         <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-4">Thank You!</h3>
         <p className="text-gray-500 font-bold">Your review has been submitted successfully. We appreciate your feedback!</p>
+        <button 
+          onClick={() => {
+            setStatus('idle');
+            setFiles([]);
+            setRating(5);
+            if(document.getElementById('review_text')) (document.getElementById('review_text') as HTMLTextAreaElement).value = '';
+            if(document.getElementById('name')) (document.getElementById('name') as HTMLInputElement).value = '';
+          }}
+          className="mt-8 text-xs font-black uppercase tracking-widest text-brand-pink hover:text-brand-dark transition-colors"
+        >
+          Submit another review
+        </button>
       </div>
     );
   }
@@ -103,6 +120,8 @@ export function ReviewForm() {
           placeholder="Tell us about your party..."
         ></textarea>
       </div>
+
+      <FileUpload onFilesChange={setFiles} />
 
       <button 
         type="submit" 

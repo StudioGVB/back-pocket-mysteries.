@@ -2,16 +2,21 @@
 
 import React, { useState } from 'react';
 import { submitContactForm } from '@/app/actions/contact';
+import { FileUpload } from '@/components/marketing/FileUpload';
 
 export function ContactForm() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus('loading');
     
     const formData = new FormData(e.currentTarget);
+    files.forEach((file) => {
+      formData.append('attachments', file);
+    });
     
     try {
       const result = await submitContactForm(formData);
@@ -38,7 +43,10 @@ export function ContactForm() {
         <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-4">Message Sent!</h3>
         <p className="text-gray-500 font-bold">We've received your inquiry and will get back to you at the email provided shortly.</p>
         <button 
-          onClick={() => setStatus('idle')}
+          onClick={() => {
+            setStatus('idle');
+            setFiles([]);
+          }}
           className="mt-8 text-xs font-black uppercase tracking-widest text-brand-pink hover:text-brand-dark transition-colors"
         >
           Send another message
@@ -91,6 +99,8 @@ export function ContactForm() {
           placeholder="How can we help you?"
         ></textarea>
       </div>
+
+      <FileUpload onFilesChange={setFiles} />
 
       <button 
         type="submit" 

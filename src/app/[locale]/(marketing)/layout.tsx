@@ -6,9 +6,11 @@ import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import LanguageSwitcher from '@/components/marketing/LanguageSwitcher';
 import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
+import MobileNav from '@/components/marketing/MobileNav';
 import { headers, cookies } from 'next/headers';
 import { resolveCurrency } from '@/utils/localization';
 import GlobalSpotlight from '@/components/marketing/GlobalSpotlight';
+import FooterMarketingForm from '@/components/marketing/FooterMarketingForm';
 
 export default async function MarketingLayout(props: {
   children: React.ReactNode;
@@ -47,7 +49,7 @@ export default async function MarketingLayout(props: {
             <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.contact}</Link>
           </nav>
           
-          <div className="flex gap-4 items-center">
+          <div className="hidden lg:flex gap-4 items-center">
             <div className="flex gap-2 items-center">
               <LanguageSwitcher currentLocale={locale as Locale} />
               <CurrencySwitcher currentCurrency={currency} />
@@ -60,6 +62,8 @@ export default async function MarketingLayout(props: {
               Coming Soon
             </Link>
           </div>
+          
+          <MobileNav locale={locale as Locale} currency={currency} dict={dict} />
         </div>
       </header>
       
@@ -106,14 +110,7 @@ export default async function MarketingLayout(props: {
             <div>
               <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">{dict.common.newsletter.title}</h4>
               <p className="text-sm text-gray-400 mb-6 font-medium">{dict.common.newsletter.desc}</p>
-              <div className="flex gap-2">
-                <input type="email" placeholder={dict.common.newsletter.placeholder} className="bg-white/5 border border-white/10 rounded-full px-4 py-3 text-sm focus:outline-none focus:border-brand-pink w-full" />
-                <button className="bg-brand-pink p-3 rounded-full hover:bg-white hover:text-brand-pink transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
+              <FooterMarketingForm placeholder={dict.common.newsletter.placeholder} />
             </div>
           </div>
           

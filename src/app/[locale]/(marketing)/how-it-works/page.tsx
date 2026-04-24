@@ -57,7 +57,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
             <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
               {dict.howItWorks.badge}
             </div>
-            <h1 className="text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.95]">
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.95]">
               {dict.howItWorks.title.split(',')[0]}<br />
               <span className="text-brand-pink italic">{dict.howItWorks.title.split(',')[1]}</span>
             </h1>
@@ -77,7 +77,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                 <div className={`inline-block px-4 py-1 rounded-full text-white font-bold text-sm ${item.accent} mb-6`}>
                   STEP {item.step}
                 </div>
-                <h2 className="text-4xl font-black text-brand-dark mb-6 uppercase tracking-tight leading-[1.1]">{item.title}</h2>
+                <h2 className="text-3xl sm:text-4xl font-black text-brand-dark mb-6 uppercase tracking-tight leading-[1.1]">{item.title}</h2>
                 <p className="text-lg text-gray-500 leading-relaxed font-medium mb-8">
                   {item.desc}
                 </p>
@@ -104,9 +104,9 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
         </div>
 
         {/* What's In The Pack */}
-        <div className="mt-48 py-20 px-12 lg:px-24 bg-brand-gray rounded-[3rem] border-2 border-gray-100">
+        <div className="mt-32 lg:mt-48 py-12 sm:py-20 px-8 sm:px-12 lg:px-24 bg-brand-gray rounded-[2rem] lg:rounded-[3rem] border-2 border-gray-100">
           <div className="text-center mb-20">
-            <h2 className="text-4xl lg:text-5xl font-black text-brand-dark mb-4 uppercase tracking-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark mb-4 uppercase tracking-tight">
               {dict.howItWorks.packContents.title.split(',').map((part, i) => (
                 <span key={i} className={i === 1 ? 'text-brand-pink italic' : ''}>
                   {part}
@@ -127,9 +127,9 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
         </div>
 
         {/* Final CTA */}
-        <div className="mt-40 text-center bg-brand-dark rounded-[3rem] p-16 lg:p-24 relative overflow-hidden shadow-2xl">
+        <div className="mt-32 lg:mt-40 text-center bg-brand-dark rounded-[2rem] lg:rounded-[3rem] p-8 sm:p-12 lg:p-24 relative overflow-hidden shadow-2xl">
           <div className="relative z-10">
-            <h2 className="text-4xl lg:text-6xl font-black text-white mb-8 uppercase tracking-tighter leading-[0.95]">
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white mb-8 uppercase tracking-tighter leading-[0.95]">
               {dict.howItWorks.cta.title.split(',')[0]}<br />
               <span className="text-brand-pink italic">{dict.howItWorks.cta.title.split(',')[1]}</span>
             </h2>
@@ -138,11 +138,11 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
               <PriceDisplay tier="basic" locale={locale as Locale} currency={currency} />
               {dict.howItWorks.cta.desc.split('{{price}}')[1]}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href={`/${locale}/themes`} className="px-10 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-white hover:text-brand-pink transition-all shadow-xl hover:translate-y-[-4px] active:scale-95">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+              <Link href={`/${locale}/themes`} className="px-10 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-white hover:text-brand-pink transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 w-full sm:w-auto text-center">
                 {dict.howItWorks.cta.ctaThemes}
               </Link>
-              <Link href={`/${locale}/pricing`} className="px-10 py-5 bg-white/10 text-white border-2 border-white/20 rounded-full font-black uppercase tracking-widest text-sm hover:border-brand-pink transition-all hover:translate-y-[-4px] active:scale-95">
+              <Link href={`/${locale}/pricing`} className="px-10 py-5 bg-white/10 text-white border-2 border-white/20 rounded-full font-black uppercase tracking-widest text-sm hover:border-brand-pink transition-all hover:translate-y-[-4px] active:scale-95 w-full sm:w-auto text-center">
                 {dict.howItWorks.cta.ctaPricing}
               </Link>
             </div>

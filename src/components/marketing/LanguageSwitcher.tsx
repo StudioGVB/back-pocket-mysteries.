@@ -47,8 +47,8 @@ export default function LanguageSwitcher({ currentLocale }: { currentLocale: Loc
         aria-expanded={isOpen}
         className="flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all bg-gray-50 border-gray-100 hover:border-gray-300 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500"
       >
-        <span>{languages[currentLocale].flag}</span>
-        <span>{languages[currentLocale].code}</span>
+        <span>{languages[currentLocale]?.flag || '🌐'}</span>
+        <span>{languages[currentLocale]?.code || currentLocale || 'EN'}</span>
         <svg
           className={`w-3 h-3 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"

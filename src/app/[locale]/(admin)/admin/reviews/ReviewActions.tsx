@@ -8,7 +8,8 @@ export function ReviewActions({ review }: { review: any }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleToggle = async () => {
+  const handleToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     setLoading(true);
     try {
       await toggleReviewStatus(review.id, review.status);

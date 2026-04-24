@@ -166,7 +166,7 @@ export default async function PricingPage(props: {
             <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
               {dict.common.pricing}
             </div>
-            <h1 className="text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.9]">
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.9]">
               {dict.pricing.title.split('.')[0]}. <br />
               <span className="text-brand-pink italic">{dict.pricing.title.split('.')[1]}</span>.
             </h1>
@@ -188,13 +188,13 @@ export default async function PricingPage(props: {
         />
 
         {/* Unlimited Subscription Tier */}
-        <div className="relative p-12 lg:p-16 mt-16 max-w-[90rem] mx-auto rounded-[3rem] border-4 bg-brand-pink border-brand-pink shadow-2xl flex flex-col lg:flex-row gap-12 items-center group transition-all duration-500">
+        <div className="relative p-8 lg:p-16 mt-16 max-w-[90rem] mx-auto rounded-[3rem] border-4 bg-brand-pink border-brand-pink shadow-2xl flex flex-col lg:flex-row gap-12 items-center group transition-all duration-500">
           <div className="absolute top-0 right-12 transform -translate-y-1/2 px-8 py-3 bg-brand-dark text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">
             FOR EVENT PLANNERS
           </div>
           
-          <div className="flex-1">
-            <h3 className="text-5xl lg:text-6xl font-black mb-2 uppercase tracking-tighter text-white">{tiers[3].name}</h3>
+          <div className="flex-1 w-full lg:w-auto">
+            <h3 className="text-4xl lg:text-6xl font-black mb-2 uppercase tracking-tighter text-white">{tiers[3].name}</h3>
             <p className="text-sm font-black uppercase tracking-widest mb-6 text-white/80">{tiers[3].tagline}</p>
             <div className="flex items-baseline gap-2 mb-6">
               <PriceDisplay 
@@ -202,7 +202,7 @@ export default async function PricingPage(props: {
                 locale={locale as Locale} 
                 currency={currency}
                 isPro={false} 
-                className="text-7xl lg:text-8xl font-black tracking-tighter text-brand-dark" 
+                className="text-6xl lg:text-8xl font-black tracking-tighter text-brand-dark" 
               />
               <span className="text-xs font-black uppercase tracking-[0.2em] text-white/80">
                 / {tiers[3].billingPeriod === 'month' ? 'MONTH' : 'EVENT'}
@@ -245,7 +245,7 @@ export default async function PricingPage(props: {
         {/* FAQ CTA */}
         <div className="mt-48 pt-32 max-w-5xl mx-auto border-t-2 border-gray-100">
           <div className="text-center mb-12">
-             <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
+             <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
                Have a <span className="text-brand-pink italic">Question?</span>
              </h2>
              <p className="text-gray-500 font-bold text-lg max-w-xl mx-auto">
@@ -264,7 +264,7 @@ export default async function PricingPage(props: {
 
         {/* Final CTA */}
         <div className="mt-40 text-center">
-          <h2 className="text-4xl lg:text-5xl font-black text-brand-dark mb-6 uppercase tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark mb-6 uppercase tracking-tight">
             Still on the fence? <span className="text-brand-pink italic">Don't be.</span>
           </h2>
           <p className="text-gray-500 font-bold text-lg max-w-xl mx-auto mb-12">

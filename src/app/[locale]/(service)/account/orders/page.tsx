@@ -13,7 +13,7 @@ export default async function OrdersPage({
   ];
 
   return (
-    <div className="container mx-auto px-6 max-w-5xl">
+    <div className="w-full">
       <div className="mb-12">
         <h1 className="text-4xl font-black text-slate-900 mb-2">My Stories</h1>
         <p className="text-slate-500 font-medium text-lg">Your collection of "Back Pocket" mysteries.</p>
