@@ -64,7 +64,7 @@ export async function saveWizardAction({
 
     // 2. Create the Characters from Guests
     if (guests.length > 0) {
-      const characterInserts = guests.map((guest, index) => ({
+      const characterInserts: Database['public']['Tables']['characters']['Insert'][] = guests.map((guest, index) => ({
         mystery_id: mystery.id,
         name: guest.name,
         gender: (guest.gender?.toLowerCase() === 'masculine' ? 'male' : 
