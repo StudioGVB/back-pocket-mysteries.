@@ -3,6 +3,7 @@
 import React, { useState, KeyboardEvent } from 'react';
 import { AvatarBuilder, AvatarConfig } from './AvatarBuilder';
 import Image from 'next/image';
+import { generateRandomQuirk } from '@/app/actions/generator';
 
 interface GuestModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
   const [quirks, setQuirks] = useState<string[]>([]);
   const [currentQuirk, setCurrentQuirk] = useState('');
   const [bio, setBio] = useState('');
+  const [isGeneratingQuirk, setIsGeneratingQuirk] = useState(false);
 
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>({
     seed: 'Felix',
@@ -31,12 +33,27 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
 
   if (!isOpen) return null;
 
+  const handleGenerateQuirk = async () => {
+    setIsGeneratingQuirk(true);
+    try {
+      const quirk = await generateRandomQuirk(name, gender);
+      if (quirk && !quirks.includes(quirk)) {
+        setQuirks([...quirks, quirk]);
+      }
+    } catch (error) {
+      console.error('Failed to generate quirk:', error);
+    } finally {
+      setIsGeneratingQuirk(false);
+    }
+  };
+
   // DiceBear Avataaars API URL generator
   // We explicitly set eyes=default, mouth=smile, clothesColor=262e33 so it doesn't look crazy in the preview
   // We set facialHairProbability=0 if no facial hair is selected
-  // We set hatColor to match hairColor so headwear uses the selected color
   // We set facialHairColor to match hairColor
-  const avatarUrl = `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || avatarConfig.seed)}&top=${avatarConfig.top}&hairColor=${avatarConfig.hairColor}&hatColor=${avatarConfig.hairColor}&facialHairColor=${avatarConfig.hairColor}&skinColor=${avatarConfig.skinColor}&eyes=default&mouth=smile&clothesColor=262e33&facialHairProbability=${avatarConfig.facialHair ? '100' : '0'}${avatarConfig.facialHair ? `&facialHair=${avatarConfig.facialHair}` : ''}&backgroundColor=transparent`;
+  // We set topProbability=0 if top is 'none' (bald)
+  const isBald = avatarConfig.top === 'none';
+  const avatarUrl = `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || avatarConfig.seed)}${isBald ? '&topProbability=0' : `&top=${avatarConfig.top}`}&hairColor=${avatarConfig.hairColor}&hatColor=${avatarConfig.hairColor}&facialHairColor=${avatarConfig.hairColor}&skinColor=${avatarConfig.skinColor}&eyes=default&mouth=smile&clothesColor=262e33&facialHairProbability=${avatarConfig.facialHair ? '100' : '0'}${avatarConfig.facialHair ? `&facialHair=${avatarConfig.facialHair}` : ''}&backgroundColor=transparent`;
 
   const handleAddQuirk = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currentQuirk.trim() !== '') {
@@ -194,15 +211,22 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
                 </div>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Gender / Presentation</label>
-                  <select 
-                    value={gender}
-                    onChange={(e) => handleGenderChange(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all appearance-none"
-                  >
-                    <option value="Masculine">Masculine</option>
-                    <option value="Feminine">Feminine</option>
-                    <option value="Neutral">Neutral / Non-Binary</option>
-                  </select>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['Masculine', 'Feminine', 'Neutral'].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => handleGenderChange(option)}
+                        className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+                          gender === option 
+                            ? 'bg-brand-pink/10 border-brand-pink text-brand-pink' 
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                        }`}
+                      >
+                        {option === 'Neutral' ? 'Neutral' : option}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Email Address (Optional)</label>
@@ -224,8 +248,21 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
             {activeTab === 'personality' && (
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Traits & Quirks</label>
-                  <p className="text-xs text-slate-500 mb-3">Type a quirk and press Enter to add it. (e.g. "Loves gossip", "Scared of bugs")</p>
+                  <div className="flex justify-between items-end mb-3">
+                    <div>
+                      <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Traits & Quirks</label>
+                      <p className="text-xs text-slate-500">Type a quirk and press Enter to add it. (e.g. "Loves gossip", "Scared of bugs")</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleGenerateQuirk}
+                      disabled={isGeneratingQuirk}
+                      className="flex items-center gap-2 text-xs font-bold text-brand-pink bg-brand-pink/10 hover:bg-brand-pink/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
+                      {isGeneratingQuirk ? 'Generating...' : 'Auto-Generate'}
+                    </button>
+                  </div>
                   
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 focus-within:border-brand-pink focus-within:ring-2 focus-within:ring-brand-pink/20 transition-all flex flex-wrap gap-2">
                     {quirks.map((quirk, idx) => (
@@ -249,7 +286,7 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
                 
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Secret Bio (Optional)</label>
-                  <textarea 
+                  <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="Any extra context about this person's vibe..."

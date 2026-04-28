@@ -19,7 +19,7 @@ export type BeatType = 'discovery' | 'confrontation' | 'clue_reveal' | 'twist' |
 export type TimelinePhase = 'pre_crime' | 'crime' | 'investigation' | 'resolution'
 export type MotiveStrength = 'low' | 'moderate' | 'high' | 'critical'
 export type MysteryComplexity = 'easy' | 'medium' | 'hard'
-export type MysterySpiceLevel = 'low' | 'medium' | 'high'
+export type MysterySpiceLevel = 'clean' | 'mild' | 'spicy' | 'filthy'
 export type OrderStatus = 'pending' | 'succeeded' | 'failed' | 'refunded'
 export type PlotRole = 'innocent' | 'killer' | 'assistant' | 'victim'
 
@@ -128,6 +128,7 @@ export interface Database {
           created_by: string | null
           created_at: string
           updated_at: string
+          inside_jokes: string | null
         }
         Insert: {
           id?: string
@@ -143,6 +144,7 @@ export interface Database {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          inside_jokes?: string | null
         }
         Update: {
           id?: string
@@ -158,6 +160,7 @@ export interface Database {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          inside_jokes?: string | null
         }
         Relationships: [
           {
@@ -562,6 +565,59 @@ export interface Database {
           amount?: number
           currency?: string
           status?: OrderStatus
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: string
+            columns: string[]
+            isOneToOne?: boolean
+            referencedRelation: string
+            referencedColumns: string[]
+          }
+        ]
+      }
+      guests: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          email: string | null
+          gender: string | null
+          eye_color: string | null
+          height: string | null
+          avatar_url: string | null
+          traits: string[] | null
+          bio: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          email?: string | null
+          gender?: string | null
+          eye_color?: string | null
+          height?: string | null
+          avatar_url?: string | null
+          traits?: string[] | null
+          bio?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          email?: string | null
+          gender?: string | null
+          eye_color?: string | null
+          height?: string | null
+          avatar_url?: string | null
+          traits?: string[] | null
+          bio?: string | null
           created_at?: string
           updated_at?: string
         }

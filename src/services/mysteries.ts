@@ -85,6 +85,8 @@ export async function getMysteryById(id: string) {
     return null;
   }
 
+  require('fs').appendFileSync('actions_log.txt', new Date().toISOString() + ' Mystery ' + id + ' created_by: ' + data.created_by + '\n');
+
   return data;
 }
 

@@ -28,8 +28,10 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
   const hairColors = ['282828', '4a3123', 'a55728', 'd6b370', 'f59797', 'e8e1e1', 'ca4444', '4b0082', '00a8ff', 'e84393', '00b894'];
   
   const masculineTops = [
+    { id: 'none', label: 'Bald' },
     { id: 'shortFlat', label: 'Short Flat' },
     { id: 'shortWaved', label: 'Short Waved' },
+    { id: 'curvy', label: 'Wavy' },
     { id: 'dreads01', label: 'Dreads' },
     { id: 'frizzle', label: 'Frizzle' },
     { id: 'theCaesar', label: 'Caesar' },
@@ -44,7 +46,9 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
   ];
 
   const feminineTops = [
+    { id: 'none', label: 'Bald' },
     { id: 'straight01', label: 'Long Straight' },
+    { id: 'curvy', label: 'Wavy' },
     { id: 'bob', label: 'Bob' },
     { id: 'curly', label: 'Curly' },
     { id: 'frida', label: 'Floral' },

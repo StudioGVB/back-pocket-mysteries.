@@ -324,11 +324,11 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
                 </div>
                 
                 {currentPresentation.outfit_image_url && (
-                  <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 relative bg-slate-50">
+                  <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 relative bg-slate-50 flex justify-center p-2">
                     <img 
                       src={currentPresentation.outfit_image_url} 
                       alt="Outfit Reference" 
-                      className="w-full object-cover"
+                      className="object-contain rounded-lg shadow-sm"
                       style={{ maxHeight: '400px' }}
                     />
                   </div>

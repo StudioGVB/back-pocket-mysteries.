@@ -20,6 +20,29 @@ export async function addBeatAction(mysteryId: string, currentCount: number) {
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
+export async function insertBeatAtPositionAction(mysteryId: string, afterSortOrder: number, allBeats: { id: string, sort_order: number }[]) {
+  const supabase = await createClient();
+  
+  // Shift all beats that come after this position down by 1
+  const beatsToShift = allBeats.filter(b => b.sort_order > afterSortOrder);
+  for (const beat of beatsToShift) {
+    await supabase.from('plot_beats').update({ sort_order: beat.sort_order + 1 }).eq('id', beat.id);
+  }
+
+  // Insert the new beat at the exact position
+  await createPlotBeat({
+    mystery_id: mysteryId,
+    event_title: 'New Story Beat',
+    beat_number: afterSortOrder + 1,
+    sort_order: afterSortOrder + 1,
+    timeline_phase: 'investigation',
+    beat_type: 'discovery',
+    is_required: true,
+  });
+
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+}
+
 export async function updateBeatAction(mysteryId: string, id: string, updates: any) {
   await updatePlotBeat(id, updates);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
@@ -27,6 +50,15 @@ export async function updateBeatAction(mysteryId: string, id: string, updates: a
 
 export async function removeBeatAction(mysteryId: string, id: string) {
   await deletePlotBeat(id);
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+}
+
+export async function deleteAllBeatsAction(mysteryId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from('plot_beats').delete().eq('mystery_id', mysteryId);
+  if (error) {
+    throw new Error(`Failed to delete all beats: ${error.message}`);
+  }
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
@@ -64,6 +96,24 @@ export async function generateNarrativePlotAction(mysteryId: string, userIdeas: 
       complexityRule = "COMPLEXITY: Hard (8 story beats). You MUST include a massive plot twist, multiple accomplices, or a completely unexpected hidden motive that flips the entire story upside down.";
     }
 
+    let spiceLevelRule = "";
+    switch(mystery.spice_level) {
+      case 'clean':
+        spiceLevelRule = "SPICE LEVEL: Clean (PG). Tone is wholesome and family-friendly. Relationships are co-workers, family, or platonic. Motives MUST be non-romantic (e.g. greed, professional jealousy). NO drugs, NO alcohol used as weapons. No gruesome details.";
+        break;
+      case 'mild':
+        spiceLevelRule = "SPICE LEVEL: Mild (MA 15+). Tone is a bit cheeky, passionate. Relationships involve casual friend groups, flirtations, minor affairs. Motives can involve minor betrayals or covering up scandalous secrets. Mentions of drugs/alcohol are fine. Light sexual references okay, nothing graphic.";
+        break;
+      case 'spicy':
+        spiceLevelRule = "SPICE LEVEL: Spicy (R 18+). Tone is intense passion, scandalous, mature. Relationships involve multiple affairs, toxic romances, blackmail over dirty secrets. Motives are lust, sexual jealousy, crimes of passion. Heavy use of drugs/alcohol. Explicit adult themes.";
+        break;
+      case 'filthy':
+        spiceLevelRule = "SPICE LEVEL: Filthy (NC-17). Tone is completely over-the-top, unhinged, wild, chaotic. Relationships involve threesomes, wild swinging, completely broken moral compasses. Motives are extreme depravity, drug-fueled paranoia, extreme sabotage. Take it as far as safety filters allow. Wildly dramatic and OTT.";
+        break;
+      default:
+        spiceLevelRule = "SPICE LEVEL: Clean (PG). Keep it wholesome.";
+    }
+
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) throw new Error('Google Generative AI API Key is missing.');
 
@@ -94,11 +144,12 @@ export async function generateNarrativePlotAction(mysteryId: string, userIdeas: 
       
       RULES:
       1. ${complexityRule}
-      2. Write a highly concise, punchy "The Murder Explained" paragraph.
-      3. You MUST include the Victim, the Killer, and the Assistant/Accomplice (if one is assigned). DO NOT reference the other innocent characters unless absolutely necessary for the murder mechanics.
-      4. DO NOT write about the investigation or setup. ONLY explain the exact mechanism of the murder, the core motive, and the twist in 1-2 paragraphs.
-      5. Strictly adhere to the character definitions provided. If a character is marked as "Role: assistant", they MUST be directly involved in the twist or the murder mechanics.
-      6. TWIST GUIDELINES: Make sure the twist fundamentally changes the nature of the crime. Do not use weak twists like "the accomplice swapped the killer's poison for a different poison." Good twists include: "the victim was actually trying to kill someone else and it backfired," "the victim wasn't the intended target," "the killer chickened out, but the victim was killed by someone else simultaneously," or "the killer's trap was triggered accidentally by the victim."
+      2. ${spiceLevelRule}
+      3. Write a highly concise, punchy "The Murder Explained" paragraph.
+      4. You MUST include the Victim, the Killer, and the Assistant/Accomplice (if one is assigned). DO NOT reference the other innocent characters unless absolutely necessary for the murder mechanics.
+      5. DO NOT write about the investigation or setup. ONLY explain the exact mechanism of the murder, the core motive, and the twist in 1-2 paragraphs.
+      6. Strictly adhere to the character definitions provided. If a character is marked as "Role: assistant", they MUST be directly involved in the twist or the murder mechanics.
+      7. TWIST GUIDELINES: Make sure the twist fundamentally changes the nature of the crime. Do not use weak twists like "the accomplice swapped the killer's poison for a different poison." Good twists include: "the victim was actually trying to kill someone else and it backfired," "the victim wasn't the intended target," "the killer chickened out, but the victim was killed by someone else simultaneously," or "the killer's trap was triggered accidentally by the victim."
       
       EXAMPLE FORMAT:
       The Murder Explained
@@ -133,20 +184,9 @@ export async function generateBeatsFromNarrativeAction(mysteryId: string, curren
         type: SchemaType.OBJECT,
         properties: {
           event_title: { type: SchemaType.STRING },
-          description: { type: SchemaType.STRING },
-          beat_type: { 
-            type: SchemaType.STRING, 
-            enum: ['discovery', 'confrontation', 'clue_reveal', 'twist', 'conclusion'],
-            format: 'enum'
-          },
-          timeline_phase: {
-            type: SchemaType.STRING,
-            enum: ['pre_crime', 'crime', 'investigation', 'resolution'],
-            format: 'enum'
-          },
-          intensity_level: { type: SchemaType.INTEGER }
+          description: { type: SchemaType.STRING }
         },
-        required: ['event_title', 'description', 'beat_type', 'timeline_phase', 'intensity_level']
+        required: ['event_title', 'description']
       }
     };
 
@@ -167,10 +207,9 @@ export async function generateBeatsFromNarrativeAction(mysteryId: string, curren
 
       RULES:
       1. Generate exactly ${targetBeats} plot beats.
-      2. PACE THE STORY SLOWLY. Dedicate the majority of the beats (at least the first 60-70%) to the "pre_crime" phase—the shifting motives, secret discoveries, stalkings, and setup BEFORE the murder weapon is even introduced. Do not rush to the murder in Beat 1 or 2.
+      2. PACE THE STORY SLOWLY. Dedicate the majority of the beats (at least the first 60-70%) to the build-up—the shifting motives, secret discoveries, stalkings, and setup BEFORE the murder weapon is even introduced. Do not rush to the murder in Beat 1 or 2.
       3. The final few beats should cover the execution of the crime itself and the twist.
-      4. Use appropriate beat_types and timeline_phases (mostly pre_crime and crime). Since these beats represent the hidden backstory the guests will uncover, you likely won't need 'investigation' or 'resolution'.
-      5. The beats MUST strictly follow the events described in the Narrative Plot. Do not invent new story elements that contradict it.
+      4. The beats MUST strictly follow the events described in the Narrative Plot. Do not invent new story elements that contradict it.
     `;
 
     const result = await model.generateContent(prompt);

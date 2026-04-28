@@ -317,14 +317,14 @@ export async function updateCharacterProfileAction(mysteryId: string, characterI
 
 export async function generateCharacterOutfitPhotoAction(mysteryId: string, characterId: string, outfitAdvice: string, characterTitle: string, theme: string) {
   try {
-    const prompt = `A cinematic, moody noir portrait of a ${characterTitle} wearing: ${outfitAdvice}. The aesthetic is ${theme}. Professional lighting, 8k resolution, highly detailed character concept art.`;
+    const prompt = `A cinematic, moody noir WIDE ANGLE FULL BODY SHOT of an approximately 28 year old ${characterTitle} wearing: ${outfitAdvice}. The character is standing. Their entire body, from the very top of their head down to their shoes, MUST be fully visible in the frame. Zoomed out perspective. The aesthetic is ${theme}. Professional lighting, 8k resolution, highly detailed character concept art.`;
     
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         instances: [{ prompt }],
-        parameters: { sampleCount: 1 }
+        parameters: { sampleCount: 1, aspectRatio: "9:16" }
       })
     });
     

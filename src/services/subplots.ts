@@ -9,12 +9,9 @@ type SubplotBeat = Database['public']['Tables']['subplot_beats']['Row'];
  */
 export async function getSubplotsByMysteryId(mysteryId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: subplots, error } = await supabase
     .from('subplots')
-    .select(`
-      *,
-      subplot_beats (*)
-    `)
+    .select('*')
     .eq('mystery_id', mysteryId)
     .order('created_at', { ascending: true });
 
@@ -22,7 +19,25 @@ export async function getSubplotsByMysteryId(mysteryId: string) {
     console.error('Error fetching subplots:', error);
     return [];
   }
-  return data || [];
+
+  if (!subplots || subplots.length === 0) return [];
+
+  const subplotIds = subplots.map(s => s.id);
+  
+  const { data: beats, error: beatsError } = await supabase
+    .from('subplot_beats')
+    .select('*')
+    .in('subplot_id', subplotIds);
+
+  if (beatsError) {
+    console.error('Error fetching subplot beats:', beatsError);
+    return subplots.map(s => ({ ...s, subplot_beats: [] }));
+  }
+
+  return subplots.map(s => ({
+    ...s,
+    subplot_beats: beats?.filter(b => b.subplot_id === s.id) || []
+  }));
 }
 
 /**
@@ -104,6 +119,25 @@ export async function updateSubplotBeat(beatId: string, updates: Partial<Subplot
     .from('subplot_beats')
     .update(updates)
     .eq('id', beatId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Create a new specific subplot beat manually
+ */
+export async function createSubplotBeat(subplotId: string, beatNumber: number) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('subplot_beats')
+    .insert({
+      subplot_id: subplotId,
+      beat_number: beatNumber,
+      description: ''
+    })
     .select()
     .single();
 

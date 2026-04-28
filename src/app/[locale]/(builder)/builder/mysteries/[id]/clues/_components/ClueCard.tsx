@@ -1,7 +1,8 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Database } from '@/types/database';
 import { updateClueAction, removeClueAction } from '../actions';
 import { ClueEditor } from './ClueEditor';
@@ -15,11 +16,29 @@ interface ClueCardProps {
   mysteryId: string;
   beats: Beat[];
   characters: Character[];
+  subplots?: any[];
 }
 
-export function ClueCard({ clue, mysteryId, beats, characters }: ClueCardProps) {
+export function ClueCard({ clue, mysteryId, beats, characters, subplots = [] }: ClueCardProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(searchParams.get('edit') === clue.id);
+
+  useEffect(() => {
+    if (searchParams.get('edit') === clue.id) {
+      setIsEditing(true);
+    }
+  }, [searchParams, clue.id]);
+
+  const handleCloseEditor = () => {
+    setIsEditing(false);
+    if (searchParams.get('edit') === clue.id) {
+      router.replace(pathname);
+    }
+  };
 
   const getStatusColor = (status: string | null) => {
     switch (status) {
@@ -30,6 +49,8 @@ export function ClueCard({ clue, mysteryId, beats, characters }: ClueCardProps) 
   };
 
   const linkedBeat = beats.find(b => b.id === clue.linked_plot_beat_id);
+  const linkedSubplotBeat = subplots?.flatMap(s => s.subplot_beats || []).find(b => b.id === clue.linked_subplot_beat_id);
+  const linkedSubplotParent = linkedSubplotBeat ? subplots?.find(s => s.id === linkedSubplotBeat.subplot_id) : null;
 
   return (
     <>
@@ -75,7 +96,9 @@ export function ClueCard({ clue, mysteryId, beats, characters }: ClueCardProps) 
           <div className="text-[10px] font-bold text-slate-400 flex items-center gap-2">
             <span className="shrink-0">📍 Link:</span>
             <span className="line-clamp-1 italic">
-              {linkedBeat ? linkedBeat.event_title : 'No timeline link'}
+              {linkedBeat ? linkedBeat.event_title : 
+               linkedSubplotBeat ? `Subplot: ${linkedSubplotParent?.title || 'Unknown'} (Beat ${linkedSubplotBeat.beat_number})` : 
+               'No timeline link'}
             </span>
           </div>
         </div>
@@ -109,7 +132,8 @@ export function ClueCard({ clue, mysteryId, beats, characters }: ClueCardProps) 
           mysteryId={mysteryId}
           beats={beats}
           characters={characters}
-          onClose={() => setIsEditing(false)}
+          subplots={subplots}
+          onClose={handleCloseEditor}
         />
       )}
     </>

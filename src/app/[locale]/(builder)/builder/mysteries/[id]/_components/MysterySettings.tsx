@@ -12,7 +12,7 @@ type MysterySettingsProps = {
 
 export function MysterySettings({
   initialComplexity = 'medium',
-  initialSpiceLevel = 'low',
+  initialSpiceLevel = 'clean',
   initialStatus = 'draft',
   initialMinPlayers = 4,
   initialMaxPlayers = 12
@@ -60,13 +60,13 @@ export function MysterySettings({
         <div className="space-y-2">
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Spice Level</label>
           <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-            {['low', 'medium', 'high'].map(level => (
+            {['clean', 'mild', 'spicy', 'filthy'].map(level => (
               <label key={level} className="flex-1 cursor-pointer">
                 <input 
                   type="radio" 
                   name="spice_level" 
                   value={level} 
-                  defaultChecked={initialSpiceLevel === level} 
+                  defaultChecked={initialSpiceLevel === level || (initialSpiceLevel === 'low' && level === 'clean')} 
                   className="peer hidden" 
                 />
                 <div className="text-center py-2 text-xs font-bold uppercase tracking-wider text-slate-400 rounded-lg hover:text-brand-pink/50 peer-checked:bg-brand-pink peer-checked:text-white transition-all">

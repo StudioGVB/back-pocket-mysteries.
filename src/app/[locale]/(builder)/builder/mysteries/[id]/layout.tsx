@@ -81,11 +81,11 @@ export default async function MysteryStudioLayout({
                  </div>
                ) : (
                  <Link 
-                   href={`/${locale}/builder/mysteries/${id}/compile`}
+                   href={`/${locale}/checkout/${id}`}
                    className="px-6 py-3 bg-brand-pink hover:bg-[#FF3366] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-pink/20 transition-all flex items-center gap-2"
                  >
-                   <span>Preview Package</span>
-                   <span>📦</span>
+                   <span>Purchase & Compile</span>
+                   <span>💳</span>
                  </Link>
                )}
             </div>

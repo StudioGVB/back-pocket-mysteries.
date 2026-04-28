@@ -18,6 +18,13 @@ export default async function MysteryCluesPage({
 
   if (!mystery) return null;
 
+  const subplots = mystery.subplots || [];
+  const subplotBeatsCount = subplots.reduce((acc: number, sub: any) => acc + (sub.subplot_beats?.length || 0), 0);
+  const targetTotal = (beats.length * 2) + (subplotBeatsCount * 1);
+  
+  const realClues = clues.filter(c => c.linked_plot_beat_id);
+  const fakeClues = clues.filter(c => c.linked_subplot_beat_id);
+
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex justify-between items-end">
@@ -28,8 +35,8 @@ export default async function MysteryCluesPage({
         
         <div className="bg-white border border-slate-100 px-6 py-3 rounded-2xl flex items-center gap-6 shadow-sm">
           <div className="text-center">
-             <div className="text-lg font-black text-slate-900 leading-none mb-1">{clues.length}</div>
-             <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Total</div>
+             <div className="text-lg font-black text-slate-900 leading-none mb-1">{clues.length} / {targetTotal}</div>
+             <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Created</div>
           </div>
           <div className="w-px h-6 bg-slate-100"></div>
           <div className="text-center">
@@ -37,6 +44,20 @@ export default async function MysteryCluesPage({
                {clues.filter(c => c.is_essential).length}
              </div>
              <div className="text-[8px] font-black uppercase tracking-widest text-slate-400 text-brand-blue">Essential</div>
+          </div>
+          <div className="w-px h-6 bg-slate-100"></div>
+          <div className="text-center">
+             <div className="text-lg font-black text-slate-900 leading-none mb-1">
+               {realClues.length}
+             </div>
+             <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Real Storyline</div>
+          </div>
+          <div className="w-px h-6 bg-slate-100"></div>
+          <div className="text-center">
+             <div className="text-lg font-black text-slate-900 leading-none mb-1">
+               {fakeClues.length}
+             </div>
+             <div className="text-[8px] font-black uppercase tracking-widest text-brand-pink">Fake / Red Herrings</div>
           </div>
         </div>
       </div>
@@ -47,6 +68,7 @@ export default async function MysteryCluesPage({
         clues={clues} 
         beats={beats}
         characters={characters}
+        subplots={mystery.subplots || []}
       />
     </div>
   );

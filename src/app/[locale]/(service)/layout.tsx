@@ -1,6 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
+import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner';
+import { createClient } from '@/utils/supabase/server';
 
 export default async function ServiceLayout({
   children,
@@ -9,18 +11,31 @@ export default async function ServiceLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
-  
+  await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isEmailUnverified = user && !user.email_confirmed_at;
+
+  const userData = user ? {
+    name: user.user_metadata?.full_name ?? '',
+    email: user.email ?? '',
+  } : undefined;
+
   return (
-    <div className="flex min-h-screen bg-slate-50/30">
+    <div className="flex min-h-screen" style={{ background: '#f4f0f7' }}>
       {/* Fixed Sidebar */}
       <div className="hidden md:block w-72 flex-shrink-0">
-        <AccountSidebar />
+        <AccountSidebar user={userData} />
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Mobile Header (placeholder for now) */}
+        {/* Email verification banner */}
+        {isEmailUnverified && user.email && (
+          <EmailVerificationBanner userEmail={user.email} />
+        )}
+
+        {/* Mobile Header */}
         <div className="md:hidden border-b border-slate-100 bg-white p-4 flex justify-between items-center sticky top-0 z-50">
           <Link href="/" className="font-black text-slate-900">
             Back Pocket Mysteries
@@ -30,9 +45,9 @@ export default async function ServiceLayout({
           </button>
         </div>
 
-        <main className="flex-grow p-6 lg:p-12 w-full max-w-6xl mx-auto">{children}</main>
-        
-        <footer className="border-t border-slate-100 bg-white py-12">
+        <main className="flex-grow p-6 lg:p-10 w-full max-w-6xl mx-auto">{children}</main>
+
+        <footer className="border-t border-white/60 py-8" style={{ background: 'rgba(255,255,255,0.4)' }}>
           <div className="container mx-auto px-6 text-center">
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
               &copy; {new Date().getFullYear()} Back Pocket Games. All rights reserved.

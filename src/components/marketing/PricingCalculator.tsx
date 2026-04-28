@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { Locale } from '@/lib/i18n-config'
 import { getRegionalPrice, formatCurrency } from '@/utils/localization'
 
@@ -57,6 +56,7 @@ export default function PricingCalculator({
 
   const activeTier = complexity === 'basic' ? basicTier : complexity === 'premium' ? premiumTier : grandTier
   const activeFeatures = (isPro && activeTier.proFeatures) ? activeTier.proFeatures : activeTier.features
+
 
   return (
     <div className="max-w-6xl mx-auto mb-20">
@@ -156,7 +156,7 @@ export default function PricingCalculator({
                   Add Custom Visuals & Inside Jokes
                 </h4>
                 <p className="text-sm font-bold text-gray-500 leading-relaxed">
-                  Every mystery already includes your guests' real names. This upgrade unlocks AI evidence images that match your group's actual appearances, and weaves personal inside jokes directly into the storyline.
+                  Every mystery already includes your guests&apos; real names. This upgrade unlocks AI evidence images that match your group&apos;s actual appearances, and weaves personal inside jokes directly into the storyline.
                 </p>
                 <div className="mt-3 text-xs font-black uppercase tracking-widest text-brand-pink">
                   +{formatCurrency(getRegionalPrice('plusAddon', currency), currency, locale)} Flat Fee
@@ -213,7 +213,7 @@ export default function PricingCalculator({
 
             {/* Feature List */}
             <div className="bg-white/5 rounded-3xl p-6 mb-8">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-4">What's Included:</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-4">What&apos;s Included:</p>
               <ul className="space-y-3">
                 {activeFeatures.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3">
@@ -224,8 +224,11 @@ export default function PricingCalculator({
               </ul>
             </div>
 
-            <Link href={`/${locale}/coming-soon`} className="btn-pill block w-full px-8 py-6 text-center text-sm bg-brand-pink text-white hover:bg-white hover:text-brand-pink shadow-xl mt-auto">
-              Get Notified When Available
+            <Link 
+              href={`/${locale}/login?next=/${locale}/builder/new`}
+              className="btn-pill block w-full px-8 py-6 text-center text-sm bg-brand-pink text-white hover:bg-white hover:text-brand-pink shadow-xl mt-auto"
+            >
+              Start Building Now
             </Link>
 
           </div>
