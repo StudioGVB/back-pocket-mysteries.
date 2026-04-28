@@ -67,8 +67,8 @@ export async function saveWizardAction({
       const characterInserts = guests.map((guest, index) => ({
         mystery_id: mystery.id,
         name: guest.name,
-        gender: guest.gender?.toLowerCase() === 'masculine' ? 'male' : 
-                guest.gender?.toLowerCase() === 'feminine' ? 'female' : 'adaptable',
+        gender: (guest.gender?.toLowerCase() === 'masculine' ? 'male' : 
+                guest.gender?.toLowerCase() === 'feminine' ? 'female' : 'adaptable') as 'male' | 'female' | 'adaptable',
         profile_data: {
           avatar_url: guest.avatar_url,
           eye_color: guest.eye_color,

@@ -33,9 +33,10 @@ export function TimelineEditor({ mystery, mysteryId, initialBeats, allCharacters
     const temp = newBeats[index].sort_order;
     newBeats[index].sort_order = newBeats[index - 1].sort_order;
     newBeats[index - 1].sort_order = temp;
+    
     await reorderBeatsAction(mysteryId, [
-      { id: newBeats[index].id, sort_order: newBeats[index].sort_order },
-      { id: newBeats[index - 1].id, sort_order: newBeats[index - 1].sort_order }
+      { id: newBeats[index].id, sort_order: newBeats[index].sort_order || 0 },
+      { id: newBeats[index - 1].id, sort_order: newBeats[index - 1].sort_order || 0 }
     ]);
     router.refresh();
   };
@@ -46,9 +47,10 @@ export function TimelineEditor({ mystery, mysteryId, initialBeats, allCharacters
     const temp = newBeats[index].sort_order;
     newBeats[index].sort_order = newBeats[index + 1].sort_order;
     newBeats[index + 1].sort_order = temp;
+    
     await reorderBeatsAction(mysteryId, [
-      { id: newBeats[index].id, sort_order: newBeats[index].sort_order },
-      { id: newBeats[index + 1].id, sort_order: newBeats[index + 1].sort_order }
+      { id: newBeats[index].id, sort_order: newBeats[index].sort_order || 0 },
+      { id: newBeats[index + 1].id, sort_order: newBeats[index + 1].sort_order || 0 }
     ]);
     router.refresh();
   };

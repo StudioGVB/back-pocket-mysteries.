@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
   switch (event.type) {
     case 'payment_intent.succeeded':
-      const paymentIntent = event.data.object as Record<string, unknown>;
+      const paymentIntent = event.data.object as unknown as Record<string, unknown>;
       const metadata = paymentIntent.metadata as Record<string, string> | undefined;
 
       if (metadata && metadata.orderId) {

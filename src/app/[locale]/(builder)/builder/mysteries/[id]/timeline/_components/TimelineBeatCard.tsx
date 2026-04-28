@@ -51,8 +51,8 @@ export function TimelineBeatCard({ beat, mysteryId, allCharacters, onMoveUp, onM
                 key={i} 
                 className="font-black px-1.5 py-0.5 rounded-md"
                 style={{
-                  backgroundColor: `${getRoleColor(matchedChar.role)}15`,
-                  color: getRoleColor(matchedChar.role)
+                  backgroundColor: `${getRoleColor(matchedChar.plot_role || matchedChar.archetype)}15`,
+                  color: getRoleColor(matchedChar.plot_role || matchedChar.archetype)
                 }}
               >
                 {part}

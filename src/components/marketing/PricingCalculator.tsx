@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Locale } from '@/lib/i18n-config'
 import { getRegionalPrice, formatCurrency } from '@/utils/localization'
 
