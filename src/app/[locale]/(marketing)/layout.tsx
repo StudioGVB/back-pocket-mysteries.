@@ -7,8 +7,6 @@ import { Locale } from '@/lib/i18n-config';
 import LanguageSwitcher from '@/components/marketing/LanguageSwitcher';
 import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
 import MobileNav from '@/components/marketing/MobileNav';
-import { headers, cookies } from 'next/headers';
-import { resolveCurrency } from '@/utils/localization';
 import GlobalSpotlight from '@/components/marketing/GlobalSpotlight';
 import FooterMarketingForm from '@/components/marketing/FooterMarketingForm';
 
@@ -20,11 +18,7 @@ export default async function MarketingLayout(props: {
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
 
-  const headersList = await headers();
-  const cookiesList = await cookies();
-  const countryCode = headersList.get('x-vercel-ip-country');
-  const cookieCurrency = cookiesList.get('NEXT_CURRENCY')?.value;
-  const currency = resolveCurrency(countryCode, cookieCurrency, locale as Locale);
+  // Currency is now managed entirely client-side
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -52,7 +46,7 @@ export default async function MarketingLayout(props: {
           <div className="hidden lg:flex gap-4 items-center">
             <div className="flex gap-2 items-center">
               <LanguageSwitcher currentLocale={locale as Locale} />
-              <CurrencySwitcher currentCurrency={currency} />
+              <CurrencySwitcher />
             </div>
 
             <Link href={`/${locale}/login`} className="text-xs font-black uppercase tracking-widest text-brand-dark/60 hover:text-brand-pink px-4 py-2 transition-colors">
@@ -63,7 +57,7 @@ export default async function MarketingLayout(props: {
             </Link>
           </div>
           
-          <MobileNav locale={locale as Locale} currency={currency} dict={dict} />
+          <MobileNav locale={locale as Locale} dict={dict} />
         </div>
       </header>
       

@@ -2,8 +2,6 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
-import { headers, cookies } from 'next/headers';
-import { resolveCurrency } from '@/utils/localization';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -22,11 +20,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
 
-  const headersList = await headers();
-  const cookiesList = await cookies();
-  const countryCode = headersList.get('x-vercel-ip-country');
-  const cookieCurrency = cookiesList.get('NEXT_CURRENCY')?.value;
-  const currency = resolveCurrency(countryCode, cookieCurrency, locale as Locale);
+  // Currency is handled client-side in components to allow static rendering
 
   const steps = [
     {
@@ -135,7 +129,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
             </h2>
             <p className="text-lg text-gray-400 mb-12 max-w-xl mx-auto font-bold">
               {dict.howItWorks.cta.desc.split('{{price}}')[0]}
-              <PriceDisplay tier="basic" locale={locale as Locale} currency={currency} />
+              <PriceDisplay tier="basic" locale={locale as Locale} />
               {dict.howItWorks.cta.desc.split('{{price}}')[1]}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">

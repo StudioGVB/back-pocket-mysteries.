@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Locale } from '@/lib/i18n-config'
-import { getRegionalPrice, formatCurrency } from '@/utils/localization'
+import { getRegionalPrice, formatCurrency, DEFAULT_CURRENCY } from '@/utils/localization'
 
 type Tier = {
   id: 'basic' | 'premium' | 'grand' | 'subscribe'
@@ -19,14 +19,25 @@ export default function PricingCalculator({
   premiumTier,
   grandTier,
   locale,
-  currency,
 }: {
   basicTier: Tier
   premiumTier: Tier
   grandTier: Tier
   locale: Locale
-  currency: string
 }) {
+  const [activeCurrency, setActiveCurrency] = useState(DEFAULT_CURRENCY)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    try {
+      const match = document.cookie.match(/(^| )NEXT_CURRENCY=([^;]+)/)
+      if (match) {
+        setActiveCurrency(match[2])
+      }
+    } catch (e) {}
+  }, [])
+
   const [complexity, setComplexity] = useState<'basic' | 'premium' | 'grand'>('premium')
   const [guests, setGuests] = useState(8)
   const [isPro, setIsPro] = useState(false)
@@ -47,11 +58,11 @@ export default function PricingCalculator({
   }, [complexity, currentLimit.max, currentLimit.min, guests])
 
   // Pricing calculations
-  const basePrice = getRegionalPrice(complexity, currency)
+  const basePrice = getRegionalPrice(complexity, activeCurrency)
   const extraGuests = Math.max(0, guests - currentLimit.included)
-  const extraGuestFee = getRegionalPrice(currentLimit.extraTier, currency)
+  const extraGuestFee = getRegionalPrice(currentLimit.extraTier, activeCurrency)
   const totalExtraGuestCost = extraGuests * extraGuestFee
-  const proCost = isPro ? getRegionalPrice('plusAddon', currency) : 0
+  const proCost = isPro ? getRegionalPrice('plusAddon', activeCurrency) : 0
   
   const totalCost = basePrice + totalExtraGuestCost + proCost
 
@@ -122,7 +133,7 @@ export default function PricingCalculator({
                   <div className="text-xs font-bold text-brand-pink uppercase tracking-widest">
                     {guests <= currentLimit.included 
                       ? 'All Included' 
-                      : `${extraGuests} Extra Guest${extraGuests > 1 ? 's' : ''} (+${formatCurrency(totalExtraGuestCost, currency, locale)})`}
+                      : `${extraGuests} Extra Guest${extraGuests > 1 ? 's' : ''} (+${formatCurrency(totalExtraGuestCost, activeCurrency, locale)})`}
                   </div>
                 </div>
 
@@ -160,7 +171,7 @@ export default function PricingCalculator({
                   Every mystery already includes your guests&apos; real names. This upgrade unlocks AI evidence images that match your group&apos;s actual appearances, and weaves personal inside jokes directly into the storyline.
                 </p>
                 <div className="mt-3 text-xs font-black uppercase tracking-widest text-brand-pink">
-                  +{formatCurrency(getRegionalPrice('plusAddon', currency), currency, locale)} Flat Fee
+                  +{mounted ? formatCurrency(getRegionalPrice('plusAddon', activeCurrency), activeCurrency, locale) : formatCurrency(getRegionalPrice('plusAddon', DEFAULT_CURRENCY), DEFAULT_CURRENCY, locale)} Flat Fee
                 </div>
               </div>
               
@@ -184,20 +195,20 @@ export default function PricingCalculator({
             <div className="space-y-4 mb-8">
               <div className="flex justify-between items-center text-white/90 font-bold">
                 <span>{activeTier.name} Base ({currentLimit.included} guests)</span>
-                <span>{formatCurrency(basePrice, currency, locale)}</span>
+                <span>{mounted ? formatCurrency(basePrice, activeCurrency, locale) : formatCurrency(getRegionalPrice(complexity, DEFAULT_CURRENCY), DEFAULT_CURRENCY, locale)}</span>
               </div>
               
               {extraGuests > 0 && (
                 <div className="flex justify-between items-center text-white/90 font-bold">
-                  <span>Extra Guests ({extraGuests} &times; {formatCurrency(extraGuestFee, currency, locale)})</span>
-                  <span>{formatCurrency(totalExtraGuestCost, currency, locale)}</span>
+                  <span>Extra Guests ({extraGuests} &times; {mounted ? formatCurrency(extraGuestFee, activeCurrency, locale) : formatCurrency(getRegionalPrice(currentLimit.extraTier, DEFAULT_CURRENCY), DEFAULT_CURRENCY, locale)})</span>
+                  <span>{mounted ? formatCurrency(totalExtraGuestCost, activeCurrency, locale) : formatCurrency(extraGuests * getRegionalPrice(currentLimit.extraTier, DEFAULT_CURRENCY), DEFAULT_CURRENCY, locale)}</span>
                 </div>
               )}
               
               {isPro && (
                 <div className="flex justify-between items-center text-brand-pink font-bold">
                   <span>Pro Customizer</span>
-                  <span>{formatCurrency(proCost, currency, locale)}</span>
+                  <span>{mounted ? formatCurrency(proCost, activeCurrency, locale) : formatCurrency(isPro ? getRegionalPrice('plusAddon', DEFAULT_CURRENCY) : 0, DEFAULT_CURRENCY, locale)}</span>
                 </div>
               )}
             </div>
@@ -207,7 +218,11 @@ export default function PricingCalculator({
               <div>
                 <span className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-1">Total Due</span>
                 <span className="text-5xl font-black tracking-tighter text-white">
-                  {formatCurrency(totalCost, currency, locale)}
+                  {mounted ? formatCurrency(totalCost, activeCurrency, locale) : formatCurrency(
+                    getRegionalPrice(complexity, DEFAULT_CURRENCY) + 
+                    (extraGuests * getRegionalPrice(currentLimit.extraTier, DEFAULT_CURRENCY)) + 
+                    (isPro ? getRegionalPrice('plusAddon', DEFAULT_CURRENCY) : 0), 
+                    DEFAULT_CURRENCY, locale)}
                 </span>
               </div>
             </div>

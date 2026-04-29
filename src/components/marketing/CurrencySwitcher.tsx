@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+
 
 export const AVAILABLE_CURRENCIES = [
   { code: 'USD', symbol: '$', label: 'USD' },
@@ -11,10 +11,19 @@ export const AVAILABLE_CURRENCIES = [
   { code: 'CAD', symbol: 'C$', label: 'CAD' },
 ]
 
-export default function CurrencySwitcher({ currentCurrency }: { currentCurrency: string }) {
-  const router = useRouter()
+export default function CurrencySwitcher() {
   const [isOpen, setIsOpen] = useState(false)
+  const [currentCurrency, setCurrentCurrency] = useState('USD')
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    try {
+      const match = document.cookie.match(/(^| )NEXT_CURRENCY=([^;]+)/)
+      if (match) {
+        setCurrentCurrency(match[2])
+      }
+    } catch (e) {}
+  }, [])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -34,8 +43,8 @@ export default function CurrencySwitcher({ currentCurrency }: { currentCurrency:
     // Persist the user's explicit choice in a cookie
     document.cookie = `NEXT_CURRENCY=${currencyCode}; path=/; max-age=31536000; SameSite=Lax`
 
-    // Refresh the page so server components re-render with new cookie
-    router.refresh()
+    // Full reload so all static-client components pick up the new cookie
+    window.location.reload()
   }
 
   const activeCurrency = AVAILABLE_CURRENCIES.find(c => c.code === currentCurrency) || AVAILABLE_CURRENCIES[0]

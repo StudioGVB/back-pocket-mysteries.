@@ -9,11 +9,10 @@ import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
 
 interface MobileNavProps {
   locale: Locale;
-  currency: string;
   dict: any;
 }
 
-export default function MobileNav({ locale, currency, dict }: MobileNavProps) {
+export default function MobileNav({ locale, dict }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -75,7 +74,7 @@ export default function MobileNav({ locale, currency, dict }: MobileNavProps) {
             <div className="mt-16 border-t border-white/10 pt-10 flex flex-col gap-8">
               <div className="flex gap-4 items-center">
                 <LanguageSwitcher currentLocale={locale as Locale} />
-                <CurrencySwitcher currentCurrency={currency} />
+                <CurrencySwitcher />
               </div>
 
               <div className="flex flex-col gap-6 items-start">

@@ -2,10 +2,8 @@ import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { headers, cookies } from 'next/headers';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
-import { resolveCurrency } from '@/utils/localization';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -26,11 +24,7 @@ export default async function HomePage(props: {
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
 
-  const headersList = await headers();
-  const cookiesList = await cookies();
-  const countryCode = headersList.get('x-vercel-ip-country');
-  const cookieCurrency = cookiesList.get('NEXT_CURRENCY')?.value;
-  const currency = resolveCurrency(countryCode, cookieCurrency, locale as Locale);
+  // Currency is now handled client-side in PriceDisplay to allow static rendering
 
   return (
     <div className="relative overflow-hidden bg-white">
@@ -61,7 +55,7 @@ export default async function HomePage(props: {
               </div>
               <p className="mt-6 text-xs text-gray-400 font-bold">
                 {dict.home.hero.priceLabel.replace('{{price}}', '')} 
-                <PriceDisplay tier="basic" locale={locale as Locale} currency={currency} />
+                <PriceDisplay tier="basic" locale={locale as Locale} />
                 {' · Instant download · No hosting required'}
               </p>
             </div>
@@ -246,7 +240,7 @@ export default async function HomePage(props: {
                   [dict.home.compare.table.f2, '✓', '✗', '✗'],
                   [dict.home.compare.table.f3, '✓', 'Varies', 'Rarely'],
                   [dict.home.compare.table.f4, '< 20 min', '3–21 days', 'Minutes'],
-                  [dict.home.compare.table.f5, <PriceDisplay key="p1" tier="basic" locale={locale as Locale} currency={currency} />, '$60–$150+', '$10–$16'],
+                  [dict.home.compare.table.f5, <PriceDisplay key="p1" tier="basic" locale={locale as Locale} />, '$60–$150+', '$10–$16'],
                   [dict.home.compare.table.f6, '✓', 'Depends', '✗'],
                 ].map(([feat, bpm, etsy, ai], i) => (
                   <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-brand-gray'}>
@@ -274,7 +268,7 @@ export default async function HomePage(props: {
                 {dict.home.ctaSection.title.split('better')[1]}
               </h2>
               <p className="text-gray-400 text-xl lg:text-2xl mb-4 font-bold max-w-xl mx-auto">
-                {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} currency={currency} /> — instant download.
+                {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} /> — instant download.
               </p>
               <p className="text-gray-500 text-sm font-bold mb-12 uppercase tracking-widest">{dict.home.ctaSection.meta}</p>
               <Link href={`/${locale}/coming-soon`} className="inline-block px-14 py-6 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-brand-pink transition-all shadow-2xl hover:translate-y-[-4px] active:scale-95">

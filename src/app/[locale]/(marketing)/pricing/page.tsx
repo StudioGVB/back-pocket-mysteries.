@@ -1,10 +1,9 @@
 import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { headers, cookies } from 'next/headers';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
-import { resolveCurrency, getFormattedPrice } from '@/utils/localization';
+import { getFormattedPrice } from '@/utils/localization';
 import PricingCalculator from '@/components/marketing/PricingCalculator';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import PricingComparison from '@/components/marketing/PricingComparison';
@@ -28,12 +27,7 @@ export default async function PricingPage(props: {
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
 
-  const headersList = await headers();
-  const cookiesList = await cookies();
-  const countryCode = headersList.get('x-vercel-ip-country');
-  const cookieCurrency = cookiesList.get('NEXT_CURRENCY')?.value;
-  const currency = resolveCurrency(countryCode, cookieCurrency, locale as Locale);
-
+  // Currency is handled client-side in components to allow static rendering
 
   const tiers = [
     {
@@ -44,7 +38,7 @@ export default async function PricingPage(props: {
       features: [
         'Easy Difficulty (1-2 Hours)',
         'Up to 6 players included (Max 10)',
-        `+${getFormattedPrice('basicExtra', locale as Locale, currency)} per extra player`,
+        `+${getFormattedPrice('basicExtra', locale as Locale)} per extra player`,
         '~15 clues (photos, texts, security footage, etc.)',
         'Theme-based mystery with 4 structured rounds',
         'Guest names inserted throughout the story',
@@ -55,7 +49,7 @@ export default async function PricingPage(props: {
       proFeatures: [
         'Easy Difficulty (1-2 Hours)',
         'Up to 6 players included (Max 10)',
-        `+${getFormattedPrice('basicExtra', locale as Locale, currency)} per extra player`,
+        `+${getFormattedPrice('basicExtra', locale as Locale)} per extra player`,
         '~15 clues (photos, texts, security footage, etc.)',
         'Theme-based mystery with 4 structured rounds',
         'Custom character appearances (hair, eyes, style)',
@@ -77,7 +71,7 @@ export default async function PricingPage(props: {
       features: [
         'Standard Difficulty (2-3 Hours)',
         'Up to 8 players included (Max 12)',
-        `+${getFormattedPrice('premiumExtra', locale as Locale, currency)} per extra player`,
+        `+${getFormattedPrice('premiumExtra', locale as Locale)} per extra player`,
         '~22 clues (photos, texts, security footage, etc.)',
         'Tailored to your specific event',
         'Optional confessional prompts',
@@ -87,7 +81,7 @@ export default async function PricingPage(props: {
       proFeatures: [
         'Standard Difficulty (2-3 Hours)',
         'Up to 8 players included (Max 12)',
-        `+${getFormattedPrice('premiumExtra', locale as Locale, currency)} per extra player`,
+        `+${getFormattedPrice('premiumExtra', locale as Locale)} per extra player`,
         '~22 clues (photos, texts, security footage, etc.)',
         'Tailored to your specific event',
         'Custom character appearances (hair, eyes, style)',
@@ -109,7 +103,7 @@ export default async function PricingPage(props: {
       features: [
         'Epic Difficulty (3-4 Hours)',
         'Up to 10 players included (Max 16)',
-        `+${getFormattedPrice('grandExtra', locale as Locale, currency)} per extra player`,
+        `+${getFormattedPrice('grandExtra', locale as Locale)} per extra player`,
         '~30 clues (photos, texts, security footage, etc.)',
         'Tailored to your specific event',
         'Optional confessional prompts',
@@ -119,7 +113,7 @@ export default async function PricingPage(props: {
       proFeatures: [
         'Epic Difficulty (3-4 Hours)',
         'Up to 10 players included (Max 16)',
-        `+${getFormattedPrice('grandExtra', locale as Locale, currency)} per extra player`,
+        `+${getFormattedPrice('grandExtra', locale as Locale)} per extra player`,
         '~30 clues (photos, texts, security footage, etc.)',
         'Tailored to your specific event',
         'Custom character appearances (hair, eyes, style)',
@@ -184,7 +178,6 @@ export default async function PricingPage(props: {
           premiumTier={tiers[1]}
           grandTier={tiers[2]}
           locale={locale as Locale}
-          currency={currency}
         />
 
         {/* Unlimited Subscription Tier */}
@@ -199,8 +192,7 @@ export default async function PricingPage(props: {
             <div className="flex items-baseline gap-2 mb-6">
               <PriceDisplay 
                 tier={tiers[3].id} 
-                locale={locale as Locale} 
-                currency={currency}
+                locale={locale as Locale}
                 isPro={false} 
                 className="text-6xl lg:text-8xl font-black tracking-tighter text-brand-dark" 
               />
