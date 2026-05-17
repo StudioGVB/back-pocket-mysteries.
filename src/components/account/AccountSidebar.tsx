@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useParams } from 'next/navigation';
 import { signOut } from '@/app/[locale]/(auth)/actions';
 
 interface AccountSidebarProps {
@@ -15,6 +15,8 @@ interface AccountSidebarProps {
 
 export function AccountSidebar({ user }: AccountSidebarProps) {
   const pathname = usePathname();
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
 
   const links = [
     {
@@ -23,6 +25,14 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
       exact: true,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      ),
+    },
+    {
+      name: 'My Profile',
+      href: '/account/profile',
+      exact: false,
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       ),
     },
     {
@@ -85,7 +95,6 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
         </p>
 
         {links.map((link) => {
-          const locale = pathname.split('/')[1] || 'en';
           const localizedHref = link.href.startsWith('/account') || link.href === '/mysteries'
             ? `/${locale}${link.href}`
             : link.href;
@@ -121,7 +130,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
       {/* Bottom section: user card + settings + sign out */}
       <div className="p-4 mt-auto space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {/* User card */}
-        <Link href={`/${pathname.split('/')[1]}/account/settings`} className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all" style={{ background: 'rgba(255,255,255,0.05)' }}>
+        <Link href={`/${locale}/account/settings`} className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all" style={{ background: 'rgba(255,255,255,0.05)' }}>
           <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0" style={{ background: '#fe04c6', color: '#fff' }}>
             {initials}
           </div>
@@ -133,7 +142,6 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
 
         {/* Settings */}
         {(() => {
-          const locale = pathname.split('/')[1] || 'en';
           const isActive = pathname.includes('/account/settings');
           return (
             <Link

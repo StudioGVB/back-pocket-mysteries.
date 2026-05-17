@@ -3,11 +3,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function generateRandomQuirk(name: string, gender: string) {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is not configured');
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
   }
 
-  const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
   const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const characterDescription = name ? `${name} (Gender: ${gender})` : `a ${gender} character`;
@@ -28,11 +28,11 @@ Respond with ONLY the quirk itself, no quotes, no extra text, and do not include
 }
 
 export async function generateCluePreview(prompt: string, templateText: string) {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is not configured');
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
   }
 
-  const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
   const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const systemInstruction = `You are a mystery game clue generator. Based on the provided prompt and template, generate the text for a single clue. Output ONLY the generated clue content, do not add any conversational fluff. Keep it concise, engaging, and in-character for a murder mystery.`;
@@ -50,11 +50,11 @@ export async function generateCluePreview(prompt: string, templateText: string) 
 }
 
 export async function suggestCluePrompts(beatTitle: string): Promise<string[]> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is not configured');
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
   }
 
-  const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
   const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `You are an expert murder mystery designer. The user needs to create a clue/evidence that reveals or relates to the following story beat:

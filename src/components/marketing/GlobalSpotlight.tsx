@@ -34,7 +34,7 @@ export default function GlobalSpotlight() {
       {/* Pull cord - fixed positioning dangling from top right */}
       <button 
         onClick={() => setLightsOn(prev => !prev)}
-        className="fixed top-0 right-8 md:right-16 z-[9999] flex flex-col items-center group origin-top hover:rotate-3 transition-transform duration-300 cursor-pointer pointer-events-auto outline-none"
+        className="fixed top-16 right-8 md:right-16 z-[9999] flex flex-col items-center group origin-top hover:rotate-3 transition-transform duration-300 cursor-pointer pointer-events-auto outline-none"
         aria-label="Toggle Lights"
       >
         {/* Cord */}

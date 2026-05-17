@@ -28,16 +28,16 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
 
   const linkedBeat = beats.find(b => b.id === clue.linked_plot_beat_id);
   const linkedSubplotBeat = subplots?.flatMap(s => s.subplot_beats || []).find((b: any) => b.id === clue.linked_subplot_beat_id);
-  const beatTitle = linkedBeat ? linkedBeat.event_title : linkedSubplotBeat ? linkedSubplotBeat.description : 'A Mysterious Event';
+  const beatTitle = (linkedBeat ? linkedBeat.event_title : linkedSubplotBeat ? linkedSubplotBeat.description : null) || 'A Mysterious Event';
 
   const handleSuggestPrompts = async () => {
     setIsSuggesting(true);
     try {
       const results = await suggestCluePrompts(beatTitle);
       setSuggestions(results);
-    } catch (e) {
-      console.error(e);
-      alert('Failed to fetch suggestions.');
+    } catch (e: any) {
+      console.error('Action Error:', e);
+      alert('Failed to fetch suggestions: ' + (e?.message || String(e)));
     }
     setIsSuggesting(false);
   };
@@ -56,9 +56,9 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
 
       const result = await generateCluePreview(hydratedPrompt, templateText);
       setTemplateText(result);
-    } catch (e) {
-      console.error(e);
-      alert('Failed to generate preview. Please make sure GEMINI_API_KEY is configured.');
+    } catch (e: any) {
+      console.error('Preview Error:', e);
+      alert('Failed to generate preview. Server said: ' + (e?.message || String(e)) + '\\n\\n(Did you remember to restart the terminal server after saving .env.local?)');
     }
     setIsGeneratingPreview(false);
   };
