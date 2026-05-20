@@ -18,7 +18,7 @@ export default async function PrintCharactersPage({
   // Create an array of character pages to render.
   const characterPages: any[] = [];
   
-  characters.forEach(char => {
+  characters.forEach((char: any) => {
     const profile = char.profile_data as any || {};
     
     if (char.gender === 'adaptable') {
@@ -56,7 +56,7 @@ export default async function PrintCharactersPage({
              <h1 className="text-6xl font-black text-slate-900 tracking-tighter">The Cast List</h1>
          </div>
          <div className="grid grid-cols-2 gap-y-12 gap-x-16">
-            {characters.map((char, i) => {
+            {characters.map((char: any, i: number) => {
                 const colors = ['#FF1493', '#4169E1', '#32CD32', '#FFA500', '#9370DB', '#00CED1'];
                 const color = colors[i % colors.length];
                 

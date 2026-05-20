@@ -9,7 +9,7 @@ export default async function CompilePage({
   const { id } = await params;
   const characters = await getCharactersByMysteryId(id);
   
-  const charactersReady = characters.length > 0 && characters.every(char => {
+  const charactersReady = characters.length > 0 && characters.every((char: any) => {
     if (!char.profile_data) return false;
     const p = char.profile_data as any;
     if (!p.bio) return false;
