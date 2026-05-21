@@ -402,3 +402,346 @@ export async function generateCharacterOutfitPhotoAction(mysteryId: string, char
     throw new Error(err.message || 'Failed to generate photo');
   }
 }
+
+export async function assignGuestToCharacterAction(mysteryId: string, characterId: string, guestId: string | null) {
+  const supabase = await createClient();
+  
+  // 1. Get the current character
+  const { data: character, error: charErr } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('id', characterId)
+    .single();
+    
+  if (charErr || !character) {
+    throw new Error(charErr?.message || 'Character not found');
+  }
+
+  const profile = { ...((character.profile_data as any) || {}) } as any;
+
+  if (!guestId) {
+    // UNASSIGN GUEST: remove all guest keys from character.profile_data
+    delete profile.guest_id;
+    delete profile.guest_name;
+    delete profile.name;
+    delete profile.gender;
+    delete profile.eye_color;
+    delete profile.height;
+    delete profile.avatar_url;
+    delete profile.traits;
+    delete profile.bio;
+    delete profile.is_linked;
+  } else {
+    // ASSIGN GUEST: Fetch guest details (check manual guests table first)
+    const { data: manualGuest } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('id', guestId)
+      .single();
+
+    let guest: any = null;
+
+    if (manualGuest) {
+      guest = {
+        id: manualGuest.id,
+        name: manualGuest.name,
+        gender: manualGuest.gender || 'adaptable',
+        eye_color: manualGuest.eye_color || '',
+        height: manualGuest.height || '',
+        avatar_url: manualGuest.avatar_url || '',
+        traits: manualGuest.traits || [],
+        bio: manualGuest.bio || '',
+        isLinked: false
+      };
+    } else {
+      // Check linked guests
+      const { data: connection } = await (supabase as any)
+        .from('guest_connections')
+        .select(`
+          id,
+          guest_user_id,
+          profiles!guest_user_id (
+            bio,
+            location,
+            pronouns,
+            avatar_config,
+            dietary_needs,
+            character_preferences
+          )
+        `)
+        .eq('guest_user_id', guestId)
+        .single() as any;
+
+      if (connection) {
+        const { data: linkedProfile } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('id', connection.guest_user_id)
+          .single();
+
+        const avatarUrlHelper = (config: any) => {
+          if (!config) return null;
+          const params = new URLSearchParams({
+            seed: config.seed || 'player',
+            top: config.top || 'shortFlat',
+            topColor: config.hairColor || '282828',
+            hairColor: config.hairColor || '282828',
+            skinColor: config.skinColor || 'ffe0bd',
+            ...(config.facialHair ? { facialHair: config.facialHair } : {}),
+            backgroundColor: 'transparent',
+          });
+          return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
+        };
+
+        guest = {
+          id: connection.guest_user_id,
+          name: linkedProfile?.full_name || 'Linked Guest',
+          gender: connection.profiles?.pronouns === 'he/him' ? 'male' : connection.profiles?.pronouns === 'she/her' ? 'female' : 'adaptable',
+          eye_color: '',
+          height: '',
+          avatar_url: avatarUrlHelper(connection.profiles?.avatar_config) || '',
+          traits: connection.profiles?.character_preferences || [],
+          bio: connection.profiles?.bio || '',
+          isLinked: true
+        };
+      }
+    }
+
+    if (!guest) {
+      throw new Error('Guest not found in database');
+    }
+
+    // Unassign this guest from any other characters in this mystery to prevent double-casting!
+    const { data: siblingCharacters } = await supabase
+      .from('characters')
+      .select('id, profile_data')
+      .eq('mystery_id', mysteryId);
+
+    if (siblingCharacters) {
+      for (const sibling of siblingCharacters) {
+        if (sibling.id !== characterId && (sibling.profile_data as any)?.guest_id === guestId) {
+          const siblingProfile = { ...((sibling.profile_data as any) || {}) } as any;
+          delete siblingProfile.guest_id;
+          delete siblingProfile.guest_name;
+          delete siblingProfile.name;
+          delete siblingProfile.gender;
+          delete siblingProfile.eye_color;
+          delete siblingProfile.height;
+          delete siblingProfile.avatar_url;
+          delete siblingProfile.traits;
+          delete siblingProfile.bio;
+          delete siblingProfile.is_linked;
+          await supabase
+            .from('characters')
+            .update({ profile_data: siblingProfile })
+            .eq('id', sibling.id);
+        }
+      }
+    }
+
+    // Merge guest details into current character's profile_data
+    profile.guest_id = guest.id;
+    profile.guest_name = guest.name;
+    profile.name = guest.name;
+    profile.gender = guest.gender;
+    profile.eye_color = guest.eye_color;
+    profile.height = guest.height;
+    profile.avatar_url = guest.avatar_url;
+    profile.traits = guest.traits;
+    profile.bio = guest.bio;
+    profile.is_linked = guest.isLinked;
+  }
+
+  // 2. Save the updated character profile
+  const { error: updateErr } = await supabase
+    .from('characters')
+    .update({ profile_data: profile })
+    .eq('id', characterId);
+
+  if (updateErr) {
+    throw new Error(updateErr.message);
+  }
+
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+}
+
+export async function autoAssignGuestsAction(mysteryId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Fetch manual guests
+  const { data: manualGuests } = await supabase
+    .from('guests')
+    .select('*')
+    .eq('user_id', user.id);
+
+  // Fetch linked guests
+  const { data: connections } = await (supabase as any)
+    .from('guest_connections')
+    .select(`
+      id,
+      guest_user_id,
+      profiles!guest_user_id (
+        bio,
+        location,
+        pronouns,
+        avatar_config,
+        dietary_needs,
+        character_preferences
+      )
+    `)
+    .eq('host_user_id', user.id) as any;
+
+  const avatarUrlHelper = (config: any) => {
+    if (!config) return null;
+    const params = new URLSearchParams({
+      seed: config.seed || 'player',
+      top: config.top || 'shortFlat',
+      topColor: config.hairColor || '282828',
+      hairColor: config.hairColor || '282828',
+      skinColor: config.skinColor || 'ffe0bd',
+      ...(config.facialHair ? { facialHair: config.facialHair } : {}),
+      backgroundColor: 'transparent',
+    });
+    return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
+  };
+
+  const linkedGuestIds = (connections ?? []).map((c: any) => c.guest_user_id);
+  let linkedGuestNames: Record<string, string> = {};
+  if (linkedGuestIds.length > 0) {
+    const { data: linkedProfiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', linkedGuestIds);
+    (linkedProfiles ?? []).forEach((p: any) => {
+      linkedGuestNames[p.id] = p.full_name || 'Guest';
+    });
+  }
+
+  const guests = [
+    ...(manualGuests || []).map((mg: any) => ({
+      id: mg.id,
+      name: mg.name,
+      gender: mg.gender || 'adaptable',
+      eye_color: mg.eye_color || '',
+      height: mg.height || '',
+      avatar_url: mg.avatar_url || '',
+      traits: mg.traits || [],
+      bio: mg.bio || '',
+      isLinked: false
+    })),
+    ...(connections || []).map((c: any) => ({
+      id: c.guest_user_id,
+      name: linkedGuestNames[c.guest_user_id] || 'Linked Guest',
+      gender: c.profiles?.pronouns === 'he/him' ? 'male' : c.profiles?.pronouns === 'she/her' ? 'female' : 'adaptable',
+      eye_color: '',
+      height: '',
+      avatar_url: avatarUrlHelper(c.profiles?.avatar_config) || '',
+      traits: c.profiles?.character_preferences || [],
+      bio: c.profiles?.bio || '',
+      isLinked: true
+    }))
+  ];
+
+  if (guests.length === 0) return { error: 'No guests saved in roster.' };
+
+  const { data: characters, error: charErr } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('mystery_id', mysteryId)
+    .order('created_at', { ascending: true });
+
+  if (charErr || !characters) throw new Error(charErr?.message || 'Characters not found');
+
+  let assignedIds = new Set<string>();
+  let availableGuests = [...guests];
+
+  // Lock already assigned guests
+  for (const char of characters) {
+    const existingGuestId = (char.profile_data as any)?.guest_id;
+    if (existingGuestId) {
+      const guestExists = guests.some(g => g.id === existingGuestId);
+      if (guestExists) {
+        assignedIds.add(existingGuestId);
+        availableGuests = availableGuests.filter(g => g.id !== existingGuestId);
+      }
+    }
+  }
+
+  // Iterate to match unassigned characters
+  for (const char of characters) {
+    if ((char.profile_data as any)?.guest_id) continue;
+
+    const charGender = char.gender || 'adaptable';
+    let matchedIndex = -1;
+
+    if (charGender !== 'adaptable') {
+      matchedIndex = availableGuests.findIndex(g => g.gender === charGender);
+    }
+
+    if (matchedIndex === -1 && availableGuests.length > 0) {
+      matchedIndex = 0;
+    }
+
+    if (matchedIndex !== -1) {
+      const guest = availableGuests[matchedIndex];
+      availableGuests.splice(matchedIndex, 1);
+      assignedIds.add(guest.id);
+
+      const profile = {
+        ...((char.profile_data as any) || {}),
+        guest_id: guest.id,
+        guest_name: guest.name,
+        name: guest.name,
+        gender: guest.gender,
+        eye_color: guest.eye_color,
+        height: guest.height,
+        avatar_url: guest.avatar_url,
+        traits: guest.traits,
+        bio: guest.bio,
+        is_linked: guest.isLinked
+      };
+
+      await supabase
+        .from('characters')
+        .update({ profile_data: profile })
+        .eq('id', char.id);
+    }
+  }
+
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+  return { success: true };
+}
+
+export async function clearAllCastingAction(mysteryId: string) {
+  const supabase = await createClient();
+  const { data: characters } = await supabase
+    .from('characters')
+    .select('id, profile_data')
+    .eq('mystery_id', mysteryId);
+
+  if (characters) {
+    for (const char of characters) {
+      const profile = { ...((char.profile_data as any) || {}) } as any;
+      delete profile.guest_id;
+      delete profile.guest_name;
+      delete profile.name;
+      delete profile.gender;
+      delete profile.eye_color;
+      delete profile.height;
+      delete profile.avatar_url;
+      delete profile.traits;
+      delete profile.bio;
+      delete profile.is_linked;
+
+      await supabase
+        .from('characters')
+        .update({ profile_data: profile })
+        .eq('id', char.id);
+    }
+  }
+
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+}
+

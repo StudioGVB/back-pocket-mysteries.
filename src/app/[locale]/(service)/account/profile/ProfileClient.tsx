@@ -9,11 +9,6 @@ const DIETARY_OPTIONS = [
   'Nut Allergy', 'Halal', 'Kosher', 'No Restrictions',
 ];
 
-const CHARACTER_PREFS = [
-  'The Villain', 'The Detective', 'The Victim\'s Friend', 'Comic Relief',
-  'The Red Herring', 'The Mysterious Stranger', 'The Socialite', 'The Professional',
-];
-
 const PRONOUNS = ['He/Him', 'She/Her', 'They/Them', 'He/They', 'She/They', 'Any'];
 
 const DEFAULT_AVATAR: AvatarConfig = {
@@ -211,7 +206,10 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
 
               {/* Bio */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Bio</label>
+                <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                  Bio
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+                </label>
                 <textarea
                   className={`${inputClass} resize-none`}
                   rows={3}
@@ -223,7 +221,10 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
 
               {/* Fun Facts */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Fun Facts</label>
+                <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                  Fun Facts
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+                </label>
                 <textarea
                   className={`${inputClass} resize-none`}
                   rows={2}
@@ -254,27 +255,6 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
                   ))}
                 </div>
               </div>
-
-              {/* Character Prefs */}
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Character Preferences</label>
-                <p className="text-xs text-slate-400 mb-3">What roles do you enjoy playing at mystery nights?</p>
-                <div className="flex flex-wrap gap-2">
-                  {CHARACTER_PREFS.map(opt => (
-                    <button
-                      key={opt}
-                      onClick={() => toggleChip(charPrefs, setCharPrefs, opt)}
-                      className="px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all"
-                      style={{
-                        borderColor: charPrefs.includes(opt) ? '#fe04c6' : '#e2e8f0',
-                        color: charPrefs.includes(opt) ? '#fe04c6' : '#94a3b8',
-                        background: charPrefs.includes(opt) ? 'rgba(254,4,198,0.05)' : '#fff',
-                      }}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           ) : (

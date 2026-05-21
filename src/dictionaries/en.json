@@ -7,11 +7,11 @@
     "faq": "FAQ",
     "blog": "Blog",
     "login": "Login",
-    "getStarted": "COMING SOON",
-    "signup": "COMING SOON",
-    "buildYourMystery": "COMING SOON",
-    "browseThemes": "COMING SOON",
-    "pickATheme": "COMING SOON",
+    "getStarted": "Build a Mystery",
+    "signup": "Sign Up",
+    "buildYourMystery": "Build Your Mystery",
+    "browseThemes": "Browse Themes",
+    "pickATheme": "Pick a Theme",
     "product": "Product",
     "company": "Company",
     "aboutUs": "About Us",
@@ -32,7 +32,7 @@
       "badge": "Your party, sorted in 20 minutes",
       "title": "Murder mystery, built around, your people.",
       "subtitle": "Real names. Real relationships. Real drama. We workshop a fully personalised, print-ready murder mystery pack — in minutes, not days.",
-      "ctaPick": "COMING SOON",
+      "ctaPick": "Pick a Theme",
       "ctaHow": "How it Works",
       "priceLabel": "From {{price}}",
       "readyBadge": "Ready in <20 min"
@@ -123,28 +123,28 @@
         "name": "Basic",
         "tagline": "Quick setup, sorted party.",
         "desc": "Best for small groups, casual hosts, or first-timers who want to see what we're about.",
-        "cta": "COMING SOON",
+        "cta": "Choose Basic",
         "bestFor": "Casual dinner parties, friend nights"
       },
       "basicPlus": {
         "name": "Basic+",
         "tagline": "Basic, but visually you.",
         "desc": "Everything in Basic, plus full character appearance customisation so the generated evidence actually looks like your group.",
-        "cta": "COMING SOON",
+        "cta": "Choose Basic+",
         "bestFor": "Immersive dinner parties"
       },
       "premium": {
         "name": "Premium",
         "tagline": "The main event pack.",
         "desc": "Best for birthdays, hens and bucks parties, and 'main event' evenings where you want it to feel really special.",
-        "cta": "COMING SOON",
+        "cta": "Choose Premium",
         "bestFor": "Hens nights, milestone birthdays"
       },
       "premiumPlus": {
         "name": "Premium+",
         "tagline": "The ultimate tailored experience.",
         "desc": "Everything in Premium, plus full visual customisation so every generated image perfectly matches your guests' descriptions.",
-        "cta": "COMING SOON",
+        "cta": "Choose Premium+",
         "bestFor": "Milestone events, content creators"
       }
     }
@@ -198,7 +198,7 @@
     "cta": {
       "title": "Ready to build, your mystery?",
       "desc": "Pick a theme, add your guests, and download your personalised pack. From {{price}}.",
-      "ctaThemes": "COMING SOON",
+      "ctaThemes": "Browse Themes",
       "ctaPricing": "See Pricing"
     }
   },
@@ -280,7 +280,7 @@
       "badge": "Can't find what you're looking for?",
       "title": "Every theme is built around you.",
       "desc": "Whichever theme you pick, we personalise the whole thing with your actual guests.",
-      "cta": "COMING SOON"
+      "cta": "Plan a Custom Theme"
     }
   },
   "faqPage": {

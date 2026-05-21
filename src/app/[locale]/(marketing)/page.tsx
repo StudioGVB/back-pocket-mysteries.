@@ -14,6 +14,13 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   return {
     title: dict.home.hero.title,
     description: dict.home.hero.subtitle,
+    alternates: {
+      canonical: `https://mysteries.backpocketgames.com/${locale}`,
+      languages: {
+        en: 'https://mysteries.backpocketgames.com/en',
+        fr: 'https://mysteries.backpocketgames.com/fr',
+      }
+    }
   }
 }
 
@@ -271,8 +278,8 @@ export default async function HomePage(props: {
                 {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} /> — instant download.
               </p>
               <p className="text-gray-500 text-sm font-bold mb-12 uppercase tracking-widest">{dict.home.ctaSection.meta}</p>
-              <Link href={`/${locale}/coming-soon`} className="inline-block px-14 py-6 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-brand-pink transition-all shadow-2xl hover:translate-y-[-4px] active:scale-95">
-                Coming Soon
+              <Link href={`/${locale}/create`} className="inline-block px-14 py-6 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-brand-pink transition-all shadow-2xl hover:translate-y-[-4px] active:scale-95">
+                {dict.common.buildYourMystery}
               </Link>
             </div>
             

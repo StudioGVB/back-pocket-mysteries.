@@ -241,7 +241,7 @@ export default function PricingCalculator({
             </div>
 
             <Link 
-              href={`/${locale}/login?next=/${locale}/builder/new`}
+              href={`/${locale}/login?next=/${locale}/create?complexity=${complexity}${isPro ? '%26pro=true' : ''}`}
               className="btn-pill block w-full px-8 py-6 text-center text-sm bg-brand-pink text-white hover:bg-white hover:text-brand-pink shadow-xl mt-auto"
             >
               Start Building Now

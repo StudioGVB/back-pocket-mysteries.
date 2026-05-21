@@ -2,6 +2,7 @@ import React from 'react';
 import { getMysteryById, getCluesByMysteryId, getCharactersByMysteryId } from '@/services/mysteries';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { hydrateTextWithCharacters } from '@/utils/hydration';
 
 export default async function PrintCluesPage({
   params,
@@ -161,11 +162,11 @@ export default async function PrintCluesPage({
                       </div>
 
                       <h3 className="text-xl font-black text-white tracking-tight leading-snug print:text-slate-900">
-                        {clue.title}
+                        {hydrateTextWithCharacters(clue.title || '', characters, 'print')}
                       </h3>
 
                       <p className="text-sm font-medium text-slate-300 leading-relaxed print:text-slate-800 print:text-xs">
-                        {clue.description || "A suspicious piece of evidence has been recovered. It implies deeper connections, but who does it belong to?"}
+                        {hydrateTextWithCharacters(clue.description || '', characters, 'print') || "A suspicious piece of evidence has been recovered. It implies deeper connections, but who does it belong to?"}
                       </p>
                     </div>
 

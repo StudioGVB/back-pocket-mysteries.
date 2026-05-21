@@ -3,20 +3,154 @@ import React from 'react';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { AddCharacterQuickForm } from './_components/AddCharacterQuickForm';
 import { CharacterCard } from './_components/CharacterCard';
+import { CastingToolbar } from './_components/CastingToolbar';
 import { Locale } from '@/lib/i18n-config';
+import { createClient } from '@/utils/supabase/server';
 
 export default async function MysteryCharactersPage({
   params,
 }: {
   params: Promise<{ id: string; locale: string }>;
 }) {
-  const { id } = await params;
+  const { id, locale } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // 1. Fetch manual and linked guests for the user roster
+  let guests: any[] = [];
+  if (user) {
+    // Fetch manual guests
+    const { data: manualGuests } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    // Fetch linked guests
+    const { data: connections } = await supabase
+      .from('guest_connections')
+      .select(`
+        id,
+        guest_user_id,
+        profiles!guest_user_id (
+          bio,
+          location,
+          pronouns,
+          avatar_config,
+          dietary_needs,
+          character_preferences
+        )
+      `)
+      .eq('host_user_id', user.id) as any;
+
+    const avatarUrlHelper = (config: any) => {
+      if (!config) return null;
+      const params = new URLSearchParams({
+        seed: config.seed || 'player',
+        top: config.top || 'shortFlat',
+        topColor: config.hairColor || '282828',
+        hairColor: config.hairColor || '282828',
+        skinColor: config.skinColor || 'ffe0bd',
+        ...(config.facialHair ? { facialHair: config.facialHair } : {}),
+        backgroundColor: 'transparent',
+      });
+      return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
+    };
+
+    const linkedGuestIds = (connections ?? []).map((c: any) => c.guest_user_id);
+    let linkedGuestNames: Record<string, string> = {};
+    if (linkedGuestIds.length > 0) {
+      const { data: linkedProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', linkedGuestIds);
+      (linkedProfiles ?? []).forEach((p: any) => {
+        linkedGuestNames[p.id] = p.full_name || 'Guest';
+      });
+    }
+
+    guests = [
+      ...(manualGuests || []).map((mg: any) => ({
+        id: mg.id,
+        name: mg.name,
+        gender: mg.gender || 'adaptable',
+        eye_color: mg.eye_color || '',
+        height: mg.height || '',
+        avatar_url: mg.avatar_url || '',
+        traits: mg.traits || [],
+        bio: mg.bio || '',
+        isLinked: false
+      })),
+      ...(connections || []).map((c: any) => ({
+        id: c.guest_user_id,
+        name: linkedGuestNames[c.guest_user_id] || 'Linked Guest',
+        gender: c.profiles?.pronouns === 'he/him' ? 'male' : c.profiles?.pronouns === 'she/her' ? 'female' : 'adaptable',
+        eye_color: '',
+        height: '',
+        avatar_url: avatarUrlHelper(c.profiles?.avatar_config) || '',
+        traits: c.profiles?.character_preferences || [],
+        bio: c.profiles?.bio || '',
+        isLinked: true
+      }))
+    ];
+  }
+
+  // 2. Fetch mystery details and character list
   const [mystery, characters] = await Promise.all([
     getMysteryById(id),
     getCharactersByMysteryId(id)
   ]);
 
   if (!mystery) return null;
+
+  // 3. Smart check: If zero characters are casted, but we have unassigned guests, auto-cast on first render!
+  const unassignedCount = characters.filter(c => !c.profile_data?.guest_id).length;
+  const castCount = characters.length - unassignedCount;
+
+  if (castCount === 0 && unassignedCount > 0 && guests.length > 0) {
+    let availableGuests = [...guests];
+    for (const char of characters) {
+      const charGender = char.gender || 'adaptable';
+      let matchedIndex = -1;
+
+      if (charGender !== 'adaptable') {
+        matchedIndex = availableGuests.findIndex(g => g.gender === charGender);
+      }
+
+      if (matchedIndex === -1 && availableGuests.length > 0) {
+        matchedIndex = 0;
+      }
+
+      if (matchedIndex !== -1) {
+        const guest = availableGuests[matchedIndex];
+        availableGuests.splice(matchedIndex, 1);
+
+        const profile = {
+          ...(char.profile_data || {}),
+          guest_id: guest.id,
+          guest_name: guest.name,
+          name: guest.name,
+          gender: guest.gender,
+          eye_color: guest.eye_color,
+          height: guest.height,
+          avatar_url: guest.avatar_url,
+          traits: guest.traits,
+          bio: guest.bio,
+          is_linked: guest.isLinked
+        };
+
+        await supabase
+          .from('characters')
+          .update({ profile_data: profile })
+          .eq('id', char.id);
+      }
+    }
+
+    // Re-fetch characters to reflect the auto-assigned states instantly
+    const refreshedChars = await getCharactersByMysteryId(id);
+    characters.length = 0;
+    characters.push(...refreshedChars);
+  }
 
   // Group characters by importance and role
   const victim = characters.find(c => c.is_victim);
@@ -33,6 +167,9 @@ export default async function MysteryCharactersPage({
 
   const maxCharacters = mystery.complexity === 'easy' ? 10 : mystery.complexity === 'medium' ? 12 : mystery.complexity === 'hard' ? 16 : 10;
   const isAtLimit = characters.length >= maxCharacters;
+
+  const updatedUnassignedCount = characters.filter(c => !c.profile_data?.guest_id).length;
+  const updatedCastCount = characters.length - updatedUnassignedCount;
 
   return (
     <div className="space-y-16 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -58,6 +195,16 @@ export default async function MysteryCharactersPage({
           </div>
         </div>
 
+        {/* Guest Casting Toolbar */}
+        {guests.length > 0 && (
+          <CastingToolbar
+            mysteryId={id}
+            totalCharacters={characters.length}
+            castCount={updatedCastCount}
+            rosterCount={guests.length}
+          />
+        )}
+
         {/* Action Bar / Quick Add */}
         {!isAtLimit ? (
           <div className="bg-slate-50/50 p-1 rounded-[2.5rem] border border-slate-100 shadow-inner">
@@ -80,7 +227,7 @@ export default async function MysteryCharactersPage({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {victim && (
-              <CharacterCard character={victim} mysteryId={id} allCharacters={characters} />
+              <CharacterCard character={victim} mysteryId={id} allCharacters={characters} guests={guests} />
             )}
             {!victim && (
               <div className="bg-red-50/30 border border-dashed border-red-100 rounded-[2.5rem] p-10 text-center flex flex-col items-center justify-center">
@@ -89,7 +236,7 @@ export default async function MysteryCharactersPage({
             )}
             
             {killer && (
-              <CharacterCard character={killer} mysteryId={id} allCharacters={characters} />
+              <CharacterCard character={killer} mysteryId={id} allCharacters={characters} guests={guests} />
             )}
             {!killer && (
               <div className="border-2 border-dashed border-brand-pink/20 rounded-[2.5rem] p-10 text-center flex flex-col items-center justify-center opacity-70">
@@ -98,7 +245,7 @@ export default async function MysteryCharactersPage({
             )}
 
             {assistant && (
-              <CharacterCard character={assistant} mysteryId={id} allCharacters={characters} />
+              <CharacterCard character={assistant} mysteryId={id} allCharacters={characters} guests={guests} />
             )}
             {!assistant && (
               <div className="border-2 border-dashed border-orange-500/20 rounded-[2.5rem] p-10 text-center flex flex-col items-center justify-center opacity-50">
@@ -118,7 +265,7 @@ export default async function MysteryCharactersPage({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {remainingMandatory.map((character) => (
-                <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} />
+                <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} guests={guests} />
               ))}
             </div>
           </section>
@@ -132,7 +279,7 @@ export default async function MysteryCharactersPage({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {remainingOptional.map((character) => (
-              <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} />
+              <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} guests={guests} />
             ))}
             <div className="border-2 border-dashed border-slate-50 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center opacity-20 h-full min-h-[200px]">
                <span className="text-2xl mb-2">➕</span>

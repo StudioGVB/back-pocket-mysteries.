@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
   if (pathnameIsMissingLocale) {
     const locale = getLocale(request)
 
-    return NextResponse.rewrite(
+    return NextResponse.redirect(
       new URL(
         `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`,
         request.url

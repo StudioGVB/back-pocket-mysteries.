@@ -81,8 +81,8 @@ export default function MobileNav({ locale, dict }: MobileNavProps) {
                 <Link href={`/${locale}/login`} className="text-lg font-black uppercase tracking-widest text-white/80 hover:text-brand-pink transition-colors">
                   {dict.common.login}
                 </Link>
-                <Link href={`/${locale}/coming-soon`} className="px-10 py-5 bg-brand-pink text-white rounded-full text-sm font-black uppercase tracking-widest w-full text-center hover:bg-white hover:text-brand-dark transition-colors shadow-2xl">
-                  Coming Soon
+                <Link href={`/${locale}/create`} className="px-10 py-5 bg-brand-pink text-white rounded-full text-sm font-black uppercase tracking-widest w-full text-center hover:bg-white hover:text-brand-dark transition-colors shadow-2xl">
+                  {dict.common.getStarted}
                 </Link>
               </div>
             </div>

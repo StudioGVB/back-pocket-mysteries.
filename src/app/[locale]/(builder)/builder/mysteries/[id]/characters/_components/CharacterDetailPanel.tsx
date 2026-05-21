@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Database, MotiveType, VictimRelationship, Archetype } from '@/types/database';
-import { updateCharacterAction } from '../actions';
+import { updateCharacterAction, assignGuestToCharacterAction } from '../actions';
 import { MotiveManager } from './MotiveManager';
 
 type Motive = Database['public']['Tables']['motives']['Row'];
@@ -10,13 +10,19 @@ interface CharacterDetailPanelProps {
   character: Character;
   mysteryId: string;
   allCharacters: Character[];
+  guests: any[];
   onClose: () => void;
 }
 
 import { RoleTitleInput } from './RoleTitleInput';
 
-export function CharacterDetailPanel({ character, mysteryId, allCharacters, onClose }: CharacterDetailPanelProps) {
+export function CharacterDetailPanel({ character, mysteryId, allCharacters, guests, onClose }: CharacterDetailPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isCasting, setIsCasting] = useState(false);
+
+  const profileData = character.profile_data as any;
+  const assignedGuestId = profileData?.guest_id;
+  const isLinked = profileData?.is_linked;
 
   const archetypes: Archetype[] = ['hero', 'villain', 'sidekick', 'victim', 'witness', 'investigator'];
   const relationships: VictimRelationship[] = ['spouse', 'sibling', 'friend', 'enemy', 'stranger', 'colleague'];
@@ -133,6 +139,75 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, onCl
                   </div>
                 </div>
               </div>
+ 
+              {/* Actor Casting */}
+              {guests.length > 0 && (
+                <div className="space-y-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50 pb-2">Actor Casting</h3>
+                  
+                  <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 relative">
+                    <div className="flex items-center gap-4 overflow-hidden w-full sm:w-auto">
+                      <div className="w-14 h-14 rounded-2xl bg-white overflow-hidden flex items-center justify-center border border-slate-200/60 shrink-0 shadow-sm">
+                        {profileData?.avatar_url ? (
+                          <img src={profileData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xl">🎭</span>
+                        )}
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-black text-slate-800 truncate">
+                            {profileData?.guest_name || profileData?.name || 'Unassigned'}
+                          </p>
+                          {assignedGuestId && (
+                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
+                              isLinked ? 'bg-brand-pink/5 text-brand-pink' : 'bg-slate-200 text-slate-600'
+                            }`}>
+                              {isLinked ? 'Connected' : 'Roster'}
+                            </span>
+                          )}
+                        </div>
+                        {profileData?.gender ? (
+                          <p className="text-[10px] font-bold text-slate-400 capitalize truncate mt-1">
+                            {profileData.gender} {profileData.eye_color ? `• ${profileData.eye_color} eyes` : ''} {profileData.height ? `• ${profileData.height}` : ''}
+                          </p>
+                        ) : (
+                          <p className="text-[10px] font-bold text-slate-400 truncate mt-1">No guest casted yet</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="w-full sm:w-auto shrink-0">
+                      <select
+                        value={assignedGuestId || ''}
+                        disabled={isCasting}
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          setIsCasting(true);
+                          try {
+                            await assignGuestToCharacterAction(mysteryId, character.id, val ? val : null);
+                          } catch (err: any) {
+                            alert('Casting failed: ' + err.message);
+                          } finally {
+                            setIsCasting(false);
+                          }
+                        }}
+                        className="w-full sm:w-auto bg-white border border-slate-200 text-xs font-black uppercase tracking-wider rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 cursor-pointer text-slate-600 hover:text-slate-900 transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        <option value="">-- Clear Casting --</option>
+                        {guests.map((g) => {
+                          const isCastElsewhere = allCharacters.some(c => c.id !== character.id && (c.profile_data as any)?.guest_id === g.id);
+                          return (
+                            <option key={g.id} value={g.id}>
+                              {g.name} ({g.gender}){isCastElsewhere ? ' [Busy]' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Story Roles */}
               <div className="space-y-6">

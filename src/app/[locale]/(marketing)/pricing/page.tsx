@@ -217,7 +217,7 @@ export default async function PricingPage(props: {
               ))}
             </ul>
 
-            <Link href={`/${locale}/coming-soon`} className="btn-pill block w-full px-8 py-6 text-center text-sm bg-brand-dark text-white hover:bg-white hover:text-brand-dark shadow-2xl">
+            <Link href={`/${locale}/create?complexity=grand`} className="btn-pill block w-full px-8 py-6 text-center text-sm bg-brand-dark text-white hover:bg-white hover:text-brand-dark shadow-2xl">
               {tiers[3].cta}
             </Link>
           </div>

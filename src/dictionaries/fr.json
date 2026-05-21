@@ -8,10 +8,11 @@
     "faq": "FAQ",
     "blog": "Blog",
     "login": "Connexion",
-    "getStarted": "BIENTÔT DISPONIBLE",
-    "signup": "BIENTÔT DISPONIBLE",
-    "buildYourMystery": "BIENTÔT DISPONIBLE",
-    "browseThemes": "BIENTÔT DISPONIBLE",
+    "getStarted": "Créer mon Enquête",
+    "signup": "S'inscrire",
+    "buildYourMystery": "Créer votre Enquête",
+    "browseThemes": "Parcourir les Thèmes",
+    "pickATheme": "Choisir un Thème",
     "footer": {
       "desc": "Kits d'enquête personnalisés pour votre groupe, prêts en moins de 20 minutes. Une création Back Pocket Games.",
       "rights": "Back Pocket Games. Tous droits réservés.",
@@ -32,7 +33,7 @@
       "badge": "Votre fête organisée en 20 minutes",
       "title": "Une enquête, construite autour, de vos proches.",
       "subtitle": "Vrais noms. Vraies relations. Vrai drame. Nous créons un pack d'enquête entièrement personnalisé et prêt à imprimer — en quelques minutes.",
-      "ctaPick": "BIENTÔT DISPONIBLE",
+      "ctaPick": "Choisir un Thème",
       "ctaHow": "Comment ça marche",
       "priceLabel": "À partir de {{price}}",
       "readyBadge": "Prêt en <20 min"
@@ -123,28 +124,28 @@
         "name": "Basique",
         "tagline": "Installation rapide, fête organisée.",
         "desc": "Idéal pour les petits groupes ou les hôtes occasionnels.",
-        "cta": "BIENTÔT DISPONIBLE",
+        "cta": "Choisir Basique",
         "bestFor": "Petits dîners entre amis"
       },
       "basicPlus": {
         "name": "Basique+",
         "tagline": "Basique, mais visuellement vous.",
         "desc": "Tout le Basique, plus une personnalisation complète de l'apparence des personnages.",
-        "cta": "BIENTÔT DISPONIBLE",
+        "cta": "Choisir Basique+",
         "bestFor": "Dîners immersifs"
       },
       "premium": {
         "name": "Premium",
         "tagline": "Le pack événementiel principal.",
         "desc": "Idéal pour les anniversaires et les occasions spéciales où vous voulez marquer le coup.",
-        "cta": "BIENTÔT DISPONIBLE",
+        "cta": "Choisir Premium",
         "bestFor": "Anniversaires, EVJF/EVG"
       },
       "premiumPlus": {
         "name": "Premium+",
         "tagline": "L'expérience sur mesure ultime.",
         "desc": "Tout le Premium, plus une personnalisation visuelle complète pour chaque image.",
-        "cta": "BIENTÔT DISPONIBLE",
+        "cta": "Choisir Premium+",
         "bestFor": "Événements spéciaux, créateurs"
       }
     }
@@ -198,7 +199,7 @@
     "cta": {
       "title": "Prêt à créer, votre enquête ?",
       "desc": "Choisissez un thème, ajoutez vos invités et téléchargez votre pack. À partir de {{price}}.",
-      "ctaThemes": "BIENTÔT DISPONIBLE",
+      "ctaThemes": "Parcourir les Thèmes",
       "ctaPricing": "Voir les tarifs"
     }
   },
@@ -280,7 +281,7 @@
       "badge": "Vous ne trouvez pas votre bonheur ?",
       "title": "Chaque thème est construit pour vous.",
       "desc": "Quel que soit le thème que vous choisissez, nous personnalisons l'ensemble avec vos invités réels.",
-      "cta": "BIENTÔT DISPONIBLE"
+      "cta": "Planifier une Enquête"
     }
   },
   "faqPage": {

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Database, PlotRole } from '@/types/database';
-import { toggleVictimAction, removeCharacterAction } from '../actions';
+import { toggleVictimAction, removeCharacterAction, assignGuestToCharacterAction } from '../actions';
 import { CharacterDetailPanel } from './CharacterDetailPanel';
 
 type Motive = Database['public']['Tables']['motives']['Row'];
@@ -13,13 +13,15 @@ interface CharacterCardProps {
   character: Character;
   mysteryId: string;
   allCharacters: Character[];
+  guests: any[];
 }
 
 import { getCharacterColor } from '@/utils/colors';
 
-export function CharacterCard({ character, mysteryId, allCharacters }: CharacterCardProps) {
+export function CharacterCard({ character, mysteryId, allCharacters, guests }: CharacterCardProps) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isCasting, setIsCasting] = useState(false);
 
   // Derive display role and style
   const role = character.plot_role || 'innocent';
@@ -35,6 +37,10 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
   };
 
   const currentRole = isVictim ? roleConfig.victim : roleConfig[role as keyof typeof roleConfig] || roleConfig.innocent;
+
+  const profileData = character.profile_data as any;
+  const assignedGuestId = profileData?.guest_id;
+  const isLinked = profileData?.is_linked;
 
   return (
     <>
@@ -153,12 +159,79 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
             </div>
           )}
         </div>
+
+        {/* Unified Guest Casting Control Badge */}
+        {guests.length > 0 && (
+          <div className="mt-6 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 flex flex-col gap-3 relative">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Assigned Actor</span>
+              {assignedGuestId && (
+                <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                  isLinked ? 'bg-brand-pink/5 text-brand-pink' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  {isLinked ? 'Connected' : 'Roster'}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200/60 shrink-0">
+                  {profileData?.avatar_url ? (
+                    <img src={profileData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm">🎭</span>
+                  )}
+                </div>
+                <div className="overflow-hidden">
+                  <p className="text-xs font-black text-slate-800 truncate">
+                    {profileData?.guest_name || profileData?.name || 'Unassigned'}
+                  </p>
+                  {profileData?.gender ? (
+                    <p className="text-[9px] font-bold text-slate-400 capitalize truncate mt-0.5">
+                      {profileData.gender} {profileData.eye_color ? `• ${profileData.eye_color} eyes` : ''}
+                    </p>
+                  ) : (
+                    <p className="text-[9px] font-bold text-slate-300 truncate mt-0.5">No guest casted yet</p>
+                  )}
+                </div>
+              </div>
+
+              <select
+                value={assignedGuestId || ''}
+                disabled={isCasting}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setIsCasting(true);
+                  try {
+                    await assignGuestToCharacterAction(mysteryId, character.id, val ? val : null);
+                  } catch (err: any) {
+                    alert('Casting failed: ' + err.message);
+                  } finally {
+                    setIsCasting(false);
+                  }
+                }}
+                className="bg-white border border-slate-200 text-[10px] font-black uppercase tracking-wider rounded-xl px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-brand-pink/20 cursor-pointer text-slate-600 hover:text-slate-900 transition-colors shadow-sm disabled:opacity-50"
+              >
+                <option value="">-- Clear --</option>
+                {guests.map((g) => {
+                  const isCastElsewhere = allCharacters.some(c => c.id !== character.id && (c.profile_data as any)?.guest_id === g.id);
+                  return (
+                    <option key={g.id} value={g.id}>
+                      {g.name} ({g.gender}){isCastElsewhere ? ' [Busy]' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+        )}
         
         <Link 
           href={`/builder/mysteries/${mysteryId}/characters/${character.id}`}
-          className="mt-6 flex w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors items-center justify-center gap-2"
+          className="mt-4 flex w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors items-center justify-center gap-2"
         >
-          {character.profile_data && typeof character.profile_data === 'object' && Object.keys(character.profile_data).length > 0 && (
+          {profileData && typeof profileData === 'object' && Object.keys(profileData).length > 0 && (
             <span className="text-emerald-400 text-sm leading-none mt-[-2px]">✓</span>
           )}
           Visuals & Personality ✨
@@ -170,9 +243,11 @@ export function CharacterCard({ character, mysteryId, allCharacters }: Character
           character={character}
           mysteryId={mysteryId}
           allCharacters={allCharacters}
+          guests={guests}
           onClose={() => setIsEditing(false)}
         />
       )}
     </>
   );
 }
+

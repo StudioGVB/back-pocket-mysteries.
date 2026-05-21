@@ -2,6 +2,10 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logAiUsage } from '@/utils/ai-logger';
+import { createClient } from '@/utils/supabase/server';
+import { getCharactersByMysteryId } from '@/services/mysteries';
+import { hydrateTextWithCharacters } from '@/utils/hydration';
+import { revalidatePath } from 'next/cache';
 
 export async function generateRandomQuirk(name: string, gender: string) {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
@@ -9,7 +13,7 @@ export async function generateRandomQuirk(name: string, gender: string) {
   }
 
   const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-  const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const characterDescription = name ? `${name} (Gender: ${gender})` : `a ${gender} character`;
 
@@ -23,7 +27,7 @@ Respond with ONLY the quirk itself, no quotes, no extra text, and do not include
     const response = await result.response;
     
     await logAiUsage({
-      model_name: 'gemini-1.5-flash',
+      model_name: 'gemini-2.5-flash',
       prompt_tokens: response.usageMetadata?.promptTokenCount,
       completion_tokens: response.usageMetadata?.candidatesTokenCount,
       feature_name: 'generate_random_quirk'
@@ -42,7 +46,7 @@ export async function generateCluePreview(prompt: string, templateText: string) 
   }
 
   const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-  const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const systemInstruction = `You are a mystery game clue generator. Based on the provided prompt and template, generate the text for a single clue. Output ONLY the generated clue content, do not add any conversational fluff. Keep it concise, engaging, and in-character for a murder mystery.`;
 
@@ -53,7 +57,7 @@ export async function generateCluePreview(prompt: string, templateText: string) 
     const response = await result.response;
 
     await logAiUsage({
-      model_name: 'gemini-1.5-flash',
+      model_name: 'gemini-2.5-flash',
       prompt_tokens: response.usageMetadata?.promptTokenCount,
       completion_tokens: response.usageMetadata?.candidatesTokenCount,
       feature_name: 'generate_clue_preview'
@@ -72,7 +76,7 @@ export async function suggestCluePrompts(beatTitle: string): Promise<string[]> {
   }
 
   const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-  const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `You are an expert murder mystery designer. The user needs to create a clue/evidence that reveals or relates to the following story beat:
 "${beatTitle}"
@@ -92,7 +96,7 @@ Return exactly 2 lines. Do not use numbers, bullet points, or any extra conversa
     const response = await result.response;
 
     await logAiUsage({
-      model_name: 'gemini-1.5-flash',
+      model_name: 'gemini-2.5-flash',
       prompt_tokens: response.usageMetadata?.promptTokenCount,
       completion_tokens: response.usageMetadata?.candidatesTokenCount,
       feature_name: 'suggest_clue_prompts'
@@ -119,3 +123,97 @@ Return exactly 2 lines. Do not use numbers, bullet points, or any extra conversa
     ];
   }
 }
+
+export async function generateClueDescriptionAction(
+  title: string,
+  beatTitle: string,
+  generationPrompt: string
+): Promise<string> {
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
+  }
+
+  const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  const prompt = `You are a mystery game designer writing the descriptive text for a clue/evidence card.
+Clue Title: "${title}"
+Story Beat: "${beatTitle}"
+AI Description / Generation Prompt: "${generationPrompt}"
+
+Your task is to write a single, rich, and highly atmospheric description of this clue. This description will be printed on the clue card itself, which the players will read during the game.
+It should be highly thematic, detailed, and reveal crucial circumstantial or direct evidence related to the story beat.
+Keep it between 2 to 4 sentences. Make it sound premium and engaging, matching a cinematic noir/suspense theme.
+CRITICAL: Output ONLY the description itself. No introduction, no quotes, no conversational text.`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      prompt_tokens: response.usageMetadata?.promptTokenCount,
+      completion_tokens: response.usageMetadata?.candidatesTokenCount,
+      feature_name: 'generate_clue_description'
+    });
+
+    return response.text().trim().replace(/^["']|["']$/g, '');
+  } catch (error) {
+    console.error('Error generating clue description:', error);
+    throw new Error("Failed to generate clue description.");
+  }
+}
+
+export async function generateClueImageAction(clueId: string, mysteryId: string, promptText: string) {
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
+  }
+
+  try {
+    const supabase = await createClient();
+    const characters = await getCharactersByMysteryId(mysteryId);
+    
+    // Hydrate the promptText with character information for visual description
+    const hydratedPrompt = hydrateTextWithCharacters(promptText, characters, 'ai');
+    
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    
+    // Enhance prompt for highest dynamic photo quality & consistent noir theme
+    const finalPrompt = `A high-quality, professional photograph of a clue item in a murder mystery: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+    const payload = {
+      instances: [{ prompt: finalPrompt }],
+      parameters: { sampleCount: 1, aspectRatio: "1:1", outputOptions: { mimeType: "image/jpeg" } }
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!data.predictions || !data.predictions[0]) {
+      throw new Error('Failed to generate image: ' + JSON.stringify(data.error || data));
+    }
+
+    const base64Image = data.predictions[0].bytesBase64Encoded;
+    const dataUri = `data:image/jpeg;base64,${base64Image}`;
+
+    // Update static_image_url in clues table
+    const { error } = await supabase
+      .from('clues')
+      .update({ static_image_url: dataUri, updated_at: new Date().toISOString() })
+      .eq('id', clueId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+    return { success: true, imageUrl: dataUri };
+  } catch (error: any) {
+    console.error('generateClueImageAction error:', error);
+    return { error: error.message };
+  }
+}
+

@@ -13,17 +13,31 @@ interface WizardClientProps {
   initialGuests: any[];
   locale: Locale;
   userId: string;
+  initialTheme?: string;
+  initialComplexity?: string;
+  initialPro?: boolean;
 }
 
-export default function WizardClient({ initialGuests, locale, userId }: WizardClientProps) {
+export default function WizardClient({ 
+  initialGuests, 
+  locale, 
+  userId,
+  initialTheme,
+  initialComplexity,
+  initialPro
+}: WizardClientProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // State Step 1
-  const [theme, setTheme] = useState('');
-  const [complexity, setComplexity] = useState<'basic' | 'premium' | 'grand'>('premium');
+  const [theme, setTheme] = useState(initialTheme || '');
+  const [complexity, setComplexity] = useState<'basic' | 'premium' | 'grand'>(
+    (initialComplexity === 'basic' || initialComplexity === 'premium' || initialComplexity === 'grand') 
+      ? initialComplexity 
+      : 'premium'
+  );
 
   // State Step 2 & 3
   const [playerCount, setPlayerCount] = useState(8);

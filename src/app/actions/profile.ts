@@ -18,7 +18,12 @@ export async function saveProfileAction(data: {
 
   const { error } = await (supabase as any)
     .from('profiles')
-    .upsert({ user_id: user.id, ...data }, { onConflict: 'user_id' });
+    .upsert({ 
+      id: user.id, 
+      email: user.email,
+      full_name: user.user_metadata?.full_name || '',
+      ...data 
+    }, { onConflict: 'id' });
 
   if (error) return { error: error.message };
   return { success: true };
@@ -33,7 +38,7 @@ export async function getProfileAction() {
   const { data } = await (supabase as any)
     .from('profiles')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('id', user.id)
     .single();
 
   return { profile: data };
