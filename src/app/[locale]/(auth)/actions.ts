@@ -24,6 +24,8 @@ export async function signup(formData: FormData) {
     options: {
       data: {
         full_name: formData.get('full_name') as string,
+        country: formData.get('country') as string,
+        how_found_us: formData.get('how_found_us') as string,
       },
     },
   }

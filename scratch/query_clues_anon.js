@@ -20,25 +20,15 @@ const supabase = createClient(
 );
 
 async function run() {
-  const email = `test_circus_host_${Date.now()}@studiogvb.com`;
-  const password = 'Password123!';
-  const fullName = 'Gabriella Blyth';
+  const { data, error } = await supabase
+    .from('clues')
+    .select('id, title, description, generation_prompt')
+    .limit(10);
 
-  console.log('Attempting sign up with full_name...');
-  let { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName
-      }
-    }
-  });
-
-  if (signUpError) {
-    console.log('Sign up error:', signUpError.message);
+  if (error) {
+    console.error('Error fetching clues:', error.message);
   } else {
-    console.log('Success!', signUpData.user.id);
+    console.log('Clues fetched directly via Anon Key:', data);
   }
 }
 

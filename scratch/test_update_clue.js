@@ -20,25 +20,20 @@ const supabase = createClient(
 );
 
 async function run() {
-  const email = `test_circus_host_${Date.now()}@studiogvb.com`;
-  const password = 'Password123!';
-  const fullName = 'Gabriella Blyth';
+  const clueId = '420a9e59-57d5-47f2-b930-58e00cadda36'; // The Threatening Text Chain
+  console.log('Testing update on clue ID:', clueId);
+  const { data, error } = await supabase
+    .from('clues')
+    .update({
+      generation_prompt: 'Test prompt'
+    })
+    .eq('id', clueId)
+    .select();
 
-  console.log('Attempting sign up with full_name...');
-  let { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName
-      }
-    }
-  });
-
-  if (signUpError) {
-    console.log('Sign up error:', signUpError.message);
+  if (error) {
+    console.error('Update failed:', error.message);
   } else {
-    console.log('Success!', signUpData.user.id);
+    console.log('Update success!', data);
   }
 }
 

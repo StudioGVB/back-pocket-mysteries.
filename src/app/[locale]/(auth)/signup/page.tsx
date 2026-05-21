@@ -55,6 +55,40 @@ export default async function SignupPage({
             />
           </div>
 
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 ml-4" htmlFor="country">
+              Country
+            </label>
+            <select
+              id="country"
+              name="country"
+              required
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-full focus:outline-none focus:border-brand-pink transition-colors text-sm font-medium appearance-none"
+              defaultValue=""
+            >
+              <option value="" disabled>Select your country</option>
+              <option value="United States">United States</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="Canada">Canada</option>
+              <option value="Australia">Australia</option>
+              <option value="New Zealand">New Zealand</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 ml-4" htmlFor="how_found_us">
+              How did you hear about us? <span className="text-slate-300 font-normal">(Optional)</span>
+            </label>
+            <input
+              id="how_found_us"
+              name="how_found_us"
+              type="text"
+              placeholder="Google, Friend, Instagram..."
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-full focus:outline-none focus:border-brand-pink transition-colors text-sm font-medium"
+            />
+          </div>
+
           <PasswordInput />
         </div>
 

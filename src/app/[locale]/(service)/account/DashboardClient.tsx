@@ -35,9 +35,10 @@ interface DashboardClientProps {
   orderCount: number;
   guests: Guest[];
   locale: string;
+  onboardingCompleted?: boolean;
 }
 
-export default function DashboardClient({ user, guestCount, orderCount, guests, locale }: DashboardClientProps) {
+export default function DashboardClient({ user, guestCount, orderCount, guests, locale, onboardingCompleted = true }: DashboardClientProps) {
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const tip = HOST_TIPS[new Date().getDate() % HOST_TIPS.length];
