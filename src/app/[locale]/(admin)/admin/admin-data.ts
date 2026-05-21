@@ -155,12 +155,11 @@ export async function getAdmins() {
 
   if (error) {
     console.error('Error fetching admins:', error);
-    return [];
   }
 
   const admins = data || [];
 
-  // Ensure current user (the owner) is always listed, even if RLS blocks DB insertion
+  // Ensure current user (the owner) is always listed, even if RLS blocks DB insertion or if there's an error
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
     const isAlreadyListed = admins.some((a: any) => a.id === user.id);
