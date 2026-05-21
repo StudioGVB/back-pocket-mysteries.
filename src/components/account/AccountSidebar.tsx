@@ -10,7 +10,14 @@ interface AccountSidebarProps {
   user?: {
     name: string;
     email: string;
+    avatar_config?: any;
   };
+}
+
+function buildAvatarUrl(config: any, name?: string) {
+  if (!config) return null;
+  const isBald = config.top === 'none';
+  return `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed)}${isBald ? '&topProbability=0' : `&top=${config.top}`}&hairColor=${config.hairColor}&hatColor=${config.hairColor}&facialHairColor=${config.hairColor}&skinColor=${config.skinColor}&eyes=default&eyebrows=default&mouth=smile&clothesColor=262e33&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${config.facialHair}` : ''}&backgroundColor=transparent`;
 }
 
 export function AccountSidebar({ user }: AccountSidebarProps) {
@@ -73,6 +80,8 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '?';
 
+  const avatarUrl = user?.avatar_config ? buildAvatarUrl(user.avatar_config, user.name) : null;
+
   return (
     <aside className="w-72 flex flex-col fixed h-full z-30" style={{ background: '#1e191c' }}>
       {/* Logo */}
@@ -130,10 +139,16 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
       {/* Bottom section: user card + settings + sign out */}
       <div className="p-4 mt-auto space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {/* User card */}
-        <Link href={`/${locale}/account/settings`} className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all" style={{ background: 'rgba(255,255,255,0.05)' }}>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0" style={{ background: '#fe04c6', color: '#fff' }}>
-            {initials}
-          </div>
+        <Link href={`/${locale}/account/settings`} className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-white/10" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          {avatarUrl ? (
+            <div className="w-10 h-10 rounded-full flex-shrink-0 bg-white flex items-center justify-center overflow-hidden shadow-inner">
+              <img src={avatarUrl} alt={user?.name || 'Avatar'} className="w-9 h-9 object-contain" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0" style={{ background: '#fe04c6', color: '#fff' }}>
+              {initials}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <p className="text-sm font-black text-white truncate">{user?.name || 'Guest'}</p>
             <p className="text-xs font-medium truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.email || ''}</p>

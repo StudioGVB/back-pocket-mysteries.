@@ -16,9 +16,20 @@ export default async function ServiceLayout({
   const { data: { user } } = await supabase.auth.getUser();
   const isEmailUnverified = user && !user.email_confirmed_at;
 
+  let avatarConfig: any = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('avatar_config')
+      .eq('id', user.id)
+      .maybeSingle();
+    avatarConfig = profile?.avatar_config;
+  }
+
   const userData = user ? {
     name: user.user_metadata?.full_name ?? '',
     email: user.email ?? '',
+    avatar_config: avatarConfig,
   } : undefined;
 
   return (

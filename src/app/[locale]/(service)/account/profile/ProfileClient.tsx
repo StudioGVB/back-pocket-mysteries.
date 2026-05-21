@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AvatarBuilder, AvatarConfig } from '@/components/account/AvatarBuilder';
+import { AvatarBuilder, AvatarConfig, buildAvatarUrl } from '@/components/account/AvatarBuilder';
 import { saveProfileAction } from '@/app/actions/profile';
+import { generateProfileBioAction, generateProfileFunFactAction } from '@/app/actions/generator';
 
 const DIETARY_OPTIONS = [
   'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free',
@@ -16,12 +17,8 @@ const DEFAULT_AVATAR: AvatarConfig = {
   top: 'shortFlat',
   hairColor: '282828',
   skinColor: 'ffe0bd',
+  accessories: 'none',
 };
-
-function buildAvatarUrl(config: AvatarConfig, name?: string) {
-  const isBald = config.top === 'none';
-  return `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed)}${isBald ? '&topProbability=0' : `&top=${config.top}`}&hairColor=${config.hairColor}&hatColor=${config.hairColor}&facialHairColor=${config.hairColor}&skinColor=${config.skinColor}&eyes=default&eyebrows=default&mouth=smile&clothesColor=262e33&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${config.facialHair}` : ''}&backgroundColor=transparent`;
-}
 
 interface ProfileClientProps {
   user: { name: string; email: string };
@@ -58,6 +55,9 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
     (profile?.avatar_config as AvatarConfig) ?? DEFAULT_AVATAR
   );
   const [activeTab, setActiveTab] = useState<'info' | 'avatar'>('info');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isGeneratingBio, setIsGeneratingBio] = useState(false);
+  const [isGeneratingFunFact, setIsGeneratingFunFact] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -93,7 +93,31 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bio, location, pronouns, funFacts, dietary, charPrefs, avatarConfig]);
 
-  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all";
+  const handleGenerateBio = async () => {
+    setIsGeneratingBio(true);
+    try {
+      const generated = await generateProfileBioAction(user.name);
+      setBio(generated);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingBio(false);
+    }
+  };
+
+  const handleGenerateFunFact = async () => {
+    setIsGeneratingFunFact(true);
+    try {
+      const generated = await generateProfileFunFactAction(user.name);
+      setFunFacts(generated);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingFunFact(false);
+    }
+  };
+
+  const inputClass = "w-full px-5 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all";
 
   return (
     <div className="w-full max-w-3xl">
@@ -206,10 +230,18 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
 
               {/* Bio */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
-                  Bio
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400">Bio</label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateBio}
+                    disabled={isGeneratingBio}
+                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-brand-pink hover:text-brand-pink/70 transition-colors disabled:opacity-50"
+                  >
+                    <svg className={isGeneratingBio ? "animate-spin" : ""} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+                    {isGeneratingBio ? 'Writing...' : 'AI Generate'}
+                  </button>
+                </div>
                 <textarea
                   className={`${inputClass} resize-none`}
                   rows={3}
@@ -221,10 +253,18 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
 
               {/* Fun Facts */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
-                  Fun Facts
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400">Fun Facts</label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateFunFact}
+                    disabled={isGeneratingFunFact}
+                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-brand-pink hover:text-brand-pink/70 transition-colors disabled:opacity-50"
+                  >
+                    <svg className={isGeneratingFunFact ? "animate-spin" : ""} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+                    {isGeneratingFunFact ? 'Thinking...' : 'AI Generate'}
+                  </button>
+                </div>
                 <textarea
                   className={`${inputClass} resize-none`}
                   rows={2}
@@ -254,7 +294,6 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
                     </button>
                   ))}
                 </div>
-              </div>
               </div>
             </div>
           ) : (

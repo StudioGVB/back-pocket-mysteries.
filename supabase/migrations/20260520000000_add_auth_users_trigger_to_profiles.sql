@@ -5,10 +5,11 @@ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = ''
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, user_id, full_name, created_at)
+  INSERT INTO public.profiles (id, user_id, email, full_name, created_at)
   VALUES (
     NEW.id,
     NEW.id,
+    NEW.email,
     NEW.raw_user_meta_data->>'full_name',
     NOW()
   )

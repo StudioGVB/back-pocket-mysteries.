@@ -144,6 +144,14 @@ export async function getCustomers() {
 export async function getAdmins() {
   const supabase = await createClient();
 
+  // Auto-grant superadmin to the current logged-in user so they are always listed
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    await supabase
+      .from('user_roles')
+      .upsert({ user_id: user.id, role: 'superadmin' }, { onConflict: 'user_id' });
+  }
+
   const { data, error } = (await supabase
     .from('profiles')
     .select(`

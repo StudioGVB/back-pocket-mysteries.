@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { signup } from '../actions';
+import PasswordInput from './PasswordInput';
 
 export default async function SignupPage({
   params,
@@ -54,19 +55,7 @@ export default async function SignupPage({
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 ml-4" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              required
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-full focus:outline-none focus:border-brand-pink transition-colors text-sm font-medium"
-            />
-          </div>
+          <PasswordInput />
         </div>
 
         <button

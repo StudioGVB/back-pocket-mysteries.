@@ -10,7 +10,21 @@ export type AvatarConfig = {
   facialHair?: string;
   eyeColor?: string;
   height?: string;
+  accessories?: string;
 };
+
+export function buildAvatarUrl(config: AvatarConfig | any, name?: string) {
+  if (!config) return null;
+  const isBald = config.top === 'none';
+  const hasAccessories = config.accessories && config.accessories !== 'none';
+  
+  return `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed)}` +
+    `&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=transparent` +
+    `${isBald ? '&topProbability=0' : `&top=${config.top}`}` +
+    `&hairColor=${config.hairColor}&hatColor=${config.hairColor}&skinColor=${config.skinColor}` +
+    `&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${config.facialHair}&facialHairColor=${config.hairColor}` : ''}` +
+    `&accessoriesProbability=${hasAccessories ? '100' : '0'}${hasAccessories ? `&accessories=${config.accessories}` : ''}`;
+}
 
 interface AvatarBuilderProps {
   config: AvatarConfig;
@@ -71,6 +85,16 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
   const eyeColors = ['Brown', 'Blue', 'Green', 'Hazel', 'Grey', 'Heterochromia'];
   const heights = ['Petite / Short', 'Average', 'Tall', 'Very Tall'];
 
+  const accessoryOptions = [
+    { id: 'none', label: 'None' },
+    { id: 'kurt', label: 'Kurt Glasses' },
+    { id: 'prescription01', label: 'Prescription 1' },
+    { id: 'prescription02', label: 'Prescription 2' },
+    { id: 'round', label: 'Round Glasses' },
+    { id: 'sunglasses', label: 'Sunglasses' },
+    { id: 'wayfarers', label: 'Wayfarers' },
+  ];
+
   const tops = gender === 'Masculine' ? masculineTops : feminineTops;
 
   return (
@@ -121,6 +145,26 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
               onClick={() => updateConfig('top', style.id)}
               className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
                 config.top === style.id 
+                  ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
+                  : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {style.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Accessories */}
+      <div>
+        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Accessories</label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {accessoryOptions.map(style => (
+            <button
+              key={style.id}
+              onClick={() => updateConfig('accessories', style.id)}
+              className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                (config.accessories || 'none') === style.id 
                   ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
                   : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
               }`}

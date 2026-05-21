@@ -217,3 +217,32 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
   }
 }
 
+export async function generateProfileBioAction(name: string): Promise<string> {
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) throw new Error('API key not configured');
+  const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const prompt = `Write a short, fun, 1-2 sentence bio for a murder mystery party guest named ${name}. Make it slightly quirky and engaging. Respond ONLY with the bio text, no quotes.`;
+  
+  try {
+    const result = await model.generateContent(prompt);
+    return (await result.response).text().trim().replace(/^["']|["']$/g, '');
+  } catch (error) {
+    console.error('Error generating bio:', error);
+    throw new Error('Failed to generate bio');
+  }
+}
+
+export async function generateProfileFunFactAction(name: string): Promise<string> {
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) throw new Error('API key not configured');
+  const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const prompt = `Write a single, hilarious, and highly specific fun fact about a murder mystery party guest named ${name}. Keep it under 15 words. Respond ONLY with the fun fact, no quotes.`;
+  
+  try {
+    const result = await model.generateContent(prompt);
+    return (await result.response).text().trim().replace(/^["']|["']$/g, '');
+  } catch (error) {
+    console.error('Error generating fun fact:', error);
+    throw new Error('Failed to generate fun fact');
+  }
+}
