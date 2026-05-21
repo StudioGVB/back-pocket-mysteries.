@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash')
 
 // Helper to extract the current locale from the request headers
 async function getLocaleFromHeaders(): Promise<string> {

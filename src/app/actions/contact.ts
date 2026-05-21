@@ -4,7 +4,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash');
 
 export async function submitContactForm(formData: FormData) {
   const name = formData.get('name') as string;
