@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { signInAction } from './login-action';
+import AutoSignInListener from './AutoSignInListener';
 
 export default async function LoginPage({
   params,
@@ -13,6 +14,7 @@ export default async function LoginPage({
   const { message, error } = await searchParams;
   return (
     <div className="space-y-8">
+      <AutoSignInListener locale={locale} />
       <div className="text-center space-y-3">
         <h1 className="text-3xl font-black text-brand-dark tracking-tight uppercase">Welcome Back</h1>
         <p className="text-slate-500 text-sm font-medium">Log in to manage your mysteries</p>

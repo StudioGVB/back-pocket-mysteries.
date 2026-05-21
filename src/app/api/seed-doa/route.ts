@@ -372,36 +372,309 @@ export async function GET(request: Request) {
     console.log(`API Seeder: Inserting clues...`);
     const { error: doaClueErr } = await supabase.from('clues').insert([
       // Round 1
-      { mystery_id: mysteryId, title: "The Threatening Text Chain", clue_type: 'secret', implication_type: 'circumstantial', round_number: 1, is_essential: false, linked_plot_beat_id: doaB1.id, description: "Gabby's DMs with an unknown number: 'You don't deserve the win. Everyone sees what you really are. Time someone did something about it.' The sender's contact name in Gabby's phone: 'Don't answer.'" },
-      { mystery_id: mysteryId, title: "Sienna's Group Chat Drop", clue_type: 'secret', implication_type: 'red_herring', round_number: 1, is_essential: false, linked_plot_beat_id: doaB1.id, description: "Sienna in the cast group chat: 'Ik im an a**hole but thought you should know what your sister said...' Gabby's reply: 'As I said before, IDGAF. Sienna needs character building anyway.'" },
-      { mystery_id: mysteryId, title: "Dane's Google Search History", clue_type: 'physical', implication_type: 'direct', round_number: 1, is_essential: true, linked_plot_beat_id: doaB2.id, description: "EyeSpy monitoring software retrieved from Dane's phone: 'How to poison someone' / 'How to spike a drink without taste' / 'Do sedatives show up in blood test' / 'Alcohol + sleeping pills dangerous?' / 'Gabby Love on the Rocks cute edits'" },
-      { mystery_id: mysteryId, title: "The Leaked DM Thread", clue_type: 'secret', implication_type: 'circumstantial', round_number: 1, is_essential: false, linked_plot_beat_id: doaB2.id, description: "Dane to Skye: 'Colt and I were together at the same time. I'm more devastated than you.' Skye: 'I can assure you, you're not.'" },
-      { mystery_id: mysteryId, title: "The Seen-Zoned Warning", clue_type: 'secret', implication_type: 'red_herring', round_number: 1, is_essential: false, linked_plot_beat_id: doaB1.id, description: "A private message to Gabby from 'RealFan_Rex': 'The reunion's gonna set someone off.' Gabby's response: SEEN. No reply." },
-      { mystery_id: mysteryId, title: "Rikki's Side Chat", clue_type: 'testimony', implication_type: 'circumstantial', round_number: 1, is_essential: false, linked_plot_beat_id: doaB4.id, description: "Rikki DMs Brooke: 'Should I just tell them?' Brooke: 'They're gonna find out at some point. You should be the one. Gabby would hate it.'" },
-      { mystery_id: mysteryId, title: "The Main Cast Group Chat", clue_type: 'secret', implication_type: 'circumstantial', round_number: 1, is_essential: false, linked_plot_beat_id: doaB1.id, description: "The full cast GC explodes: 'You couldn't keep your story straight, could you S' / 'Oh f*** off. Why are we talking about this in the main GC' / 'Actually, why are we talking about this at all.' Recorded from Zayn's phone." },
-      { mystery_id: mysteryId, title: "Rikki's Glam Mirror Note", clue_type: 'physical', implication_type: 'direct', round_number: 1, is_essential: true, linked_plot_beat_id: doaB4.id, description: "A sticky note found on the glam mirror: 'FYI — there was white powder all over the corner of my makeup mirror. Pretty sure B used it while I stepped out. Handle it if you need to. Just don't put it on me. – M'" },
+      {
+        mystery_id: mysteryId,
+        title: "The Threatening Text Chain",
+        clue_type: 'secret',
+        implication_type: 'circumstantial',
+        round_number: 1,
+        is_essential: false,
+        linked_plot_beat_id: doaB1.id,
+        description: `{{Gabby}} DMs with an unknown number:\nUnknown: "You don't deserve the win. Everyone sees what you really are. Time someone did something about it."\nThe sender's contact name in {{Gabby}}'s phone is "Don't answer."`,
+        generation_prompt: `A dramatic close-up photograph of a smartphone screen lying face-up on a wet pavement in a dark street at night. The screen is cracked, casting a soft, cool glow on the damp asphalt. Reflected streetlights shimmer on the glass. On the screen, a messaging interface shows a single incoming text bubble with blurred, out-of-focus text and a header showing "Don't answer". Gritty noir aesthetic, cinematic shot, low-key lighting, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Sienna's Group Chat Drop",
+        clue_type: 'secret',
+        implication_type: 'red_herring',
+        round_number: 1,
+        is_essential: false,
+        linked_plot_beat_id: doaB1.id,
+        description: `{{Sienna}} in the cast group chat: "Ik im an a**hole but thought you should know what your sister said..."\n{{Gabby}}'s reply: "As I said before, IDGAF. {{Sienna}} needs character building anyway."`,
+        generation_prompt: `A moody, atmospheric close-up shot of a smartphone held by a hand casting soft shadows. The screen glows brightly in a dimly lit, glitzy penthouse room with warm, out-of-focus background party lights. On the screen, a group chat interface displays two recent text bubbles (one grey, one blue) with blurred, out-of-focus text. Gritty noir aesthetic, dramatic low-key lighting, cinematic shot, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Dane's Google Search History",
+        clue_type: 'physical',
+        implication_type: 'direct',
+        round_number: 1,
+        is_essential: true,
+        linked_plot_beat_id: doaB2.id,
+        description: `EyeSpy monitoring software log retrieved from {{Dane}}'s phone:\n- "How to poison someone"\n- "How to spike a drink without taste"\n- "Do sedatives show up in blood test"\n- "Alcohol + sleeping pills dangerous?"\n- "{{Gabby}} Love on the Rocks cute edits"`,
+        generation_prompt: `A cinematic close-up of a smartphone screen lying on a dark wooden table in a dimly lit dressing room. The phone screen is brightly lit, showing a vertical list of web searches on a clean interface, with the individual search terms blurred and out of focus. Soft green backlighting from a vanity mirror in the background casts a moody glow. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Leaked DM Thread",
+        clue_type: 'secret',
+        implication_type: 'circumstantial',
+        round_number: 1,
+        is_essential: false,
+        linked_plot_beat_id: doaB2.id,
+        description: `{{Dane}} in a leaked DM thread to {{Gabby}}:\n{{Dane}}: "Colt and I were together at the same time. I'm more devastated than you."\n{{Gabby}}: "I can assure you, you're not."`,
+        generation_prompt: `A dramatic close-up of a mobile screen glowing face-up on a leather sofa armrest in a dark, empty room. The screen displays a direct message interface with two chat bubbles. The text inside the bubbles is completely blurred and illegible, casting a soft teal light on the dark leather. Gritty noir aesthetic, low-key lighting, atmospheric shadows, cinematic shot, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Seen-Zoned Warning",
+        clue_type: 'secret',
+        implication_type: 'red_herring',
+        round_number: 1,
+        is_essential: false,
+        linked_plot_beat_id: doaB1.id,
+        description: `A private message to {{Gabby}} from an account named "RealFan_Milo":\nRealFan_Milo: "The reunion's gonna set someone off."\n{{Gabby}}'s response: SEEN. No reply.`,
+        generation_prompt: `A dramatic close-up of a smartphone lying face-up next to an half-empty champagne flute on a glossy bar counter. The screen glows in the dark room, displaying a direct message interface showing an incoming message and a tiny "SEEN" status indicator, all text and details heavily blurred and out of focus. Gritty noir aesthetic, moody lighting, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Rikki's Side Chat",
+        clue_type: 'testimony',
+        implication_type: 'circumstantial',
+        round_number: 1,
+        is_essential: false,
+        linked_plot_beat_id: doaB4.id,
+        description: `{{Rikki}} in a private side chat with {{Ava}}:\n{{Rikki}}: "Should I just tell them?"\n{{Ava}}: "They're gonna find out at some point. You should be the one. {{Gabby}} would hate it."`,
+        generation_prompt: `A moody, close-up photograph of a smartphone resting on a glass vanity shelf inside a dimly lit bathroom. The screen is illuminated, displaying a messaging thread with two chat bubbles. The text in the bubbles is blurred and out of focus, reflecting softly on the dark glass shelf. Gritty noir aesthetic, dramatic low-key purple and white lighting, atmospheric shadows, cinematic shot, shallow depth of field.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Main Cast Group Chat",
+        clue_type: 'secret',
+        implication_type: 'circumstantial',
+        round_number: 1,
+        is_essential: false,
+        linked_plot_beat_id: doaB1.id,
+        description: `The full cast group chat explodes (recorded from {{Zayn}}'s phone):\n- "You couldn't keep your story straight, could you S"\n- "Oh f*** off. Why are we talking about this in the main GC"\n- "Actually, why are we talking about this at all."`,
+        generation_prompt: `A close-up photograph of a smartphone screen lying face-up inside a velvet-lined VIP booth drawer. The screen is glowing brightly, showing a busy group chat thread with multiple text bubbles. The text is entirely blurred and out of focus, casting a soft blue glow onto the surrounding dark red velvet. Gritty noir aesthetic, dramatic low-key lighting, atmospheric shadows, cinematic shot, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Rikki's Glam Mirror Note",
+        clue_type: 'physical',
+        implication_type: 'direct',
+        round_number: 1,
+        is_essential: true,
+        linked_plot_beat_id: doaB4.id,
+        description: `A sticky note found on the glam mirror:\n"FYI — there was white powder all over the corner of my makeup mirror. Pretty sure {{Dane}} used it while I stepped out. Handle it if you need to. Just don't put it on me. – {{Milo}}"`,
+        generation_prompt: `A high-quality, professional photograph of a square neon sticky note stuck to the corner of a dirty, smudge-filled dressing room mirror. The handwritten note has clean, organic-looking handwriting in black ink under dramatic, low-key warm vanity bulb lighting. In the background, makeup jars and brushes are out of focus. Gritty noir aesthetic, highly detailed paper texture, cinematic shot, sharp focus, 8k resolution.`
+      },
+
       // Round 2
-      { mystery_id: mysteryId, title: "The Glam Room Production Note", clue_type: 'physical', implication_type: 'direct', round_number: 2, is_essential: true, linked_plot_beat_id: doaB4.id, description: "Production log from the glam room: 'B spiralling re: S & C. C and S were in wardrobe for AGES. R still hovering. Watch them, seems unstable. You know what to do...'" },
-      { mystery_id: mysteryId, title: "The Unsigned Bar Note", clue_type: 'physical', implication_type: 'red_herring', round_number: 2, is_essential: false, linked_plot_beat_id: doaB4.id, description: "A folded note found near the bar: 'Try to get S to talk to ___. [Name crossed out]. You know what to do.'" },
-      { mystery_id: mysteryId, title: "Dane's Rage Texts", clue_type: 'secret', implication_type: 'direct', round_number: 2, is_essential: true, linked_plot_beat_id: doaB2.id, description: "Dane's messages to an unknown recipient: 'If I have to watch them stand next to Gabby again I'll lose it. The cameras are on. But I will. I'm done being quiet.'" },
-      { mystery_id: mysteryId, title: "The Inner Circle Group Chat", clue_type: 'secret', implication_type: 'circumstantial', round_number: 2, is_essential: false, linked_plot_beat_id: doaB4.id, description: "Inner circle chat: 'Dane is in glam pacing like they're about to explode. They deadass asked me if Gabby still talks about them. I saw them staring at the champagne bottles. Is Dane still on their meds...? I'm not tryna get roofied tonight.'" },
-      { mystery_id: mysteryId, title: "Milo's Cheat Sheet Warning", clue_type: 'secret', implication_type: 'circumstantial', round_number: 2, is_essential: false, linked_plot_beat_id: doaB3.id, description: "A DM from Milo to Mara: 'The reunion's gonna set someone off. If someone snaps, it won't be a surprise.' Mara: SEEN. No reply." },
-      { mystery_id: mysteryId, title: "Gabby's Final Message", clue_type: 'secret', implication_type: 'direct', round_number: 2, is_essential: true, linked_plot_beat_id: doaB6.id, description: "Gabby to Colt at 5:20PM: 'You okay? I feel like something's off. Let's talk before the toast...' Message: SEEN. No reply." },
-      { mystery_id: mysteryId, title: "The Wardrobe Intercept Audio", clue_type: 'testimony', implication_type: 'direct', round_number: 2, is_essential: true, linked_plot_beat_id: doaB2.id, description: "Jeremy's phone, 25 seconds. Jordan: 'Rikki said they were in wardrobe for 25 minutes. Just them — Colt and Gabby.' Blaze: 'You're joking.' Jordan: 'I'm not. Might be good to get that on camera.' Blaze: 'You'll get something.' [Recording cuts]" },
-      { mystery_id: mysteryId, title: "Milo's Diary Entry", clue_type: 'secret', implication_type: 'circumstantial', round_number: 2, is_essential: false, linked_plot_beat_id: doaB3.id, description: "Milo's notes app: 'Tonight felt kind of perfect. I actually think I'm happy — like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening...'" },
-      { mystery_id: mysteryId, title: "The Deleted Security Camera File", clue_type: 'physical', implication_type: 'direct', round_number: 2, is_essential: true, linked_plot_beat_id: doaB7.id, description: "File: SEC CAM_4B [Bar Area]. Time: 5:40–6:05PM. Status: Permanently Deleted. Actioned by: jordan.p@doatv.tv. Reason: 'corrupted audio, unusable'. Jeremy's quote: 'It was mostly Rikki ranting anyway — no good angles. Not worth a storyline.'" },
-      { mystery_id: mysteryId, title: "Sienna & Zayn's Plan", clue_type: 'secret', implication_type: 'red_herring', round_number: 2, is_essential: false, linked_plot_beat_id: doaB1.id, description: "Sienna to Zane: 'I cannot believe she said that. Especially after EVERYTHING I've done. I have an idea — let's give her a taste of her own medicine. We look exactly the same.' Zane: 'God I think I'm in love with you.'" },
+      {
+        mystery_id: mysteryId,
+        title: "The Glam Room Production Note",
+        clue_type: 'physical',
+        implication_type: 'direct',
+        round_number: 2,
+        is_essential: true,
+        linked_plot_beat_id: doaB4.id,
+        description: `Production log from the glam room:\n"{{Dane}} spiralling re: {{Gabby}} & {{Colt}}. {{Colt}} and {{Gabby}} were in wardrobe for AGES. {{Rikki}} still hovering. Watch them, seems unstable. You know what to do..."`,
+        generation_prompt: `A high-quality close-up photograph of a printed production log sheet lying on a clipboard. The clipboard is resting on a cluttered metal styling table under harsh spotlighting. A line of text is circled in red pen, with crisp, legible print. Out-of-focus background reveals clothes racks and camera gear. Gritty noir aesthetic, highly detailed paper texture, cinematic shot, sharp focus, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Unsigned Bar Note",
+        clue_type: 'physical',
+        implication_type: 'red_herring',
+        round_number: 2,
+        is_essential: false,
+        linked_plot_beat_id: doaB4.id,
+        description: `A folded note found near the bar:\n"Try to get {{Sienna}} to talk to ___. [Name crossed out]. You know what to do."`,
+        generation_prompt: `A dramatic close-up photograph of a folded, creased piece of paper resting on a wet dark marble bar counter. The note has hurried, handwritten text in dark ink under warm, direct spotlighting. Condensation drops from a nearby cocktail glass are visible on the paper. Gritty noir aesthetic, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Dane's Rage Texts",
+        clue_type: 'secret',
+        implication_type: 'direct',
+        round_number: 2,
+        is_essential: true,
+        linked_plot_beat_id: doaB2.id,
+        description: `{{Dane}}'s messages to an unknown recipient:\n"If I have to watch them stand next to {{Gabby}} again I'll lose it. The cameras are on. But I will. I'm done being quiet."`,
+        generation_prompt: `A dramatic close-up of a smartphone screen lying face-up next to an open green pill bottle on a dark table. The screen glows intensely in the dim green ambient light of the room, displaying a sent messaging bubble. The text inside the bubble is blurred and out of focus. Gritty noir aesthetic, low-key lighting, green atmosphere, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Inner Circle Group Chat",
+        clue_type: 'secret',
+        implication_type: 'circumstantial',
+        round_number: 2,
+        is_essential: false,
+        linked_plot_beat_id: doaB4.id,
+        description: `Inner circle group chat:\n"{{Dane}} is in glam pacing like they're about to explode. They deadass asked me if {{Gabby}} still talks about them. I saw them staring at the champagne bottles. Is {{Dane}} still on their meds...? I'm not tryna get roofied tonight."`,
+        generation_prompt: `A moody close-up photograph of a smartphone screen resting inside a guest's purse. The screen is illuminated and glows against the dark leather lining, showing a group chat feed with a long text bubble. The text is entirely blurred and out of focus. Gritty noir aesthetic, dramatic low-key lighting, atmospheric shadows, cinematic shot, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Milo's Cheat Sheet Warning",
+        clue_type: 'secret',
+        implication_type: 'circumstantial',
+        round_number: 2,
+        is_essential: false,
+        linked_plot_beat_id: doaB3.id,
+        description: `A DM from {{Milo}} to {{Rikki}}:\n{{Milo}}: "The reunion's gonna set someone off. If someone snaps, it won't be a surprise."\n{{Rikki}}: SEEN. No reply.`,
+        generation_prompt: `A dramatic close-up of a mobile screen face-up on a vanity desk between powder brushes and eyeshadow palettes. The screen is brightly lit, showing a DM chat thread with blurred, out-of-focus text and a "SEEN" status indicator. Orange glow from a table lamp is cast on the scene. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Gabby's Final Message",
+        clue_type: 'secret',
+        implication_type: 'direct',
+        round_number: 2,
+        is_essential: true,
+        linked_plot_beat_id: doaB6.id,
+        description: `{{Gabby}} to {{Colt}} at 5:20PM:\n{{Gabby}}: "You okay? I feel like something's off. Let's talk before the toast..."\nMessage status: SEEN. No reply.`,
+        generation_prompt: `A moody close-up of a sleek smartphone screen lying next to a golden microphone in a dark, empty backstage hallway. The screen glows brightly, showing a single chat bubble with blurred and out-of-focus text. Soft gold backlighting casts dramatic shadows. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Wardrobe Intercept Audio",
+        clue_type: 'testimony',
+        implication_type: 'direct',
+        round_number: 2,
+        is_essential: true,
+        linked_plot_beat_id: doaB2.id,
+        description: `Audio recorded on {{Jeremy}}'s phone (25 seconds):\n{{Jeremy}}: "{{Rikki}} said they were in wardrobe for 25 minutes. Just them — {{Colt}} and {{Gabby}}."\n{{Dane}}: "You're joking."\n{{Jeremy}}: "I'm not. Might be good to get that on camera."\n{{Dane}}: "You'll get something."\n[Recording cuts]`,
+        generation_prompt: `A professional, high-quality close-up photograph of a sleek audio recording app active on a smartphone screen in a dark room. The screen shows a green and white glowing sound waveform, audio duration counter, and record button. Out-of-focus sound mixing board sliders glow in the background. Gritty noir aesthetic, low-key lighting, cinematic shot, sharp focus, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Milo's Diary Entry",
+        clue_type: 'secret',
+        implication_type: 'circumstantial',
+        round_number: 2,
+        is_essential: false,
+        linked_plot_beat_id: doaB3.id,
+        description: `{{Milo}}'s phone notes app entry:\n"Tonight felt kind of perfect. I actually think I'm happy — like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening..."`,
+        generation_prompt: `A dramatic close-up of a mobile screen lying face-up on a dark bedspread. The screen is glowing with a mobile notes application showing multiple lines of text. The text is entirely blurred and out of focus, casting a warm orange light onto the dark fabric. Gritty noir aesthetic, low-key lighting, atmospheric shadows, cinematic shot, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Deleted Security Camera File",
+        clue_type: 'physical',
+        implication_type: 'direct',
+        round_number: 2,
+        is_essential: true,
+        linked_plot_beat_id: doaB7.id,
+        description: `Restored file metadata: SEC CAM_4B [Bar Area]\n- Time: 5:40–6:05PM\n- Status: Permanently Deleted\n- Actioned by: {{Jeremy}} (jordan.p@doatv.tv)\n- Reason: "corrupted audio, unusable"\n{{Jeremy}}'s quote: "It was mostly {{Rikki}} ranting anyway — no good angles. Not worth a storyline."`,
+        generation_prompt: `A dramatic close-up photograph of a computer monitor inside a dark production booth. The screen displays a video editing timeline and file browser with a highlighted file entry marked "SEC CAM_4B [Bar Area] - DELETED" in red text, all characters and text blurred and out of focus. Gritty noir aesthetic, glowing screen, low-key lighting, cinematic shot, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Sienna & Zayn's Plan",
+        clue_type: 'secret',
+        implication_type: 'red_herring',
+        round_number: 2,
+        is_essential: false,
+        linked_plot_beat_id: doaB1.id,
+        description: `{{Sienna}} in a private message thread to {{Zayn}}:\n{{Sienna}}: "I cannot believe she said that. Especially after EVERYTHING I've done. I have an idea — let's give her a taste of her own medicine. We look exactly the same."\n{{Zayn}}: "God I think I'm in love with you."`,
+        generation_prompt: `A close-up photograph of a smartphone screen lying face-up next to a small makeup palette. The screen is illuminated, displaying a text message dialogue with two chat bubbles. The text in the bubbles is blurred and out of focus, casting a soft pink and grey glow on the table. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k resolution.`
+      },
+
       // Round 3
-      { mystery_id: mysteryId, title: "The Burning Heart Thread", clue_type: 'secret', implication_type: 'circumstantial', round_number: 3, is_essential: false, linked_plot_beat_id: doaB5.id, description: "A thread between Gabby and an unsaved contact. Only heart-on-fire emojis remain. The final message is Gabby's, at 5:52PM — eight minutes before the toast. No reply." },
-      { mystery_id: mysteryId, title: "Milo's Final Draft", clue_type: 'secret', implication_type: 'direct', round_number: 3, is_essential: true, linked_plot_beat_id: doaB8.id, description: "Found in Milo's phone drafts: '...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well… there's only one way this ends. –R'" },
-      { mystery_id: mysteryId, title: "Gabby's Cocktail Napkin", clue_type: 'physical', implication_type: 'red_herring', round_number: 3, is_essential: false, linked_plot_beat_id: doaB6.id, description: "A cocktail napkin with Gabby's handwriting found near the bar: 'If this goes wrong tonight — it was always going to. -S'. The ink is smudged at the edge." },
-      { mystery_id: mysteryId, title: "The Recorded Argument", clue_type: 'testimony', implication_type: 'direct', round_number: 3, is_essential: true, linked_plot_beat_id: doaB6.id, description: "32 seconds of audio recorded unintentionally from Zayn's phone: 'You think this is just content?! This is my life.' / 'You said to post it.' / 'They already think you hooked up anyway.' / *Pause* / 'I never want to see you again.' / 'You're so dramatic.' / 'You're both on camera.'" },
-      { mystery_id: mysteryId, title: "The Love Rejection Note", clue_type: 'physical', implication_type: 'direct', round_number: 3, is_essential: true, linked_plot_beat_id: doaB3.id, description: "On hotel stationery, crumpled near the champagne table: '...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well... there's only one way this ends.' No signature — but the handwriting matches Milo's fan mail." },
-      { mystery_id: mysteryId, title: "Rikki's Warning Voice Note", clue_type: 'testimony', implication_type: 'circumstantial', round_number: 3, is_essential: true, linked_plot_beat_id: doaB5.id, description: "Rikki's voice note to Jeremy (6:01PM — 3 minutes before the toast): 'Something isn't right. Milo was at the bar alone for two minutes when nobody was looking. Just standing there. Switching something. I thought it was their glass. Jeremy, call me back.'" },
-      { mystery_id: mysteryId, title: "The Glass Switch Photo", clue_type: 'physical', implication_type: 'direct', round_number: 3, is_essential: true, linked_plot_beat_id: doaB5.id, description: "A blurry photo timestamped 6:03PM from a guest's phone. In the background: a figure in orange (Milo's colour code) moving two champagne flutes on the serving tray, swapping their positions." },
+      {
+        mystery_id: mysteryId,
+        title: "The Burning Heart Thread",
+        clue_type: 'secret',
+        implication_type: 'circumstantial',
+        round_number: 3,
+        is_essential: false,
+        linked_plot_beat_id: doaB5.id,
+        description: `A direct message thread between {{Gabby}} and an unsaved contact:\n- Only heart-on-fire emojis remain in the history.\n- The final message is {{Gabby}}'s, sent at 5:52PM — eight minutes before the toast.\n- No reply.`,
+        generation_prompt: `A dramatic close-up of a smartphone screen lying on a dark metallic surface. The screen shows a messaging app with a row of tiny red heart-on-fire emojis in chat bubbles, the text and interface details completely blurred and out of focus. Deep pink and red ambient light casts a dramatic glow. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Milo's Final Draft",
+        clue_type: 'secret',
+        implication_type: 'direct',
+        round_number: 3,
+        is_essential: true,
+        linked_plot_beat_id: doaB8.id,
+        description: `Found in {{Milo}}'s phone drafts:\n"...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well… there's only one way this ends. –R"`,
+        generation_prompt: `A moody close-up photograph of a smartphone screen lying on a dark sheet of satin fabric. The screen displays a message composition field with several lines of text. The text is entirely blurred and out of focus, casting a cool white light onto the dark folds of satin. Gritty noir aesthetic, dramatic low-key lighting, atmospheric shadows, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Gabby's Cocktail Napkin",
+        clue_type: 'physical',
+        implication_type: 'red_herring',
+        round_number: 3,
+        is_essential: false,
+        linked_plot_beat_id: doaB6.id,
+        description: `A cocktail napkin with {{Gabby}}'s handwriting found near the bar:\n"If this goes wrong tonight — it was always going to. -S"\nThe ink is smudged at the edge.`,
+        generation_prompt: `A paper cocktail napkin lying on a dark, wet bar counter next to spilled champagne. On the napkin, short handwritten words are written in blue ballpoint ink, with the signature smudged at the edge. Gritty noir aesthetic, dramatic low-key lighting, highly detailed paper texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Recorded Argument",
+        clue_type: 'testimony',
+        implication_type: 'direct',
+        round_number: 3,
+        is_essential: true,
+        linked_plot_beat_id: doaB6.id,
+        description: `32 seconds of audio recorded unintentionally on {{Zayn}}'s phone:\n- "You think this is just content?! This is my life."\n- "You said to post it."\n- "They already think you hooked up anyway."\n- *Pause*\n- "I never want to see you again."\n- "You're so dramatic."\n- "You're both on camera."`,
+        generation_prompt: `A moody close-up photograph of a mobile screen active with a sound recording app lying on a glossy tabletop. The screen shows a bright green digital sound wave graph and a timer active at 32 seconds, with all text details blurred and out of focus. Reflective neon lights are visible on the table surface. Gritty noir aesthetic, dramatic low-key lighting, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Love Rejection Note",
+        clue_type: 'physical',
+        implication_type: 'direct',
+        round_number: 3,
+        is_essential: true,
+        linked_plot_beat_id: doaB3.id,
+        description: `On hotel stationery, crumpled near the champagne table:\n"...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well... there's only one way this ends."\nNo signature — but the handwriting matches {{Milo}}'s fan mail.`,
+        generation_prompt: `A high-quality, professional close-up photograph of a crumpled piece of cream-colored hotel stationery lying on a polished mahogany floor. Hurried, handwritten script in dark fountain pen ink is partially visible on the creases. Dramatic low-key spotlighting casts deep shadows in the paper folds. Gritty noir aesthetic, highly detailed paper texture, sharp focus, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "Rikki's Warning Voice Note",
+        clue_type: 'testimony',
+        implication_type: 'circumstantial',
+        round_number: 3,
+        is_essential: true,
+        linked_plot_beat_id: doaB5.id,
+        description: `{{Rikki}}'s voice note to {{Jeremy}} (6:01PM — 3 minutes before the toast):\n"Something isn't right. {{Milo}} was at the bar alone for two minutes when nobody was looking. Just standing there. Switching something. I thought it was their glass. {{Jeremy}}, call me back."`,
+        generation_prompt: `A moody close-up photograph of a voice memo player interface on a smartphone screen resting on a fabric vanity stool. The screen glows with a simple waveform track showing a voice note, with all text and player details blurred and out of focus. Low-key purple ambient lighting casts deep shadows. Gritty noir aesthetic, shallow depth of field, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Glass Switch Photo",
+        clue_type: 'physical',
+        implication_type: 'direct',
+        round_number: 3,
+        is_essential: true,
+        linked_plot_beat_id: doaB5.id,
+        description: `A blurry photo timestamped 6:03PM retrieved from a guest's phone.\nIn the background: a figure in orange ({{Milo}}'s colour code) is seen moving two champagne flutes on the serving tray, swapping their positions.`,
+        generation_prompt: `A professional close-up photograph of a smartphone screen showing a blurry, candid snapshot. The snapshot depicts a dark penthouse party room with party guests in the foreground. In the distant, out-of-focus background, a figure wearing a bright orange jacket is caught in motion near a cocktail tray. Gritty noir aesthetic, dramatic low-key lighting, cinematic shot, sharp focus on the screen glass, 8k resolution.`
+      },
+
       // Round 4
-      { mystery_id: mysteryId, title: "Milo's Confessional Voice Note", clue_type: 'testimony', implication_type: 'direct', round_number: 4, is_essential: true, linked_plot_beat_id: doaB8.id, description: "45.21 seconds. Milo's voice, calm and measured: 'I tried to be quiet. I really did. I watched the whole thing happen. And when the moment came… I directed it to go exactly where it needed to. It's wild how things just fall into place. Some people live for the camera. Some people die for it. Either way… I'm part of the story now.'" },
-      { mystery_id: mysteryId, title: "The Producer's Smoking Gun Audio", clue_type: 'testimony', implication_type: 'direct', round_number: 4, is_essential: true, linked_plot_beat_id: doaB7.id, description: "38.64 seconds — Recovered security cam audio (5:52PM): Rikki: 'I'm serious — Dane is not okay. They're twitchy, I'm pretty sure they mixed something into the drinks.' Jordan: 'And you're telling me this like it's a problem?' Mara: 'It's a liability. What if they snap?' Jordan: (laughs) 'Then we get the footage. You want safe, go film MasterChef.'" }
+      {
+        mystery_id: mysteryId,
+        title: "Milo's Confessional Voice Note",
+        clue_type: 'testimony',
+        implication_type: 'direct',
+        round_number: 4,
+        is_essential: true,
+        linked_plot_beat_id: doaB8.id,
+        description: `Voice recording on {{Milo}}'s phone (45.21 seconds). {{Milo}}'s voice is calm and measured:\n"I tried to be quiet. I really did. I watched the whole thing happen. And when the moment came… I directed it to go exactly where it needed to. It's wild how things just fall into place. Some people live for the camera. Some people die for it. Either way… I'm part of the story now."`,
+        generation_prompt: `A dramatic close-up of a sleek, dark audio recording device lying on a glass table. The digital display is glowing with an active, pulsing white audio waveform and timer, with all letters and text blurred and out of focus. Cinematic moody lighting casts long shadows on the glass. Gritty noir aesthetic, sharp focus, 8k resolution.`
+      },
+      {
+        mystery_id: mysteryId,
+        title: "The Producer's Smoking Gun Audio",
+        clue_type: 'testimony',
+        implication_type: 'direct',
+        round_number: 4,
+        is_essential: true,
+        linked_plot_beat_id: doaB7.id,
+        description: `Recovered security camera audio (38.64 seconds, timestamped 5:52PM):\n{{Rikki}}: "I'm serious — {{Dane}} is not okay. They're twitchy, I'm pretty sure they mixed something into the drinks."\n{{Jeremy}}: "And you're telling me this like it's a problem?"\n{{Rikki}}: "It's a liability. What if they snap?"\n{{Jeremy}}: (laughs) "Then we get the footage. You want safe, go film MasterChef."`,
+        generation_prompt: `A moody close-up photograph of a professional video editing console monitor inside a dark, empty studio booth. The screen displays audio waveforms on a complex timeline with a file named "SEC_CAM_AUDIO" highlighted. The screen glows blue, casting light on the control knobs and sliders, which are out of focus. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k resolution.`
+      }
     ]);
     if (doaClueErr) throw new Error(`DOA clues failed: ${doaClueErr.message}`);
 
