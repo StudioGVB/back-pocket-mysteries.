@@ -17,7 +17,7 @@ export default async function ProfilePage({
   if (!user) redirect(`/${locale}/login`);
 
   const { data: profile } = await (supabase as any)
-    .from('user_profiles')
+    .from('profiles')
     .select('*')
     .eq('user_id', user.id)
     .maybeSingle();

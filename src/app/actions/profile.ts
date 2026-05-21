@@ -17,7 +17,7 @@ export async function saveProfileAction(data: {
   if (!user) return { error: 'Not authenticated' };
 
   const { error } = await (supabase as any)
-    .from('user_profiles')
+    .from('profiles')
     .upsert({ user_id: user.id, ...data }, { onConflict: 'user_id' });
 
   if (error) return { error: error.message };
@@ -31,7 +31,7 @@ export async function getProfileAction() {
   if (!user) return { profile: null };
 
   const { data } = await (supabase as any)
-    .from('user_profiles')
+    .from('profiles')
     .select('*')
     .eq('user_id', user.id)
     .single();

@@ -1,8 +1,7 @@
 import React from 'react';
-import Link from 'next/link';
 import { getMysteries } from '@/services/admin';
 import { CreateMysteryBaseButton } from './_components/CreateMysteryBaseButton';
-import { Locale } from '@/lib/i18n-config';
+import { MysteryRowActions } from './_components/MysteryRowActions';
 
 export default async function AdminMysteries({
   params,
@@ -11,6 +10,17 @@ export default async function AdminMysteries({
 }) {
   const { locale } = await params;
   const mysteries = await getMysteries();
+
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status) {
+      case 'published':
+        return 'bg-green-100 text-green-600';
+      case 'archived':
+        return 'bg-amber-100 text-amber-600';
+      default:
+        return 'bg-gray-100 text-gray-400';
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -45,33 +55,37 @@ export default async function AdminMysteries({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {mysteries.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-bold text-brand-dark">{item.title}</p>
-                    <p className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                      Created {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Unknown Date'}
-                    </p>
-                  </td>
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-bold text-brand-dark">{item.theme || 'No theme'}</p>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${item.status === 'published' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <Link 
-                      href={`/${locale}/builder/mysteries/${item.id}`}
-                      className="text-brand-pink text-xs font-black uppercase tracking-widest hover:underline mr-4"
-                    >
-                      Edit
-                    </Link>
-                    <button className="text-gray-400 text-xs font-black uppercase tracking-widest hover:text-brand-dark">Archive</button>
-                  </td>
-                </tr>
-              ))}
+              {mysteries.map((item) => {
+                const isArchived = item.status === 'archived';
+                return (
+                  <tr 
+                    key={item.id} 
+                    className={`transition-colors hover:bg-gray-50 ${isArchived ? 'opacity-65 bg-gray-50/40' : ''}`}
+                  >
+                    <td className="px-8 py-6">
+                      <p className={`text-sm font-bold ${isArchived ? 'text-gray-500 line-through' : 'text-brand-dark'}`}>
+                        {item.title}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                        Created {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Unknown Date'}
+                      </p>
+                    </td>
+                    <td className="px-8 py-6">
+                      <p className={`text-sm font-bold ${isArchived ? 'text-gray-400' : 'text-brand-dark'}`}>
+                        {item.theme || 'No theme'}
+                      </p>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusBadgeStyle(item.status)}`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <MysteryRowActions id={item.id} status={item.status} locale={locale} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -79,4 +93,5 @@ export default async function AdminMysteries({
     </div>
   );
 }
+
 

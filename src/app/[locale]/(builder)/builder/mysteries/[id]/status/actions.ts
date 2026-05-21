@@ -29,7 +29,7 @@ export async function updatePublishingAction(
       sale_discount_pct: sale_discount_pct,
       sale_ends_at: sale_ends_at || null,
       updated_at: new Date().toISOString(),
-    })
+    } as any)
     .eq('id', mysteryId);
 
   if (error) {

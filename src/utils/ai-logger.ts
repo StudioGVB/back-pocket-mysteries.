@@ -50,7 +50,7 @@ export async function logAiUsage(data: AiUsageData) {
       }
     }
 
-    const supabase = await createClient();
+    const supabase = (await createClient()) as any;
     
     // Attempt to get user_id if not provided
     let userId = data.user_id;

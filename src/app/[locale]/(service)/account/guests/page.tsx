@@ -29,7 +29,7 @@ export default async function GuestsPage({
     .select(`
       id,
       guest_user_id,
-      user_profiles!guest_user_id (
+      profiles!guest_user_id (
         bio,
         location,
         pronouns,
@@ -49,7 +49,7 @@ export default async function GuestsPage({
     .gt('expires_at', new Date().toISOString());
 
   // Get display names for linked guests from auth metadata
-  // (We use user_profiles — name comes from auth metadata so we pull it separately)
+  // (We use profiles — name comes from auth metadata so we pull it separately)
   const linkedGuestIds: string[] = (connections ?? []).map((c: any) => c.guest_user_id);
   let linkedGuestNames: Record<string, string> = {};
   if (linkedGuestIds.length > 0) {
@@ -70,7 +70,7 @@ export default async function GuestsPage({
     guestUserId: c.guest_user_id,
     name: linkedGuestNames[c.guest_user_id] || 'Linked Guest',
     isLinked: true,
-    profile: c.user_profiles,
+    profile: c.profiles,
   }));
 
   return (

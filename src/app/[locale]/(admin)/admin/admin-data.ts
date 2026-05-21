@@ -213,5 +213,5 @@ export async function getAiCosts() {
     return [];
   }
 
-  return data || [];
+  return (data as any[]) || [];
 }
