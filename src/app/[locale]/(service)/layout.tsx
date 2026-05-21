@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner';
 import { createClient } from '@/utils/supabase/server';
+import { OnboardingWizard } from '@/components/account/OnboardingWizard';
 
 export default async function ServiceLayout({
   children,
@@ -17,13 +18,15 @@ export default async function ServiceLayout({
   const isEmailUnverified = user && !user.email_confirmed_at;
 
   let avatarConfig: any = null;
+  let onboardingCompleted = true;
   if (user) {
     const { data: profile } = await (supabase as any)
       .from('profiles')
-      .select('avatar_config')
+      .select('avatar_config, onboarding_completed')
       .eq('id', user.id)
       .maybeSingle();
     avatarConfig = profile?.avatar_config;
+    onboardingCompleted = profile?.onboarding_completed ?? true;
   }
 
   const userData = user ? {
@@ -34,6 +37,10 @@ export default async function ServiceLayout({
 
   return (
     <div className="flex min-h-screen" style={{ background: '#f4f0f7' }}>
+      {user && (
+        <OnboardingWizard onboardingCompleted={onboardingCompleted} userName={userData?.name || ''} />
+      )}
+      
       {/* Fixed Sidebar */}
       <div className="hidden md:block w-72 flex-shrink-0">
         <AccountSidebar user={userData} />

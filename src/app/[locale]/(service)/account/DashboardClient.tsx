@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { GuestModal } from '@/components/account/GuestModal';
+import { OnboardingWizard } from '@/components/account/OnboardingWizard';
 
 const HOST_TIPS = [
   "Assign the loudest guest as the red herring character — they'll commit to the bit.",

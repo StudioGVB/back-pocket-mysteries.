@@ -11,7 +11,7 @@ export async function completeOnboarding() {
     throw new Error('User not found');
   }
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('profiles')
     .update({ onboarding_completed: true })
     .eq('id', user.id);
