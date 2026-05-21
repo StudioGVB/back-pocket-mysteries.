@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useActionState, useState } from 'react';
-import { updatePublishingAction } from '../actions';
+import { updatePublishingAction } from './actions';
 
 interface PublishingFormProps {
   mystery: {

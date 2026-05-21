@@ -1,6 +1,4 @@
 import { getAdminStats, getAiCosts } from '../admin-data';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 
 export default async function CostsPage() {
@@ -18,91 +16,91 @@ export default async function CostsPage() {
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">AI Cost Tracking</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">AI Cost Tracking</h1>
+        <p className="text-slate-500 mt-2 font-medium">
           Monitor your AI API usage and compare it against your incoming revenue.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ${totalRevenue.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">From completed orders</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Revenue Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Revenue</h2>
+          <div className="text-4xl font-black text-green-600">
+            ${totalRevenue.toFixed(2)}
+          </div>
+          <p className="text-xs text-slate-400 mt-2 font-medium">From completed orders</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total AI Cost</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              ${totalAiCost.toFixed(4)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Total API expenditure</p>
-          </CardContent>
-        </Card>
+        {/* AI Cost Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Total AI Cost</h2>
+          <div className="text-4xl font-black text-red-500">
+            ${totalAiCost.toFixed(4)}
+          </div>
+          <p className="text-xs text-slate-400 mt-2 font-medium">Total API expenditure</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit / Margin</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${(totalRevenue - totalAiCost).toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{profitMargin.toFixed(1)}% margin on AI usage</p>
-          </CardContent>
-        </Card>
+        {/* Profit Margin Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Net Profit</h2>
+          <div className="text-4xl font-black text-slate-900">
+            ${(totalRevenue - totalAiCost).toFixed(2)}
+          </div>
+          <p className="text-xs text-slate-400 mt-2 font-medium">{profitMargin.toFixed(1)}% margin on AI usage</p>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent AI Generation Logs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Feature</TableHead>
-                <TableHead>Model</TableHead>
-                <TableHead>Tokens</TableHead>
-                <TableHead className="text-right">Cost (USD)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      {/* Logs Table */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100">
+          <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Recent AI Generation Logs</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <tr>
+                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Feature</th>
+                <th className="px-6 py-4">Model</th>
+                <th className="px-6 py-4">Tokens</th>
+                <th className="px-6 py-4 text-right">Cost (USD)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
               {logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                     No AI usage logs found.
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ) : (
                 logs.slice(0, 50).map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell>{format(new Date(log.created_at), 'MMM d, h:mm a')}</TableCell>
-                    <TableCell className="font-medium capitalize">{log.feature_name.replace(/_/g, ' ')}</TableCell>
-                    <TableCell>{log.model_name}</TableCell>
-                    <TableCell>
-                      {log.prompt_tokens ? `${log.prompt_tokens} in / ${log.completion_tokens} out` : 'N/A (Image)'}
-                    </TableCell>
-                    <TableCell className="text-right">${Number(log.cost_usd).toFixed(5)}</TableCell>
-                  </TableRow>
+                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">{format(new Date(log.created_at), 'MMM d, h:mm a')}</td>
+                    <td className="px-6 py-4 font-bold text-slate-800 capitalize">{log.feature_name.replace(/_/g, ' ')}</td>
+                    <td className="px-6 py-4 text-xs">{log.model_name}</td>
+                    <td className="px-6 py-4">
+                      {log.prompt_tokens ? (
+                        <span className="text-xs text-slate-500">
+                          <span className="text-slate-800">{log.prompt_tokens}</span> in / <span className="text-slate-800">{log.completion_tokens}</span> out
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded">Image Gen</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right font-black text-red-500">
+                      ${Number(log.cost_usd).toFixed(5)}
+                    </td>
+                  </tr>
                 ))
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
