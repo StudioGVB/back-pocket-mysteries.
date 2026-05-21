@@ -9,9 +9,10 @@ interface GuestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (guestData: any) => Promise<void> | void;
+  initialData?: any;
 }
 
-export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
+export function GuestModal({ isOpen, onClose, onSave, initialData }: GuestModalProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'basics' | 'avatar' | 'personality'>('basics');
   const [name, setName] = useState('');
@@ -31,6 +32,62 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
     eyeColor: 'Brown',
     height: 'Average',
   });
+
+  // Load initial data if provided
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setName(initialData.name || '');
+        setEmail(initialData.email || '');
+        setGender(initialData.gender || 'Unspecified');
+        setQuirks(initialData.traits || []);
+        setBio(initialData.bio || '');
+        
+        // Parse avatarUrl to extract config if possible (simplified approach: use defaults but update seed)
+        // If we really wanted to we could parse the query string, but we can also just let them rebuild or rely on what's visible
+        // However, if we don't have the config, the preview will reset. Ideally we would parse the dicebear URL parameters.
+        // For now, we'll initialize with basic extracted traits or defaults
+        setAvatarConfig({
+          seed: initialData.name || 'Felix',
+          top: 'shortFlat', // Could parse from URL but omitting for brevity
+          hairColor: '282828',
+          skinColor: 'eac086',
+          eyeColor: initialData.eye_color || 'Brown',
+          height: initialData.height || 'Average',
+        });
+        
+        // If we have an avatar URL and want to try to parse it:
+        if (initialData.avatar_url) {
+          try {
+            const url = new URL(initialData.avatar_url);
+            setAvatarConfig({
+              seed: url.searchParams.get('seed') || initialData.name || 'Felix',
+              top: url.searchParams.get('top') || 'shortFlat',
+              hairColor: url.searchParams.get('hairColor') || '282828',
+              skinColor: url.searchParams.get('skinColor') || 'eac086',
+              eyeColor: initialData.eye_color || 'Brown',
+              height: initialData.height || 'Average',
+              facialHair: url.searchParams.get('facialHair') || undefined,
+              accessories: url.searchParams.get('accessories') || undefined,
+            });
+          } catch (e) {
+            // Invalid URL, ignore
+          }
+        }
+      } else {
+        // Reset
+        setName('');
+        setEmail('');
+        setGender('Masculine');
+        setQuirks([]);
+        setBio('');
+        setAvatarConfig({
+          seed: 'Felix', top: 'shortFlat', hairColor: '282828', skinColor: 'eac086', eyeColor: 'Brown', height: 'Average',
+        });
+      }
+      setActiveTab('basics');
+    }
+  }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
@@ -93,7 +150,7 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
     setIsSaving(true);
     try {
       await onSave({
-        id: Date.now().toString(),
+        id: initialData?.id || Date.now().toString(),
         name: name || 'Unknown Guest',
         email,
         gender,
@@ -103,12 +160,6 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
         traits: quirks,
         bio,
       });
-      // Reset form
-      setName('');
-      setEmail('');
-      setGender('Unspecified');
-      setQuirks([]);
-      setBio('');
       onClose();
     } catch (e) {
       console.error(e);

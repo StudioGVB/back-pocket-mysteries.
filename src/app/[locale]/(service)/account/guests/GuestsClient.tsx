@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { GuestModal } from '@/components/account/GuestModal';
 import { sendGuestInvitation, cancelInvitation, removeGuestConnection } from '@/app/actions/guest-invitations';
-import { saveGuestAction } from '@/app/actions/guests';
+import { saveGuestAction, updateGuestAction, removeGuestAction } from '@/app/actions/guests';
 import { buildAvatarUrl } from '@/components/account/AvatarBuilder';
 
 interface ManualGuest {
@@ -47,7 +47,7 @@ interface GuestsClientProps {
   locale: string;
 }
 
-function GuestCard({ guest, onRemove }: { guest: ManualGuest; onRemove?: () => void }) {
+function GuestCard({ guest, onRemove, onEdit, onShare }: { guest: ManualGuest; onRemove?: () => void; onEdit?: () => void; onShare?: () => void }) {
   const initials = guest.name.charAt(0).toUpperCase();
   const defaultAvatar = buildAvatarUrl({
     seed: guest.name,
@@ -77,11 +77,23 @@ function GuestCard({ guest, onRemove }: { guest: ManualGuest; onRemove?: () => v
             <p className="text-xs font-bold text-slate-400">{guest.gender || 'Unspecified'}</p>
           </div>
         </div>
-        {onRemove && (
-          <button onClick={onRemove} className="text-slate-300 hover:text-red-400 transition-colors p-1">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        )}
+        <div className="flex gap-1">
+          {onShare && (
+            <button onClick={onShare} className="text-slate-300 hover:text-indigo-400 transition-colors p-1" title="Invite guest to create account">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            </button>
+          )}
+          {onEdit && (
+            <button onClick={onEdit} className="text-slate-300 hover:text-brand-pink transition-colors p-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+          )}
+          {onRemove && (
+            <button onClick={onRemove} className="text-slate-300 hover:text-red-400 transition-colors p-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          )}
+        </div>
       </div>
       <div className="mt-auto pt-4 border-t border-slate-50 flex flex-wrap gap-2">
         {guest.traits?.map((trait, idx) => (
@@ -167,7 +179,7 @@ function PendingCard({ invite, onCancel }: { invite: PendingInvite; onCancel: ()
 }
 
 // --- Invite Modal ---
-function InviteModal({ isOpen, onClose, onSent }: { isOpen: boolean; onClose: () => void; onSent: (invite: PendingInvite) => void }) {
+function InviteModal({ isOpen, onClose, onSent, sharingGuest }: { isOpen: boolean; onClose: () => void; onSent: (invite: PendingInvite) => void; sharingGuest: ManualGuest | null }) {
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
@@ -179,7 +191,8 @@ function InviteModal({ isOpen, onClose, onSent }: { isOpen: boolean; onClose: ()
     if (!email.trim()) { setError('Please enter an email address.'); return; }
     setLoading(true);
     setError('');
-    const result = await sendGuestInvitation(email.trim(), note.trim() || undefined);
+
+    const result = await sendGuestInvitation(email.trim(), note.trim() || undefined, sharingGuest?.id);
     setLoading(false);
     if (result.error) { setError(result.error); }
     else {
@@ -197,8 +210,14 @@ function InviteModal({ isOpen, onClose, onSent }: { isOpen: boolean; onClose: ()
       <div className="relative bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Invite a Guest</h2>
-            <p className="text-sm text-slate-400 font-medium mt-1">They'll create their own profile and link to your roster.</p>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">
+              {sharingGuest ? `Invite ${sharingGuest.name}` : 'Invite a Friend'}
+            </h3>
+            <p className="text-sm text-slate-500 mb-6">
+              {sharingGuest 
+                ? `Send ${sharingGuest.name} an email invitation so they can create an account, claim their profile, and customize their own avatar!`
+                : "Send them an email link so they can create a profile and join your roster."}
+            </p>
           </div>
           <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -263,12 +282,14 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
   const [linkedGuests, setLinkedGuests] = useState<LinkedGuest[]>(initialLinked);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>(initialPending);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingGuest, setEditingGuest] = useState<ManualGuest | null>(null);
+  const [sharingGuest, setSharingGuest] = useState<ManualGuest | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSaveGuest = async (newGuest: any) => {
     setError(null);
-    const result = await saveGuestAction({
+    const guestPayload = {
       name: newGuest.name,
       email: newGuest.email,
       gender: newGuest.gender,
@@ -277,7 +298,14 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
       avatar_url: newGuest.avatarUrl,
       traits: newGuest.traits,
       bio: newGuest.bio,
-    });
+    };
+
+    let result;
+    if (editingGuest) {
+      result = await updateGuestAction(editingGuest.id, guestPayload);
+    } else {
+      result = await saveGuestAction(guestPayload);
+    }
 
     if (result.error) {
       setError(result.error);
@@ -285,7 +313,11 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
     }
 
     if (result.guest) {
-      setGuests([result.guest as ManualGuest, ...guests]);
+      if (editingGuest) {
+        setGuests(guests.map(g => g.id === editingGuest.id ? result.guest as ManualGuest : g));
+      } else {
+        setGuests([result.guest as ManualGuest, ...guests]);
+      }
     }
   };
   const handleInviteSent = (invite: PendingInvite) => setPendingInvites([invite, ...pendingInvites]);
@@ -298,6 +330,15 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
   const handleUnlink = async (connectionId: string) => {
     await removeGuestConnection(connectionId);
     setLinkedGuests(linkedGuests.filter(g => g.connectionId !== connectionId));
+  };
+
+  const handleRemoveManualGuest = async (id: string) => {
+    const result = await removeGuestAction(id);
+    if (!result.error) {
+      setGuests(guests.filter(g => g.id !== id));
+    } else {
+      setError(result.error);
+    }
   };
 
   const totalCount = guests.length + linkedGuests.length + pendingInvites.length;
@@ -404,15 +445,36 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
                 <span className="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{guests.length}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {guests.map(g => <GuestCard key={g.id} guest={g} />)}
+                {guests.map(g => (
+                  <GuestCard 
+                    key={g.id} 
+                    guest={g} 
+                    onRemove={() => handleRemoveManualGuest(g.id)} 
+                    onEdit={() => setEditingGuest(g)}
+                    onShare={() => {
+                      setSharingGuest(g);
+                      setIsInviteModalOpen(true);
+                    }}
+                  />
+                ))}
               </div>
             </section>
           )}
         </div>
       )}
 
-      <GuestModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={handleSaveGuest} />
-      <InviteModal isOpen={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} onSent={handleInviteSent} />
+      <GuestModal 
+        isOpen={isAddModalOpen || editingGuest !== null} 
+        onClose={() => { setIsAddModalOpen(false); setEditingGuest(null); }} 
+        onSave={handleSaveGuest} 
+        initialData={editingGuest}
+      />
+      <InviteModal 
+        isOpen={isInviteModalOpen} 
+        onClose={() => { setIsInviteModalOpen(false); setSharingGuest(null); }} 
+        onSent={handleInviteSent} 
+        sharingGuest={sharingGuest}
+      />
     </div>
   );
 }

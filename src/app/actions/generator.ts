@@ -164,6 +164,90 @@ CRITICAL: Output ONLY the description itself. No introduction, no quotes, no con
   }
 }
 
+async function optimizeScreenCluePrompt(promptText: string, characters: any[]): Promise<string> {
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
+  }
+
+  const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  // Map characters to their actual assigned guest names for the prompt refiner
+  let characterMapping = characters.map(c => {
+    const rawName = c.name || '';
+    const cleanName = rawName.split('|')[0]?.trim() || '';
+    const profile = c.profile_data || {};
+    const guestName = profile.name || profile.guest_name || profile.guestName || cleanName;
+    return `- ${cleanName} (token: {{${cleanName}}}) is played by "${guestName}"`;
+  }).join('\n');
+
+  const victim = characters.find(c => c.is_victim);
+  const killer = characters.find(c => c.plot_role === 'killer');
+
+  if (victim) {
+    const rawName = victim.name || '';
+    const cleanName = rawName.split('|')[0]?.trim() || '';
+    const profile = victim.profile_data || {};
+    const guestName = profile.name || profile.guest_name || profile.guestName || cleanName;
+    characterMapping += `\n- VICTIM (token: {{VICTIM}}) is played by "${guestName}"`;
+  }
+  if (killer) {
+    const rawName = killer.name || '';
+    const cleanName = rawName.split('|')[0]?.trim() || '';
+    const profile = killer.profile_data || {};
+    const guestName = profile.name || profile.guest_name || profile.guestName || cleanName;
+    characterMapping += `\n- KILLER (token: {{KILLER}}) is played by "${guestName}"`;
+  }
+
+  const systemInstruction = `You are an expert prompt engineer for Imagen 4.0. Your task is to rewrite a murder mystery game clue prompt involving a digital screen (like a smartphone screen, text message/DM thread, email, or chat conversation) into a highly optimized, extremely concise, and visually sharp prompt for image generation.
+
+Here is the casting mapping for the game guests:
+${characterMapping}
+
+User's raw prompt containing placeholders:
+"${promptText}"
+
+CRITICAL RULES for Screen/Chat Clues:
+1. Replace all character tokens (e.g. {{CharacterName}}, {{VICTIM}}, {{KILLER}}) with their actual cast guest names.
+2. Clear Sender/Recipient Distinction: The owner of the device (the recipient of the text/email, e.g. {{Gabby}} -> "Gabriella") is holding or viewing the phone. Their name or physical description MUST NOT appear at the top header or as the sender of the incoming messages.
+3. Header Placement: The contact/sender name of the person sending the message (e.g. "Don't answer", an unknown number, or another guest) MUST be positioned clearly at the very top of the screen as a header.
+4. Message Legibility & Spelling: State clearly that the text inside the bubbles must be perfectly spelled, sharp, and highly legible. Use a clean, default mobile sans-serif font.
+5. Do NOT include physical descriptions of the recipient (e.g., hazel eyes, hair color) as text inside the chat thread or header. These physical traits should only be used to describe the hands holding the phone if appropriate, but keep it minimal to prevent confusing the AI.
+6. CHAT LAYOUT & GIBBERISH PREVENTION:
+   - If the user's prompt describes a single-sided incoming message, render ONLY that single incoming message in a grey/white bubble below the contact header. Explicitly state in the prompt that "the screen is entirely dark, blank, and empty below this single message bubble, with no other text bubbles or elements."
+   - If the user's prompt describes a two-way dialogue or back-and-forth conversation (e.g. 'Dane to Ava: ... Ava: ...' or dialogue lines), render it as a real dialogue on the screen: incoming messages from the contact header in grey/white bubbles on the left, and outgoing replies from the device owner in blue/green bubbles on the right.
+   - CRITICAL: Every bubble must contain ONLY the exact, literal dialogue text specified in the user's prompt. There must be absolutely NO AI-invented replies, NO placeholder text, and NO gibberish words. Every word on the screen must be exactly from the user's prompt. Specify that "there must be absolutely no other text, no gibberish, and no AI-invented messages on the screen".
+7. CONCISENESS & SHARPNESS: Keep the final output prompt very concise, direct, and under 120 words. Verbose prompts degrade the text rendering capabilities of Imagen. Focus purely on spatial placement, the header, bubble colors, and the exact literal text strings to render in quotes.
+8. The overall scene should be a premium, dramatic, close-up photograph of a smartphone screen lying on a surface or held in a hand. Use the "gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution" style.
+9. Return ONLY the final optimized prompt text. Do not include any introduction, explanations, quotes, or markdown code blocks.`;
+
+  try {
+    const result = await model.generateContent(systemInstruction);
+    const response = await result.response;
+    
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      prompt_tokens: response.usageMetadata?.promptTokenCount,
+      completion_tokens: response.usageMetadata?.candidatesTokenCount,
+      feature_name: 'optimize_screen_clue_prompt'
+    });
+
+    let text = response.text().trim();
+    // Strip markdown code blocks if any
+    if (text.startsWith('```')) {
+      text = text.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '').trim();
+    }
+    // Strip surrounding quotes
+    text = text.replace(/^["']|["']$/g, '').trim();
+    return text;
+  } catch (error) {
+    console.error('Error in optimizeScreenCluePrompt:', error);
+    // Fallback if AI fails
+    const hydratedPrompt = hydrateTextWithCharacters(promptText, characters, 'ai');
+    return `A high-quality, professional photograph of a smartphone screen showing a text message conversation: ${hydratedPrompt}. CRITICAL: The sender's name must be at the top header, and the text messages below. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`;
+  }
+}
+
 export async function generateClueImageAction(clueId: string, mysteryId: string, promptText: string) {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
@@ -173,13 +257,47 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
     const supabase = await createClient();
     const characters = await getCharactersByMysteryId(mysteryId);
     
-    // Hydrate the promptText with character information for visual description
-    const hydratedPrompt = hydrateTextWithCharacters(promptText, characters, 'ai');
-    
+    // Robust detection for text chains, chats, screen, DMs, email, or dialogue format
+    const lowercasePrompt = promptText.toLowerCase();
+    const hasScreenKeywords = 
+      lowercasePrompt.includes('smartphone') || 
+      lowercasePrompt.includes('phone screen') || 
+      lowercasePrompt.includes('text message') || 
+      lowercasePrompt.includes('text chain') || 
+      lowercasePrompt.includes('chat thread') || 
+      lowercasePrompt.includes('sms') || 
+      lowercasePrompt.includes('screen') ||
+      lowercasePrompt.includes('dm') ||
+      lowercasePrompt.includes('direct message') ||
+      lowercasePrompt.includes('text bubble') ||
+      lowercasePrompt.includes('email') ||
+      lowercasePrompt.includes('inbox') ||
+      lowercasePrompt.includes('chat history') ||
+      lowercasePrompt.includes('message chain') ||
+      lowercasePrompt.includes('whatsapp') ||
+      lowercasePrompt.includes('imessage');
+
+    // Detect dialogue script format, e.g. {{Dane}} to {{Ava}} or {{Dane}}:
+    const hasDialogueFormat = 
+      /\{\{[^}]+\}\}\s*to\s*\{\{[^}]+\}\}/i.test(promptText) ||
+      /\{\{[^}]+\}\}\s*:/i.test(promptText) ||
+      /\{\{[^}]+\}\}\s+DMs/i.test(promptText) ||
+      /\{\{[^}]+\}\}\s+says/i.test(promptText);
+
+    const isScreenClue = hasScreenKeywords || hasDialogueFormat;
+
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    
-    // Enhance prompt for highest dynamic photo quality & consistent noir theme
-    const finalPrompt = `A high-quality, professional photograph of a clue item in a murder mystery: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`;
+    let finalPrompt = '';
+
+    if (isScreenClue) {
+      // Use Gemini to optimize and rewrite the screen-based prompt
+      finalPrompt = await optimizeScreenCluePrompt(promptText, characters);
+    } else {
+      // Hydrate the promptText with character information for visual description
+      const hydratedPrompt = hydrateTextWithCharacters(promptText, characters, 'ai');
+      // Enhance prompt for highest dynamic photo quality & consistent noir theme
+      finalPrompt = `A high-quality, professional photograph of a clue item in a murder mystery: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`;
+    }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
     const payload = {

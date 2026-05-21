@@ -3,11 +3,11 @@
 import { createClient } from '@/utils/supabase/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash');
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mysteries.backpocketgames.com';
 
 // --- Send an invitation ---
-export async function sendGuestInvitation(email: string, note?: string) {
+export async function sendGuestInvitation(email: string, note?: string, manualGuestId?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Not authenticated' };
@@ -34,6 +34,7 @@ export async function sendGuestInvitation(email: string, note?: string) {
       inviter_user_id: user.id,
       invite_email: email.toLowerCase(),
       personal_note: note || null,
+      manual_guest_id: manualGuestId || null,
     })
     .select()
     .single();
@@ -155,16 +156,39 @@ export async function acceptInvitation(token: string) {
   if (!invite) return { error: 'This invitation has expired or is no longer valid.' };
   if (invite.inviter_user_id === user.id) return { error: "You can't accept your own invitation." };
 
-  // Create the connection
-  await (supabase as any)
-    .from('guest_connections')
-    .upsert({ host_user_id: invite.inviter_user_id, guest_user_id: user.id, invitation_id: invite.id }, { onConflict: 'host_user_id,guest_user_id' });
-
-  // Mark invite as accepted
-  await (supabase as any)
+  // 3. Mark invitation as accepted
+  const { data: updatedInvite, error: updateError } = await (supabase as any)
     .from('guest_invitations')
-    .update({ status: 'accepted', invited_user_id: user.id, accepted_at: new Date().toISOString() })
-    .eq('id', invite.id);
+    .update({
+      status: 'accepted',
+      invited_user_id: user.id,
+      accepted_at: new Date().toISOString(),
+    })
+    .eq('id', invite.id)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+
+  // 4. Create the connection
+  const { error: connectionError } = await (supabase as any)
+    .from('guest_connections')
+    .insert({
+      host_user_id: invite.inviter_user_id,
+      guest_user_id: user.id,
+      invitation_id: invite.id,
+    });
+
+  if (connectionError) throw connectionError;
+
+  // 5. If this invite was tied to a manual guest, delete the manual guest
+  if (updatedInvite.manual_guest_id) {
+    await (supabase as any)
+      .from('guests')
+      .delete()
+      .eq('id', updatedInvite.manual_guest_id)
+      .eq('user_id', invite.inviter_user_id);
+  }
 
   return { success: true, hostId: invite.inviter_user_id };
 }

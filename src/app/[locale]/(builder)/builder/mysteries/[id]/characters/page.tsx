@@ -6,6 +6,7 @@ import { CharacterCard } from './_components/CharacterCard';
 import { CastingToolbar } from './_components/CastingToolbar';
 import { Locale } from '@/lib/i18n-config';
 import { createClient } from '@/utils/supabase/server';
+import { getStaticMockGuests } from '@/utils/mock-guests';
 
 export default async function MysteryCharactersPage({
   params,
@@ -16,9 +17,32 @@ export default async function MysteryCharactersPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Helper to construct avatar URLs from config
+  const avatarUrlHelper = (config: any) => {
+    if (!config) return null;
+    const params = new URLSearchParams({
+      seed: config.seed || 'player',
+      top: config.top || 'shortFlat',
+      topColor: config.hairColor || '282828',
+      hairColor: config.hairColor || '282828',
+      skinColor: config.skinColor || 'ffe0bd',
+      ...(config.facialHair ? { facialHair: config.facialHair } : {}),
+      backgroundColor: 'transparent',
+    });
+    return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
+  };
+
   // 1. Fetch manual and linked guests for the user roster
   let guests: any[] = [];
   if (user) {
+    // Fetch host profile
+    const { data: hostProfileRaw } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+    const hostProfile = hostProfileRaw as any;
+
     // Fetch manual guests
     const { data: manualGuests } = await supabase
       .from('guests')
@@ -43,20 +67,6 @@ export default async function MysteryCharactersPage({
       `)
       .eq('host_user_id', user.id) as any;
 
-    const avatarUrlHelper = (config: any) => {
-      if (!config) return null;
-      const params = new URLSearchParams({
-        seed: config.seed || 'player',
-        top: config.top || 'shortFlat',
-        topColor: config.hairColor || '282828',
-        hairColor: config.hairColor || '282828',
-        skinColor: config.skinColor || 'ffe0bd',
-        ...(config.facialHair ? { facialHair: config.facialHair } : {}),
-        backgroundColor: 'transparent',
-      });
-      return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
-    };
-
     const linkedGuestIds = (connections ?? []).map((c: any) => c.guest_user_id);
     let linkedGuestNames: Record<string, string> = {};
     if (linkedGuestIds.length > 0) {
@@ -69,7 +79,7 @@ export default async function MysteryCharactersPage({
       });
     }
 
-    guests = [
+    const fetchedGuests = [
       ...(manualGuests || []).map((mg: any) => ({
         id: mg.id,
         name: mg.name,
@@ -93,6 +103,78 @@ export default async function MysteryCharactersPage({
         isLinked: true
       }))
     ];
+
+    if (hostProfile) {
+      fetchedGuests.push({
+        id: hostProfile.id,
+        name: hostProfile.full_name || 'Gabriella Blyth',
+        gender: hostProfile.pronouns?.toLowerCase().includes('she') ? 'female' : hostProfile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
+        eye_color: hostProfile.avatar_config?.eyeColor || 'Hazel',
+        height: hostProfile.avatar_config?.height || 'Average',
+        avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
+        traits: hostProfile.character_preferences || [],
+        bio: hostProfile.bio || '',
+        isLinked: false
+      });
+    }
+
+    const hasActiveRoster = (manualGuests && manualGuests.length > 0) || (connections && connections.length > 0);
+
+    if (hasActiveRoster) {
+      guests = fetchedGuests;
+    } else {
+      // User has no guests: fallback to hello@studiogvb.com mock roster
+      // First try via security definer RPC
+      const { data: rpcGuests } = await supabase.rpc('get_mock_guests');
+      
+      // Also fetch Gabriella's own profile to append as the 12th guest ("plus me is 12")
+      const { data: gvbProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', '4903bd39-e54f-42e4-b679-2af5d128bb8f')
+        .maybeSingle();
+
+      if (rpcGuests && rpcGuests.length > 0) {
+        guests = rpcGuests.map((rg: any) => ({
+          id: rg.id,
+          name: rg.name,
+          gender: rg.gender || 'adaptable',
+          eye_color: rg.eye_color || '',
+          height: rg.height || '',
+          avatar_url: rg.avatar_url || '',
+          traits: rg.traits || [],
+          bio: rg.bio || '',
+          isLinked: false
+        }));
+
+        if (gvbProfile) {
+          guests.push({
+            id: gvbProfile.id,
+            name: gvbProfile.full_name || 'Gabriella Blyth',
+            gender: gvbProfile.pronouns?.toLowerCase().includes('she') ? 'female' : 'male',
+            eye_color: gvbProfile.avatar_config?.eyeColor || 'Hazel',
+            height: gvbProfile.avatar_config?.height || 'Average',
+            avatar_url: avatarUrlHelper(gvbProfile.avatar_config) || '',
+            traits: gvbProfile.character_preferences || [],
+            bio: gvbProfile.bio || '',
+            isLinked: false
+          });
+        }
+      } else {
+        // Absolute fallback: load static high-quality mock roster in code
+        guests = getStaticMockGuests().map((sg: any) => ({
+          id: sg.id,
+          name: sg.name,
+          gender: sg.gender,
+          eye_color: sg.eye_color,
+          height: sg.height,
+          avatar_url: sg.avatar_url,
+          traits: sg.traits,
+          bio: sg.bio,
+          isLinked: false
+        }));
+      }
+    }
   }
 
   // 2. Fetch mystery details and character list

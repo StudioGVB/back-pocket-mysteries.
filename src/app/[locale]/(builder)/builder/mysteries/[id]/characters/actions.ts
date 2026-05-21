@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { createCharacter, updateCharacter, deleteCharacter } from '@/services/mysteries';
+import { getStaticMockGuests } from '@/utils/mock-guests';
 
 export async function addCharacterAction(mysteryId: string, formData: FormData) {
   const base_name = formData.get('base_name') as string;
@@ -405,6 +406,7 @@ export async function generateCharacterOutfitPhotoAction(mysteryId: string, char
 
 export async function assignGuestToCharacterAction(mysteryId: string, characterId: string, guestId: string | null) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   
   // 1. Get the current character
   const { data: character, error: charErr } = await supabase
@@ -432,83 +434,149 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
     delete profile.bio;
     delete profile.is_linked;
   } else {
-    // ASSIGN GUEST: Fetch guest details (check manual guests table first)
-    const { data: manualGuest } = await supabase
-      .from('guests')
-      .select('*')
-      .eq('id', guestId)
-      .single();
+    // Helper to construct avatar URLs from config
+    const avatarUrlHelper = (config: any) => {
+      if (!config) return null;
+      const params = new URLSearchParams({
+        seed: config.seed || 'player',
+        top: config.top || 'shortFlat',
+        topColor: config.hairColor || '282828',
+        hairColor: config.hairColor || '282828',
+        skinColor: config.skinColor || 'ffe0bd',
+        ...(config.facialHair ? { facialHair: config.facialHair } : {}),
+        backgroundColor: 'transparent',
+      });
+      return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
+    };
 
+    // ASSIGN GUEST: Fetch guest details (with static, database mock, and regular manual/linked fallbacks)
     let guest: any = null;
 
-    if (manualGuest) {
+    // A. Check static mock guests list first
+    const staticGuest = getStaticMockGuests().find(g => g.id === guestId);
+    if (staticGuest) {
       guest = {
-        id: manualGuest.id,
-        name: manualGuest.name,
-        gender: manualGuest.gender || 'adaptable',
-        eye_color: manualGuest.eye_color || '',
-        height: manualGuest.height || '',
-        avatar_url: manualGuest.avatar_url || '',
-        traits: manualGuest.traits || [],
-        bio: manualGuest.bio || '',
+        id: staticGuest.id,
+        name: staticGuest.name,
+        gender: staticGuest.gender,
+        eye_color: staticGuest.eye_color,
+        height: staticGuest.height,
+        avatar_url: staticGuest.avatar_url,
+        traits: staticGuest.traits,
+        bio: staticGuest.bio,
         isLinked: false
       };
     } else {
-      // Check linked guests
-      const { data: connection } = await (supabase as any)
-        .from('guest_connections')
-        .select(`
-          id,
-          guest_user_id,
-          profiles!guest_user_id (
-            bio,
-            location,
-            pronouns,
-            avatar_config,
-            dietary_needs,
-            character_preferences
-          )
-        `)
-        .eq('guest_user_id', guestId)
-        .single() as any;
+      // B. Check standard manual guests table
+      const { data: manualGuest } = await supabase
+        .from('guests')
+        .select('*')
+        .eq('id', guestId)
+        .maybeSingle();
 
-      if (connection) {
-        const { data: linkedProfile } = await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .eq('id', connection.guest_user_id)
-          .single();
-
-        const avatarUrlHelper = (config: any) => {
-          if (!config) return null;
-          const params = new URLSearchParams({
-            seed: config.seed || 'player',
-            top: config.top || 'shortFlat',
-            topColor: config.hairColor || '282828',
-            hairColor: config.hairColor || '282828',
-            skinColor: config.skinColor || 'ffe0bd',
-            ...(config.facialHair ? { facialHair: config.facialHair } : {}),
-            backgroundColor: 'transparent',
-          });
-          return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
-        };
-
+      if (manualGuest) {
         guest = {
-          id: connection.guest_user_id,
-          name: linkedProfile?.full_name || 'Linked Guest',
-          gender: connection.profiles?.pronouns === 'he/him' ? 'male' : connection.profiles?.pronouns === 'she/her' ? 'female' : 'adaptable',
-          eye_color: '',
-          height: '',
-          avatar_url: avatarUrlHelper(connection.profiles?.avatar_config) || '',
-          traits: connection.profiles?.character_preferences || [],
-          bio: connection.profiles?.bio || '',
-          isLinked: true
+          id: manualGuest.id,
+          name: manualGuest.name,
+          gender: manualGuest.gender || 'adaptable',
+          eye_color: manualGuest.eye_color || '',
+          height: manualGuest.height || '',
+          avatar_url: manualGuest.avatar_url || '',
+          traits: manualGuest.traits || [],
+          bio: manualGuest.bio || '',
+          isLinked: false
         };
+      } else {
+        // C. Check database mock guests via RPC
+        const { data: rpcGuests } = await (supabase as any).rpc('get_mock_guests');
+        const dbMockGuest = ((rpcGuests as any) ?? []).find((rg: any) => rg.id === guestId);
+        if (dbMockGuest) {
+          guest = {
+            id: dbMockGuest.id,
+            name: dbMockGuest.name,
+            gender: dbMockGuest.gender || 'adaptable',
+            eye_color: dbMockGuest.eye_color || '',
+            height: dbMockGuest.height || '',
+            avatar_url: dbMockGuest.avatar_url || '',
+            traits: dbMockGuest.traits || [],
+            bio: dbMockGuest.bio || '',
+            isLinked: false
+          };
+        } else {
+          // D. Check host profile (either active user or Gabriella's mock profile ID)
+          const targetProfileId = guestId === '4903bd39-e54f-42e4-b679-2af5d128bb8f'
+            ? '4903bd39-e54f-42e4-b679-2af5d128bb8f'
+            : (user && guestId === user.id ? user.id : null);
+
+          if (targetProfileId) {
+            const { data: profileRaw } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', targetProfileId)
+              .maybeSingle();
+
+            const profile = profileRaw as any;
+
+            if (profile) {
+              guest = {
+                id: profile.id,
+                name: profile.full_name || 'Gabriella Blyth',
+                gender: profile.pronouns?.toLowerCase().includes('she') ? 'female' : profile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
+                eye_color: profile.avatar_config?.eyeColor || 'Hazel',
+                height: profile.avatar_config?.height || 'Average',
+                avatar_url: avatarUrlHelper(profile.avatar_config) || '',
+                traits: profile.character_preferences || [],
+                bio: profile.bio || '',
+                isLinked: false
+              };
+            }
+          }
+
+          if (!guest) {
+            // E. Check linked guests
+            const { data: connection } = await (supabase as any)
+              .from('guest_connections')
+              .select(`
+                id,
+                guest_user_id,
+                profiles!guest_user_id (
+                  bio,
+                  location,
+                  pronouns,
+                  avatar_config,
+                  dietary_needs,
+                  character_preferences
+                )
+              `)
+              .eq('guest_user_id', guestId)
+              .maybeSingle() as any;
+
+            if (connection) {
+              const { data: linkedProfile } = await supabase
+                .from('profiles')
+                .select('id, full_name')
+                .eq('id', connection.guest_user_id)
+                .single();
+
+              guest = {
+                id: connection.guest_user_id,
+                name: linkedProfile?.full_name || 'Linked Guest',
+                gender: connection.profiles?.pronouns === 'he/him' ? 'male' : connection.profiles?.pronouns === 'she/her' ? 'female' : 'adaptable',
+                eye_color: '',
+                height: '',
+                avatar_url: avatarUrlHelper(connection.profiles?.avatar_config) || '',
+                traits: connection.profiles?.character_preferences || [],
+                bio: connection.profiles?.bio || '',
+                isLinked: true
+              };
+            }
+          }
+        }
       }
     }
 
     if (!guest) {
-      throw new Error('Guest not found in database');
+      throw new Error('Guest not found in database or static mock roster');
     }
 
     // Unassign this guest from any other characters in this mystery to prevent double-casting!
@@ -569,6 +637,14 @@ export async function autoAssignGuestsAction(mysteryId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  // Fetch host profile
+  const { data: hostProfileRaw } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+  const hostProfile = hostProfileRaw as any;
 
   // Fetch manual guests
   const { data: manualGuests } = await supabase
@@ -643,6 +719,81 @@ export async function autoAssignGuestsAction(mysteryId: string) {
       isLinked: true
     }))
   ];
+
+  if (hostProfile) {
+    guests.push({
+      id: hostProfile.id,
+      name: hostProfile.full_name || 'Gabriella Blyth',
+      gender: hostProfile.pronouns?.toLowerCase().includes('she') ? 'female' : hostProfile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
+      eye_color: hostProfile.avatar_config?.eyeColor || 'Hazel',
+      height: hostProfile.avatar_config?.height || 'Average',
+      avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
+      traits: hostProfile.character_preferences || [],
+      bio: hostProfile.bio || '',
+      isLinked: false
+    });
+  }
+
+  const hasActiveRoster = (manualGuests && manualGuests.length > 0) || (connections && connections.length > 0);
+
+  if (!hasActiveRoster) {
+    // First try via security definer RPC
+    const { data: rpcGuests } = await (supabase as any).rpc('get_mock_guests');
+    
+    // Also fetch Gabriella's own profile to append as the 12th guest ("plus me is 12")
+    const { data: gvbProfileRaw } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', '4903bd39-e54f-42e4-b679-2af5d128bb8f')
+      .maybeSingle();
+
+    const gvbProfile = gvbProfileRaw as any;
+
+    if (rpcGuests && (rpcGuests as any).length > 0) {
+      let mappedGuests = (rpcGuests as any).map((rg: any) => ({
+        id: rg.id,
+        name: rg.name,
+        gender: rg.gender || 'adaptable',
+        eye_color: rg.eye_color || '',
+        height: rg.height || '',
+        avatar_url: rg.avatar_url || '',
+        traits: rg.traits || [],
+        bio: rg.bio || '',
+        isLinked: false
+      }));
+
+      if (gvbProfile) {
+        mappedGuests.push({
+          id: gvbProfile.id,
+          name: gvbProfile.full_name || 'Gabriella Blyth',
+          gender: gvbProfile.pronouns?.toLowerCase().includes('she') ? 'female' : 'male',
+          eye_color: gvbProfile.avatar_config?.eyeColor || 'Hazel',
+          height: gvbProfile.avatar_config?.height || 'Average',
+          avatar_url: avatarUrlHelper(gvbProfile.avatar_config) || '',
+          traits: gvbProfile.character_preferences || [],
+          bio: gvbProfile.bio || '',
+          isLinked: false
+        });
+      }
+      guests.length = 0;
+      guests.push(...mappedGuests);
+    } else {
+      // Fall back to static mock guests
+      const staticMockGuests = getStaticMockGuests().map((sg: any) => ({
+        id: sg.id,
+        name: sg.name,
+        gender: sg.gender,
+        eye_color: sg.eye_color,
+        height: sg.height,
+        avatar_url: sg.avatar_url,
+        traits: sg.traits,
+        bio: sg.bio,
+        isLinked: false
+      }));
+      guests.length = 0;
+      guests.push(...staticMockGuests);
+    }
+  }
 
   if (guests.length === 0) return { error: 'No guests saved in roster.' };
 
