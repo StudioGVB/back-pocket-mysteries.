@@ -18,7 +18,7 @@ export default async function ServiceLayout({
 
   let avatarConfig: any = null;
   if (user) {
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('avatar_config')
       .eq('id', user.id)

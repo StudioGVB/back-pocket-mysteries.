@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useState, KeyboardEvent } from 'react';
-import { AvatarBuilder, AvatarConfig } from './AvatarBuilder';
+import { AvatarBuilder, AvatarConfig, buildAvatarUrl } from './AvatarBuilder';
 import Image from 'next/image';
 import { generateRandomQuirk } from '@/app/actions/generator';
 
 interface GuestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (guestData: any) => void;
+  onSave: (guestData: any) => Promise<void> | void;
 }
 
 export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
+  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'basics' | 'avatar' | 'personality'>('basics');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -48,12 +49,7 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
   };
 
   // DiceBear Avataaars API URL generator
-  // We explicitly set eyes=default, mouth=smile, clothesColor=262e33 so it doesn't look crazy in the preview
-  // We set facialHairProbability=0 if no facial hair is selected
-  // We set facialHairColor to match hairColor
-  // We set topProbability=0 if top is 'none' (bald)
-  const isBald = avatarConfig.top === 'none';
-  const avatarUrl = `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || avatarConfig.seed)}${isBald ? '&topProbability=0' : `&top=${avatarConfig.top}`}&hairColor=${avatarConfig.hairColor}&hatColor=${avatarConfig.hairColor}&facialHairColor=${avatarConfig.hairColor}&skinColor=${avatarConfig.skinColor}&eyes=default&eyebrows=default&mouth=smile&clothesColor=262e33&facialHairProbability=${avatarConfig.facialHair ? '100' : '0'}${avatarConfig.facialHair ? `&facialHair=${avatarConfig.facialHair}` : ''}&backgroundColor=transparent`;
+  const avatarUrl = buildAvatarUrl(avatarConfig, name);
 
   const handleAddQuirk = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currentQuirk.trim() !== '') {
@@ -93,25 +89,32 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
     }
   };
 
-  const handleSave = () => {
-    onSave({
-      id: Date.now().toString(),
-      name: name || 'Unknown Guest',
-      email,
-      gender,
-      eyeColor: avatarConfig.eyeColor,
-      height: avatarConfig.height,
-      avatarUrl,
-      traits: quirks,
-      bio,
-    });
-    // Reset form
-    setName('');
-    setEmail('');
-    setGender('Unspecified');
-    setQuirks([]);
-    setBio('');
-    onClose();
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave({
+        id: Date.now().toString(),
+        name: name || 'Unknown Guest',
+        email,
+        gender,
+        eyeColor: avatarConfig.eyeColor,
+        height: avatarConfig.height,
+        avatarUrl,
+        traits: quirks,
+        bio,
+      });
+      // Reset form
+      setName('');
+      setEmail('');
+      setGender('Unspecified');
+      setQuirks([]);
+      setBio('');
+      onClose();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -303,8 +306,13 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
             <button onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">
               Cancel
             </button>
-            <button onClick={handleSave} className="px-8 py-3 bg-brand-pink text-white rounded-xl font-black tracking-widest uppercase text-sm hover:bg-brand-dark transition-all shadow-lg shadow-brand-pink/20 active:scale-95">
-              Save Guest
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full font-black text-sm text-white transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
+              style={{ background: '#fe04c6', boxShadow: '0 8px 20px -8px rgba(254,4,198,0.5)' }}
+            >
+              {isSaving ? 'Saving...' : 'Save Guest'}
             </button>
           </div>
         </div>

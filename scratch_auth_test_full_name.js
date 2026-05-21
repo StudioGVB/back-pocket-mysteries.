@@ -20,7 +20,7 @@ const supabase = createClient(
 );
 
 async function run() {
-  const email = `test_circus_host_${Date.now()}@example.com`;
+  const email = `test_circus_host_${Date.now()}@gmail.com`;
   const password = 'Password123!';
 
   console.log('Attempting sign up with full_name...');

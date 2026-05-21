@@ -13,8 +13,8 @@ export type AvatarConfig = {
   accessories?: string;
 };
 
-export function buildAvatarUrl(config: AvatarConfig | any, name?: string) {
-  if (!config) return null;
+export function buildAvatarUrl(config: AvatarConfig | any, name?: string): string | undefined {
+  if (!config) return undefined;
   const isBald = config.top === 'none';
   const hasAccessories = config.accessories && config.accessories !== 'none';
   
@@ -93,6 +93,7 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
     { id: 'round', label: 'Round Glasses' },
     { id: 'sunglasses', label: 'Sunglasses' },
     { id: 'wayfarers', label: 'Wayfarers' },
+    { id: 'eyepatch', label: 'Eyepatch' },
   ];
 
   const tops = gender === 'Masculine' ? masculineTops : feminineTops;

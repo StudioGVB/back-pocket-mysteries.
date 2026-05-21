@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { GuestModal } from '@/components/account/GuestModal';
 import { sendGuestInvitation, cancelInvitation, removeGuestConnection } from '@/app/actions/guest-invitations';
+import { saveGuestAction } from '@/app/actions/guests';
+import { buildAvatarUrl } from '@/components/account/AvatarBuilder';
 
 interface ManualGuest {
   id: string;
@@ -45,30 +47,25 @@ interface GuestsClientProps {
   locale: string;
 }
 
-function avatarUrl(config: any) {
-  if (!config) return null;
-  const params = new URLSearchParams({
-    seed: config.seed || 'player',
-    top: config.top || 'shortFlat',
-    topColor: config.hairColor || '282828',
-    hairColor: config.hairColor || '282828',
-    skinColor: config.skinColor || 'ffe0bd',
-    ...(config.facialHair ? { facialHair: config.facialHair } : {}),
-    backgroundColor: 'transparent',
-  });
-  return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
-}
-
 function GuestCard({ guest, onRemove }: { guest: ManualGuest; onRemove?: () => void }) {
   const initials = guest.name.charAt(0).toUpperCase();
+  const defaultAvatar = buildAvatarUrl({
+    seed: guest.name,
+    top: guest.gender === 'Masculine' ? 'shortFlat' : 'longButNotTooLong',
+    hairColor: '282828',
+    skinColor: 'ffe0bd',
+    accessories: 'none'
+  }, guest.name);
+  const displayAvatar = guest.avatar_url || defaultAvatar;
+
   return (
     <div className="bg-white border border-slate-100 p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative overflow-hidden">
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4">
-          {guest.avatar_url ? (
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
+          {displayAvatar ? (
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={guest.avatar_url} alt={guest.name} className="w-[120%] h-[120%] object-cover mt-2" />
+              <img src={displayAvatar} alt={guest.name} className="w-[120%] h-[120%] object-cover mt-2" />
             </div>
           ) : (
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white border-2 border-white shadow-md" style={{ background: '#fe04c6' }}>
@@ -101,7 +98,7 @@ function GuestCard({ guest, onRemove }: { guest: ManualGuest; onRemove?: () => v
 }
 
 function LinkedGuestCard({ guest, onUnlink }: { guest: LinkedGuest; onUnlink?: () => void }) {
-  const avatar = avatarUrl(guest.profile?.avatar_config);
+  const avatar = guest.profile?.avatar_config ? buildAvatarUrl(guest.profile.avatar_config, guest.name) : undefined;
   const initials = guest.name.charAt(0).toUpperCase();
   return (
     <div className="bg-white border border-slate-100 p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative overflow-hidden">
@@ -267,8 +264,30 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>(initialPending);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSaveGuest = (newGuest: any) => setGuests([newGuest, ...guests]);
+  const handleSaveGuest = async (newGuest: any) => {
+    setError(null);
+    const result = await saveGuestAction({
+      name: newGuest.name,
+      email: newGuest.email,
+      gender: newGuest.gender,
+      eye_color: newGuest.eyeColor,
+      height: newGuest.height,
+      avatar_url: newGuest.avatarUrl,
+      traits: newGuest.traits,
+      bio: newGuest.bio,
+    });
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    if (result.guest) {
+      setGuests([result.guest as ManualGuest, ...guests]);
+    }
+  };
   const handleInviteSent = (invite: PendingInvite) => setPendingInvites([invite, ...pendingInvites]);
 
   const handleCancelInvite = async (id: string) => {

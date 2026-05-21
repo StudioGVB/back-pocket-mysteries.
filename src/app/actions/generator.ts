@@ -246,3 +246,44 @@ export async function generateProfileFunFactAction(name: string): Promise<string
     throw new Error('Failed to generate fun fact');
   }
 }
+
+/**
+ * Utility function to convert a guest's database profile into a standardized
+ * physical description block for Image Generation AI (like Imagen 4).
+ * This ensures character consistency by injecting the exact same physical traits 
+ * into every image prompt that includes this character.
+ */
+export async function buildCharacterPromptBlock(guest: any): Promise<string> {
+  const name = guest.name || 'A character';
+  const gender = guest.gender || (guest.profile?.pronouns?.toLowerCase().includes('she') ? 'feminine woman' : guest.profile?.pronouns?.toLowerCase().includes('he') ? 'masculine man' : 'person') || 'person';
+  const traits = guest.traits || guest.profile?.character_preferences || [];
+  
+  // Extract physical traits from avatar config if available (Linked Guest)
+  const avatarConfig = guest.profile?.avatar_config;
+  let hairStr = '';
+  let accessoriesStr = '';
+  
+  if (avatarConfig) {
+    // Mapping dicebear values to prompt-friendly descriptors
+    if (avatarConfig.top === 'none') hairStr = 'who is bald';
+    else if (avatarConfig.top) hairStr = `with ${avatarConfig.top.replace(/([A-Z])/g, ' $1').toLowerCase()} hair`;
+    
+    if (avatarConfig.accessories && avatarConfig.accessories !== 'none') {
+      const acc = avatarConfig.accessories.replace(/[0-9]/g, '');
+      accessoriesStr = `, wearing ${acc === 'kurt' ? 'thick retro glasses' : acc === 'eyepatch' ? 'an eyepatch' : 'glasses'}`;
+    }
+  } else {
+    // Fallbacks for manual guests that just have text fields
+    const features = [];
+    if (guest.eye_color) features.push(`${guest.eye_color} eyes`);
+    hairStr = features.length > 0 ? `with ${features.join(' and ')}` : '';
+  }
+
+  const height = guest.height ? `who is ${guest.height.toLowerCase()}` : '';
+
+  // Combine into a strict AI instruction block
+  const block = `[CHARACTER PHYSICAL ANCHOR - ${name.toUpperCase()}]: A ${height} ${gender} ${hairStr}${accessoriesStr}.`;
+  
+  // Clean up double spaces
+  return block.replace(/\s+/g, ' ').trim();
+}

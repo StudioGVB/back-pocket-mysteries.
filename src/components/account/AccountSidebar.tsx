@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useParams } from 'next/navigation';
 import { signOut } from '@/app/[locale]/(auth)/actions';
+import { buildAvatarUrl } from '@/components/account/AvatarBuilder';
 
 interface AccountSidebarProps {
   user?: {
@@ -12,12 +13,6 @@ interface AccountSidebarProps {
     email: string;
     avatar_config?: any;
   };
-}
-
-function buildAvatarUrl(config: any, name?: string) {
-  if (!config) return null;
-  const isBald = config.top === 'none';
-  return `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed)}${isBald ? '&topProbability=0' : `&top=${config.top}`}&hairColor=${config.hairColor}&hatColor=${config.hairColor}&facialHairColor=${config.hairColor}&skinColor=${config.skinColor}&eyes=default&eyebrows=default&mouth=smile&clothesColor=262e33&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${config.facialHair}` : ''}&backgroundColor=transparent`;
 }
 
 export function AccountSidebar({ user }: AccountSidebarProps) {
@@ -80,7 +75,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '?';
 
-  const avatarUrl = user?.avatar_config ? buildAvatarUrl(user.avatar_config, user.name) : null;
+  const avatarUrl = user?.avatar_config ? buildAvatarUrl(user.avatar_config, user.name) : undefined;
 
   return (
     <aside className="w-72 flex flex-col fixed h-full z-30" style={{ background: '#1e191c' }}>

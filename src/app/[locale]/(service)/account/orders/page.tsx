@@ -57,7 +57,7 @@ export default async function OrdersPage({
           <p className="text-slate-500 font-medium max-w-md mb-10">
             You haven't purchased any mysteries yet. Head over to our collection to find your first adventure.
           </p>
-          <Link href="/mysteries" className="px-12 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-dark transition-all shadow-2xl shadow-brand-pink/20 hover:translate-y-[-4px] active:scale-95">
+          <Link href={`/${locale}/themes`} className="px-12 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-dark transition-all shadow-2xl shadow-brand-pink/20 hover:translate-y-[-4px] active:scale-95">
             Browse Mysteries
           </Link>
         </div>
