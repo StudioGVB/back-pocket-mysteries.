@@ -1,5 +1,4 @@
 import { getAdminStats, getAiCosts } from '../admin-data';
-import { format } from 'date-fns';
 
 export default async function CostsPage() {
   const [stats, logs] = await Promise.all([
@@ -77,25 +76,34 @@ export default async function CostsPage() {
                   </td>
                 </tr>
               ) : (
-                logs.slice(0, 50).map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">{format(new Date(log.created_at), 'MMM d, h:mm a')}</td>
-                    <td className="px-6 py-4 font-bold text-slate-800 capitalize">{log.feature_name.replace(/_/g, ' ')}</td>
-                    <td className="px-6 py-4 text-xs">{log.model_name}</td>
-                    <td className="px-6 py-4">
-                      {log.prompt_tokens ? (
-                        <span className="text-xs text-slate-500">
-                          <span className="text-slate-800">{log.prompt_tokens}</span> in / <span className="text-slate-800">{log.completion_tokens}</span> out
-                        </span>
-                      ) : (
-                        <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded">Image Gen</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right font-black text-red-500">
-                      ${Number(log.cost_usd).toFixed(5)}
-                    </td>
-                  </tr>
-                ))
+                logs.slice(0, 50).map((log) => {
+                  const formattedDate = new Intl.DateTimeFormat('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  }).format(new Date(log.created_at));
+
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">{formattedDate}</td>
+                      <td className="px-6 py-4 font-bold text-slate-800 capitalize">{log.feature_name.replace(/_/g, ' ')}</td>
+                      <td className="px-6 py-4 text-xs">{log.model_name}</td>
+                      <td className="px-6 py-4">
+                        {log.prompt_tokens ? (
+                          <span className="text-xs text-slate-500">
+                            <span className="text-slate-800">{log.prompt_tokens}</span> in / <span className="text-slate-800">{log.completion_tokens}</span> out
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded">Image Gen</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right font-black text-red-500">
+                        ${Number(log.cost_usd).toFixed(5)}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
