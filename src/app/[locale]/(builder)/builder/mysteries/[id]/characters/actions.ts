@@ -84,6 +84,7 @@ export async function removeMotiveAction(mysteryId: string, motiveId: string) {
 
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
+import { logAiUsage } from '@/utils/ai-logger';
 
 export async function generateAICharacterAction(mysteryId: string) {
   try {
@@ -148,6 +149,15 @@ export async function generateAICharacterAction(mysteryId: string) {
     `;
 
     const result = await model.generateContent(prompt);
+    
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      prompt_tokens: result.response.usageMetadata?.promptTokenCount,
+      completion_tokens: result.response.usageMetadata?.candidatesTokenCount,
+      feature_name: 'generate_ai_character',
+      mystery_id: mysteryId
+    });
+
     const responseText = result.response.text();
     const parsed = JSON.parse(responseText);
 
@@ -202,6 +212,15 @@ export async function generateRoleSuggestionsAction(mysteryId: string): Promise<
     `;
 
     const result = await model.generateContent(prompt);
+    
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      prompt_tokens: result.response.usageMetadata?.promptTokenCount,
+      completion_tokens: result.response.usageMetadata?.candidatesTokenCount,
+      feature_name: 'generate_role_suggestions',
+      mystery_id: mysteryId
+    });
+
     const parsed = JSON.parse(result.response.text());
     
     return parsed as string[];
@@ -298,6 +317,15 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
     `;
 
     const result = await model.generateContent(prompt);
+    
+    await logAiUsage({
+      model_name: 'gemini-2.5-pro',
+      prompt_tokens: result.response.usageMetadata?.promptTokenCount,
+      completion_tokens: result.response.usageMetadata?.candidatesTokenCount,
+      feature_name: 'generate_character_profile',
+      mystery_id: mysteryId
+    });
+
     const parsed = JSON.parse(result.response.text());
     
     return parsed;
@@ -333,6 +361,14 @@ export async function generateCharacterOutfitPhotoAction(mysteryId: string, char
     }
     
     const data = await response.json();
+    
+    // Log Imagen request cost
+    await logAiUsage({
+      model_name: 'imagen-4.0-generate-001',
+      feature_name: 'generate_character_photo',
+      mystery_id: mysteryId
+    });
+
     const base64Str = data.predictions?.[0]?.bytesBase64Encoded;
     
     if (!base64Str) {

@@ -1,6 +1,7 @@
 'use server';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logAiUsage } from '@/utils/ai-logger';
 
 export async function generateRandomQuirk(name: string, gender: string) {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
@@ -20,6 +21,14 @@ Respond with ONLY the quirk itself, no quotes, no extra text, and do not include
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
+    
+    await logAiUsage({
+      model_name: 'gemini-1.5-flash',
+      prompt_tokens: response.usageMetadata?.promptTokenCount,
+      completion_tokens: response.usageMetadata?.candidatesTokenCount,
+      feature_name: 'generate_random_quirk'
+    });
+
     return response.text().trim().replace(/^["']|["']$/g, '');
   } catch (error) {
     console.error('Error generating quirk:', error);
@@ -42,6 +51,14 @@ export async function generateCluePreview(prompt: string, templateText: string) 
   try {
     const result = await model.generateContent(fullPrompt);
     const response = await result.response;
+
+    await logAiUsage({
+      model_name: 'gemini-1.5-flash',
+      prompt_tokens: response.usageMetadata?.promptTokenCount,
+      completion_tokens: response.usageMetadata?.candidatesTokenCount,
+      feature_name: 'generate_clue_preview'
+    });
+
     return response.text().trim();
   } catch (error) {
     console.error('Error generating clue preview:', error);
@@ -73,6 +90,14 @@ Return exactly 2 lines. Do not use numbers, bullet points, or any extra conversa
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
+
+    await logAiUsage({
+      model_name: 'gemini-1.5-flash',
+      prompt_tokens: response.usageMetadata?.promptTokenCount,
+      completion_tokens: response.usageMetadata?.candidatesTokenCount,
+      feature_name: 'suggest_clue_prompts'
+    });
+
     const text = response.text().trim();
     // Split by newline, remove any stray numbers/bullets at start, filter empties
     const suggestions = text.split('\n')

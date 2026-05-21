@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { GuestModal } from '@/components/account/GuestModal';
 import { sendGuestInvitation, cancelInvitation, removeGuestConnection } from '@/app/actions/guest-invitations';
 
@@ -292,6 +293,11 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
           <p className="text-slate-500 font-medium text-lg">
             Save your crew for quick casting — or invite them to create their own profile.
           </p>
+          <div className="mt-3">
+            <Link href={`/${locale}/account/profile`} className="inline-flex items-center gap-1.5 text-sm font-bold transition-colors hover:opacity-80" style={{ color: '#fe04c6' }}>
+              Create your own profile/character <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button

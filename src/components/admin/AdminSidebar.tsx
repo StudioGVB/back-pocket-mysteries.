@@ -145,6 +145,15 @@ export function AdminSidebar() {
             <ul className="space-y-2">
               <li>
                 <Link 
+                  href="/admin/costs" 
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-bold"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  AI Costs
+                </Link>
+              </li>
+              <li>
+                <Link 
                   href="/admin/settings" 
                   className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-bold"
                 >

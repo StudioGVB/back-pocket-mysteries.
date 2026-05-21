@@ -65,7 +65,7 @@ export default async function MarketingLayout(props: {
       
       <footer className="bg-brand-dark text-white py-24">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-20">
             <div className="col-span-1 md:col-span-1 lg:col-span-1">
               <Link href={`/${locale}`} className="flex items-center mb-8 hover:opacity-90 transition-opacity">
                 <Image 
@@ -98,6 +98,16 @@ export default async function MarketingLayout(props: {
                 <li><Link href={`/${locale}/about`} className="hover:text-brand-pink transition-colors">{dict.common.aboutUs}</Link></li>
                 <li><Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-colors">{dict.common.faq}</Link></li>
                 <li><Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-colors">{dict.common.contact}</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">Compare</h4>
+              <ul className="space-y-4 text-sm font-bold text-gray-400">
+                <li><Link href={`/${locale}/compare`} className="hover:text-brand-pink transition-colors">All Alternatives</Link></li>
+                <li><Link href={`/${locale}/compare/hunt-a-killer`} className="hover:text-brand-pink transition-colors">Hunt a Killer Alternative</Link></li>
+                <li><Link href={`/${locale}/compare/my-mystery-party`} className="hover:text-brand-pink transition-colors">My Mystery Party Alternative</Link></li>
+                <li><Link href={`/${locale}/compare/night-of-mystery`} className="hover:text-brand-pink transition-colors">Night of Mystery Alternative</Link></li>
               </ul>
             </div>
             

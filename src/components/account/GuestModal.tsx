@@ -53,7 +53,7 @@ export function GuestModal({ isOpen, onClose, onSave }: GuestModalProps) {
   // We set facialHairColor to match hairColor
   // We set topProbability=0 if top is 'none' (bald)
   const isBald = avatarConfig.top === 'none';
-  const avatarUrl = `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || avatarConfig.seed)}${isBald ? '&topProbability=0' : `&top=${avatarConfig.top}`}&hairColor=${avatarConfig.hairColor}&hatColor=${avatarConfig.hairColor}&facialHairColor=${avatarConfig.hairColor}&skinColor=${avatarConfig.skinColor}&eyes=default&mouth=smile&clothesColor=262e33&facialHairProbability=${avatarConfig.facialHair ? '100' : '0'}${avatarConfig.facialHair ? `&facialHair=${avatarConfig.facialHair}` : ''}&backgroundColor=transparent`;
+  const avatarUrl = `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || avatarConfig.seed)}${isBald ? '&topProbability=0' : `&top=${avatarConfig.top}`}&hairColor=${avatarConfig.hairColor}&hatColor=${avatarConfig.hairColor}&facialHairColor=${avatarConfig.hairColor}&skinColor=${avatarConfig.skinColor}&eyes=default&eyebrows=default&mouth=smile&clothesColor=262e33&facialHairProbability=${avatarConfig.facialHair ? '100' : '0'}${avatarConfig.facialHair ? `&facialHair=${avatarConfig.facialHair}` : ''}&backgroundColor=transparent`;
 
   const handleAddQuirk = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currentQuirk.trim() !== '') {

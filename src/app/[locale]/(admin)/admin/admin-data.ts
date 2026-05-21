@@ -199,3 +199,19 @@ export async function getEnquiries() {
 
   return data || [];
 }
+
+export async function getAiCosts() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('ai_usage_logs')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching AI costs:', error);
+    return [];
+  }
+
+  return data || [];
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AvatarBuilder, AvatarConfig } from '@/components/account/AvatarBuilder';
 import { saveProfileAction } from '@/app/actions/profile';
 
@@ -23,17 +23,9 @@ const DEFAULT_AVATAR: AvatarConfig = {
   skinColor: 'ffe0bd',
 };
 
-function avatarUrl(config: AvatarConfig) {
-  const params = new URLSearchParams({
-    seed: config.seed || 'player',
-    top: config.top,
-    topColor: config.hairColor,
-    hairColor: config.hairColor,
-    skinColor: config.skinColor,
-    ...(config.facialHair ? { facialHair: config.facialHair } : {}),
-    backgroundColor: 'transparent',
-  });
-  return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
+function buildAvatarUrl(config: AvatarConfig, name?: string) {
+  const isBald = config.top === 'none';
+  return `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed)}${isBald ? '&topProbability=0' : `&top=${config.top}`}&hairColor=${config.hairColor}&hatColor=${config.hairColor}&facialHairColor=${config.hairColor}&skinColor=${config.skinColor}&eyes=default&eyebrows=default&mouth=smile&clothesColor=262e33&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${config.facialHair}` : ''}&backgroundColor=transparent`;
 }
 
 interface ProfileClientProps {
@@ -57,6 +49,16 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
   const [dietary, setDietary] = useState<string[]>(profile?.dietary_needs ?? []);
   const [charPrefs, setCharPrefs] = useState<string[]>(profile?.character_preferences ?? []);
   const [gender, setGender] = useState<'Masculine' | 'Feminine'>('Feminine');
+
+  const handleGenderChange = (g: 'Masculine' | 'Feminine') => {
+    setGender(g);
+    // Reset hair to a valid default for the new gender
+    setAvatarConfig(prev => ({
+      ...prev,
+      top: g === 'Feminine' ? 'straight01' : 'shortFlat',
+      facialHair: undefined,
+    }));
+  };
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
     (profile?.avatar_config as AvatarConfig) ?? DEFAULT_AVATAR
   );
@@ -83,6 +85,19 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
     else { setSaved(true); setTimeout(() => setSaved(false), 3000); }
   };
 
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    const timeout = setTimeout(() => {
+      handleSave();
+    }, 1000);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bio, location, pronouns, funFacts, dietary, charPrefs, avatarConfig]);
+
   const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all";
 
   return (
@@ -94,18 +109,19 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
           <p className="text-slate-500 font-medium">
             How you appear to other hosts and in the mystery world.
           </p>
+          <div className="mt-5 flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-transparent max-w-2xl">
+            <span className="text-brand-pink mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+            <p className="text-sm font-medium text-slate-700 leading-relaxed">
+              <span className="font-bold text-slate-900">Good to know:</span> Your custom avatar and profile details are completely free to create and will always be saved to your account. However, these custom features will only appear in a host's mystery if they purchase a <span className="font-bold text-slate-900">Plus Plan</span>.
+            </p>
+          </div>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-6 py-2.5 rounded-xl text-sm font-black border-2 transition-all disabled:opacity-40"
-          style={{
-            borderColor: saved ? '#10b981' : '#fe04c6',
-            color: saved ? '#10b981' : '#fe04c6',
-          }}
-        >
-          {saving ? 'Saving...' : saved ? 'Saved' : 'Save Profile'}
-        </button>
+        <div className="h-10 flex items-center justify-end min-w-[100px]">
+          {saving && <span className="text-sm font-bold text-slate-400">Saving...</span>}
+          {saved && !saving && <span className="text-sm font-bold text-emerald-500">Saved</span>}
+        </div>
       </div>
 
       {error && (
@@ -121,7 +137,7 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
             <div className="w-24 h-24 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={avatarUrl(avatarConfig)}
+                src={buildAvatarUrl(avatarConfig, user.name)}
                 alt="Your avatar"
                 className="w-full h-full object-cover scale-110"
               />
@@ -153,7 +169,12 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
                 borderBottom: activeTab === tab ? '2px solid #fe04c6' : '2px solid transparent',
               }}
             >
-              {tab === 'info' ? 'Profile Info' : 'Avatar Builder'}
+              {tab === 'info' ? 'Profile Info' : (
+                <span className="flex items-center justify-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 22 22 7 12 2"/></svg>
+                  Avatar Builder
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -265,7 +286,7 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
                   {(['Feminine', 'Masculine'] as const).map(g => (
                     <button
                       key={g}
-                      onClick={() => setGender(g)}
+                      onClick={() => handleGenderChange(g)}
                       className="px-5 py-2.5 rounded-xl text-sm font-black border-2 transition-all"
                       style={{
                         borderColor: gender === g ? '#fe04c6' : '#e2e8f0',

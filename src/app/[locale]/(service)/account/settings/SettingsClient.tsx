@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { updateProfile, updatePassword, deleteAccount } from './actions';
 import { resendConfirmationEmail } from '@/app/actions/email-confirmation';
 
@@ -13,9 +14,9 @@ interface SettingsClientProps {
   };
 }
 
-function Section({ title, description, children, danger }: { title: string; description: string; children: React.ReactNode; danger?: boolean }) {
+function Section({ title, description, children, danger, id }: { title: string; description: string; children: React.ReactNode; danger?: boolean; id?: string }) {
   return (
-    <div className={`bg-white border rounded-[2rem] overflow-hidden ${danger ? 'border-red-100' : 'border-slate-100'}`}>
+    <div id={id} className={`bg-white border rounded-[2rem] overflow-hidden scroll-mt-8 ${danger ? 'border-red-100' : 'border-slate-100'}`}>
       <div className={`p-8 border-b ${danger ? 'border-red-50 bg-red-50/30' : 'border-slate-50'}`}>
         <h2 className={`text-xl font-black mb-1 ${danger ? 'text-red-600' : 'text-slate-900'}`}>{title}</h2>
         <p className="text-sm text-slate-400 font-medium">{description}</p>
@@ -171,7 +172,32 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         <p className="text-slate-500 font-medium text-lg">Manage your account details and preferences.</p>
       </div>
 
-      <div className="space-y-8 max-w-2xl">
+      <div className="flex items-start gap-12">
+        {/* Sidebar menu */}
+        <div className="w-56 flex-shrink-0 hidden md:block sticky top-8 space-y-1">
+          <Link href="/account/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-bold text-sm text-slate-500 hover:text-brand-pink hover:bg-brand-pink/5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My Profile
+          </Link>
+          <div className="my-2 border-t border-slate-100 mx-4" />
+          <a href="#personal-info" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-bold text-sm text-slate-500 hover:text-brand-pink hover:bg-brand-pink/5">
+            Personal Info
+          </a>
+          <a href="#security" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-bold text-sm text-slate-500 hover:text-brand-pink hover:bg-brand-pink/5">
+            Security
+          </a>
+          <a href="#preferences" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-bold text-sm text-slate-500 hover:text-brand-pink hover:bg-brand-pink/5">
+            Preferences
+          </a>
+          <a href="#notifications" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-bold text-sm text-slate-500 hover:text-brand-pink hover:bg-brand-pink/5">
+            Notifications
+          </a>
+          <a href="#danger-zone" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-bold text-sm text-slate-500 hover:text-red-500 hover:bg-red-50">
+            Danger Zone
+          </a>
+        </div>
+
+        <div className="flex-1 max-w-2xl space-y-8">
 
         {/* Email Verification Status */}
         {!user.emailVerified && (
@@ -205,7 +231,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         )}
 
         {/* Personal Information */}
-        <Section title="Personal Information" description="Update your display name and email address.">
+        <Section id="personal-info" title="Personal Information" description="Update your display name and email address.">
           <Field label="Full Name">
             <input className={inputClass} value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" />
           </Field>
@@ -219,7 +245,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         </Section>
 
         {/* Security */}
-        <Section title="Security" description="Change your password. We recommend using a strong, unique password.">
+        <Section id="security" title="Security" description="Change your password. We recommend using a strong, unique password.">
           <Field label="Current Password">
             <input className={inputClass} type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••" />
           </Field>
@@ -239,7 +265,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         </Section>
 
         {/* Game Master Preferences */}
-        <Section title="Game Master Preferences" description="Set your default options when building and ordering mysteries.">
+        <Section id="preferences" title="Game Master Preferences" description="Set your default options when building and ordering mysteries.">
           <Field label="Default Delivery Method" hint="How you prefer to receive your mystery materials.">
             <div className="grid grid-cols-3 gap-3 mt-1">
               {(['email', 'print', 'both'] as const).map(opt => (
@@ -282,7 +308,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         </Section>
 
         {/* Notifications */}
-        <Section title="Notifications" description="Choose what emails you'd like to receive from us.">
+        <Section id="notifications" title="Notifications" description="Choose what emails you'd like to receive from us.">
           <div className="space-y-5">
             <Toggle label="Mystery Updates" description="Get notified when your mystery is ready or updated." checked={notifMystery} onChange={setNotifMystery} />
             <Toggle label="Marketing & Offers" description="New mystery themes, discounts, and special events." checked={notifMarketing} onChange={setNotifMarketing} />
@@ -294,7 +320,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         </Section>
 
         {/* Danger Zone */}
-        <Section title="Danger Zone" description="Permanent actions that cannot be undone." danger>
+        <Section id="danger-zone" title="Danger Zone" description="Permanent actions that cannot be undone." danger>
           {!showDeleteConfirm ? (
             <button
               onClick={() => setShowDeleteConfirm(true)}
@@ -325,7 +351,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
             </div>
           )}
         </Section>
-
+        </div>
       </div>
     </div>
   );

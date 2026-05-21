@@ -2,10 +2,13 @@
 
 import React, { useState } from 'react';
 import { createMysteryAction } from '../actions';
+import { useParams } from 'next/navigation';
 
 export function CreateMysteryButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
 
   return (
     <>
@@ -21,17 +24,25 @@ export function CreateMysteryButton() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-10 shadow-2xl shadow-slate-900/20 border border-white animate-in zoom-in-95 duration-200">
             <h2 className="text-2xl font-black text-slate-900 mb-2">New Mystery Project</h2>
-            <p className="text-slate-500 font-medium text-sm mb-8">Let's start by giving your interactive experience a name and theme.</p>
+            <p className="text-slate-500 font-medium text-sm mb-8">Let&apos;s start by giving your interactive experience a name and theme.</p>
             
             <form action={async (formData) => {
               setIsPending(true);
               try {
                 await createMysteryAction(formData);
-              } catch (e) {
-                console.error(e);
+                // Next.js redirect() throws a special object — this won't run on success
+              } catch (e: any) {
+                // Re-throw Next.js redirect objects so navigation works
+                if (e?.digest?.startsWith('NEXT_REDIRECT')) {
+                  throw e;
+                }
+                console.error('Mystery creation error:', e);
                 setIsPending(false);
               }
             }} className="space-y-6">
+              <input type="hidden" name="isAdmin" value="false" />
+              <input type="hidden" name="locale" value={locale} />
+              
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Mystery Title</label>
                 <input 
@@ -56,15 +67,17 @@ export function CreateMysteryButton() {
                 <button 
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="flex-grow py-4 bg-slate-50 text-slate-500 rounded-2xl font-bold hover:bg-slate-100 transition-all border border-slate-100"
+                  disabled={isPending}
+                  className="flex-grow py-4 bg-slate-50 text-slate-500 rounded-2xl font-bold hover:bg-slate-100 transition-all border border-slate-100 disabled:opacity-40"
                 >
                   Cancel
                 </button>
                 <button 
+                  type="submit"
                   disabled={isPending}
                   className="flex-grow py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-brand-pink transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isPending ? 'Initializing...' : 'Create Studio →'}
+                  {isPending ? 'Seeding...' : 'Create Studio →'}
                 </button>
               </div>
             </form>

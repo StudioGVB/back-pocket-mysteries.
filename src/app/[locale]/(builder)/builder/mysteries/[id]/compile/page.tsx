@@ -6,7 +6,7 @@ export default async function CompilePage({
 }: {
   params: Promise<{ id: string; locale: string }>;
 }) {
-  const { id } = await params;
+  const { id, locale } = await params;
   const characters = await getCharactersByMysteryId(id);
   
   const charactersReady = characters.length > 0 && characters.every((char: any) => {
@@ -58,16 +58,39 @@ export default async function CompilePage({
                 </button>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm flex flex-col items-center text-center">
+            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm flex flex-col items-center text-center w-full">
                 <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-4 text-left w-full border-b pb-4">Export Printables</h3>
-                <p className="text-sm font-medium text-slate-500 mb-6 w-full text-left">Generate printable PDF packs for your guests.</p>
-                <a 
-                    href={`/en/builder/mysteries/${id}/compile/print-characters`} 
-                    target="_blank" 
-                    className="w-full py-4 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-xl shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-3"
-                >
-                    🖨️ Compile Character Pack
-                </a>
+                <p className="text-sm font-medium text-slate-500 mb-6 w-full text-left font-sans">Generate customized, print-ready PDF packs for your guests.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                    <a 
+                        href={`/${locale}/builder/mysteries/${id}/compile/print-overview`} 
+                        target="_blank" 
+                        className="w-full py-4 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-wider hover:bg-slate-900 hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        🖨️ Host Overview
+                    </a>
+                    <a 
+                        href={`/${locale}/builder/mysteries/${id}/compile/print-characters`} 
+                        target="_blank" 
+                        className="w-full py-4 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-wider hover:bg-slate-900 hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        🖨️ Character Pack
+                    </a>
+                    <a 
+                        href={`/${locale}/builder/mysteries/${id}/compile/print-clues`} 
+                        target="_blank" 
+                        className="w-full py-4 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-wider hover:bg-slate-900 hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        🖨️ Clues Pack
+                    </a>
+                    <a 
+                        href={`/${locale}/builder/mysteries/${id}/compile/print-reveal`} 
+                        target="_blank" 
+                        className="w-full py-4 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl font-black text-xs uppercase tracking-wider hover:bg-slate-900 hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        🖨️ Reveal & Solution
+                    </a>
+                </div>
             </div>
         </div>
 

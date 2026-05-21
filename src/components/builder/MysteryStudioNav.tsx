@@ -49,11 +49,6 @@ export function MysteryStudioNav({ mysteryId }: MysteryStudioNavProps) {
         { label: 'Clue Organisor', href: `/builder/mysteries/${mysteryId}/clues` },
       ]
     },
-    { 
-      label: 'Compile', 
-      href: `/builder/mysteries/${mysteryId}/compile`,
-      exact: true
-    },
   ];
 
   const activeMainItem = navigation.find(item => {

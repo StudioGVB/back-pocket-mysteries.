@@ -228,5 +228,210 @@ export const blogPosts: BlogPost[] = [
       <h3>Ready to Dress Up?</h3>
       <p>Pick your theme first, then start the hunt. Your character is waiting! <a href="/occasions" class="text-brand-pink font-black border-b-2 border-brand-pink">Find your occasion here.</a></p>
     `
+  },
+  {
+    slug: 'ai-revolutionizing-murder-mystery-games',
+    title: 'How AI is Revolutionizing Murder Mystery Games in 2026',
+    subtitle: 'Say goodbye to generic scripts and hello to infinite personalization.',
+    excerpt: 'The future of murder mystery parties is here. Learn how artificial intelligence is transforming off-the-shelf games into deeply personal, immersive experiences.',
+    image: '/blog/ai-mystery.png',
+    date: 'May 18, 2024',
+    readTime: '6 min read',
+    tag: 'Technology',
+    author: {
+      name: 'Julian Vance',
+      role: 'Tech & Narrative Lead'
+    },
+    seo: {
+      title: 'How AI Murder Mystery Games Work | Custom Generators 2026',
+      description: 'Discover how AI is changing murder mystery parties. Learn how custom generators create personalized scripts, characters, and clues based on your actual guests.',
+      keywords: ['AI murder mystery game', 'custom murder mystery generator', 'personalized mystery party']
+    },
+    content: `
+      <h2>The Problem with Traditional Kits</h2>
+      <p>For decades, hosting a murder mystery meant buying a boxed kit or downloading a PDF. The stories were fun, but they had glaring flaws: the characters were generic, the player counts were rigid, and if you played with the same group twice, the magic faded.</p>
+      
+      <h3>Enter the AI Custom Generator</h3>
+      <p>Artificial intelligence isn't just for writing emails; it's a powerful storytelling engine. By feeding an AI the names, personalities, and inside jokes of your real-life friends, you can generate a <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">100% custom murder mystery game</a> in seconds.</p>
+      
+      <div class="bg-brand-gray p-8 rounded-3xl border-l-4 border-brand-pink my-8">
+        <h4 class="font-black text-brand-dark uppercase tracking-widest text-sm mb-2">Why Customisation Matters</h4>
+        <p class="text-gray-600">Imagine a game where the motive for murder is that time your best friend stole your pizza in college. That level of personalization creates uncontrollable laughter and immediate immersion.</p>
+      </div>
+
+      <h3>Dynamic Scaling for Any Group Size</h3>
+      <p>Ever had a guest drop out at the last minute and ruin a pre-written game? AI generators solve this. Our dynamic platform recalculates the plot, reassigns clues, and ensures the mystery works flawlessly whether you have 6 guests or 60.</p>
+
+      <h3>Ready to Build Your Own?</h3>
+      <p>Stop settling for generic stories. Experience the future of party games today. <a href="/custom-murder-mystery" class="inline-block mt-4 px-6 py-2 bg-brand-pink text-white rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-colors">Generate Your Custom Mystery</a></p>
+    `
+  },
+  {
+    slug: 'birthday-murder-mystery-dinner-plan',
+    title: 'How to Plan an Unforgettable Birthday Murder Mystery Dinner',
+    subtitle: 'Make your next milestone birthday criminally good.',
+    excerpt: 'Step-by-step instructions for hosting a birthday murder mystery dinner that your friends will be talking about until you turn 100.',
+    image: '/blog/birthday-dinner.png',
+    date: 'May 20, 2024',
+    readTime: '7 min read',
+    tag: 'Guides',
+    author: {
+      name: 'Clara Hughes',
+      role: 'Event Planning Expert'
+    },
+    seo: {
+      title: 'How to Plan a Birthday Murder Mystery Dinner Party',
+      description: 'The ultimate checklist for hosting a birthday murder mystery dinner. Menu ideas, pacing tips, and how to make the birthday guest the star of the show.',
+      keywords: ['birthday murder mystery dinner', 'murder mystery dinner party', 'milestone birthday ideas']
+    },
+    content: `
+      <h2>A Milestone to Die For</h2>
+      <p>Dinner and drinks are fine, but a milestone birthday (30th, 40th, 50th) deserves an event. A murder mystery dinner party combines great food, outrageous costumes, and interactive theater into one unforgettable evening.</p>
+      
+      <h3>1. Make the Birthday Guest the Star (or the Victim!)</h3>
+      <p>The best part of a birthday mystery is centering the plot around the guest of honor. Some love being the lead detective, while others find it hilarious to play the wealthy victim who gets "knocked off" before the appetizers. With a <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">custom-built mystery</a>, you dictate exactly who plays what role.</p>
+      
+      <h3>2. The Perfect Murder Mystery Menu</h3>
+      <p>Pacing is everything. You want food that is easy to eat while mingling and holding clue cards.</p>
+      <ul class="list-disc pl-6 space-y-2 mb-8 text-gray-700">
+        <li><strong>Act I (Arrival):</strong> Charcuterie boards and themed cocktails.</li>
+        <li><strong>Act II (The Investigation):</strong> A buffet or family-style dinner. Avoid complex plated meals that trap guests in their seats.</li>
+        <li><strong>Act III (The Reveal):</strong> The birthday cake (perhaps shaped like a magnifying glass or a skull) and coffee.</li>
+      </ul>
+
+      <div class="bg-brand-dark p-10 rounded-[2rem] text-center my-10">
+        <h4 class="text-white text-2xl font-black uppercase tracking-tight mb-4">Need a Theme?</h4>
+        <p class="text-gray-400 mb-6">From 1920s Gatsby to 80s Prom, we have themes to match any birthday era.</p>
+        <a href="/themes" class="px-8 py-3 bg-white text-brand-dark rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-colors">Browse Party Themes</a>
+      </div>
+
+      <h3>3. Invitations Set the Tone</h3>
+      <p>Send your invitations out 3-4 weeks in advance. Include the guest's character assignment and costume suggestions so they have plenty of time to hit the thrift stores.</p>
+    `
+  },
+  {
+    slug: 'murder-mystery-host-mistakes',
+    title: '5 Things Every Murder Mystery Host Forgets (And How to Fix Them)',
+    subtitle: 'Don\'t let a missing clue ruin the crime scene.',
+    excerpt: 'Hosting your first murder mystery? Learn the top 5 mistakes rookie hosts make and how to ensure your party runs smoothly.',
+    image: '/blog/host-mistakes.png',
+    date: 'May 22, 2024',
+    readTime: '5 min read',
+    tag: 'Tips',
+    author: {
+      name: 'Alex Sterling',
+      role: 'Lead Story Architect'
+    },
+    seo: {
+      title: '5 Murder Mystery Party Hosting Mistakes to Avoid',
+      description: 'Learn the top mistakes people make when hosting a murder mystery party and how to avoid them for a flawless, fun event.',
+      keywords: ['murder mystery host tips', 'how to host a murder mystery', 'murder mystery party mistakes']
+    },
+    content: `
+      <h2>Learning from the Crime Scene</h2>
+      <p>We've helped thousands of people host their first murder mystery party. While they are incredibly fun, there are a few common pitfalls that can trip up a first-time host.</p>
+      
+      <h3>Mistake 1: Trapping Guests at the Table</h3>
+      <p>A sit-down dinner is great, but a mystery requires mingling. If your guests are glued to their chairs, they can't secretly interrogate the suspect across the room. <strong>The Fix:</strong> Serve buffet style, or intentionally build in "mingle breaks" between courses.</p>
+      
+      <h3>Mistake 2: Forgetting Name Tags</h3>
+      <p>You know your friend Sarah, but tonight she's "Countess Von Diamond." If guests can't remember who is playing who, the investigation stalls. <strong>The Fix:</strong> Always provide clear, readable name tags.</p>
+
+      <div class="bg-brand-pink/10 p-8 rounded-3xl border-2 border-brand-pink my-8">
+        <h4 class="font-black text-brand-pink uppercase tracking-widest text-sm mb-2">Automated Hosting</h4>
+        <p class="text-gray-700">Our platform automatically generates printable name tags, evidence files, and step-by-step host instructions so you never miss a detail. <a href="/how-it-works" class="font-bold underline hover:text-brand-pink">See how it works.</a></p>
+      </div>
+
+      <h3>Mistake 3: Giving Away the Ending</h3>
+      <p>As the host, it's tempting to read the entire script beforehand. But if you know who the killer is, it's very hard not to accidentally drop hints! <strong>The Fix:</strong> Choose a game format where the host can play along blindly.</p>
+
+      <h3>Mistake 4: Taking it Too Seriously</h3>
+      <p>Someone will inevitably forget their accent, drop a clue, or accuse the wrong person for a silly reason. Lean into it! The laughter is the point.</p>
+    `
+  },
+  {
+    slug: 'what-to-expect-first-murder-mystery',
+    title: 'What to Expect at Your First Murder Mystery Party',
+    subtitle: 'A beginner\'s guide to surviving (and solving) the night.',
+    excerpt: 'Invited to your first murder mystery party? Here is exactly what to expect, how to prepare, and how to get into character without feeling awkward.',
+    image: '/blog/first-party.png',
+    date: 'May 25, 2024',
+    readTime: '4 min read',
+    tag: 'Beginners',
+    author: {
+      name: 'Sasha Vain',
+      role: 'Community Manager'
+    },
+    seo: {
+      title: 'What to Expect at a Murder Mystery Party | Beginner Guide',
+      description: 'Attending your first murder mystery party? Find out what to expect, how to play your character, and tips for solving the crime.',
+      keywords: ['what to expect at a murder mystery party', 'how to play a murder mystery game', 'murder mystery beginner guide']
+    },
+    content: `
+      <h2>So, You've Been Invited to a Murder...</h2>
+      <p>Getting invited to a murder mystery party is thrilling, but if you've never been to one, it can also feel a bit intimidating. Will you have to act? What if you're the killer? Relax—here is exactly what will happen.</p>
+      
+      <h3>Before the Party</h3>
+      <p>You will receive your character assignment. This usually includes a brief backstory, some costume suggestions, and a few secrets. <strong>Your only job right now is to find an outfit.</strong> You don't need to memorize a script; just get a feel for your character's vibe.</p>
+      
+      <h3>Arriving at the Party</h3>
+      <p>When you walk in, you'll likely receive an envelope containing your "Round 1" objectives. These are simple goals like, "Find out why the Butler is angry," or "Tell everyone how rich you are." It gives you an immediate excuse to talk to people.</p>
+
+      <div class="my-10 p-8 border-l-4 border-gray-800 bg-gray-50">
+        <h4 class="font-black text-gray-800 uppercase tracking-widest text-sm mb-2">The Golden Rule</h4>
+        <p class="text-gray-600 italic">"You cannot lie unless your character sheet explicitly tells you that you are the murderer. If you are innocent, you must answer questions truthfully (even if it makes you look suspicious!)."</p>
+      </div>
+
+      <h3>The Murder & The Investigation</h3>
+      <p>Eventually, someone will "die" (usually dramatically). The host will present evidence—like a police report or a weapon. From there, it’s a free-for-all. You will gossip, accuse, and defend yourself.</p>
+
+      <h3>Don't Worry About Being a Good Actor</h3>
+      <p>You don't need an Oscar. Simply reading your clues with a terrible fake accent is usually the funniest part of the night. If you're ready to dive in, suggest a <a href="/compare" class="text-brand-pink font-bold hover:underline">modern, easy-to-play game format</a> to your host!</p>
+    `
+  },
+  {
+    slug: 'best-murder-mystery-large-groups',
+    title: 'The Best Murder Mystery Party Games for Large Groups in 2026',
+    subtitle: 'How to host 20, 50, or 100+ suspects without losing your mind.',
+    excerpt: 'Hosting a massive event? Discover the best murder mystery formats and games designed specifically for large crowds and corporate events.',
+    image: '/blog/large-groups.png',
+    date: 'May 28, 2024',
+    readTime: '6 min read',
+    tag: 'Corporate',
+    author: {
+      name: 'Marcus Reed',
+      role: 'Corporate Events Specialist'
+    },
+    seo: {
+      title: 'Best Murder Mystery Games for Large Groups & Corporate',
+      description: 'Find the best murder mystery party games for large groups of 20, 50, or 100+ people. Perfect for corporate events, fundraisers, and massive parties.',
+      keywords: ['murder mystery for large groups', 'large group party games', 'murder mystery corporate event']
+    },
+    content: `
+      <h2>Scaling the Suspense</h2>
+      <p>Hosting a mystery for 8 people around a dinner table is easy. Hosting a mystery for 80 people in a rented hall is a completely different beast. Traditional boxed kits fall apart when the player count gets too high because they rely on everyone listening to one person read a script.</p>
+      
+      <h3>The "Mingle" Format is Mandatory</h3>
+      <p>For large groups, you must use a "mingle" or "free-form" game. In this format, there is no central script. Instead, guests are given individual secrets and objectives, and they must roam the room to interrogate each other. It creates a chaotic, highly energetic atmosphere.</p>
+      
+      <h3>Primary vs. Secondary Characters</h3>
+      <p>When you have 50 guests, not everyone can be the prime suspect. The best large-group games divide the room:</p>
+      <ul class="list-disc pl-6 space-y-2 mb-8 text-gray-700">
+        <li><strong>The Core Suspects (10-15 people):</strong> These are your outgoing guests who have direct motives and deep ties to the victim.</li>
+        <li><strong>The Investigators (Everyone else):</strong> They form detective teams. They still get characters and costumes, but their primary goal is to interview the Core Suspects and solve the crime.</li>
+      </ul>
+
+      <div class="bg-brand-dark p-12 rounded-[3rem] text-white my-10 shadow-xl">
+        <h4 class="text-3xl font-black mb-4 uppercase tracking-tighter">Custom Scaling to 100+ Guests</h4>
+        <p class="text-gray-300 mb-8 font-bold">Our AI engine allows you to generate a mystery that perfectly fits your massive guest list. We create the Core Suspects and unlimited Investigator roles.</p>
+        <a href="/pricing" class="inline-block px-8 py-3 bg-brand-pink rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-pink transition-colors">See Large Group Pricing</a>
+      </div>
+
+      <h3>Organizing the Evidence</h3>
+      <p>With a massive crowd, passing around a single physical clue is impossible. Project evidence onto a screen, or use a platform that allows guests to access clues on their phones.</p>
+
+      <h3>Conclusion</h3>
+      <p>Large events require tools designed for scale. Explore our <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">custom game builder</a> to see how we handle massive parties with ease.</p>
+    `
   }
 ];

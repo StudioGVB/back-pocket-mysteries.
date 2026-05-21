@@ -71,7 +71,6 @@ export function SubplotManager({ mysteryId, characters, subplots }: props) {
     subplots.flatMap(s => s.subplot_beats?.map((b: any) => b.description) || []).filter(Boolean)
   )) as string[];
 
-  const characterIdsForColors = characters.map(c => c.id);
 
   const handleGenerateSubplot = async (characterId: string) => {
     setGeneratingId(characterId);
@@ -124,7 +123,7 @@ export function SubplotManager({ mysteryId, characters, subplots }: props) {
           const subplot = subplotsByCharacter[character.id];
           const isExpanded = activeSubplotId === subplot?.id;
           const isGenerating = generatingId === character.id;
-          const charColor = getCharacterColor(character.id, characterIdsForColors);
+          const charColor = getCharacterColor(character, characters);
 
           const otherCharacterId = subplot ? (subplot.primary_character_id === character.id ? subplot.secondary_character_id : subplot.primary_character_id) : null;
           const otherCharacter = otherCharacterId ? characters.find(c => c.id === otherCharacterId) : null;

@@ -1,27 +1,21 @@
 'use server';
 
- dream: 'import { revalidatePath } from "next/cache";'
-import { createMystery } from '@/services/admin';
-import { Database } from '@/types/database';
 import { revalidatePath } from 'next/cache';
+import { createMysteryAction } from '../../../(builder)/builder/mysteries/actions';
 
-type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
+// Re-export the builder action so admin components can call it directly
+export { createMysteryAction };
 
-export async function createMysteryBaseAction(formData: FormData) {
+export async function archiveMysteryAction(id: string) {
   try {
-    const title = formData.get('title') as string;
-    
-    const newBase: MysteryInsert = {
-      title,
-      description: formData.get('description') as string,
-      min_players: parseInt(formData.get('min_players') as string || '4'),
-      max_players: parseInt(formData.get('max_players') as string || '20'),
-      status: 'draft',
-    };
-
-    await createMystery(newBase);
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('mysteries')
+      .update({ status: 'archived' })
+      .eq('id', id);
+    if (error) return { success: false, error: error.message };
     revalidatePath('/admin/mysteries');
-    
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
