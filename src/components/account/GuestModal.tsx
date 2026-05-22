@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, KeyboardEvent } from 'react';
-import { AvatarBuilder, AvatarConfig, buildAvatarUrl } from './AvatarBuilder';
+import { AvatarBuilder } from './AvatarBuilder';
+import { buildAvatarUrl, AvatarConfig } from '@/utils/avatar';
 import Image from 'next/image';
 import { generateRandomQuirk } from '@/app/actions/generator';
 

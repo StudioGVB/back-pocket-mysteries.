@@ -257,7 +257,7 @@ export async function getCustomerProfile(userId: string) {
     .maybeSingle();
 
   if (error) console.error('Error fetching customer profile:', error);
-  return data;
+  return data as any;
 }
 
 export async function getCustomerOrders(userId: string) {

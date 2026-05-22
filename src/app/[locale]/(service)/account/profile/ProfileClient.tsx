@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AvatarBuilder, AvatarConfig, buildAvatarUrl } from '@/components/account/AvatarBuilder';
+import { AvatarBuilder } from '@/components/account/AvatarBuilder';
+import { buildAvatarUrl, AvatarConfig } from '@/utils/avatar';
 import { saveProfileAction } from '@/app/actions/profile';
 import { generateProfileBioAction, generateProfileFunFactAction } from '@/app/actions/generator';
 

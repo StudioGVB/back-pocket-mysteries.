@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useParams } from 'next/navigation';
 import { signOut } from '@/app/[locale]/(auth)/actions';
-import { buildAvatarUrl } from '@/components/account/AvatarBuilder';
+import { buildAvatarUrl } from '@/utils/avatar';
 
 interface AccountSidebarProps {
   user?: {

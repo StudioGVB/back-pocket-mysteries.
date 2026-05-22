@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { GuestModal } from '@/components/account/GuestModal';
 import { sendGuestInvitation, cancelInvitation, removeGuestConnection } from '@/app/actions/guest-invitations';
 import { saveGuestAction, updateGuestAction, removeGuestAction } from '@/app/actions/guests';
-import { buildAvatarUrl } from '@/components/account/AvatarBuilder';
+import { buildAvatarUrl } from '@/utils/avatar';
 
 interface ManualGuest {
   id: string;
