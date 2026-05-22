@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getCustomers } from '../admin-data';
 import { createClient } from '@/utils/supabase/server';
+import { buildAvatarUrl } from '@/components/account/AvatarBuilder';
 
 export default async function AdminUsers({
   params,
@@ -56,9 +57,17 @@ export default async function AdminUsers({
                 <tr key={user.id} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center text-xs font-black uppercase">
-                        {(user.full_name || 'U')[0]}
-                      </div>
+                      {user.avatar_url || user.avatar_config ? (
+                        <img 
+                          src={user.avatar_url || buildAvatarUrl(user.avatar_config, user.full_name || 'User')} 
+                          alt={user.full_name || 'User'}
+                          className="w-10 h-10 rounded-full object-cover border border-gray-100"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center text-xs font-black uppercase">
+                          {(user.full_name || 'U')[0]}
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm font-black text-brand-dark tracking-tight">{user.full_name || 'Anonymous User'}</p>
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">ID: {user.id.slice(0, 8)}...</p>
