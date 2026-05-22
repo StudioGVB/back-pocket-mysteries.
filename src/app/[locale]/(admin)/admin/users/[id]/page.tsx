@@ -94,12 +94,35 @@ export default async function CustomerProfilePage({
                   {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
               </div>
-              {profile.location && (
+              
+              {profile.country && (
+                <div>
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Country</p>
+                  <p className="text-xs font-medium text-gray-200">{profile.country}</p>
+                </div>
+              )}
+              
+              {profile.how_found_us && (
+                <div>
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Acquisition Source</p>
+                  <p className="text-xs font-medium text-gray-200 capitalize">{profile.how_found_us.replace('_', ' ')}</p>
+                </div>
+              )}
+
+              {profile.location && !profile.country && (
                 <div>
                   <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Location</p>
                   <p className="text-xs font-medium text-gray-200">{profile.location}</p>
                 </div>
               )}
+
+              <div>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Provided Review</p>
+                <p className="text-xs font-medium text-gray-400">
+                  <span className="inline-block w-2 h-2 rounded-full bg-gray-500 mr-2"></span>
+                  No
+                </p>
+              </div>
             </div>
           </div>
           <div className="absolute inset-0 bg-[radial-gradient(rgba(255,45,85,0.15)_1px,transparent_1px)] [background-size:24px_24px] opacity-20"></div>
