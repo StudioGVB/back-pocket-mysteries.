@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getCustomers } from '../admin-data';
 import { createClient } from '@/utils/supabase/server';
-import { buildAvatarUrl } from '@/components/account/AvatarBuilder';
+import { buildAvatarUrl } from '@/utils/avatar';
 
 export default async function AdminUsers({
   params,

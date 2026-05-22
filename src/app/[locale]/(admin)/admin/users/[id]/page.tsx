@@ -9,7 +9,7 @@ import {
   getCustomerAiUsage 
 } from '../../admin-data';
 import { CustomerDashboard } from './CustomerDashboard';
-import { buildAvatarUrl } from '@/components/account/AvatarBuilder';
+import { buildAvatarUrl } from '@/utils/avatar';
 
 export default async function CustomerProfilePage({
   params,
