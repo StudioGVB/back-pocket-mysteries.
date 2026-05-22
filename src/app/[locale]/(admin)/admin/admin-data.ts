@@ -127,6 +127,7 @@ export async function getCustomers() {
   if (error) {
     console.error('Error fetching customers:', error);
     return [];
+  }
   return data || [];
 }
 
