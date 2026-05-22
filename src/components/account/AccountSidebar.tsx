@@ -30,9 +30,10 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
       ),
     },
     {
-      name: 'My Profile',
+      name: 'Profile & Guests',
       href: '/account/profile',
       exact: false,
+      id: 'tour-step-roster',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       ),
@@ -41,6 +42,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
       name: 'Browse Mysteries',
       href: '/mysteries',
       exact: false,
+      id: 'tour-step-mysteries',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       ),
@@ -53,14 +55,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       ),
     },
-    {
-      name: 'My Guests',
-      href: '/account/guests',
-      exact: false,
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      ),
-    },
+
     {
       name: 'Game Materials',
       href: '/account/downloads',
@@ -111,6 +106,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
             <Link
               key={link.name}
               href={localizedHref}
+              id={(link as any).id}
               className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-bold text-sm ${
                 isActive
                   ? 'text-white'
@@ -131,10 +127,10 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
         })}
       </nav>
 
-      {/* Bottom section: user card + settings + sign out */}
+      {/* Bottom section: user card + sign out */}
       <div className="p-4 mt-auto space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {/* User card */}
-        <Link href={`/${locale}/account/settings`} className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-white/10" style={{ background: 'rgba(255,255,255,0.05)' }}>
+        <Link href={`/${locale}/account/profile`} id="tour-step-profile" className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all hover:bg-white/5">
           {avatarUrl ? (
             <div className="w-10 h-10 rounded-full flex-shrink-0 bg-white flex items-center justify-center overflow-hidden shadow-inner">
               <img src={avatarUrl} alt={user?.name || 'Avatar'} className="w-9 h-9 object-contain" />
@@ -149,27 +145,6 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
             <p className="text-xs font-medium truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.email || ''}</p>
           </div>
         </Link>
-
-        {/* Settings */}
-        {(() => {
-          const isActive = pathname.includes('/account/settings');
-          return (
-            <Link
-              href={`/${locale}/account/settings`}
-              className="relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-bold text-sm"
-              style={{
-                background: isActive ? 'rgba(254,4,198,0.15)' : 'transparent',
-                color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
-              }}
-            >
-              {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full" style={{ background: '#fe04c6' }} />}
-              <span style={{ color: isActive ? '#fe04c6' : 'inherit' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              </span>
-              Settings
-            </Link>
-          );
-        })()}
 
         {/* Sign out */}
         <form action={signOut}>

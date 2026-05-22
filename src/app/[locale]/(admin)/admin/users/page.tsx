@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { getCustomers } from '../admin-data';
 import { createClient } from '@/utils/supabase/server';
 
@@ -79,7 +80,9 @@ export default async function AdminUsers({
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <button className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-brand-pink transition-colors">View Profile</button>
+                    <Link href={`/${locale}/admin/users/${user.id}`} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-brand-pink transition-colors">
+                      View Profile
+                    </Link>
                   </td>
                 </tr>
               ))

@@ -235,3 +235,94 @@ export async function getAiCosts() {
 
   return (data as any[]) || [];
 }
+
+// --- Customer Profile View Data ---
+
+export async function getCustomerProfile(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) console.error('Error fetching customer profile:', error);
+  return data;
+}
+
+export async function getCustomerOrders(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('orders')
+    .select(`
+      id, amount, status, created_at,
+      mystery:mysteries!mystery_id(title)
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) console.error('Error fetching customer orders:', error);
+  return (data as any[]) || [];
+}
+
+export async function getCustomerMysteries(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('mysteries')
+    .select('id, title, status, max_players, created_at')
+    .eq('created_by', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) console.error('Error fetching customer mysteries:', error);
+  return (data as any[]) || [];
+}
+
+export async function getCustomerGuests(userId: string) {
+  const supabase = await createClient();
+  
+  // Get manual guests
+  const { data: manualGuests } = await supabase
+    .from('guests')
+    .select('*')
+    .eq('user_id', userId);
+
+  // Get linked guests
+  const { data: linkedConnections } = await (supabase as any)
+    .from('guest_connections')
+    .select(`
+      id,
+      profiles!guest_user_id (
+        full_name, email, pronouns
+      )
+    `)
+    .eq('host_user_id', userId);
+
+  return {
+    manual: (manualGuests as any[]) || [],
+    linked: (linkedConnections as any[]) || []
+  };
+}
+
+export async function getCustomerAiUsage(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('ai_usage_logs')
+    .select('prompt_tokens, completion_tokens')
+    .eq('user_id', userId);
+
+  if (error) console.error('Error fetching AI usage:', error);
+  
+  const logs = (data as any[]) || [];
+  const totalPrompt = logs.reduce((sum, log) => sum + (log.prompt_tokens || 0), 0);
+  const totalCompletion = logs.reduce((sum, log) => sum + (log.completion_tokens || 0), 0);
+  const totalTokens = totalPrompt + totalCompletion;
+  
+  // Rough estimate: $0.0003 per 1k tokens (Flash 8B/Flash pricing roughly)
+  const estimatedCost = (totalTokens / 1000) * 0.0003;
+
+  return {
+    generationsCount: logs.length,
+    totalTokens,
+    estimatedCost
+  };
+}
