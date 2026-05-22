@@ -32,35 +32,45 @@ export async function getAdminStats() {
 export async function getRecentTransactions() {
   const supabase = await createClient();
 
-  // Fetch recent orders with customer name and mystery title
-  const { data: orders } = await supabase
+  const { data: orders, error } = await supabase
     .from('orders')
-    .select(`
-      amount,
-      status,
-      created_at,
-      user_id,
-      mystery_id
-    `)
+    .select('id, amount, status, created_at, user_id, mystery_id')
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(10);
 
-  // Since nested selects can sometimes fail if relationships aren't perfectly mapped in types,
-  // we'll fetch profiles and mysteries separately or use a join if supported.
-  // In this schema, we'll try the nested query first as it's cleaner.
-  const { data: enrichedOrders } = (await supabase
-    .from('orders')
-    .select(`
-      amount,
-      status,
-      created_at,
-      profile:profiles!user_id(full_name),
-      mystery:mysteries!mystery_id(title)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(10)) as any;
+  if (error) {
+    console.error('Error fetching recent orders:', error);
+    return [];
+  }
 
-  return enrichedOrders || [];
+  const safeOrders = orders || [];
+  if (safeOrders.length === 0) return [];
+
+  const userIds = [...new Set(safeOrders.map(o => o.user_id).filter(Boolean))];
+  const mysteryIds = [...new Set(safeOrders.map(o => o.mystery_id).filter(Boolean))];
+
+  let profilesMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+    if (profiles) profilesMap = profiles.reduce((acc, p) => ({...acc, [p.id]: p.full_name}), {});
+  }
+
+  let mysteriesMap: Record<string, string> = {};
+  if (mysteryIds.length > 0) {
+    const { data: mysteries } = await supabase.from('mysteries').select('id, title').in('id', mysteryIds);
+    if (mysteries && mysteries.length > 0) {
+      mysteriesMap = mysteries.reduce((acc, m) => ({...acc, [m.id]: m.title}), {});
+    } else {
+      const { data: bases } = await supabase.from('mystery_bases').select('id, title').in('id', mysteryIds);
+      if (bases) mysteriesMap = bases.reduce((acc, b) => ({...acc, [b.id]: b.title}), {});
+    }
+  }
+
+  return safeOrders.map(o => ({
+    ...o,
+    profile: { full_name: profilesMap[o.user_id as string] || 'Unknown User' },
+    mystery: { title: mysteriesMap[o.mystery_id as string] || 'Unknown Mystery' }
+  }));
 }
 
 export async function getTopMysteries() {
@@ -252,17 +262,51 @@ export async function getCustomerProfile(userId: string) {
 
 export async function getCustomerOrders(userId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: orders, error } = await supabase
     .from('orders')
-    .select(`
-      id, amount, status, created_at,
-      mystery:mysteries!mystery_id(title)
-    `)
+    .select('id, amount, status, created_at, mystery_id')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) console.error('Error fetching customer orders:', error);
-  return (data as any[]) || [];
+  if (error) {
+    console.error('Error fetching customer orders:', error);
+    return [];
+  }
+
+  const safeOrders = orders || [];
+  
+  if (safeOrders.length === 0) return [];
+
+  // Fetch mysteries manually to avoid PGRST200 join errors
+  const mysteryIds = [...new Set(safeOrders.map(o => o.mystery_id).filter(Boolean))];
+  
+  let mysteriesMap: Record<string, string> = {};
+  if (mysteryIds.length > 0) {
+    // Try mysteries first
+    const { data: mysteries } = await supabase
+      .from('mysteries')
+      .select('id, title')
+      .in('id', mysteryIds);
+      
+    if (mysteries && mysteries.length > 0) {
+      mysteriesMap = mysteries.reduce((acc, m) => ({...acc, [m.id]: m.title}), {});
+    } else {
+      // Fallback to mystery_bases if they are buying bases
+      const { data: bases } = await supabase
+        .from('mystery_bases')
+        .select('id, title')
+        .in('id', mysteryIds);
+      if (bases) {
+        mysteriesMap = bases.reduce((acc, b) => ({...acc, [b.id]: b.title}), {});
+      }
+    }
+  }
+
+  // Attach title back to orders
+  return safeOrders.map(o => ({
+    ...o,
+    mystery: { title: mysteriesMap[o.mystery_id as string] || 'Unknown Mystery' }
+  }));
 }
 
 export async function getCustomerMysteries(userId: string) {
