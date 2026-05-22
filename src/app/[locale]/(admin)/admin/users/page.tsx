@@ -4,6 +4,8 @@ import { getCustomers } from '../admin-data';
 import { createClient } from '@/utils/supabase/server';
 import { buildAvatarUrl } from '@/utils/avatar';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminUsers({
   params,
 }: {

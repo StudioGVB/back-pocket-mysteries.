@@ -11,6 +11,8 @@ import {
 import { CustomerDashboard } from './CustomerDashboard';
 import { buildAvatarUrl } from '@/utils/avatar';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CustomerProfilePage({
   params,
 }: {
