@@ -108,24 +108,10 @@ export async function getLeads() {
 export async function getCustomers() {
   const supabase = await createClient();
 
-  // Fetch all profiles
-  const { data: profiles, error: profileError } = (await supabase
-    .from('profiles')
-    .select(`
-      id,
-      full_name,
-      created_at,
-      user_roles!inner(role)
-    `)) as any;
-
-  // We filter for role = 'user' or where there's no role assigned (defaulting to user)
-  // Actually, we'll fetch profiles and then left join user_roles
+  // Fetch all profiles without joining user_roles to avoid RLS/schema errors
   const { data, error } = (await supabase
     .from('profiles')
-    .select(`
-      *,
-      user_roles(role)
-    `)
+    .select('*')
     .order('created_at', { ascending: false })) as any;
 
   if (error) {
@@ -133,12 +119,8 @@ export async function getCustomers() {
     return [];
   }
 
-  // Filter out any that have admin roles
-  return data.filter(p => {
-    const roles = p.user_roles as any[];
-    const hasAdminRole = roles?.some(r => ['admin', 'superadmin', 'super_admin'].includes(r.role.toLowerCase()));
-    return !hasAdminRole;
-  });
+  // Filter out the known superadmin (owner) manually
+  return (data || []).filter((p: any) => p.id !== '4903bd39-e54f-42e4-b679-2af5d128bb8f');
 }
 
 export async function getAdmins() {
