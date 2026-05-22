@@ -127,10 +127,7 @@ export async function getCustomers() {
   if (error) {
     console.error('Error fetching customers:', error);
     return [];
-  }
-
-  // Filter out the known superadmin (owner) manually
-  return (data || []).filter((p: any) => p.id !== '4903bd39-e54f-42e4-b679-2af5d128bb8f');
+  return data || [];
 }
 
 export async function getAdmins() {
@@ -257,6 +254,7 @@ export async function getCustomerProfile(userId: string) {
     .maybeSingle();
 
   if (error) console.error('Error fetching customer profile:', error);
+  console.log('DEBUG profile:', data);
   return data as any;
 }
 

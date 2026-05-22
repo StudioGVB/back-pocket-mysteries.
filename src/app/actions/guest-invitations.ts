@@ -66,9 +66,9 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
         <tr>
           <td style="padding:48px 48px 32px;">
             <p style="color:#fe04c6;font-size:12px;font-weight:700;margin:0 0 12px;letter-spacing:2.5px;text-transform:uppercase;">You're invited</p>
-            <h1 style="color:#111;font-size:28px;font-weight:900;margin:0 0 20px;letter-spacing:-0.5px;">${hostName} wants you on their guest list.</h1>
+            <h1 style="color:#111;font-size:28px;font-weight:900;margin:0 0 20px;letter-spacing:-0.5px;">${hostName} wants to connect with you.</h1>
             <p style="color:#555;font-size:16px;line-height:1.7;margin:0 0 16px;">
-              They're building custom murder mystery nights on Back Pocket Mysteries and have invited you to create your own player profile — so they can cast you perfectly, every time.
+              They're using Back Pocket Mysteries to build custom murder mystery nights and have invited you to collaborate! Create your own player profile so you can join their roster, connect your profiles, and be cast perfectly in their upcoming mysteries.
             </p>
             ${note ? `<div style="background:#f9f9f9;border-left:3px solid #fe04c6;border-radius:4px;padding:16px 20px;margin:0 0 24px;"><p style="color:#555;font-size:15px;line-height:1.7;margin:0;font-style:italic;">"${note}"</p><p style="color:#aaa;font-size:12px;margin:8px 0 0;font-weight:700;">— ${hostName}</p></div>` : ''}
             <p style="color:#555;font-size:16px;line-height:1.7;margin:0 0 36px;">
@@ -101,12 +101,12 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
                 <td><p style="margin:0 0 2px;color:#222;font-size:14px;font-weight:700;">Your own player profile</p><p style="margin:0;color:#888;font-size:13px;line-height:1.6;">Build your avatar, set preferences, and be ready for any mystery night.</p></td>
               </tr></table></td></tr>
               <tr><td style="padding:0 0 16px;"><table cellpadding="0" cellspacing="0"><tr>
-                <td style="font-size:22px;padding-right:14px;vertical-align:top;padding-top:2px;">🕵️</td>
-                <td><p style="margin:0 0 2px;color:#222;font-size:14px;font-weight:700;">Get cast in mysteries</p><p style="margin:0;color:#888;font-size:13px;line-height:1.6;">Hosts can cast you based on your character preferences and personality.</p></td>
+                <td style="font-size:22px;padding-right:14px;vertical-align:top;padding-top:2px;">🤝</td>
+                <td><p style="margin:0 0 2px;color:#222;font-size:14px;font-weight:700;">Connect with friends</p><p style="margin:0;color:#888;font-size:13px;line-height:1.6;">Link your profile to their account so you can see each other's details.</p></td>
               </tr></table></td></tr>
               <tr><td><table cellpadding="0" cellspacing="0"><tr>
                 <td style="font-size:22px;padding-right:14px;vertical-align:top;padding-top:2px;">📦</td>
-                <td><p style="margin:0 0 2px;color:#222;font-size:14px;font-weight:700;">One account, every event</p><p style="margin:0;color:#888;font-size:13px;line-height:1.6;">Be on multiple hosts' rosters with a single profile you control.</p></td>
+                <td><p style="margin:0 0 2px;color:#222;font-size:14px;font-weight:700;">One account, every event</p><p style="margin:0;color:#888;font-size:13px;line-height:1.6;">Build your avatar and preferences once, and use them across all your friend's games.</p></td>
               </tr></table></td></tr>
             </table>
 
