@@ -335,7 +335,7 @@ export async function getCustomerGuests(userId: string) {
     .select(`
       id,
       profiles!guest_user_id (
-        full_name, email, pronouns
+        full_name, email, pronouns, avatar_url, avatar_config, character_preferences, bio
       )
     `)
     .eq('host_user_id', userId);

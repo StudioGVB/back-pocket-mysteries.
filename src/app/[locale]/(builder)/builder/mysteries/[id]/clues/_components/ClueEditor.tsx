@@ -10,6 +10,79 @@ type Clue = Database['public']['Tables']['clues']['Row'];
 type Beat = Database['public']['Tables']['plot_beats']['Row'];
 type Character = Database['public']['Tables']['characters']['Row'];
 
+function isCctvOrVideoClue(title: string, description: string, generationPrompt: string) {
+  const t = title.toLowerCase();
+  const d = description.toLowerCase();
+  const p = generationPrompt.toLowerCase();
+  return (
+    t.includes('cctv') ||
+    t.includes('video') ||
+    t.includes('camera') ||
+    t.includes('photo') ||
+    t.includes('polaroid') ||
+    d.includes('cctv') ||
+    d.includes('security cam') ||
+    d.includes('camera footage') ||
+    d.includes('video footage') ||
+    d.includes('metadata: sec cam') ||
+    p.includes('cctv') ||
+    p.includes('security camera') ||
+    p.includes('surveillance')
+  );
+}
+
+function isAudioClue(title: string, description: string, generationPrompt: string) {
+  const t = title.toLowerCase();
+  const d = description.toLowerCase();
+  const p = generationPrompt.toLowerCase();
+  return (
+    t.includes('audio') ||
+    t.includes('voice note') ||
+    t.includes('recorded') ||
+    t.includes('recording') ||
+    t.includes('clip') ||
+    t.includes('sound') ||
+    d.includes('🎙️') ||
+    d.includes('audio recording') ||
+    d.includes('voice note') ||
+    p.includes('microphone') ||
+    p.includes('soundboard') ||
+    p.includes('audio recorder')
+  );
+}
+
+function parseCctvMetadata(title: string, description: string) {
+  const desc = description || '';
+  
+  // Try to find Timestamp
+  let timestamp = '06/23/2026 18:03:00';
+  const timeMatch = desc.match(/Timestamp:\s*([^\n|)]+)/i);
+  if (timeMatch) {
+    const rawTime = timeMatch[1].trim();
+    timestamp = `06/23/2026 ${rawTime}`;
+  } else {
+    const simpleTimeMatch = desc.match(/(\d{1,2}:\d{2}\s*(?:PM|AM))/i);
+    if (simpleTimeMatch) {
+      timestamp = `06/23/2026 ${simpleTimeMatch[1]}`;
+    }
+  }
+
+  // Try to find Camera
+  let camera = 'CAM 01';
+  const camMatch = desc.match(/SEC CAM_([^\n\s|\]]+)/i);
+  if (camMatch) {
+    camera = `SEC CAM ${camMatch[1].toUpperCase()}`;
+  } else if (desc.toLowerCase().includes('bar area')) {
+    camera = 'CAM 02 - PENTHOUSE BAR';
+  } else if (desc.toLowerCase().includes('lobby') || desc.toLowerCase().includes('hallway')) {
+    camera = 'CAM 01 - CORRIDOR';
+  } else if (title.toLowerCase().includes('switch')) {
+    camera = 'CAM 03 - DRINK COUNTER';
+  }
+
+  return { timestamp, camera };
+}
+
 interface ClueEditorProps {
   clue: Clue;
   mysteryId: string;
@@ -165,6 +238,10 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
     }, 50);
   };
 
+  const isAudio = isAudioClue(title, description, generationPrompt);
+  const isCctv = isCctvOrVideoClue(title, description, generationPrompt) && !isAudio;
+  const cctv = parseCctvMetadata(title, description);
+
   const clueTypes: ClueType[] = ['physical', 'testimony', 'background', 'secret'];
   const implications: ImplicationType[] = ['direct', 'circumstantial', 'red_herring'];
 
@@ -228,6 +305,230 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
             }}
             className="space-y-8"
           >
+            {/* Quick Overview Card at the Top */}
+            <div className="bg-slate-900 text-white rounded-[2rem] p-6 shadow-xl border border-slate-800 space-y-4 mb-6 select-none">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Evidence Record</span>
+                  <h3 className="text-lg font-black leading-snug">{title || 'Unnamed Evidence'}</h3>
+                </div>
+                <span className={`px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border shrink-0 ${
+                  linkedBeatValue === 'fake' 
+                    ? 'bg-rose-950/40 text-rose-450 border-rose-900/30' 
+                    : 'bg-emerald-950/40 text-emerald-455 border-emerald-900/30'
+                }`}>
+                  {linkedBeatValue === 'fake' ? 'Fake Clue' : 'Real Clue'}
+                </span>
+              </div>
+
+              {/* Beat Number or Fake */}
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-350 bg-slate-950/50 px-4 py-3 rounded-xl border border-slate-850">
+                <span className="text-slate-500 shrink-0">📍 Link:</span>
+                <span className="italic text-slate-200">
+                  {linkedBeatValue === 'fake' ? '🚫 Fake Clue (Not on timeline)' : (
+                    (() => {
+                      if (linkedBeatValue.startsWith('main_')) {
+                        const beatId = linkedBeatValue.replace('main_', '');
+                        const beat = beats.find(b => b.id === beatId);
+                        return beat ? `Beat ${beat.beat_number}: ${beat.event_title}` : 'Main Timeline Beat';
+                      } else if (linkedBeatValue.startsWith('sub_')) {
+                        const beatId = linkedBeatValue.replace('sub_', '');
+                        const beat = subplots?.flatMap(s => s.subplot_beats || []).find((b: any) => b.id === beatId);
+                        return beat ? `Subplot Beat: ${beat.description}` : 'Subplot Beat';
+                      }
+                      return 'Timeline Linked';
+                    })()
+                  )}
+                </span>
+              </div>
+
+              {/* The Image We Generated (with CCTV or Audio overlay!) */}
+              <div className="relative w-full h-44 rounded-2xl overflow-hidden bg-slate-950 border border-slate-855 shadow-inner group/preview flex items-center justify-center">
+                {imageUrl ? (
+                  <div className="absolute inset-0 w-full h-full">
+                    <img 
+                      src={imageUrl} 
+                      alt={title} 
+                      className="w-full h-full object-cover" 
+                    />
+                    {isCctv && (
+                      <div className="absolute inset-0 bg-black/10 pointer-events-none flex flex-col justify-between p-3 font-mono text-[9px] text-white">
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] opacity-20" />
+                        <div className="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
+                        <div className="flex justify-between items-center z-10">
+                          <div className="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded text-red-500 font-bold uppercase tracking-widest">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block animate-pulse"></span>
+                            <span>REC</span>
+                          </div>
+                          <div className="bg-black/50 px-2 py-0.5 rounded text-slate-300 font-bold">
+                            {cctv.camera}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-end z-10">
+                          <div className="bg-black/50 px-2 py-0.5 rounded text-slate-300 font-bold">
+                            {cctv.timestamp}
+                          </div>
+                          <div className="bg-black/50 px-2 py-0.5 rounded text-slate-400 font-bold uppercase tracking-wider">
+                            4K 30FPS
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {isAudio && (
+                      <div className="absolute inset-0 bg-black/25 pointer-events-none flex flex-col justify-end p-4">
+                        <div className="absolute inset-0 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]" />
+                        <div className="bg-slate-955/85 border border-white/10 rounded-2xl p-3.5 backdrop-blur-md flex items-center gap-3.5 z-10 w-full shadow-lg">
+                          <div className="w-7 h-7 rounded-full bg-brand-blue flex items-center justify-center text-white shadow-md shrink-0">
+                            <svg className="w-3 h-3 fill-current ml-0.5" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                          <div className="flex-grow flex items-center gap-0.5 h-5">
+                            {[15, 30, 45, 20, 35, 55, 40, 25, 50, 60, 35, 20, 45, 30, 15, 25, 40, 50, 30, 20].map((height, i) => (
+                              <div 
+                                key={i} 
+                                className="flex-grow rounded-full" 
+                                style={{ 
+                                  height: `${height}%`,
+                                  backgroundColor: i < 7 ? '#3b82f6' : 'rgba(255, 255, 255, 0.25)'
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Hover Overlay to Regenerate */}
+                    <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/preview:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 z-20">
+                      <button
+                        type="button"
+                        onClick={handleGenerateImage}
+                        disabled={isGeneratingImage}
+                        className="px-4 py-2 bg-white text-slate-900 text-[11px] font-black uppercase tracking-wider rounded-xl hover:bg-brand-pink hover:text-white transition-all shadow-md active:scale-95 disabled:opacity-50"
+                      >
+                        ⚡ Regenerate Photo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 text-center flex flex-col items-center justify-center space-y-3 select-none">
+                    {isCctv ? (
+                      <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-2">
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] opacity-20" />
+                        <div className="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]" />
+                        <span className="text-3xl filter animate-pulse z-10">📹</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">{cctv.camera}</span>
+                        <span className="text-[9px] font-mono text-slate-500 z-10">{cctv.timestamp}</span>
+                        <button
+                          type="button"
+                          onClick={handleGenerateImage}
+                          disabled={isGeneratingImage || !generationPrompt}
+                          className="px-4 py-2 bg-brand-pink text-white rounded-xl text-[10px] font-bold hover:bg-brand-pink/80 transition-all shadow-md active:scale-95 disabled:opacity-50 z-10 mt-2"
+                        >
+                          Generate CCTV Frame
+                        </button>
+                      </div>
+                    ) : isAudio ? (
+                      <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-4 gap-3">
+                        <span className="text-3xl filter animate-pulse">🎙️</span>
+                        <div className="bg-slate-900 border border-white/5 rounded-xl p-2 flex items-center gap-2 w-full max-w-[200px] shadow-lg mb-2">
+                          <div className="w-5 h-5 rounded-full bg-brand-blue flex items-center justify-center text-white shrink-0">
+                            <svg className="w-2 h-2 fill-current ml-0.5" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                          <div className="flex-grow flex items-center gap-0.5 h-3">
+                            {[15, 35, 55, 20, 40, 50, 30, 20, 10, 25].map((height, i) => (
+                              <div 
+                                key={i} 
+                                className="flex-grow rounded-full" 
+                                style={{ 
+                                  height: `${height}%`,
+                                  backgroundColor: i < 3 ? '#3b82f6' : 'rgba(255, 255, 255, 0.2)'
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleGenerateImage}
+                          disabled={isGeneratingImage || !generationPrompt}
+                          className="px-4 py-2 bg-brand-pink text-white rounded-xl text-[10px] font-bold hover:bg-brand-pink/80 transition-all shadow-md active:scale-95 disabled:opacity-50 z-10"
+                        >
+                          Generate Audio Mockup
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-2xl filter grayscale mb-1">📦</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">No Photo Generated</span>
+                        <button
+                          type="button"
+                          onClick={handleGenerateImage}
+                          disabled={isGeneratingImage || !generationPrompt}
+                          className="px-4 py-2 bg-brand-pink text-white rounded-xl text-[10px] font-bold hover:bg-brand-pink/80 transition-all shadow-md active:scale-95 disabled:opacity-50"
+                        >
+                          Generate Photo
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Loading Overlay */}
+                {isGeneratingImage && (
+                  <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center text-white space-y-4 animate-in fade-in duration-300 z-30">
+                    <div className="relative flex items-center justify-center animate-bounce">
+                      <div className="w-12 h-12 rounded-full border-4 border-brand-pink/20 border-t-brand-pink animate-spin"></div>
+                      <svg className="w-5 h-5 text-brand-pink absolute animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L28 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-black uppercase tracking-widest text-brand-pink animate-pulse">Gemini Imagen 4.0</p>
+                      <p className="text-[10px] text-slate-350 font-bold mt-1">Fleshing out visual mystery details...</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Overlay */}
+                {imageError && (
+                  <div className="absolute inset-0 bg-red-950/90 p-6 flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in z-30">
+                    <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-400">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-widest text-red-400">Generation Error</p>
+                      <p className="text-[10px] text-red-200 mt-1 max-w-[220px] leading-relaxed mx-auto font-medium">{imageError}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setImageError(null)}
+                      className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] font-bold transition-all"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Guest Preview Line (Real-time Hydrated Description) */}
+              <div className="bg-slate-955/40 border border-slate-800/80 p-4 rounded-2xl">
+                <div className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                  👀 Player Clue Text (Guest Preview)
+                </div>
+                <p className="text-xs font-medium text-slate-200 leading-relaxed italic">
+                  {description.trim() 
+                    ? hydrateTextWithCharacters(description, characters, 'print')
+                    : 'No description text provided yet.'}
+                </p>
+              </div>
+            </div>
+
             {/* 1. Name */}
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-2">Evidence Name</label>
@@ -291,7 +592,7 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                 onFocus={() => setFocusedInput('description')}
                 rows={4}
                 placeholder="Write the public description players will read on the printed card..."
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-brand-blue/20 resize-none"
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-brand-blue/20 resize-none text-xs text-slate-700 leading-relaxed"
               />
             </div>
 
@@ -416,96 +717,8 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                   </div>
                 </div>
 
-                {/* Photo Preview Card */}
-                <div className="space-y-2 mt-4">
-                  <label className="block text-xs font-bold text-brand-pink/60">Clue Photo Illustration Preview</label>
-                  <div className="w-full aspect-square bg-white border border-brand-pink/15 rounded-3xl overflow-hidden relative group shadow-inner flex flex-col items-center justify-center transition-all duration-300">
-                    {imageUrl ? (
-                      <div className="absolute inset-0 w-full h-full">
-                        <img
-                          src={imageUrl}
-                          alt="Clue Photo Preview"
-                          className="w-full h-full object-cover grayscale-[20%] sepia-[10%] contrast-[1.05] brightness-[0.95] group-hover:grayscale-0 group-hover:sepia-0 group-hover:brightness-100 transition-all duration-700"
-                        />
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
-                          <button
-                            type="button"
-                            onClick={handleGenerateImage}
-                            disabled={isGeneratingImage}
-                            className="px-4 py-2 bg-white/95 text-slate-900 text-[11px] font-black uppercase tracking-wider rounded-xl hover:bg-brand-pink hover:text-white transition-all shadow-md active:scale-95 disabled:opacity-50"
-                          >
-                            ⚡ Regenerate Illustration
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-8 text-center flex flex-col items-center justify-center space-y-4">
-                        <div className="w-16 h-16 rounded-2xl bg-brand-pink/5 flex items-center justify-center text-brand-pink/30 group-hover:scale-110 transition-transform duration-500">
-                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">No Photo Generated</p>
-                          <p className="text-[10px] text-slate-400 font-medium mt-1 leading-normal max-w-[220px] mx-auto">
-                            Illustrate this clue with a premium Gemini-generated photo.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleGenerateImage}
-                          disabled={isGeneratingImage || !generationPrompt}
-                          className="px-4 py-2 bg-brand-pink/10 hover:bg-brand-pink text-brand-pink hover:text-white border border-brand-pink/20 rounded-xl text-[11px] font-bold transition-all disabled:opacity-50"
-                        >
-                          Generate Photo Preview
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Loading Overlay */}
-                    {isGeneratingImage && (
-                      <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex flex-col items-center justify-center text-white space-y-4 animate-in fade-in duration-300">
-                        <div className="relative flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full border-4 border-brand-pink/20 border-t-brand-pink animate-spin"></div>
-                          <svg className="w-5 h-5 text-brand-pink absolute animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                          </svg>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs font-black uppercase tracking-widest text-brand-pink animate-pulse">Gemini Imagen 4.0</p>
-                          <p className="text-[10px] text-slate-300 font-bold mt-1">Fleshing out visual mystery details...</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Error Overlay */}
-                    {imageError && (
-                      <div className="absolute inset-0 bg-red-950/90 p-6 flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in">
-                        <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-400">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-widest text-red-400">Generation Error</p>
-                          <p className="text-[10px] text-red-200 mt-1 max-w-[220px] leading-relaxed mx-auto font-medium">{imageError}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setImageError(null)}
-                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] font-bold transition-all"
-                        >
-                          Try Again
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {templateText && (
-                  <div>
+                  <div className="mt-4">
                     <label className="block text-xs font-bold text-brand-pink/60 mb-2">Clue Document / AI Text Preview</label>
                     <textarea 
                       name="template_text"

@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import { getCharactersByMysteryId } from '@/services/mysteries';
 import { hydrateTextWithCharacters } from '@/utils/hydration';
 import { revalidatePath } from 'next/cache';
+import crypto from 'crypto';
 
 export async function generateRandomQuirk(name: string, gender: string) {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
@@ -78,16 +79,18 @@ export async function suggestCluePrompts(beatTitle: string): Promise<string[]> {
   const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
   const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const prompt = `You are an expert murder mystery designer. The user needs to create a clue/evidence that reveals or relates to the following story beat:
+  const prompt = `You are an expert murder mystery designer. The user needs to create an image generation prompt for a clue/evidence that reveals or relates to the following story beat:
 "${beatTitle}"
 
-Suggest exactly 2 distinct ideas for what this evidence could be, and write them as instructional prompts that an AI could use to generate the actual content of the clue.
+Suggest exactly 2 distinct ideas for what this evidence could be, and write them as detailed visual prompts for an AI image generator (like Imagen) to create the physical scene.
 Use the placeholder {{VICTIM}} and {{KILLER}} if appropriate.
+
+CRITICAL RULE: Visual prompts MUST NOT request any text, writing, handwriting, ink, messages, or letters on any objects (such as notebooks, paper, coasters, sticky notes, or napkins). Instead, describe the object as completely blank with no text or writing on it (e.g. "a blank paper with no writing or text on it", "a blank coaster with no writing on it"). Screen/chat clues should be described face-down so no screen is visible (e.g. "a smartphone lying face-down, no screen is visible"). All text message contents will be rendered separately via HTML, not in the generated image. Keep the suggestions highly visual, atmospheric, and aligned with the gritty noir aesthetic.
 
 Example Beat: "The affair is discovered"
 Output:
-1. A crumpled love letter found in {{VICTIM}}'s coat pocket, passionately written but unsigned, mentioning a secret rendezvous at the old docks.
-2. A blurry photograph of {{KILLER}} and {{VICTIM}} arguing furiously outside a motel room, dated two days before the murder.
+1. A dramatic close-up of a crumpled piece of blank cream-colored hotel stationery lying inside {{VICTIM}}'s coat pocket. The paper is completely blank with no writing, ink, or text on it. Gritty noir aesthetic, moody lighting, shallow depth of field, 8k.
+2. A blurry, atmospheric photograph of {{KILLER}} and {{VICTIM}} arguing furiously outside a motel room at twilight, under glowing neon signs. Gritty noir aesthetic, dramatic low-key lighting, shallow depth of field, 8k.
 
 Return exactly 2 lines. Do not use numbers, bullet points, or any extra conversational text. Just the two raw suggestions separated by a newline.`;
 
@@ -164,88 +167,72 @@ CRITICAL: Output ONLY the description itself. No introduction, no quotes, no con
   }
 }
 
-async function optimizeScreenCluePrompt(promptText: string, characters: any[]): Promise<string> {
-  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
-  }
+function isCctvOrVideoClue(clue: any) {
+  const title = (clue.title || '').toLowerCase();
+  const desc = (clue.description || '').toLowerCase();
+  const prompt = (clue.generation_prompt || '').toLowerCase();
+  return (
+    title.includes('cctv') ||
+    title.includes('video') ||
+    title.includes('camera') ||
+    title.includes('photo') ||
+    title.includes('polaroid') ||
+    desc.includes('cctv') ||
+    desc.includes('security cam') ||
+    desc.includes('camera footage') ||
+    desc.includes('video footage') ||
+    desc.includes('metadata: sec cam') ||
+    prompt.includes('cctv') ||
+    prompt.includes('security camera') ||
+    prompt.includes('surveillance')
+  );
+}
 
-  const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-  const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+function isAudioClue(clue: any) {
+  const title = (clue.title || '').toLowerCase();
+  const desc = (clue.description || '').toLowerCase();
+  const prompt = (clue.generation_prompt || '').toLowerCase();
+  return (
+    title.includes('audio') ||
+    title.includes('voice note') ||
+    title.includes('recorded') ||
+    title.includes('recording') ||
+    title.includes('clip') ||
+    title.includes('sound') ||
+    desc.includes('🎙️') ||
+    desc.includes('audio recording') ||
+    desc.includes('voice note') ||
+    prompt.includes('microphone') ||
+    prompt.includes('soundboard') ||
+    prompt.includes('audio recorder')
+  );
+}
 
-  // Map characters to their actual assigned guest names for the prompt refiner
-  let characterMapping = characters.map(c => {
-    const rawName = c.name || '';
-    const cleanName = rawName.split('|')[0]?.trim() || '';
-    const profile = c.profile_data || {};
-    const guestName = profile.name || profile.guest_name || profile.guestName || cleanName;
-    return `- ${cleanName} (token: {{${cleanName}}}) is played by "${guestName}"`;
-  }).join('\n');
-
-  const victim = characters.find(c => c.is_victim);
-  const killer = characters.find(c => c.plot_role === 'killer');
-
-  if (victim) {
-    const rawName = victim.name || '';
-    const cleanName = rawName.split('|')[0]?.trim() || '';
-    const profile = victim.profile_data || {};
-    const guestName = profile.name || profile.guest_name || profile.guestName || cleanName;
-    characterMapping += `\n- VICTIM (token: {{VICTIM}}) is played by "${guestName}"`;
-  }
-  if (killer) {
-    const rawName = killer.name || '';
-    const cleanName = rawName.split('|')[0]?.trim() || '';
-    const profile = killer.profile_data || {};
-    const guestName = profile.name || profile.guest_name || profile.guestName || cleanName;
-    characterMapping += `\n- KILLER (token: {{KILLER}}) is played by "${guestName}"`;
-  }
-
-  const systemInstruction = `You are an expert prompt engineer for Imagen 4.0. Your task is to rewrite a murder mystery game clue prompt involving a digital screen (like a smartphone screen, text message/DM thread, email, or chat conversation) into a highly optimized, extremely concise, and visually sharp prompt for image generation.
-
-Here is the casting mapping for the game guests:
-${characterMapping}
-
-User's raw prompt containing placeholders:
-"${promptText}"
-
-CRITICAL RULES for Screen/Chat Clues:
-1. Replace all character tokens (e.g. {{CharacterName}}, {{VICTIM}}, {{KILLER}}) with their actual cast guest names.
-2. Clear Sender/Recipient Distinction: The owner of the device (the recipient of the text/email, e.g. {{Gabby}} -> "Gabriella") is holding or viewing the phone. Their name or physical description MUST NOT appear at the top header or as the sender of the incoming messages.
-3. Header Placement: The contact/sender name of the person sending the message (e.g. "Don't answer", an unknown number, or another guest) MUST be positioned clearly at the very top of the screen as a header.
-4. Message Legibility & Spelling: State clearly that the text inside the bubbles must be perfectly spelled, sharp, and highly legible. Use a clean, default mobile sans-serif font.
-5. Do NOT include physical descriptions of the recipient (e.g., hazel eyes, hair color) as text inside the chat thread or header. These physical traits should only be used to describe the hands holding the phone if appropriate, but keep it minimal to prevent confusing the AI.
-6. CHAT LAYOUT & GIBBERISH PREVENTION:
-   - If the user's prompt describes a single-sided incoming message, render ONLY that single incoming message in a grey/white bubble below the contact header. Explicitly state in the prompt that "the screen is entirely dark, blank, and empty below this single message bubble, with no other text bubbles or elements."
-   - If the user's prompt describes a two-way dialogue or back-and-forth conversation (e.g. 'Dane to Ava: ... Ava: ...' or dialogue lines), render it as a real dialogue on the screen: incoming messages from the contact header in grey/white bubbles on the left, and outgoing replies from the device owner in blue/green bubbles on the right.
-   - CRITICAL: Every bubble must contain ONLY the exact, literal dialogue text specified in the user's prompt. There must be absolutely NO AI-invented replies, NO placeholder text, and NO gibberish words. Every word on the screen must be exactly from the user's prompt. Specify that "there must be absolutely no other text, no gibberish, and no AI-invented messages on the screen".
-7. CONCISENESS & SHARPNESS: Keep the final output prompt very concise, direct, and under 120 words. Verbose prompts degrade the text rendering capabilities of Imagen. Focus purely on spatial placement, the header, bubble colors, and the exact literal text strings to render in quotes.
-8. The overall scene should be a premium, dramatic, close-up photograph of a smartphone screen lying on a surface or held in a hand. Use the "gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution" style.
-9. Return ONLY the final optimized prompt text. Do not include any introduction, explanations, quotes, or markdown code blocks.`;
-
-  try {
-    const result = await model.generateContent(systemInstruction);
-    const response = await result.response;
-    
-    await logAiUsage({
-      model_name: 'gemini-2.5-flash',
-      prompt_tokens: response.usageMetadata?.promptTokenCount,
-      completion_tokens: response.usageMetadata?.candidatesTokenCount,
-      feature_name: 'optimize_screen_clue_prompt'
-    });
-
-    let text = response.text().trim();
-    // Strip markdown code blocks if any
-    if (text.startsWith('```')) {
-      text = text.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '').trim();
-    }
-    // Strip surrounding quotes
-    text = text.replace(/^["']|["']$/g, '').trim();
-    return text;
-  } catch (error) {
-    console.error('Error in optimizeScreenCluePrompt:', error);
-    // Fallback if AI fails
-    const hydratedPrompt = hydrateTextWithCharacters(promptText, characters, 'ai');
-    return `A high-quality, professional photograph of a smartphone screen showing a text message conversation: ${hydratedPrompt}. CRITICAL: The sender's name must be at the top header, and the text messages below. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`;
-  }
+function isScreenClue(clue: any) {
+  const title = (clue.title || '').toLowerCase();
+  const desc = (clue.description || '').toLowerCase();
+  const prompt = (clue.generation_prompt || '').toLowerCase();
+  return (
+    title.includes('smartphone') ||
+    title.includes('phone') ||
+    title.includes('text') ||
+    title.includes('chat') ||
+    title.includes('dm') ||
+    title.includes('sms') ||
+    title.includes('screen') ||
+    title.includes('email') ||
+    title.includes('message') ||
+    title.includes('whatsapp') ||
+    title.includes('imessage') ||
+    desc.includes('chat thread') ||
+    desc.includes('text message') ||
+    desc.includes('dm thread') ||
+    desc.includes('private dm') ||
+    prompt.includes('phone') ||
+    prompt.includes('screen') ||
+    prompt.includes('chat') ||
+    prompt.includes('message')
+  );
 }
 
 export async function generateClueImageAction(clueId: string, mysteryId: string, promptText: string) {
@@ -257,67 +244,104 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
     const supabase = await createClient();
     const characters = await getCharactersByMysteryId(mysteryId);
     
-    // Robust detection for text chains, chats, screen, DMs, email, or dialogue format
-    const lowercasePrompt = promptText.toLowerCase();
-    const hasScreenKeywords = 
-      lowercasePrompt.includes('smartphone') || 
-      lowercasePrompt.includes('phone screen') || 
-      lowercasePrompt.includes('text message') || 
-      lowercasePrompt.includes('text chain') || 
-      lowercasePrompt.includes('chat thread') || 
-      lowercasePrompt.includes('sms') || 
-      lowercasePrompt.includes('screen') ||
-      lowercasePrompt.includes('dm') ||
-      lowercasePrompt.includes('direct message') ||
-      lowercasePrompt.includes('text bubble') ||
-      lowercasePrompt.includes('email') ||
-      lowercasePrompt.includes('inbox') ||
-      lowercasePrompt.includes('chat history') ||
-      lowercasePrompt.includes('message chain') ||
-      lowercasePrompt.includes('whatsapp') ||
-      lowercasePrompt.includes('imessage');
+    // Fetch the full clue record to check its type
+    const { data: clue, error: clueError } = await supabase
+      .from('clues')
+      .select('*')
+      .eq('id', clueId)
+      .single();
 
-    // Detect dialogue script format, e.g. {{Dane}} to {{Ava}} or {{Dane}}:
-    const hasDialogueFormat = 
-      /\{\{[^}]+\}\}\s*to\s*\{\{[^}]+\}\}/i.test(promptText) ||
-      /\{\{[^}]+\}\}\s*:/i.test(promptText) ||
-      /\{\{[^}]+\}\}\s+DMs/i.test(promptText) ||
-      /\{\{[^}]+\}\}\s+says/i.test(promptText);
+    if (clueError || !clue) {
+      throw new Error(clueError?.message || 'Clue not found');
+    }
 
-    const isScreenClue = hasScreenKeywords || hasDialogueFormat;
+    const isAudio = isAudioClue(clue);
+    const isCctv = isCctvOrVideoClue(clue) && !isAudio;
+    const isScreen = isScreenClue(clue) && !isAudio && !isCctv;
+
+    // Determine the base prompt to use (avoiding sending the dialogue description)
+    let basePrompt = clue.generation_prompt?.trim() || clue.title || '';
+    // Clean up any quotes or text inside the base prompt
+    basePrompt = basePrompt.replace(/"[^"]*"/g, '').replace(/'[^']*'/g, '').trim();
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     let finalPrompt = '';
 
-    if (isScreenClue) {
-      // Use Gemini to optimize and rewrite the screen-based prompt
-      finalPrompt = await optimizeScreenCluePrompt(promptText, characters);
+    if (isAudio || isScreen) {
+      const device = basePrompt.toLowerCase().includes('laptop') ? 'laptop' : 'smartphone';
+      finalPrompt = `A premium, dramatic, close-up photograph of a ${device} lying on a dark surface or held in a hand in a dimly lit room. The screen is completely black, dark, off, or showing only a simple generic dark lockscreen wallpaper with absolutely NO text, NO writing, NO letters, NO numbers, NO chat bubbles, and NO symbols. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations, NO stylized art.`;
+    } else if (isCctv) {
+      const hydratedPrompt = hydrateTextWithCharacters(basePrompt, characters, 'ai');
+      finalPrompt = `A high-quality, professional photograph of: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. CRITICAL: This is a real, live-action photograph taken with a DSLR camera. The image MUST be highly photorealistic. CRITICAL: Any people in the image MUST look between 25 and 30 years old. Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations, NO stylized art, NO vector graphics. The image MUST contain absolutely NO text, NO writing, NO letters, NO numbers, and NO overlay graphics.`;
     } else {
-      // Hydrate the promptText with character information for visual description
-      const hydratedPrompt = hydrateTextWithCharacters(promptText, characters, 'ai');
-      // Enhance prompt for highest dynamic photo quality & consistent noir theme
-      finalPrompt = `A high-quality, professional photograph of a clue item in a murder mystery: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`;
+      const hydratedPrompt = hydrateTextWithCharacters(basePrompt, characters, 'ai');
+      finalPrompt = `A high-quality, professional photograph of a clue item in a murder mystery: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. CRITICAL: This is a real, live-action photograph taken with a DSLR camera. The image MUST be highly photorealistic. CRITICAL: Any people in the image MUST look between 25 and 30 years old. Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations, NO stylized art, NO vector graphics. The image MUST contain absolutely NO text, NO writing, NO letters, NO numbers, and NO characters.`;
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-    const payload = {
-      instances: [{ prompt: finalPrompt }],
-      parameters: { sampleCount: 1, aspectRatio: "1:1", outputOptions: { mimeType: "image/jpeg" } }
-    };
+    const promptHash = crypto.createHash('sha256').update(finalPrompt).digest('hex');
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    // Check cache first
+    const { data: cached } = await supabase
+      .from('image_generation_cache')
+      .select('image_url')
+      .eq('prompt_hash', promptHash)
+      .single();
 
-    const data = await res.json();
-    if (!data.predictions || !data.predictions[0]) {
-      throw new Error('Failed to generate image: ' + JSON.stringify(data.error || data));
+    let dataUri = '';
+
+    if (cached?.image_url) {
+      dataUri = cached.image_url;
+    } else {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+      const payload = {
+        instances: [{ prompt: finalPrompt }],
+        parameters: { 
+          sampleCount: 1, 
+          aspectRatio: "1:1", 
+          outputOptions: { mimeType: "image/jpeg" },
+          personGeneration: "allow_adult"
+        }
+      };
+
+      let res;
+      let retries = 0;
+      let isRateLimited = false;
+      while (retries < 3) {
+        res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        
+        if (res.status === 429 || res.status === 403) {
+          isRateLimited = true;
+          retries++;
+          await new Promise(r => setTimeout(r, 2000 * retries)); // Exponential backoff
+          continue;
+        }
+        break;
+      }
+
+      let base64Image = '';
+
+      if (res && res.ok) {
+        const data = await res.json();
+        base64Image = data.predictions?.[0]?.bytesBase64Encoded;
+      }
+
+      if (base64Image) {
+        dataUri = `data:image/jpeg;base64,${base64Image}`;
+        
+        // Save to cache asynchronously
+        supabase.from('image_generation_cache').insert({
+          prompt_hash: promptHash,
+          image_url: dataUri
+        }).then(() => console.log('Saved clue image to cache')).catch(e => console.error(e));
+      } else {
+        console.warn('Image generation failed or quota exceeded, using fallback placeholder');
+        dataUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(clue.title || 'Clue')}&background=random&size=512`;
+      }
     }
-
-    const base64Image = data.predictions[0].bytesBase64Encoded;
-    const dataUri = `data:image/jpeg;base64,${base64Image}`;
 
     // Update static_image_url in clues table
     const { error } = await supabase

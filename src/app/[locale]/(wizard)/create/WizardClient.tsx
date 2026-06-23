@@ -44,6 +44,7 @@ export default function WizardClient({
   const [savedGuests, setSavedGuests] = useState<any[]>(initialGuests);
   const [assignedGuests, setAssignedGuests] = useState<any[]>([]);
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [generatingAvatars, setGeneratingAvatars] = useState<Set<string>>(new Set());
 
   // State Step 4
   const [insideJokes, setInsideJokes] = useState('');
@@ -59,11 +60,29 @@ export default function WizardClient({
   const handleSaveNewGuest = async (guestData: any) => {
     const res = await saveGuestAction(guestData);
     if (res.guest) {
-      setSavedGuests([res.guest, ...savedGuests]);
+      const savedGuest = res.guest;
+      setSavedGuests(prev => [savedGuest, ...prev]);
       // Auto assign if there's room
       if (assignedGuests.length < playerCount) {
-        setAssignedGuests([...assignedGuests, res.guest]);
+        setAssignedGuests(prev => [...prev, savedGuest]);
       }
+
+      setGeneratingAvatars(prev => new Set(prev).add(savedGuest.id));
+      import('@/app/actions/ai-guests').then(({ generateGuestAvatarAction }) => {
+        generateGuestAvatarAction(savedGuest.id, guestData)
+          .then((actionRes) => {
+             setSavedGuests(prev => prev.map(g => g.id === savedGuest.id ? { ...g, avatar_url: actionRes.publicUrl } : g));
+             setAssignedGuests(prev => prev.map(g => g.id === savedGuest.id ? { ...g, avatar_url: actionRes.publicUrl } : g));
+          })
+          .catch(err => console.error('Failed to generate guest avatar:', err))
+          .finally(() => {
+            setGeneratingAvatars(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(savedGuest.id);
+              return newSet;
+            });
+          });
+      });
     } else if (res.error) {
       alert('Error saving guest: ' + res.error);
     }
@@ -253,10 +272,18 @@ export default function WizardClient({
                         : 'border-slate-200 hover:border-brand-pink/50'
                   }`}
                 >
-                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0 relative">
                     {guest.avatar_url && (
                        // eslint-disable-next-line @next/next/no-img-element
                       <img src={guest.avatar_url} alt={guest.name} className="w-full h-full object-cover" />
+                    )}
+                    {generatingAvatars.has(guest.id) && (
+                      <div className="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center backdrop-blur-sm z-10">
+                        <svg className="animate-spin h-4 w-4 text-brand-pink mb-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
                     )}
                   </div>
                   <div className="flex-grow min-w-0">

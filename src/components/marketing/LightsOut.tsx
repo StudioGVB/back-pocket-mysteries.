@@ -29,13 +29,13 @@ export default function LightsOut() {
         background: `radial-gradient(circle 300px at ${mousePos.x}px ${mousePos.y}px, transparent 0%, rgba(0, 0, 0, 0.8) 80%, rgba(0, 0, 0, 0.95) 100%)`
       }}
     >
-      <div className="absolute top-8 right-8 pointer-events-auto">
+      <div className="absolute top-8 right-8 pointer-events-auto flex items-center">
         <button 
           onClick={() => setLightsOn(true)}
-          className="group flex items-center gap-3 bg-brand-dark text-white px-6 py-3 rounded-full font-black uppercase tracking-widest hover:bg-brand-pink transition-colors shadow-2xl border-2 border-white/10"
+          className="group text-white font-black tracking-widest uppercase text-sm animate-pulse flex items-center gap-2 hover:text-brand-pink transition-colors"
         >
-          <span className="text-xl">💡</span>
-          Turn Lights On
+          <span>Turn on the light</span>
+          <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
         </button>
       </div>
       

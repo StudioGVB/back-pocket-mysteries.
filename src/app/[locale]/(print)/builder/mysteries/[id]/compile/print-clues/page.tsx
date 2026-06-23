@@ -4,6 +4,144 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { hydrateTextWithCharacters } from '@/utils/hydration';
 
+// Helper function to format clue descriptions for printed cards
+function formatClueDescriptionForPrint(hydratedText: string) {
+  if (!hydratedText) return { header: 'EVIDENCE', meta: '', content: '' };
+  
+  const lines = hydratedText.split('\n').map(l => l.trim()).filter(Boolean);
+  
+  let header = 'EVIDENCE';
+  let meta = '';
+  let contentLines: string[] = [];
+  
+  let currentLineIdx = 0;
+  
+  // 1. Detect header (usually starts with an emoji)
+  if (lines[0] && (
+    lines[0].startsWith('💬') || 
+    lines[0].startsWith('🎙️') || 
+    lines[0].startsWith('🔍') || 
+    lines[0].startsWith('📋') || 
+    lines[0].startsWith('📌') || 
+    lines[0].startsWith('💻') || 
+    lines[0].startsWith('📓') || 
+    lines[0].startsWith('📸')
+  )) {
+    // Strip emojis/special characters and use as header
+    header = lines[0].replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim().toUpperCase();
+    currentLineIdx = 1;
+  } else if (lines[0] && lines[0].toUpperCase() === lines[0] && lines[0].length < 40) {
+    header = lines[0];
+    currentLineIdx = 1;
+  }
+  
+  // 2. Detect meta (Sender/Recipient lines or Device/Source)
+  const metaLines: string[] = [];
+  while (currentLineIdx < lines.length) {
+    const line = lines[currentLineIdx];
+    if (
+      line.startsWith('Sender:') || 
+      line.startsWith('Recipient:') || 
+      line.startsWith('Device:') || 
+      line.startsWith('Source:') || 
+      line.startsWith('Speakers:') || 
+      line.startsWith('Timestamp:') || 
+      line.startsWith('Restored metadata:')
+    ) {
+      metaLines.push(line);
+      currentLineIdx++;
+    } else {
+      break;
+    }
+  }
+  
+  if (metaLines.length > 0) {
+    meta = metaLines.join(' | ');
+  }
+  
+  // 3. The rest is content
+  contentLines = lines.slice(currentLineIdx);
+  
+  return {
+    header,
+    meta,
+    content: contentLines.join('\n')
+  };
+}
+
+function isCctvOrVideoClue(clue: any) {
+  const title = (clue.title || '').toLowerCase();
+  const desc = (clue.description || '').toLowerCase();
+  const prompt = (clue.generation_prompt || '').toLowerCase();
+  return (
+    title.includes('cctv') ||
+    title.includes('video') ||
+    title.includes('camera') ||
+    title.includes('photo') ||
+    title.includes('polaroid') ||
+    desc.includes('cctv') ||
+    desc.includes('security cam') ||
+    desc.includes('camera footage') ||
+    desc.includes('video footage') ||
+    desc.includes('metadata: sec cam') ||
+    prompt.includes('cctv') ||
+    prompt.includes('security camera') ||
+    prompt.includes('surveillance')
+  );
+}
+
+function isAudioClue(clue: any) {
+  const title = (clue.title || '').toLowerCase();
+  const desc = (clue.description || '').toLowerCase();
+  const prompt = (clue.generation_prompt || '').toLowerCase();
+  return (
+    title.includes('audio') ||
+    title.includes('voice note') ||
+    title.includes('recorded') ||
+    title.includes('recording') ||
+    title.includes('clip') ||
+    title.includes('sound') ||
+    desc.includes('🎙️') ||
+    desc.includes('audio recording') ||
+    desc.includes('voice note') ||
+    prompt.includes('microphone') ||
+    prompt.includes('soundboard') ||
+    prompt.includes('audio recorder')
+  );
+}
+
+function parseCctvMetadata(clue: any) {
+  const desc = clue.description || '';
+  
+  // Try to find Timestamp
+  let timestamp = '06/23/2026 18:03:00';
+  const timeMatch = desc.match(/Timestamp:\s*([^\n|)]+)/i);
+  if (timeMatch) {
+    const rawTime = timeMatch[1].trim();
+    timestamp = `06/23/2026 ${rawTime}`;
+  } else {
+    const simpleTimeMatch = desc.match(/(\d{1,2}:\d{2}\s*(?:PM|AM))/i);
+    if (simpleTimeMatch) {
+      timestamp = `06/23/2026 ${simpleTimeMatch[1]}`;
+    }
+  }
+
+  // Try to find Camera
+  let camera = 'CAM 01';
+  const camMatch = desc.match(/SEC CAM_([^\n\s|\]]+)/i);
+  if (camMatch) {
+    camera = `SEC CAM ${camMatch[1].toUpperCase()}`;
+  } else if (desc.toLowerCase().includes('bar area')) {
+    camera = 'CAM 02 - PENTHOUSE BAR';
+  } else if (desc.toLowerCase().includes('lobby') || desc.toLowerCase().includes('hallway')) {
+    camera = 'CAM 01 - CORRIDOR';
+  } else if (clue.title.toLowerCase().includes('switch')) {
+    camera = 'CAM 03 - DRINK COUNTER';
+  }
+
+  return { timestamp, camera };
+}
+
 export default async function PrintCluesPage({
   params,
 }: {
@@ -133,49 +271,181 @@ export default async function PrintCluesPage({
                 const colors = ['#FF1493', '#4169E1', '#9370DB', '#00CED1'];
                 const cardColor = colors[idx % colors.length];
 
+                const hydratedTitle = hydrateTextWithCharacters(clue.title || '', characters, 'print');
+                const hydratedDesc = hydrateTextWithCharacters(clue.description || '', characters, 'print');
+                const formatted = formatClueDescriptionForPrint(hydratedDesc);
+                
+                const isPhoneClue = clue.clue_type === 'secret' || (clue.generation_prompt && clue.generation_prompt.toLowerCase().includes('phone'));
+                const isAudio = isAudioClue(clue);
+                const isCctv = isCctvOrVideoClue(clue) && !isAudio;
+                const cctv = parseCctvMetadata(clue);
+
                 return (
                   <div 
                     key={clue.id} 
-                    className="relative border-2 border-dashed border-slate-700 rounded-3xl p-8 bg-slate-900/60 shadow-xl overflow-hidden flex flex-col justify-between print:border-slate-400 print:bg-white print:shadow-none print:rounded-2xl print:border-[1px] print:p-6"
-                    style={{ minHeight: '360px' }}
+                    className="relative border-2 border-dashed border-slate-700 rounded-3xl p-6 bg-slate-900/60 shadow-xl overflow-hidden flex flex-col justify-between print:border-slate-400 print:bg-white print:shadow-none print:rounded-2xl print:border-[1px] print:p-6"
+                    style={{ minHeight: '420px' }}
                   >
                     {/* Dotted cutting outline (web-only help tag) */}
                     <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-[9px] font-black uppercase text-slate-600 tracking-wider flex items-center gap-1 print:hidden select-none">
                       <span>✂️</span> <span>Cut Dotted Card Border</span> <span>✂️</span>
                     </div>
 
-                    <div className="space-y-4 mt-2">
-                      <div className="flex justify-between items-start">
-                        <span 
-                          className="text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest border"
-                          style={{ 
-                            color: cardColor, 
-                            borderColor: cardColor,
-                            backgroundColor: `${cardColor}08`
-                          }}
-                        >
-                          {clue.clue_type ? clue.clue_type.toUpperCase() : 'EVIDENCE'}
-                        </span>
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider print:text-slate-400">
-                          R{roundNum} • CARD {idx + 1}
-                        </span>
+                    <div className="flex flex-col h-full">
+                      {/* A. Image or Face-down Phone Placeholder */}
+                      {clue.static_image_url ? (
+                        <div className="w-full h-44 rounded-2xl overflow-hidden mb-4 bg-slate-800 border border-slate-700/30 print:border-slate-300 relative shrink-0">
+                          <img 
+                            src={clue.static_image_url} 
+                            alt={hydratedTitle} 
+                            className="w-full h-full object-cover" 
+                          />
+                          {isCctv && (
+                            <div className="absolute inset-0 bg-black/10 pointer-events-none flex flex-col justify-between p-3 select-none font-mono text-[9px] text-white">
+                              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] opacity-20" />
+                              <div className="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]" />
+                              
+                              {/* Top Row */}
+                              <div className="flex justify-between items-center z-10">
+                                <div className="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded text-red-500 font-bold uppercase tracking-widest">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block animate-pulse"></span>
+                                  <span>REC</span>
+                                </div>
+                                <div className="bg-black/50 px-2 py-0.5 rounded text-slate-300 font-bold">
+                                  {cctv.camera}
+                                </div>
+                              </div>
+                              
+                              {/* Bottom Row */}
+                              <div className="flex justify-between items-end z-10">
+                                <div className="bg-black/50 px-2 py-0.5 rounded text-slate-300 font-bold">
+                                  {cctv.timestamp}
+                                </div>
+                                <div className="bg-black/50 px-2 py-0.5 rounded text-slate-400 font-bold uppercase tracking-wider">
+                                  4K 30FPS
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {isAudio && (
+                            <div className="absolute inset-0 bg-black/25 pointer-events-none flex flex-col justify-end p-4 select-none">
+                              <div className="absolute inset-0 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]" />
+                              <div className="bg-slate-950/85 border border-white/10 rounded-2xl p-3.5 backdrop-blur-md flex items-center gap-3.5 z-10 w-full shadow-lg">
+                                <div className="w-7 h-7 rounded-full bg-brand-blue flex items-center justify-center text-white shadow-md shrink-0">
+                                  <svg className="w-3 h-3 fill-current ml-0.5" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-grow flex items-center gap-0.5 h-5">
+                                  {[15, 30, 45, 20, 35, 55, 40, 25, 50, 60, 35, 20, 45, 30, 15, 25, 40, 50, 30, 20].map((height, i) => (
+                                    <div 
+                                      key={i} 
+                                      className="flex-grow rounded-full" 
+                                      style={{ 
+                                        height: `${height}%`,
+                                        backgroundColor: i < 7 ? '#3b82f6' : 'rgba(255, 255, 255, 0.25)'
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : isPhoneClue ? (
+                        <div className="w-full h-44 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-black border border-slate-800 print:border-slate-200 shadow-inner flex items-center justify-center relative overflow-hidden mb-4 shrink-0 select-none">
+                          {/* Phone body */}
+                          <div className="w-20 h-36 rounded-2xl bg-slate-800 border-2 border-slate-700/60 shadow-2xl relative flex flex-col items-center justify-between p-3 print:bg-slate-100 print:border-slate-300">
+                            {/* Camera bump */}
+                            <div className="w-6 h-6 rounded-md bg-slate-950 border border-slate-800 print:bg-slate-300 print:border-slate-400 flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-800"></div>
+                            </div>
+                            {/* Center logo marker */}
+                            <div className="w-4 h-4 rounded-full bg-slate-700/30 print:bg-slate-200"></div>
+                            {/* Glowing notification line/dot */}
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] print:bg-emerald-600"></div>
+                          </div>
+                          {/* Ambient lights */}
+                          <div className="absolute -top-10 -right-10 w-24 h-24 bg-pink-500/10 rounded-full blur-xl print:hidden"></div>
+                          <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-blue-500/10 rounded-full blur-xl print:hidden"></div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-44 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/50 border border-slate-200/60 shadow-inner flex flex-col items-center justify-center gap-2 mb-4 relative overflow-hidden print:bg-slate-50 print:border-slate-200 shrink-0 select-none">
+                          {isCctv ? (
+                            <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-2 select-none">
+                              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] opacity-20" />
+                              <div className="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]" />
+                              <span className="text-3xl filter animate-pulse z-10">📹</span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">{cctv.camera}</span>
+                              <span className="text-[9px] font-mono text-slate-500 z-10">{cctv.timestamp}</span>
+                            </div>
+                          ) : isAudio ? (
+                            <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-4 gap-3 select-none">
+                              <span className="text-3xl filter animate-pulse">🎙️</span>
+                              <div className="bg-slate-900 border border-white/5 rounded-xl p-2 flex items-center gap-2 w-full max-w-[200px] shadow-lg">
+                                <div className="w-5 h-5 rounded-full bg-brand-blue flex items-center justify-center text-white shrink-0">
+                                  <svg className="w-2 h-2 fill-current ml-0.5" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-grow flex items-center gap-0.5 h-3">
+                                  {[15, 35, 55, 20, 40, 50, 30, 20, 10, 25].map((height, i) => (
+                                    <div 
+                                      key={i} 
+                                      className="flex-grow rounded-full" 
+                                      style={{ 
+                                        height: `${height}%`,
+                                        backgroundColor: i < 3 ? '#3b82f6' : 'rgba(255, 255, 255, 0.2)'
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-3xl filter grayscale">📦</span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest print:text-slate-500">Physical Clue Asset</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* B. Header Details */}
+                      <div className="space-y-1.5 shrink-0">
+                        <div className="flex justify-between items-center">
+                          <span 
+                            className="text-[9px] font-black uppercase tracking-wider"
+                            style={{ color: cardColor }}
+                          >
+                            {formatted.header}
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider print:text-slate-400">
+                            R{roundNum} • CARD {idx + 1}
+                          </span>
+                        </div>
+                        
+                        {formatted.meta && (
+                          <div className="text-[10px] font-black text-slate-400 print:text-slate-500 leading-tight">
+                            {formatted.meta}
+                          </div>
+                        )}
                       </div>
 
-                      <h3 className="text-xl font-black text-white tracking-tight leading-snug print:text-slate-900">
-                        {hydrateTextWithCharacters(clue.title || '', characters, 'print')}
-                      </h3>
+                      {/* C. Clue Content */}
+                      <div className="flex-grow my-4 overflow-hidden">
+                        <p className="text-xs font-medium text-slate-300 print:text-slate-800 leading-relaxed whitespace-pre-line">
+                          {formatted.content || hydratedDesc}
+                        </p>
+                      </div>
 
-                      <p className="text-sm font-medium text-slate-300 leading-relaxed print:text-slate-800 print:text-xs">
-                        {hydrateTextWithCharacters(clue.description || '', characters, 'print') || "A suspicious piece of evidence has been recovered. It implies deeper connections, but who does it belong to?"}
-                      </p>
-                    </div>
-
-                    {/* Card Footer detail */}
-                    <div className="border-t border-slate-800/80 pt-4 mt-6 flex justify-between items-center text-[10px] font-black text-slate-500 print:border-slate-200">
-                      <span className="uppercase tracking-widest">Back Pocket Mysteries</span>
-                      {clue.is_essential && (
-                        <span className="text-[#FF1493] tracking-widest uppercase">★ Essential Clue</span>
-                      )}
+                      {/* D. Card Footer */}
+                      <div className="border-t border-slate-800/80 pt-3 mt-auto flex justify-between items-center text-[9px] font-black text-slate-500 print:border-slate-200 shrink-0 select-none">
+                        <span className="uppercase tracking-widest">Back Pocket Mysteries</span>
+                        <span style={{ color: cardColor }} className="tracking-widest uppercase">
+                          Clue {idx + 1} | Round {roundNum}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );

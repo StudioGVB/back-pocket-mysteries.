@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Database } from '@/types/database';
 import { addClueAction } from '../actions';
 import { ClueCard } from './ClueCard';
+import { generateClueImageAction } from '@/app/actions/generator';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type Clue = Database['public']['Tables']['clues']['Row'];
@@ -24,7 +25,49 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
   const router = useRouter();
   const pathname = usePathname();
   const formRef = useRef<HTMLFormElement>(null);
+  
   const [isAdding, setIsAdding] = useState(false);
+  const [currentClues, setCurrentClues] = useState(clues);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regeneratedCount, setRegeneratedCount] = useState(0);
+  const [currentlyGeneratingId, setCurrentlyGeneratingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentClues(clues);
+  }, [clues]);
+
+  const handleRegenerateAll = async () => {
+    if (isRegenerating) return;
+    setIsRegenerating(true);
+    setRegeneratedCount(0);
+
+    for (let i = 0; i < currentClues.length; i++) {
+      const clue = currentClues[i];
+      setCurrentlyGeneratingId(clue.id);
+
+      const prompt = clue.generation_prompt?.trim() || (clue.description ? `${clue.title}: ${clue.description}` : clue.title);
+      
+      try {
+        const res = await generateClueImageAction(clue.id, mysteryId, prompt);
+        if (res?.success && res.imageUrl) {
+          // Update the clue image in local state immediately so it updates in real time
+          setCurrentClues(prev => prev.map(c => c.id === clue.id ? { ...c, static_image_url: res.imageUrl } : c));
+        } else {
+          console.error(`Failed to generate for clue ${clue.id}:`, res?.error);
+        }
+      } catch (e) {
+        console.error(`Error generating for clue ${clue.id}:`, e);
+      }
+
+      setRegeneratedCount(prev => prev + 1);
+      // Brief pause between requests to reduce API rate-limiting risk
+      await new Promise(r => setTimeout(r, 600));
+    }
+
+    setCurrentlyGeneratingId(null);
+    setIsRegenerating(false);
+    router.refresh();
+  };
 
   const placeholders: { type: 'main' | 'subplot'; beatId: string; beatTitle: string }[] = [];
 
@@ -60,7 +103,23 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
     <div className="space-y-10">
       {/* Quick Add Bar */}
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Discovery Log</h3>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Discovery Log</h3>
+          <button
+            onClick={handleRegenerateAll}
+            disabled={isRegenerating}
+            id="gen-clues-btn"
+            className={`px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm ${
+              isRegenerating 
+                ? 'bg-brand-pink animate-pulse cursor-not-allowed' 
+                : 'bg-slate-900 hover:bg-brand-blue active:scale-95'
+            }`}
+          >
+            {isRegenerating 
+              ? `Updated ${regeneratedCount}/${currentClues.length} photos` 
+              : 'Regenerate All AI Clue Photos'}
+          </button>
+        </div>
         <form 
           ref={formRef}
           action={async (formData) => {
@@ -141,11 +200,11 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
       )}
 
       {/* Clue Grid */}
-      {clues.length > 0 && (
+      {currentClues.length > 0 && (
         <div>
           <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 ml-2">Created Evidence</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clues.map((clue) => (
+            {currentClues.map((clue) => (
               <ClueCard 
                 key={clue.id} 
                 clue={clue} 
@@ -153,6 +212,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
                 beats={beats}
                 characters={characters}
                 subplots={subplots}
+                isGenerating={currentlyGeneratingId === clue.id}
               />
             ))}
           </div>

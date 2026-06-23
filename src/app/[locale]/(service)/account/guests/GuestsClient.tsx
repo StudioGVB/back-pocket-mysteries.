@@ -63,7 +63,7 @@ function Countdown({ expiresAt }: { expiresAt: string }) {
   return <span className="font-mono">{d}d {h}h {m}m</span>;
 }
 
-function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelInvite }: { guest: ManualGuest; onRemove?: () => void; onEdit?: () => void; onShare?: () => void; pendingInvite?: PendingInvite; onCancelInvite?: () => void }) {
+function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelInvite, isGenerating }: { guest: ManualGuest; onRemove?: () => void; onEdit?: () => void; onShare?: () => void; pendingInvite?: PendingInvite; onCancelInvite?: () => void; isGenerating?: boolean }) {
   const initials = guest.name.charAt(0).toUpperCase();
   const defaultAvatar = buildAvatarUrl({
     seed: guest.name,
@@ -91,16 +91,29 @@ function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelIn
       )}
       <div className={`flex items-start justify-between mb-6 ${pendingInvite ? 'mt-6' : ''}`}>
         <div className="flex items-center gap-4">
-          {displayAvatar ? (
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={displayAvatar} alt={guest.name} className="w-[120%] h-[120%] object-cover mt-2" />
-            </div>
-          ) : (
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white border-2 border-white shadow-md" style={{ background: '#fe04c6' }}>
-              {initials}
-            </div>
-          )}
+          <div className="relative">
+            {displayAvatar ? (
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={displayAvatar} alt={guest.name} className="w-[120%] h-[120%] object-cover mt-2" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white border-2 border-white shadow-md" style={{ background: '#fe04c6' }}>
+                {initials}
+              </div>
+            )}
+            
+            {/* Loading Overlay */}
+            {isGenerating && (
+              <div className="absolute inset-0 bg-slate-900/60 rounded-2xl flex flex-col items-center justify-center border-2 border-white backdrop-blur-sm z-10 shadow-lg">
+                <svg className="animate-spin h-5 w-5 text-brand-pink mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-[8px] font-black uppercase tracking-widest text-white">AI Gen</span>
+              </div>
+            )}
+          </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900">{guest.name}</h3>
             <p className="text-xs font-bold text-slate-400">{guest.gender || 'Unspecified'}</p>
@@ -321,6 +334,8 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [generatingAvatars, setGeneratingAvatars] = useState<Set<string>>(new Set());
+
   const handleSaveGuest = async (newGuest: any) => {
     setError(null);
     const guestPayload = {
@@ -347,11 +362,29 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
     }
 
     if (result.guest) {
+      const savedGuest = result.guest as ManualGuest;
       if (editingGuest) {
-        setGuests(guests.map(g => g.id === editingGuest.id ? result.guest as ManualGuest : g));
+        setGuests(prev => prev.map(g => g.id === editingGuest.id ? savedGuest : g));
       } else {
-        setGuests([result.guest as ManualGuest, ...guests]);
+        setGuests(prev => [savedGuest, ...prev]);
       }
+
+      // Background generation of avatar
+      setGeneratingAvatars(prev => new Set(prev).add(savedGuest.id));
+      import('@/app/actions/ai-guests').then(({ generateGuestAvatarAction }) => {
+        generateGuestAvatarAction(savedGuest.id, guestPayload)
+          .then((res) => {
+            setGuests(prev => prev.map(g => g.id === savedGuest.id ? { ...g, avatar_url: res.publicUrl } : g));
+          })
+          .catch(err => console.error('Failed to generate guest avatar:', err))
+          .finally(() => {
+            setGeneratingAvatars(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(savedGuest.id);
+              return newSet;
+            });
+          });
+      });
     }
   };
   const handleInviteSent = (invite: PendingInvite) => setPendingInvites([invite, ...pendingInvites]);
@@ -493,6 +526,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
                         setSharingGuest(g);
                         setIsInviteModalOpen(true);
                       }}
+                      isGenerating={generatingAvatars.has(g.id)}
                     />
                   );
                 })}

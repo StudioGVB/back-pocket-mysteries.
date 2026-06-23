@@ -66,7 +66,25 @@ export function hydrateTextWithCharacters(
     } else {
       // For AI image generation prompts, replace with descriptive text
       const desc = getGuestPhysicalDescription(profile, genderStr);
-      const replacement = desc ? `${guestName} (${desc})` : guestName;
+      
+      // Retrieve the themed character's outfit advice from profile_data
+      let outfit = profile.outfit_advice || '';
+      if (!outfit) {
+        const pres = (genderStr || '').toLowerCase().includes('female') || (genderStr || '').toLowerCase() === 'f'
+          ? profile.presentation_female 
+          : profile.presentation_male;
+        if (pres) {
+          outfit = pres.outfit_advice || '';
+        }
+      }
+
+      // Merge physical traits and outfit advice
+      let mergedDesc = desc;
+      if (outfit) {
+        mergedDesc = desc ? `${desc}, styled like: ${outfit}` : `styled like: ${outfit}`;
+      }
+
+      const replacement = mergedDesc ? `${guestName} (${mergedDesc})` : guestName;
       hydrated = hydrated.replace(tokenRegex, replacement);
     }
   });
@@ -87,7 +105,20 @@ export function hydrateTextWithCharacters(
       hydrated = hydrated.replace(victimRegex, guestName);
     } else {
       const desc = getGuestPhysicalDescription(profile, genderStr);
-      const replacement = desc ? `${guestName} (${desc})` : guestName;
+      let outfit = profile.outfit_advice || '';
+      if (!outfit) {
+        const pres = (genderStr || '').toLowerCase().includes('female') || (genderStr || '').toLowerCase() === 'f'
+          ? profile.presentation_female 
+          : profile.presentation_male;
+        if (pres) {
+          outfit = pres.outfit_advice || '';
+        }
+      }
+      let mergedDesc = desc;
+      if (outfit) {
+        mergedDesc = desc ? `${desc}, styled like: ${outfit}` : `styled like: ${outfit}`;
+      }
+      const replacement = mergedDesc ? `${guestName} (${mergedDesc})` : guestName;
       hydrated = hydrated.replace(victimRegex, replacement);
     }
   }
@@ -104,7 +135,20 @@ export function hydrateTextWithCharacters(
       hydrated = hydrated.replace(killerRegex, guestName);
     } else {
       const desc = getGuestPhysicalDescription(profile, genderStr);
-      const replacement = desc ? `${guestName} (${desc})` : guestName;
+      let outfit = profile.outfit_advice || '';
+      if (!outfit) {
+        const pres = (genderStr || '').toLowerCase().includes('female') || (genderStr || '').toLowerCase() === 'f'
+          ? profile.presentation_female 
+          : profile.presentation_male;
+        if (pres) {
+          outfit = pres.outfit_advice || '';
+        }
+      }
+      let mergedDesc = desc;
+      if (outfit) {
+        mergedDesc = desc ? `${desc}, styled like: ${outfit}` : `styled like: ${outfit}`;
+      }
+      const replacement = mergedDesc ? `${guestName} (${mergedDesc})` : guestName;
       hydrated = hydrated.replace(killerRegex, replacement);
     }
   }

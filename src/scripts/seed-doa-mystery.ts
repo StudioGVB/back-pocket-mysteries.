@@ -233,57 +233,57 @@ export const DOA_CLUE_STRUCTURE = {
       title: "Blaze's Google Search History",
       type: "physical",
       implication: "direct",
-      note: `EyeSpy monitoring software retrieved from {{Blaze}}'s phone:\n- 'How to poison someone'\n- 'How to spike a drink without taste'\n- 'Do sedatives show up in blood test'\n- 'Alcohol + sleeping pills dangerous?'\n- '{{Skye}} Love on the Rocks cute edits'`,
-      generation_prompt: `A dramatic close-up of a modern smartphone lying on a dark glass table. The screen is illuminated but completely out of focus, showing a blurred green and white interface with soft bokeh and abstract glowing light orbs, completely illegible. The phone's sleek glass back reflects a neon purple spotlight from the background. Gritty noir aesthetic, atmospheric, cinematic, 8k.`
+      note: `🔍 MOBILE SEARCH HISTORY LOG\nDevice: EyeSpy monitoring dump ({{Blaze}}'s phone)\n\n- "How to poison someone"\n- "How to spike a drink without taste"\n- "Do sedatives show up in blood test"\n- "Alcohol + sleeping pills dangerous?"\n- "{{Skye}} Love on the Rocks cute edits"`,
+      generation_prompt: `A dramatic, atmospheric close-up photograph of Blaze looking down intensely at a blank, glowing smartphone screen in a dimly-lit penthouse lounge, the cool light of the screen illuminating their face. Gritty noir aesthetic, low-key lighting, moody, 8k.`
     },
     {
       title: "Mara's Glam Mirror Note",
       type: "physical",
       implication: "direct",
-      note: `A sticky note found on the glam mirror: "FYI — there was white powder all over the corner of my makeup mirror. Pretty sure {{Blaze}} used it while I stepped out. Handle it if you need to. Just don't put it on me. – {{Rex}}"`,
-      generation_prompt: `A high-quality, professional photograph of a square neon sticky note stuck to the corner of a dirty, smudge-filled dressing room mirror. The handwritten note has clean, organic-looking handwriting in black ink under dramatic, low-key warm vanity bulb lighting. In the background, makeup jars and brushes are out of focus. Gritty noir aesthetic, highly detailed paper texture, cinematic shot, sharp focus, 8k resolution.`
+      note: `📌 Glam room mirror sticky note:\n"FYI — there was white powder all over the corner of my makeup mirror. Pretty sure {{Blaze}} used it while I stepped out. Handle it if you need to. Just don't put it on me. – {{Rex}}"`,
+      generation_prompt: `A high-quality photograph of Mara looking at her own reflection in a vanity mirror. In the corner of the mirror, a blank neon pink sticky note is stuck. Mara is looking intensely at the blank sticky note with a concerned expression. The sticky note is completely blank with no writing, ink, or text on it. Out-of-focus background reveals clothes racks. Gritty noir aesthetic, dramatic low-key vanity bulbs lighting, sharp focus, 8k.`
     },
     {
       title: "Mara's Side Chat",
       type: "testimony",
       implication: "circumstantial",
-      note: `{{Mara}} DMs {{Brooke}}: 'Should I just tell them?'\n\n{{Brooke}}: 'They're gonna find out at some point. You should be the one. {{Skye}} would hate it.'`,
-      generation_prompt: `A moody close-up photograph of a modern smartphone resting on a dark velvet bar stool. The screen glows softly in the dark room, but it is completely out of focus, showing only abstract blue and white light bubbles (extreme bokeh). A warm background amber light illuminates the phone's metallic edge. Gritty noir aesthetic, atmospheric shadows, shallow depth of field, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: {{Mara}}\nRecipient: {{Brooke}}\n\n[5:32 PM] {{Mara}}: "Should I just tell them?"\n[5:33 PM] {{Brooke}}: "They're gonna find out at some point. You should be the one. {{Skye}} would hate it."`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Mara looking down at a glowing blank smartphone screen in a dimly-lit bar lounge. On the right: Brooke looking down at a glowing blank smartphone screen in a luxury bedroom. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     },
     {
       title: "Nova's Group Chat Drop",
       type: "secret",
       implication: "red_herring",
-      note: `{{Nova}} in the cast group chat: 'Ik im an a**hole but thought you should know what your sister said...'\n\n{{Skye}}'s reply: 'As I said before, IDGAF. {{Nova}} needs character building anyway.'`,
-      generation_prompt: `A professional photograph of a sleek, dark smartphone lying on a reflective black marble counter next to scattered cosmetic brushes. The screen is turned on but completely out of focus, casting a soft magenta glow onto the marble, with all text appearing as abstract, blurry light circles. Moody, gritty noir aesthetic, dramatic low-key lighting, 8k.`
+      note: `💬 CAST GROUP CHAT\nSender: {{Nova}}\n\n[5:15 PM] {{Nova}}: "Ik im an a**hole but thought you should know what your sister said..."\n[5:16 PM] {{Skye}}: "As I said before, IDGAF. {{Nova}} needs character building anyway."`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Nova looking down at a glowing blank smartphone screen in a bright dressing room. On the right: Skye looking down at a glowing blank smartphone screen on a penthouse balcony at night. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     },
     {
       title: "The Leaked DM Thread",
       type: "secret",
       implication: "circumstantial",
-      note: `{{Blaze}} to {{Skye}}: '{{Cole}} and I were together at the same time. I'm more devastated than you.'\n\n{{Skye}}: 'I can assure you, you're not.'`,
-      generation_prompt: `A dramatic close-up of a modern smartphone held in a hand with dark nail polish. The camera is at a low angle from behind the phone, showing the metallic back and the screen's bright glow illuminating the fingers, but the screen's content is completely angled away from the camera and invisible. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: {{Blaze}}\nRecipient: {{Skye}}\n\n[5:10 PM] {{Blaze}}: "{{Cole}} and I were together at the same time. I'm more devastated than you."\n[5:12 PM] {{Skye}}: "I can assure you, you're not."`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Blaze looking down at a glowing blank smartphone screen in a dimly-lit lounge. On the right: Skye looking down at a glowing blank smartphone screen in a hotel suite at night. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     },
     {
       title: "The Main Cast Group Chat",
       type: "secret",
       implication: "circumstantial",
-      note: `The full cast GC explodes:\n- 'You couldn't keep your story straight, could you S'\n- 'Oh f*** off. Why are we talking about this in the main GC'\n- 'Actually, why are we talking about this at all.'\n\nRecorded from {{Zane}}'s phone.`,
-      generation_prompt: `A moody photograph of a smartphone lying face down on a polished wooden table. A single green notification light on the edge of the phone pulses slowly, casting a subtle green reflection on the wood. The background is a dark penthouse party room, heavily blurred. Gritty noir aesthetic, low-key lighting, atmospheric shadows, 8k.`
+      note: `💬 CAST GROUP CHAT (From {{Zane}}'s phone)\n\n[5:22 PM] {{Brooke}}: "You couldn't keep your story straight, could you S"\n[5:23 PM] {{Nova}}: "Oh f*** off. Why are we talking about this in the main GC"\n[5:24 PM] {{Blaze}}: "Actually, why are we talking about this at all."`,
+      generation_prompt: `A grid-style photo collage divided into four separate equal quadrants. In each panel, a different character (Brooke, Nova, Blaze, Zane) is shown from the chest up looking down intensely at a glowing blank smartphone screen in their hand, with distinct backgrounds for each room (dressing room, lounge, balcony, bar). Gritty noir aesthetic, dramatic low-key lighting, 8k.`
     },
     {
       title: "The Seen-Zoned Warning",
       type: "secret",
       implication: "circumstantial",
-      note: `A private message to {{Skye}} from 'RealFan_{{Rex}}': 'The reunion's gonna set someone off.'\n\n{{Skye}}'s response: SEEN. No reply.`,
-      generation_prompt: `A close-up photograph of a smartphone resting next to an empty cocktail glass on a glowing blue glass bar. The phone screen is face up but extremely out of focus, with the interface appearing as a soft, abstract gradient of white and blue light. Gritty noir aesthetic, moody lighting, shallow depth of field, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: RealFan_{{Rex}}\nRecipient: {{Skye}}\n\n[5:02 PM] RealFan_{{Rex}}: "The reunion's gonna set someone off."\n\n(Status: SEEN 5:05 PM — No Reply)`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Rex (wearing a bright orange jacket) looking down at a glowing blank smartphone screen in a dark hallway. On the right: Skye looking down at a glowing blank smartphone screen on a penthouse balcony at night. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     },
     {
       title: "The Threatening Text Chain",
       type: "secret",
       implication: "circumstantial",
-      note: `{{Skye}}'s DMs with an unknown number: 'You don't deserve the win. Everyone sees what you really are. Time someone did something about it.'\n\nThe sender's contact name in {{Skye}}'s phone: 'Don't answer.'`,
-      generation_prompt: `A dramatic close-up of a sleek smartphone lying face up next to an empty champagne flute on a dark, glossy bar counter. The screen glows in the dark room but is completely out of focus, displaying a soft, blurred light with no legible text or details visible. Gritty noir aesthetic, low-key lighting, moody, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: Unknown Number (Saved as: Don't answer.)\nRecipient: {{Skye}}\n\n[5:42 PM] Unknown: "You don't deserve the win. Everyone sees what you really are. Time someone did something about it."\n\n(Status: SEEN 5:43 PM — No Reply)`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Skye looking down at a glowing blank smartphone screen on a penthouse balcony at night. On the right: A mysterious dark silhouette looking down at a glowing phone screen in a dark corridor. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     }
   ],
   round2: [
@@ -291,71 +291,71 @@ export const DOA_CLUE_STRUCTURE = {
       title: "Blaze's Rage Texts",
       type: "secret",
       implication: "direct",
-      note: `{{Blaze}}'s messages to an unknown recipient: 'If I have to watch them stand next to {{Skye}} again I'll lose it. The cameras are on. But I will. I'm done being quiet.'`,
-      generation_prompt: `A dramatic close-up of a dark smartphone screen lying face up in a dark room. The screen is turned on but completely out of focus, casting a red ambient glow onto the tabletop, with all text appearing as blurry, abstract white light. Gritty noir aesthetic, low-key lighting, moody, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: {{Blaze}}\nRecipient: Unknown\n\n[5:44 PM] {{Blaze}}: "If I have to watch them stand next to {{Skye}} again I'll lose it. The cameras are on. But I will. I'm done being quiet."`,
+      generation_prompt: `A dramatic close-up of Blaze looking down intensely at a blank, glowing smartphone screen in a dimly-lit penthouse suite, their angry expression highlighted by the cool blue light of the screen. Gritty noir aesthetic, low-key lighting, moody, 8k.`
     },
     {
       title: "Skye's Final Message",
       type: "secret",
       implication: "direct",
-      note: `{{Skye}} to {{Cole}} at 5:20PM: 'You okay? I feel like something's off. Let's talk before the toast...'\n\nMessage: SEEN. No reply.`,
-      generation_prompt: `A close-up of a modern smartphone resting on a dark velvet dressing room chair. The screen is active but entirely out of focus, showing a blurred white and grey chat interface with no legible letters or details. Golden light from a makeup vanity glows in the background. Gritty noir aesthetic, shallow depth of field, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: {{Skye}}\nRecipient: {{Cole}}\n\n[5:20 PM] {{Skye}}: "You okay? I feel like something's off. Let's talk before the toast..."\n\n(Status: SEEN 5:21 PM — No Reply)`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Skye looking down at a glowing blank smartphone screen in a luxury penthouse kitchen. On the right: Cole looking down at a glowing blank smartphone screen in a dimly-lit bathroom. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     },
     {
       title: "Rex's Cheat Sheet Warning",
       type: "secret",
       implication: "circumstantial",
-      note: `A DM from {{Rex}} to {{Mara}}: 'The reunion's gonna set someone off. If someone snaps, it won't be a surprise.'\n\n{{Mara}}: SEEN. No reply.`,
-      generation_prompt: `A moody photograph of a sleek phone lying on a glass table. The screen is turned on but completely out of focus, showing a soft, abstract blur of blue light, with no text or details visible. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: {{Rex}}\nRecipient: {{Mara}}\n\n[5:36 PM] {{Rex}}: "The reunion's gonna set someone off. If someone snaps, it won't be a surprise."\n\n(Status: SEEN 5:37 PM — No Reply)`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Rex (wearing a bright orange jacket) looking down at a glowing blank smartphone screen in a quiet hallway. On the right: Mara looking down at a glowing blank smartphone screen in a dimly-lit VIP lounge. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     },
     {
       title: "Rex's Diary Entry",
       type: "secret",
       implication: "circumstantial",
-      note: `{{Rex}}'s notes app: 'Tonight felt kind of perfect. I actually think I'm happy — like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening...'`,
-      generation_prompt: `A dramatic close-up of a smartphone lying open on a dark satin sheet. The screen is lit but completely out of focus, showing a blurred yellow and white notes interface with soft bokeh and no legible text. Cool blue moonlight filters in from a window in the background. Gritty noir aesthetic, low-key lighting, 8k.`
+      note: `📓 PERSONAL NOTES LOG\nDevice: {{Rex}}'s phone\n\n[Entry dated: Tonight]\n"Tonight felt kind of perfect. I actually think I'm happy — like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening..."`,
+      generation_prompt: `A dramatic close-up of Rex (wearing a bright orange jacket) looking down at a blank, glowing smartphone screen in a quiet, dimly lit corner of a luxury suite. Gritty noir aesthetic, low-key lighting, moody, 8k.`
     },
     {
       title: "Nova & Zane's Plan",
       type: "secret",
       implication: "red_herring",
-      note: `{{Nova}} to {{Zane}}: 'I cannot believe she said that. Especially after EVERYTHING I've done. I have an idea — let's give her a taste of her own medicine. We look exactly the same.'\n\n{{Zane}}: 'God I think I'm in love with you.'`,
-      generation_prompt: `A professional photograph of two smartphones lying side by side on a glossy black tabletop. Both screens are lit but completely out of focus, creating a beautiful gradient of pink and blue glowing light without any visible text. Gritty noir aesthetic, moody lighting, sharp focus on the table texture, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: {{Nova}}\nRecipient: {{Zane}}\n\n[5:25 PM] {{Nova}}: "I cannot believe she said that. Especially after EVERYTHING I've done. I have an idea — let's give her a taste of her own medicine. We look exactly the same."\n[5:27 PM] {{Zane}}: "God I think I'm in love with you."`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Nova looking down at a glowing blank smartphone screen in a dressing room. On the right: Zane looking down at a glowing blank smartphone screen on a dark penthouse balcony. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     },
     {
       title: "The Deleted Security Camera File",
       type: "physical",
       implication: "direct",
-      note: `File: SEC CAM_4B [Bar Area]. Time: 5:40–6:05PM. Status: Permanently Deleted. Actioned by: jordan.p@doatv.tv. Reason: 'corrupted audio, unusable'.\n\n{{Jordan}}'s quote: 'It was mostly {{Mara}} ranting anyway — no good angles. Not worth a storyline.'`,
-      generation_prompt: `A close-up of an editing bay monitor screen in a dark control booth. The monitor screen is active but completely out of focus, showing a blurred video editing interface with red and blue timeline bars and abstract light circles, with no legible text or images. Moody glowing control panels in the background. Gritty noir aesthetic, low-key lighting, 8k.`
+      note: `💻 SECURITY SYSTEM LOG\nRestored metadata: SEC CAM_4B [Bar Area]\nTime Range: 5:40–6:05 PM\nStatus: Permanently Deleted\nActioned by: {{Jordan}} (jordan.p@doatv.tv)\nReason: "corrupted audio, unusable"\n\n[Overheard: {{Jordan}}'s quote]\n"It was mostly {{Mara}} ranting anyway — no good angles. Not worth a storyline."`,
+      generation_prompt: `A moody, dramatic shot of an empty television control booth with glowing, colorful buttons on the control panel, casting abstract light reflections in the dark room. Gritty noir aesthetic, low-key lighting, 8k.`
     },
     {
       title: "The Glam Room Production Note",
       type: "physical",
       implication: "direct",
-      note: `Production log from the glam room: 'B spiralling re: S & C. C and S were in wardrobe for AGES. R still hovering. Watch them, seems unstable. You know what to do...'`,
-      generation_prompt: `A high-quality close-up photograph of a printed production log sheet lying on a clipboard. The clipboard is resting on a cluttered metal styling table under harsh spotlighting. A line of text is circled in red pen, with crisp, legible print. Out-of-focus background reveals clothes racks and camera gear. Gritty noir aesthetic, highly detailed paper texture, cinematic shot, sharp focus, 8k resolution.`
+      note: `📋 PRODUCTION LOG SHEET (Glam Room)\n\n"B spiralling re: S & C. C and S were in wardrobe for AGES. R still hovering. Watch them, seems unstable. You know what to do..."`,
+      generation_prompt: `A dramatic close-up photograph of Jordan holding a clipboard and looking down at a sheet of blank white production stationery with a concerned expression in a dark production booth. The page is completely blank with no text or writing on it, except for a red circle drawn on the blank page. Gritty noir aesthetic, low-key lighting, 8k.`
     },
     {
       title: "The Inner Circle Group Chat",
       type: "secret",
       implication: "circumstantial",
-      note: `Inner circle chat: '{{Blaze}} is in glam pacing like they're about to explode. They deadass asked me if {{Skye}} still talks about them. I saw them staring at the champagne bottles. Is {{Blaze}} still on their meds...? I'm not tryna get roofied tonight.'`,
-      generation_prompt: `A sleek phone lying face down on a polished glass counter next to a glass of water. A glowing blue ring of light is visible around the camera bezel on the back of the phone, casting a reflection on the glass. Gritty noir aesthetic, low-key lighting, moody, 8k.`
+      note: `💬 CAST GROUP CHAT (From {{Jordan}}'s phone)\n\n[5:38 PM] {{Mara}}: "{{Blaze}} is in glam pacing like they're about to explode. They deadass asked me if {{Skye}} still talks about them."\n[5:39 PM] {{Brooke}}: "I saw them staring at the champagne bottles. Is {{Blaze}} still on their meds...?"\n[5:40 PM] {{Mara}}: "I'm not tryna get roofied tonight."`,
+      generation_prompt: `A split-screen photograph divided vertically into three separate vertical panels. In each panel, a different character (Mara, Brooke, Jordan) is shown looking down intensely at a glowing blank smartphone screen in their hand, with distinct backgrounds for each panel (bar lounge, dressing room, production desk). Gritty noir aesthetic, dramatic low-key lighting, 8k.`
     },
     {
       title: "The Unsigned Bar Note",
       type: "physical",
       implication: "red_herring",
-      note: `A folded note found near the bar: 'Try to get S to talk to ___. [Name crossed out]. You know what to do.'`,
-      generation_prompt: `A dramatic close-up photograph of a folded, creased piece of paper resting on a wet dark marble bar counter. The note has hurried, handwritten text in dark ink under warm, direct spotlighting. Condensation drops from a nearby cocktail glass are visible on the paper. Gritty noir aesthetic, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`
+      note: `📌 Folded note found near the bar:\n"Try to get S to talk to ___. [Name crossed out]. You know what to do."`,
+      generation_prompt: `A dramatic close-up photograph of a folded, creased piece of blank cream-colored paper resting on a wet dark marble bar counter under warm, direct spotlighting. The paper is completely blank with no writing, ink, or text on it. Condensation drops from a nearby cocktail glass are visible on the paper. Gritty noir aesthetic, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k.`
     },
     {
       title: "The Wardrobe Intercept Audio",
       type: "testimony",
       implication: "direct",
-      note: `{{Jordan}}'s phone, 25 seconds. {{Jordan}}: '{{Mara}} said they were in wardrobe for 25 minutes. Just them — {{Cole}} and {{Skye}}.'\n\n{{Blaze}}: 'You're joking.'\n\n{{Jordan}}: 'I'm not. Might be good to get that on camera.'\n\n{{Blaze}}: 'You'll get something.' [Recording cuts]`,
-      generation_prompt: `A close-up of a high-end portable audio recorder lying on a glossy tabletop. The tiny LCD screen on the recorder glows softly but is completely out of focus, showing a blurred wave icon and time indicator with no legible text. A green level indicator light glows on the device. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+      note: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Backstage Wardrobe Intercept (Duration: 25s)\nSpeakers: {{Jordan}} & {{Blaze}}\n\n[00:08] {{Jordan}}: "{{Mara}} said they were in wardrobe for 25 minutes. Just them — {{Cole}} and {{Skye}}."\n[00:12] {{Blaze}}: "You're joking."\n[00:15] {{Jordan}}: "I'm not. Might be good to get that on camera."\n[00:19] {{Blaze}}: "You'll get something."\n\n(Audio cuts off — static)`,
+      generation_prompt: `A premium matte-black podcasting microphone standing on a sleek glossy table, illuminated by a moody green spotlight from behind. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
     }
   ],
   round3: [
@@ -363,50 +363,50 @@ export const DOA_CLUE_STRUCTURE = {
       title: "Skye's Cocktail Napkin",
       type: "physical",
       implication: "red_herring",
-      note: `A cocktail napkin with {{Skye}}'s handwriting found near the bar:\n"If this goes wrong tonight — it was always going to. -S"\nThe ink is smudged at the edge.`,
-      generation_prompt: `A paper cocktail napkin lying on a dark, wet bar counter next to spilled champagne. On the napkin, short handwritten words are written in blue ballpoint ink, with the signature smudged at the edge. Gritty noir aesthetic, dramatic low-key lighting, highly detailed paper texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution.`
+      note: `📌 Cocktail napkin found near the bar:\n"If this goes wrong tonight — it was always going to. -S"\n(The ink is smudged at the edge.)`,
+      generation_prompt: `A paper cocktail napkin lying on a dark, wet bar counter next to spilled champagne. The napkin is completely blank and clean with no writing, text, signatures, or ink on it. Gritty noir aesthetic, dramatic low-key lighting, highly detailed paper texture, atmospheric shadows, cinematic shot, sharp focus, 8k.`
     },
     {
       title: "Rex's Final Draft",
       type: "secret",
       implication: "direct",
-      note: `Found in {{Rex}}'s phone drafts: '...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well… there's only one way this ends. –R'`,
-      generation_prompt: `A professional photograph of a modern smartphone resting on dark satin sheets. The screen is turned on but completely out of focus, displaying a blurred white drafts interface with no legible letters or details. Warm window light illuminates the metallic edge of the phone. Gritty noir aesthetic, atmospheric, shallow depth of field, 8k.`
+      note: `💬 UNSENT MESSAGE DRAFT\nSender: {{Rex}}\nRecipient: {{Skye}}\n\n"...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well… there's only one way this ends. –R"`,
+      generation_prompt: `A dramatic close-up of Rex (wearing a bright orange jacket) looking down intensely at a blank, glowing smartphone screen in a dark, empty bedroom, their face lit by the screen. Gritty noir aesthetic, low-key lighting, moody, 8k.`
     },
     {
       title: "Mara's Warning Voice Note",
       type: "testimony",
       implication: "circumstantial",
-      note: `{{Mara}}'s voice note to {{Jordan}} (6:01PM — 3 minutes before the toast): 'Something isn't right. {{Rex}} was at the bar alone for two minutes when nobody was looking. Just standing there. Switching something. I thought it was their glass. {{Jordan}}, call me back.'`,
-      generation_prompt: `A sleek smartphone lying face up on a plush hotel bar chair. The screen is active but completely out of focus, showing a blurred wave-form playback screen with soft bokeh. Gritty noir aesthetic, moody lighting, shallow depth of field, 8k.`
+      note: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: {{Mara}}'s Voice Note (Duration: 32s)\nRecipient: {{Jordan}}\n\n[6:01 PM] {{Mara}}: "Something isn't right. {{Rex}} was at the bar alone for two minutes when nobody was looking. Just standing there. Switching something. I thought it was their glass. {{Jordan}}, call me back."`,
+      generation_prompt: `An empty bar lounge in the penthouse at twilight, a single champagne flute left behind, with long shadows stretching across the polished hardwood floor. Gritty noir aesthetic, moody lighting, shallow depth of field, 8k.`
     },
     {
       title: "The Burning Heart Thread",
       type: "secret",
       implication: "circumstantial",
-      note: `A thread between {{Skye}} and an unsaved contact. Only heart-on-fire emojis remain. The final message is {{Skye}}'s, at 5:52PM — eight minutes before the toast. No reply.`,
-      generation_prompt: `A close-up photograph of a smartphone screen lying face up in a dark room. The screen is active but completely out of focus, showing a blurred chat thread with glowing red and orange light spots (bokeh) representing heart emojis, with no legible text. Gritty noir aesthetic, dramatic lighting, shallow depth of field, 8k.`
+      note: `💬 PRIVATE DM THREAD\nSender: {{Skye}}\nRecipient: Unsaved Contact\n\n- Only heart-on-fire emojis remain in the chat thread.\n- The final message is {{Skye}}'s, at 5:52 PM.\n- No reply.`,
+      generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Skye looking down at a glowing blank smartphone screen with a red neon heart light reflecting on her face. On the right: A mysterious dark silhouette looking down at a glowing phone screen in a dark corridor. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
     },
     {
       title: "The Glass Switch Photo",
       type: "physical",
       implication: "direct",
-      note: `A blurry Polaroid photo timestamped 6:03PM retrieved from a guest's pocket.\n\nIn the background: a figure in orange ({{Rex}}'s colour code) is seen moving two champagne flutes on the serving tray, swapping their positions.`,
-      generation_prompt: `A professional close-up photograph of a physical Polaroid snapshot lying on a wooden table. The photo shows a dark penthouse party room with guests in the foreground. In the distant, blurry background, a figure wearing a bright orange jacket is caught in motion near a cocktail tray. Gritty noir aesthetic, dramatic low-key lighting, cinematic shot, sharp focus on the Polaroid border, 8k resolution.`
+      note: `📸 POLAROID SNAPSHOT\nTimestamp: 6:03 PM (Found in guest's pocket)\n\n- In the distant background: A figure in orange ({{Rex}}'s color code) is seen moving two champagne flutes on the serving tray, swapping their positions.`,
+      generation_prompt: `A professional close-up photograph of a physical Polaroid snapshot lying on a wooden table. The photo shows a dark penthouse party room with guests in the foreground. In the distant, blurry background, a figure wearing a bright orange jacket is caught in motion near a cocktail tray. Gritty noir aesthetic, dramatic low-key lighting, cinematic shot, sharp focus on the Polaroid border, 8k.`
     },
     {
       title: "The Love Rejection Note",
       type: "physical",
       implication: "direct",
-      note: `On hotel stationery, crumpled near the champagne table:\n"...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well... there's only one way this ends."\nNo signature — but the handwriting matches {{Rex}}'s fan mail.`,
-      generation_prompt: `A high-quality, professional close-up photograph of a crumpled piece of cream-colored hotel stationery lying on a polished mahogany floor. Hurried, handwritten script in dark fountain pen ink is partially visible on the creases. Dramatic low-key spotlighting casts deep shadows in the paper folds. Gritty noir aesthetic, highly detailed paper texture, sharp focus, 8k resolution.`
+      note: `📌 Crumpled paper found near the champagne table:\n"...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well... there's only one way this ends."\n(No signature — but the handwriting matches {{Rex}}'s fan mail.)`,
+      generation_prompt: `A high-quality, professional photograph of Skye holding a crumpled piece of blank cream-colored hotel stationery in her hands, looking down at it with a shocked and distressed expression in a dimly lit penthouse corner. The paper is completely blank and text-free with no writing, ink, or words on it. Gritty noir aesthetic, dramatic low-key spotlighting, sharp focus, 8k.`
     },
     {
       title: "The Recorded Argument",
       type: "testimony",
       implication: "direct",
-      note: `32 seconds of audio recorded unintentionally from {{Zane}}'s phone: 'You think this is just content?! This is my life.' / 'You said to post it.' / 'They already think you hooked up anyway.' / *Pause* / 'I never want to see you again.' / 'You're so dramatic.' / 'You're both on camera.'`,
-      generation_prompt: `A professional photograph of a sleek phone lying next to a sound mixing board. The phone screen is turned on but completely out of focus, displaying a blurred blue and green visualizer graphic with no text or letters visible. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+      note: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Accidental recording ({{Zane}}'s phone, 32s)\n\n[00:04] {{Nova}}: "You think this is just content?! This is my life."\n[00:09] {{Zane}}: "You said to post it."\n[00:13] {{Nova}}: "They already think you hooked up anyway."\n[00:18] *Pause*\n[00:20] {{Nova}}: "I never want to see you again."\n[00:24] {{Zane}}: "You're so dramatic. We're both on camera."`,
+      generation_prompt: `A moody close-up of a professional sound mixing board in a dimly lit audio suite, with small green and yellow indicator lights glowing in the dark. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
     }
   ],
   round4: [
@@ -414,15 +414,15 @@ export const DOA_CLUE_STRUCTURE = {
       title: "Rex's Confessional Voice Note",
       type: "testimony",
       implication: "direct",
-      note: `45.21 seconds. {{Rex}}'s voice, calm and measured: 'I tried to be quiet. I really did. I watched the whole thing happen. And when the moment came… I directed it to go exactly where it needed to. It's wild how things just fall into place. Some people live for the camera. Some people die for it. Either way… I'm part of the story now.'`,
-      generation_prompt: `A professional close-up photograph of a sleek smartphone resting on a dark velvet recording console. The screen is active but completely out of focus, displaying a blurred orange audio waveform with no text or details. A soft ambient blue spotlight illuminates the side of the phone. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+      note: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: {{Rex}}'s Voice Note (Duration: 45s)\n\n[00:10] {{Rex}}: "I tried to be quiet. I really did. I watched the whole thing happen. And when the moment came… I directed it to go exactly where it needed to. It's wild how things just fall into place. Some people live for the camera. Some people die for it. Either way… I'm part of the story now."`,
+      generation_prompt: `A vintage studio microphone sitting in a dark, empty recording booth, with a single purple spotlight illuminating the metallic mesh. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
     },
     {
       title: "The Producer's Smoking Gun Audio",
       type: "testimony",
       implication: "direct",
-      note: `38.64 seconds — Recovered security cam audio (5:52PM):\n\n{{Mara}}: "I'm serious — {{Blaze}} is not okay. They're twitchy, I'm pretty sure they mixed something into the drinks."\n\n{{Jordan}}: "And you're telling me this like it's a problem?"\n\n{{Mara}}: "It's a liability. What if they snap?"\n\n{{Jordan}}: (laughs) "Then we get the footage. You want safe, go film MasterChef."`,
-      generation_prompt: `A professional photograph of a laptop computer open in a dark, empty studio booth. The screen is turned on but completely out of focus, showing a blurred video playback window and timeline tracks with beautiful blue and yellow glowing light circles, with no legible text or details visible. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+      note: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Security camera audio recovery (5:52 PM, 38s)\nSpeakers: {{Mara}} & {{Jordan}}\n\n[00:06] {{Mara}}: "I'm serious — {{Blaze}} is not okay. They're twitchy, I'm pretty sure they mixed something into the drinks."\n[00:14] {{Jordan}}: "And you're telling me this like it's a problem?"\n[00:18] {{Mara}}: "It's a liability. What if they snap?"\n[00:23] {{Jordan}}: (laughs) "Then we get the footage. You want safe, go film MasterChef."`,
+      generation_prompt: `A closed metallic laptop resting on a glossy black desk in a dark, empty production office, reflecting yellow and blue window lights. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
     }
   ]
 };

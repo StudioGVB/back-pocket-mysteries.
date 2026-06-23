@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { createCharacter, updateCharacter, deleteCharacter } from '@/services/mysteries';
 import { getStaticMockGuests } from '@/utils/mock-guests';
+import crypto from 'crypto';
 
 export async function addCharacterAction(mysteryId: string, formData: FormData) {
   const base_name = formData.get('base_name') as string;
@@ -348,54 +349,89 @@ export async function generateCharacterOutfitPhotoAction(mysteryId: string, char
   try {
     const prompt = `A cinematic, moody noir WIDE ANGLE FULL BODY SHOT of an approximately 28 year old ${characterTitle} wearing: ${outfitAdvice}. The character is standing. Their entire body, from the very top of their head down to their shoes, MUST be fully visible in the frame. Zoomed out perspective. The aesthetic is ${theme}. Professional lighting, 8k resolution, highly detailed character concept art.`;
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio: "9:16" }
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Imagen API error: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    // Log Imagen request cost
-    await logAiUsage({
-      model_name: 'imagen-4.0-generate-001',
-      feature_name: 'generate_character_photo',
-      mystery_id: mysteryId
-    });
-
-    const base64Str = data.predictions?.[0]?.bytesBase64Encoded;
-    
-    if (!base64Str) {
-      throw new Error('No image bytes returned from API');
-    }
-    
+    const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
     const supabase = await createClient();
-    const fileName = `${mysteryId}/${characterId}_${Date.now()}.png`;
-    
-    const imageBuffer = Buffer.from(base64Str, 'base64');
-    
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('character-images')
-      .upload(fileName, imageBuffer, {
-        contentType: 'image/png',
-        upsert: true
+
+    // Check Cache
+    const { data: cached } = await supabase
+      .from('image_generation_cache')
+      .select('image_url')
+      .eq('prompt_hash', promptHash)
+      .single();
+
+    if (cached?.image_url) {
+      return cached.image_url;
+    }
+
+    let response;
+    let isRateLimited = false;
+    let retries = 0;
+    while(retries < 3) {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt }],
+          parameters: { sampleCount: 1, aspectRatio: "9:16" }
+        })
       });
-      
-    if (uploadError) {
-      throw new Error(`Failed to upload to Supabase: ${uploadError.message}`);
+
+      if (response.status === 429 || response.status === 403) {
+        isRateLimited = true;
+        retries++;
+        await new Promise(r => setTimeout(r, 2000 * retries));
+        continue;
+      }
+      break;
     }
     
-    const { data: { publicUrl } } = supabase.storage
-      .from('character-images')
-      .getPublicUrl(fileName);
+    let base64Str = '';
+    if (response && response.ok) {
+      const data = await response.json();
+      base64Str = data.predictions?.[0]?.bytesBase64Encoded;
       
+      // Log Imagen request cost
+      await logAiUsage({
+        model_name: 'imagen-4.0-generate-001',
+        feature_name: 'generate_character_photo',
+        mystery_id: mysteryId
+      });
+    }
+
+    let publicUrl = '';
+
+    if (base64Str) {
+      const fileName = `${mysteryId}/${characterId}_${Date.now()}.png`;
+      const imageBuffer = Buffer.from(base64Str, 'base64');
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('character-images')
+        .upload(fileName, imageBuffer, {
+          contentType: 'image/png',
+          upsert: true
+        });
+        
+      if (uploadError) {
+        throw new Error(`Failed to upload to Supabase: ${uploadError.message}`);
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('character-images')
+        .getPublicUrl(fileName);
+
+      publicUrl = urlData.publicUrl;
+
+      // Save to cache asynchronously
+      supabase.from('image_generation_cache').insert({
+        prompt_hash: promptHash,
+        image_url: publicUrl
+      }).then(() => console.log('Saved character photo to cache')).catch(e => console.error(e));
+
+    } else {
+      console.warn('Image generation failed or quota exceeded, using fallback placeholder');
+      publicUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(characterTitle)}&background=random&size=512`;
+    }
+    
     return publicUrl;
     
   } catch (err: any) {

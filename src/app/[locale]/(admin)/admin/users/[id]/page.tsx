@@ -41,10 +41,20 @@ export default async function CustomerProfilePage({
     id: g.id,
     name: g.profiles?.full_name || 'Linked Guest',
     email: g.profiles?.email,
+    avatar_url: g.profiles?.avatar_url,
+    avatar_config: g.profiles?.avatar_config,
+    traits: g.profiles?.character_preferences || [],
+    bio: g.profiles?.bio,
     isLinked: true
   }));
   
-  const allGuests = [...guests.manual, ...flatLinkedGuests];
+  const allGuests = [
+    ...guests.manual.map((g: any) => ({ 
+      ...g, 
+      isLinked: false 
+    })), 
+    ...flatLinkedGuests
+  ];
 
   return (
     <div className="space-y-8 pb-20">

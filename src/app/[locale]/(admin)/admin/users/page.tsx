@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getCustomers } from '../admin-data';
 import { createClient } from '@/utils/supabase/server';
 import { buildAvatarUrl } from '@/utils/avatar';
+import UserRowClient from './UserRowClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +57,7 @@ export default async function AdminUsers({
           <tbody className="divide-y divide-gray-50">
             {customers.length > 0 ? (
               customers.map((user: any) => (
-                <tr key={user.id} className="hover:bg-gray-50/30 transition-colors">
+                <UserRowClient key={user.id} user={user} locale={locale}>
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
                       {user.avatar_url || user.avatar_config ? (
@@ -91,11 +92,12 @@ export default async function AdminUsers({
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <Link href={`/${locale}/admin/users/${user.id}`} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-brand-pink transition-colors">
+                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-brand-pink/10 text-brand-pink rounded-xl text-[10px] font-black uppercase tracking-widest group-hover:bg-brand-pink group-hover:text-white transition-all shadow-sm">
                       View Profile
-                    </Link>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </span>
                   </td>
-                </tr>
+                </UserRowClient>
               ))
             ) : (
               <tr>
