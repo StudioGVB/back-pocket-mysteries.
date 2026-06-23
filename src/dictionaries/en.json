@@ -78,12 +78,30 @@
     "occasions": {
       "title": "Perfect for every occasion.",
       "items": {
-        "birthdays": "Birthdays",
-        "hens": "Hens & Bucks Nights",
-        "dinner": "Dinner Parties",
-        "corporate": "Corporate Team Days",
-        "friends": "Friend Group Traditions",
-        "engagement": "Engagement Parties"
+        "birthdays": {
+          "title": "Birthdays",
+          "desc": "Make their special day unforgettable with a custom murder mystery where the birthday VIP takes center stage as a key suspect."
+        },
+        "hens": {
+          "title": "Hens & Bucks Nights",
+          "desc": "Ditch the typical cliches for a personalized whodunit that brings the entire bridal party together for a night of hilarious suspense."
+        },
+        "dinner": {
+          "title": "Dinner Parties",
+          "desc": "Elevate your next gathering with an interactive mystery that turns your dining room into a thrilling, immersive crime scene."
+        },
+        "corporate": {
+          "title": "Corporate Team Days",
+          "desc": "Forget boring icebreakers. Tailored mysteries are the ultimate team-building activity to get coworkers laughing and collaborating."
+        },
+        "friends": {
+          "title": "Friend Group Traditions",
+          "desc": "Build a new tradition by dropping your best mates into a hilarious, fully customized storyline packed with your own inside jokes."
+        },
+        "engagement": {
+          "title": "Engagement Parties",
+          "desc": "Celebrate your engagement with a unique interactive experience that gets both families mingling and solving clues together."
+        }
       }
     },
     "compare": {

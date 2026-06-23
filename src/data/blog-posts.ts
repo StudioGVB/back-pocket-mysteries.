@@ -466,5 +466,246 @@ export const blogPosts: BlogPost[] = [
       <h3>Conclusion</h3>
       <p>Large events require tools designed specifically for scale. Explore our <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">custom game builder</a> to see how we handle massive corporate parties and fundraisers with ease.</p>
     `
+  },
+  {
+    slug: 'virtual-murder-mystery-zoom-party',
+    title: 'How to Host an Epic Virtual Murder Mystery Party on Zoom',
+    subtitle: 'Connecting friends and suspects across the globe.',
+    excerpt: 'Distance is no excuse for a dull party. Learn the best strategies, games, and setups for hosting a flawless virtual murder mystery party online.',
+    image: '/blog/virtual-mystery-party.png',
+    date: 'June 23, 2024',
+    readTime: '10 min read',
+    tag: 'Virtual',
+    author: {
+      name: 'Julian Vance',
+      role: 'Tech & Narrative Lead'
+    },
+    seo: {
+      title: 'Virtual Murder Mystery Party | How to Host on Zoom',
+      description: 'The ultimate guide to hosting a virtual murder mystery party on Zoom or Google Meet. Learn the best games, tech setups, and tips for online team building.',
+      keywords: ['virtual murder mystery party', 'zoom murder mystery', 'online team building mystery', 'how to host a virtual murder mystery']
+    },
+    content: `
+      <h2>Solving Crimes Through the Screen</h2>
+      <p>In a world where remote work and long-distance friendships are the norm, a <strong>virtual murder mystery party</strong> is the perfect way to bring people together. Unlike awkward video calls with no clear agenda, a mystery provides structure, laughter, and a shared goal. Plus, it's one of the best <a href="https://hbr.org/2021/01/how-to-do-virtual-team-building-right" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">virtual team-building exercises</a> you can host.</p>
+      
+      <h3>1. The Tech Setup</h3>
+      <p>Your platform of choice (Zoom, Google Meet, Microsoft Teams) needs to support <strong>Breakout Rooms</strong>. Breakout rooms are essential for smaller interrogations and secret alliances. We recommend assigning one person as the dedicated "Tech Host" who manages muting, moving people between rooms, and sharing screen evidence, while someone else plays the lead detective.</p>
+      
+      <h3>2. Digital Clues and Evidence</h3>
+      <p>Instead of physical envelopes, you'll need digital folders. Use Google Drive or Dropbox to create a folder for each character containing their backstory and secrets. During the party, the host can drop link to "New Evidence" in the main chat. Our <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">custom game generator</a> automatically creates mobile-friendly digital portals for every player, completely eliminating this manual work.</p>
+      
+      <h3>3. Virtual Backgrounds</h3>
+      <p>Encourage guests to use virtual backgrounds that match the theme! A 1920s speakeasy game looks incredible when everyone has a roaring twenties bar as their backdrop. It adds instant atmosphere with zero physical decorating required.</p>
+
+      <h3>4. Pacing the Online Game</h3>
+      <p>Video fatigue is real. Keep virtual mysteries under two hours. Structure the game in clear 20-minute "rounds" followed by a group reconvene where everyone shares their theories before moving to the next set of breakout rooms.</p>
+
+      <div class="bg-brand-pink/10 p-8 rounded-3xl border-2 border-brand-pink my-10">
+         <h4 class="font-black text-brand-pink uppercase tracking-widest text-sm mb-4">Ready to go digital?</h4>
+         <p class="font-bold text-gray-700">Our themes are fully adapted for virtual play with built-in digital clue distribution. <a href="/themes" class="underline hover:text-brand-pink">Find your remote mystery theme.</a></p>
+      </div>
+    `
+  },
+  {
+    slug: 'halloween-murder-mystery-ideas',
+    title: 'The Ultimate Halloween Murder Mystery Party Guide',
+    subtitle: 'Make this October genuinely terrifying (and fun).',
+    excerpt: 'Tired of the same old Halloween costume parties? Elevate your spooky season with a thrilling Halloween-themed murder mystery event.',
+    image: '/blog/halloween-mystery.png',
+    date: 'June 23, 2024',
+    readTime: '11 min read',
+    tag: 'Holiday',
+    author: {
+      name: 'Bella Noir',
+      role: 'Creative Director'
+    },
+    seo: {
+      title: 'Halloween Murder Mystery Party Ideas & Themes',
+      description: 'Host the best Halloween party ever with these spooky murder mystery ideas. Perfect themes, decorations, and games for October 31st.',
+      keywords: ['Halloween murder mystery party', 'scary party themes', 'Halloween games for adults', 'spooky dinner party']
+    },
+    content: `
+      <h2>A Killer Halloween</h2>
+      <p>Halloween is already about costumes, acting, and the macabre—making it the absolute perfect holiday for a <strong>Halloween murder mystery party</strong>. Instead of just bobbing for apples and playing monster mash, give your guests a thrilling whodunit that will keep them engaged all night long.</p>
+      
+      <h3>1. Spooky Themes That Work</h3>
+      <p>While any mystery can be played on Halloween, leaning into the season makes it special. Consider themes like <em>The Haunted Asylum</em>, <em>Vampire Aristocracy</em>, or a classic <em>Victorian Ghost Hunt</em>. A <a href="https://en.wikipedia.org/wiki/Gothic_fiction" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Gothic Horror setting</a> provides an incredible aesthetic for costumes and decor.</p>
+      
+      <h3>2. Atmosphere is Everything</h3>
+      <p>Dim the lights to the absolute minimum required for reading clues. Use LED candles (safety first!), cobwebs, and dry ice in your punch bowls. Sound design is crucial: build a Spotify playlist featuring eerie wind, distant thunder, and tense cello music. Drop the temperature in your house slightly to give the room an actual chill.</p>
+      
+      <div class="bg-brand-dark p-12 rounded-[3rem] text-white my-12 shadow-2xl relative overflow-hidden">
+        <div class="relative z-10">
+          <h4 class="text-3xl font-black mb-6 uppercase tracking-tighter">Custom Scares</h4>
+          <p class="text-gray-400 mb-8 font-bold">Generate a Halloween mystery tailored exactly to your friend group's inside jokes and personalities.</p>
+          <a href="/custom-murder-mystery" class="inline-block px-10 py-4 bg-brand-pink rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-pink transition-all">Create Your Spooky Mystery</a>
+        </div>
+      </div>
+
+      <h3>3. The "Jump Scare" Clue</h3>
+      <p>Coordinate with a co-host to introduce physical scares into the game. When the murder occurs, have someone secretly cut the main breaker or loudly knock on a window from outside. Real-world startles heighten the adrenaline and make the game feel far more immersive.</p>
+    `
+  },
+  {
+    slug: 'murder-mystery-dinner-menu-ideas',
+    title: 'Killer Recipes: The Best Murder Mystery Dinner Menu Ideas',
+    subtitle: 'Deliciously deceptive food for your detective guests.',
+    excerpt: 'What do you feed a room full of suspects? Discover themed, easy-to-eat dinner menus that keep the party moving and the guests full.',
+    image: '/blog/mystery-menu.png',
+    date: 'June 23, 2024',
+    readTime: '8 min read',
+    tag: 'Hosting',
+    author: {
+      name: 'Clara Hughes',
+      role: 'Event Planning Expert'
+    },
+    seo: {
+      title: 'Murder Mystery Dinner Menu Ideas & Recipes',
+      description: 'The best themed food and drink recipes for your murder mystery dinner party. Easy appetizers, buffet ideas, and dramatic desserts.',
+      keywords: ['murder mystery dinner menu', 'party food ideas', 'themed dinner recipes', 'murder mystery food']
+    },
+    content: `
+      <h2>Food to Die For</h2>
+      <p>One of the most common questions hosts ask is: <em>"What should I serve?"</em> A <strong>murder mystery dinner menu</strong> needs to balance theme, flavor, and most importantly—logistics. You want food that guests can eat while holding a clue card and interrogating the suspect across the room.</p>
+      
+      <h3>1. The "Poisoned" Cocktail Hour</h3>
+      <p>Start the night with signature drinks. A "Black Widow" blackberry smash or an "Arsenic" green apple martini sets the mood instantly. Use dry ice stirrers for a smoking effect, or rim the glasses with red-dyed sugar. For culinary inspiration, <a href="https://www.epicurious.com/" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Epicurious</a> has fantastic holiday cocktail guides.</p>
+      
+      <h3>2. Mingle-Friendly Mains</h3>
+      <p>Avoid heavy, sit-down plated meals. Instead, opt for a grazing table or a high-end buffet. Charcuterie boards arranged in the shape of a skeleton, dark pasta dishes (like squid ink linguine), or elegant skewers are perfect. They allow guests to continuously move about the room to gather clues.</p>
+
+      <h3>3. The Deathly Dessert Reveal</h3>
+      <p>Dessert is usually served right before the killer is revealed. Make it dramatic. Serve a "Blood Velvet" cake (Red Velvet) with a sugar-glass dagger sticking out of it, or individual "Dirt" puddings complete with edible tombstones. </p>
+
+      <div class="my-10 p-10 border-l-8 border-brand-pink bg-brand-gray">
+        <p class="italic text-xl font-medium text-gray-600">"The best party food is the food the host doesn't have to cook while the party is happening. Prep everything beforehand so you can play too!"</p>
+      </div>
+
+      <h3>Plan Your Menu Around the Theme</h3>
+      <p>Hosting a 1920s Mafia game? Serve heavy Italian-American classics. A pirate mutiny? Rum cakes and tropical barbecue. Match the cuisine to the crime scene for ultimate immersion.</p>
+    `
+  },
+  {
+    slug: 'murder-mystery-party-teens',
+    title: 'Murder Mystery Party Games for Teens: A Guide to Family-Friendly Fun',
+    subtitle: 'Keep teenagers engaged without screens.',
+    excerpt: 'How to host a thrilling, age-appropriate mystery party that teenagers will actually want to play. No mature themes, just pure puzzle-solving fun.',
+    image: '/blog/teen-mystery.png',
+    date: 'June 02, 2024',
+    readTime: '10 min read',
+    tag: 'Guides',
+    author: {
+      name: 'Julian Vance',
+      role: 'Tech & Narrative Lead'
+    },
+    seo: {
+      title: 'Murder Mystery Party Games for Teens | Family Friendly Ideas',
+      description: 'Discover how to host the perfect murder mystery party for teens. Clean, family-friendly themes, engaging puzzles, and tips to keep teenagers entertained.',
+      keywords: ['murder mystery for teens', 'clean murder mystery games', 'family friendly mystery party', 'teen party games']
+    },
+    content: `
+      <h2>The Teenage Entertainment Dilemma</h2>
+      <p>Throwing a party for teenagers is notoriously difficult. They are too old for standard party games, but often too young for the mature themes present in many adult murder mystery kits. Furthermore, keeping a group of 14-year-olds engaged in a single activity without them defaulting to their smartphones can feel like an impossible task. Enter: The Teen Murder Mystery Party.</p>
+      
+      <h3>1. Tone Down the "Murder"</h3>
+      <p>A mystery doesn't actually need a dead body to be thrilling! If you are looking for clean, family-friendly mystery games, consider alternate crimes. A diamond heist, a kidnapped mascot, or a sabotaged science fair project all provide the exact same investigative mechanics as a murder, but keep the tone entirely appropriate for younger audiences.</p>
+      
+      <div class="bg-brand-gray p-8 rounded-3xl border-l-4 border-brand-pink my-8">
+        <h4 class="font-black text-brand-dark uppercase tracking-widest text-sm mb-2">Age-Appropriate Generation</h4>
+        <p class="text-gray-600">With our <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">custom AI generator</a>, you can specify that the mystery must be "family-friendly" or "PG-13." The engine will automatically adjust motives to avoid inappropriate themes like affairs or violence, focusing instead on rivalries, stolen items, and secret alliances.</p>
+      </div>
+
+      <h3>2. Keep the Mechanics Fast and Interactive</h3>
+      <p>Teenagers appreciate agency. Instead of making them read long monologues from a script, use a "mingle" format where they receive bullet-point secrets and have to interrogate each other. Encourage them to form alliances or bribe each other for information. The more they can move around and interact organically, the less it feels like a school assignment.</p>
+
+      <h3>3. Food that Fits the Vibe</h3>
+      <p>Don't overcomplicate the menu. Pizza, sliders, and a themed dessert (like cupcakes with magnifying glass toppers) are perfect. The focus should be on the game, so handheld foods that don't interrupt the investigation are essential.</p>
+
+      <h3>Conclusion</h3>
+      <p>A well-crafted mystery party treats teens like young adults, trusting them to solve complex puzzles and engage in lighthearted roleplay. It's the perfect antidote to screen-heavy hangouts.</p>
+    `
+  },
+  {
+    slug: 'virtual-zoom-murder-mystery',
+    title: 'How to Host a Virtual Murder Mystery Party on Zoom',
+    subtitle: 'Connecting remote teams and long-distance friends.',
+    excerpt: 'A comprehensive guide to running a seamless virtual murder mystery party. From managing breakout rooms to digital evidence distribution.',
+    image: '/blog/virtual-mystery.png',
+    date: 'June 05, 2024',
+    readTime: '12 min read',
+    tag: 'Technology',
+    author: {
+      name: 'Marcus Reed',
+      role: 'Corporate Events Specialist'
+    },
+    seo: {
+      title: 'How to Host a Virtual Murder Mystery Party on Zoom',
+      description: 'Learn how to host an online murder mystery party on Zoom. Step-by-step guide for remote team building, digital evidence, and virtual event management.',
+      keywords: ['virtual murder mystery party', 'zoom murder mystery', 'online murder mystery games', 'remote team building']
+    },
+    content: `
+      <h2>Solving Crimes Across Time Zones</h2>
+      <p>Whether you're organizing a remote team-building event for a distributed workforce or trying to celebrate a birthday with friends across the country, a virtual murder mystery party is the ultimate online activity. But translating a highly interactive, physical game into a Zoom call requires a specific strategy.</p>
+      
+      <h3>1. Managing the Digital Space</h3>
+      <p>The biggest mistake virtual hosts make is leaving 20 people in the main Zoom room for two hours. It creates chaos, people talk over each other, and introverts get drowned out. The solution? <strong>Breakout Rooms.</strong></p>
+      <p>Create 3 or 4 breakout rooms with themes like "The Library," "The Kitchen," and "The Garden." Allow participants to freely move between the rooms to conduct private interrogations, just as they would at a physical party. As the host, you can jump between rooms to drop new evidence or announce a plot twist.</p>
+      
+      <h3>2. Digital Evidence Distribution</h3>
+      <p>You can't physically hand a bloody glove to someone over a webcam. Instead, use a shared digital space. At Back Pocket Mysteries, our digital packs are designed perfectly for screen sharing. You can also drop PDFs of the "Autopsy Report" or "Bank Statements" directly into the Zoom chat for everyone to download and analyze.</p>
+
+      <div class="bg-brand-dark p-10 rounded-[2rem] text-center my-10 shadow-2xl">
+        <h4 class="text-white text-2xl font-black uppercase tracking-tight mb-4">Remote Team Building</h4>
+        <p class="text-gray-400 mb-6">Looking for a highly engaging activity for your remote workforce? A virtual mystery gets your team laughing and collaborating without the usual "Zoom fatigue."</p>
+        <a href="/pricing" class="px-8 py-3 bg-white text-brand-dark rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-colors">See Corporate Options</a>
+      </div>
+
+      <h3>3. Virtual Backgrounds and Costumes</h3>
+      <p>The beauty of a Zoom murder mystery is that participants only need to dress from the waist up! Encourage guests to use virtual backgrounds that match the theme (e.g., a spooky Victorian mansion interior or a neon Cyberpunk bar). It instantly sets the mood and requires zero physical decorating from the host.</p>
+
+      <h3>Conclusion</h3>
+      <p>With a little bit of digital preparation, a virtual murder mystery can be just as chaotic, hilarious, and immersive as an in-person event. Send out those Zoom links and let the accusations fly!</p>
+    `
+  },
+  {
+    slug: 'murder-mystery-menu-ideas',
+    title: 'The Ultimate Murder Mystery Menu: Best Food & Drink Recipes',
+    subtitle: 'Deliciously deceptive dishes for your dinner party.',
+    excerpt: 'What to serve when there is a killer on the loose. Discover the best appetizers, main courses, and themed cocktails for your mystery night.',
+    image: '/blog/mystery-menu.png',
+    date: 'June 08, 2024',
+    readTime: '8 min read',
+    tag: 'Guides',
+    author: {
+      name: 'Clara Hughes',
+      role: 'Event Planning Expert'
+    },
+    seo: {
+      title: 'Murder Mystery Menu Ideas | Party Food & Drink Recipes',
+      description: 'The ultimate guide to murder mystery party food. Get themed menu ideas, easy appetizers, signature cocktails, and tips for hosting a dinner party.',
+      keywords: ['murder mystery menu', 'murder mystery party food ideas', 'themed dinner party recipes', 'mystery party cocktails']
+    },
+    content: `
+      <h2>Eat, Drink, and Be Wary</h2>
+      <p>Food is a crucial element of any dinner party, but when you are hosting a murder mystery, the menu needs to serve a dual purpose: it must be delicious, and it must be easy to eat while holding a magnifying glass (or a clue card). A heavy, sit-down plated meal traps your guests at the table and halts the investigation. Instead, focus on a dynamic, themed menu.</p>
+      
+      <h3>1. The "Poison" Signature Cocktail</h3>
+      <p>Start the night right with a signature drink. For a classic aesthetic, serve a "Poison Apple Martini" or a "Black Widow Smash" (using blackberry syrup to give the drink a dark, moody hue). Serve it in a large punch bowl with dry ice for a dramatic, smoking effect that will immediately set the tone as guests arrive.</p>
+      
+      <h3>2. Finger Foods are Your Best Friend</h3>
+      <p>Your guests will be moving around, talking to suspects, and reviewing evidence. Serve food that can be eaten standing up. Massive charcuterie boards, elegant crostinis, stuffed mushrooms, and caprese skewers are perfect.</p>
+
+      <div class="my-10 p-10 border-l-8 border-brand-pink bg-brand-gray">
+        <h4 class="font-black text-brand-dark uppercase tracking-widest text-sm mb-4">The "Evidence" Board</h4>
+        <p class="text-gray-700">Turn your charcuterie board into a crime scene! Use tiny food-safe chalkboards to label different cheeses as "Evidence A", "Evidence B", and scatter edible flowers or dark blackberries to make it look moody and dramatic.</p>
+      </div>
+
+      <h3>3. The Climax Dessert</h3>
+      <p>The dessert course should coincide with the grand reveal of the murderer. This is where you can have fun with the presentation. A red velvet cake that looks like a bloody crime scene, or cupcakes decorated with fondant daggers. Serve coffee alongside dessert to keep the energy up as guests read their final confessions.</p>
+
+      <h3>Conclusion</h3>
+      <p>Your menu should elevate the theme without anchoring your guests to a dining chair. Keep it interactive, keep it themed, and make sure nobody poisons the host!</p>
+    `
   }
 ];

@@ -79,12 +79,30 @@
     "occasions": {
       "title": "Parfait pour chaque occasion.",
       "items": {
-        "birthdays": "Anniversaires",
-        "hens": "Enterrements de vie de jeune fille/garçon",
-        "dinner": "Dîners",
-        "corporate": "Team Buildings",
-        "friends": "Traditions entre amis",
-        "engagement": "Fiançailles"
+        "birthdays": {
+          "title": "Anniversaires",
+          "desc": "Rendez leur journée spéciale inoubliable avec un meurtre et mystère personnalisé où la personne célébrée est le suspect principal."
+        },
+        "hens": {
+          "title": "Enterrements de vie de jeune fille/garçon",
+          "desc": "Oubliez les clichés avec un jeu d'enquête personnalisé qui réunit tous vos amis pour une soirée de suspense hilarant."
+        },
+        "dinner": {
+          "title": "Dîners",
+          "desc": "Élevez votre prochain dîner avec un mystère interactif qui transforme votre salon en une véritable scène de crime."
+        },
+        "corporate": {
+          "title": "Team Buildings",
+          "desc": "Oubliez les jeux brise-glace ennuyeux. Nos enquêtes sont l'activité idéale pour faire collaborer vos collègues."
+        },
+        "friends": {
+          "title": "Traditions entre amis",
+          "desc": "Créez une nouvelle tradition en plongeant vos meilleurs amis dans une histoire pleine de blagues internes."
+        },
+        "engagement": {
+          "title": "Fiançailles",
+          "desc": "Célébrez vos fiançailles avec une expérience interactive unique qui rassemble les deux familles autour de la résolution d'indices."
+        }
       }
     },
     "compare": {

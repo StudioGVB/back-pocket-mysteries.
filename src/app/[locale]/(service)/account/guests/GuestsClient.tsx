@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { GuestModal } from '@/components/account/GuestModal';
 import { sendGuestInvitation, cancelInvitation, removeGuestConnection } from '@/app/actions/guest-invitations';
@@ -38,6 +38,7 @@ interface PendingInvite {
   personal_note?: string | null;
   created_at: string;
   expires_at: string;
+  manual_guest_id?: string | null;
 }
 
 interface GuestsClientProps {
@@ -47,7 +48,22 @@ interface GuestsClientProps {
   locale: string;
 }
 
-function GuestCard({ guest, onRemove, onEdit, onShare }: { guest: ManualGuest; onRemove?: () => void; onEdit?: () => void; onShare?: () => void }) {
+function Countdown({ expiresAt }: { expiresAt: string }) {
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, new Date(expiresAt).getTime() - Date.now()));
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft(Math.max(0, new Date(expiresAt).getTime() - Date.now()));
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+  
+  const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const h = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
+  const m = Math.floor((timeLeft / 1000 / 60) % 60);
+  return <span className="font-mono">{d}d {h}h {m}m</span>;
+}
+
+function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelInvite }: { guest: ManualGuest; onRemove?: () => void; onEdit?: () => void; onShare?: () => void; pendingInvite?: PendingInvite; onCancelInvite?: () => void }) {
   const initials = guest.name.charAt(0).toUpperCase();
   const defaultAvatar = buildAvatarUrl({
     seed: guest.name,
@@ -60,7 +76,20 @@ function GuestCard({ guest, onRemove, onEdit, onShare }: { guest: ManualGuest; o
 
   return (
     <div className="bg-white border border-slate-100 p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative overflow-hidden">
-      <div className="flex items-start justify-between mb-6">
+      {pendingInvite && (
+        <div className="absolute top-0 left-0 w-full bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest px-5 py-2 flex justify-between items-center z-10">
+          <span>Invite Pending</span>
+          <div className="flex gap-3 items-center">
+            <Countdown expiresAt={pendingInvite.expires_at} />
+            {onCancelInvite && (
+              <button onClick={onCancelInvite} className="hover:text-white transition-colors" title="Cancel Invite">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      <div className={`flex items-start justify-between mb-6 ${pendingInvite ? 'mt-6' : ''}`}>
         <div className="flex items-center gap-4">
           {displayAvatar ? (
             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
@@ -113,7 +142,11 @@ function LinkedGuestCard({ guest, onUnlink }: { guest: LinkedGuest; onUnlink?: (
   const avatar = guest.profile?.avatar_config ? buildAvatarUrl(guest.profile.avatar_config, guest.name) : undefined;
   const initials = guest.name.charAt(0).toUpperCase();
   return (
-    <div className="bg-white border border-slate-100 p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative overflow-hidden">
+    <div className="relative group rounded-[2rem] p-[3px] flex flex-col">
+      {/* Animated rainbow background */}
+      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 animate-pulse opacity-70 group-hover:opacity-100 transition-opacity" />
+      {/* Inner card */}
+      <div className="relative bg-white p-6 rounded-[calc(2rem-3px)] h-full flex flex-col hover:shadow-xl transition-all duration-300 overflow-hidden">
       {/* Linked badge */}
       <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: 'rgba(254,4,198,0.08)' }}>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -153,6 +186,7 @@ function LinkedGuestCard({ guest, onUnlink }: { guest: LinkedGuest; onUnlink?: (
           Unlink guest
         </button>
       )}
+      </div>
     </div>
   );
 }
@@ -197,7 +231,7 @@ function InviteModal({ isOpen, onClose, onSent, sharingGuest }: { isOpen: boolea
     if (result.error) { setError(result.error); }
     else {
       const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
-      onSent({ id: result.inviteId!, invite_email: email.trim(), personal_note: note || null, created_at: new Date().toISOString(), expires_at: expiresAt });
+      onSent({ id: result.inviteId!, invite_email: email.trim(), personal_note: note || null, created_at: new Date().toISOString(), expires_at: expiresAt, manual_guest_id: sharingGuest?.id });
       setEmail(''); setNote(''); onClose();
     }
   };
@@ -422,15 +456,15 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
             </section>
           )}
 
-          {/* Pending invites */}
-          {pendingInvites.length > 0 && (
+          {/* Pending standalone invites (not attached to a manual guest) */}
+          {pendingInvites.filter(i => !i.manual_guest_id).length > 0 && (
             <section>
               <div className="flex items-center gap-3 mb-5">
-                <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Awaiting Response</h2>
-                <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#d97706' }}>{pendingInvites.length}</span>
+                <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Standalone Invites</h2>
+                <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#d97706' }}>{pendingInvites.filter(i => !i.manual_guest_id).length}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pendingInvites.map(invite => (
+                {pendingInvites.filter(i => !i.manual_guest_id).map(invite => (
                   <PendingCard key={invite.id} invite={invite} onCancel={() => handleCancelInvite(invite.id)} />
                 ))}
               </div>
@@ -445,18 +479,23 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
                 <span className="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{guests.length}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {guests.map(g => (
-                  <GuestCard 
-                    key={g.id} 
-                    guest={g} 
-                    onRemove={() => handleRemoveManualGuest(g.id)} 
-                    onEdit={() => setEditingGuest(g)}
-                    onShare={() => {
-                      setSharingGuest(g);
-                      setIsInviteModalOpen(true);
-                    }}
-                  />
-                ))}
+                {guests.map(g => {
+                  const pendingInvite = pendingInvites.find(inv => inv.manual_guest_id === g.id);
+                  return (
+                    <GuestCard 
+                      key={g.id} 
+                      guest={g} 
+                      pendingInvite={pendingInvite}
+                      onCancelInvite={pendingInvite ? () => handleCancelInvite(pendingInvite.id) : undefined}
+                      onRemove={() => handleRemoveManualGuest(g.id)} 
+                      onEdit={() => setEditingGuest(g)}
+                      onShare={() => {
+                        setSharingGuest(g);
+                        setIsInviteModalOpen(true);
+                      }}
+                    />
+                  );
+                })}
               </div>
             </section>
           )}

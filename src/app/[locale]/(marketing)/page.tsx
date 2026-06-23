@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
+import HeroImageCarousel from '@/components/marketing/HeroImageCarousel';
+import LightsOut from '@/components/marketing/LightsOut';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -34,7 +36,9 @@ export default async function HomePage(props: {
   // Currency is now handled client-side in PriceDisplay to allow static rendering
 
   return (
-    <div className="relative overflow-hidden bg-white">
+    <div className="relative overflow-hidden">
+      <main className="flex-grow">
+      <LightsOut />
       {/* Hero Section */}
       <section className="relative pt-8 pb-12 lg:pt-16 lg:pb-20 overflow-hidden bg-white">
         <div className="container mx-auto px-6">
@@ -67,17 +71,10 @@ export default async function HomePage(props: {
               </p>
             </div>
             
-            <div className="relative group">
+            <div className="relative group perspective-1000">
               <div className="absolute -inset-3 bg-brand-pink/5 rounded-[30px] opacity-10 transition-opacity"></div>
-              <div className="relative rounded-[30px] overflow-hidden shadow-2xl border-4 lg:border-8 border-white group-hover:scale-[1.02] transition-transform duration-500">
-                <Image 
-                  src="/hero-mystery-playing.png" 
-                  alt={dict.home.hero.title} 
-                  width={600} 
-                  height={600}
-                  className="w-full aspect-[4/3] lg:aspect-square object-cover"
-                  priority
-                />
+              <div className="relative w-full aspect-[4/3] lg:aspect-square group-hover:scale-[1.02] transition-transform duration-500 flex items-center justify-center p-4 lg:p-8">
+                <HeroImageCarousel alt={dict.home.hero.title} />
               </div>
               {/* Badge */}
               <div className="absolute -top-4 -right-4 lg:-top-6 lg:-right-6 w-20 h-20 lg:w-24 lg:h-24 bg-brand-pink rounded-full flex items-center justify-center text-white font-black uppercase text-[8px] lg:text-[9px] tracking-widest rotate-12 shadow-2xl border-4 border-white pointer-events-none text-center leading-tight p-2">
@@ -95,7 +92,7 @@ export default async function HomePage(props: {
             {Object.values(dict.home.occasions.items).map((occ: any, i) => (
               <span key={i} className="flex items-center gap-3">
                 <span className="w-1.5 h-1.5 bg-brand-pink rounded-full"></span>
-                {occ}
+                {occ.title}
               </span>
             ))}
           </div>
@@ -201,19 +198,18 @@ export default async function HomePage(props: {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: dict.home.occasions.items.birthdays, emoji: '🎂' },
-              { title: dict.home.occasions.items.hens, emoji: '💍' },
-              { title: dict.home.occasions.items.dinner, emoji: '🍷' },
-              { title: dict.home.occasions.items.corporate, emoji: '💼' },
-              { title: dict.home.occasions.items.friends, emoji: '🎲' },
-              { title: dict.home.occasions.items.engagement, emoji: '🥂' },
+              { title: dict.home.occasions.items.birthdays.title, emoji: '🎂', desc: dict.home.occasions.items.birthdays.desc },
+              { title: dict.home.occasions.items.hens.title, emoji: '💍', desc: dict.home.occasions.items.hens.desc },
+              { title: dict.home.occasions.items.dinner.title, emoji: '🍷', desc: dict.home.occasions.items.dinner.desc },
+              { title: dict.home.occasions.items.corporate.title, emoji: '💼', desc: dict.home.occasions.items.corporate.desc },
+              { title: dict.home.occasions.items.friends.title, emoji: '🎲', desc: dict.home.occasions.items.friends.desc },
+              { title: dict.home.occasions.items.engagement.title, emoji: '🥂', desc: dict.home.occasions.items.engagement.desc },
             ].map((occ, i) => (
               <div key={i} className="card-branded p-8 lg:p-10 group hover:border-brand-pink">
                 <div className="text-4xl mb-6">{occ.emoji}</div>
                 <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight mb-3 group-hover:text-brand-pink transition-colors">{occ.title}</h3>
                 <p className="text-gray-500 font-semibold leading-relaxed">
-                  {/* Since I didn't add descriptions to dictionary for occasions in my rush, I'll keep them or move them later if needed. For now let's just use title */}
-                  {dict.home.occasions.title}
+                  {occ.desc}
                 </p>
               </div>
             ))}
@@ -290,6 +286,7 @@ export default async function HomePage(props: {
           </div>
         </div>
       </section>
+      </main>
     </div>
   );
 }

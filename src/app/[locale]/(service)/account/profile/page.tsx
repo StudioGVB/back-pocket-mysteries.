@@ -49,7 +49,7 @@ export default async function ProfilePage({
   // Fetch pending invitations
   const { data: pendingInvites } = await (supabase as any)
     .from('guest_invitations')
-    .select('id, invite_email, personal_note, created_at, expires_at')
+    .select('id, invite_email, personal_note, created_at, expires_at, manual_guest_id')
     .eq('inviter_user_id', user.id)
     .eq('status', 'pending')
     .gt('expires_at', new Date().toISOString());
