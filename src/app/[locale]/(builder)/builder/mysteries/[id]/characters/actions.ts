@@ -421,11 +421,12 @@ export async function generateCharacterOutfitPhotoAction(mysteryId: string, char
 
       publicUrl = urlData.publicUrl;
 
-      // Save to cache asynchronously
-      supabase.from('image_generation_cache').insert({
+      // Save to cache
+      await supabase.from('image_generation_cache').insert({
         prompt_hash: promptHash,
         image_url: publicUrl
-      }).then(() => console.log('Saved character photo to cache')).catch(e => console.error(e));
+      });
+      console.log('Saved character photo to cache');
 
     } else {
       console.warn('Image generation failed or quota exceeded, using fallback placeholder');
