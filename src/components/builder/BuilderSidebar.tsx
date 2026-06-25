@@ -59,7 +59,7 @@ export function BuilderSidebar({ mysteries = [], locale = 'en' }: BuilderSidebar
 
       <div className={`p-8 h-28 flex items-center ${isCollapsed ? 'justify-center px-4' : ''}`}>
         {!isCollapsed ? (
-          <Link href={`/${locale}/builder`} className="group flex flex-col gap-2 overflow-hidden">
+          <Link href={`/${locale}/admin`} className="group flex flex-col gap-2 overflow-hidden">
             <Image 
               src="/logo-horizontal-white.png" 
               alt="Back Pocket Mysteries Builder" 
@@ -70,7 +70,7 @@ export function BuilderSidebar({ mysteries = [], locale = 'en' }: BuilderSidebar
             <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] pl-1 whitespace-nowrap">Builder</span>
           </Link>
         ) : (
-          <Link href={`/${locale}/builder`} className="font-black text-brand-pink text-2xl" title="Builder Portal">
+          <Link href={`/${locale}/admin`} className="font-black text-brand-pink text-2xl" title="Admin Dashboard">
             BP
           </Link>
         )}
