@@ -631,6 +631,27 @@ export interface Database {
           }
         ]
       }
+      image_generation_cache: {
+        Row: {
+          id: string
+          prompt_hash: string
+          image_url: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          prompt_hash: string
+          image_url: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          prompt_hash?: string
+          image_url?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
