@@ -74,11 +74,12 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       if (base64Str) {
         dataUri = `data:image/jpeg;base64,${base64Str}`;
         
-        // Save to cache asynchronously
-        supabase.from('image_generation_cache').insert({
+        // Save to cache
+        await supabase.from('image_generation_cache').insert({
           prompt_hash: promptHash,
           image_url: dataUri
-        }).then(() => console.log('Saved to image cache')).catch(e => console.error('Cache save error', e));
+        });
+        console.log('Saved to image cache');
       } else {
         // Fallback placeholder image if quota exceeded or error
         console.warn('Image generation failed or quota exceeded, using fallback placeholder');

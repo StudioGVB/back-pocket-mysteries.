@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import crypto from 'crypto';
 import { getCharactersByMysteryId, getMysteryById, getPlotBeatsByMysteryId } from '@/services/mysteries';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 
@@ -1643,11 +1644,12 @@ export async function generateMysteryCoverAction(mysteryId: string) {
       if (base64Image) {
         dataUri = `data:image/jpeg;base64,${base64Image}`;
         
-        // Save to cache asynchronously
-        supabase.from('image_generation_cache').insert({
+        // Save to cache
+        await supabase.from('image_generation_cache').insert({
           prompt_hash: promptHash,
           image_url: dataUri
-        }).then(() => console.log('Saved cover to cache')).catch(e => console.error(e));
+        });
+        console.log('Saved cover to cache');
       } else {
         console.warn('Image generation failed or quota exceeded, using fallback placeholder');
         dataUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(theme)}&background=random&size=1024`;

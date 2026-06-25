@@ -332,11 +332,12 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
       if (base64Image) {
         dataUri = `data:image/jpeg;base64,${base64Image}`;
         
-        // Save to cache asynchronously
-        supabase.from('image_generation_cache').insert({
+        // Save to cache
+        await supabase.from('image_generation_cache').insert({
           prompt_hash: promptHash,
           image_url: dataUri
-        }).then(() => console.log('Saved clue image to cache')).catch(e => console.error(e));
+        });
+        console.log('Saved clue image to cache');
       } else {
         console.warn('Image generation failed or quota exceeded, using fallback placeholder');
         dataUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(clue.title || 'Clue')}&background=random&size=512`;

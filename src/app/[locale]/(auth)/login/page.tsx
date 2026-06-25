@@ -48,24 +48,7 @@ export default async function LoginPage({
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between items-center ml-4">
-              <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400" htmlFor="password">
-                Password
-              </label>
-              <Link href="/reset-password" className="text-[10px] font-black uppercase tracking-[0.15em] text-brand-pink hover:underline mr-4">
-                Forgot?
-              </Link>
-            </div>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-full focus:outline-none focus:border-brand-pink transition-colors text-sm font-medium"
-            />
-          </div>
+          <PasswordInput showForgotPassword={true} />
         </div>
 
         <div className="flex items-center px-4">

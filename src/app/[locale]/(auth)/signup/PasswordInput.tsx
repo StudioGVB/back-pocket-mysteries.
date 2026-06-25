@@ -1,15 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 
-export default function PasswordInput() {
+export default function PasswordInput({ showForgotPassword = false }: { showForgotPassword?: boolean }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 ml-4" htmlFor="password">
-        Password
-      </label>
+      <div className="flex justify-between items-center ml-4">
+        <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400" htmlFor="password">
+          Password
+        </label>
+        {showForgotPassword && (
+          <Link href="/reset-password" className="text-[10px] font-black uppercase tracking-[0.15em] text-brand-pink hover:underline mr-4">
+            Forgot?
+          </Link>
+        )}
+      </div>
       <div className="relative">
         <input
           id="password"
