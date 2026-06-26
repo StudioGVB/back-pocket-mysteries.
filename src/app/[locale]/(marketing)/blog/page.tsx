@@ -15,6 +15,14 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   return {
     title: `${dict.common.blog} | ${dict.common.siteTitle}`,
     description: dict.blog.subtitle,
+    alternates: {
+      canonical: `https://mysteries.backpocketgames.com/${locale}/blog`,
+      languages: {
+        en: 'https://mysteries.backpocketgames.com/en/blog',
+        fr: 'https://mysteries.backpocketgames.com/fr/blog',
+        'x-default': 'https://mysteries.backpocketgames.com/en/blog',
+      }
+    }
   };
 }
 

@@ -22,6 +22,14 @@ export async function generateMetadata(props: { params: Promise<{ slug: string; 
     title: `${competitor.name} vs Back Pocket Mysteries | Alternative & Review`,
     description: `Looking for a ${competitor.name} alternative? See our comprehensive review and compare features, pricing, and personalisation against Back Pocket Mysteries.`,
     keywords: competitor.searchKeywords.join(', '),
+    alternates: {
+      canonical: `https://mysteries.backpocketgames.com/${params.locale}/compare/${params.slug}`,
+      languages: {
+        en: `https://mysteries.backpocketgames.com/en/compare/${params.slug}`,
+        fr: `https://mysteries.backpocketgames.com/fr/compare/${params.slug}`,
+        'x-default': `https://mysteries.backpocketgames.com/en/compare/${params.slug}`,
+      }
+    }
   };
 }
 

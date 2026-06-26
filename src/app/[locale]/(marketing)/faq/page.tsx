@@ -15,6 +15,14 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   return {
     title: `${dict.common.faq} | Back Pocket Mysteries`,
     description: dict.faqPage?.seoDescription || "Frequently Asked Questions about our custom murder mystery parties.",
+    alternates: {
+      canonical: `https://mysteries.backpocketgames.com/${locale}/faq`,
+      languages: {
+        en: 'https://mysteries.backpocketgames.com/en/faq',
+        fr: 'https://mysteries.backpocketgames.com/fr/faq',
+        'x-default': 'https://mysteries.backpocketgames.com/en/faq',
+      }
+    }
   }
 }
 

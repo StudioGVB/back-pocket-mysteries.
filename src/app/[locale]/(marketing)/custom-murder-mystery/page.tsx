@@ -15,6 +15,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     description: dict.seoLanding.seoDescription,
     alternates: {
       canonical: `https://mysteries.backpocketgames.com/${locale}/custom-murder-mystery`,
+      languages: {
+        en: 'https://mysteries.backpocketgames.com/en/custom-murder-mystery',
+        fr: 'https://mysteries.backpocketgames.com/fr/custom-murder-mystery',
+        'x-default': 'https://mysteries.backpocketgames.com/en/custom-murder-mystery',
+      }
     }
   }
 }

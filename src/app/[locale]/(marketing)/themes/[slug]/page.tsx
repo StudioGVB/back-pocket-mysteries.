@@ -181,6 +181,7 @@ export async function generateMetadata(props: {
       languages: {
         en: `https://mysteries.backpocketgames.com/en/themes/${slug}`,
         fr: `https://mysteries.backpocketgames.com/fr/themes/${slug}`,
+        'x-default': `https://mysteries.backpocketgames.com/en/themes/${slug}`,
       }
     }
   };

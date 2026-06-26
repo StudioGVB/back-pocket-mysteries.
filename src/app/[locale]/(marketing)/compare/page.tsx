@@ -13,6 +13,14 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   return {
     title: `Best Murder Mystery Party Game Alternatives | ${dict.common.siteTitle}`,
     description: `Compare the top murder mystery party games. See how Hunt a Killer, My Mystery Party, and Night of Mystery stack up against Back Pocket Mysteries.`,
+    alternates: {
+      canonical: `https://mysteries.backpocketgames.com/${locale}/compare`,
+      languages: {
+        en: 'https://mysteries.backpocketgames.com/en/compare',
+        fr: 'https://mysteries.backpocketgames.com/fr/compare',
+        'x-default': 'https://mysteries.backpocketgames.com/en/compare',
+      }
+    }
   };
 }
 

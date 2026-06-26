@@ -12,6 +12,14 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   return {
     title: `Leave a Review | Back Pocket Mysteries`,
     description: "Rate your experience with Back Pocket Mysteries.",
+    alternates: {
+      canonical: `https://mysteries.backpocketgames.com/${locale}/reviews`,
+      languages: {
+        en: 'https://mysteries.backpocketgames.com/en/reviews',
+        fr: 'https://mysteries.backpocketgames.com/fr/reviews',
+        'x-default': 'https://mysteries.backpocketgames.com/en/reviews',
+      }
+    }
   };
 }
 
