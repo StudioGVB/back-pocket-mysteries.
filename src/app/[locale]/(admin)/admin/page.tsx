@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { getAdminStats, getRecentTransactions, getTopMysteries } from './admin-data';
 import { getVercelTraffic } from '@/app/actions/admin-vercel';
+import Link from 'next/link';
 
 export const unstable_instant = false;
 
@@ -96,6 +97,9 @@ async function DashboardTraffic() {
           <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Page Views</p>
           <p className="text-4xl font-black text-brand-pink">{traffic.pageViews.toLocaleString()}</p>
         </div>
+        <Link href="/en/admin/analytics" className="bg-slate-100 hover:bg-brand-dark hover:text-white text-brand-dark text-xs font-black uppercase tracking-widest px-6 py-4 rounded-xl transition-all shadow-sm">
+          Full Report →
+        </Link>
       </div>
     </div>
   );
