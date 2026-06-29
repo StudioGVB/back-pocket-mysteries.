@@ -67,7 +67,7 @@ export function DashboardTrafficWidget({ data, totalVisitors, totalPageviews, is
               itemStyle={{ fontWeight: 900, color: '#1e293b' }}
               labelStyle={{ fontWeight: 700, color: '#94a3b8', marginBottom: '4px' }}
             />
-            <Bar dataKey="pageviews" fill="#ec4899" radius={[4, 4, 4, 4]} barSize={24} name="Page Views" />
+            <Bar dataKey="pageviews" fill="#fe04c6" radius={[8, 8, 8, 8] as any} barSize={16} name="Page Views" background={{ fill: '#f4f4f4', radius: 8 }} />
           </BarChart>
         </ResponsiveContainer>
       </div>

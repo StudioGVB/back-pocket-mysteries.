@@ -2,6 +2,8 @@ import React, { Suspense } from 'react';
 import { getAdminStats, getRecentTransactions, getTopMysteries } from './admin-data';
 import { getAnalyticsTimeseries } from '@/app/actions/admin-vercel';
 import { DashboardTrafficWidget } from '@/components/admin/DashboardTrafficWidget';
+import { cookies } from 'next/headers';
+import { DashboardTracker } from './DashboardTracker';
 
 export const unstable_instant = false;
 
@@ -37,25 +39,35 @@ export default async function AdminDashboard({
 }
 
 async function DashboardStats() {
-  const stats = await getAdminStats();
+  const cookieStore = await cookies();
+  const lastViewStr = cookieStore.get('admin_dashboard_last_view')?.value;
+  const stats = await getAdminStats(lastViewStr);
   const statConfig = [
     { label: 'Total Revenue', value: `£${stats.totalRevenue.toLocaleString()}`, color: 'brand-pink' },
     { label: 'Mystery Sales', value: stats.salesCount.toString(), color: 'brand-blue' },
-    { label: 'Active Users', value: stats.activeUsers.toString(), color: 'brand-dark' },
+    { label: 'Active Users', value: stats.activeUsers.toString(), color: 'brand-dark', badge: stats.newUsersCount > 0 ? `${stats.newUsersCount} New` : null },
     { label: 'Avg. Order Val', value: `£${stats.avgOrderVal.toFixed(2)}`, color: 'gray-500' },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {statConfig.map((stat, i) => (
-        <div key={i} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{stat.label}</p>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-brand-dark">{stat.value}</h3>
+    <>
+      <DashboardTracker />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statConfig.map((stat, i) => (
+          <div key={i} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-xs font-black uppercase tracking-widest text-gray-400">{stat.label}</p>
+              {stat.badge && (
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink bg-brand-pink/10 px-2 py-1 rounded-full">{stat.badge}</span>
+              )}
+            </div>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-3xl font-black text-brand-dark">{stat.value}</h3>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }
 

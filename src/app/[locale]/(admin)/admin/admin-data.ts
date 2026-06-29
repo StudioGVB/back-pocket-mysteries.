@@ -3,7 +3,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 
-export async function getAdminStats() {
+export async function getAdminStats(lastViewStr?: string) {
   const supabase = await createClient();
 
   // Get succeeded orders
@@ -21,10 +21,20 @@ export async function getAdminStats() {
   const salesCount = orders?.length || 0;
   const avgOrderVal = salesCount > 0 ? totalRevenue / salesCount : 0;
 
+  let newUsersCount = 0;
+  if (lastViewStr) {
+    const { count: newUsers } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', lastViewStr);
+    newUsersCount = newUsers || 0;
+  }
+
   return {
     totalRevenue,
     salesCount,
     activeUsers: usersCount || 0,
+    newUsersCount,
     avgOrderVal,
   };
 }
