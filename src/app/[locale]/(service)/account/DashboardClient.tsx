@@ -234,6 +234,27 @@ export default function DashboardClient({ user, guestCount, orderCount, guests, 
         </div>
       </div>
 
+      {/* Upgrade CTA */}
+      <div className="rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500 rounded-full blur-3xl opacity-20"></div>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
+            <span className="text-2xl">✨</span>
+          </div>
+          <div>
+            <h3 className="font-black text-lg text-white">Upgrade to Unlimited</h3>
+            <p className="text-sm text-slate-300 font-medium leading-snug mt-1">Host as many mysteries as you want for one flat monthly price. Unlock exclusive premium stories!</p>
+          </div>
+        </div>
+        <Link
+          href={`/${locale}/pricing`}
+          className="bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-black px-6 py-3 rounded-xl hover:scale-105 active:scale-95 transition-all flex-shrink-0 relative z-10 text-center w-full sm:w-auto"
+          style={{ boxShadow: '0 4px 14px 0 rgba(99, 102, 241, 0.39)' }}
+        >
+          View Plans
+        </Link>
+      </div>
+
       {/* Get Inspired + Host Tip — side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Get Inspired — takes 2 cols */}
