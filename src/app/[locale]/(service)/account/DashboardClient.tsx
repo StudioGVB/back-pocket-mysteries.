@@ -169,6 +169,38 @@ export default function DashboardClient({ user, guestCount, orderCount, guests, 
         </div>
       </div>
 
+      {/* Refer a Friend */}
+      <div className="rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6" style={{ background: 'linear-gradient(135deg, #fe04c6 0%, #b8008e 100%)', color: 'white' }}>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <span className="text-2xl">🎁</span>
+          </div>
+          <div>
+            <h3 className="font-black text-lg">Give 20%, Get 20%</h3>
+            <p className="text-sm text-white/80 font-medium leading-snug mt-1">Share your unique link. When a friend buys a mystery, you both get a 20% off voucher!</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto bg-black/20 p-2 rounded-xl border border-white/10">
+          <code className="text-xs font-bold px-3 py-1 opacity-90 truncate max-w-[200px] sm:max-w-[250px]">
+            https://backpocketmysteries.com/refer?c={user.name?.replace(/\s+/g, '').toLowerCase() || 'guest'}
+          </code>
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(`https://backpocketmysteries.com/refer?c=${user.name?.replace(/\s+/g, '').toLowerCase() || 'guest'}`);
+              const btn = document.getElementById('copy-referral-btn');
+              if (btn) {
+                btn.innerText = 'Copied! ✅';
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+              }
+            }}
+            id="copy-referral-btn"
+            className="bg-white text-pink-600 text-xs font-black px-4 py-2 rounded-lg hover:scale-105 active:scale-95 transition-all flex-shrink-0"
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+
       {/* Guests Preview */}
       <div>
         <div className="flex items-center justify-between mb-4">

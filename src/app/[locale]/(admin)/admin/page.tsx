@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { getAdminStats, getRecentTransactions, getTopMysteries } from './admin-data';
-import { getVercelTraffic } from '@/app/actions/admin-vercel';
-import Link from 'next/link';
+import { getAnalyticsTimeseries } from '@/app/actions/admin-vercel';
+import { DashboardTrafficWidget } from '@/components/admin/DashboardTrafficWidget';
 
 export const unstable_instant = false;
 
@@ -60,49 +60,13 @@ async function DashboardStats() {
 }
 
 async function DashboardTraffic() {
-  const traffic = await getVercelTraffic();
+  const timeseries = await getAnalyticsTimeseries(7);
+  const isConnected = !!process.env.VERCEL_ACCESS_TOKEN;
   
-  if (!traffic.isConnected) {
-    return (
-      <div className="bg-gradient-to-r from-brand-dark to-slate-900 p-8 rounded-[32px] border border-brand-pink/20 shadow-lg relative overflow-hidden group">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-brand-pink/10 rounded-full blur-3xl"></div>
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Live Analytics Not Connected</h3>
-            <p className="text-sm text-slate-300">Add <code className="bg-black/50 px-2 py-1 rounded text-brand-pink">VERCEL_ACCESS_TOKEN</code> to your local environment variables to see live site traffic.</p>
-          </div>
-          <a href="https://vercel.com/account/tokens" target="_blank" rel="noopener noreferrer" className="bg-brand-pink hover:bg-white hover:text-brand-dark text-white text-sm font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl shrink-0">
-            Get Token
-          </a>
-        </div>
-      </div>
-    );
-  }
+  const totalVisitors = timeseries.reduce((acc: any, curr: any) => acc + (curr.visitors || 0), 0);
+  const totalPageviews = timeseries.reduce((acc: any, curr: any) => acc + (curr.pageviews || 0), 0);
 
-  return (
-    <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-8">
-      <div>
-        <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-1 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          Live Site Traffic
-        </h3>
-        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Last 30 Days (Vercel Analytics)</p>
-      </div>
-      <div className="flex items-center gap-12">
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Total Visitors</p>
-          <p className="text-4xl font-black text-brand-dark">{traffic.visitors.toLocaleString()}</p>
-        </div>
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Page Views</p>
-          <p className="text-4xl font-black text-brand-pink">{traffic.pageViews.toLocaleString()}</p>
-        </div>
-        <Link href="/en/admin/analytics" className="bg-slate-100 hover:bg-brand-dark hover:text-white text-brand-dark text-xs font-black uppercase tracking-widest px-6 py-4 rounded-xl transition-all shadow-sm">
-          Full Report →
-        </Link>
-      </div>
-    </div>
-  );
+  return <DashboardTrafficWidget data={timeseries} totalVisitors={totalVisitors} totalPageviews={totalPageviews} isConnected={isConnected} />;
 }
 
 async function DashboardTransactions() {
