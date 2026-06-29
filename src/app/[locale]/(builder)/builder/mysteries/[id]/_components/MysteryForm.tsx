@@ -50,6 +50,8 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
               className="w-full px-0 py-2 bg-transparent border-b-2 border-slate-200 focus:border-brand-pink outline-none font-black text-2xl transition-all appearance-none cursor-pointer text-slate-900"
             >
               <option value="" disabled>Select a theme...</option>
+              <option value="Reality TV Reunion">Reality TV Reunion</option>
+              <option value="Retro Circus Noir">Retro Circus Noir</option>
               <option value="1920s Speakeasy / Great Gatsby">1920s Speakeasy / Great Gatsby</option>
               <option value="Yacht / Luxury Cruise">Yacht / Luxury Cruise</option>
               <option value="Corporate Retreat">Corporate Retreat</option>
@@ -82,6 +84,7 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
               <option value="Halloween Party">Halloween Party</option>
               <option value="Christmas Party">Christmas Party</option>
               <option value="Custom">Custom / Other</option>
+
             </select>
             <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>

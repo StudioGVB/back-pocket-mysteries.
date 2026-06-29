@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner';
 import { createClient } from '@/utils/supabase/server';
 import { OnboardingWizard } from '@/components/account/OnboardingWizard';
+import CopyrightYear from '@/components/marketing/CopyrightYear';
+
+export const unstable_instant = false;
 
 export default async function ServiceLayout({
   children,
@@ -13,45 +16,18 @@ export default async function ServiceLayout({
   params: Promise<{ locale: string }>;
 }) {
   await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const isEmailUnverified = user && !user.email_confirmed_at;
-
-  let avatarConfig: any = null;
-  let onboardingCompleted = true;
-  if (user) {
-    const { data: profile } = await (supabase as any)
-      .from('profiles')
-      .select('avatar_config, onboarding_completed')
-      .eq('id', user.id)
-      .maybeSingle();
-    avatarConfig = profile?.avatar_config;
-    onboardingCompleted = profile?.onboarding_completed ?? true;
-  }
-
-  const userData = user ? {
-    name: user.user_metadata?.full_name ?? '',
-    email: user.email ?? '',
-    avatar_config: avatarConfig,
-  } : undefined;
 
   return (
     <div className="flex min-h-screen" style={{ background: '#f4f0f7' }}>
-      {user && (
-        <OnboardingWizard onboardingCompleted={onboardingCompleted} userName={userData?.name || ''} />
-      )}
+      <Suspense fallback={<div className="hidden md:block w-72 flex-shrink-0" />}>
+        <ServiceSidebarAndWizardLoader />
+      </Suspense>
       
-      {/* Fixed Sidebar */}
-      <div className="hidden md:block w-72 flex-shrink-0">
-        <AccountSidebar user={userData} />
-      </div>
-
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Email verification banner */}
-        {isEmailUnverified && user.email && (
-          <EmailVerificationBanner userEmail={user.email} />
-        )}
+        <Suspense fallback={null}>
+          <ServiceBannerLoader />
+        </Suspense>
 
         {/* Mobile Header */}
         <div className="md:hidden border-b border-slate-100 bg-white p-4 flex justify-between items-center sticky top-0 z-50">
@@ -63,12 +39,16 @@ export default async function ServiceLayout({
           </button>
         </div>
 
-        <main className="flex-grow p-6 lg:p-10 w-full max-w-6xl mx-auto">{children}</main>
+        <main className="flex-grow p-6 lg:p-10 w-full max-w-6xl mx-auto">
+          <Suspense fallback={<div className="animate-pulse h-96 bg-white rounded-3xl" />}>
+            {children}
+          </Suspense>
+        </main>
 
         <footer className="border-t border-white/60 py-8" style={{ background: 'rgba(255,255,255,0.4)' }}>
           <div className="container mx-auto px-6 text-center">
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-              &copy; {new Date().getFullYear()} Back Pocket Games. All rights reserved.
+              &copy; <CopyrightYear /> Back Pocket Games. All rights reserved.
             </p>
           </div>
         </footer>
@@ -76,3 +56,40 @@ export default async function ServiceLayout({
     </div>
   );
 }
+
+async function ServiceSidebarAndWizardLoader() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await (supabase as any)
+    .from('profiles')
+    .select('avatar_config, onboarding_completed')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const userData = {
+    name: user.user_metadata?.full_name ?? '',
+    email: user.email ?? '',
+    avatar_config: profile?.avatar_config,
+  };
+
+  return (
+    <>
+      <OnboardingWizard onboardingCompleted={profile?.onboarding_completed ?? true} userName={userData.name} />
+      <div className="hidden md:block w-72 flex-shrink-0">
+        <AccountSidebar user={userData} />
+      </div>
+    </>
+  );
+}
+
+async function ServiceBannerLoader() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user && !user.email_confirmed_at && user.email) {
+    return <EmailVerificationBanner userEmail={user.email} />;
+  }
+  return null;
+}
+

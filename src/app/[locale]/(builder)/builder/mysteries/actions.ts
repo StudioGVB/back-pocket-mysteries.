@@ -1597,18 +1597,24 @@ export async function generateMysteryCoverAction(mysteryId: string) {
     const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
     const supabase = await createClient();
 
-    // Check cache first
-    const { data: cached } = await supabase
-      .from('image_generation_cache')
-      .select('image_url')
-      .eq('prompt_hash', promptHash)
-      .single();
-
+    // Check cache first safely
     let dataUri = '';
+    let cached = null;
+    try {
+      const { data } = await supabase
+        .from('image_generation_cache')
+        .select('image_url')
+        .eq('prompt_hash', promptHash)
+        .single();
+      cached = data;
+    } catch (cacheErr) {
+      console.warn('Cache lookup skipped/failed:', cacheErr);
+    }
 
     if (cached?.image_url) {
       dataUri = cached.image_url;
     } else {
+
       const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
       const payload = {
         instances: [{ prompt }],
@@ -1639,17 +1645,28 @@ export async function generateMysteryCoverAction(mysteryId: string) {
       if (res && res.ok) {
         const data = await res.json();
         base64Image = data.predictions?.[0]?.bytesBase64Encoded;
+      } else if (res) {
+        const errorText = await res.text();
+        console.error('Imagen API generation failed:', errorText);
+        throw new Error(`Imagen API error (${res.status}): ${errorText}`);
+      } else {
+        throw new Error('No response from Imagen API.');
       }
+
 
       if (base64Image) {
         dataUri = `data:image/jpeg;base64,${base64Image}`;
         
-        // Save to cache
-        await supabase.from('image_generation_cache').insert({
-          prompt_hash: promptHash,
-          image_url: dataUri
-        });
-        console.log('Saved cover to cache');
+        // Save to cache safely
+        try {
+          await supabase.from('image_generation_cache').insert({
+            prompt_hash: promptHash,
+            image_url: dataUri
+          });
+          console.log('Saved cover to cache');
+        } catch (cacheInsertErr) {
+          console.warn('Failed to insert into cache:', cacheInsertErr);
+        }
       } else {
         console.warn('Image generation failed or quota exceeded, using fallback placeholder');
         dataUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(theme)}&background=random&size=1024`;

@@ -12,6 +12,7 @@ interface ManualGuest {
   name: string;
   gender?: string | null;
   avatar_url?: string | null;
+  ethnicity?: string | null;
   traits?: string[] | null;
   bio?: string | null;
 }
@@ -67,12 +68,14 @@ function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelIn
   const initials = guest.name.charAt(0).toUpperCase();
   const defaultAvatar = buildAvatarUrl({
     seed: guest.name,
-    top: guest.gender === 'Masculine' ? 'shortFlat' : 'longButNotTooLong',
+    top: guest.gender === 'Masculine' ? 'shortFlat' : 'straight01',
     hairColor: '282828',
     skinColor: 'ffe0bd',
     accessories: 'none'
   }, guest.name);
-  const displayAvatar = guest.avatar_url || defaultAvatar;
+  
+  const isDataUri = guest.avatar_url?.startsWith('data:image/');
+  const displayAvatar = isDataUri ? defaultAvatar : (guest.avatar_url || defaultAvatar);
 
   return (
     <div className="bg-white border border-slate-100 p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative overflow-hidden">
@@ -131,8 +134,8 @@ function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelIn
             </button>
           )}
           {onRemove && (
-            <button onClick={onRemove} className="text-slate-300 hover:text-red-400 transition-colors p-1">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <button onClick={onRemove} className="text-slate-300 hover:text-red-400 transition-colors p-1" title="Delete guest">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
             </button>
           )}
         </div>
@@ -344,6 +347,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
       gender: newGuest.gender,
       eye_color: newGuest.eyeColor,
       height: newGuest.height,
+      ethnicity: newGuest.ethnicity,
       avatar_url: newGuest.avatarUrl,
       traits: newGuest.traits,
       bio: newGuest.bio,
@@ -539,7 +543,12 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
       <GuestModal 
         isOpen={isAddModalOpen || editingGuest !== null} 
         onClose={() => { setIsAddModalOpen(false); setEditingGuest(null); }} 
-        onSave={handleSaveGuest} 
+        onSave={handleSaveGuest}
+        onDelete={(id) => {
+          handleRemoveManualGuest(id);
+          setIsAddModalOpen(false);
+          setEditingGuest(null);
+        }}
         initialData={editingGuest}
       />
       <InviteModal 

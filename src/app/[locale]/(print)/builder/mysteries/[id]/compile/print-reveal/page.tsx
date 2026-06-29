@@ -4,6 +4,8 @@ import { getSubplotsByMysteryId } from '@/services/subplots';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+export const unstable_instant = false;
+
 export default async function PrintRevealPage({
   params,
 }: {

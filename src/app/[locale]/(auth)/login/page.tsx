@@ -4,6 +4,8 @@ import { signInAction } from './login-action';
 import AutoSignInListener from './AutoSignInListener';
 import PasswordInput from '../signup/PasswordInput';
 
+export const unstable_instant = false;
+
 export default async function LoginPage({
   params,
   searchParams,

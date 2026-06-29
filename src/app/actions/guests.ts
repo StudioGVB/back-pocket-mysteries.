@@ -10,6 +10,7 @@ export async function saveGuestAction(guestData: {
   gender?: string;
   eye_color?: string;
   height?: string;
+  ethnicity?: string;
   avatar_url?: string;
   traits?: string[];
   bio?: string;
@@ -60,6 +61,7 @@ export async function updateGuestAction(id: string, guestData: {
   gender?: string;
   eye_color?: string;
   height?: string;
+  ethnicity?: string;
   avatar_url?: string;
   traits?: string[];
   bio?: string;

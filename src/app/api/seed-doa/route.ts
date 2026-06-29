@@ -20,8 +20,8 @@ function dedupeRelationships(rels: any[]): any[] {
 }
 
 export async function GET(request: Request) {
+  const supabase = await createClient();
   try {
-    const supabase = await createClient();
     
     // 1. Get authenticated user session
     const { data: { user } } = await supabase.auth.getUser();

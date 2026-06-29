@@ -2,6 +2,8 @@ import React from 'react';
 import { Locale } from '@/lib/i18n-config';
 import Link from 'next/link';
 
+export const unstable_instant = false;
+
 export default async function GeneratingPage(props: {
   params: Promise<{ locale: Locale, id: string }>
 }) {

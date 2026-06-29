@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useParams } from 'next/navigation';
 
 interface Mystery {
   id: string;
@@ -12,14 +12,15 @@ interface Mystery {
 }
 
 interface BuilderSidebarProps {
-  mysteries?: Mystery[];
-  locale?: string;
+  children?: React.ReactNode;
 }
 
-export function BuilderSidebar({ mysteries = [], locale = 'en' }: BuilderSidebarProps) {
+export function BuilderSidebar({ children }: BuilderSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
 
   // Extract the current mystery ID from the URL if we are inside a mystery
   const mysteryIdMatch = pathname.match(/\/builder\/mysteries\/([^\/]+)/);
@@ -38,15 +39,6 @@ export function BuilderSidebar({ mysteries = [], locale = 'en' }: BuilderSidebar
     { label: 'Status', href: `/${locale}/builder/mysteries/${activeMysteryId}/status`, icon: '📊', exact: true },
   ] : [];
 
-  const handleMysteryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedId = e.target.value;
-    if (selectedId) {
-      router.push(`/${locale}/builder/mysteries/${selectedId}`);
-    } else {
-      router.push(`/${locale}/builder/mysteries`);
-    }
-  };
-
   return (
     <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-slate-900 text-white flex-shrink-0 flex flex-col shadow-2xl transition-all duration-300 relative z-20`}>
       <button 
@@ -59,7 +51,7 @@ export function BuilderSidebar({ mysteries = [], locale = 'en' }: BuilderSidebar
 
       <div className={`p-8 h-28 flex items-center ${isCollapsed ? 'justify-center px-4' : ''}`}>
         {!isCollapsed ? (
-          <Link href={`/${locale}/admin`} className="group flex flex-col gap-2 overflow-hidden">
+          <a href={`/${locale}/admin`} className="group flex flex-col gap-2 overflow-hidden">
             <Image 
               src="/logo-horizontal-white.png" 
               alt="Back Pocket Mysteries Builder" 
@@ -68,30 +60,17 @@ export function BuilderSidebar({ mysteries = [], locale = 'en' }: BuilderSidebar
               className="h-8 w-auto object-contain group-hover:scale-105 transition-transform origin-left"
             />
             <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] pl-1 whitespace-nowrap">Builder</span>
-          </Link>
+          </a>
         ) : (
-          <Link href={`/${locale}/admin`} className="font-black text-brand-pink text-2xl" title="Admin Dashboard">
+          <a href={`/${locale}/admin`} className="font-black text-brand-pink text-2xl" title="Admin Dashboard">
             BP
-          </Link>
+          </a>
         )}
       </div>
 
-      {!isCollapsed && (
+      {!isCollapsed && children && (
         <div className="px-6 mb-4">
-          <label htmlFor="mystery-select" className="sr-only">Select Mystery</label>
-          <select 
-            id="mystery-select"
-            value={activeMysteryId || ''}
-            onChange={handleMysteryChange}
-            className="w-full bg-slate-800 border border-slate-700 text-white text-sm rounded-lg focus:ring-brand-pink focus:border-brand-pink block p-2.5 outline-none appearance-none cursor-pointer hover:bg-slate-700 transition-colors"
-          >
-            <option value="">-- Select a Mystery --</option>
-            {mysteries.map(mystery => (
-              <option key={mystery.id} value={mystery.id}>
-                {mystery.title || 'Untitled Mystery'}
-              </option>
-            ))}
-          </select>
+          {children}
         </div>
       )}
       
@@ -146,15 +125,15 @@ export function BuilderSidebar({ mysteries = [], locale = 'en' }: BuilderSidebar
       </nav>
       
       <div className={`p-6 border-t border-white/5 bg-slate-950/50 flex flex-col gap-4`}>
-        <Link href={`/${locale}/admin`} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} text-xs text-slate-400 hover:text-brand-pink font-bold transition-all`} title={isCollapsed ? "Admin Dashboard" : undefined}>
+        <a href={`/${locale}/admin`} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} text-xs text-slate-400 hover:text-brand-pink font-bold transition-all`} title={isCollapsed ? "Admin Dashboard" : undefined}>
           <span className={isCollapsed ? "text-xl" : "text-sm"}>{isCollapsed ? "⚙️" : "←"}</span>
           {!isCollapsed && <span className="whitespace-nowrap">Admin Dashboard</span>}
-        </Link>
+        </a>
         
-        <Link href={`/${locale}`} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} text-xs text-slate-400 hover:text-brand-pink font-bold transition-all`} title={isCollapsed ? "Back to Public Site" : undefined}>
+        <a href={`/${locale}`} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} text-xs text-slate-400 hover:text-brand-pink font-bold transition-all`} title={isCollapsed ? "Back to Public Site" : undefined}>
           <span className={isCollapsed ? "text-xl" : "text-sm"}>{isCollapsed ? "🌍" : "←"}</span>
           {!isCollapsed && <span className="whitespace-nowrap">Back to Public Site</span>}
-        </Link>
+        </a>
         
         <button className={`w-full py-4 bg-white/5 hover:bg-red-500/10 text-red-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${isCollapsed ? 'px-0 flex justify-center items-center' : ''}`} title={isCollapsed ? "Logout" : undefined}>
           {isCollapsed ? <span className="text-xl">🚪</span> : "Logout"}

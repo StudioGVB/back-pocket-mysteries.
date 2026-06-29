@@ -587,6 +587,7 @@ export interface Database {
           gender: string | null
           eye_color: string | null
           height: string | null
+          ethnicity: string | null
           avatar_url: string | null
           traits: string[] | null
           bio: string | null
@@ -601,6 +602,7 @@ export interface Database {
           gender?: string | null
           eye_color?: string | null
           height?: string | null
+          ethnicity?: string | null
           avatar_url?: string | null
           traits?: string[] | null
           bio?: string | null
@@ -615,6 +617,7 @@ export interface Database {
           gender?: string | null
           eye_color?: string | null
           height?: string | null
+          ethnicity?: string | null
           avatar_url?: string | null
           traits?: string[] | null
           bio?: string | null

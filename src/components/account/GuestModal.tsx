@@ -10,15 +10,18 @@ interface GuestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (guestData: any) => Promise<void> | void;
+  onDelete?: (id: string) => void;
   initialData?: any;
 }
 
-export function GuestModal({ isOpen, onClose, onSave, initialData }: GuestModalProps) {
+export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: GuestModalProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'basics' | 'avatar' | 'personality'>('basics');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [gender, setGender] = useState('Masculine');
+  const [ethnicity, setEthnicity] = useState('');
+  const [isEthnicityDropdownOpen, setIsEthnicityDropdownOpen] = useState(false);
   
   const [quirks, setQuirks] = useState<string[]>([]);
   const [currentQuirk, setCurrentQuirk] = useState('');
@@ -41,49 +44,53 @@ export function GuestModal({ isOpen, onClose, onSave, initialData }: GuestModalP
         setName(initialData.name || '');
         setEmail(initialData.email || '');
         setGender(initialData.gender || 'Unspecified');
+        setEthnicity(initialData.ethnicity || '');
         setQuirks(initialData.traits || []);
         setBio(initialData.bio || '');
         
-        // Parse avatarUrl to extract config if possible (simplified approach: use defaults but update seed)
-        // If we really wanted to we could parse the query string, but we can also just let them rebuild or rely on what's visible
-        // However, if we don't have the config, the preview will reset. Ideally we would parse the dicebear URL parameters.
-        // For now, we'll initialize with basic extracted traits or defaults
-        setAvatarConfig({
+        const isDataUri = initialData.avatar_url?.startsWith('data:image/');
+        const baseTop = initialData.gender === 'Feminine' ? 'straight01' : 'shortFlat';
+        
+        let initialConfig: AvatarConfig = {
           seed: initialData.name || 'Felix',
-          top: 'shortFlat', // Could parse from URL but omitting for brevity
+          top: baseTop,
           hairColor: '282828',
-          skinColor: 'eac086',
+          skinColor: 'ffe0bd',
           eyeColor: initialData.eye_color || 'Brown',
           height: initialData.height || 'Average',
-        });
-        
-        // If we have an avatar URL and want to try to parse it:
-        if (initialData.avatar_url) {
+        };
+
+        if (initialData.avatar_url && !isDataUri) {
           try {
             const url = new URL(initialData.avatar_url);
-            setAvatarConfig({
+            initialConfig = {
               seed: url.searchParams.get('seed') || initialData.name || 'Felix',
-              top: url.searchParams.get('top') || 'shortFlat',
+              top: url.searchParams.get('top') || baseTop,
               hairColor: url.searchParams.get('hairColor') || '282828',
-              skinColor: url.searchParams.get('skinColor') || 'eac086',
+              skinColor: url.searchParams.get('skinColor') || 'ffe0bd',
               eyeColor: initialData.eye_color || 'Brown',
               height: initialData.height || 'Average',
               facialHair: url.searchParams.get('facialHair') || undefined,
               accessories: url.searchParams.get('accessories') || undefined,
-            });
+              build: url.searchParams.get('build') || undefined,
+              distinctiveFeatures: url.searchParams.get('distinctiveFeatures') ? url.searchParams.get('distinctiveFeatures')!.split(',') : undefined,
+            };
           } catch (e) {
-            // Invalid URL, ignore
+            // Invalid URL, keep initialConfig
           }
         }
+        
+        setAvatarConfig(initialConfig);
       } else {
         // Reset
         setName('');
         setEmail('');
         setGender('Masculine');
+        setEthnicity('');
         setQuirks([]);
         setBio('');
         setAvatarConfig({
-          seed: 'Felix', top: 'shortFlat', hairColor: '282828', skinColor: 'eac086', eyeColor: 'Brown', height: 'Average',
+          seed: 'Felix', top: 'shortFlat', hairColor: '282828', skinColor: 'ffe0bd', eyeColor: 'Brown', height: 'Average',
         });
       }
       setActiveTab('basics');
@@ -157,6 +164,7 @@ export function GuestModal({ isOpen, onClose, onSave, initialData }: GuestModalP
         gender,
         eyeColor: avatarConfig.eyeColor,
         height: avatarConfig.height,
+        ethnicity,
         avatarUrl,
         traits: quirks,
         bio,
@@ -218,7 +226,7 @@ export function GuestModal({ isOpen, onClose, onSave, initialData }: GuestModalP
         </div>
 
         {/* Right Side: Editor */}
-        <div className="w-full md:w-3/5 flex flex-col h-[60vh] md:h-auto">
+        <div className="w-full md:w-3/5 flex flex-col h-[60vh] md:h-[680px] max-h-[85vh]">
           {/* Header & Tabs */}
           <div className="px-8 pt-8 border-b border-slate-100">
             <div className="flex justify-between items-center mb-6">
@@ -253,7 +261,7 @@ export function GuestModal({ isOpen, onClose, onSave, initialData }: GuestModalP
           {/* Scrollable Form Content */}
           <div className="flex-grow overflow-y-auto p-8">
             {activeTab === 'basics' && (
-              <div className="space-y-6">
+              <div className={`space-y-6 transition-all duration-200 ${isEthnicityDropdownOpen ? 'pb-52' : ''}`}>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Guest Name</label>
                   <input 
@@ -282,6 +290,59 @@ export function GuestModal({ isOpen, onClose, onSave, initialData }: GuestModalP
                       </button>
                     ))}
                   </div>
+                </div>
+                <div className="relative">
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Ethnicity</label>
+                  <div 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center transition-all hover:border-slate-300"
+                    onClick={() => setIsEthnicityDropdownOpen(!isEthnicityDropdownOpen)}
+                  >
+                    <span className={ethnicity ? 'text-slate-900' : 'text-slate-400'}>
+                      {ethnicity || 'Unspecified'}
+                    </span>
+                    <svg className={`w-4 h-4 text-slate-400 transition-transform ${isEthnicityDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+                  
+                  {isEthnicityDropdownOpen && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setIsEthnicityDropdownOpen(false)}
+                      />
+                      <div className="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden py-2 max-h-60 overflow-y-auto">
+                        {[
+                          { value: '', label: 'Unspecified' },
+                          { value: 'Caucasian / White', label: 'Caucasian / White' },
+                          { value: 'Black / African Descent', label: 'Black / African Descent' },
+                          { value: 'East Asian', label: 'East Asian' },
+                          { value: 'South Asian', label: 'South Asian' },
+                          { value: 'Southeast Asian', label: 'Southeast Asian' },
+                          { value: 'Hispanic / Latino', label: 'Hispanic / Latino' },
+                          { value: 'Middle Eastern', label: 'Middle Eastern' },
+                          { value: 'Native American / Indigenous', label: 'Native American / Indigenous' },
+                          { value: 'Pacific Islander', label: 'Pacific Islander' },
+                          { value: 'Mixed / Multiracial', label: 'Mixed / Multiracial' },
+                          { value: 'Other', label: 'Other' }
+                        ].map((option) => (
+                          <div
+                            key={option.value}
+                            className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${
+                              ethnicity === option.value ? 'bg-brand-pink/5 text-brand-pink font-bold' : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                            onClick={() => {
+                              setEthnicity(option.value);
+                              setIsEthnicityDropdownOpen(false);
+                            }}
+                          >
+                            {option.label}
+                            {ethnicity === option.value && (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Email Address (Optional)</label>
@@ -354,18 +415,29 @@ export function GuestModal({ isOpen, onClose, onSave, initialData }: GuestModalP
           </div>
 
           {/* Footer Actions */}
-          <div className="p-6 border-t border-slate-100 flex justify-end gap-4 bg-slate-50 mt-auto">
-            <button onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-full font-black text-sm text-white transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
-              style={{ background: '#fe04c6', boxShadow: '0 8px 20px -8px rgba(254,4,198,0.5)' }}
-            >
-              {isSaving ? 'Saving...' : 'Save Guest'}
-            </button>
+          <div className="p-6 border-t border-slate-100 flex items-center justify-between bg-slate-50 mt-auto">
+            {onDelete && initialData?.id ? (
+              <button 
+                onClick={() => onDelete(initialData.id)}
+                className="px-4 py-2 rounded-xl font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-2 text-sm"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                Delete Guest
+              </button>
+            ) : <div />}
+            <div className="flex gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+              <button onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-full font-black text-sm text-white transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
+                style={{ background: '#fe04c6', boxShadow: '0 8px 20px -8px rgba(254,4,198,0.5)' }}
+              >
+                {isSaving ? 'Saving...' : 'Save Guest'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

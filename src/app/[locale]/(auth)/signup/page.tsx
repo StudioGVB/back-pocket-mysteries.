@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { signup } from '../actions';
 import PasswordInput from './PasswordInput';
 
+export const unstable_instant = false;
+
 export default async function SignupPage({
   params,
   searchParams,

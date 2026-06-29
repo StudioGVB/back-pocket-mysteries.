@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { getTransactions } from '@/services/admin';
 import { refundOrderAction } from './actions';
+import { formatDate } from '@/utils/date';
+
+export const unstable_instant = false;
 
 export default async function AdminTransactions({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
-  const transactions: any[] = await getTransactions();
-
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -24,71 +24,99 @@ export default async function AdminTransactions({
         </div>
       </div>
 
-      <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Order ID</th>
-              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Customer</th>
-              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Mystery</th>
-              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Date</th>
-              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Amount</th>
-              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
-              <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {transactions.length > 0 ? (
-              transactions.map((item, i) => (
-                <tr key={i} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-black text-brand-dark">{item.id.slice(0, 8).toUpperCase()}</p>
-                  </td>
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-bold text-brand-dark">{item.profiles?.full_name || 'Guest'}</p>
-                  </td>
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-medium text-slate-600">{item.mysteries?.title || 'Unknown'}</p>
-                  </td>
-                  <td className="px-8 py-6">
-                    <p className="text-sm text-gray-500 font-medium">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                  </td>
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-black text-brand-dark">
-                      {new Intl.NumberFormat('en-GB', { style: 'currency', currency: item.currency || 'GBP' }).format(item.amount)}
-                    </p>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest 
-                      ${item.status === 'succeeded' ? 'bg-green-100 text-green-600' : 
-                        item.status === 'pending' ? 'bg-amber-100 text-amber-600' : 
-                        item.status === 'refunded' ? 'bg-slate-100 text-slate-400' :
-                        'bg-red-100 text-red-600'}`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    {item.status !== 'refunded' && (
-                      <form action={refundOrderAction.bind(null, item.id)}>
-                        <button className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors">
-                          Refund
-                        </button>
-                      </form>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="px-8 py-20 text-center">
-                   <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No transactions found</p>
+      <Suspense fallback={<AdminTransactionsSkeleton />}>
+        <AdminTransactionsList />
+      </Suspense>
+    </div>
+  );
+}
+
+async function AdminTransactionsList() {
+  const transactions: any[] = await getTransactions();
+
+  return (
+    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+      <table className="w-full text-left">
+        <thead className="bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Order ID</th>
+            <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Customer</th>
+            <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Mystery</th>
+            <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Date</th>
+            <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Amount</th>
+            <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
+            <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-50">
+          {transactions.length > 0 ? (
+            transactions.map((item, i) => (
+              <tr key={i} className="hover:bg-gray-50 transition-colors">
+                <td className="px-8 py-6">
+                  <p className="text-sm font-black text-brand-dark">{item.id.slice(0, 8).toUpperCase()}</p>
+                </td>
+                <td className="px-8 py-6">
+                  <p className="text-sm font-bold text-brand-dark">{item.profiles?.full_name || 'Guest'}</p>
+                </td>
+                <td className="px-8 py-6">
+                  <p className="text-sm font-medium text-slate-600">{item.mysteries?.title || 'Unknown'}</p>
+                </td>
+                <td className="px-8 py-6">
+                  <p className="text-sm text-gray-500 font-medium">
+                    {formatDate(item.created_at)}
+                  </p>
+                </td>
+                <td className="px-8 py-6">
+                  <p className="text-sm font-black text-brand-dark">
+                    {new Intl.NumberFormat('en-GB', { style: 'currency', currency: item.currency || 'GBP' }).format(item.amount)}
+                  </p>
+                </td>
+                <td className="px-8 py-6">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest 
+                    ${item.status === 'succeeded' ? 'bg-green-100 text-green-600' : 
+                      item.status === 'pending' ? 'bg-amber-100 text-amber-600' : 
+                      item.status === 'refunded' ? 'bg-slate-100 text-slate-400' :
+                      'bg-red-100 text-red-600'}`}>
+                    {item.status}
+                  </span>
+                </td>
+                <td className="px-8 py-6 text-right">
+                  {item.status !== 'refunded' && (
+                    <form action={refundOrderAction.bind(null, item.id)}>
+                      <button className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors">
+                        Refund
+                      </button>
+                    </form>
+                  )}
                 </td>
               </tr>
-            )}
-          </tbody>
-        </table>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={7} className="px-8 py-20 text-center">
+                 <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No transactions found</p>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function AdminTransactionsSkeleton() {
+  return (
+    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden h-96 animate-pulse">
+      <div className="h-12 bg-slate-50 border-b border-gray-100 w-full"></div>
+      <div className="p-8 space-y-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex justify-between items-center h-8">
+            <div className="h-4 bg-slate-100 rounded w-24"></div>
+            <div className="h-4 bg-slate-100 rounded w-24"></div>
+            <div className="h-4 bg-slate-100 rounded w-32"></div>
+            <div className="h-4 bg-slate-100 rounded w-16"></div>
+          </div>
+        ))}
       </div>
     </div>
   );

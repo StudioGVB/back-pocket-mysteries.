@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import ProfileAndGuestsClient from './ProfileAndGuestsClient';
@@ -10,12 +10,36 @@ export default async function ProfilePage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  return (
+    <Suspense fallback={<ProfileSkeleton />}>
+      <ProfileContentLoader params={params} />
+    </Suspense>
+  );
+}
+
+async function ProfileContentLoader({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const { locale } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect(`/${locale}/login`);
 
+  return <ProfileContent user={user} supabase={supabase} locale={locale} />;
+}
+
+async function ProfileContent({
+  user,
+  supabase,
+  locale,
+}: {
+  user: any;
+  supabase: any;
+  locale: string;
+}) {
   const { data: profile } = await (supabase as any)
     .from('profiles')
     .select('*')
@@ -89,3 +113,16 @@ export default async function ProfilePage({
     />
   );
 }
+
+function ProfileSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="h-12 bg-slate-200 rounded w-1/3 mb-8"></div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 bg-slate-200 rounded-3xl h-96"></div>
+        <div className="lg:col-span-2 bg-slate-200 rounded-3xl h-96"></div>
+      </div>
+    </div>
+  );
+}
+

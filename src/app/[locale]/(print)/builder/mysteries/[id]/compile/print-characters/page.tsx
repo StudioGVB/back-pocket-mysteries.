@@ -2,6 +2,8 @@ import React from 'react';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { notFound } from 'next/navigation';
 
+export const unstable_instant = false;
+
 export default async function PrintCharactersPage({
   params,
 }: {

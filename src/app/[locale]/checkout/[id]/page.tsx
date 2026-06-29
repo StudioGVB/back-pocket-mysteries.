@@ -6,6 +6,8 @@ import CheckoutClient from '@/components/checkout/CheckoutClient'
 import { getCurrencyForLocale } from '@/utils/localization'
 import { Locale } from '@/lib/i18n-config'
 
+export const unstable_instant = false;
+
 export default async function CheckoutPage(props: {
   params: Promise<{ locale: Locale, id: string }>
 }) {

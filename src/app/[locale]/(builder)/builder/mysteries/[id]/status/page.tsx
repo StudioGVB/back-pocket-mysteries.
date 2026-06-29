@@ -1,13 +1,24 @@
+import React, { Suspense } from 'react';
 import { getMysteryById } from '@/services/mysteries';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { PublishingForm } from './PublishingForm';
+
+export const unstable_instant = false;
 
 interface StatusPageProps {
   params: Promise<{ id: string; locale: string }>;
 }
 
 export default async function StatusPage({ params }: StatusPageProps) {
+  return (
+    <Suspense fallback={<StatusPageSkeleton />}>
+      <StatusPageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function StatusPageContent({ params }: StatusPageProps) {
   const { id } = await params;
   const mystery = await getMysteryById(id);
 
@@ -112,6 +123,29 @@ export default async function StatusPage({ params }: StatusPageProps) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function StatusPageSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <div className="h-8 bg-slate-100 rounded w-48"></div>
+          <div className="h-4 bg-slate-100 rounded w-96"></div>
+        </div>
+        <div className="w-24 h-10 bg-slate-100 rounded-xl"></div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-white rounded-2xl border border-slate-200 p-6 h-28 flex flex-col justify-center space-y-2">
+            <div className="h-3 bg-slate-100 rounded w-20"></div>
+            <div className="h-8 bg-slate-100 rounded w-24"></div>
+          </div>
+        ))}
+      </div>
+      <div className="h-48 bg-white border border-slate-200 rounded-2xl w-full"></div>
     </div>
   );
 }

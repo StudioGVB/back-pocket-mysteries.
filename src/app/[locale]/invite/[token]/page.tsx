@@ -6,6 +6,8 @@ interface Props {
   params: Promise<{ locale: string; token: string }>;
 }
 
+export const unstable_instant = false;
+
 export const metadata = { title: 'You\'re Invited — Back Pocket Mysteries' };
 
 export default async function InvitePage({ params }: Props) {

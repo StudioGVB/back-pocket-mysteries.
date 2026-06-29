@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getDictionary } from '@/lib/get-dictionary';
@@ -9,6 +9,7 @@ import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
 import MobileNav from '@/components/marketing/MobileNav';
 import GlobalSpotlight from '@/components/marketing/GlobalSpotlight';
 import FooterMarketingForm from '@/components/marketing/FooterMarketingForm';
+import CopyrightYear from '@/components/marketing/CopyrightYear';
 
 export default async function MarketingLayout(props: {
   children: React.ReactNode;
@@ -22,7 +23,9 @@ export default async function MarketingLayout(props: {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <GlobalSpotlight />
+      <Suspense fallback={null}>
+        <GlobalSpotlight />
+      </Suspense>
       <header className="border-b border-gray-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 py-2">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <Link href={`/${locale}`} className="group flex items-center">
@@ -43,21 +46,23 @@ export default async function MarketingLayout(props: {
             <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.contact}</Link>
           </nav>
           
-          <div className="hidden lg:flex gap-4 items-center">
-            <div className="flex gap-2 items-center">
-              <LanguageSwitcher currentLocale={locale as Locale} />
-              <CurrencySwitcher />
-            </div>
+          <Suspense fallback={<div className="h-12 w-48 bg-slate-100 rounded-full animate-pulse"></div>}>
+            <div className="hidden lg:flex gap-4 items-center">
+              <div className="flex gap-2 items-center">
+                <LanguageSwitcher currentLocale={locale as Locale} />
+                <CurrencySwitcher />
+              </div>
 
-            <Link href={`/${locale}/login`} className="text-xs font-black uppercase tracking-widest text-brand-dark/60 hover:text-brand-pink px-4 py-2 transition-colors">
-              {dict.common.login}
-            </Link>
-            <Link href={`/${locale}/create`} className="px-8 py-4 bg-brand-pink text-white rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-all duration-300 shadow-xl shadow-brand-pink/10 hover:shadow-brand-pink/20 hover:translate-y-[-2px] active:scale-95">
-              {dict.common.getStarted}
-            </Link>
-          </div>
-          
-          <MobileNav locale={locale as Locale} dict={dict} />
+              <Link href={`/${locale}/login`} className="text-xs font-black uppercase tracking-widest text-brand-dark/60 hover:text-brand-pink px-4 py-2 transition-colors">
+                {dict.common.login}
+              </Link>
+              <Link href={`/${locale}/create`} className="px-8 py-4 bg-brand-pink text-white rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-all duration-300 shadow-xl shadow-brand-pink/10 hover:shadow-brand-pink/20 hover:translate-y-[-2px] active:scale-95">
+                {dict.common.getStarted}
+              </Link>
+            </div>
+            
+            <MobileNav locale={locale as Locale} dict={dict} />
+          </Suspense>
         </div>
       </header>
       
@@ -119,7 +124,7 @@ export default async function MarketingLayout(props: {
           </div>
           
           <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8 text-[11px] font-black uppercase tracking-widest text-gray-500">
-            <p>&copy; {new Date().getFullYear()} {dict.common.footer.rights}</p>
+            <p>&copy; <CopyrightYear /> {dict.common.footer.rights}</p>
             <div className="flex gap-8 items-center">
               <a href="#" className="hover:text-brand-pink transition-colors">Twitter</a>
               <a href="#" className="hover:text-brand-pink transition-colors">Instagram</a>

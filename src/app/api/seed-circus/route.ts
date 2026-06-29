@@ -1,9 +1,9 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const supabase = await createClient();
   try {
-    const supabase = await createClient();
     
     // 1. Get authenticated user session
     const { data: { user } } = await supabase.auth.getUser();

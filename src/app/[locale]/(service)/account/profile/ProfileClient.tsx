@@ -32,9 +32,10 @@ interface ProfileClientProps {
     character_preferences?: string[] | null;
     fun_facts?: string | null;
   } | null;
+  onClose?: () => void;
 }
 
-export default function ProfileClient({ user, profile }: ProfileClientProps) {
+export default function ProfileClient({ user, profile, onClose }: ProfileClientProps) {
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [location, setLocation] = useState(profile?.location ?? '');
   const [pronouns, setPronouns] = useState(profile?.pronouns ?? '');
@@ -121,15 +122,28 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
   const inputClass = "w-full px-5 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all";
 
   return (
-    <div className="w-full max-w-3xl">
-      {/* Header */}
-      <div className="mb-10 flex items-end justify-between">
-        <div>
-          <h1 className="text-4xl font-black text-slate-900 mb-1">My Profile</h1>
-          <p className="text-slate-500 font-medium">
-            How you appear to other hosts and in the mystery world.
-          </p>
-          <div className="mt-5 flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-transparent max-w-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-5xl relative shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        
+        {/* Header */}
+        <div className="p-8 pb-6 border-b border-slate-100 flex items-center justify-between bg-white z-10 flex-shrink-0">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">Edit My Profile</h2>
+            <p className="text-sm font-bold text-slate-400">Update your avatar and personal preferences</p>
+          </div>
+          {onClose && (
+            <button onClick={onClose} className="w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full flex items-center justify-center transition-colors">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          )}
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="p-8 overflow-y-auto flex-1 relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-pink/5 rounded-bl-full -z-10" />
+
+          {/* Good to know banner */}
+          <div className="mt-2 mb-8 flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-transparent max-w-2xl">
             <span className="text-brand-pink mt-0.5">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </span>
@@ -137,12 +151,13 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
               <span className="font-bold text-slate-900">Good to know:</span> Your custom avatar and profile details are completely free to create and will always be saved to your account. However, these custom features will only appear in a host's mystery if they purchase a <span className="font-bold text-slate-900">Plus Plan</span>.
             </p>
           </div>
-        </div>
-        <div className="h-10 flex items-center justify-end min-w-[100px]">
-          {saving && <span className="text-sm font-bold text-slate-400">Saving...</span>}
-          {saved && !saving && <span className="text-sm font-bold text-emerald-500">Saved</span>}
-        </div>
-      </div>
+          
+          {/* Save Status Banner */}
+          <div className="mb-6 flex items-center gap-3">
+            {saving && <span className="text-xs font-bold text-slate-400 flex items-center gap-2"><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>Saving changes...</span>}
+            {saved && <span className="text-xs font-bold text-brand-pink">Changes saved!</span>}
+            {error && <span className="text-xs font-bold text-red-500">{error}</span>}
+          </div>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-sm font-bold text-red-600">
@@ -323,7 +338,9 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
             </div>
           )}
         </div>
+        </div>
       </div>
+    </div>
     </div>
   );
 }

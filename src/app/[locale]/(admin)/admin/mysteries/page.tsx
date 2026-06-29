@@ -1,27 +1,15 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { getMysteries } from '@/services/admin';
 import { CreateMysteryBaseButton } from './_components/CreateMysteryBaseButton';
-import { MysteryRowActions } from './_components/MysteryRowActions';
+import { MysteryCard } from './_components/MysteryCard';
+
+export const unstable_instant = false;
 
 export default async function AdminMysteries({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
-  const mysteries = await getMysteries();
-
-  const getStatusBadgeStyle = (status: string) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-100 text-green-600';
-      case 'archived':
-        return 'bg-amber-100 text-amber-600';
-      default:
-        return 'bg-gray-100 text-gray-400';
-    }
-  };
-
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -32,66 +20,61 @@ export default async function AdminMysteries({
         <CreateMysteryBaseButton />
       </div>
 
-      <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-        {!mysteries || mysteries.length === 0 ? (
-          <div className="p-20 text-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </div>
-            <h3 className="text-lg font-black text-brand-dark mb-2">No Mystery Bases Yet</h3>
-            <p className="text-gray-400 text-sm mb-8">Ready to create your first mystery template?</p>
-            <button className="text-brand-pink text-xs font-black uppercase tracking-widest hover:underline">
-              Learn how to create a mystery base
-            </button>
-          </div>
-        ) : (
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Title</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Theme</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {mysteries.map((item) => {
-                const isArchived = item.status === 'archived';
-                return (
-                  <tr 
-                    key={item.id} 
-                    className={`transition-colors hover:bg-gray-50 ${isArchived ? 'opacity-65 bg-gray-50/40' : ''}`}
-                  >
-                    <td className="px-8 py-6">
-                      <p className={`text-sm font-bold ${isArchived ? 'text-gray-500 line-through' : 'text-brand-dark'}`}>
-                        {item.title}
-                      </p>
-                      <p className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                        Created {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Unknown Date'}
-                      </p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className={`text-sm font-bold ${isArchived ? 'text-gray-400' : 'text-brand-dark'}`}>
-                        {item.theme || 'No theme'}
-                      </p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusBadgeStyle(item.status)}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      <MysteryRowActions id={item.id} status={item.status} locale={locale} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <Suspense fallback={<AdminMysteriesSkeleton />}>
+        <AdminMysteriesList params={params} />
+      </Suspense>
     </div>
   );
 }
+
+async function AdminMysteriesList({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const mysteries = await getMysteries();
+
+  if (!mysteries || mysteries.length === 0) {
+    return (
+      <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden p-20 text-center">
+        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <h3 className="text-lg font-black text-brand-dark mb-2">No Mystery Bases Yet</h3>
+        <p className="text-gray-400 text-sm mb-8">Ready to create your first mystery template?</p>
+        <button className="text-brand-pink text-xs font-black uppercase tracking-widest hover:underline">
+          Learn how to create a mystery base
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+      {mysteries.map((item) => (
+        <MysteryCard key={item.id} mystery={item} locale={locale} />
+      ))}
+    </div>
+  );
+}
+
+function AdminMysteriesSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="bg-white rounded-[32px] border border-slate-100 p-8 space-y-6 shadow-sm animate-pulse">
+          <div className="h-48 bg-slate-100 rounded-2xl w-full"></div>
+          <div className="space-y-3">
+            <div className="h-6 bg-slate-100 rounded w-2/3"></div>
+            <div className="h-4 bg-slate-100 rounded w-1/2"></div>
+          </div>
+          <div className="h-10 bg-slate-100 rounded-xl w-full"></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -10,16 +10,38 @@ import {
 } from '../../admin-data';
 import { CustomerDashboard } from './CustomerDashboard';
 import { buildAvatarUrl } from '@/utils/avatar';
+import { EditProfileButton } from './EditProfileButton';
 
-export const dynamic = 'force-dynamic';
+export const unstable_instant = false;
 
 export default async function CustomerProfilePage({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
-  const { locale, id } = await params;
+  return (
+    <Suspense fallback={<CustomerProfileSkeleton />}>
+      <CustomerProfileContentLoader params={params} />
+    </Suspense>
+  );
+}
 
+async function CustomerProfileContentLoader({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale, id } = await params;
+  return <CustomerProfileContent id={id} locale={locale} />;
+}
+
+async function CustomerProfileContent({
+  id,
+  locale,
+}: {
+  id: string;
+  locale: string;
+}) {
   // Fetch all data in parallel
   const [profile, orders, mysteries, guests, aiUsage] = await Promise.all([
     getCustomerProfile(id),
@@ -82,6 +104,7 @@ export default async function CustomerProfilePage({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Profile Card */}
         <div className="md:col-span-1 bg-brand-dark rounded-[32px] p-6 text-white relative overflow-hidden group shadow-xl">
+          <EditProfileButton profile={profile} />
           <div className="relative z-10 flex flex-col items-center text-center">
             {profile.avatar_url || profile.avatar_config ? (
               <img 
@@ -176,6 +199,41 @@ export default async function CustomerProfilePage({
         mysteries={mysteries}
         guests={allGuests}
       />
+    </div>
+  );
+}
+
+function CustomerProfileSkeleton() {
+  return (
+    <div className="space-y-8 pb-20 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-10 h-10 rounded-full bg-slate-200"></div>
+        <div className="space-y-2">
+          <div className="h-8 bg-slate-200 rounded w-48"></div>
+          <div className="h-3 bg-slate-200 rounded w-32"></div>
+        </div>
+      </div>
+
+      {/* Top Metrics Grid Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-slate-200 rounded-[32px] h-64"></div>
+        <div className="md:col-span-3 grid grid-cols-2 gap-6">
+          <div className="bg-slate-200 rounded-[32px] h-32"></div>
+          <div className="bg-slate-200 rounded-[32px] h-32"></div>
+          <div className="bg-slate-200 rounded-[32px] h-32"></div>
+          <div className="bg-slate-200 rounded-[32px] h-32"></div>
+        </div>
+      </div>
+
+      {/* Tabs Skeleton */}
+      <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 h-96">
+        <div className="h-6 bg-slate-200 rounded w-32 mb-6"></div>
+        <div className="space-y-4">
+          <div className="h-12 bg-slate-100 rounded"></div>
+          <div className="h-12 bg-slate-100 rounded"></div>
+        </div>
+      </div>
     </div>
   );
 }

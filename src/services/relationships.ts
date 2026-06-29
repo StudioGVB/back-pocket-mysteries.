@@ -1,11 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import { Database } from '@/types/database';
+import { cache } from 'react';
 
 export type Relationship = Database['public']['Tables']['relationships']['Row'];
 export type RelationshipInsert = Database['public']['Tables']['relationships']['Insert'];
 export type RelationshipUpdate = Database['public']['Tables']['relationships']['Update'];
 
-export async function getRelationshipsByMysteryId(mysteryId: string) {
+export const getRelationshipsByMysteryId = cache(async (mysteryId: string) => {
   const supabase = await createClient();
   
   const { data, error } = await supabase
@@ -19,7 +20,7 @@ export async function getRelationshipsByMysteryId(mysteryId: string) {
   }
 
   return data;
-}
+});
 
 export async function upsertRelationship(relationship: RelationshipInsert) {
   const supabase = await createClient();

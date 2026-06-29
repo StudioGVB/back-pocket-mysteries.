@@ -158,6 +158,25 @@ const themeDataMap: Record<string, Omit<ThemeDetails, 'title' | 'desc' | 'diffic
   }
 };
 
+export async function generateStaticParams() {
+  const slugs = [
+    'love-on-the-rocks',
+    'the-inheritance',
+    'the-gala-heist',
+    'dead-space',
+    'speakeasy-scandal',
+    'off-the-grid'
+  ];
+  const locales = ['en', 'fr'];
+  const paramsList: { locale: string; slug: string }[] = [];
+  for (const locale of locales) {
+    for (const slug of slugs) {
+      paramsList.push({ locale, slug });
+    }
+  }
+  return paramsList;
+}
+
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
@@ -338,7 +357,7 @@ export default async function ThemeDetailPage(props: {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50">CASE FILE #{Math.floor(Math.random() * 9000) + 1000}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50">CASE FILE #{theme.title.charCodeAt(0) * 100 + (theme.title.charCodeAt(1) || 0)}</span>
               </div>
               
               <div className="space-y-4">

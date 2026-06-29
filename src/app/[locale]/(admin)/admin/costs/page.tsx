@@ -1,6 +1,26 @@
+import React, { Suspense } from 'react';
 import { getAdminStats, getAiCosts } from '../admin-data';
 
+export const unstable_instant = false;
+
 export default async function CostsPage() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">AI Cost Tracking</h1>
+        <p className="text-slate-500 mt-2 font-medium">
+          Monitor your AI API usage and compare it against your incoming revenue.
+        </p>
+      </div>
+
+      <Suspense fallback={<AdminCostsSkeleton />}>
+        <AdminCostsContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function AdminCostsContent() {
   const [stats, logs] = await Promise.all([
     getAdminStats(),
     getAiCosts()
@@ -15,14 +35,7 @@ export default async function CostsPage() {
     : 0;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">AI Cost Tracking</h1>
-        <p className="text-slate-500 mt-2 font-medium">
-          Monitor your AI API usage and compare it against your incoming revenue.
-        </p>
-      </div>
-
+    <>
       <div className="grid gap-6 md:grid-cols-3">
         {/* Revenue Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -109,6 +122,22 @@ export default async function CostsPage() {
           </table>
         </div>
       </div>
+    </>
+  );
+}
+
+function AdminCostsSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="grid gap-6 md:grid-cols-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-white rounded-2xl border border-slate-200 p-6 h-28 flex flex-col justify-center space-y-2">
+            <div className="h-3 bg-slate-100 rounded w-20 animate-pulse"></div>
+            <div className="h-8 bg-slate-100 rounded w-24 animate-pulse"></div>
+          </div>
+        ))}
+      </div>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm h-64 w-full animate-pulse"></div>
     </div>
   );
 }

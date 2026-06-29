@@ -31,17 +31,29 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regeneratedCount, setRegeneratedCount] = useState(0);
   const [currentlyGeneratingId, setCurrentlyGeneratingId] = useState<string | null>(null);
+  
+  const stopRequestedRef = useRef(false);
 
   useEffect(() => {
     setCurrentClues(clues);
   }, [clues]);
 
+  const handleStop = () => {
+    stopRequestedRef.current = true;
+  };
+
   const handleRegenerateAll = async () => {
     if (isRegenerating) return;
     setIsRegenerating(true);
     setRegeneratedCount(0);
+    stopRequestedRef.current = false;
 
     for (let i = 0; i < currentClues.length; i++) {
+      if (stopRequestedRef.current) {
+        console.log('Clue generation stopped by user request.');
+        break;
+      }
+
       const clue = currentClues[i];
       setCurrentlyGeneratingId(clue.id);
 
@@ -66,6 +78,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
 
     setCurrentlyGeneratingId(null);
     setIsRegenerating(false);
+    stopRequestedRef.current = false;
     router.refresh();
   };
 
@@ -105,20 +118,31 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Discovery Log</h3>
-          <button
-            onClick={handleRegenerateAll}
-            disabled={isRegenerating}
-            id="gen-clues-btn"
-            className={`px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm ${
-              isRegenerating 
-                ? 'bg-brand-pink animate-pulse cursor-not-allowed' 
-                : 'bg-slate-900 hover:bg-brand-blue active:scale-95'
-            }`}
-          >
-            {isRegenerating 
-              ? `Updated ${regeneratedCount}/${currentClues.length} photos` 
-              : 'Regenerate All AI Clue Photos'}
-          </button>
+          <div className="flex items-center gap-3">
+            {isRegenerating && (
+              <button
+                type="button"
+                onClick={handleStop}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm animate-pulse"
+              >
+                🛑 Stop
+              </button>
+            )}
+            <button
+              onClick={handleRegenerateAll}
+              disabled={isRegenerating}
+              id="gen-clues-btn"
+              className={`px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm ${
+                isRegenerating 
+                  ? 'bg-brand-pink cursor-not-allowed opacity-80' 
+                  : 'bg-slate-900 hover:bg-brand-blue active:scale-95'
+              }`}
+            >
+              {isRegenerating 
+                ? `Updated ${regeneratedCount}/${currentClues.length} photos` 
+                : 'Regenerate All AI Clue Photos'}
+            </button>
+          </div>
         </div>
         <form 
           ref={formRef}

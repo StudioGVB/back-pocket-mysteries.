@@ -1,20 +1,21 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BuilderSidebar } from '@/components/builder/BuilderSidebar';
-import { getUserMysteries } from '@/services/mysteries';
+import { MysterySelectWrapper } from '@/components/builder/MysterySelectWrapper';
 
 export default async function BuilderLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
-  const mysteries = await getUserMysteries();
-
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <BuilderSidebar mysteries={mysteries} locale={locale} />
+      <Suspense fallback={<div className="w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col shadow-2xl transition-all duration-300 relative z-20"></div>}>
+        <BuilderSidebar>
+          <Suspense fallback={<div className="w-full h-[42px] bg-slate-800 border border-slate-700 rounded-lg animate-pulse"></div>}>
+            <MysterySelectWrapper />
+          </Suspense>
+        </BuilderSidebar>
+      </Suspense>
 
 
       {/* Main Content */}

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ReviewActions } from '@/app/[locale]/(admin)/admin/reviews/ReviewActions';
 import { bulkUpdateReviews } from '@/app/actions/reviews';
 import { useRouter } from 'next/navigation';
+import { formatDate } from '@/utils/date';
 
 export default function ReviewsTable({ reviews }: { reviews: any[] }) {
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
@@ -125,7 +126,7 @@ export default function ReviewsTable({ reviews }: { reviews: any[] }) {
                     </p>
                   </td>
                   <td className="px-4 py-4 text-gray-400 font-medium whitespace-nowrap">
-                    {new Date(review.created_at).toLocaleDateString()}
+                    {formatDate(review.created_at)}
                   </td>
                   <td className="px-4 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${

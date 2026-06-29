@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { Database } from '@/types/database';
+import { cache } from 'react';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
@@ -19,7 +20,7 @@ export async function getMysteries() {
   return data;
 }
 
-export async function getUserMysteries() {
+export const getUserMysteries = cache(async () => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -37,7 +38,7 @@ export async function getUserMysteries() {
   }
 
   return data;
-}
+});
 
 export async function createMystery(mystery: MysteryInsert) {
   const supabase = await createClient();
@@ -59,7 +60,7 @@ export async function createMystery(mystery: MysteryInsert) {
   return data;
 }
 
-export async function getMysteryById(id: string) {
+export const getMysteryById = cache(async (id: string) => {
   const supabase = await createClient();
   const { data, error } = (await supabase
     .from('mysteries')
@@ -88,9 +89,9 @@ export async function getMysteryById(id: string) {
   require('fs').appendFileSync('actions_log.txt', new Date().toISOString() + ' Mystery ' + id + ' created_by: ' + data.created_by + '\n');
 
   return data;
-}
+});
 
-export async function getCharactersByMysteryId(mysteryId: string) {
+export const getCharactersByMysteryId = cache(async (mysteryId: string) => {
   const supabase = await createClient();
   
   const { data, error } = (await supabase
@@ -103,17 +104,22 @@ export async function getCharactersByMysteryId(mysteryId: string) {
     .order('created_at', { ascending: true })) as any;
 
   if (error) {
-    if (error.code === 'PGRST201') {
-      console.error('Join Error: Multiple relationships found. Using motives!motives_character_id_fkey');
-      // If this fails, we can fall back or try the other key, but this is the primary one
-    } else {
-      console.error('Error fetching characters:', error);
+    console.error('Error fetching characters with motives, attempting fallback without motives:', error);
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('characters')
+      .select('*')
+      .eq('mystery_id', mysteryId)
+      .order('created_at', { ascending: true });
+
+    if (fallbackError) {
+      console.error('Fallback fetch characters error:', fallbackError);
+      return [];
     }
-    return [];
+    return fallbackData;
   }
 
   return data;
-}
+});
 
 export async function createCharacter(character: Database['public']['Tables']['characters']['Insert']) {
   const supabase = await createClient();
@@ -167,7 +173,7 @@ export async function deleteCharacter(id: string) {
   }
 }
 
-export async function getPlotBeatsByMysteryId(mysteryId: string) {
+export const getPlotBeatsByMysteryId = cache(async (mysteryId: string) => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('plot_beats')
@@ -181,7 +187,7 @@ export async function getPlotBeatsByMysteryId(mysteryId: string) {
   }
 
   return data;
-}
+});
 
 export async function createPlotBeat(beat: Database['public']['Tables']['plot_beats']['Insert']) {
   const supabase = await createClient();
@@ -238,7 +244,7 @@ export async function reorderPlotBeats(id: string, newSortOrder: number) {
   }
 }
 
-export async function getCluesByMysteryId(mysteryId: string) {
+export const getCluesByMysteryId = cache(async (mysteryId: string) => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('clues')
@@ -252,7 +258,7 @@ export async function getCluesByMysteryId(mysteryId: string) {
   }
 
   return data;
-}
+});
 
 export async function createClue(clue: Database['public']['Tables']['clues']['Insert']) {
   const supabase = await createClient();

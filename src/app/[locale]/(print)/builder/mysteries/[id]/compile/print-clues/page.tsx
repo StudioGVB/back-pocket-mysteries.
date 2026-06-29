@@ -142,6 +142,8 @@ function parseCctvMetadata(clue: any) {
   return { timestamp, camera };
 }
 
+export const unstable_instant = false;
+
 export default async function PrintCluesPage({
   params,
 }: {
