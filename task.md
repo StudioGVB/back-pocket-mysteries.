@@ -1,0 +1,10 @@
+- [x] Restructure the Compile command center (`src/app/[locale]/(builder)/builder/mysteries/[id]/compile/page.tsx`)
+- [x] Create the Guest Playroom page (`src/app/[locale]/(play)/play/[id]/page.tsx`)
+- [x] Run build and typechecks to verify correctness
+- [x] Add SQL migration script for `mysteries.current_round`
+- [x] Add `current_round` to database types in `database.ts`
+- [x] Create `HostRoundController` component for updating game rounds
+- [x] Implement round lock checking on clue cards in playroom
+- [x] Optimize database queries in Layout, Compile page, and Playroom page
+- [x] Optimize database queries in Status page
+- [x] Create performance indexing script for database foreign keys

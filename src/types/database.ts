@@ -129,6 +129,7 @@ export interface Database {
           created_at: string
           updated_at: string
           inside_jokes: string | null
+          current_round: number | null
         }
         Insert: {
           id?: string
@@ -145,6 +146,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           inside_jokes?: string | null
+          current_round?: number | null
         }
         Update: {
           id?: string
@@ -161,6 +163,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           inside_jokes?: string | null
+          current_round?: number | null
         }
         Relationships: [
           {

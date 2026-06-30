@@ -18,9 +18,7 @@ export default async function MysteryStudioLayout({
   const { id, locale } = await params;
   
   const mysteryPromise = getMysteryById(id);
-  const charactersPromise = getCharactersByMysteryId(id);
   const relationshipsPromise = getRelationshipsByMysteryId(id);
-  const plotBeatsPromise = getPlotBeatsByMysteryId(id);
 
   return (
     <div className="flex flex-col min-h-full bg-[#f8fafc]">
@@ -30,9 +28,7 @@ export default async function MysteryStudioLayout({
             id={id}
             locale={locale}
             mysteryPromise={mysteryPromise}
-            charactersPromise={charactersPromise}
             relationshipsPromise={relationshipsPromise}
-            plotBeatsPromise={plotBeatsPromise}
           />
         </Suspense>
 
@@ -56,27 +52,24 @@ async function MysteryHeader({
   id,
   locale,
   mysteryPromise,
-  charactersPromise,
-  relationshipsPromise,
-  plotBeatsPromise
+  relationshipsPromise
 }: {
   id: string;
   locale: string;
   mysteryPromise: ReturnType<typeof getMysteryById>;
-  charactersPromise: ReturnType<typeof getCharactersByMysteryId>;
   relationshipsPromise: ReturnType<typeof getRelationshipsByMysteryId>;
-  plotBeatsPromise: ReturnType<typeof getPlotBeatsByMysteryId>;
 }) {
-  const [mystery, characters, relationships, plotBeats] = await Promise.all([
+  const [mystery, relationships] = await Promise.all([
     mysteryPromise,
-    charactersPromise,
-    relationshipsPromise,
-    plotBeatsPromise
+    relationshipsPromise
   ]);
 
   if (!mystery) {
     notFound();
   }
+
+  const characters = (mystery as any).characters || [];
+  const plotBeats = (mystery as any).plot_beats || [];
 
   // Calculate Progress
   let progress = 0;
@@ -117,28 +110,18 @@ async function MysteryHeader({
         </div>
 
         <div className="flex items-center gap-3">
-           {progress < 100 ? (
-             <div className="flex flex-col items-end gap-1.5">
-               <div className="flex items-center gap-2">
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Completion</span>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">{progress}%</span>
-               </div>
-               <div className="w-48 h-2 bg-slate-800 rounded-full overflow-hidden">
-                 <div 
-                   className="h-full bg-brand-pink rounded-full transition-all duration-1000 ease-out"
-                   style={{ width: `${progress}%` }}
-                 />
-               </div>
-             </div>
-           ) : (
-             <Link 
-               href={`/${locale}/checkout/${id}`}
-               className="px-6 py-3 bg-brand-pink hover:bg-[#FF3366] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-pink/20 transition-all flex items-center gap-2"
-             >
-               <span>Purchase & Compile</span>
-               <span>💳</span>
-             </Link>
-           )}
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Completion</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">{progress}%</span>
+            </div>
+            <div className="w-48 h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-brand-pink rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

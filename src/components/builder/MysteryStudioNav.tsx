@@ -1,15 +1,25 @@
 "use client";
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 interface MysteryStudioNavProps {
   mysteryId: string;
 }
 
 export function MysteryStudioNav({ mysteryId }: MysteryStudioNavProps) {
+  return (
+    <Suspense fallback={<div className="h-[90px] bg-[#0b0f19] animate-pulse w-full" />}>
+      <MysteryStudioNavContent mysteryId={mysteryId} />
+    </Suspense>
+  );
+}
+
+function MysteryStudioNavContent({ mysteryId }: { mysteryId: string }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab');
 
   const navigation = [
     { 
@@ -46,7 +56,7 @@ export function MysteryStudioNav({ mysteryId }: MysteryStudioNavProps) {
       matchPatterns: [`/builder/mysteries/${mysteryId}/clues`],
       subItems: [
         { label: 'Clue Generator', href: `/builder/mysteries/${mysteryId}/clues?tab=generator` },
-        { label: 'Clue Organisor', href: `/builder/mysteries/${mysteryId}/clues` },
+        { label: 'Clue Organiser', href: `/builder/mysteries/${mysteryId}/clues` },
       ]
     },
   ];
@@ -64,18 +74,18 @@ export function MysteryStudioNav({ mysteryId }: MysteryStudioNavProps) {
   return (
     <div className="flex flex-col w-full">
       {/* Main Navigation Bar */}
-      <nav className="w-full bg-slate-900">
-        <div className="max-w-[1600px] mx-auto w-full px-12 flex items-center">
+      <nav className="w-full bg-[#0b0f19] border-b border-white/5 py-4">
+        <div className="max-w-[1600px] mx-auto w-full px-12 flex items-center gap-3">
           {navigation.map((item) => {
             const isActive = activeMainItem === item;
             return (
               <Link 
                 key={item.label}
                 href={item.href}
-                className={`px-6 py-3.5 text-xs font-black uppercase tracking-widest transition-colors ${
+                className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 border ${
                   isActive 
-                    ? 'bg-[#f8fafc] text-slate-900' 
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                    ? 'bg-brand-pink/15 text-brand-pink border-brand-pink/30 shadow-[0_0_15px_rgba(254,4,198,0.15)] font-black' 
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border-transparent'
                 }`}
               >
                 {item.label}
@@ -87,23 +97,23 @@ export function MysteryStudioNav({ mysteryId }: MysteryStudioNavProps) {
 
       {/* Sub Navigation Bar */}
       {activeMainItem && activeMainItem.subItems && activeMainItem.subItems.length > 0 ? (
-        <nav className="w-full bg-[#f8fafc] shadow-sm relative z-10">
-          <div className="max-w-[1600px] mx-auto w-full px-12 py-3 flex items-center gap-6">
-            <div className="px-6 flex items-center gap-6 w-full">
+        <nav className="w-full bg-[#f8fafc] border-b border-slate-100 py-3.5 relative z-10">
+          <div className="max-w-[1600px] mx-auto w-full px-12 flex items-center">
+            <div className="flex items-center gap-1.5 bg-slate-200/40 p-1 rounded-full border border-slate-200/30">
               {activeMainItem.subItems.map(sub => {
-                // Match sub items accounting for locale prefix in pathname
                 const baseSubHref = sub.href.split('?')[0];
-                const isSubActive = pathname.endsWith(baseSubHref) && 
-                                    (sub.href.includes('?') ? true : !pathname.includes('?'));
+                const isSubActive = activeMainItem.label === 'Clues'
+                  ? (sub.href.includes('tab=generator') ? tab === 'generator' : !tab)
+                  : pathname.endsWith(baseSubHref);
                 
                 return (
                   <Link
                     key={sub.label}
                     href={sub.href}
-                    className={`text-[13px] font-bold transition-colors ${
+                    className={`text-[11px] font-black uppercase tracking-wider px-5 py-2 rounded-full transition-all duration-300 ${
                       isSubActive 
-                        ? 'text-slate-900' 
-                        : 'text-slate-400 hover:text-slate-600'
+                        ? 'bg-slate-900 text-white shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-800'
                     }`}
                   >
                     {sub.label}
@@ -114,7 +124,7 @@ export function MysteryStudioNav({ mysteryId }: MysteryStudioNavProps) {
           </div>
         </nav>
       ) : (
-        <div className="w-full bg-[#f8fafc] h-3 shadow-sm relative z-10"></div>
+        <div className="w-full bg-[#f8fafc] h-3 border-b border-slate-100 relative z-10"></div>
       )}
     </div>
   );

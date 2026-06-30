@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { DashboardTracker } from './DashboardTracker';
 
 export const unstable_instant = false;
+export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard({
   params,

@@ -144,17 +144,33 @@ export async function getCustomers() {
 export async function getAdmins() {
   const supabase = await createClient();
 
-  const { data, error } = (await supabase
-    .from('profiles')
-    .select(`
-      *,
-      user_roles!inner(role)
-    `)
-    .in('user_roles.role', ['admin', 'superadmin', 'super_admin'])
-    .order('created_at', { ascending: false })) as any;
+  const { data: rolesData, error: rolesError } = await supabase
+    .from('user_roles')
+    .select('user_id, role')
+    .in('role', ['admin', 'superadmin', 'super_admin']);
 
-  if (error) {
-    console.error('Error fetching admins:', error);
+  if (rolesError) {
+    console.error('Error fetching admin roles:', rolesError);
+  }
+
+  const adminUserIds = rolesData?.map(r => r.user_id).filter(Boolean) || [];
+
+  let data: any[] = [];
+  if (adminUserIds.length > 0) {
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', adminUserIds)
+      .order('created_at', { ascending: false });
+
+    if (profilesError) {
+      console.error('Error fetching admin profiles:', profilesError);
+    } else if (profilesData) {
+      data = profilesData.map(p => ({
+        ...p,
+        user_roles: [{ role: rolesData?.find(r => r.user_id === p.id)?.role || 'admin' }]
+      }));
+    }
   }
 
   const admins = data || [];

@@ -1,5 +1,4 @@
 import React, { Suspense } from 'react';
-import { getMysteryById } from '@/services/mysteries';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { PublishingForm } from './PublishingForm';
@@ -20,17 +19,26 @@ export default async function StatusPage({ params }: StatusPageProps) {
 
 async function StatusPageContent({ params }: StatusPageProps) {
   const { id } = await params;
-  const mystery = await getMysteryById(id);
+  const supabase = await createClient();
+
+  const [mysteryRes, ordersRes] = await Promise.all([
+    supabase
+      .from('mysteries')
+      .select('id, title, status')
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('orders')
+      .select('id, amount, created_at, status')
+      .eq('mystery_id', id)
+      .eq('status', 'succeeded')
+      .order('created_at', { ascending: false })
+  ]);
+
+  const mystery = mysteryRes.data;
+  const orders = ordersRes.data;
 
   if (!mystery) notFound();
-
-  const supabase = await createClient();
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('id, amount, created_at, status')
-    .eq('mystery_id', id)
-    .eq('status', 'succeeded')
-    .order('created_at', { ascending: false });
 
   const totalRevenue = orders?.reduce((acc, o) => acc + (o.amount || 0), 0) || 0;
   const totalPurchases = orders?.length || 0;
