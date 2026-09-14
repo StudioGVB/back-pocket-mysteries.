@@ -3,6 +3,7 @@ import { getMysteryById, getCluesByMysteryId, getCharactersByMysteryId, getPlotB
 import { getSubplotsByMysteryId } from '@/services/subplots';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { connection } from 'next/server';
 
 export const unstable_instant = false;
 
@@ -11,6 +12,7 @@ export default async function PrintRevealPage({
 }: {
   params: Promise<{ id: string; locale: string }>;
 }) {
+  await connection();
   const { id, locale } = await params;
   const [mystery, clues, characters, plotBeats, subplots] = await Promise.all([
     getMysteryById(id),
@@ -375,13 +377,9 @@ export default async function PrintRevealPage({
         </div>
       )}
 
-      {/* Auto-print script wired with window setup delay */}
+      {/* Print handler script */}
       <script dangerouslySetInnerHTML={{ __html: `
         window.onload = function() {
-          setTimeout(function() {
-            window.print();
-          }, 1500);
-
           const btn = document.getElementById('web-print-btn');
           if (btn) {
             btn.onclick = function() {

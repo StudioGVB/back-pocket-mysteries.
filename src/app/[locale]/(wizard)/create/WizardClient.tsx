@@ -32,7 +32,9 @@ export default function WizardClient({
   const [error, setError] = useState<string | null>(null);
 
   // State Step 1
-  const [theme, setTheme] = useState(initialTheme || '');
+  const [theme, setTheme] = useState(initialTheme || 'Penthouse Murder');
+  const [occasion, setOccasion] = useState('Birthday Party');
+  const [spiceLevel, setSpiceLevel] = useState<'clean' | 'mild' | 'spicy' | 'filthy'>('mild');
   const [complexity, setComplexity] = useState<'basic' | 'premium' | 'grand'>(
     (initialComplexity === 'basic' || initialComplexity === 'premium' || initialComplexity === 'grand') 
       ? initialComplexity 
@@ -62,7 +64,6 @@ export default function WizardClient({
     if (res.guest) {
       const savedGuest = res.guest;
       setSavedGuests(prev => [savedGuest, ...prev]);
-      // Auto assign if there's room
       if (assignedGuests.length < playerCount) {
         setAssignedGuests(prev => [...prev, savedGuest]);
       }
@@ -105,7 +106,10 @@ export default function WizardClient({
     
     const res = await saveWizardAction({
       title,
+      theme,
       complexity,
+      spiceLevel,
+      occasion,
       guests: assignedGuests,
       insideJokes,
     });
@@ -145,59 +149,131 @@ export default function WizardClient({
             ))}
           </div>
           <div className="flex justify-between mt-4">
-            <span className={`text-xs font-bold uppercase tracking-widest ${step >= 1 ? 'text-brand-pink' : 'text-slate-400'}`}>Base</span>
+            <span className={`text-xs font-bold uppercase tracking-widest ${step >= 1 ? 'text-brand-pink' : 'text-slate-400'}`}>Base Setup</span>
             <span className={`text-xs font-bold uppercase tracking-widest ${step >= 2 ? 'text-brand-pink' : 'text-slate-400'}`}>Players</span>
             <span className={`text-xs font-bold uppercase tracking-widest ${step >= 3 ? 'text-brand-pink' : 'text-slate-400'}`}>Cast</span>
-            <span className={`text-xs font-bold uppercase tracking-widest ${step >= 4 ? 'text-brand-pink' : 'text-slate-400'}`}>Jokes</span>
+            <span className={`text-xs font-bold uppercase tracking-widest ${step >= 4 ? 'text-brand-pink' : 'text-slate-400'}`}>Jokes & Notes</span>
           </div>
         </div>
       )}
 
-      {/* Step 1: Base */}
+      {/* Step 1: Base Setup */}
       {step === 1 && (
-        <div className="space-y-8 animate-in fade-in">
+        <div className="space-y-10 animate-in fade-in">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Choose your mystery tier.</h2>
-            <p className="text-slate-500">The tier determines the complexity, number of subplots, and depth of the story.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {(['basic', 'premium', 'grand'] as const).map(tier => (
-              <button
-                key={tier}
-                onClick={() => setComplexity(tier)}
-                className={`p-6 rounded-3xl border-2 text-left transition-all ${
-                  complexity === tier 
-                    ? 'border-brand-pink bg-brand-pink/5 ring-4 ring-brand-pink/20' 
-                    : 'border-slate-200 hover:border-brand-pink/50 hover:bg-slate-50'
-                }`}
-              >
-                <h3 className={`text-xl font-black uppercase tracking-tight mb-2 ${complexity === tier ? 'text-brand-pink' : 'text-slate-900'}`}>
-                  {tier}
-                </h3>
-                <p className="text-sm font-medium text-slate-500">
-                  {tier === 'basic' && 'A fun, straightforward mystery perfect for beginners and casual parties.'}
-                  {tier === 'premium' && 'Our most popular tier. Deep subplots and hidden motives for everyone.'}
-                  {tier === 'grand' && 'A complex, multi-layered narrative designed for experienced sleuths.'}
-                </p>
-              </button>
-            ))}
+            <h2 className="text-3xl font-black text-slate-900 mb-2">Configure Your Mystery.</h2>
+            <p className="text-slate-500">Select the event, theme, complexity, and spice level for your group.</p>
           </div>
 
+          {/* Event Occasion */}
           <div>
-            <label className="block text-sm font-black uppercase tracking-widest text-slate-400 mb-2">Theme Idea (Optional)</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">1. Celebrating Occasion</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {['Birthday Party', 'Hen / Bachelorette', 'Stag / Bachelor', 'Dinner Party', 'Halloween', 'New Year Eve', 'Corporate Event', 'Casual Hangout'].map(occ => (
+                <button
+                  key={occ}
+                  onClick={() => setOccasion(occ)}
+                  className={`p-3.5 rounded-2xl border-2 text-xs font-black uppercase tracking-wider transition-all text-center ${
+                    occasion === occ 
+                      ? 'border-brand-pink bg-brand-pink/5 text-brand-pink ring-2 ring-brand-pink/20' 
+                      : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  {occ}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Theme */}
+          <div>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">2. Theme Preset</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+              {[
+                { name: 'Penthouse Murder', desc: 'High-stakes glam, VIP penthouse scandal' },
+                { name: '1920s Speakeasy Gala', desc: 'Flappers, mobsters, prohibition secrets' },
+                { name: 'VIP Music Festival', desc: 'Backstage drama, rockstars & influencer feuds' },
+                { name: 'Haunted Gothic Manor', desc: 'Eerie mystery, aristocratic inheritance' },
+              ].map(t => (
+                <button
+                  key={t.name}
+                  onClick={() => setTheme(t.name)}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                    theme === t.name 
+                      ? 'border-brand-pink bg-brand-pink/5 ring-2 ring-brand-pink/20' 
+                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className={`font-black text-sm uppercase ${theme === t.name ? 'text-brand-pink' : 'text-slate-900'}`}>{t.name}</div>
+                  <div className="text-xs font-medium text-slate-500 mt-1">{t.desc}</div>
+                </button>
+              ))}
+            </div>
             <input 
               type="text" 
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
-              placeholder="e.g. 1920s Gatsby, Haunted Mansion, Sci-Fi Space Station"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-4 text-slate-900 font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none"
+              placeholder="Or enter custom theme (e.g. 80s Disco Murder)"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none"
             />
           </div>
 
-          <div className="flex justify-end pt-8">
+          {/* Spice Level */}
+          <div>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">3. Spice Level</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { level: 'clean', label: 'Clean (Family)', emoji: '😇' },
+                { level: 'mild', label: 'Mild (PG-13)', emoji: '🥂' },
+                { level: 'spicy', label: 'Spicy (Adults)', emoji: '🌶️' },
+                { level: 'filthy', label: 'Filthy (18+ Uncensored)', emoji: '🔥' },
+              ].map(s => (
+                <button
+                  key={s.level}
+                  onClick={() => setSpiceLevel(s.level as any)}
+                  className={`p-3.5 rounded-2xl border-2 text-xs font-black uppercase tracking-wider transition-all text-center flex flex-col items-center gap-1 ${
+                    spiceLevel === s.level 
+                      ? 'border-brand-pink bg-brand-pink/5 text-brand-pink ring-2 ring-brand-pink/20' 
+                      : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="text-lg">{s.emoji}</span>
+                  <span>{s.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Complexity Tier */}
+          <div>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">4. Complexity Tier</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(['basic', 'premium', 'grand'] as const).map(tier => (
+                <button
+                  key={tier}
+                  onClick={() => setComplexity(tier)}
+                  className={`p-5 rounded-2xl border-2 text-left transition-all ${
+                    complexity === tier 
+                      ? 'border-brand-pink bg-brand-pink/5 ring-2 ring-brand-pink/20' 
+                      : 'border-slate-200 hover:border-brand-pink/50 hover:bg-slate-50'
+                  }`}
+                >
+                  <h3 className={`text-base font-black uppercase tracking-tight mb-1 ${complexity === tier ? 'text-brand-pink' : 'text-slate-900'}`}>
+                    {tier}
+                  </h3>
+                  <p className="text-xs font-medium text-slate-500">
+                    {tier === 'basic' && 'Straightforward mystery perfect for beginners.'}
+                    {tier === 'premium' && 'Our most popular tier. Deep subplots and secrets.'}
+                    {tier === 'grand' && 'Complex, multi-layered story for expert sleuths.'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
             <button onClick={handleNext} className="btn-pill px-8 py-4 bg-brand-pink text-white font-black uppercase tracking-widest text-sm hover:bg-brand-dark">
-              Next Step &rarr;
+              Next Step: Players &rarr;
             </button>
           </div>
         </div>

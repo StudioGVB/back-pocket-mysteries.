@@ -7,12 +7,18 @@ import { MysteryComplexity } from '@/types/database';
 
 export async function saveWizardAction({
   title,
+  theme,
   complexity,
+  spiceLevel,
+  occasion,
   guests,
   insideJokes,
 }: {
   title: string;
+  theme?: string;
   complexity: 'basic' | 'premium' | 'grand';
+  spiceLevel?: 'clean' | 'mild' | 'spicy' | 'filthy';
+  occasion?: string;
   guests: any[];
   insideJokes: string;
 }) {
@@ -42,17 +48,25 @@ export async function saveWizardAction({
       'grand': 'hard',
     };
 
+    // Combine occasion & inside jokes into description/inside_jokes context
+    const fullInsideJokes = [
+      occasion ? `Occasion: ${occasion}` : null,
+      insideJokes ? `Inside Jokes & Notes: ${insideJokes}` : null,
+    ].filter(Boolean).join('\n\n');
+
     // 1. Create the Mystery
     const { data: mystery, error: mysteryError } = await supabase
       .from('mysteries')
       .insert({
         title,
+        theme: theme || null,
         status: 'draft',
         min_players: guests.length,
         max_players: guests.length,
         complexity: complexityMap[complexity],
+        spice_level: spiceLevel || 'mild',
         created_by: user.id,
-        inside_jokes: insideJokes,
+        inside_jokes: fullInsideJokes,
       })
       .select()
       .single();

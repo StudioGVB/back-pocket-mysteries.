@@ -793,13 +793,13 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
       .eq('prompt_hash', promptHash)
       .single();
 
-    let dataUri = '';
+    let dataUri: string | null = '';
 
     if (cached?.image_url) {
       dataUri = cached.image_url;
     } else {
       console.log(`[IMAGEN REQUEST] prompt: "${finalPrompt}"`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
       const payload = {
         instances: [
           {
@@ -866,8 +866,13 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
         });
         console.log('Saved clue image to cache');
       } else {
-        console.warn('Image generation failed or quota exceeded, using fallback placeholder');
-        dataUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(clue.title || 'Clue')}&background=random&size=512`;
+        console.warn('Image generation failed or quota exceeded. Preserving existing image or setting to null for premium placeholder.');
+        const currentUrl = clue.static_image_url || '';
+        if (currentUrl.startsWith('data:image/') || currentUrl.includes('/storage/v1/object/public/')) {
+          dataUri = currentUrl;
+        } else {
+          dataUri = null;
+        }
       }
     }
 

@@ -73,7 +73,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
 
       setRegeneratedCount(prev => prev + 1);
       // Brief pause between requests to reduce API rate-limiting risk
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 2500));
     }
 
     setCurrentlyGeneratingId(null);

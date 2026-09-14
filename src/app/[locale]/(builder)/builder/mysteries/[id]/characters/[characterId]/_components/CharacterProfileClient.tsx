@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { generateCharacterProfileAIAction, updateCharacterProfileAction, updateCharacterAction, generateCharacterOutfitPhotoAction } from '../../actions';
+import { generateCharacterProfileAIAction, updateCharacterProfileAction, updateCharacterAction, generateCharacterOutfitPhotoAction, expandCharacterBioAction } from '../../actions';
 import { getCharacterColor } from '@/utils/colors';
 
 interface CharacterProfileClientProps {
@@ -15,6 +15,7 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isExpandingBio, setIsExpandingBio] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -68,6 +69,23 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
       alert('Failed to generate profile');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleExpandBio = async () => {
+    setIsExpandingBio(true);
+    try {
+      const expandedBio = await expandCharacterBioAction(mystery.id, character, profileData.bio, mystery.title);
+      updateField('bio', expandedBio);
+      
+      const newProfileData = { ...profileData, bio: expandedBio };
+      await updateCharacterProfileAction(mystery.id, character.id, newProfileData);
+      
+    } catch (err: any) {
+      console.error(err);
+      alert('Failed to expand bio: ' + err.message);
+    } finally {
+      setIsExpandingBio(false);
     }
   };
 
@@ -251,7 +269,7 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column - Bio */}
         <div className="space-y-6">
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm h-full">
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm h-full flex flex-col">
             <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
               <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm" style={{ backgroundColor: `${charColor}20`, color: charColor }}>
                 1
@@ -259,15 +277,25 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
               The Backstory
             </h2>
             
-            <div className="space-y-4">
-              <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
-                Full Bio
-              </label>
+            <div className="space-y-4 flex-grow flex flex-col">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+                  Full Bio
+                </label>
+                <button 
+                  onClick={handleExpandBio} 
+                  disabled={isExpandingBio}
+                  className="text-xs font-bold hover:opacity-80 flex items-center gap-1 disabled:opacity-50 transition-opacity"
+                  style={{ color: charColor }}
+                >
+                  {isExpandingBio ? 'Expanding...' : '✨ Expand with AI'}
+                </button>
+              </div>
               <textarea
                 value={profileData.bio || ''}
                 onChange={(e) => updateField('bio', e.target.value)}
                 placeholder="Write a compelling backstory here..."
-                className="w-full h-64 rounded-xl border border-slate-200 p-4 text-sm resize-none focus:ring-2 focus:border-transparent transition-all"
+                className="w-full flex-grow rounded-xl border border-slate-200 p-4 text-sm resize-none focus:ring-2 focus:border-transparent transition-all min-h-[300px]"
                 style={{ '--tw-ring-color': charColor } as any}
               />
             </div>

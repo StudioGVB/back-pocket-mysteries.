@@ -50,6 +50,7 @@ interface PlayroomClientProps {
 export function PlayroomClient({ mystery, characters, relationships, clues }: PlayroomClientProps) {
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'relations' | 'clues'>('profile');
+  const [selectedClue, setSelectedClue] = useState<Clue | null>(null);
 
   const selectedChar = characters.find(c => c.id === selectedCharId);
 
@@ -340,7 +341,7 @@ export function PlayroomClient({ mystery, characters, relationships, clues }: Pl
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="text-center mb-6">
               <h2 className="text-xl font-black uppercase tracking-wider text-white">Evidence & Clues Board</h2>
-              <p className="text-slate-500 text-xs font-semibold mt-1">Review all clues discovered throughout the investigation.</p>
+              <p className="text-slate-500 text-xs font-semibold mt-1">Review all clues discovered throughout the investigation. Click any Polaroid to inspect the details.</p>
             </div>
 
             {clues.length === 0 ? (
@@ -348,67 +349,121 @@ export function PlayroomClient({ mystery, characters, relationships, clues }: Pl
                 No clues have been seeded or published for this mystery yet.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {clues.map(clue => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {clues.map((clue, index) => {
                   const isLocked = clue.round_number !== null && clue.round_number > currentRound;
 
                   if (isLocked) {
                     return (
                       <div
                         key={clue.id}
-                        className="bg-slate-950/40 border border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col shadow-lg relative min-h-[300px] justify-center items-center p-8 text-center"
+                        className="bg-slate-950/40 border border-white/5 rounded-[1.5rem] overflow-hidden flex flex-col shadow-lg relative min-h-[250px] justify-center items-center p-6 text-center"
                       >
-                        <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xl mb-4 text-slate-500">
+                        <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-lg mb-3 text-slate-500">
                           🔒
                         </div>
-                        <h3 className="text-sm font-black uppercase tracking-wider text-slate-400 mb-1">
+                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-1">
                           Round {clue.round_number} Clue
                         </h3>
-                        <p className="text-xs font-semibold text-slate-600 leading-relaxed max-w-xs">
+                        <p className="text-[10px] font-semibold text-slate-600 leading-relaxed max-w-xs">
                           This clue is locked. It will be revealed on your device once the host starts Round {clue.round_number}.
                         </p>
                       </div>
                     );
                   }
 
+                  const isCctv = isCctvOrVideoClue(clue);
+                  const isAudio = isAudioClue(clue);
+                  const cctv = parseCctvMetadata(clue);
+
                   const hydratedTitle = hydrateTextWithCharacters(clue.title || 'Evidence', characters, 'print');
-                  const hydratedDesc = hydrateTextWithCharacters(clue.description || '', characters, 'print');
+                  const clueNum = index + 1;
 
                   return (
                     <div
                       key={clue.id}
-                      className="bg-slate-900/40 border border-white/5 rounded-[2.5rem] overflow-hidden flex flex-col shadow-lg relative min-h-[300px]"
+                      onClick={() => setSelectedClue(clue)}
+                      className="bg-[#fcfbf9] p-3 pb-8 rounded-sm shadow-[0_12px_28px_rgba(0,0,0,0.6)] border border-neutral-300/45 flex flex-col hover:scale-105 hover:-translate-y-1 hover:rotate-1 transition-all duration-300 cursor-pointer group select-none text-neutral-800"
                     >
-                      {clue.static_image_url ? (
-                        <div className="relative h-44 w-full bg-slate-950 flex-shrink-0">
-                          <Image
-                            src={clue.static_image_url}
-                            alt={hydratedTitle}
-                            fill
-                            className="object-cover"
-                          />
-                          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950/90 to-transparent pointer-events-none z-10" />
-                        </div>
-                      ) : (
-                        <div className="relative h-20 w-full bg-gradient-to-br from-slate-900 to-slate-950 flex items-center justify-center">
-                          <span className="text-3xl opacity-30">🔍</span>
-                        </div>
-                      )}
+                      {/* Polaroid Image Box */}
+                      <div className="relative aspect-square w-full bg-neutral-950 overflow-hidden border border-neutral-300/40">
+                        {clue.static_image_url ? (
+                          <div className="relative w-full h-full">
+                            <img
+                              src={clue.static_image_url}
+                              alt={hydratedTitle}
+                              className="w-full h-full object-cover"
+                            />
+                            {isCctv && (
+                              <div className="absolute inset-0 bg-black/10 pointer-events-none flex flex-col justify-between p-2 select-none font-mono text-[8px] text-white z-10">
+                                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] opacity-15" />
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-1 bg-black/55 px-1 rounded text-red-500 font-bold">
+                                    <span className="w-1 h-1 rounded-full bg-red-500 inline-block animate-pulse"></span>
+                                    <span>REC</span>
+                                  </div>
+                                  <div className="bg-black/55 px-1 rounded text-slate-300 font-bold">
+                                    {cctv.camera}
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                  <div className="bg-black/55 px-1 rounded text-slate-300 font-bold">
+                                    {cctv.timestamp}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-slate-900 to-slate-950 flex flex-col items-center justify-center gap-2 relative">
+                            {isCctv ? (
+                              <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-1.5 select-none">
+                                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] opacity-20" />
+                                <span className="text-2xl filter animate-pulse z-10">📹</span>
+                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest z-10">{cctv.camera}</span>
+                                <span className="text-[7px] font-mono text-slate-500 z-10">{cctv.timestamp}</span>
+                              </div>
+                            ) : isAudio ? (
+                              <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-3 gap-2 select-none">
+                                <span className="text-2xl filter animate-pulse">🎙️</span>
+                                <div className="bg-slate-900 border border-white/5 rounded-lg p-1.5 flex items-center gap-1.5 w-full max-w-[140px] shadow-md">
+                                  <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white shrink-0">
+                                    <svg className="w-1.5 h-1.5 fill-current ml-0.5" viewBox="0 0 24 24">
+                                      <path d="M8 5v14l11-7z" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-grow flex items-center gap-0.5 h-2">
+                                    {[15, 35, 55, 20, 40, 50, 30, 20, 10, 25].map((height, i) => (
+                                      <div 
+                                        key={i} 
+                                        className="flex-grow rounded-full" 
+                                        style={{ 
+                                          height: `${height}%`,
+                                          backgroundColor: i < 3 ? '#3b82f6' : 'rgba(255, 255, 255, 0.2)'
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-2xl filter grayscale group-hover:scale-110 transition-transform duration-300">📷</span>
+                                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">No photo generated</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
-                      <div className="p-6 flex-grow flex flex-col relative z-20 bg-slate-900/20">
-                        <div className="flex items-center justify-between gap-3 mb-2">
-                          <h3 className="text-sm font-black uppercase tracking-wider text-white select-all">
-                            {hydratedTitle}
-                          </h3>
-                          {clue.clue_type && (
-                            <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink border border-brand-pink/20 shrink-0">
-                              {clue.clue_type}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs font-semibold text-slate-400 leading-relaxed font-sans select-all whitespace-pre-line mt-2">
-                          {hydratedDesc}
-                        </p>
+                      {/* Polaroid Title/Number */}
+                      <div className="mt-3 flex flex-col items-center justify-center text-center px-1">
+                        <span className="font-mono text-[8px] uppercase tracking-wider text-neutral-400">
+                          ROUND {clue.round_number || 1} • CLUE {clueNum}
+                        </span>
+                        <span className="font-serif italic text-neutral-800 text-xs mt-1 font-bold tracking-tight line-clamp-1">
+                          {hydratedTitle}
+                        </span>
                       </div>
                     </div>
                   );
@@ -419,9 +474,178 @@ export function PlayroomClient({ mystery, characters, relationships, clues }: Pl
         )}
       </main>
 
+      {/* Clue Details Modal */}
+      {selectedClue && (() => {
+        const hydratedTitle = hydrateTextWithCharacters(selectedClue.title || 'Evidence', characters, 'print');
+        const hydratedDesc = hydrateTextWithCharacters(selectedClue.description || '', characters, 'print');
+        const isCctv = isCctvOrVideoClue(selectedClue);
+        const isAudio = isAudioClue(selectedClue);
+        const cctv = parseCctvMetadata(selectedClue);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/85 backdrop-blur-[3px] animate-in fade-in duration-200">
+            <div className="absolute inset-0" onClick={() => setSelectedClue(null)} />
+            
+            <div className="relative bg-[#0d131f] border border-white/10 rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] z-10 animate-in zoom-in-95 duration-200">
+              
+              {/* Image Frame */}
+              <div className="relative aspect-[4/3] w-full bg-slate-950 shrink-0">
+                {selectedClue.static_image_url ? (
+                  <img
+                    src={selectedClue.static_image_url}
+                    alt={hydratedTitle}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex items-center justify-center">
+                    {isCctv ? (
+                      <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-2 select-none">
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] opacity-25" />
+                        <span className="text-4xl filter animate-pulse z-10">📹</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest z-10">{cctv.camera}</span>
+                        <span className="text-[10px] font-mono text-slate-500 z-10">{cctv.timestamp}</span>
+                      </div>
+                    ) : isAudio ? (
+                      <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 gap-3 select-none">
+                        <span className="text-4xl filter animate-pulse">🎙️</span>
+                        <div className="bg-slate-900 border border-white/5 rounded-xl p-3 flex items-center gap-3 w-full max-w-[200px] shadow-lg">
+                          <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white shrink-0 animate-pulse">
+                            <svg className="w-2.5 h-2.5 fill-current ml-0.5" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                          <div className="flex-grow flex items-center gap-0.5 h-3">
+                            {[15, 35, 55, 20, 40, 50, 30, 20, 10, 25].map((height, i) => (
+                              <div 
+                                key={i} 
+                                className="flex-grow rounded-full" 
+                                style={{ 
+                                  height: `${height}%`,
+                                  backgroundColor: i < 3 ? '#3b82f6' : 'rgba(255, 255, 255, 0.2)'
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-4xl opacity-30">🔍</span>
+                    )}
+                  </div>
+                )}
+                {/* Close */}
+                <button
+                  onClick={() => setSelectedClue(null)}
+                  className="absolute top-4 right-4 z-30 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 border border-white/10 text-white flex items-center justify-center text-sm font-bold transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 md:p-8 flex-grow overflow-y-auto flex flex-col">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-brand-pink/10 text-brand-pink border border-brand-pink/20">
+                    Round {selectedClue.round_number || 1} Evidence
+                  </span>
+                  {selectedClue.clue_type && (
+                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      {selectedClue.clue_type}
+                    </span>
+                  )}
+                </div>
+                
+                <h3 className="text-xl font-black text-white tracking-tight uppercase mb-4 border-b border-white/5 pb-3">
+                  {hydratedTitle}
+                </h3>
+                
+                <div className="bg-slate-950/40 border border-white/5 rounded-2xl p-5 text-sm font-semibold text-slate-300 leading-relaxed font-sans whitespace-pre-line overflow-y-auto">
+                  {hydratedDesc}
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        );
+      })()}
+
       <footer className="py-6 border-t border-white/5 text-center text-[10px] font-black uppercase tracking-widest text-slate-600 bg-slate-950/20">
         Back Pocket Games Studio Playroom
       </footer>
     </div>
   );
+}
+
+// ----------------------------------------------------
+// PLAYROOM CLUE BOARD HELPER UTILITIES
+// ----------------------------------------------------
+function isCctvOrVideoClue(clue: any) {
+  const title = (clue.title || '').toLowerCase();
+  const desc = (clue.description || '').toLowerCase();
+  const prompt = (clue.generation_prompt || '').toLowerCase();
+  return (
+    title.includes('cctv') ||
+    title.includes('video') ||
+    title.includes('camera') ||
+    title.includes('photo') ||
+    title.includes('polaroid') ||
+    desc.includes('cctv') ||
+    desc.includes('security cam') ||
+    desc.includes('camera footage') ||
+    desc.includes('video footage') ||
+    desc.includes('metadata: sec cam') ||
+    prompt.includes('cctv') ||
+    prompt.includes('security camera') ||
+    prompt.includes('surveillance')
+  );
+}
+
+function isAudioClue(clue: any) {
+  const title = (clue.title || '').toLowerCase();
+  const desc = (clue.description || '').toLowerCase();
+  const prompt = (clue.generation_prompt || '').toLowerCase();
+  return (
+    title.includes('audio') ||
+    title.includes('voice note') ||
+    title.includes('recorded') ||
+    title.includes('recording') ||
+    title.includes('clip') ||
+    title.includes('sound') ||
+    desc.includes('🎙️') ||
+    desc.includes('audio recording') ||
+    desc.includes('voice note') ||
+    prompt.includes('microphone') ||
+    prompt.includes('soundboard') ||
+    prompt.includes('audio recorder')
+  );
+}
+
+function parseCctvMetadata(clue: any) {
+  const desc = clue.description || '';
+  
+  let timestamp = '06/23/2026 18:03:00';
+  const timeMatch = desc.match(/Timestamp:\s*([^\n|)]+)/i);
+  if (timeMatch) {
+    const rawTime = timeMatch[1].trim();
+    timestamp = `06/23/2026 ${rawTime}`;
+  } else {
+    const simpleTimeMatch = desc.match(/(\d{1,2}:\d{2}\s*(?:PM|AM))/i);
+    if (simpleTimeMatch) {
+      timestamp = `06/23/2026 ${simpleTimeMatch[1]}`;
+    }
+  }
+
+  let camera = 'CAM 01';
+  const camMatch = desc.match(/SEC CAM_([^\n\s|\]]+)/i);
+  if (camMatch) {
+    camera = `SEC CAM ${camMatch[1].toUpperCase()}`;
+  } else if (desc.toLowerCase().includes('bar area')) {
+    camera = 'CAM 02 - PENTHOUSE BAR';
+  } else if (desc.toLowerCase().includes('lobby') || desc.toLowerCase().includes('hallway')) {
+    camera = 'CAM 01 - CORRIDOR';
+  } else if (clue.title.toLowerCase().includes('switch')) {
+    camera = 'CAM 03 - DRINK COUNTER';
+  }
+
+  return { timestamp, camera };
 }

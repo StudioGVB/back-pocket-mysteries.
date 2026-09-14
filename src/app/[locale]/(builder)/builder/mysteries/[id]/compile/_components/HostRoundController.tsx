@@ -33,11 +33,11 @@ export function HostRoundController({ mysteryId, currentRound }: HostRoundContro
   ];
 
   return (
-    <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Active Game State</p>
-          <h4 className="text-sm font-black text-white uppercase tracking-wider">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Active Game State</p>
+          <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider">
             {rounds.find(r => r.value === localRound)?.label || `Round ${localRound}`}
           </h4>
         </div>
@@ -56,13 +56,13 @@ export function HostRoundController({ mysteryId, currentRound }: HostRoundContro
               key={r.value}
               disabled={isPending}
               onClick={() => handleRoundChange(r.value)}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 border ${
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 border ${
                 isActive
-                  ? 'bg-brand-pink/25 text-brand-pink border-brand-pink/40 shadow-sm'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-400 border-transparent hover:text-slate-200'
+                  ? 'bg-brand-pink text-white border-brand-pink shadow-sm'
+                  : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200 hover:text-slate-800 hover:border-slate-300'
               } disabled:opacity-50`}
             >
-              {r.value === 0 ? 'Lobby' : `R${r.value}`}
+              {r.value === 0 ? 'Lobby' : r.value === 5 ? 'Reveal' : `Round ${r.value}`}
             </button>
           );
         })}

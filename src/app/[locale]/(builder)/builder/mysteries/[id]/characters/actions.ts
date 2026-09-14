@@ -468,7 +468,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
     delete profile.height;
     delete profile.avatar_url;
     delete profile.traits;
-    delete profile.bio;
+    delete profile.guest_bio;
     delete profile.is_linked;
   } else {
     // Helper to construct avatar URLs from config
@@ -634,7 +634,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
           delete siblingProfile.height;
           delete siblingProfile.avatar_url;
           delete siblingProfile.traits;
-          delete siblingProfile.bio;
+          delete siblingProfile.guest_bio;
           delete siblingProfile.is_linked;
           await supabase
             .from('characters')
@@ -653,7 +653,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
     profile.height = guest.height;
     profile.avatar_url = guest.avatar_url;
     profile.traits = guest.traits;
-    profile.bio = guest.bio;
+    profile.guest_bio = guest.bio;
     profile.is_linked = guest.isLinked;
   }
 
@@ -887,7 +887,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
         height: guest.height,
         avatar_url: guest.avatar_url,
         traits: guest.traits,
-        bio: guest.bio,
+        guest_bio: guest.bio,
         is_linked: guest.isLinked
       };
 
@@ -920,7 +920,7 @@ export async function clearAllCastingAction(mysteryId: string) {
       delete profile.height;
       delete profile.avatar_url;
       delete profile.traits;
-      delete profile.bio;
+      delete profile.guest_bio;
       delete profile.is_linked;
 
       await supabase
@@ -933,3 +933,26 @@ export async function clearAllCastingAction(mysteryId: string) {
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
+export async function expandCharacterBioAction(mysteryId: string, character: any, currentBio: string, mysteryTitle: string) {
+  try {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `You are a master mystery writer. Expand the following character biography into a detailed, compelling 2-3 paragraph backstory. 
+Make it dramatic, juicy, and fit for a murder mystery party titled "${mysteryTitle}". 
+The character's name is ${character.name.split('|')[0]}.
+Here is their current short bio/background:
+"${currentBio || character.archetype || 'No background provided.'}"
+
+Focus on adding rich flavor, deep secrets, and dramatic flair. Do not change any fundamental facts given, just expand and embellish them beautifully. Return ONLY the expanded bio text.`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    
+    return text;
+  } catch (error) {
+    console.error('Failed to expand character bio:', error);
+    throw new Error('Failed to expand character bio');
+  }
+}

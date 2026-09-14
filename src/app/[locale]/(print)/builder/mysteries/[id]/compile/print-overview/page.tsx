@@ -2,6 +2,7 @@ import React from 'react';
 import { getMysteryById, getCharactersByMysteryId } from '@/services/mysteries';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { connection } from 'next/server';
 
 export const unstable_instant = false;
 
@@ -10,6 +11,7 @@ export default async function PrintOverviewPage({
 }: {
   params: Promise<{ id: string; locale: string }>;
 }) {
+  await connection();
   const { id, locale } = await params;
   const [mystery, characters] = await Promise.all([
     getMysteryById(id),
@@ -306,14 +308,9 @@ export default async function PrintOverviewPage({
         </div>
       </div>
 
-      {/* Auto-print script wired with window setup delay */}
+      {/* Print handler script */}
       <script dangerouslySetInnerHTML={{ __html: `
         window.onload = function() {
-          // Auto click print in 1s for seamless user UX
-          setTimeout(function() {
-            window.print();
-          }, 1500);
-
           // Setup manual click handler for screen-only button
           const btn = document.getElementById('web-print-btn');
           if (btn) {
