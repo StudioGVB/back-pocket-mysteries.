@@ -1,5 +1,7 @@
+import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
@@ -13,11 +15,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `${dict.common.howItWorks} | ${dict.common.siteTitle}`,
     description: dict.howItWorks.subtitle,
     alternates: {
-      canonical: `https://mysteries.backpocketgames.com/${locale}/how-it-works`,
+      canonical: `https://backpocketmysteries.com/${locale}/how-it-works`,
       languages: {
-        en: 'https://mysteries.backpocketgames.com/en/how-it-works',
-        fr: 'https://mysteries.backpocketgames.com/fr/how-it-works',
-        'x-default': 'https://mysteries.backpocketgames.com/en/how-it-works',
+        en: 'https://backpocketmysteries.com/en/how-it-works',
+        fr: 'https://backpocketmysteries.com/fr/how-it-works',
+        'x-default': 'https://backpocketmysteries.com/en/how-it-works',
       }
     }
   };
@@ -27,8 +29,6 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
   const params = await props.params;
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
-
-  // Currency is handled client-side in components to allow static rendering
 
   const steps = [
     {
@@ -50,6 +50,15 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
       imageLabel: 'Pack Download'
     }
   ];
+
+  const packIcons: Record<string, string> = {
+    hostGuide: '📖',
+    characterPackets: '🎭',
+    clues: '🕵️‍♀️',
+    evidence: '💬',
+    reveal: '🏆',
+    ready: '🖨️',
+  };
 
   return (
     <div className="bg-white">
@@ -93,13 +102,117 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                 </ul>
               </div>
               <div className="flex-1">
-                <div className="aspect-video bg-brand-gray rounded-[2rem] border-2 border-gray-100 flex items-center justify-center relative overflow-hidden group shadow-inner hover:border-brand-pink transition-colors">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <span className="text-gray-300 font-black tracking-widest uppercase text-xs">{item.imageLabel}</span>
-                  <div className="absolute top-4 left-4 w-24 h-2 bg-gray-200 rounded-full"></div>
-                  <div className="absolute bottom-4 right-4 w-12 h-12 bg-gray-200 rounded-xl"></div>
-                  <div className="absolute top-8 right-8 w-8 h-8 bg-brand-pink/20 rounded-full"></div>
-                </div>
+                {i === 0 && (
+                  <Link href={`/${locale}/themes/love-on-the-rocks`} className="block rounded-[2rem] border-2 border-gray-100 bg-brand-dark overflow-hidden shadow-2xl group hover:border-brand-pink transition-all">
+                    <div className="relative aspect-[16/10] w-full overflow-hidden">
+                      <Image
+                        src="/moodboard/lotr/main-promo-murder.jpg"
+                        alt="Love On The Rocks — Reality TV Reunion Murder Mystery"
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 600px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/30 to-transparent" />
+                      <div className="absolute top-4 left-4 flex gap-2">
+                        <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                          Active Package
+                        </span>
+                        <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest border border-white/15">
+                          4–12 Players
+                        </span>
+                      </div>
+                      <div className="absolute bottom-4 left-6 right-6">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Reality TV Reunion</p>
+                        <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">Love On The Rocks</h3>
+                      </div>
+                    </div>
+                    <div className="p-6 bg-brand-dark border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        {['The Star', 'The Villain', 'The Ex', 'The Producer', '+5 Roles'].map((role) => (
+                          <span key={role} className="px-2.5 py-1 rounded-full bg-white/10 text-white/80 text-[10px] font-bold">
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-brand-pink group-hover:translate-x-1 transition-transform">
+                        Explore Theme →
+                      </span>
+                    </div>
+                  </Link>
+                )}
+
+                {i === 1 && (
+                  <div className="rounded-[2rem] border-2 border-gray-100 bg-brand-gray p-6 sm:p-8 shadow-xl space-y-4">
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue block">Step 2 • Cast Your Guests</span>
+                        <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Real Friends → Iconic Roles</h3>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                        🌶️ Spice: Spicy
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { guest: 'Chloe (Bride-to-be)', role: 'The Star', note: 'Loves espresso martinis & dramatic toasts', badge: 'Catalyst' },
+                        { guest: 'Marco (Best Man)', role: 'The Ex', note: 'Still brings up the 2022 Ibiza holiday', badge: 'Suspect' },
+                        { guest: 'Jess (Maid of Honour)', role: 'The Villain', note: 'Knows everyone’s secrets in the group chat', badge: 'Suspect' },
+                        { guest: 'Sam (Host)', role: 'The Producer', note: 'Spoiler-Free Host Mode enabled', badge: 'Host Playing' },
+                      ].map((row, idx) => (
+                        <div key={idx} className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center justify-between gap-4 shadow-sm">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-brand-dark text-sm">{row.guest}</span>
+                              <span className="text-gray-300">→</span>
+                              <span className="font-black text-brand-pink text-sm uppercase">{row.role}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 font-medium mt-0.5">&ldquo;{row.note}&rdquo;</p>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-full bg-brand-gray text-brand-dark text-[10px] font-black uppercase tracking-widest shrink-0">
+                            {row.badge}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {i === 2 && (
+                  <div className="rounded-[2rem] border-2 border-gray-100 bg-brand-dark text-white p-6 sm:p-8 shadow-2xl space-y-6">
+                    <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-lg">
+                          📱
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">Live Digital Playroom + PDFs</span>
+                          <h3 className="text-lg font-black uppercase tracking-tight">Game PIN: 849 201</h3>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest">
+                        Ready in ~30m
+                      </span>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink mb-2">Interactive Mobile Lobby</p>
+                        <ul className="space-y-2 text-xs text-gray-300 font-semibold">
+                          <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Join via 6-digit PIN or QR code</li>
+                          <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Live Round 1–3 secret objectives</li>
+                          <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Group-chat &amp; audio wiretap clues</li>
+                        </ul>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">Print-Ready PDF Kit</p>
+                        <ul className="space-y-2 text-xs text-gray-300 font-semibold">
+                          <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Spoiler-Free Host Guide PDF</li>
+                          <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Custom Suspect Booklets</li>
+                          <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Printable Crime Scene Evidence</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -120,7 +233,9 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {Object.entries(dict.howItWorks.packContents.items).map(([key, item], i) => (
               <div key={i} className="card-branded p-10 group hover:border-brand-pink">
-                <div className="w-10 h-10 bg-brand-pink rounded-xl mb-6 group-hover:scale-110 transition-transform"></div>
+                <div className="w-12 h-12 bg-brand-pink rounded-xl mb-6 group-hover:scale-110 transition-transform flex items-center justify-center shadow-lg shadow-brand-pink/20 text-xl">
+                  {packIcons[key] || '✨'}
+                </div>
                 <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-3">{item.title}</h3>
                 <p className="text-gray-500 font-semibold leading-relaxed text-sm">{item.desc}</p>
               </div>

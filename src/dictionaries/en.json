@@ -17,7 +17,7 @@
     "aboutUs": "About Us",
     "contact": "Contact",
     "footer": {
-      "desc": "Personalised murder mystery kits built for your crowd, ready in under 20 minutes. Part of Back Pocket Games.",
+      "desc": "Personalised murder mystery kits built for your crowd, ready in ~30 minutes. Part of Back Pocket Games.",
       "rights": "Back Pocket Games. All rights reserved.",
       "admin": "Admin Access"
     },
@@ -29,13 +29,13 @@
   },
   "home": {
     "hero": {
-      "badge": "Your party, sorted in 20 minutes",
+      "badge": "Your party, sorted in 30 minutes",
       "title": "Murder mystery, built around, your people.",
-      "subtitle": "Real names. Real relationships. Real drama. We workshop a fully personalised, print-ready murder mystery pack — in minutes, not days.",
+      "subtitle": "Real names. Real relationships. Real drama. We workshop a fully personalised, print-ready murder mystery pack — in ~30 minutes, not days.",
       "ctaPick": "Pick a Theme",
       "ctaHow": "How it Works",
       "priceLabel": "From {{price}}",
-      "readyBadge": "Ready in <20 min"
+      "readyBadge": "Ready in ~30 min"
     },
     "why": {
       "title": "Not just a kit. Your kit.",
@@ -52,9 +52,9 @@
           "badge": "Custom Graphics"
         },
         "instant": {
-          "title": "Print-Ready in Minutes",
+          "title": "Print-Ready in ~30 Mins",
           "desc": "Download your complete pack — host guide, character packets, and evidence assets — all formatted and ready to print.",
-          "badge": "Instant Download"
+          "badge": "Ready in ~30 Mins"
         }
       }
     },
@@ -63,15 +63,15 @@
       "subtitle": "No planning. No stress. No spoilers for the host.",
       "step1": {
         "title": "Pick a theme that fits your crowd",
-        "desc": "Celebrity gossip scandal? 1920s speakeasy? Toxic ex drama? Choose the vibe — we handle the rest."
+        "desc": "Reality TV reunion scandal? Poisoned champagne toast? Secret NDA drama? Choose your active theme — we handle the rest."
       },
       "step2": {
         "title": "Tell us who's coming",
         "desc": "Add your guest names and their relationships. The more detail you give, the funnier and more personal the mystery gets."
       },
       "step3": {
-        "title": "Download and play",
-        "desc": "Your complete, print-ready pack is ready in under 20 minutes. Share digitally or print at home."
+        "title": "Launch live lobby or print & play",
+        "desc": "Your complete pack and Kahoot-style 6-digit Game PIN lobby are ready in ~30 minutes. Play on phones or print at home."
       },
       "cta": "See the full process"
     },
@@ -105,7 +105,7 @@
       }
     },
     "compare": {
-      "title": "Etsy takes weeks. We take 20 minutes.",
+      "title": "Etsy takes weeks. We take 30 minutes.",
       "subtitle": "The same level of personalisation — without the wait, the Canva faff, or the £150 price tag.",
       "table": {
         "feature": "Feature",
@@ -113,22 +113,22 @@
         "etsy": "Etsy Custom Kits",
         "ai": "Generic AI Tools",
         "f1": "Guest names in the story",
-        "f2": "Custom evidence graphics",
+        "f2": "Custom evidence & live mobile lobby",
         "f3": "Print-ready pack, all docs",
         "f4": "Delivery time",
-        "f5": "Price (6–12 guests)",
-        "f6": "Host plays along too"
+        "f5": "Price (4–16 guests)",
+        "f6": "Spoiler-Free Host Mode"
       }
     },
     "ctaSection": {
       "title": "Your party deserves better than a blank template.",
       "desc": "Get a mystery that's actually about your people. Packs from {{price}}.",
-      "meta": "Rated 16+ · UK, US & AU friendly · Print or share digitally"
+      "meta": "Rated 16+ · UK, US & AU friendly · Live Mobile Lobby + Print-Ready PDFs"
     }
   },
   "pricing": {
     "title": "One pack. Your whole night.",
-    "subtitle": "Pay once per event. No subscriptions, no per-player fees, no hidden extras. Just a complete, personalised mystery pack ready to go.",
+    "subtitle": "Priced flat by group size — $0 extra per-player fees. Choose a single mystery pack for your party or unlock Unlimited monthly access + 1 Free Monthly Gift Pass.",
     "mostPopular": "Most Popular",
     "event": "/ event",
     "bestFor": "Best for:",
@@ -139,78 +139,78 @@
     "tiers": {
       "basic": {
         "name": "Basic",
-        "tagline": "Quick setup, sorted party.",
-        "desc": "Best for small groups, casual hosts, or first-timers who want to see what we're about.",
-        "cta": "Choose Basic",
-        "bestFor": "Casual dinner parties, friend nights"
-      },
-      "basicPlus": {
-        "name": "Basic+",
-        "tagline": "Basic, but visually you.",
-        "desc": "Everything in Basic, plus full character appearance customisation so the generated evidence actually looks like your group.",
-        "cta": "Choose Basic+",
-        "bestFor": "Immersive dinner parties"
+        "tagline": "4–6 Players • Intimate Party.",
+        "desc": "Perfect for smaller dinner parties and game nights with 4 to 6 guests.",
+        "cta": "Browse Mysteries",
+        "bestFor": "Intimate dinner parties (4–6 guests)"
       },
       "premium": {
         "name": "Premium",
-        "tagline": "The main event pack.",
-        "desc": "Best for birthdays, hens and bucks parties, and 'main event' evenings where you want it to feel really special.",
-        "cta": "Choose Premium",
-        "bestFor": "Hens nights, milestone birthdays"
+        "tagline": "4–10 Players • The Main Event.",
+        "desc": "Our most popular group size — ideal for birthdays, hens nights, and medium parties up to 10 guests.",
+        "cta": "Browse Mysteries",
+        "bestFor": "Birthdays & hens nights (4–10 guests)"
       },
-      "premiumPlus": {
-        "name": "Premium+",
-        "tagline": "The ultimate tailored experience.",
-        "desc": "Everything in Premium, plus full visual customisation so every generated image perfectly matches your guests' descriptions.",
-        "cta": "Choose Premium+",
-        "bestFor": "Milestone events, content creators"
+      "grand": {
+        "name": "Grand",
+        "tagline": "4–16 Players • Full House.",
+        "desc": "Built for big celebrations, weekend getaways, and large groups of up to 16 suspects.",
+        "cta": "Browse Mysteries",
+        "bestFor": "Large parties & getaways (4–16 guests)"
+      },
+      "subscribe": {
+        "name": "Unlimited",
+        "tagline": "Unlimited + 1 Monthly Gift Pass.",
+        "desc": "Unlock unlimited mystery events every month for up to 16 players, plus 1 Free Monthly Gift Pass to send any mystery to a friend.",
+        "cta": "Unlock Unlimited Pass",
+        "bestFor": "Hosts, regulars & event pros"
       }
     }
   },
   "howItWorks": {
-    "title": "Your party sorted, in under 20 minutes.",
-    "subtitle": "You've got enough on your plate. We handle the script, the evidence, the character packets, and the host guide — all personalised to your actual guest list.",
+    "title": "Your party sorted, in ~30 minutes.",
+    "subtitle": "You've got enough on your plate. We handle the script, the evidence, the character booklets, the live mobile lobby, and the host guide — all personalised to your actual guest list.",
     "badge": "The Process",
     "steps": {
       "pick": {
         "title": "Pick a theme that fits your crowd",
-        "desc": "Browse our themes and pick the one that matches your event energy. Every theme comes with a full plot, structured rounds, and a final reveal.",
+        "desc": "Browse our active themes and pick the setting that matches your event energy. Every theme comes with a full plot, 3 structured rounds, and a dramatic final reveal.",
         "bullets": [
-          "Themes for every vibe — classic, modern, chaotic",
-          "Rated 16+ by default",
-          "New themes added regularly"
+          "Flagship Reality TV Reunion ('Love On The Rocks') live now",
+          "Configurable Spice Level (Mild PG-13, Spicy, or Extra Juicy)",
+          "Configurable Complexity (Light, Standard, or Complex)"
         ]
       },
       "guests": {
-        "title": "Tell us who's coming",
-        "desc": "This is where the magic happens. Add your guests' names and their relationships. Our system adapts our human-written plots, building a custom conflict graph that weaves your people into every clue.",
+        "title": "Cast your real guests into iconic roles",
+        "desc": "This is where the magic happens. Add your guests' names, quirks, and relationships. Instead of forcing friends to memorize pre-set stranger names, your guests' real names become 'The Star', 'The Villain', 'The Ex', and more.",
         "bullets": [
-          "Guest names appear throughout the story",
-          "Relationship dynamics shape character motivations",
-          "Even the host can play — no spoilers required"
+          "Real guest names woven throughout every script & clue",
+          "Relationship dynamics & inside jokes shape character motives",
+          "Spoiler-Free Host Mode so the host can play as a full suspect"
         ]
       },
       "download": {
-        "title": "Download your complete pack",
-        "desc": "In under 20 minutes, your personalised murder mystery pack is ready. Print at home or share digitally with guests.",
+        "title": "Launch your Live Lobby or print your kit",
+        "desc": "In ~30 minutes, your personalised murder mystery is ready inside your Host Dashboard. Share the 6-digit Game PIN for live mobile play or print the formatted PDF booklets at home.",
         "bullets": [
-          "Host guide runs the evening",
-          "Per-guest character packets",
-          "Custom evidence images",
-          "Printable or digital ready"
+          "Kahoot-style 6-digit Game PIN lobby for guest phones",
+          "Interactive group-chat texts & AI audio wiretap clues",
+          "Print-ready PDF Suspect Booklets & Host Guide",
+          "Live Round 1–3 Host Controller"
         ]
       }
     },
     "packContents": {
       "title": "What's in, the pack?",
-      "subtitle": "Everything you need to run a seamless, memorable night — all formatted, all personalised.",
+      "subtitle": "Everything you need to run a seamless, memorable night — both digitally on guest phones and ready to print.",
       "items": {
-        "hostGuide": { "title": "Host Guide", "desc": "Step-by-step facilitation script." },
-        "characterPackets": { "title": "Character Packets", "desc": "Sealed per-guest envelopes." },
-        "clues": { "title": "Clue Drops", "desc": "Structured reveals across 4 rounds." },
-        "evidence": { "title": "Custom Evidence", "desc": "Fake texts, DMs, and receipts." },
-        "reveal": { "title": "Final Reveal", "desc": "A satisfying, dramatic conclusion." },
-        "ready": { "title": "Ready to Print", "desc": "No design skills required." }
+        "hostGuide": { "title": "Spoiler-Free Host Guide", "desc": "Step-by-step facilitation & live round controller so you can play too." },
+        "characterPackets": { "title": "Custom Suspect Booklets", "desc": "Individual character scripts cast with your guests' real names." },
+        "clues": { "title": "3-Round Clue Drops", "desc": "Structured secrets & objectives unlocked round by round." },
+        "evidence": { "title": "Chat & Audio Wiretaps", "desc": "Leaked group-chat DMs, receipts, and voice-note clues." },
+        "reveal": { "title": "Live Voting & Final Reveal", "desc": "Guests vote on the killer & Best Actor before the dramatic confession." },
+        "ready": { "title": "Mobile Lobby + Printable PDFs", "desc": "Join via 6-digit PIN on any phone or print paper envelopes." }
       }
     },
     "cta": {
@@ -246,12 +246,12 @@
     "bestFor": "Best for",
     "list": {
       "loveOnTheRocks": {
-        "title": "Love on the Rocks",
-        "desc": "Toxic exes, secret affairs, and a suspicious death at the hen weekend.",
+        "title": "Love On The Rocks",
+        "desc": "The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest dating show reunites at a luxury penthouse — until The Star collapses mid-champagne-toast.",
         "difficulty": "Medium",
-        "category": "Drama / Romance",
+        "category": "Reality TV Reunion",
         "tone": "Chaotic & Spicy",
-        "bestFor": "Hens, Birthdays"
+        "bestFor": "Hens Nights, 20s & 30s Birthdays, Girls' Nights & Reality TV Fans"
       },
       "inheritance": {
         "title": "The Inheritance",
@@ -305,62 +305,21 @@
     "title": "Frequently Asked Questions.",
     "subtitle": "Everything you need to know about hosting a personalized murder mystery.",
     "seoDescription": "Got questions about our custom murder mystery parties? Read our FAQ to learn how our games work, how to customize characters, and more.",
-    "questions": [
-      {
-        "q": "What exactly is a custom murder mystery party?",
-        "a": "Unlike generic kits, our mysteries are generated specifically for your guest list. We take the names, relationships, and dynamics of your real-life friends and weave them into a unique story where everyone gets a character, motives, and secrets tailored to them."
-      },
-      {
-        "q": "How does the process work?",
-        "a": "First, you pick a theme (like 1920s Speakeasy or Gala Heist). Then, you enter your guests' names and how they know each other. Within 20 minutes, our platform takes our human-written stories and personalizes them to generate a complete, print-ready pack including a host guide, character packets, clues, and custom evidence."
-      },
-      {
-        "q": "Can I still play as the host?",
-        "a": "Yes — and that's by design. The host guide tells you exactly when to reveal each clue without spoiling the ending for you. You get to play along as a character and solve the mystery with everyone else."
-      },
-      {
-        "q": "Do I need to print everything?",
-        "a": "Nope! You can share character packets and clues digitally via PDF. If you prefer the tactile experience, everything comes formatted and ready to print at home."
-      },
-      {
-        "q": "What if my guest list changes last minute?",
-        "a": "Reach out to us within 24 hours of your download, and we'll help you re-generate your pack with the updated guest list at no extra cost."
-      },
-      {
-        "q": "How long does a game typically last?",
-        "a": "Depending on the complexity you choose, our games typically last between 1.5 to 3 hours. This makes them perfect for dinner parties, hens nights, or weekend getaways."
-      },
-      {
-        "q": "Is this suitable for work events or corporate team building?",
-        "a": "Absolutely. Our themes are rated 16+ by default and focus on drama, intrigue, and fun without inappropriate content. Themes like 'The Gala Heist' work exceptionally well for corporate groups."
-      },
-      {
-        "q": "Can I buy a pack as a gift?",
-        "a": "Yes! You can purchase a pack and give it to the organizer. They can then input their own guest list and download the customized mystery."
-      },
-      {
-        "q": "Do you ship physical kits?",
-        "a": "We are a fully digital platform. This means you don't have to wait for shipping, and you receive your completely customized, high-quality digital assets in under 20 minutes."
-      },
-      {
-        "q": "How do you handle character appearances in the evidence?",
-        "a": "On our Premium and Grand tiers, you can customize character appearances (hair, eyes, style) so that the AI-generated evidence images perfectly match your group."
-      }
-    ]
+    "questions": []
   },
   "seoLanding": {
     "title": "Host a Custom Murder Mystery Party.",
-    "subtitle": "Get a fully personalized, print-ready murder mystery game built around your actual guest list in under 20 minutes.",
-    "seoDescription": "Host a custom murder mystery party personalized for your guests. We take your guest list and weave them into a unique story with custom evidence and characters.",
+    "subtitle": "Get a fully personalized, print-ready & mobile-ready murder mystery game built around your actual guest list in ~30 minutes.",
+    "seoDescription": "Host a custom murder mystery party personalized for your guests. We cast your real friends into iconic roles with custom evidence, audio wiretaps, and a live mobile lobby.",
     "whyCustomTitle": "Why choose a custom murder mystery?",
-    "whyCustomDesc": "Generic games are fun, but nothing beats the excitement of finding out your best friend is the prime suspect, or that your partner has a secret fictional motive. Our platform takes our human-crafted mystery plots and adapts them entirely around your actual guest list — names, relationships, and all the drama.",
+    "whyCustomDesc": "Generic boxed games force your friends to read stiff scripts for pre-named strangers. Our platform takes human-crafted mystery plots and adapts them entirely around your actual guest list — casting your friends' real names into iconic archetypes, weaving in their relationships and inside jokes, and delivering both printable booklets and a live Kahoot-style mobile lobby.",
     "features": {
-      "f1": "Guest Names in the Story",
-      "f1Desc": "Your actual guests are the suspects and victims.",
-      "f2": "Custom Evidence",
-      "f2Desc": "AI-generated evidence that matches your guests' descriptions.",
-      "f3": "Instant Delivery",
-      "f3Desc": "Ready to print or play digitally in under 20 minutes."
+      "f1": "Real Guests Cast Into Iconic Roles",
+      "f1Desc": "No pre-set stranger names — your actual guests become The Star, The Villain, The Ex, and more.",
+      "f2": "Interactive Clues & Live Mobile Lobby",
+      "f2Desc": "Leaked group-chat texts, audio wiretaps, and a 6-digit Game PIN lobby alongside printable PDF booklets.",
+      "f3": "Spoiler-Free Host Mode in ~30 Mins",
+      "f3Desc": "Play along as a full suspect without spoiling the killer's identity. Ready in ~30 minutes."
     },
     "ctaTitle": "Ready to host your custom party?",
     "ctaButton": "View Pricing"

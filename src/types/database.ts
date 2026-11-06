@@ -12,6 +12,18 @@ export type Archetype = 'hero' | 'villain' | 'sidekick' | 'victim' | 'witness' |
 export type VictimRelationship = 'spouse' | 'sibling' | 'friend' | 'enemy' | 'stranger' | 'colleague'
 export type MotiveType = 'revenge' | 'greed' | 'love' | 'fear' | 'justice' | 'power' | 'jealousy' | 'betrayal' | 'heartbreak' | 'desperation' | 'blackmail' | 'hatred'
 export type ClueType = 'physical' | 'testimony' | 'background' | 'secret'
+export type ClueFormat =
+  | 'chat'              // iMessage / WhatsApp message threads
+  | 'receipt'           // Thermal store/bar receipts
+  | 'document'          // Lab reports, police dossiers, formal notes
+  | 'cctv'              // Security camera footage
+  | 'audio'             // Voice notes, wiretaps, voicemails
+  | 'physical_prop'     // Weapons, poison vials, physical evidence items
+  | 'search_log'        // Dark browser search history or server audit log
+  | 'social_post'       // Instagram / TikTok profile or unposted video draft
+  | 'handwritten_note'  // Personal note, diary entry, or phone notes checklist
+  | 'medical_rx'        // Pharmacy prescription label or toxicology slip
+  | 'call_sheet'        // Backstage clipboard memo with pinned sticky note
 export type ImplicationType = 'direct' | 'circumstantial' | 'red_herring'
 export type EvidenceStatus = 'real' | 'fake' | 'planted'
 export type InvestigationRole = 'lead' | 'supporting' | 'background'
@@ -30,22 +42,58 @@ export interface Database {
         Row: {
           id: string
           user_id: string
+          email: string | null
           full_name: string | null
+          role: string | null
           avatar_url: string | null
+          bio: string | null
+          location: string | null
+          pronouns: string | null
+          fun_facts: string | null
+          dietary_needs: string | null
+          character_preferences: string | null
+          avatar_config: Json | null
+          country: string | null
+          how_found_us: string | null
+          onboarding_completed: boolean | null
           created_at: string
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id?: string
+          email?: string | null
           full_name?: string | null
+          role?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          location?: string | null
+          pronouns?: string | null
+          fun_facts?: string | null
+          dietary_needs?: string | null
+          character_preferences?: string | null
+          avatar_config?: Json | null
+          country?: string | null
+          how_found_us?: string | null
+          onboarding_completed?: boolean | null
           created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
+          email?: string | null
           full_name?: string | null
+          role?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          location?: string | null
+          pronouns?: string | null
+          fun_facts?: string | null
+          dietary_needs?: string | null
+          character_preferences?: string | null
+          avatar_config?: Json | null
+          country?: string | null
+          how_found_us?: string | null
+          onboarding_completed?: boolean | null
           created_at?: string
         }
         Relationships: [
@@ -130,6 +178,7 @@ export interface Database {
           updated_at: string
           inside_jokes: string | null
           current_round: number | null
+          voice_region?: 'en-US' | 'en-GB' | 'en-AU' | string | null
         }
         Insert: {
           id?: string
@@ -147,6 +196,7 @@ export interface Database {
           updated_at?: string
           inside_jokes?: string | null
           current_round?: number | null
+          voice_region?: 'en-US' | 'en-GB' | 'en-AU' | string | null
         }
         Update: {
           id?: string
@@ -164,6 +214,7 @@ export interface Database {
           updated_at?: string
           inside_jokes?: string | null
           current_round?: number | null
+          voice_region?: 'en-US' | 'en-GB' | 'en-AU' | string | null
         }
         Relationships: [
           {
@@ -308,6 +359,7 @@ export interface Database {
           mystery_id: string
           title: string
           clue_type: ClueType | null
+          format?: ClueFormat | null
           implication_type: ImplicationType | null
           round_number: number | null
           is_essential: boolean
@@ -325,12 +377,15 @@ export interface Database {
           generation_prompt: string | null
           template_text: string | null
           linked_subplot_beat_id: string | null
+          audio_url?: string | null
+          voice_region?: 'en-US' | 'en-GB' | 'en-AU' | string | null
         }
         Insert: {
           id?: string
           mystery_id: string
           title: string
           clue_type?: ClueType | null
+          format?: ClueFormat | null
           implication_type?: ImplicationType | null
           round_number?: number | null
           is_essential?: boolean
@@ -348,12 +403,15 @@ export interface Database {
           generation_prompt?: string | null
           template_text?: string | null
           linked_subplot_beat_id?: string | null
+          audio_url?: string | null
+          voice_region?: 'en-US' | 'en-GB' | 'en-AU' | string | null
         }
         Update: {
           id?: string
           mystery_id?: string
           title?: string
           clue_type?: ClueType | null
+          format?: ClueFormat | null
           implication_type?: ImplicationType | null
           round_number?: number | null
           is_essential?: boolean
@@ -371,6 +429,8 @@ export interface Database {
           generation_prompt?: string | null
           template_text?: string | null
           linked_subplot_beat_id?: string | null
+          audio_url?: string | null
+          voice_region?: 'en-US' | 'en-GB' | 'en-AU' | string | null
         }
         Relationships: [
           {
@@ -658,6 +718,90 @@ export interface Database {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          id: string
+          ticket_number: number
+          user_id: string | null
+          user_name: string | null
+          user_email: string
+          mystery_id: string | null
+          category: 'bug' | 'mystery_content' | 'billing' | 'feature_request' | 'general'
+          subject: string
+          severity: 'low' | 'medium' | 'high' | 'urgent'
+          status: 'open' | 'in_progress' | 'waiting_on_customer' | 'resolved' | 'closed'
+          last_reply_by: 'customer' | 'admin'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          ticket_number?: number
+          user_id?: string | null
+          user_name?: string | null
+          user_email: string
+          mystery_id?: string | null
+          category?: 'bug' | 'mystery_content' | 'billing' | 'feature_request' | 'general'
+          subject: string
+          severity?: 'low' | 'medium' | 'high' | 'urgent'
+          status?: 'open' | 'in_progress' | 'waiting_on_customer' | 'resolved' | 'closed'
+          last_reply_by?: 'customer' | 'admin'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          ticket_number?: number
+          user_id?: string | null
+          user_name?: string | null
+          user_email?: string
+          mystery_id?: string | null
+          category?: 'bug' | 'mystery_content' | 'billing' | 'feature_request' | 'general'
+          subject?: string
+          severity?: 'low' | 'medium' | 'high' | 'urgent'
+          status?: 'open' | 'in_progress' | 'waiting_on_customer' | 'resolved' | 'closed'
+          last_reply_by?: 'customer' | 'admin'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      support_ticket_messages: {
+        Row: {
+          id: string
+          ticket_id: string
+          sender_id: string | null
+          sender_role: 'customer' | 'admin' | 'system'
+          sender_name: string | null
+          message: string
+          attachment_urls: string[]
+          status_change_to: 'open' | 'in_progress' | 'waiting_on_customer' | 'resolved' | 'closed' | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          ticket_id: string
+          sender_id?: string | null
+          sender_role: 'customer' | 'admin' | 'system'
+          sender_name?: string | null
+          message: string
+          attachment_urls?: string[]
+          status_change_to?: 'open' | 'in_progress' | 'waiting_on_customer' | 'resolved' | 'closed' | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          ticket_id?: string
+          sender_id?: string | null
+          sender_role?: 'customer' | 'admin' | 'system'
+          sender_name?: string | null
+          message?: string
+          attachment_urls?: string[]
+          status_change_to?: 'open' | 'in_progress' | 'waiting_on_customer' | 'resolved' | 'closed' | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -673,4 +817,5 @@ export interface Database {
     }
   }
 }
+
 

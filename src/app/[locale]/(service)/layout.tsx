@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner';
@@ -7,6 +8,18 @@ import { OnboardingWizard } from '@/components/account/OnboardingWizard';
 import CopyrightYear from '@/components/marketing/CopyrightYear';
 
 export const unstable_instant = false;
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+};
 
 export default async function ServiceLayout({
   children,

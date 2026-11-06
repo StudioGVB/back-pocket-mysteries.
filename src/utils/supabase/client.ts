@@ -2,17 +2,20 @@ import { createBrowserClient } from '@supabase/ssr'
 import { Database } from '@/types/database'
 
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
       'Supabase environment variables are missing. Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your .env.local file and restart your development server.'
-    );
+    )
   }
 
-  return createBrowserClient<Database>(
-    supabaseUrl,
-    supabaseKey
-  )
+  return createBrowserClient<Database>(supabaseUrl, supabaseKey, {
+    auth: {
+      // Let Next.js middleware handle token refreshes on the server so browser
+      // visibilitychange events never race with server requests on single-use refresh tokens.
+      autoRefreshToken: false,
+    },
+  })
 }

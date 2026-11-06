@@ -9,8 +9,8 @@ interface AddCharacterQuickFormProps {
 }
 
 import { AIGenerateCharacterButton } from './AIGenerateCharacterButton';
-
 import { RoleTitleInput } from './RoleTitleInput';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -63,9 +63,24 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
         className="p-4"
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 bg-slate-50/50 p-6 rounded-[1.8rem] border border-slate-100">
+          {/* Role / Title Field */}
+          <div className="md:col-span-4">
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Character Title / Role</label>
+            <input type="hidden" name="base_name" value={title} />
+            <RoleTitleInput 
+              mysteryId={mysteryId}
+              value={title}
+              onChange={(val) => {
+                setTitle(val);
+                setName(val);
+              }}
+              inputClassName="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
+            />
+          </div>
+
           {/* Prefix Field */}
           <div className="md:col-span-2">
-            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Prefix</label>
+            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Prefix (Optional)</label>
             <input 
               name="prefix"
               value={prefix}
@@ -74,92 +89,53 @@ export function AddCharacterQuickForm({ mysteryId }: AddCharacterQuickFormProps)
               className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
             />
           </div>
-
-          {/* Name Field */}
-          <div className="md:col-span-2">
-            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Placeholder Name</label>
-            <input 
-              name="base_name"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Maria"
-              className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
-            />
-          </div>
-
-          {/* Title Field */}
-          <div className="md:col-span-2">
-            <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Role / Title</label>
-            <RoleTitleInput 
-              mysteryId={mysteryId}
-              value={title}
-              onChange={setTitle}
-              inputClassName="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm placeholder:text-slate-300 shadow-sm"
-            />
-          </div>
           
           {/* Importance Field */}
           <div className="md:col-span-2">
              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Importance</label>
-             <div className="relative">
-               <select 
-                 name="importance"
-                 required
-                 value={importance}
-                 onChange={(e) => setImportance(e.target.value)}
-                 className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all appearance-none text-sm cursor-pointer shadow-sm"
-               >
-                 <option value="mandatory">Mandatory</option>
-                 <option value="optional">Optional</option>
-               </select>
-               <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
-               </div>
-             </div>
+             <CustomSelect 
+               name="importance"
+               required
+               value={importance}
+               onChange={(e) => setImportance(e.target.value)}
+               className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm shadow-sm"
+             >
+               <option value="mandatory">Mandatory</option>
+               <option value="optional">Optional</option>
+             </CustomSelect>
           </div>
 
           {/* Plot Role Field */}
           <div className="md:col-span-2">
              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Plot Role</label>
-             <div className="relative">
-               <select 
-                 name="plot_role"
-                 required
-                 value={plotRole}
-                 onChange={(e) => setPlotRole(e.target.value)}
-                 className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all appearance-none text-sm cursor-pointer shadow-sm"
-               >
-                 <option value="innocent">Innocent</option>
-                 <option value="killer">Killer</option>
-                 <option value="assistant">Assistant</option>
-                 <option value="victim">Victim</option>
-               </select>
-               <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
-               </div>
-             </div>
+             <CustomSelect 
+               name="plot_role"
+               required
+               value={plotRole}
+               onChange={(e) => setPlotRole(e.target.value)}
+               className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm shadow-sm"
+             >
+               <option value="innocent">Innocent</option>
+               <option value="killer">Killer</option>
+               <option value="assistant">Assistant</option>
+               <option value="victim">Victim</option>
+             </CustomSelect>
           </div>
 
           {/* Gender Field */}
           <div className="md:col-span-2">
              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Gender</label>
-             <div className="relative">
-               <select 
-                 name="gender"
-                 required
-                 value={gender}
-                 onChange={(e) => setGender(e.target.value)}
-                 className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all appearance-none text-sm cursor-pointer shadow-sm"
-               >
-                 <option value="adaptable">Adaptable ⚧</option>
-                 <option value="female">Female ♀</option>
-                 <option value="male">Male ♂</option>
-               </select>
-               <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
-               </div>
-             </div>
+             <CustomSelect 
+               name="gender"
+               required
+               value={gender}
+               onChange={(e) => setGender(e.target.value)}
+               className="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-pink/10 focus:border-brand-pink outline-none font-bold transition-all text-sm shadow-sm"
+             >
+               <option value="adaptable">Adaptable ⚧</option>
+               <option value="female">Female ♀</option>
+               <option value="male">Male ♂</option>
+             </CustomSelect>
           </div>
 
           {/* Submit Button */}

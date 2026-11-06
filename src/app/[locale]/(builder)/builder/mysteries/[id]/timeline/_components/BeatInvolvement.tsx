@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Database } from '@/types/database';
+import { getCharacterRoleTitle } from '@/utils/hydration';
 import { updateBeatAction } from '../actions';
 
 type Character = Database['public']['Tables']['characters']['Row'];
@@ -41,7 +42,7 @@ export function BeatInvolvement({ mysteryId, beatId, involvedIds, allCharacters 
                 : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
             }`}
           >
-            {char.name}
+            {getCharacterRoleTitle(char)}
           </button>
         );
       })}

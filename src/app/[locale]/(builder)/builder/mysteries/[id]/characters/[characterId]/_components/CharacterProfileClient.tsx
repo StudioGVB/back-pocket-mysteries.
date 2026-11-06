@@ -4,6 +4,12 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { generateCharacterProfileAIAction, updateCharacterProfileAction, updateCharacterAction, generateCharacterOutfitPhotoAction, expandCharacterBioAction } from '../../actions';
 import { getCharacterColor } from '@/utils/colors';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import {
+  getCharacterDisplayName,
+  getCharacterRoleTitle,
+  hydrateTextWithCharacters,
+} from '@/utils/hydration';
 
 interface CharacterProfileClientProps {
   mystery: any;
@@ -26,22 +32,43 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
   
   const [profileData, setProfileData] = useState<any>(() => {
     const data = character.profile_data || {};
+    const hydratedBio = hydrateTextWithCharacters(data.bio || '', allCharacters, 'role');
     if (isAdaptable) {
       return {
-        bio: data.bio || '',
-        presentation_male: data.presentation_male || { 
-          outfit_advice: data.outfit_advice || '', 
-          act_summary: data.act_summary || '', 
-          act_bullets: data.act_bullets || ['', '', ''] 
-        },
-        presentation_female: data.presentation_female || { ...defaultPresentation }
+        bio: hydratedBio,
+        presentation_male: data.presentation_male
+          ? {
+              ...data.presentation_male,
+              act_summary: hydrateTextWithCharacters(data.presentation_male.act_summary || '', allCharacters, 'role'),
+              act_bullets: (data.presentation_male.act_bullets || ['', '', '']).map((b: string) =>
+                hydrateTextWithCharacters(b, allCharacters, 'role')
+              ),
+            }
+          : {
+              outfit_advice: data.outfit_advice || '',
+              act_summary: hydrateTextWithCharacters(data.act_summary || '', allCharacters, 'role'),
+              act_bullets: (data.act_bullets || ['', '', '']).map((b: string) =>
+                hydrateTextWithCharacters(b, allCharacters, 'role')
+              ),
+            },
+        presentation_female: data.presentation_female
+          ? {
+              ...data.presentation_female,
+              act_summary: hydrateTextWithCharacters(data.presentation_female.act_summary || '', allCharacters, 'role'),
+              act_bullets: (data.presentation_female.act_bullets || ['', '', '']).map((b: string) =>
+                hydrateTextWithCharacters(b, allCharacters, 'role')
+              ),
+            }
+          : { ...defaultPresentation },
       };
     } else {
       return {
-        bio: data.bio || '',
+        bio: hydratedBio,
         outfit_advice: data.outfit_advice || '',
-        act_summary: data.act_summary || '',
-        act_bullets: data.act_bullets || ['', '', '']
+        act_summary: hydrateTextWithCharacters(data.act_summary || '', allCharacters, 'role'),
+        act_bullets: (data.act_bullets || ['', '', '']).map((b: string) =>
+          hydrateTextWithCharacters(b, allCharacters, 'role')
+        ),
       };
     }
   });
@@ -52,8 +79,8 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
     plot_role: character.plot_role 
   }, allCharacters);
 
-  const characterName = character.name.split('|')[0] || 'Unknown';
-  const characterTitle = character.name.includes('|') ? character.name.split('|')[1] : 'Guest';
+  const characterTitle = getCharacterRoleTitle(character);
+  const characterName = characterTitle;
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -227,19 +254,19 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
                 {characterTitle}
               </p>
               <div className="w-1 h-1 rounded-full bg-slate-200"></div>
-              <select
+              <CustomSelect
                 value={character.gender || 'adaptable'}
                 onChange={async (e) => {
                   const newGender = e.target.value;
                   await updateCharacterAction(mystery.id, character.id, { gender: newGender });
                   router.refresh();
                 }}
-                className="text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 border border-slate-200 rounded-full px-3 py-1 outline-none focus:ring-2 focus:ring-brand-pink/20 cursor-pointer hover:bg-slate-100 transition-colors"
+                className="text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-600 border border-slate-200 rounded-full px-3.5 py-1.5 outline-none hover:bg-slate-100 transition-colors"
               >
                 <option value="adaptable">Adaptable ⚧</option>
                 <option value="female">Female ♀</option>
                 <option value="male">Male ♂</option>
-              </select>
+              </CustomSelect>
             </div>
           </div>
         </div>

@@ -17,11 +17,19 @@ interface CharacterCardProps {
 }
 
 import { getCharacterColor } from '@/utils/colors';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import {
+  getCharacterDisplayName,
+  getCharacterRoleTitle,
+  hasAssignedGuest,
+  hydrateTextWithCharacters,
+} from '@/utils/hydration';
 
 export function CharacterCard({ character, mysteryId, allCharacters, guests }: CharacterCardProps) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isCasting, setIsCasting] = useState(false);
+  const [pendingVictimGuestId, setPendingVictimGuestId] = useState<string | null>(null);
 
   // Derive display role and style
   const role = character.plot_role || 'innocent';
@@ -41,6 +49,9 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
   const profileData = character.profile_data as any;
   const assignedGuestId = profileData?.guest_id;
   const isLinked = profileData?.is_linked;
+  const roleTitle = getCharacterRoleTitle(character);
+  const displayName = getCharacterDisplayName(character, { includePrefix: true });
+  const isGuestAssigned = hasAssignedGuest(character);
 
   return (
     <>
@@ -61,15 +72,10 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
             </div>
             <div>
               <h4 className="text-xl font-black text-slate-900 leading-tight">
-                {character.name.split('|')[2] && (
-                  <span className="text-slate-400 mr-1.5">{character.name.split('|')[2]}</span>
-                )}
-                {character.name.split('|')[0]}
+                {roleTitle}
               </h4>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                {character.name.includes('|') && character.name.split('|')[1] 
-                  ? character.name.split('|')[1] 
-                  : 'Mystery Guest'}
+                {isGuestAssigned ? `Played by ${displayName}` : 'Unassigned Role'}
               </p>
             </div>
           </div>
@@ -150,7 +156,7 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
                     </span>
                     {m.notes && (
                       <span className="text-[10px] font-bold text-slate-600 italic">
-                        "{m.notes}"
+                        &ldquo;{hydrateTextWithCharacters(m.notes, allCharacters, 'role')}&rdquo;
                       </span>
                     )}
                   </div>
@@ -197,11 +203,28 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
                 </div>
               </div>
 
-              <select
+              <CustomSelect
                 value={assignedGuestId || ''}
                 disabled={isCasting}
                 onChange={async (e) => {
                   const val = e.target.value;
+                  if (val && isVictim) {
+                    const directGender = (character.gender || 'adaptable').toLowerCase();
+                    const currentCastGender = (profileData?.gender || 'adaptable').toLowerCase();
+                    const effectiveVictimGender =
+                      directGender === 'male' || directGender === 'female'
+                        ? directGender
+                        : currentCastGender;
+                    const pickedGuest = guests.find((g) => g.id === val);
+                    const guestGender = (pickedGuest?.gender || 'adaptable').toLowerCase();
+                    if (
+                      (effectiveVictimGender === 'male' || effectiveVictimGender === 'female') &&
+                      guestGender !== effectiveVictimGender
+                    ) {
+                      setPendingVictimGuestId(val);
+                      return;
+                    }
+                  }
                   setIsCasting(true);
                   try {
                     await assignGuestToCharacterAction(mysteryId, character.id, val ? val : null);
@@ -211,7 +234,7 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
                     setIsCasting(false);
                   }
                 }}
-                className="bg-white border border-slate-200 text-[10px] font-black uppercase tracking-wider rounded-xl px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-brand-pink/20 cursor-pointer text-slate-600 hover:text-slate-900 transition-colors shadow-sm disabled:opacity-50"
+                className="bg-white border border-slate-200 text-[10px] font-black uppercase tracking-wider rounded-xl px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-brand-pink/20 text-slate-600 hover:text-slate-900 transition-colors shadow-sm"
               >
                 <option value="">-- Clear --</option>
                 {guests.map((g) => {
@@ -222,7 +245,7 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
                     </option>
                   );
                 })}
-              </select>
+              </CustomSelect>
             </div>
           </div>
         )}
@@ -237,6 +260,68 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
           Visuals & Personality ✨
         </Link>
       </div>
+
+      {/* VICTIM GENDER MISMATCH CONFIRMATION POP-UP */}
+      {pendingVictimGuestId && (() => {
+        const pendingGuest = guests.find((g) => g.id === pendingVictimGuestId);
+        const baselineGender =
+          character.gender === 'male' || character.gender === 'female'
+            ? character.gender
+            : profileData?.gender || 'their original gender';
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-slate-900 border-2 border-amber-400/50 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-5 text-white">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-2xl">
+                ⚠️
+              </div>
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                  Gender Mismatch Heads-Up
+                </span>
+                <h3 className="text-xl font-black text-white">
+                  Assign {pendingGuest?.name} as The Victim?
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                  The Victim role (<strong>{roleTitle}</strong>) is set as{' '}
+                  <strong className="text-amber-300 uppercase">{baselineGender}</strong>, while{' '}
+                  <strong>{pendingGuest?.name}</strong> is listed as{' '}
+                  <strong className="text-amber-300 uppercase">{pendingGuest?.gender}</strong>.
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Some pre-written clues or pronouns in the story may occasionally misgender them or refer to their original gender. Are you happy to proceed with this?
+                </p>
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingVictimGuestId(null)}
+                  className="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-black uppercase tracking-wider text-slate-300 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const guestIdToAssign = pendingVictimGuestId;
+                    setPendingVictimGuestId(null);
+                    setIsCasting(true);
+                    try {
+                      await assignGuestToCharacterAction(mysteryId, character.id, guestIdToAssign);
+                    } catch (err: any) {
+                      alert('Casting failed: ' + err.message);
+                    } finally {
+                      setIsCasting(false);
+                    }
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black uppercase tracking-wider transition-colors shadow-lg cursor-pointer"
+                >
+                  Proceed Anyway →
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {isEditing && (
         <CharacterDetailPanel 

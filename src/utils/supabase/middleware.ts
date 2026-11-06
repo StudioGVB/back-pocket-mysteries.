@@ -1,13 +1,47 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { i18n } from '@/lib/i18n-config'
+import { isUserAdmin } from '@/utils/admin-auth'
+import {
+  buildSafeCookieOptions,
+  getEffectiveAuthCookies,
+  readPersistedUserFromCookies,
+  recordRefreshedAuthCookies,
+  serverProcessLock,
+} from './session-lock'
 
 export async function updateSession(request: NextRequest) {
+  const initialCookies = request.cookies.getAll()
+  const effectiveInitialCookies = getEffectiveAuthCookies(initialCookies)
+
+  // If a concurrent request just rotated the refresh token, apply the new cookies to request.cookies
+  // so downstream Server Components in this request see the fresh session immediately.
+  let syncedFromCache = false
+  for (const c of effectiveInitialCookies) {
+    if (request.cookies.get(c.name)?.value !== c.value) {
+      request.cookies.set(c.name, c.value)
+      syncedFromCache = true
+    }
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
 
-  const isPermanent = request.cookies.get('sb-keep-logged-in')?.value === 'true'
+  // Default to permanent (30-day) session unless explicitly opted out ('false')
+  const isPermanent = request.cookies.get('sb-keep-logged-in')?.value !== 'false'
+
+  if (syncedFromCache) {
+    for (const c of effectiveInitialCookies) {
+      if (c.name.startsWith('sb-') && c.name.includes('-auth-token')) {
+        supabaseResponse.cookies.set(
+          c.name,
+          c.value,
+          buildSafeCookieOptions(c.value, undefined, isPermanent)
+        )
+      }
+    }
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,21 +49,34 @@ export async function updateSession(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return getEffectiveAuthCookies(request.cookies.getAll())
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          const isWipingAllCookies =
+            cookiesToSet.length > 0 &&
+            cookiesToSet.every(({ value, options }) => !value || options?.maxAge === 0)
+
+          // Never let middleware wipe the user's browser session cookies on transient/concurrent errors
+          if (isWipingAllCookies) {
+            return
+          }
+
+          recordRefreshedAuthCookies(initialCookies, cookiesToSet)
+
+          cookiesToSet.forEach(({ name, value, options }) => {
+            if (!value || options?.maxAge === 0) {
+              request.cookies.delete(name)
+            } else {
+              request.cookies.set(name, value)
+            }
+          })
+
           supabaseResponse = NextResponse.next({
             request,
           })
+
           cookiesToSet.forEach(({ name, value, options }) => {
-            const cookieOptions = { ...options };
-            if (!isPermanent) {
-              delete cookieOptions.maxAge;
-              delete cookieOptions.expires;
-            } else {
-              cookieOptions.maxAge = 60 * 60 * 24 * 30; // 30 days
-            }
+            const cookieOptions = buildSafeCookieOptions(value, options, isPermanent)
             supabaseResponse.cookies.set(name, value, cookieOptions)
           })
         },
@@ -37,36 +84,48 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // getUser(). A simple mistake can make it very hard to debug
-  // issues with users being randomly logged out.
-
+  // getSession() automatically refreshes expired access tokens via __loadSession()
+  // while avoiding unnecessary remote /auth/v1/user round-trips on every request.
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  let user = session?.user ?? null
+
+  // Fallback to persisted 30-day auth cookie if "Keep me logged in" is enabled
+  if (!user && isPermanent) {
+    user = readPersistedUserFromCookies(request.cookies.getAll())
+  }
 
   const pathname = request.nextUrl.pathname
   const locale = i18n.locales.find(loc => pathname.startsWith(`/${loc}/`) || pathname === `/${loc}`)
   const pathWithoutLocale = locale ? pathname.replace(`/${locale}`, '') || '/' : pathname
 
   const isAuthPage = ['/login', '/signup', '/auth'].some(p => pathWithoutLocale.startsWith(p))
-  const isProtectedPage = ['/builder', '/account', '/admin'].some(p => pathWithoutLocale.startsWith(p))
+  const isCastPage = /^\/mysteries\/[^/]+\/cast(\/|$)/.test(pathWithoutLocale)
+  const isProtectedPage =
+    ['/builder', '/account', '/admin'].some(p => pathWithoutLocale.startsWith(p)) || isCastPage
+  const isAdminOnlyPage = pathWithoutLocale.startsWith('/admin')
 
   if (!user && !isAuthPage && isProtectedPage) {
     const url = request.nextUrl.clone()
     url.pathname = locale ? `/${locale}/login` : '/login'
+    url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as is. If you're
-  // creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally: return myNewResponse
+  // Strictly block non-admin authenticated users from /admin (customers can still access /builder and /account)
+  if (user && isAdminOnlyPage) {
+    const isAdmin = await isUserAdmin(supabase, user)
+    if (!isAdmin) {
+      const url = request.nextUrl.clone()
+      url.pathname = locale ? `/${locale}/account` : '/en/account'
+      const redirectResponse = NextResponse.redirect(url)
+      supabaseResponse.cookies.getAll().forEach(c => {
+        redirectResponse.cookies.set(c.name, c.value)
+      })
+      return redirectResponse
+    }
+  }
 
   return supabaseResponse
 }

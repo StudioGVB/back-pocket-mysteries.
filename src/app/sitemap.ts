@@ -3,16 +3,13 @@ import { i18n } from '@/lib/i18n-config'
 import { blogPosts } from '@/data/blog-posts'
 import { competitors } from '@/data/competitors'
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mysteries.backpocketgames.com'
+import { ACTIVE_MYSTERIES } from '@/data/active-mysteries'
 
-const themeSlugs = [
-  'love-on-the-rocks',
-  'the-inheritance',
-  'the-gala-heist',
-  'dead-space',
-  'speakeasy-scandal',
-  'off-the-grid'
-]
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://backpocketmysteries.com'
+
+export const dynamic = 'force-static'
+
+const themeSlugs = ACTIVE_MYSTERIES.map((m) => m.slug)
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const locales = i18n.locales

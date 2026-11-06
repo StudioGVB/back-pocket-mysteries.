@@ -1,3 +1,6 @@
+import { industrySeoBlogsPart1 } from './industry-seo-blogs-part1';
+import { industrySeoBlogsPart2 } from './industry-seo-blogs-part2';
+
 export interface BlogPost {
   slug: string;
   title: string;
@@ -21,6 +24,8 @@ export interface BlogPost {
 }
 
 export const blogPosts: BlogPost[] = [
+  ...industrySeoBlogsPart1,
+  ...industrySeoBlogsPart2,
   {
     slug: 'diy-murder-mystery-party-guide',
     title: 'How to Host an Unforgettable DIY Murder Mystery Party',
@@ -49,7 +54,7 @@ export const blogPosts: BlogPost[] = [
       
       <div class="bg-brand-pink/10 p-8 rounded-3xl border-2 border-brand-pink my-10">
         <h4 class="font-black text-brand-pink uppercase tracking-widest text-sm mb-4">Pro Tip: Skip the Stress</h4>
-        <p class="font-bold text-gray-700">Don't write it from scratch. Our ready-to-run themes are designed to be sorted in under 20 minutes with zero prep for the host. <a href="/themes" class="underline hover:text-brand-pink">Browse our custom themes here.</a></p>
+        <p class="font-bold text-gray-700">Don't write it from scratch. Our ready-to-run themes are designed to be sorted in ~30 minutes with zero prep for the host. <a href="/themes" class="underline hover:text-brand-pink">Browse our custom themes here.</a></p>
       </div>
 
       <h3>2. Curating The Guest List & Characters</h3>
@@ -99,8 +104,8 @@ export const blogPosts: BlogPost[] = [
       <p>Nostalgia is powerful. Hairspray, neon windbreakers, and a killer on the loose at the high school prom. This theme is incredibly easy to costume (just hit any local thrift store) and allows for an absolutely killer 80s synth-pop playlist.</p>
 
       <div class="my-12 text-center">
-        <h4 class="text-2xl font-black mb-6 uppercase tracking-tight text-brand-dark">Which theme fits your group?</h4>
-        <a href="/themes" class="inline-block px-10 py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-xs shadow-xl hover:translate-y-[-2px] transition-all">Take the Theme Quiz</a>
+        <h4 class="text-2xl font-black mb-6 uppercase tracking-tight text-brand-dark">Ready to explore our active themes?</h4>
+        <a href="/themes" class="inline-block px-10 py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-xs shadow-xl hover:translate-y-[-2px] transition-all">Explore Active Mysteries</a>
       </div>
 
       <h3>4. The Hollywood Premiere</h3>
@@ -113,7 +118,7 @@ export const blogPosts: BlogPost[] = [
       <p>Perfect for outdoor summer parties or beach events. Rum cocktails, buried treasure, and backstabbing crewmates. It's loud, boisterous, and encourages ridiculous accents.</p>
 
       <h3>7. The Reality TV Show Finale</h3>
-      <p>Set during the finale of a competitive reality show (think <i>Survivor</i> or <i>The Bachelor</i>). The producer turns up dead, and every contestant has a motive to win the prize money. It's modern, highly relatable, and encourages hilarious "confessional" moments.</p>
+      <p>Set during the reunion of a competitive reality show (like our flagship mystery <i>Love On The Rocks</i>). The star collapses mid-champagne-toast, and every cast member has a motive to hide their secrets. It's modern, highly relatable, and encourages hilarious "confessional" moments.</p>
 
       <h3>The Final Verdict</h3>
       <p>Choosing a theme is half the fun. Pick something that matches your friendship group's energy—whether they're goofy, serious, or ready for a high-fashion costume contest.</p>
@@ -147,7 +152,7 @@ export const blogPosts: BlogPost[] = [
       <div class="bg-brand-dark p-12 rounded-[3rem] text-white my-12 shadow-2xl relative overflow-hidden">
         <div class="relative z-10">
           <h4 class="text-3xl font-black mb-6 uppercase tracking-tighter">Plan your next Offsite</h4>
-          <p class="text-gray-400 mb-8 font-bold">We offer custom corporate packages for teams of 10 to 500. Let us handle the mystery while you enjoy the credit.</p>
+          <p class="text-gray-400 mb-8 font-bold">We offer custom packages for groups of 4 to 16 players, plus an Unlimited Monthly Pass for running multiple tables across larger company events.</p>
           <a href="/pricing" class="inline-block px-10 py-4 bg-brand-pink rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-pink transition-all">View Package Pricing</a>
         </div>
         <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-brand-blue rounded-full blur-[80px] opacity-20"></div>
@@ -241,8 +246,8 @@ export const blogPosts: BlogPost[] = [
         </div>
         <div class="bg-brand-gray p-6 rounded-2xl flex flex-col items-center text-center">
             <span class="text-3xl mb-3">🛍️</span>
-            <h5 class="font-black text-xs uppercase mb-2">Easy Shopping</h5>
-            <p class="text-[10px] text-gray-500">We link to easy Amazon/Etsy finds for your specific theme.</p>
+            <h5 class="font-black text-xs uppercase mb-2">Easy Styling</h5>
+            <p class="text-[10px] text-gray-500">Every character role includes a tailored wardrobe & prop prompt.</p>
         </div>
       </div>
 
@@ -253,7 +258,7 @@ export const blogPosts: BlogPost[] = [
       <p>Never underestimate the power of eyeliner, fake mustaches, and excessive hair gel. A slicked-back hairstyle instantly makes someone look like a mob boss, while smudged mascara screams "distraught widow." <a href="https://www.youtube.com/results?search_query=theatrical+makeup+tutorial" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">YouTube theatrical makeup tutorials</a> can teach you how to age your face 20 years with just a brown pencil.</p>
 
       <h3>Ready to Dress Up?</h3>
-      <p>Pick your theme first, then start the hunt. Your character is waiting! <a href="/occasions" class="text-brand-pink font-black border-b-2 border-brand-pink">Find your occasion here.</a></p>
+      <p>Pick your theme first, then start the hunt. Your character is waiting! <a href="/themes" class="text-brand-pink font-black border-b-2 border-brand-pink">Explore our themes here.</a></p>
     `
   },
   {
@@ -279,7 +284,7 @@ export const blogPosts: BlogPost[] = [
       <p>For decades, hosting a murder mystery meant buying a boxed kit from a hobby store or downloading a static PDF from the internet. The stories were fun, but they had glaring flaws: the characters were generic ("You are Dr. Green"), the player counts were rigid (if someone canceled, the game broke), and if you played with the same group twice, the magic faded.</p>
       
       <h3>Enter the AI Custom Generator</h3>
-      <p>Artificial intelligence isn't just for writing code or drafting emails; it's a powerful, dynamic storytelling engine. By feeding an AI the names, personalities, and inside jokes of your real-life friends, you can generate a <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">100% custom murder mystery game</a> in seconds. This isn't mad-libs; the AI weaves complex, logical plots that structurally support your specific guest list.</p>
+      <p>Artificial intelligence isn't just for writing code or drafting emails; it's a powerful, dynamic storytelling engine. By feeding an AI the names, personalities, and inside jokes of your real-life friends, you can generate a <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">100% custom murder mystery game</a> in ~30 minutes. This isn't mad-libs; the AI weaves complex, logical plots that structurally support your specific guest list.</p>
       
       <div class="bg-brand-gray p-8 rounded-3xl border-l-4 border-brand-pink my-8">
         <h4 class="font-black text-brand-dark uppercase tracking-widest text-sm mb-2">Why Customisation Matters</h4>
@@ -287,7 +292,7 @@ export const blogPosts: BlogPost[] = [
       </div>
 
       <h3>Dynamic Scaling for Any Group Size</h3>
-      <p>Ever had a guest drop out at the last minute and ruin a pre-written game because they held the murder weapon in their envelope? AI generators solve this fundamentally. Our dynamic platform allows you to recalculate the plot, reassign clues, and ensure the mystery works flawlessly whether you have 6 guests or 60. To learn more about how AI handles complex combinatorial logic, <a href="https://mitsloan.mit.edu/ideas-made-to-matter/machine-learning-explained" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">MIT Sloan has a great primer on machine learning logic</a>.</p>
+      <p>Ever had a guest drop out at the last minute and ruin a pre-written game because they held the murder weapon in their envelope? AI generators solve this fundamentally. Our dynamic platform allows you to recalculate the plot, reassign clues, and ensure the mystery works flawlessly whether you have 4 guests or 16. To learn more about how AI handles complex combinatorial logic, <a href="https://mitsloan.mit.edu/ideas-made-to-matter/machine-learning-explained" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">MIT Sloan has a great primer on machine learning logic</a>.</p>
 
       <h3>The Death of Spoilers</h3>
       <p>With traditional games, a quick Google search can reveal the killer. But when your game is generated specifically for you, there are no spoilers online. The killer could be anyone, and the motive is entirely unique to your run of the game.</p>
@@ -319,7 +324,7 @@ export const blogPosts: BlogPost[] = [
       <p>Going out for dinner and drinks is fine, but a milestone birthday (30th, 40th, 50th) deserves an actual event. A murder mystery dinner party combines great food, outrageous costumes, and interactive theater into one unforgettable evening. It gives your guests an excuse to dress up and guarantees that there will be no awkward silences or lulls in conversation.</p>
       
       <h3>1. Make the Birthday Guest the Star (or the Victim!)</h3>
-      <p>The best part of a birthday mystery is centering the plot around the guest of honor. Some love being the lead detective (the hero), while others find it hilarious to play the wealthy, arrogant victim who gets "knocked off" before the appetizers arrive. With a <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">custom-built mystery</a>, you dictate exactly who plays what role.</p>
+      <p>The best part of a birthday mystery is centering the plot around the guest of honor. Some love being the lead detective (the hero), while others find it hilarious to play the wealthy, arrogant star who gets "knocked off" right after Round 1. With a <a href="/custom-murder-mystery" class="text-brand-pink font-bold hover:underline">custom-built mystery</a>, you dictate exactly who plays what role.</p>
       
       <h3>2. The Perfect Murder Mystery Menu</h3>
       <p>Pacing is everything. You want food that is easy to eat while mingling and holding clue cards. Don't trap people at a table with a messy, complex plated meal.</p>
@@ -331,7 +336,7 @@ export const blogPosts: BlogPost[] = [
 
       <div class="bg-brand-dark p-10 rounded-[2rem] text-center my-10">
         <h4 class="text-white text-2xl font-black uppercase tracking-tight mb-4">Need a Theme?</h4>
-        <p class="text-gray-400 mb-6">From 1920s Gatsby to 80s Prom, we have themes to match any birthday era.</p>
+        <p class="text-gray-400 mb-6">Explore our flagship Reality TV Reunion mystery <i>Love On The Rocks</i> — built for unforgettable birthdays and hens nights.</p>
         <a href="/themes" class="px-8 py-3 bg-white text-brand-dark rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-colors">Browse Party Themes</a>
       </div>
 
@@ -365,21 +370,21 @@ export const blogPosts: BlogPost[] = [
       <p>A formal, multi-course sit-down dinner sounds elegant, but a mystery requires mingling. If your guests are glued to their assigned chairs, they can't secretly interrogate the suspect across the room or form alliances. <strong>The Fix:</strong> Serve buffet style, or intentionally build in "mingle breaks" between courses where guests are encouraged to get up and grab a drink.</p>
       
       <h3>Mistake 2: Forgetting Name Tags</h3>
-      <p>You know your friend Sarah, but tonight she's "Countess Von Diamond." If guests can't remember who is playing who, the investigation stalls. Nobody wants to yell, "Hey... you! The guy in the hat!" <strong>The Fix:</strong> Always provide clear, readable name tags. They are non-negotiable.</p>
+      <p>You know your friend Sarah, but tonight she's playing "The Villain." If guests can't remember who is playing which role, the investigation stalls. Nobody wants to yell, "Hey... you! The guy in the hat!" <strong>The Fix:</strong> Always provide clear, readable name tags or let guests join the Live Mobile Lobby on their phones.</p>
 
       <div class="bg-brand-pink/10 p-8 rounded-3xl border-2 border-brand-pink my-8">
         <h4 class="font-black text-brand-pink uppercase tracking-widest text-sm mb-2">Automated Hosting</h4>
-        <p class="text-gray-700">Our platform automatically generates printable name tags, evidence files, and step-by-step host instructions so you never miss a detail. <a href="/how-it-works" class="font-bold underline hover:text-brand-pink">See how it works.</a></p>
+        <p class="text-gray-700">Our platform automatically generates printable character booklets, a live 6-digit PIN mobile lobby, and step-by-step Spoiler-Free Host Controls so you never miss a detail. <a href="/how-it-works" class="font-bold underline hover:text-brand-pink">See how it works.</a></p>
       </div>
 
       <h3>Mistake 3: Giving Away the Ending</h3>
-      <p>As the host, it's very tempting to read the entire script beforehand to make sure everything makes sense. But if you know who the killer is, it's incredibly hard not to accidentally drop hints or guide players too forcefully! <strong>The Fix:</strong> Choose a game format where the host can play along blindly alongside their guests.</p>
+      <p>As the host, it's very tempting to read the entire script beforehand to make sure everything makes sense. But if you know who the killer is, it's incredibly hard not to accidentally drop hints or guide players too forcefully! <strong>The Fix:</strong> Choose a game format with Spoiler-Free Host Mode where the host can play along blindly alongside their guests.</p>
 
       <h3>Mistake 4: Taking it Too Seriously</h3>
       <p>Someone will inevitably forget their accent, drop a clue under the sofa, or accuse the wrong person for an entirely ridiculous reason. Lean into it! The laughter is the point. <a href="https://www.psychologytoday.com/us/blog/play-in-mind/201204/the-value-play-in-adulthood" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Psychologists emphasize the importance of adult play</a>, so let go of perfectionism and embrace the chaos.</p>
       
       <h3>Mistake 5: Not Having a "Murder" Signal</h3>
-      <p>When the murder actually happens (usually between Round 1 and 2), you need a way to get everyone's attention. Yelling over 15 talking people ruins the drama. <strong>The Fix:</strong> Flick the lights off for 3 seconds, ring a loud bell, or suddenly play a dramatic sound effect over your Bluetooth speakers.</p>
+      <p>When the murder actually happens (between Round 1 and Round 2), you need a way to get everyone's attention. Yelling over 15 talking people ruins the drama. <strong>The Fix:</strong> Flick the lights off for 3 seconds, ring a loud bell, or suddenly play a dramatic sound effect over your Bluetooth speakers.</p>
     `
   },
   {
@@ -405,10 +410,10 @@ export const blogPosts: BlogPost[] = [
       <p>Getting invited to a murder mystery party is thrilling, but if you've never been to one, it can also feel a bit intimidating. Will you have to act? Do you have to memorize lines? What if you're the killer and you ruin the game? Relax—here is exactly what will happen and how to survive the night.</p>
       
       <h3>Before the Party: Costumes and Prep</h3>
-      <p>You will receive your character assignment from your host a few weeks prior. This usually includes a brief backstory, some costume suggestions, and a few secrets. <strong>Your only job right now is to find an outfit.</strong> You do NOT need to memorize a script. Just get a feel for your character's vibe. (Need help? Check out <a href="https://www.wikihow.com/Dress-for-a-Murder-Mystery-Party" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">WikiHow's guide on dressing for a mystery party</a>).</p>
+      <p>You will receive your character assignment from your host prior to the party. This includes your character role, backstory, costume suggestions, and a few secrets. <strong>Your only job right now is to find an outfit.</strong> You do NOT need to memorize a script. Just get a feel for your character's vibe. (Need help? Check out <a href="https://www.wikihow.com/Dress-for-a-Murder-Mystery-Party" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">WikiHow's guide on dressing for a mystery party</a>).</p>
       
       <h3>Arriving at the Party</h3>
-      <p>When you walk in, you'll likely receive an envelope or a digital link containing your "Round 1" objectives. These are simple goals like, "Find out why the Butler is angry," or "Tell everyone how rich you are." It gives you an immediate, built-in excuse to walk up to strangers and start talking.</p>
+      <p>When you walk in, you'll receive either a printed character booklet or a 6-digit Game PIN to join the live party lobby on your phone containing your "Round 1" objectives. These are simple goals like, "Find out why The Ex is angry," or "Confront The Producer about the leaked contract." It gives you an immediate, built-in excuse to walk up to other guests and start talking.</p>
 
       <div class="my-10 p-8 border-l-4 border-gray-800 bg-gray-50">
         <h4 class="font-black text-gray-800 uppercase tracking-widest text-sm mb-2">The Golden Rule</h4>
@@ -416,17 +421,17 @@ export const blogPosts: BlogPost[] = [
       </div>
 
       <h3>The Murder & The Investigation</h3>
-      <p>Eventually, someone will "die" (usually dramatically, perhaps with a dramatic light flicker). The host will present new evidence—like a police report, a bloody weapon, or a leaked bank statement. From there, it’s a free-for-all. You will gossip, accuse, defend yourself, and try to piece together the timeline.</p>
+      <p>Eventually, someone will "die" (usually dramatically at the end of Round 1). The host will unlock Round 2 and present new evidence—like leaked group-chat screenshots, audio wiretaps, and forensic clues. From there, it’s a free-for-all. You will gossip, accuse, defend yourself, and try to piece together the timeline.</p>
 
       <h3>Don't Worry About Being a Good Actor</h3>
-      <p>You don't need an Oscar. In fact, simply reading your clues with a terrible fake accent is usually the funniest part of the night. The pressure is low, and everyone is in the same boat. If you're ready to dive in, suggest a <a href="/compare" class="text-brand-pink font-bold hover:underline">modern, easy-to-play game format</a> to your host for their next party!</p>
+      <p>You don't need an Oscar. In fact, simply reading your clues with a dramatic voice is usually the funniest part of the night. The pressure is low, and everyone is in the same boat. If you're ready to dive in, suggest a <a href="/compare" class="text-brand-pink font-bold hover:underline">modern, easy-to-play game format</a> to your host for their next party!</p>
     `
   },
   {
     slug: 'best-murder-mystery-large-groups',
     title: 'The Best Murder Mystery Party Games for Large Groups in 2026',
-    subtitle: 'How to host 20, 50, or 100+ suspects without losing your mind.',
-    excerpt: 'Hosting a massive event? Discover the best murder mystery formats and games designed specifically for large crowds and corporate events.',
+    subtitle: 'How to host 12 to 16+ suspects without losing your mind.',
+    excerpt: 'Hosting a big group event? Discover the best murder mystery formats and strategies designed for lively dinner parties and multi-table corporate events.',
     image: '/blog/large-groups.png',
     date: 'May 28, 2024',
     readTime: '13 min read',
@@ -437,27 +442,27 @@ export const blogPosts: BlogPost[] = [
     },
     seo: {
       title: 'Best Murder Mystery Games for Large Groups & Corporate',
-      description: 'Find the best murder mystery party games for large groups of 20, 50, or 100+ people. Perfect for corporate events, fundraisers, and massive parties.',
+      description: 'Find the best murder mystery party games for large groups and multi-table corporate events. Perfect for team offsites, fundraisers, and lively parties.',
       keywords: ['murder mystery for large groups', 'large group party games', 'murder mystery corporate event']
     },
     content: `
       <h2>Scaling the Suspense</h2>
-      <p>Hosting a mystery for 8 people around a dinner table is easy. Hosting a mystery for 80 people in a rented banquet hall is a completely different beast. Traditional boxed kits fall apart when the player count gets too high because they rely on everyone sitting quietly and listening to one person read a script. For large events, you need a different strategy entirely.</p>
+      <p>Hosting a mystery for 6 people around a dinner table is intimate. Hosting a mystery for 16 people — or running multiple tables across a company offsite — requires the right structure. Traditional boxed kits fall apart when the player count gets high because they rely on everyone sitting quietly and listening to one person read a static script. For larger events, you need a dynamic mingle strategy.</p>
       
       <h3>The "Mingle" Format is Mandatory</h3>
-      <p>For large groups, you must use a "mingle" or "free-form" game. In this format, there is no central script read aloud to the room. Instead, guests are given individual secrets and objectives, and they must roam the room to interrogate each other in small groups. It creates a chaotic, highly energetic atmosphere similar to a bustling cocktail party. <a href="https://www.bizbash.com/" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Event professionals at BizBash</a> frequently recommend mingle formats to maximize networking.</p>
+      <p>For larger groups, you must use a "mingle" or round-based social deduction format. Instead of reading a central script aloud to the room, guests are given individual secrets and objectives for each round, and they roam the room to interrogate each other in small groups. It creates a chaotic, highly energetic atmosphere similar to a bustling cocktail party. <a href="https://www.bizbash.com/" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Event professionals at BizBash</a> frequently recommend mingle formats to maximize networking.</p>
       
-      <h3>Primary vs. Secondary Characters</h3>
-      <p>When you have 50 guests, not everyone can be the prime suspect—otherwise, the plot becomes impossible to follow. The best large-group games divide the room into two tiers:</p>
+      <h3>Single-Table Grand (Up to 16 Players) vs. Multi-Table Unlimited</h3>
+      <p>When you have a larger group, there are two ways to structure your event so everyone stays deeply involved:</p>
       <ul class="list-disc pl-6 space-y-2 mb-8 text-gray-700">
-        <li><strong>The Core Suspects (10-15 people):</strong> These are your outgoing guests who have direct motives and deep ties to the victim.</li>
-        <li><strong>The Investigators (Everyone else):</strong> They form detective teams. They still get characters, quirks, and costumes, but their primary goal is to interview the Core Suspects and solve the crime as a unit.</li>
+        <li><strong>The Grand Package (4–16 Players):</strong> Every single guest receives a full custom suspect role, personalized alibis, and interlocking relationships.</li>
+        <li><strong>Multi-Table Corporate Mode (Unlimited Monthly Pass):</strong> For events with 20+ attendees, split the room into competing tables of 8–12 players, each with its own unique AI-generated mystery and live 6-digit Game PIN lobby!</li>
       </ul>
 
       <div class="bg-brand-dark p-12 rounded-[3rem] text-white my-10 shadow-xl">
-        <h4 class="text-3xl font-black mb-4 uppercase tracking-tighter">Custom Scaling to 100+ Guests</h4>
-        <p class="text-gray-300 mb-8 font-bold">Our AI engine allows you to generate a mystery that perfectly fits your massive guest list. We create the Core Suspects and unlimited Investigator roles dynamically.</p>
-        <a href="/pricing" class="inline-block px-8 py-3 bg-brand-pink rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-pink transition-colors">See Large Group Pricing</a>
+        <h4 class="text-3xl font-black mb-4 uppercase tracking-tighter">Up to 16 Suspects Per Game — Or Unlimited Tables</h4>
+        <p class="text-gray-300 mb-8 font-bold">Our Grand tier supports up to 16 fully customized suspects in a single mystery, while our Unlimited Monthly Pass lets event organizers generate unlimited mysteries for multi-table events.</p>
+        <a href="/pricing" class="inline-block px-8 py-3 bg-brand-pink rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-pink transition-colors">See Group Pricing</a>
       </div>
 
       <h3>Organizing the Evidence</h3>

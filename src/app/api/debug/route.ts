@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/utils/admin-auth';
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
     
     // 1. Fetch latest mystery
     const { data: mysteries, error: myErr } = await supabase

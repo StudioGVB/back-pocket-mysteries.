@@ -1,20 +1,21 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
+import { isUserAdmin } from '@/utils/admin-auth';
 
 export async function GET(request: Request) {
   const supabase = await createClient();
   try {
     
-    // 1. Get authenticated user session
+    // 1. Get authenticated admin user session
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!user || !(await isUserAdmin(supabase, user))) {
       return new NextResponse(
         JSON.stringify({ 
           success: false, 
-          error: 'Unauthorized', 
-          message: 'Please make sure you are logged into the Back Pocket Mysteries application first, then refresh this page!' 
+          error: 'Forbidden', 
+          message: 'Admin privileges required.' 
         }), 
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
       );
     }
 

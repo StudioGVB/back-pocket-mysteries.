@@ -16,11 +16,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `${dict.common.faq} | Back Pocket Mysteries`,
     description: dict.faqPage?.seoDescription || "Frequently Asked Questions about our custom murder mystery parties.",
     alternates: {
-      canonical: `https://mysteries.backpocketgames.com/${locale}/faq`,
+      canonical: `https://backpocketmysteries.com/${locale}/faq`,
       languages: {
-        en: 'https://mysteries.backpocketgames.com/en/faq',
-        fr: 'https://mysteries.backpocketgames.com/fr/faq',
-        'x-default': 'https://mysteries.backpocketgames.com/en/faq',
+        en: 'https://backpocketmysteries.com/en/faq',
+        fr: 'https://backpocketmysteries.com/fr/faq',
+        'x-default': 'https://backpocketmysteries.com/en/faq',
       }
     }
   }
@@ -75,14 +75,47 @@ export default async function FAQPage(props: {
           
           <FAQSearch faqs={faqsData} />
 
+          {/* Still Have Questions / Support Ticket Callout */}
+          <div className="mt-20 p-10 lg:p-14 rounded-[2.5rem] bg-brand-dark text-white border-2 border-brand-pink/30 relative overflow-hidden">
+            <div className="max-w-3xl mx-auto text-center relative z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 text-[10px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/15 rounded-full border border-brand-pink/30">
+                Support Desk • 48h Response Guarantee
+              </div>
+              <h2 className="text-2xl lg:text-4xl font-black text-white mb-4 uppercase tracking-tight">
+                Still can&apos;t find your <span className="text-brand-pink italic">answer?</span>
+              </h2>
+              <p className="text-gray-300 font-medium text-base lg:text-lg mb-8">
+                Send us a message on our Contact page, raise a ticket inside your Host Support Portal, or email us at{' '}
+                <a href="mailto:hello@backpocketgames.com" className="text-brand-pink font-bold underline">
+                  hello@backpocketgames.com
+                </a>
+                . We respond to all inquiries within 48 hours.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link
+                  href={`/${locale}/contact`}
+                  className="px-8 py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.15em] text-xs hover:bg-white hover:text-brand-dark transition-all shadow-xl"
+                >
+                  Contact Support
+                </Link>
+                <a
+                  href="mailto:hello@backpocketgames.com"
+                  className="px-8 py-4 bg-white/10 text-white border border-white/20 rounded-full font-black uppercase tracking-[0.15em] text-xs hover:border-brand-pink hover:text-brand-pink transition-all"
+                >
+                  Email hello@backpocketgames.com
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* CTA Section */}
-          <div className="mt-32 text-center p-12 lg:p-16 rounded-[3rem] bg-gray-50 border-2 border-gray-100 relative overflow-hidden group">
+          <div className="mt-16 text-center p-12 lg:p-16 rounded-[3rem] bg-gray-50 border-2 border-gray-100 relative overflow-hidden group">
             <div className="absolute inset-0 bg-brand-pink/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <h2 className="text-3xl lg:text-5xl font-black text-brand-dark mb-6 uppercase tracking-tight relative z-10">
               Ready to <span className="text-brand-pink italic">host?</span>
             </h2>
             <p className="text-gray-500 font-bold text-lg max-w-xl mx-auto mb-10 relative z-10">
-              Your party is happening either way. Let's make it one they actually remember.
+              Your party is happening either way. Let&apos;s make it one they actually remember.
             </p>
             <Link href={`/${locale}/themes`} className="relative z-10 inline-block px-12 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-brand-dark transition-all shadow-2xl hover:translate-y-[-4px] active:scale-95">
               {dict.common.browseThemes}

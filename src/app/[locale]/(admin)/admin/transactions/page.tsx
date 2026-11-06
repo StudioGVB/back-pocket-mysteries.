@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import Link from 'next/link';
 import { getTransactions } from '@/services/admin';
 import { refundOrderAction } from './actions';
 import { formatDate } from '@/utils/date';
@@ -18,6 +19,12 @@ export default async function AdminTransactions({
           <p className="text-gray-500 text-sm font-medium">Keep track of every mystery sold and payment processed</p>
         </div>
         <div className="flex gap-4">
+          <Link
+            href="/admin/balance-sheet"
+            className="px-6 py-3 bg-brand-pink text-white rounded-full text-xs font-black uppercase tracking-widest hover:opacity-95 transition-all"
+          >
+            Income vs. Tax Balance Sheet →
+          </Link>
           <button className="px-6 py-3 border border-gray-200 text-brand-dark rounded-full text-xs font-black uppercase tracking-widest hover:border-brand-dark transition-all">
             Export CSV
           </button>

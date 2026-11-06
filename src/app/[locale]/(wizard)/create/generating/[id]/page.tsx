@@ -33,7 +33,7 @@ export default async function GeneratingPage(props: {
         <p className="text-slate-400 text-lg font-medium mb-10 max-w-lg mx-auto">
           Our AI detectives are currently piecing together your clues, forging motives, and hiding secrets. 
           <br/><br/>
-          <strong className="text-white">This process takes approximately 20 minutes.</strong>
+          <strong className="text-white">This process takes approximately 30 minutes.</strong>
         </p>
 
         <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 mb-10 text-left space-y-4">

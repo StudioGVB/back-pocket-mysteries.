@@ -11,6 +11,67 @@ interface AvatarBuilderProps {
   gender: string;
 }
 
+export const deriveDiceBearTop = (length?: string, texture?: string, g?: string) => {
+  if (!length || length === 'Bald') return 'none';
+  if (length === 'Hijab') return 'hijab';
+  if (length === 'Turban') return 'turban';
+  if (length === 'Beanie') return 'winterHat1';
+  
+  if (g === 'Masculine') {
+    if (length === 'Short') {
+      if (texture === 'Curly' || texture === 'Very Curly') return 'shortCurly';
+      if (texture === 'Coily' || texture === 'Afro') return 'frizzle';
+      if (texture === 'Dreads') return 'dreads01';
+      if (texture === 'Wavy' || texture === 'Small Waves') return 'shortWaved';
+      return 'shortFlat';
+    }
+    if (length === 'Medium') {
+      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'shortCurly';
+      if (texture === 'Afro') return 'fro';
+      if (texture === 'Dreads') return 'dreads02';
+      if (texture === 'Wavy' || texture === 'Small Waves') return 'shortWaved';
+      return 'shortRound';
+    }
+    if (length === 'Shoulder-Length') {
+      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'shaggy';
+      if (texture === 'Afro') return 'fro';
+      if (texture === 'Dreads') return 'dreads02';
+      if (texture === 'Wavy' || texture === 'Small Waves') return 'shaggy';
+      return 'shaggyMullet';
+    }
+    if (length === 'Long' || length === 'Very Long') {
+      if (texture === 'Dreads') return 'dreads';
+      if (texture === 'Afro' || texture === 'Coily') return 'fro';
+      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Wavy' || texture === 'Small Waves') return 'shaggyMullet';
+      return 'longButNotTooLong';
+    }
+    return 'shortFlat';
+  } else {
+    if (length === 'Short') {
+      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'shortCurly';
+      if (texture === 'Afro') return 'frizzle';
+      if (texture === 'Dreads') return 'dreads01';
+      if (texture === 'Wavy' || texture === 'Small Waves') return 'shortWaved';
+      return 'miaWallace';
+    }
+    if (length === 'Medium' || length === 'Shoulder-Length') {
+      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
+      if (texture === 'Wavy' || texture === 'Small Waves') return 'curvy';
+      if (texture === 'Afro') return 'fro';
+      if (texture === 'Dreads') return 'dreads';
+      return 'bob';
+    }
+    if (length === 'Long' || length === 'Very Long') {
+      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
+      if (texture === 'Wavy' || texture === 'Small Waves') return 'curvy';
+      if (texture === 'Afro') return 'fro';
+      if (texture === 'Dreads') return 'dreads';
+      return 'straight01';
+    }
+    return 'straight01';
+  }
+};
+
 export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) {
   const updateConfig = (key: keyof AvatarConfig, value: string | undefined) => {
     onChange({ ...config, [key]: value });
@@ -68,57 +129,21 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
     { id: 'Afro', label: 'Afro' }
   ];
 
-  const deriveDiceBearTop = (length?: string, texture?: string, g?: string) => {
-    if (!length || length === 'Bald') return 'none';
-    if (length === 'Hijab') return 'hijab';
-    if (length === 'Turban') return 'turban';
-    if (length === 'Beanie') return 'winterHat1';
-    
-    if (g === 'Masculine') {
-      if (length === 'Short') {
-        if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'shortCurly';
-        if (texture === 'Afro') return 'frizzle';
-        if (texture === 'Dreads') return 'dreads01';
-        if (texture === 'Wavy' || texture === 'Small Waves') return 'shortWaved';
-        return 'shortFlat';
-      }
-      if (length === 'Medium' || length === 'Shoulder-Length') {
-        if (texture === 'Curly' || texture === 'Wavy' || texture === 'Small Waves') return 'curvy';
-        if (texture === 'Afro') return 'frizzle';
-        return 'shaggyMullet'; 
-      }
-      if (length === 'Long' || length === 'Very Long') {
-        if (texture === 'Dreads') return 'dreads01';
-        return 'straightAndStrand';
-      }
-      return 'shortFlat';
+  let currentLength = config.hairLength;
+  if (!currentLength) {
+    if (!config.top || config.top === 'none') {
+      currentLength = 'Bald';
+    } else if (['shortFlat', 'shortCurly', 'shortWaved', 'theCaesar', 'miaWallace'].includes(config.top)) {
+      currentLength = 'Short';
+    } else if (['straight01', 'straight02', 'straightAndStrand'].includes(config.top)) {
+      currentLength = 'Long';
     } else {
-      if (length === 'Short') {
-        if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
-        if (texture === 'Afro') return 'frizzle';
-        if (texture === 'Dreads') return 'dreads01';
-        return 'miaWallace';
-      }
-      if (length === 'Medium' || length === 'Shoulder-Length') {
-        if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
-        if (texture === 'Wavy' || texture === 'Small Waves') return 'curvy';
-        if (texture === 'Afro') return 'frizzle';
-        if (texture === 'Dreads') return 'dreads01';
-        return 'bob';
-      }
-      if (length === 'Long' || length === 'Very Long') {
-        if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
-        if (texture === 'Wavy' || texture === 'Small Waves') return 'curvy';
-        if (texture === 'Afro') return 'frizzle';
-        if (texture === 'Dreads') return 'dreads01';
-        return 'straight01';
-      }
-      return 'straight01';
+      currentLength = 'Medium';
     }
-  };
+  }
 
   const updateHair = (length?: string, texture?: string) => {
-    const l = length !== undefined ? length : config.hairLength;
+    const l = length !== undefined ? length : currentLength;
     const t = texture !== undefined ? texture : (config.hairTexture || 'Straight');
     const top = deriveDiceBearTop(l, t, gender);
     onChange({ ...config, hairLength: l, hairTexture: t, top });
@@ -136,8 +161,6 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
   const eyeColors = ['Brown', 'Blue', 'Green', 'Hazel', 'Grey', 'Heterochromia'];
   const heights = ['Petite / Short', 'Average', 'Tall', 'Very Tall'];
 
-
-
   const builds = ['Slender', 'Athletic', 'Average', 'Curvy', 'Heavy-set', 'Broad-shouldered'];
   const distinctiveFeaturesOptions = ['Freckles', 'Beauty Mark', 'Glasses'];
 
@@ -149,15 +172,6 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
       onChange({ ...config, distinctiveFeatures: [...current, feature] });
     }
   };
-
-  let currentLength = config.hairLength;
-  if (!currentLength) {
-    if (!config.top || config.top === 'none') {
-      currentLength = 'Bald';
-    } else {
-      currentLength = 'Medium';
-    }
-  }
 
   return (
     <div className="space-y-8">

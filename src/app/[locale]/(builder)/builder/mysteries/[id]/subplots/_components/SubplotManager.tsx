@@ -3,6 +3,11 @@
 import React, { useState, useTransition } from 'react';
 import { addSubplotAction, removeSubplotAction, updateBeatAction, generateSubplotAction, addSubplotBeatAction } from '../actions';
 import { getCharacterColor } from '@/utils/colors';
+import {
+  getCharacterRoleTitle,
+  hydrateTextWithCharacters,
+  tokenizeTextWithCharacterRoles,
+} from '@/utils/hydration';
 
 interface props {
   mysteryId: string;
@@ -10,8 +15,9 @@ interface props {
   subplots: any[];
 }
 
-function BeatAutocompleteTextarea({ beat, allDescriptions, onSave }: { beat: any, allDescriptions: string[], onSave: (val: string) => void }) {
-  const [value, setValue] = useState(beat.description || '');
+function BeatAutocompleteTextarea({ beat, allDescriptions, characters, onSave }: { beat: any, allDescriptions: string[], characters: any[], onSave: (val: string) => void }) {
+  const hydratedInitial = hydrateTextWithCharacters(beat.description || '', characters, 'role');
+  const [value, setValue] = useState(hydratedInitial);
   const [isFocused, setIsFocused] = useState(false);
 
   const suggestions = value && isFocused 
@@ -28,7 +34,9 @@ function BeatAutocompleteTextarea({ beat, allDescriptions, onSave }: { beat: any
          onBlur={() => {
            setTimeout(() => {
              setIsFocused(false);
-             if (value !== beat.description) onSave(value);
+             if (value !== beat.description && value !== hydratedInitial) {
+               onSave(tokenizeTextWithCharacterRoles(value, characters));
+             }
            }, 200);
          }}
          className="w-full pl-10 pr-4 py-3 bg-slate-50 hover:bg-slate-100 focus:bg-white border-2 border-transparent focus:border-slate-300 rounded-2xl text-sm font-medium text-slate-700 transition-all resize-none min-h-[80px]"
@@ -43,7 +51,7 @@ function BeatAutocompleteTextarea({ beat, allDescriptions, onSave }: { beat: any
                  e.preventDefault();
                  setValue(suggestion);
                  setIsFocused(false);
-                 onSave(suggestion);
+                 onSave(tokenizeTextWithCharacterRoles(suggestion, characters));
                }}
                className="px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
              >
@@ -68,7 +76,7 @@ export function SubplotManager({ mysteryId, characters, subplots }: props) {
   }, {} as Record<string, any>);
 
   const allBeatDescriptions = Array.from(new Set(
-    subplots.flatMap(s => s.subplot_beats?.map((b: any) => b.description) || []).filter(Boolean)
+    subplots.flatMap(s => s.subplot_beats?.map((b: any) => hydrateTextWithCharacters(b.description || '', characters, 'role')) || []).filter(Boolean)
   )) as string[];
 
 
@@ -124,6 +132,8 @@ export function SubplotManager({ mysteryId, characters, subplots }: props) {
           const isExpanded = activeSubplotId === subplot?.id;
           const isGenerating = generatingId === character.id;
           const charColor = getCharacterColor(character, characters);
+          const roleTitle = getCharacterRoleTitle(character);
+          const roleInitial = roleTitle.replace(/^The\s+/i, '').trim()[0]?.toUpperCase() || roleTitle[0];
 
           const otherCharacterId = subplot ? (subplot.primary_character_id === character.id ? subplot.secondary_character_id : subplot.primary_character_id) : null;
           const otherCharacter = otherCharacterId ? characters.find(c => c.id === otherCharacterId) : null;
@@ -137,14 +147,11 @@ export function SubplotManager({ mysteryId, characters, subplots }: props) {
                     className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold uppercase shadow-inner"
                     style={{ backgroundColor: `${charColor}20`, color: charColor }}
                   >
-                    {character.name[0]}
+                    {roleInitial}
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 leading-tight">{character.name.split('|')[0]}</h3>
+                    <h3 className="text-xl font-black text-slate-900 leading-tight">{roleTitle}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        {character.name.includes('|') ? character.name.split('|')[1] : (character.archetype || 'Suspect')}
-                      </p>
                       <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${character.is_mandatory ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}`}>
                         {character.is_mandatory ? 'Mandatory' : 'Optional'}
                       </span>
@@ -185,9 +192,9 @@ export function SubplotManager({ mysteryId, characters, subplots }: props) {
                     <div>
                       <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-600 mb-1">
                         Subplot Theme
-                        {otherCharacter && <span className="text-brand-pink ml-2 px-2 py-0.5 bg-brand-pink/10 rounded-full">Shared with {otherCharacter.name.split('|')[0]}</span>}
+                        {otherCharacter && <span className="text-brand-pink ml-2 px-2 py-0.5 bg-brand-pink/10 rounded-full">Shared with {getCharacterRoleTitle(otherCharacter)}</span>}
                       </div>
-                      <div className="text-lg font-black text-slate-900">{subplot.title}</div>
+                      <div className="text-lg font-black text-slate-900">{hydrateTextWithCharacters(subplot.title || '', characters, 'role')}</div>
                     </div>
                     <div className="flex gap-2">
                        <button 
@@ -212,6 +219,7 @@ export function SubplotManager({ mysteryId, characters, subplots }: props) {
                           key={beat.id} 
                           beat={beat} 
                           allDescriptions={allBeatDescriptions}
+                          characters={characters}
                           onSave={(val) => handleUpdateBeatText(beat.id, val)}
                         />
                       ))}

@@ -1,6 +1,8 @@
 import React, { Suspense } from 'react';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
+import { acceptInvitation } from '@/app/actions/guest-invitations';
 import ProfileAndGuestsClient from './ProfileAndGuestsClient';
 
 export const metadata = { title: 'My Roster — Back Pocket Mysteries' };
@@ -40,6 +42,38 @@ async function ProfileContent({
   supabase: any;
   locale: string;
 }) {
+  // 0. If this user has a pending invite token cookie from signing up via a share link, auto-accept it
+  try {
+    const cookieStore = await cookies();
+    const pendingToken = cookieStore.get('bpm_pending_invite_token')?.value;
+    if (pendingToken) {
+      await acceptInvitation(pendingToken);
+    }
+  } catch {
+    // Ignore cookie errors in Server Component render
+  }
+
+  // 0B. Clean up any manual_guest_id rows that have already been accepted by a linked friend
+  const { data: acceptedWithManual } = await (supabase as any)
+    .from('guest_invitations')
+    .select('id, manual_guest_id')
+    .eq('inviter_user_id', user.id)
+    .eq('status', 'accepted')
+    .not('manual_guest_id', 'is', null);
+
+  if (acceptedWithManual && acceptedWithManual.length > 0) {
+    const manualIdsToRemove = acceptedWithManual
+      .map((inv: any) => inv.manual_guest_id)
+      .filter(Boolean);
+    if (manualIdsToRemove.length > 0) {
+      await supabase
+        .from('guests')
+        .delete()
+        .in('id', manualIdsToRemove)
+        .eq('user_id', user.id);
+    }
+  }
+
   const { data: profile } = await (supabase as any)
     .from('profiles')
     .select('*')
@@ -70,10 +104,10 @@ async function ProfileContent({
     `)
     .eq('host_user_id', user.id);
 
-  // Fetch pending invitations
+  // Fetch pending invitations (including invite_token so host can copy link anytime)
   const { data: pendingInvites } = await (supabase as any)
     .from('guest_invitations')
-    .select('id, invite_email, personal_note, created_at, expires_at, manual_guest_id')
+    .select('id, invite_email, invite_token, personal_note, created_at, expires_at, manual_guest_id')
     .eq('inviter_user_id', user.id)
     .eq('status', 'pending')
     .gt('expires_at', new Date().toISOString());

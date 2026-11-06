@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Database, MotiveType, MotiveStrength } from '@/types/database';
 import { addMotiveAction, removeMotiveAction } from '../actions';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import { getCharacterDisplayName, getCharacterRoleTitle, hydrateTextWithCharacters } from '@/utils/hydration';
 
 type Character = Database['public']['Tables']['characters']['Row'];
 type Motive = Database['public']['Tables']['motives']['Row'];
@@ -54,20 +56,25 @@ export function MotiveManager({ mysteryId, characterId, existingMotives, allChar
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[8px] font-black uppercase text-slate-400 mb-2">Target Character</label>
-              <select name="linked_character_id" required className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl font-bold text-xs appearance-none">
+              <CustomSelect name="linked_character_id" required defaultValue="" className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl font-bold text-xs">
                 <option value="">Select Target...</option>
-                {otherCharacters.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+                {otherCharacters.map(c => {
+                  const role = getCharacterRoleTitle(c);
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {role}
+                    </option>
+                  );
+                })}
+              </CustomSelect>
             </div>
             <div>
               <label className="block text-[8px] font-black uppercase text-slate-400 mb-2">Motive Type</label>
-              <select name="motive_type" required className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl font-bold text-xs appearance-none">
+              <CustomSelect name="motive_type" required className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl font-bold text-xs">
                 {motiveTypes.map(t => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           </div>
           
@@ -103,6 +110,7 @@ export function MotiveManager({ mysteryId, characterId, existingMotives, allChar
         {existingMotives.length > 0 ? (
           existingMotives.map((motive) => {
             const target = allCharacters.find(c => c.id === motive.linked_character_id);
+            const targetDisplay = target ? getCharacterRoleTitle(target) : 'Unknown';
             return (
               <div key={motive.id} className="flex justify-between items-start p-5 bg-white border border-slate-100 rounded-2xl group shadow-sm hover:border-brand-pink/20 transition-all">
                 <div className="flex gap-4 w-full">
@@ -111,9 +119,13 @@ export function MotiveManager({ mysteryId, characterId, existingMotives, allChar
                     <div className="flex items-center gap-2 mb-1">
                        <span className="text-xs font-black text-slate-900 capitalize">{motive.motive_type}</span>
                        <span className="text-[8px] font-black uppercase text-slate-300">against</span>
-                       <span className="text-xs font-black text-brand-pink">{target?.name || 'Unknown'}</span>
+                       <span className="text-xs font-black text-brand-pink">{targetDisplay}</span>
                     </div>
-                    {motive.notes && <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{motive.notes}</p>}
+                    {motive.notes && (
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                        {hydrateTextWithCharacters(motive.notes, allCharacters, 'role')}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <button 

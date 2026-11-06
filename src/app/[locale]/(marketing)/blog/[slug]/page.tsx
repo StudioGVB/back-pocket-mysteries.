@@ -25,11 +25,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     description: post.seo.description,
     keywords: post.seo.keywords,
     alternates: {
-      canonical: `https://mysteries.backpocketgames.com/${params.locale}/blog/${params.slug}`,
+      canonical: `https://backpocketmysteries.com/${params.locale}/blog/${params.slug}`,
       languages: {
-        en: `https://mysteries.backpocketgames.com/en/blog/${params.slug}`,
-        fr: `https://mysteries.backpocketgames.com/fr/blog/${params.slug}`,
-        'x-default': `https://mysteries.backpocketgames.com/en/blog/${params.slug}`,
+        en: `https://backpocketmysteries.com/en/blog/${params.slug}`,
+        fr: `https://backpocketmysteries.com/fr/blog/${params.slug}`,
+        'x-default': `https://backpocketmysteries.com/en/blog/${params.slug}`,
       }
     },
     openGraph: {
@@ -57,8 +57,40 @@ export default async function BlogPostPage(props: {
     .filter((p) => p.slug !== post.slug)
     .slice(0, 2);
 
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.seo.title || post.title,
+    description: post.seo.description || post.excerpt,
+    image: [`https://backpocketmysteries.com${post.image}`],
+    datePublished: new Date(post.date).toISOString(),
+    dateModified: new Date(post.date).toISOString(),
+    author: {
+      '@type': 'Person',
+      name: post.author.name,
+      jobTitle: post.author.role,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Back Pocket Mysteries',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://backpocketmysteries.com/logo-horizontal.png',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://backpocketmysteries.com/${locale}/blog/${post.slug}`,
+    },
+    keywords: post.seo.keywords.join(', '),
+  };
+
   return (
     <div className="bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       {/* Hero Section */}
       <section className="relative h-[60vh] lg:h-[80vh] overflow-hidden">
         <Image 
@@ -135,7 +167,7 @@ export default async function BlogPostPage(props: {
                       <span className="text-brand-pink italic">The Rocks</span>
                     </h4>
                     <p className="text-gray-400 text-sm font-bold mb-8 leading-relaxed">
-                      Toxic exes, secret affairs, and a suspicious death at a hen weekend. Perfect for your next party.
+                      The cameras stopped rolling six months ago, but the drama never did. Secret affairs, leaked NDA receipts, and a poisoned champagne toast at the Season 3 reunion.
                     </p>
                     <Link href={`/${locale}/themes/love-on-the-rocks`} className="w-full py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-[10px] text-center block hover:bg-white hover:text-brand-pink transition-all shadow-xl">
                       Build your mystery

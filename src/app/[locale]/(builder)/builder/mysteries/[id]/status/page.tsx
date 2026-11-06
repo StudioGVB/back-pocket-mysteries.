@@ -18,13 +18,13 @@ export default async function StatusPage({ params }: StatusPageProps) {
 }
 
 async function StatusPageContent({ params }: StatusPageProps) {
-  const { id } = await params;
+  const { id, locale } = await params;
   const supabase = await createClient();
 
-  const [mysteryRes, ordersRes] = await Promise.all([
+  const [mysteryRes, ordersRes, charsCountRes] = await Promise.all([
     supabase
       .from('mysteries')
-      .select('id, title, status')
+      .select('id, title, status, min_players, max_players')
       .eq('id', id)
       .single(),
     supabase
@@ -32,11 +32,16 @@ async function StatusPageContent({ params }: StatusPageProps) {
       .select('id, amount, created_at, status')
       .eq('mystery_id', id)
       .eq('status', 'succeeded')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('characters')
+      .select('id', { count: 'exact', head: true })
+      .eq('mystery_id', id),
   ]);
 
   const mystery = mysteryRes.data;
   const orders = ordersRes.data;
+  const characterCount = charsCountRes.count ?? 0;
 
   if (!mystery) notFound();
 
@@ -86,7 +91,7 @@ async function StatusPageContent({ params }: StatusPageProps) {
       </div>
 
       {/* Publishing Controls */}
-      <PublishingForm mystery={mystery as any} />
+      <PublishingForm mystery={mystery as any} characterCount={characterCount} locale={locale} />
 
       {/* Recent Purchases */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

@@ -75,23 +75,32 @@ function MysteryStudioNavContent({ mysteryId }: { mysteryId: string }) {
     <div className="flex flex-col w-full">
       {/* Main Navigation Bar */}
       <nav className="w-full bg-[#0b0f19] border-b border-white/5 py-4">
-        <div className="max-w-[1600px] mx-auto w-full px-12 flex items-center gap-3">
-          {navigation.map((item) => {
-            const isActive = activeMainItem === item;
-            return (
-              <Link 
-                key={item.label}
-                href={item.href}
-                className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 border ${
-                  isActive 
-                    ? 'bg-brand-pink/15 text-brand-pink border-brand-pink/30 shadow-[0_0_15px_rgba(254,4,198,0.15)] font-black' 
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border-transparent'
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+        <div className="max-w-[1600px] mx-auto w-full px-12 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {navigation.map((item) => {
+              const isActive = activeMainItem === item;
+              return (
+                <Link 
+                  key={item.label}
+                  href={item.href}
+                  className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 border ${
+                    isActive 
+                      ? 'bg-brand-pink/15 text-brand-pink border-brand-pink/30 shadow-[0_0_15px_rgba(254,4,198,0.15)] font-black' 
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border-transparent'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+          <Link
+            href={`/builder/support?mysteryId=${mysteryId}`}
+            className="px-4 py-2 rounded-full bg-white/5 hover:bg-brand-pink/20 border border-white/10 hover:border-brand-pink/40 text-slate-300 hover:text-white text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shrink-0"
+          >
+            <span>🎫</span>
+            <span>Support &amp; Tickets</span>
+          </Link>
         </div>
       </nav>
 

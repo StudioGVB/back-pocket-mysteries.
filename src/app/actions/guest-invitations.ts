@@ -1,12 +1,87 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash');
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mysteries.backpocketgames.com';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://backpocketmysteries.com';
 
-// --- Send an invitation ---
+// --- Create or reuse a shareable invite link (no email required) ---
+export async function createShareableInviteLink(options?: {
+  manualGuestId?: string;
+  guestName?: string;
+  note?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated' };
+
+  const manualGuestId = options?.manualGuestId || undefined;
+  const guestName = options?.guestName?.trim() || undefined;
+  const note = options?.note?.trim() || undefined;
+
+  // If tied to a specific manual guest card, reuse any existing active pending invite so links stay valid
+  if (manualGuestId) {
+    const { data: existing } = await (supabase as any)
+      .from('guest_invitations')
+      .select('*')
+      .eq('inviter_user_id', user.id)
+      .eq('manual_guest_id', manualGuestId)
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      if (note && note !== existing.personal_note) {
+        await (supabase as any)
+          .from('guest_invitations')
+          .update({ personal_note: note })
+          .eq('id', existing.id);
+      }
+      return {
+        success: true,
+        reused: true,
+        inviteId: existing.id as string,
+        inviteToken: existing.invite_token as string,
+        inviteEmail: existing.invite_email as string,
+        expiresAt: existing.expires_at as string,
+        manualGuestId: existing.manual_guest_id as string | null,
+      };
+    }
+  }
+
+  const labelEmail = guestName ? `link:${guestName}` : 'link:Friend';
+
+  const { data: invite, error: insertError } = await (supabase as any)
+    .from('guest_invitations')
+    .insert({
+      inviter_user_id: user.id,
+      invite_email: labelEmail,
+      personal_note: note || null,
+      manual_guest_id: manualGuestId || null,
+    })
+    .select()
+    .single();
+
+  if (insertError || !invite) {
+    return { error: insertError?.message || 'Failed to generate invite link' };
+  }
+
+  return {
+    success: true,
+    reused: false,
+    inviteId: invite.id as string,
+    inviteToken: invite.invite_token as string,
+    inviteEmail: invite.invite_email as string,
+    expiresAt: invite.expires_at as string,
+    manualGuestId: (invite.manual_guest_id as string | null) ?? null,
+  };
+}
+
+// --- Send an invitation via email ---
 export async function sendGuestInvitation(email: string, note?: string, manualGuestId?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -14,17 +89,22 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
 
   const hostName = user.user_metadata?.full_name || user.email || 'Someone';
 
-  // Check if already pending
+  // Check if already pending for this email
   const { data: existing } = await (supabase as any)
     .from('guest_invitations')
-    .select('id, status')
+    .select('id, status, invite_token, expires_at')
     .eq('inviter_user_id', user.id)
     .eq('invite_email', email.toLowerCase())
     .in('status', ['pending', 'accepted'])
     .maybeSingle();
 
   if (existing) {
-    return { error: existing.status === 'accepted' ? 'This guest is already linked to your account.' : 'An invite is already pending for this email.' };
+    return {
+      error:
+        existing.status === 'accepted'
+          ? 'This guest is already linked to your account.'
+          : 'An invite is already pending for this email.',
+    };
   }
 
   // Create the invitation record
@@ -59,7 +139,7 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
 
         <tr>
           <td style="background:#111111;padding:32px 40px;text-align:center;border-bottom:4px solid #fe04c6;">
-            <img src="https://mysteries.backpocketgames.com/logo-horizontal-white.png" width="200" alt="Back Pocket Mysteries" style="display:block;margin:0 auto;" />
+            <img src="https://backpocketmysteries.com/logo-horizontal-white.png" width="200" alt="Back Pocket Mysteries" style="display:block;margin:0 auto;" />
           </td>
         </tr>
 
@@ -119,7 +199,7 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
         <tr>
           <td style="background:#fafafa;padding:24px 48px;text-align:center;">
             <p style="color:#aaa;font-size:12px;margin:0 0 6px;">© ${year} Back Pocket Games. All rights reserved.</p>
-            <a href="${APP_URL}" style="color:#fe04c6;font-size:12px;text-decoration:none;">mysteries.backpocketgames.com</a>
+            <a href="${APP_URL}" style="color:#fe04c6;font-size:12px;text-decoration:none;">backpocketmysteries.com</a>
           </td>
         </tr>
 
@@ -135,16 +215,112 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
     console.error('Invite email failed:', emailError);
   }
 
-  return { success: true, inviteId: invite.id };
+  return {
+    success: true,
+    inviteId: invite.id as string,
+    inviteToken: invite.invite_token as string,
+    expiresAt: invite.expires_at as string,
+  };
 }
 
-// --- Accept an invitation (called after user signs up/logs in via invite link) ---
+// --- Internal helper to finalize an invitation for a known userId ---
+async function finalizeInvitationForUser(
+  supabase: any,
+  invite: any,
+  userId: string,
+  fallbackFullName?: string
+) {
+  if (invite.inviter_user_id === userId) {
+    return { error: "You're currently signed in as the host who created this invite. Sign in or create an account as your guest to claim it!" };
+  }
+
+  // Ensure the guest's profile has a full_name if we know it
+  const invitedNameFromLink = invite.invite_email?.startsWith('link:')
+    ? invite.invite_email.replace(/^link:/, '').trim()
+    : '';
+  const effectiveName =
+    fallbackFullName?.trim() ||
+    (invitedNameFromLink && invitedNameFromLink !== 'Friend' ? invitedNameFromLink : '');
+
+  if (effectiveName) {
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (existingProfile && !existingProfile.full_name) {
+      await supabase
+        .from('profiles')
+        .update({ full_name: effectiveName })
+        .eq('id', userId);
+    }
+  }
+
+  // 1. Mark invitation as accepted
+  const { data: updatedInvite, error: updateError } = await supabase
+    .from('guest_invitations')
+    .update({
+      status: 'accepted',
+      invited_user_id: userId,
+      accepted_at: new Date().toISOString(),
+    })
+    .eq('id', invite.id)
+    .select()
+    .single();
+
+  if (updateError) {
+    return { error: updateError.message || 'Failed to accept invitation.' };
+  }
+
+  // 2. Create the connection (if not already connected)
+  const { data: existingConn } = await supabase
+    .from('guest_connections')
+    .select('id')
+    .eq('host_user_id', invite.inviter_user_id)
+    .eq('guest_user_id', userId)
+    .maybeSingle();
+
+  if (!existingConn) {
+    const { error: connectionError } = await supabase
+      .from('guest_connections')
+      .insert({
+        host_user_id: invite.inviter_user_id,
+        guest_user_id: userId,
+        invitation_id: invite.id,
+      });
+
+    if (connectionError) {
+      return { error: connectionError.message || 'Failed to link guest connection.' };
+    }
+  }
+
+  // 3. Best-effort cleanup of manual_guest_id (also cleaned up on host's ProfilePage load)
+  if (updatedInvite?.manual_guest_id) {
+    await supabase
+      .from('guests')
+      .delete()
+      .eq('id', updatedInvite.manual_guest_id)
+      .eq('user_id', invite.inviter_user_id);
+  }
+
+  // Clear pending invite cookie if present
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete('bpm_pending_invite_token');
+  } catch {
+    // Ignore cookie errors
+  }
+
+  return { success: true, hostId: invite.inviter_user_id };
+}
+
+// --- Accept an invitation (called when user is already signed in) ---
 export async function acceptInvitation(token: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Not authenticated' };
 
-  // Find the valid (non-expired) invite
   const { data: invite } = await (supabase as any)
     .from('guest_invitations')
     .select('*')
@@ -154,43 +330,133 @@ export async function acceptInvitation(token: string) {
     .maybeSingle();
 
   if (!invite) return { error: 'This invitation has expired or is no longer valid.' };
-  if (invite.inviter_user_id === user.id) return { error: "You can't accept your own invitation." };
 
-  // 3. Mark invitation as accepted
-  const { data: updatedInvite, error: updateError } = await (supabase as any)
-    .from('guest_invitations')
-    .update({
-      status: 'accepted',
-      invited_user_id: user.id,
-      accepted_at: new Date().toISOString(),
-    })
-    .eq('id', invite.id)
-    .select()
-    .single();
+  return finalizeInvitationForUser(
+    supabase,
+    invite,
+    user.id,
+    user.user_metadata?.full_name
+  );
+}
 
-  if (updateError) throw updateError;
+// --- Seamless in-page Sign Up or Sign In + Accept Invitation in one step ---
+export async function claimInvitationWithAuthAction(input: {
+  token: string;
+  mode: 'signup' | 'login';
+  fullName?: string;
+  email: string;
+  password: string;
+}) {
+  const supabase = await createClient(true);
+  const email = input.email.trim().toLowerCase();
+  const password = input.password;
+  const fullName = input.fullName?.trim() || '';
 
-  // 4. Create the connection
-  const { error: connectionError } = await (supabase as any)
-    .from('guest_connections')
-    .insert({
-      host_user_id: invite.inviter_user_id,
-      guest_user_id: user.id,
-      invitation_id: invite.id,
-    });
-
-  if (connectionError) throw connectionError;
-
-  // 5. If this invite was tied to a manual guest, delete the manual guest
-  if (updatedInvite.manual_guest_id) {
-    await (supabase as any)
-      .from('guests')
-      .delete()
-      .eq('id', updatedInvite.manual_guest_id)
-      .eq('user_id', invite.inviter_user_id);
+  if (!email || !password) {
+    return { error: 'Please enter both your email address and password.' };
   }
 
-  return { success: true, hostId: invite.inviter_user_id };
+  // Verify invite is valid first
+  const { data: invite } = await (supabase as any)
+    .from('guest_invitations')
+    .select('*')
+    .eq('invite_token', input.token)
+    .eq('status', 'pending')
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle();
+
+  if (!invite) {
+    return { error: 'This invitation has expired or has already been claimed.' };
+  }
+
+  // Save token in cookie so even if email confirmation is required, logging in later auto-links them
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set('bpm_pending_invite_token', input.token, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+  } catch {
+    // Ignore
+  }
+
+  let userId: string | null = null;
+  let hasActiveSession = false;
+
+  if (input.mode === 'signup') {
+    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName || (invite.invite_email?.startsWith('link:') ? invite.invite_email.replace(/^link:/, '') : 'Guest'),
+        },
+      },
+    });
+
+    if (signUpErr) {
+      // If user already exists, seamlessly attempt sign-in with the provided password!
+      if (signUpErr.message?.toLowerCase().includes('already registered')) {
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInErr || !signInData.user) {
+          return {
+            error: 'An account with this email already exists. Please switch to "Sign In" or check your password.',
+          };
+        }
+        userId = signInData.user.id;
+        hasActiveSession = Boolean(signInData.session);
+      } else {
+        return { error: signUpErr.message };
+      }
+    } else {
+      userId = signUpData.user?.id || null;
+      hasActiveSession = Boolean(signUpData.session);
+
+      // If signUp didn't return a session, try immediate signInWithPassword in case auto-confirm is enabled
+      if (userId && !hasActiveSession) {
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInData?.session) {
+          hasActiveSession = true;
+        }
+      }
+    }
+  } else {
+    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (signInErr || !signInData.user) {
+      return { error: signInErr?.message || 'Invalid email or password.' };
+    }
+    userId = signInData.user.id;
+    hasActiveSession = Boolean(signInData.session);
+  }
+
+  if (!userId) {
+    return { error: 'Could not authenticate account. Please try again.' };
+  }
+
+  const finalizeResult = await finalizeInvitationForUser(
+    supabase,
+    invite,
+    userId,
+    fullName
+  );
+
+  if (finalizeResult.error) {
+    return { error: finalizeResult.error };
+  }
+
+  return {
+    success: true,
+    hasActiveSession,
+  };
 }
 
 // --- Remove a guest connection (from host side) ---
@@ -222,3 +488,4 @@ export async function cancelInvitation(inviteId: string) {
 
   return { success: true };
 }
+

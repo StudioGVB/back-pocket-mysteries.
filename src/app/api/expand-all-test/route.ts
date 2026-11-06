@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/utils/admin-auth';
 import { getMysteryById } from '@/services/mysteries';
 import { expandCharacterBioAction } from '@/app/[locale]/(builder)/builder/mysteries/[id]/characters/actions';
 
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
     
     // 1. Verify access to the mystery
     const mystery = await getMysteryById(mysteryId);

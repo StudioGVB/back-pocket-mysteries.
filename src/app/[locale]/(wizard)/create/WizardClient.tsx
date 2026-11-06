@@ -115,12 +115,12 @@ export default function WizardClient({
     });
 
     if (res.mysteryId) {
-      setMysteryId(res.mysteryId);
-      setStep(5); // Go to checkout
+      router.push(`/${locale}/checkout/${res.mysteryId}?guests=${assignedGuests.length}`);
+      return;
     } else {
       setError(res.error || 'Failed to generate mystery.');
+      setIsProcessing(false);
     }
-    setIsProcessing(false);
   };
 
   return (
@@ -432,38 +432,9 @@ export default function WizardClient({
               disabled={isProcessing}
               className="btn-pill px-8 py-4 bg-brand-pink text-white font-black uppercase tracking-widest text-sm hover:bg-brand-dark disabled:opacity-50 flex items-center gap-2"
             >
-              {isProcessing ? 'Saving Configuration...' : 'Finalize Package'}
+              {isProcessing ? 'Saving & Redirecting to Checkout...' : 'Continue to Checkout →'}
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Step 5: Checkout */}
-      {step === 5 && mysteryId && (
-        <div className="animate-in fade-in slide-in-from-bottom-8">
-          <div className="bg-brand-dark rounded-3xl p-8 mb-12 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 text-white/5 rotate-12 pointer-events-none">
-              <svg width="200" height="200" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            </div>
-            <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4 relative z-10">
-              Your package will be ready in ~20 mins...
-            </h2>
-            <p className="text-brand-pink font-bold uppercase tracking-widest relative z-10">
-              We will email you as soon as it's generated!
-            </p>
-            <p className="text-slate-400 mt-4 relative z-10">
-              Fill in your card details below to finalize the creation process.
-            </p>
-          </div>
-
-          <CheckoutClient 
-            mysteryId={mysteryId}
-            initialTier={complexity}
-            guests={assignedGuests.length}
-            locale={locale}
-            currency={currency}
-            mysteryTitle={theme ? `${theme} Mystery` : 'Custom Murder Mystery'}
-          />
         </div>
       )}
 

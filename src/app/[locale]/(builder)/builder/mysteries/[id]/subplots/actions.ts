@@ -36,6 +36,8 @@ export async function addSubplotBeatAction(mysteryId: string, subplotId: string,
 import { getMysteryById } from '@/services/mysteries';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { createClient } from '@/utils/supabase/server';
+import { getCharacterRoleTitle } from '@/utils/hydration';
+import { logAiUsage } from '@/utils/ai-logger';
 
 export async function generateSubplotAction(mysteryId: string, characterId: string) {
   try {
@@ -58,7 +60,7 @@ export async function generateSubplotAction(mysteryId: string, characterId: stri
       !existingSubplots.some((sp: any) => sp.primary_character_id === c.id || sp.secondary_character_id === c.id)
     );
 
-    const eligiblePartnerNames = eligiblePartners.map((c: any) => c.name.split('|')[0].trim());
+    const eligiblePartnerNames = eligiblePartners.map((c: any) => getCharacterRoleTitle(c));
 
     // Retrieve motives
     const characterMotives = character.motives?.map((m: any) => m.notes || m.motive_type).join(', ') || 'General suspicion';
@@ -93,7 +95,7 @@ export async function generateSubplotAction(mysteryId: string, characterId: stri
 
     let entangleRule = "";
     if (character.is_mandatory && eligiblePartnerNames.length > 0) {
-      entangleRule = `CRITICAL RULE: Because this character is mandatory, you should strongly consider entwining their subplot with one of the following mandatory characters to share a red herring or alibi: [${eligiblePartnerNames.join(', ')}]. For example, they were secretly making out during the murder, or they are being blackmailed by the same person. If you choose to entangle them, return their exact name in the 'entangled_character_name' field.`;
+      entangleRule = `CRITICAL RULE: Because this character is mandatory, you should strongly consider entwining their subplot with one of the following mandatory characters to share a red herring or alibi: [${eligiblePartnerNames.join(', ')}]. For example, they were secretly making out during the murder, or they are being blackmailed by the same person. If you choose to entangle them, return their exact role title in the 'entangled_character_name' field.`;
     }
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -107,7 +109,7 @@ export async function generateSubplotAction(mysteryId: string, characterId: stri
         theme: { type: SchemaType.STRING },
         entangled_character_name: { 
           type: SchemaType.STRING, 
-          description: "The name of the entangled character, or an empty string if none.",
+          description: "The role title of the entangled character, or an empty string if none.",
           nullable: true 
         },
         beats: {
@@ -132,6 +134,9 @@ export async function generateSubplotAction(mysteryId: string, characterId: stri
       }
     });
 
+    const charRoleTitle = getCharacterRoleTitle(character);
+    const allRoleTokens = mystery.characters.map((c: any) => `{{${getCharacterRoleTitle(c)}}}`).join(', ');
+
     const prompt = `
       You are an expert murder mystery party game designer.
       Generate a secondary subplot arc for a specific character. This subplot should add depth, secondary objectives, or red herrings without overshadowing the main murder.
@@ -143,7 +148,7 @@ export async function generateSubplotAction(mysteryId: string, characterId: stri
       ${mainBeats}
       
       CHARACTER TO WRITE SUBPLOT FOR:
-      Name: ${character.name}
+      Role Title: ${charRoleTitle}
       Archetype: ${character.archetype}
       Role in main plot: ${character.plot_role}
       Known Motives/Secrets: ${characterMotives}
@@ -155,9 +160,16 @@ export async function generateSubplotAction(mysteryId: string, characterId: stri
       3. ${entangleRule}
       4. Create a short, punchy "title" (e.g., "The Secret Blackmail File") and a 1-2 word "theme" (e.g., "Blackmail").
       5. Create exactly 3 timeline beats for this subplot. These beats should slowly unravel or escalate alongside the main story beats.
+      6. CRITICAL NAMING RULE: NEVER invent fake first/last names for any character. Always refer to characters using their exact bracketed role title tokens from [${allRoleTokens}] (e.g., "{{${charRoleTitle}}}").
     `;
 
     const result = await model.generateContent(prompt);
+    await logAiUsage({
+      model_name: 'gemini-2.5-pro',
+      feature_name: 'generate_subplot',
+      mystery_id: mysteryId,
+      usageMetadata: result.response.usageMetadata as any,
+    });
     let text = result.response.text();
     text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(text);
@@ -168,7 +180,11 @@ export async function generateSubplotAction(mysteryId: string, characterId: stri
 
     let secondaryCharacterId = null;
     if (parsed.entangled_character_name) {
-      const match = eligiblePartners.find((c: any) => c.name.toLowerCase().includes(parsed.entangled_character_name.toLowerCase()));
+      const cleanedTarget = parsed.entangled_character_name.replace(/\{\{|\}\}/g, '').toLowerCase().trim();
+      const match = eligiblePartners.find((c: any) => 
+        getCharacterRoleTitle(c).toLowerCase().includes(cleanedTarget) ||
+        c.name.toLowerCase().includes(cleanedTarget)
+      );
       if (match) {
         secondaryCharacterId = match.id;
       }

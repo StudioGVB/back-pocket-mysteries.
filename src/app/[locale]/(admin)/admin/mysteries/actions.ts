@@ -16,6 +16,7 @@ export async function archiveMysteryAction(id: string) {
       .eq('id', id);
     if (error) return { success: false, error: error.message };
     revalidatePath('/admin/mysteries');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -32,6 +33,7 @@ export async function unarchiveMysteryAction(id: string) {
       .eq('id', id);
     if (error) return { success: false, error: error.message };
     revalidatePath('/admin/mysteries');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -61,6 +63,7 @@ export async function deleteMysteryAction(id: string) {
     if (error) return { success: false, error: error.message };
     
     revalidatePath('/admin/mysteries');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

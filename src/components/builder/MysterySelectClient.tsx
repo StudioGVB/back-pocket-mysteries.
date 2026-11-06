@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface Mystery {
   id: string;
@@ -35,24 +36,20 @@ export function MysterySelectClient({
   return (
     <div className="relative w-full">
       <label htmlFor="mystery-select" className="sr-only">Select Mystery</label>
-      <select 
+      <CustomSelect
         id="mystery-select"
+        variant="dark"
         value={activeMysteryId || ''}
         onChange={handleMysteryChange}
-        className="w-full bg-[#05080e] border border-white/10 text-slate-100 text-xs font-black uppercase tracking-widest rounded-xl focus:border-brand-pink focus:ring-1 focus:ring-brand-pink/50 block py-3.5 pl-4 pr-10 outline-none appearance-none cursor-pointer hover:bg-slate-900/60 transition-all duration-300"
+        className="w-full bg-[#05080e] border border-white/10 text-slate-100 text-xs font-black uppercase tracking-widest rounded-xl focus:border-brand-pink focus:ring-1 focus:ring-brand-pink/50 py-3.5 px-4 outline-none hover:bg-slate-900/60 transition-all duration-300"
       >
-        <option value="" className="bg-[#0c1322] text-slate-400">Select Mystery</option>
+        <option value="">Select Mystery</option>
         {mysteries.map(mystery => (
-          <option key={mystery.id} value={mystery.id} className="bg-[#0c1322] text-slate-100 font-medium normal-case tracking-normal">
+          <option key={mystery.id} value={mystery.id}>
             {mystery.title || 'Untitled Mystery'}
           </option>
         ))}
-      </select>
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
-        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
+      </CustomSelect>
     </div>
   );
 }

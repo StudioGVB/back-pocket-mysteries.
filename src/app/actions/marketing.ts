@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { Resend } from 'resend';
+import { saveDiscountAction } from '@/app/actions/discounts';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash');
 
@@ -28,6 +29,25 @@ export async function submitEmailLead(email: string, fullName?: string) {
 
   // Generate a unique discount code, e.g. EARLY20-XXXX
   const uniqueCode = `EARLY20-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+  try {
+    await saveDiscountAction({
+      name: `Lead Welcome (${fullName || email})`,
+      code: uniqueCode,
+      auto_apply: false,
+      discount_type: 'percentage',
+      discount_value: 20,
+      applies_to: 'all',
+      target_packages: [],
+      target_mysteries: [],
+      starts_at: new Date().toISOString(),
+      ends_at: null,
+      usage_limit: 'one_per_customer',
+      is_active: true,
+    });
+  } catch (err) {
+    console.warn('Could not save generated marketing code to discounts store:', err);
+  }
 
   try {
     if (process.env.RESEND_API_KEY) {

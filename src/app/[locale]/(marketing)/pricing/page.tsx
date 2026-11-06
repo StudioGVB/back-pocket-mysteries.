@@ -18,11 +18,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `${dict.common.pricing} | Back Pocket Mysteries`,
     description: dict.pricing.subtitle,
     alternates: {
-      canonical: `https://mysteries.backpocketgames.com/${locale}/pricing`,
+      canonical: `https://backpocketmysteries.com/${locale}/pricing`,
       languages: {
-        en: 'https://mysteries.backpocketgames.com/en/pricing',
-        fr: 'https://mysteries.backpocketgames.com/fr/pricing',
-        'x-default': 'https://mysteries.backpocketgames.com/en/pricing',
+        en: 'https://backpocketmysteries.com/en/pricing',
+        fr: 'https://backpocketmysteries.com/fr/pricing',
+        'x-default': 'https://backpocketmysteries.com/en/pricing',
       }
     }
   }
@@ -41,124 +41,80 @@ export default async function PricingPage(props: {
     {
       id: 'basic' as const,
       name: 'Basic',
-      tagline: 'QUICK SETUP, SORTED PARTY.',
-      desc: 'Best for small groups, casual hosts, or first-timers who want to see what we\'re about.',
+      tagline: '4–6 PLAYERS • INTIMATE PARTY.',
+      desc: 'Perfect for smaller dinner parties and game nights with 4 to 6 guests.',
       features: [
-        'Easy Difficulty (1-2 Hours)',
-        'Up to 6 players included (Max 10)',
-        `+${getFormattedPrice('basicExtra', locale as Locale)} per extra player`,
-        '~15 clues (photos, texts, security footage, etc.)',
-        'Theme-based mystery with 4 structured rounds',
-        'Guest names inserted throughout the story',
-        'Host guide + character packets',
-        'Print or share digitally',
-        'Instant download',
+        '4–6 custom suspect roles & character booklets',
+        'Tight-knit dinner party conflict web & alibis',
+        'Any Complexity & Spice Level (Easy to Hard, Clean to Filthy)',
+        'Interactive clues (texts, receipts, CCTV, voice memos)',
+        'Guest names, avatars & real-life quirks woven into the story',
+        'Kahoot-style 6-digit Game PIN & Spoiler-free Host Mode',
+        'Print character booklets or play 100% on phones',
       ],
-      proFeatures: [
-        'Easy Difficulty (1-2 Hours)',
-        'Up to 6 players included (Max 10)',
-        `+${getFormattedPrice('basicExtra', locale as Locale)} per extra player`,
-        '~15 clues (photos, texts, security footage, etc.)',
-        'Theme-based mystery with 4 structured rounds',
-        'Custom character appearances (hair, eyes, style)',
-        'Inside jokes & character traits',
-        'Host guide + character packets',
-        'Print or share digitally',
-        'Instant download',
-      ],
-      cta: 'Get Started',
+      cta: 'Browse Mysteries',
       featured: false,
-      bestFor: 'CASUAL DINNER PARTIES',
+      bestFor: 'INTIMATE DINNER PARTIES (4–6 GUESTS)',
       billingPeriod: 'event' as const
     },
     {
       id: 'premium' as const,
       name: 'Premium',
-      tagline: 'THE MAIN EVENT PACK.',
-      desc: 'Best for birthdays, hens parties, and evenings where you want it to feel really special.',
+      tagline: '4–10 PLAYERS • THE MAIN EVENT.',
+      desc: 'Our most popular group size — ideal for birthdays, hens nights, and medium parties up to 10 guests.',
       features: [
-        'Standard Difficulty (2-3 Hours)',
-        'Up to 8 players included (Max 12)',
-        `+${getFormattedPrice('premiumExtra', locale as Locale)} per extra player`,
-        '~22 clues (photos, texts, security footage, etc.)',
-        'Tailored to your specific event',
-        'Optional confessional prompts',
-        'Host guide + sealed per-guest packets',
-        'Instant download',
+        '4–10 custom suspect roles & character booklets',
+        'Expanded relationship web, rival alliances & side-plots',
+        'Any Complexity & Spice Level (Easy to Hard, Clean to Filthy)',
+        'Interactive clues (group chats, audio wiretaps, forensics)',
+        'Guest names, avatars & real-life quirks woven into the story',
+        'Kahoot-style 6-digit Game PIN & Spoiler-free Host Mode',
+        'Print character booklets or play 100% on phones',
       ],
-      proFeatures: [
-        'Standard Difficulty (2-3 Hours)',
-        'Up to 8 players included (Max 12)',
-        `+${getFormattedPrice('premiumExtra', locale as Locale)} per extra player`,
-        '~22 clues (photos, texts, security footage, etc.)',
-        'Tailored to your specific event',
-        'Custom character appearances (hair, eyes, style)',
-        'Inside jokes & character traits',
-        'Optional confessional prompts',
-        'Host guide + sealed per-guest packets',
-        'Instant download',
-      ],
-      cta: 'Get Premium',
+      cta: 'Browse Mysteries',
       featured: true,
-      bestFor: 'HENS NIGHTS, MILESTONES',
+      bestFor: 'BIRTHDAYS & HENS NIGHTS (4–10 GUESTS)',
       billingPeriod: 'event' as const
     },
     {
       id: 'grand' as const,
       name: 'Grand',
-      tagline: 'FOR THE PERFECTIONIST.',
-      desc: 'A full 8-beat film-quality mystery. Extended story, more evidence, maximum drama.',
+      tagline: '4–16 PLAYERS • FULL HOUSE.',
+      desc: 'Built for big celebrations, weekend getaways, and large groups of up to 16 suspects.',
       features: [
-        'Epic Difficulty (3-4 Hours)',
-        'Up to 10 players included (Max 16)',
-        `+${getFormattedPrice('grandExtra', locale as Locale)} per extra player`,
-        '~30 clues (photos, texts, security footage, etc.)',
-        'Tailored to your specific event',
-        'Optional confessional prompts',
-        'Host guide + sealed per-guest packets',
-        'Instant download',
+        '4–16 custom suspect roles & character booklets',
+        'Full-house conflict graph, multi-faction subplots & red herrings',
+        'Any Complexity & Spice Level (Easy to Hard, Clean to Filthy)',
+        'Interactive clues (group chats, audio wiretaps, forensics)',
+        'Guest names, avatars & real-life quirks woven into the story',
+        'Kahoot-style 6-digit Game PIN & Spoiler-free Host Mode',
+        'Print character booklets or play 100% on phones',
       ],
-      proFeatures: [
-        'Epic Difficulty (3-4 Hours)',
-        'Up to 10 players included (Max 16)',
-        `+${getFormattedPrice('grandExtra', locale as Locale)} per extra player`,
-        '~30 clues (photos, texts, security footage, etc.)',
-        'Tailored to your specific event',
-        'Custom character appearances (hair, eyes, style)',
-        'Inside jokes & character traits',
-        'Optional confessional prompts',
-        'Host guide + sealed per-guest packets',
-        'Instant download',
-      ],
-      cta: 'Go Grand',
+      cta: 'Browse Mysteries',
       featured: false,
-      bestFor: 'WEEKEND GETAWAYS',
+      bestFor: 'LARGE PARTIES & GETAWAYS (4–16 GUESTS)',
       billingPeriod: 'event' as const
     },
     {
       id: 'subscribe' as const,
       name: 'Unlimited',
-      tagline: 'FOR EVENT PROS.',
-      desc: 'Generate unlimited mysteries every month. Pro Customizer always included.',
+      tagline: 'UNLIMITED + 1 MONTHLY GIFT PASS.',
+      desc: 'Unlock unlimited mystery events every month for up to 16 players, plus 1 Free Monthly Gift Pass to send any mystery to a friend.',
       features: [
-        'Unlimited mysteries (1/day)',
-        'Choose any difficulty level',
-        'Up to 16 players included per mystery',
-        'Tailored to your specific events',
-        'Custom character appearances (hair, eyes, style)',
-        'Inside jokes & character traits',
-        'Unlimited AI-generated evidence images',
-        'Commercial use license',
-        'Priority Generation',
+        'Unlimited mystery events every month',
+        '🎁 1 Free Monthly Gift Pass (gift any mystery to a friend)',
+        'All group sizes included (4–16 players per mystery)',
+        'Every complexity & spice level in the catalog',
+        'Guest names, avatars & quirks woven into every game',
+        'Kahoot-style live game lobbies & printable kits',
+        'Commercial event & venue use license',
       ],
-      cta: 'Subscribe Now',
+      cta: 'Unlock Unlimited Pass',
       featured: false,
-      bestFor: 'EVENT PLANNERS, VENUES',
+      bestFor: 'HOSTS, REGULARS & EVENT PROS',
       billingPeriod: 'month' as const
     }
   ];
-
-
 
   return (
     <div className="bg-white">
@@ -191,7 +147,7 @@ export default async function PricingPage(props: {
         {/* Unlimited Subscription Tier */}
         <div className="relative p-8 lg:p-16 mt-16 max-w-[90rem] mx-auto rounded-[3rem] border-4 bg-brand-pink border-brand-pink shadow-2xl flex flex-col lg:flex-row gap-12 items-center group transition-all duration-500">
           <div className="absolute top-0 right-12 transform -translate-y-1/2 px-8 py-3 bg-brand-dark text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">
-            FOR EVENT PLANNERS
+            UNLIMITED + 1 FREE MONTHLY GIFT PASS
           </div>
           
           <div className="flex-1 w-full lg:w-auto">
@@ -201,7 +157,6 @@ export default async function PricingPage(props: {
               <PriceDisplay 
                 tier={tiers[3].id} 
                 locale={locale as Locale}
-                isPro={false} 
                 className="text-6xl lg:text-8xl font-black tracking-tighter text-brand-dark" 
               />
               <span className="text-xs font-black uppercase tracking-[0.2em] text-white/80">
@@ -225,7 +180,7 @@ export default async function PricingPage(props: {
               ))}
             </ul>
 
-            <Link href={`/${locale}/create?complexity=grand`} className="btn-pill block w-full px-8 py-6 text-center text-sm bg-brand-dark text-white hover:bg-white hover:text-brand-dark shadow-2xl">
+            <Link href={`/${locale}/mysteries`} className="btn-pill block w-full px-8 py-6 text-center text-sm bg-brand-dark text-white hover:bg-white hover:text-brand-dark shadow-2xl">
               {tiers[3].cta}
             </Link>
           </div>
@@ -236,7 +191,7 @@ export default async function PricingPage(props: {
           <p className="text-gray-400 font-bold text-sm max-w-2xl mx-auto leading-relaxed">
             For context: hiring a human to write a custom mystery costs $500+ and takes weeks. <br />
             A generic boxed kit costs $40–$80 and has zero personalization. <br />
-            We deliver a fully customized, film-quality experience — for your whole group — in under 20 minutes.
+            We deliver a fully customized, film-quality experience — for your whole group — in ~30 minutes.
           </p>
         </div>
         

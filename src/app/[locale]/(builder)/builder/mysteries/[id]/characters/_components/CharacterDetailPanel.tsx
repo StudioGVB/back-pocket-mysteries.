@@ -15,6 +15,8 @@ interface CharacterDetailPanelProps {
 }
 
 import { RoleTitleInput } from './RoleTitleInput';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import { getCharacterRoleTitle, getCharacterPrefix } from '@/utils/hydration';
 
 export function CharacterDetailPanel({ character, mysteryId, allCharacters, guests, onClose }: CharacterDetailPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
@@ -23,6 +25,8 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, gues
   const profileData = character.profile_data as any;
   const assignedGuestId = profileData?.guest_id;
   const isLinked = profileData?.is_linked;
+  const initialRoleTitle = getCharacterRoleTitle(character);
+  const initialPrefix = getCharacterPrefix(character);
 
   const archetypes: Archetype[] = ['hero', 'villain', 'sidekick', 'victim', 'witness', 'investigator'];
   const relationships: VictimRelationship[] = ['spouse', 'sibling', 'friend', 'enemy', 'stranger', 'colleague'];
@@ -59,14 +63,13 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, gues
 
                 const relationshipValue = formData.get('victim_relationship');
 
-                const base_name = formData.get('base_name') as string;
-                const title = formData.get('title') as string;
-                const prefix = formData.get('prefix') as string;
-                const name = `${base_name || ''}|${title || ''}|${prefix || ''}`;
+                const title = ((formData.get('title') as string) || initialRoleTitle).trim();
+                const prefix = ((formData.get('prefix') as string) || '').trim();
+                const name = `${title}|${title}|${prefix}`;
 
                 const updates = {
                   name,
-                  archetype: null, // Hardcode to null or omit, setting to null clears old data
+                  archetype: null,
                   is_mandatory,
                   is_victim,
                   plot_role,
@@ -84,43 +87,34 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, gues
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50 pb-2">Identity</h3>
                 <div className="grid gap-6">
                   <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <label className="block text-xs font-bold text-slate-500 mb-2">Character Title / Role</label>
+                      <RoleTitleInput 
+                        mysteryId={mysteryId}
+                        defaultValue={initialRoleTitle}
+                        inputClassName="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all placeholder:text-slate-300"
+                      />
+                    </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2">Prefix</label>
+                      <label className="block text-xs font-bold text-slate-500 mb-2">Prefix (Optional)</label>
                       <input 
                         name="prefix"
-                        defaultValue={character.name.split('|')[2] || ''}
+                        defaultValue={initialPrefix}
                         placeholder="e.g. Captain"
                         className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all placeholder:text-slate-300"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2">Placeholder Name</label>
-                      <input 
-                        name="base_name"
-                        defaultValue={character.name.split('|')[0]}
-                        required
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2">Role / Title</label>
-                      <RoleTitleInput 
-                        mysteryId={mysteryId}
-                        defaultValue={character.name.includes('|') ? character.name.split('|')[1] : ''}
-                        inputClassName="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all placeholder:text-slate-300"
-                      />
-                    </div>
-                    <div>
                       <label className="block text-xs font-bold text-slate-500 mb-2">Gender</label>
-                      <select 
+                      <CustomSelect 
                         name="gender"
                         defaultValue={character.gender || 'adaptable'}
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all appearance-none"
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all"
                       >
                          <option value="adaptable">Adaptable ⚧</option>
                          <option value="female">Female ♀</option>
                          <option value="male">Male ♂</option>
-                      </select>
+                      </CustomSelect>
                     </div>
                   </div>
                   
@@ -178,7 +172,7 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, gues
                     </div>
 
                     <div className="w-full sm:w-auto shrink-0">
-                      <select
+                      <CustomSelect
                         value={assignedGuestId || ''}
                         disabled={isCasting}
                         onChange={async (e) => {
@@ -192,7 +186,7 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, gues
                             setIsCasting(false);
                           }
                         }}
-                        className="w-full sm:w-auto bg-white border border-slate-200 text-xs font-black uppercase tracking-wider rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 cursor-pointer text-slate-600 hover:text-slate-900 transition-colors shadow-sm disabled:opacity-50"
+                        className="w-full sm:w-auto bg-white border border-slate-200 text-xs font-black uppercase tracking-wider rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-brand-pink/20 text-slate-600 hover:text-slate-900 transition-colors shadow-sm"
                       >
                         <option value="">-- Clear Casting --</option>
                         {guests.map((g) => {
@@ -203,7 +197,7 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, gues
                             </option>
                           );
                         })}
-                      </select>
+                      </CustomSelect>
                     </div>
                   </div>
                 </div>
@@ -235,16 +229,16 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, gues
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2">Relationship to Victim</label>
-                    <select 
+                    <CustomSelect 
                       name="victim_relationship"
                       defaultValue={character.victim_relationship || ''}
-                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all appearance-none"
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none font-bold transition-all"
                     >
                        <option value="">Select Relationship...</option>
                        {relationships.map(r => (
                          <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
                        ))}
-                    </select>
+                    </CustomSelect>
                   </div>
                 </div>
               </div>

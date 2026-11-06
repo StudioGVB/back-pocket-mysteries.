@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { generateClueImageAction } from '@/app/actions/generator';
+import { isUserAdmin } from '@/utils/admin-auth';
 
 export async function POST(req: Request) {
   try {
@@ -13,10 +14,10 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
 
-    // Verify authentication
+    // Verify admin authentication
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user || !(await isUserAdmin(supabase, user))) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
     // Get all clues for this mystery

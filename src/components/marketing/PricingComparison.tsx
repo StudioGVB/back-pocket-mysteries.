@@ -2,41 +2,40 @@ import React from 'react'
 
 export default function PricingComparison() {
   const plans = [
-    { id: 'basic', name: 'Easy' },
-    { id: 'premium', name: 'Standard' },
-    { id: 'grand', name: 'Epic' },
+    { id: 'basic', name: 'Basic (4–6)' },
+    { id: 'premium', name: 'Premium (4–10)' },
+    { id: 'grand', name: 'Grand (4–16)' },
     { id: 'subscribe', name: 'Unlimited' },
   ]
 
   const features = [
     {
-      category: 'Core Experience',
+      category: 'Party Scale & Story Web',
       items: [
-        { name: 'Difficulty / Length', basic: 'Easy (1-2 Hours)', premium: 'Standard (2-3 Hours)', grand: 'Epic (3-4 Hours)', subscribe: 'All Levels' },
-        { name: 'Included Players', basic: 'Up to 6', premium: 'Up to 8', grand: 'Up to 10', subscribe: 'Up to 16' },
-        { name: 'Extra Player Fee', basic: '+$3 / player', premium: '+$4 / player', grand: '+$5 / player', subscribe: 'Included' },
-        { name: 'Logic Cap (Max Players)', basic: '10', premium: '12', grand: '16', subscribe: '16' },
-        { name: 'Clues / Photos', basic: '~15', premium: '~22', grand: '~30', subscribe: 'Unlimited' },
-        { name: 'Mysteries Included', basic: '1', premium: '1', grand: '1', subscribe: 'Unlimited (1/day)' },
-        { name: 'Host Guide & Packets', basic: true, premium: true, grand: true, subscribe: true },
-        { name: 'Print or Play Digitally', basic: true, premium: true, grand: true, subscribe: true },
-        { name: 'Instant Download', basic: true, premium: true, grand: true, subscribe: 'Priority Generation' },
+        { name: 'Players Included', basic: '4–6 Players', premium: '4–10 Players', grand: '4–16 Players', subscribe: '4–16 Players' },
+        { name: 'Custom Character Booklets Generated', basic: 'Up to 6 Roles', premium: 'Up to 10 Roles', grand: 'Up to 16 Roles', subscribe: 'Up to 16 Roles' },
+        { name: 'Relationship Web & Subplots', basic: 'Core Suspect Web', premium: 'Expanded Alliances & Subplots', grand: 'Full-House Multi-Faction Web', subscribe: 'All Group Sizes' },
+        { name: 'Mysteries Included', basic: '1 Mystery Pack', premium: '1 Mystery Pack', grand: '1 Mystery Pack', subscribe: 'Unlimited / Mo' },
+        { name: 'Monthly Gift Pass (Gift a Mystery to a Friend)', basic: false, premium: false, grand: false, subscribe: '1 Free Gift / Mo' },
       ]
     },
     {
-      category: 'Pro Customizer (+A$15)',
+      category: 'Core Experience (Included on Every Tier)',
       items: [
-        { name: 'Visual Character Customisation', basic: 'Pro Add-on', premium: 'Pro Add-on', grand: 'Pro Add-on', subscribe: 'Included' },
-        { name: 'Tailored Event Vibes', basic: 'Pro Add-on', premium: 'Pro Add-on', grand: 'Pro Add-on', subscribe: 'Included' },
-        { name: 'Inside Jokes & Traits', basic: 'Pro Add-on', premium: 'Pro Add-on', grand: 'Pro Add-on', subscribe: 'Included' },
-        { name: 'Bespoke AI Evidence Images', basic: 'Pro Add-on', premium: 'Pro Add-on', grand: 'Pro Add-on', subscribe: 'Included' },
+        { name: 'Complexity Levels (Easy, Medium, Hard)', basic: 'Included', premium: 'Included', grand: 'Included', subscribe: 'Included' },
+        { name: 'Spice Levels (Clean, Mild, Spicy, Filthy)', basic: 'Included', premium: 'Included', grand: 'Included', subscribe: 'Included' },
+        { name: 'Guest Names, Avatars & Quirks Woven In', basic: true, premium: true, grand: true, subscribe: true },
+        { name: 'Interactive Chat, Receipt & Audio Clues', basic: true, premium: true, grand: true, subscribe: true },
+        { name: 'Kahoot-Style Live Lobby & 6-Digit PIN', basic: true, premium: true, grand: true, subscribe: true },
+        { name: 'Spoiler-Free Host Mode', basic: true, premium: true, grand: true, subscribe: true },
+        { name: 'Print Booklets or Play 100% Digitally', basic: true, premium: true, grand: true, subscribe: true },
       ]
     },
     {
       category: 'Licensing',
       items: [
-        { name: 'Personal Use', basic: true, premium: true, grand: true, subscribe: true },
-        { name: 'Commercial Event Use', basic: false, premium: false, grand: false, subscribe: true },
+        { name: 'Personal Party Use', basic: true, premium: true, grand: true, subscribe: true },
+        { name: 'Commercial Event & Venue Use', basic: false, premium: false, grand: false, subscribe: true },
       ]
     }
   ]
@@ -50,12 +49,8 @@ export default function PricingComparison() {
       )
     }
     
-    if (value === 'Pro Add-on') {
-      return <span className="font-black text-[10px] tracking-widest text-brand-pink uppercase px-3 py-1 bg-brand-pink/10 rounded-full">{value}</span>
-    }
-    
     if (value === 'Included') {
-      return <span className="font-black text-[10px] tracking-widest text-brand-dark uppercase px-3 py-1 bg-brand-dark/10 rounded-full">{value}</span>
+      return <span className="font-black text-[10px] tracking-widest text-emerald-600 uppercase px-3 py-1 bg-emerald-50 rounded-full">{value}</span>
     }
     
     return <span className="font-bold text-gray-600">{value}</span>
@@ -65,9 +60,9 @@ export default function PricingComparison() {
     <div className="mt-48 max-w-[80rem] mx-auto">
       <div className="text-center mb-16">
         <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
-          Compare <span className="text-brand-pink italic">Features</span>
+          Compare <span className="text-brand-pink italic">Packages</span>
         </h2>
-        <p className="text-gray-400 font-bold text-lg">Everything you need to know, side by side.</p>
+        <p className="text-gray-400 font-bold text-lg">Same full-featured experience on every tier — only your group size changes the price.</p>
       </div>
 
       <div className="overflow-x-auto rounded-[2rem] border-2 border-gray-100 shadow-xl">

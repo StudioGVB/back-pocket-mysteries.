@@ -1,18 +1,24 @@
 'use client';
 
 import React, { useActionState, useState } from 'react';
+import Link from 'next/link';
 import { updatePublishingAction } from './actions';
+import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 
 interface PublishingFormProps {
   mystery: {
     id: string;
     status: string;
     title: string;
+    min_players?: number | null;
+    max_players?: number | null;
     sale_enabled?: boolean;
     sale_label?: string | null;
     sale_discount_pct?: number | null;
     sale_ends_at?: string | null;
   };
+  characterCount?: number;
+  locale?: string;
 }
 
 const STATUS_OPTIONS = [
@@ -51,31 +57,87 @@ const STATUS_OPTIONS = [
   },
 ];
 
-export function PublishingForm({ mystery }: PublishingFormProps) {
+export function PublishingForm({ mystery, characterCount = 0, locale = 'en' }: PublishingFormProps) {
   const boundAction = updatePublishingAction.bind(null, mystery.id);
   const [state, formAction, isPending] = useActionState(boundAction, null);
 
-  const [selectedStatus, setSelectedStatus] = useState(mystery.status || 'draft');
+  const pkgInfo = getPackageInfoForMaxPlayers(mystery.max_players);
+  const canPublish = characterCount >= pkgInfo.requiredCharacters;
+  const missingCharacters = Math.max(0, pkgInfo.requiredCharacters - characterCount);
+
+  const [selectedStatus, setSelectedStatus] = useState(
+    !canPublish && mystery.status === 'published' ? 'draft' : mystery.status || 'draft'
+  );
   const [saleEnabled, setSaleEnabled] = useState(mystery.sale_enabled ?? false);
 
   return (
     <form action={formAction} className="space-y-8">
       {/* Status Selector */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100">
-          <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Visibility Status</h2>
-          <p className="text-xs text-slate-400 mt-1">Control whether this mystery is publicly available.</p>
+        <div className="px-6 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Visibility Status</h2>
+            <p className="text-xs text-slate-400 mt-1">Control whether this mystery is publicly available.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-[10px] font-black uppercase tracking-widest">
+              {pkgInfo.label} ({pkgInfo.rangeLabel}) • ${pkgInfo.baseUsd} Base
+            </span>
+            <span
+              className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
+                canPublish
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}
+            >
+              {characterCount} / {pkgInfo.requiredCharacters} Characters
+            </span>
+          </div>
         </div>
+
+        {!canPublish && (
+          <div className="mx-6 mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black text-amber-900 uppercase tracking-wide">
+                🔒 Publishing Locked — {missingCharacters} More Character{missingCharacters === 1 ? '' : 's'} Required
+              </p>
+              <p className="text-xs text-amber-700 font-medium mt-0.5">
+                This mystery is assigned to the <strong>{pkgInfo.label} ({pkgInfo.rangeLabel})</strong>, which requires all <strong>{pkgInfo.requiredCharacters} characters</strong> to be created before you can post it live (currently has {characterCount}).
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href={`/${locale}/builder/mysteries/${mystery.id}`}
+                className="px-3.5 py-2 rounded-lg bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                Change Package
+              </Link>
+              <Link
+                href={`/${locale}/builder/mysteries/${mystery.id}/characters`}
+                className="px-4 py-2 rounded-lg bg-amber-900 hover:bg-amber-800 text-white text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                Add Characters →
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           {STATUS_OPTIONS.map(opt => {
-            const isActive = selectedStatus === opt.value;
+            const isLocked = opt.value === 'published' && !canPublish;
+            const isActive = selectedStatus === opt.value && !isLocked;
             return (
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setSelectedStatus(opt.value)}
+                disabled={isLocked}
+                onClick={() => {
+                  if (!isLocked) setSelectedStatus(opt.value);
+                }}
                 className={`relative flex flex-col gap-2 p-5 rounded-xl border-2 text-left transition-all ${
-                  isActive
+                  isLocked
+                    ? 'bg-slate-50 border-slate-200 opacity-50 cursor-not-allowed'
+                    : isActive
                     ? `${opt.activeBg} ${opt.activeText} shadow-md`
                     : `${opt.bg} hover:shadow-sm`
                 }`}
@@ -83,11 +145,13 @@ export function PublishingForm({ mystery }: PublishingFormProps) {
                 <div className="flex items-center gap-2">
                   <span className={`w-2.5 h-2.5 rounded-full ${isActive ? 'bg-white/80' : opt.dot}`} />
                   <span className={`text-sm font-black uppercase tracking-widest ${isActive ? opt.activeText : opt.text}`}>
-                    {opt.label}
+                    {isLocked ? `🔒 ${opt.label}` : opt.label}
                   </span>
                 </div>
                 <p className={`text-xs leading-relaxed ${isActive ? 'text-white/80' : 'text-slate-500'}`}>
-                  {opt.desc}
+                  {isLocked
+                    ? `Requires ${pkgInfo.requiredCharacters} characters (${missingCharacters} more needed) before going Live.`
+                    : opt.desc}
                 </p>
                 {isActive && (
                   <span className="absolute top-3 right-3 text-white text-sm">✓</span>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
+import { isUserAdmin } from '@/utils/admin-auth';
 
 export async function POST(req: Request) {
   try {
@@ -17,6 +18,9 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (user.id !== userId && !(await isUserAdmin(supabase, user))) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
     // Get all guests for this user

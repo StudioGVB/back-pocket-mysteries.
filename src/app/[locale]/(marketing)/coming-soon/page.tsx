@@ -70,7 +70,7 @@ export default function ComingSoonPage() {
           <Link href={`/${locale}/themes`} className="px-12 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-white hover:text-brand-pink transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 text-center w-full sm:w-auto">
             Choose a Theme
           </Link>
-          <Link href={`/${locale}/create`} className="px-12 py-5 bg-white text-brand-dark rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-pink hover:text-white transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 text-center w-full sm:w-auto">
+          <Link href={`/${locale}/login`} className="px-12 py-5 bg-white text-brand-dark rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-pink hover:text-white transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 text-center w-full sm:w-auto">
             Build your Mystery
           </Link>
         </div>

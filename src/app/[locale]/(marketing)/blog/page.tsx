@@ -16,11 +16,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `${dict.common.blog} | ${dict.common.siteTitle}`,
     description: dict.blog.subtitle,
     alternates: {
-      canonical: `https://mysteries.backpocketgames.com/${locale}/blog`,
+      canonical: `https://backpocketmysteries.com/${locale}/blog`,
       languages: {
-        en: 'https://mysteries.backpocketgames.com/en/blog',
-        fr: 'https://mysteries.backpocketgames.com/fr/blog',
-        'x-default': 'https://mysteries.backpocketgames.com/en/blog',
+        en: 'https://backpocketmysteries.com/en/blog',
+        fr: 'https://backpocketmysteries.com/fr/blog',
+        'x-default': 'https://backpocketmysteries.com/en/blog',
       }
     }
   };
@@ -45,9 +45,14 @@ export default async function BlogPage(props: { params: Promise<{ locale: string
             <h1 className="text-5xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.9]">
               {dict.blog.title.split(',').map((part, i) => (
                 <React.Fragment key={i}>
-                  {part}
-                  {i === 0 && <br />}
-                  {i === 1 && <span className="text-brand-pink italic">{part}</span>}
+                  {i === 0 ? (
+                    <>
+                      {part}
+                      <br />
+                    </>
+                  ) : (
+                    <span className="text-brand-pink italic">{part}</span>
+                  )}
                 </React.Fragment>
               ))}
             </h1>
@@ -131,9 +136,14 @@ export default async function BlogPage(props: { params: Promise<{ locale: string
             <h2 className="text-5xl lg:text-7xl font-black text-white mb-8 uppercase tracking-tighter leading-[0.9]">
                {dict.blog.newsletter.title.split(',').map((part, i) => (
                  <React.Fragment key={i}>
-                   {part}
-                   {i === 0 && <br />}
-                   {i === 1 && <span className="text-brand-pink italic">{part}</span>}
+                   {i === 0 ? (
+                     <>
+                       {part}
+                       <br />
+                     </>
+                   ) : (
+                     <span className="text-brand-pink italic">{part}</span>
+                   )}
                  </React.Fragment>
                ))}
             </h2>

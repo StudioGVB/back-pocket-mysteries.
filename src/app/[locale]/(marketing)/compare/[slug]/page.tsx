@@ -23,11 +23,11 @@ export async function generateMetadata(props: { params: Promise<{ slug: string; 
     description: `Looking for a ${competitor.name} alternative? See our comprehensive review and compare features, pricing, and personalisation against Back Pocket Mysteries.`,
     keywords: competitor.searchKeywords.join(', '),
     alternates: {
-      canonical: `https://mysteries.backpocketgames.com/${params.locale}/compare/${params.slug}`,
+      canonical: `https://backpocketmysteries.com/${params.locale}/compare/${params.slug}`,
       languages: {
-        en: `https://mysteries.backpocketgames.com/en/compare/${params.slug}`,
-        fr: `https://mysteries.backpocketgames.com/fr/compare/${params.slug}`,
-        'x-default': `https://mysteries.backpocketgames.com/en/compare/${params.slug}`,
+        en: `https://backpocketmysteries.com/en/compare/${params.slug}`,
+        fr: `https://backpocketmysteries.com/fr/compare/${params.slug}`,
+        'x-default': `https://backpocketmysteries.com/en/compare/${params.slug}`,
       }
     }
   };
@@ -119,10 +119,10 @@ export default async function CompetitorComparisonPage(props: { params: Promise<
                   Using advanced AI, we generate a 100% unique murder mystery game built specifically around <em>your</em> guests. You simply input who is coming to your party, and our system writes a cohesive, thrilling mystery where your friends are the suspects. 
                 </p>
                 <ul className="list-disc pl-6 space-y-2 font-bold text-brand-dark">
-                  <li>Your friends' names are printed in the scripts.</li>
-                  <li>Inside jokes and real-life relationships can be woven into the motives.</li>
-                  <li>The game scales exactly to your guest count—no awkward missing characters.</li>
-                  <li>It is ready to download and play instantly, for a fraction of the cost of physical kits.</li>
+                  <li>Your friends&apos; real names become the cast (no awkward pre-set stranger names).</li>
+                  <li>Inside jokes, quirks, and real-life relationships are woven directly into the motives and alibis.</li>
+                  <li>Includes a Kahoot-style Live Mobile Lobby (6-digit Game PIN) with leaked group-chat texts &amp; audio wiretaps alongside printable PDF booklets.</li>
+                  <li>Spoiler-Free Host Mode lets the host play along as a full suspect — ready in ~30 minutes.</li>
                 </ul>
               </div>
             </section>

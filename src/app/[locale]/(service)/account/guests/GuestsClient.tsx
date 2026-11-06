@@ -3,14 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { GuestModal } from '@/components/account/GuestModal';
-import { sendGuestInvitation, cancelInvitation, removeGuestConnection } from '@/app/actions/guest-invitations';
+import { sendGuestInvitation, createShareableInviteLink, cancelInvitation, removeGuestConnection } from '@/app/actions/guest-invitations';
 import { saveGuestAction, updateGuestAction, removeGuestAction } from '@/app/actions/guests';
-import { buildAvatarUrl } from '@/utils/avatar';
+import { buildAvatarUrl, extractAccentFromAvatarUrl } from '@/utils/avatar';
 
 interface ManualGuest {
   id: string;
   name: string;
   gender?: string | null;
+  accent?: string | null;
   avatar_url?: string | null;
   ethnicity?: string | null;
   traits?: string[] | null;
@@ -36,6 +37,7 @@ interface LinkedGuest {
 interface PendingInvite {
   id: string;
   invite_email: string;
+  invite_token?: string | null;
   personal_note?: string | null;
   created_at: string;
   expires_at: string;
@@ -64,7 +66,8 @@ function Countdown({ expiresAt }: { expiresAt: string }) {
   return <span className="font-mono">{d}d {h}h {m}m</span>;
 }
 
-function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelInvite, isGenerating }: { guest: ManualGuest; onRemove?: () => void; onEdit?: () => void; onShare?: () => void; pendingInvite?: PendingInvite; onCancelInvite?: () => void; isGenerating?: boolean }) {
+function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, onCancelInvite, isGenerating }: { guest: ManualGuest; locale: string; onRemove?: () => void; onEdit?: () => void; onShare?: () => void; pendingInvite?: PendingInvite; onCancelInvite?: () => void; isGenerating?: boolean }) {
+  const [copiedBanner, setCopiedBanner] = useState(false);
   const initials = guest.name.charAt(0).toUpperCase();
   const defaultAvatar = buildAvatarUrl({
     seed: guest.name,
@@ -76,13 +79,32 @@ function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelIn
   
   const isDataUri = guest.avatar_url?.startsWith('data:image/');
   const displayAvatar = isDataUri ? defaultAvatar : (guest.avatar_url || defaultAvatar);
+  const accent = guest.accent || extractAccentFromAvatarUrl(guest.avatar_url);
+
+  const handleCopyPendingLink = async () => {
+    if (!pendingInvite?.invite_token) {
+      onShare?.();
+      return;
+    }
+    const url = `${window.location.origin}/${locale}/invite/${pendingInvite.invite_token}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedBanner(true);
+    setTimeout(() => setCopiedBanner(false), 2500);
+  };
 
   return (
     <div className="bg-white border border-slate-100 p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative overflow-hidden">
       {pendingInvite && (
         <div className="absolute top-0 left-0 w-full bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest px-5 py-2 flex justify-between items-center z-10">
           <span>Invite Pending</span>
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-2.5 items-center">
+            <button
+              onClick={handleCopyPendingLink}
+              className="px-2 py-0.5 rounded-md bg-amber-950/10 hover:bg-amber-950/20 text-amber-950 font-black transition-colors flex items-center gap-1"
+              title="Copy invite link"
+            >
+              {copiedBanner ? '✓ Copied' : '🔗 Copy Link'}
+            </button>
             <Countdown expiresAt={pendingInvite.expires_at} />
             {onCancelInvite && (
               <button onClick={onCancelInvite} className="hover:text-white transition-colors" title="Cancel Invite">
@@ -119,12 +141,14 @@ function GuestCard({ guest, onRemove, onEdit, onShare, pendingInvite, onCancelIn
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900">{guest.name}</h3>
-            <p className="text-xs font-bold text-slate-400">{guest.gender || 'Unspecified'}</p>
+            <p className="text-xs font-bold text-slate-400">
+              {guest.gender || 'Unspecified'}{accent ? ` · 🎙️ ${accent}` : ''}
+            </p>
           </div>
         </div>
         <div className="flex gap-1">
           {onShare && (
-            <button onClick={onShare} className="text-slate-300 hover:text-indigo-400 transition-colors p-1" title="Invite guest to create account">
+            <button onClick={onShare} className="text-slate-300 hover:text-indigo-400 transition-colors p-1" title="Invite guest via link or email">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
             </button>
           )}
@@ -207,119 +231,328 @@ function LinkedGuestCard({ guest, onUnlink }: { guest: LinkedGuest; onUnlink?: (
   );
 }
 
-function PendingCard({ invite, onCancel }: { invite: PendingInvite; onCancel: () => void }) {
+function PendingCard({ invite, locale, onCancel }: { invite: PendingInvite; locale: string; onCancel: () => void }) {
+  const [copied, setCopied] = useState(false);
   const daysLeft = Math.max(0, Math.ceil((new Date(invite.expires_at).getTime() - Date.now()) / 86400000));
+  const isShareLink = invite.invite_email?.startsWith('link:');
+  const displayTarget = isShareLink
+    ? `Shareable Link (${invite.invite_email.replace(/^link:/, '') || 'Friend'})`
+    : invite.invite_email;
+
+  const handleCopy = async () => {
+    if (!invite.invite_token) return;
+    const url = `${window.location.origin}/${locale}/invite/${invite.invite_token}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   return (
     <div className="bg-white border-2 border-dashed border-amber-200 p-6 rounded-[2rem] flex flex-col" style={{ background: 'rgba(251,191,36,0.03)' }}>
       <div className="flex items-start justify-between mb-4">
         <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(251,191,36,0.1)' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          {isShareLink ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          )}
         </div>
         <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full" style={{ background: 'rgba(251,191,36,0.1)', color: '#d97706' }}>
           Pending · {daysLeft}d left
         </span>
       </div>
-      <p className="font-black text-slate-900 text-sm truncate mb-1">{invite.invite_email}</p>
-      <p className="text-xs text-slate-400 font-medium mb-4">Invite sent — waiting for them to join.</p>
-      <button onClick={onCancel} className="text-xs font-bold text-slate-300 hover:text-red-400 transition-colors text-left mt-auto">
-        Cancel invite
-      </button>
+      <p className="font-black text-slate-900 text-sm truncate mb-1">{displayTarget}</p>
+      <p className="text-xs text-slate-400 font-medium mb-4">
+        {isShareLink ? 'Link ready — waiting for your friend to claim.' : 'Invite sent — waiting for them to join.'}
+      </p>
+      <div className="flex items-center justify-between mt-auto pt-2">
+        {invite.invite_token ? (
+          <button
+            onClick={handleCopy}
+            className="text-xs font-black px-3 py-1.5 rounded-lg transition-all"
+            style={{ background: copied ? '#ecfdf5' : 'rgba(254,4,198,0.08)', color: copied ? '#059669' : '#fe04c6' }}
+          >
+            {copied ? '✓ Link Copied!' : '🔗 Copy Invite Link'}
+          </button>
+        ) : <span />}
+        <button onClick={onCancel} className="text-xs font-bold text-slate-300 hover:text-red-400 transition-colors">
+          Cancel invite
+        </button>
+      </div>
     </div>
   );
 }
 
 // --- Invite Modal ---
-function InviteModal({ isOpen, onClose, onSent, sharingGuest }: { isOpen: boolean; onClose: () => void; onSent: (invite: PendingInvite) => void; sharingGuest: ManualGuest | null }) {
+function InviteModal({
+  isOpen,
+  onClose,
+  onSent,
+  sharingGuest,
+  existingInvite,
+  locale,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSent: (invite: PendingInvite) => void;
+  sharingGuest: ManualGuest | null;
+  existingInvite?: PendingInvite;
+  locale: string;
+}) {
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingLink, setLoadingLink] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setError('');
+      setCopiedLink(false);
+      setNote(existingInvite?.personal_note || '');
+      if (existingInvite?.invite_token && typeof window !== 'undefined') {
+        setShareUrl(`${window.location.origin}/${locale}/invite/${existingInvite.invite_token}`);
+      } else {
+        setShareUrl(null);
+      }
+    }
+  }, [isOpen, existingInvite, locale]);
 
   if (!isOpen) return null;
 
-  const handleSend = async () => {
-    if (!email.trim()) { setError('Please enter an email address.'); return; }
-    setLoading(true);
+  const ensureInviteLink = async (): Promise<string | null> => {
+    if (shareUrl && (!note.trim() || note.trim() === (existingInvite?.personal_note || ''))) {
+      return shareUrl;
+    }
+    setLoadingLink(true);
+    setError('');
+    const result = await createShareableInviteLink({
+      manualGuestId: sharingGuest?.id,
+      guestName: sharingGuest?.name,
+      note: note.trim() || undefined,
+    });
+    setLoadingLink(false);
+
+    if (result.error || !result.inviteToken) {
+      setError(result.error || 'Could not create invite link.');
+      return null;
+    }
+
+    const url = `${window.location.origin}/${locale}/invite/${result.inviteToken}`;
+    setShareUrl(url);
+    onSent({
+      id: result.inviteId!,
+      invite_email: result.inviteEmail || (sharingGuest?.name ? `link:${sharingGuest.name}` : 'link:Friend'),
+      invite_token: result.inviteToken,
+      personal_note: note.trim() || null,
+      created_at: new Date().toISOString(),
+      expires_at: result.expiresAt || new Date(Date.now() + 7 * 86400000).toISOString(),
+      manual_guest_id: sharingGuest?.id,
+    });
+    return url;
+  };
+
+  const handleCopyLink = async () => {
+    const url = await ensureInviteLink();
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 3500);
+  };
+
+  const handleNativeShare = async () => {
+    const url = await ensureInviteLink();
+    if (!url) return;
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join my Mystery Night Roster!',
+          text: sharingGuest
+            ? `Hey ${sharingGuest.name}! Claim your character profile on my Back Pocket Mysteries roster:`
+            : 'Claim your character profile on my Back Pocket Mysteries roster:',
+          url,
+        });
+      } catch {
+        // User cancelled share sheet; still copy to clipboard as fallback
+        await navigator.clipboard.writeText(url);
+        setCopiedLink(true);
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!email.trim()) {
+      setError('Please enter an email address, or use Copy Invite Link above.');
+      return;
+    }
+    setLoadingEmail(true);
     setError('');
 
     const result = await sendGuestInvitation(email.trim(), note.trim() || undefined, sharingGuest?.id);
-    setLoading(false);
-    if (result.error) { setError(result.error); }
-    else {
-      const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
-      onSent({ id: result.inviteId!, invite_email: email.trim(), personal_note: note || null, created_at: new Date().toISOString(), expires_at: expiresAt, manual_guest_id: sharingGuest?.id });
-      setEmail(''); setNote(''); onClose();
+    setLoadingEmail(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      const expiresAt = result.expiresAt || new Date(Date.now() + 7 * 86400000).toISOString();
+      onSent({
+        id: result.inviteId!,
+        invite_email: email.trim(),
+        invite_token: result.inviteToken || null,
+        personal_note: note.trim() || null,
+        created_at: new Date().toISOString(),
+        expires_at: expiresAt,
+        manual_guest_id: sharingGuest?.id,
+      });
+      setEmail('');
+      setNote('');
+      onClose();
     }
   };
 
   const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 outline-none transition-all";
+  const targetName = sharingGuest?.name || ' your friend';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between mb-8">
+      <div className="relative bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl max-h-[92vh] overflow-y-auto">
+        <div className="flex items-start justify-between mb-5">
           <div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">
+            <h3 className="text-xl font-bold text-slate-900 mb-1.5">
               {sharingGuest ? `Invite ${sharingGuest.name}` : 'Invite a Friend'}
             </h3>
-            <p className="text-sm text-slate-500 mb-6">
-              {sharingGuest 
-                ? `Send ${sharingGuest.name} an email invitation so they can create an account, claim their profile, and customize their own avatar!`
-                : "Send them an email link so they can create a profile and join your roster."}
+            <p className="text-sm text-slate-500">
+              {sharingGuest
+                ? `Copy a personal invite link to text ${sharingGuest.name}, or send an email so they can claim their profile and customize their avatar!`
+                : 'Copy a link to text your friend directly, or send them an email invite.'}
             </p>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all">
+          <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all flex-shrink-0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Friend's Email</label>
-            <input
-              type="email"
-              className={inputClass}
-              style={{ focusBorderColor: '#fe04c6' } as any}
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="friend@email.com"
-              onKeyDown={e => e.key === 'Enter' && handleSend()}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Personal Note <span className="font-medium normal-case tracking-normal text-slate-300">(optional)</span></label>
-            <textarea
-              className={`${inputClass} resize-none`}
-              rows={3}
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              placeholder="Join my mystery nights! I promise you'll love it..."
-            />
-          </div>
-
-          {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
-
-          <div className="flex gap-3 pt-2">
-            <button onClick={onClose} className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 transition-all">
-              Cancel
-            </button>
-            <button
-              onClick={handleSend}
-              disabled={loading}
-              className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all disabled:opacity-50"
-              style={{ background: '#fe04c6' }}
-            >
-              {loading ? 'Sending...' : 'Send Invite'}
-            </button>
-          </div>
+        {/* Optional Personal Note (applies to both Link & Email) */}
+        <div className="mb-5">
+          <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+            Personal Note <span className="font-medium normal-case tracking-normal text-slate-300">(optional — shown on their invite card)</span>
+          </label>
+          <textarea
+            className={`${inputClass} resize-none`}
+            rows={2}
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder="Join my mystery nights! I promise you'll love it..."
+          />
         </div>
 
-        <div className="mt-6 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(254,4,198,0.05)' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2" className="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            Your friend will receive a branded invite email. They'll create their own account and their profile will appear on your guest list. Invites expire after 7 days.
+        {/* Primary Option: Copy Shareable Link to Text */}
+        <div className="p-4 rounded-2xl border-2 mb-6" style={{ borderColor: copiedLink ? '#10b981' : 'rgba(254,4,198,0.22)', background: copiedLink ? 'rgba(16,185,129,0.05)' : 'rgba(254,4,198,0.03)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-black uppercase tracking-widest" style={{ color: copiedLink ? '#059669' : '#fe04c6' }}>
+              Fastest · Text or DM Link
+            </span>
+            <span className="text-[11px] font-bold text-slate-400">No email needed</span>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              disabled={loadingLink}
+              className="flex-1 py-3.5 px-4 rounded-xl text-sm font-black text-white flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+              style={{ background: copiedLink ? '#10b981' : '#fe04c6' }}
+            >
+              {loadingLink ? (
+                'Creating Link...'
+              ) : copiedLink ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  Link Copied! Ready to Text
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  {sharingGuest ? `Copy Invite Link for ${sharingGuest.name}` : 'Copy Invite Link'}
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNativeShare}
+              disabled={loadingLink}
+              className="px-3.5 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-sm transition-all flex items-center justify-center"
+              title="Share via Messages / WhatsApp"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </button>
+          </div>
+
+          {shareUrl && (
+            <div className="mt-3 flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+              <input
+                type="text"
+                readOnly
+                value={shareUrl}
+                onClick={e => (e.target as HTMLInputElement).select()}
+                className="w-full text-xs font-mono text-slate-600 bg-transparent outline-none truncate"
+              />
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="text-[11px] font-black px-2.5 py-1 rounded-lg flex-shrink-0 transition-colors"
+                style={{ background: 'rgba(254,4,198,0.1)', color: '#fe04c6' }}
+              >
+                {copiedLink ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          )}
+
+          <p className="text-[11px] text-slate-500 font-medium mt-2.5 leading-relaxed">
+            Paste this link in iMessage, WhatsApp, or SMS. When {targetName} opens it, they can create their login and customize their avatar in one step.
           </p>
+        </div>
+
+        {/* Divider */}
+        <div className="relative flex items-center justify-center my-5">
+          <div className="border-t border-slate-100 w-full" />
+          <span className="bg-white px-3 text-[10px] font-black uppercase tracking-widest text-slate-300 flex-shrink-0">
+            Or send by email
+          </span>
+          <div className="border-t border-slate-100 w-full" />
+        </div>
+
+        {/* Secondary Option: Email Invite */}
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Friend's Email</label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                className={inputClass}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="friend@email.com"
+                onKeyDown={e => e.key === 'Enter' && handleSendEmail()}
+              />
+              <button
+                type="button"
+                onClick={handleSendEmail}
+                disabled={loadingEmail}
+                className="px-5 py-3 rounded-xl text-sm font-black text-white bg-slate-900 hover:bg-slate-800 transition-all disabled:opacity-50 flex-shrink-0"
+              >
+                {loadingEmail ? 'Sending...' : 'Send Email'}
+              </button>
+            </div>
+          </div>
+
+          {error && <p className="text-red-500 text-xs font-bold">{error}</p>}
         </div>
       </div>
     </div>
@@ -391,7 +624,12 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
       });
     }
   };
-  const handleInviteSent = (invite: PendingInvite) => setPendingInvites([invite, ...pendingInvites]);
+  const handleInviteSent = (invite: PendingInvite) => {
+    setPendingInvites(prev => {
+      const filtered = prev.filter(i => i.id !== invite.id && (!invite.manual_guest_id || i.manual_guest_id !== invite.manual_guest_id));
+      return [invite, ...filtered];
+    });
+  };
 
   const handleCancelInvite = async (id: string) => {
     await cancelInvitation(id);
@@ -502,7 +740,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pendingInvites.filter(i => !i.manual_guest_id).map(invite => (
-                  <PendingCard key={invite.id} invite={invite} onCancel={() => handleCancelInvite(invite.id)} />
+                  <PendingCard key={invite.id} invite={invite} locale={locale} onCancel={() => handleCancelInvite(invite.id)} />
                 ))}
               </div>
             </section>
@@ -522,6 +760,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
                     <GuestCard 
                       key={g.id} 
                       guest={g} 
+                      locale={locale}
                       pendingInvite={pendingInvite}
                       onCancelInvite={pendingInvite ? () => handleCancelInvite(pendingInvite.id) : undefined}
                       onRemove={() => handleRemoveManualGuest(g.id)} 
@@ -556,6 +795,8 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
         onClose={() => { setIsInviteModalOpen(false); setSharingGuest(null); }} 
         onSent={handleInviteSent} 
         sharingGuest={sharingGuest}
+        existingInvite={sharingGuest ? pendingInvites.find(inv => inv.manual_guest_id === sharingGuest.id) : undefined}
+        locale={locale}
       />
     </div>
   );

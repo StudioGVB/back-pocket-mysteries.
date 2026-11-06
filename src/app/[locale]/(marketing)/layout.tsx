@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { Suspense } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getDictionary } from '@/lib/get-dictionary';
@@ -10,6 +11,17 @@ import MobileNav from '@/components/marketing/MobileNav';
 import GlobalSpotlight from '@/components/marketing/GlobalSpotlight';
 import FooterMarketingForm from '@/components/marketing/FooterMarketingForm';
 import CopyrightYear from '@/components/marketing/CopyrightYear';
+
+export const metadata: Metadata = {
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+};
 
 export default async function MarketingLayout(props: {
   children: React.ReactNode;
@@ -43,6 +55,7 @@ export default async function MarketingLayout(props: {
             <Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.howItWorks}</Link>
             <Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.themes}</Link>
             <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.pricing}</Link>
+            <Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.faq}</Link>
             <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.contact}</Link>
           </nav>
           
@@ -56,7 +69,7 @@ export default async function MarketingLayout(props: {
               <Link href={`/${locale}/login`} className="text-xs font-black uppercase tracking-widest text-brand-dark/60 hover:text-brand-pink px-4 py-2 transition-colors">
                 {dict.common.login}
               </Link>
-              <Link href={`/${locale}/create`} className="px-8 py-4 bg-brand-pink text-white rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-all duration-300 shadow-xl shadow-brand-pink/10 hover:shadow-brand-pink/20 hover:translate-y-[-2px] active:scale-95">
+              <Link href={`/${locale}/login`} className="px-8 py-4 bg-brand-pink text-white rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-all duration-300 shadow-xl shadow-brand-pink/10 hover:shadow-brand-pink/20 hover:translate-y-[-2px] active:scale-95">
                 {dict.common.getStarted}
               </Link>
             </div>
@@ -100,7 +113,6 @@ export default async function MarketingLayout(props: {
               <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">{dict.common.company}</h4>
               <ul className="space-y-4 text-sm font-bold text-gray-400">
                 <li><Link href={`/${locale}/blog`} className="hover:text-brand-pink transition-colors">{dict.common.blog}</Link></li>
-                <li><Link href={`/${locale}/about`} className="hover:text-brand-pink transition-colors">{dict.common.aboutUs}</Link></li>
                 <li><Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-colors">{dict.common.faq}</Link></li>
                 <li><Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-colors">{dict.common.contact}</Link></li>
               </ul>
@@ -126,9 +138,8 @@ export default async function MarketingLayout(props: {
           <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8 text-[11px] font-black uppercase tracking-widest text-gray-500">
             <p>&copy; <CopyrightYear /> {dict.common.footer.rights}</p>
             <div className="flex gap-8 items-center">
-              <a href="#" className="hover:text-brand-pink transition-colors">Twitter</a>
-              <a href="#" className="hover:text-brand-pink transition-colors">Instagram</a>
-              <a href="#" className="hover:text-brand-pink transition-colors">LinkedIn</a>
+              <a href="mailto:hello@backpocketgames.com" className="hover:text-brand-pink transition-colors lowercase">hello@backpocketgames.com</a>
+              <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-colors">{dict.common.contact}</Link>
               <span className="w-1 h-1 rounded-full bg-white/10 hidden md:block"></span>
               <Link href={`/${locale}/admin`} className="text-white/20 hover:text-white transition-colors lowercase font-medium">{dict.common.footer.admin}</Link>
             </div>

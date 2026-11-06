@@ -1,7 +1,7 @@
 {
   "common": {
     "siteTitle": "Back Pocket Mysteries | Packs d'Enquête Personnalisés et Créés par des Humains",
-    "siteDescription": "Votre liste d'invités. Vos relations. Votre drame — tissé dans un pack d'enquête prêt à imprimer en moins de 20 minutes.",
+    "siteDescription": "Votre liste d'invités. Vos relations. Votre drame — tissé dans un pack d'enquête prêt à imprimer en ~30 minutes.",
     "howItWorks": "Comment ça marche",
     "themes": "Thèmes",
     "pricing": "Tarifs",
@@ -14,7 +14,7 @@
     "browseThemes": "Parcourir les Thèmes",
     "pickATheme": "Choisir un Thème",
     "footer": {
-      "desc": "Kits d'enquête personnalisés pour votre groupe, prêts en moins de 20 minutes. Une création Back Pocket Games.",
+      "desc": "Kits d'enquête personnalisés pour votre groupe, prêts en ~30 minutes. Une création Back Pocket Games.",
       "rights": "Back Pocket Games. Tous droits réservés.",
       "admin": "Accès Admin"
     },
@@ -30,13 +30,13 @@
   },
   "home": {
     "hero": {
-      "badge": "Votre fête organisée en 20 minutes",
+      "badge": "Votre fête organisée en ~30 minutes",
       "title": "Une enquête, construite autour, de vos proches.",
-      "subtitle": "Vrais noms. Vraies relations. Vrai drame. Nous créons un pack d'enquête entièrement personnalisé et prêt à imprimer — en quelques minutes.",
+      "subtitle": "Vrais noms. Vraies relations. Vrai drame. Nous créons un pack d'enquête entièrement personnalisé et prêt à imprimer — en ~30 minutes.",
       "ctaPick": "Choisir un Thème",
       "ctaHow": "Comment ça marche",
       "priceLabel": "À partir de {{price}}",
-      "readyBadge": "Prêt en <20 min"
+      "readyBadge": "Prêt en ~30 min"
     },
     "why": {
       "title": "Pas juste un kit. Votre kit.",
@@ -48,14 +48,14 @@
           "badge": "Personnalisé"
         },
         "evidence": {
-          "title": "Images de preuves réelles",
-          "desc": "Faux SMS, captures d'écran DM et reçus — enrichis pour correspondre à votre histoire. Des preuves qui nomment réellement vos invités.",
+          "title": "Images de preuves & Audio",
+          "desc": "Faux SMS, captures d'écran DM, notes vocales et reçus — enrichis pour correspondre à votre histoire.",
           "badge": "Graphismes Sur Mesure"
         },
         "instant": {
-          "title": "Prêt à imprimer en quelques minutes",
-          "desc": "Téléchargez votre pack complet — guide de l'hôte, livrets de personnages et preuves — tout est formaté et prêt à imprimer.",
-          "badge": "Téléchargement Instantané"
+          "title": "Prêt en ~30 Minutes",
+          "desc": "Accédez à votre salon mobile interactif (code PIN à 6 chiffres) et téléchargez vos livrets PDF prêts à imprimer.",
+          "badge": "Prêt en ~30 Mins"
         }
       }
     },
@@ -64,15 +64,15 @@
       "subtitle": "Pas de planification. Pas de stress. Pas de spoilers pour l'hôte.",
       "step1": {
         "title": "Choisissez un thème qui convient à votre groupe",
-        "desc": "Scandale de célébrités ? Speakeasy des années 1920 ? Drame d'ex ? Choisissez l'ambiance — on s'occupe du reste."
+        "desc": "Réunion de télé-réalité explosive ? Toast au champagne empoisonné ? Choisissez votre thème actif — on s'occupe du reste."
       },
       "step2": {
         "title": "Dites-nous qui vient",
         "desc": "Ajoutez vos noms d'invités et leurs relations. Plus vous donnez de détails, plus l'enquête devient drôle et personnelle."
       },
       "step3": {
-        "title": "Téléchargez et jouez",
-        "desc": "Votre pack complet est prêt en moins de 20 minutes. Partagez-le numériquement ou imprimez-le à la maison."
+        "title": "Jouez sur mobile ou imprimez",
+        "desc": "Votre pack complet et votre salon mobile interactif sont prêts en ~30 minutes. Partagez le code PIN ou imprimez à la maison."
       },
       "cta": "Voir tout le processus"
     },
@@ -106,7 +106,7 @@
       }
     },
     "compare": {
-      "title": "Etsy prend des semaines. Nous prenons 20 minutes.",
+      "title": "Etsy prend des semaines. Nous prenons 30 minutes.",
       "subtitle": "Le même niveau de personnalisation — sans l'attente, les outils de design, ou le prix élevé.",
       "table": {
         "feature": "Fonctionnalité",
@@ -114,22 +114,22 @@
         "etsy": "Kits Personnalisés Etsy",
         "ai": "Outils IA Génériques",
         "f1": "Noms des invités dans l'histoire",
-        "f2": "Graphismes de preuves personnalisés",
+        "f2": "Preuves sur mesure & salon mobile",
         "f3": "Pack prêt à imprimer",
         "f4": "Délai de livraison",
-        "f5": "Prix (6–12 invités)",
-        "f6": "L'hôte peut aussi jouer"
+        "f5": "Prix (4–16 invités)",
+        "f6": "Mode Hôte Sans Spoiler"
       }
     },
     "ctaSection": {
       "title": "Votre fête mérite mieux qu'un modèle vide.",
       "desc": "Obtenez une enquête qui parle vraiment de vos invités. Packs à partir de {{price}}.",
-      "meta": "Classé 16+ · Impression ou partage numérique"
+      "meta": "Classé 16+ · Salon Mobile en Direct + PDF Prêts à Imprimer"
     }
   },
   "pricing": {
     "title": "Un pack. Toute votre soirée.",
-    "subtitle": "Payez une seule fois par événement. Pas d'abonnement, pas de frais par joueur, pas de suppléments cachés. Juste un pack d'enquête complet et personnalisé.",
+    "subtitle": "Tarif fixe selon la taille du groupe — 0 $ de frais par joueur. Choisissez un pack unique ou l'accès mensuel Illimité + 1 Pass Cadeau Mensuel Gratuit.",
     "mostPopular": "Le Plus Populaire",
     "event": "/ événement",
     "bestFor": "Idéal pour :",
@@ -140,78 +140,78 @@
     "tiers": {
       "basic": {
         "name": "Basique",
-        "tagline": "Installation rapide, fête organisée.",
-        "desc": "Idéal pour les petits groupes ou les hôtes occasionnels.",
-        "cta": "Choisir Basique",
-        "bestFor": "Petits dîners entre amis"
-      },
-      "basicPlus": {
-        "name": "Basique+",
-        "tagline": "Basique, mais visuellement vous.",
-        "desc": "Tout le Basique, plus une personnalisation complète de l'apparence des personnages.",
-        "cta": "Choisir Basique+",
-        "bestFor": "Dîners immersifs"
+        "tagline": "4–6 Joueurs • Soirée Intime.",
+        "desc": "Parfait pour les petits dîners et soirées jeux de 4 à 6 invités.",
+        "cta": "Voir les Enquêtes",
+        "bestFor": "Petits dîners entre amis (4–6 invités)"
       },
       "premium": {
         "name": "Premium",
-        "tagline": "Le pack événementiel principal.",
-        "desc": "Idéal pour les anniversaires et les occasions spéciales où vous voulez marquer le coup.",
-        "cta": "Choisir Premium",
-        "bestFor": "Anniversaires, EVJF/EVG"
+        "tagline": "4–10 Joueurs • L'Événement Principal.",
+        "desc": "Notre format le plus populaire — idéal pour les anniversaires, EVJF et soirées jusqu'à 10 invités.",
+        "cta": "Voir les Enquêtes",
+        "bestFor": "Anniversaires, EVJF/EVG (4–10 invités)"
       },
-      "premiumPlus": {
-        "name": "Premium+",
-        "tagline": "L'expérience sur mesure ultime.",
-        "desc": "Tout le Premium, plus une personnalisation visuelle complète pour chaque image.",
-        "cta": "Choisir Premium+",
-        "bestFor": "Événements spéciaux, créateurs"
+      "grand": {
+        "name": "Grand",
+        "tagline": "4–16 Joueurs • Salle Comble.",
+        "desc": "Conçu pour les grandes fêtes, week-ends et grands groupes jusqu'à 16 suspects.",
+        "cta": "Voir les Enquêtes",
+        "bestFor": "Grandes soirées et week-ends (4–16 invités)"
+      },
+      "subscribe": {
+        "name": "Illimité",
+        "tagline": "Illimité + 1 Pass Cadeau Mensuel.",
+        "desc": "Débloquez des soirées enquête illimitées chaque mois jusqu'à 16 joueurs, plus 1 Pass Cadeau Mensuel Gratuit à offrir à un ami.",
+        "cta": "Passer en Illimité",
+        "bestFor": "Hôtes réguliers et pros de l'événementiel"
       }
     }
   },
   "howItWorks": {
-    "title": "Votre fête organisée, en moins de 20 minutes.",
-    "subtitle": "On s'occupe de tout : scénario, preuves, livrets de personnages et guide de l'hôte — tout est personnalisé pour votre liste d'invités.",
+    "title": "Votre fête organisée, en ~30 minutes.",
+    "subtitle": "On s'occupe de tout : scénario, preuves, livrets de personnages, salon mobile en direct et guide de l'hôte — tout est personnalisé pour votre liste d'invités.",
     "badge": "Le Processus",
     "steps": {
       "pick": {
         "title": "Choisissez un thème",
-        "desc": "Parcourez nos thèmes et choisissez celui qui correspond à l'énergie de votre événement.",
+        "desc": "Parcourez nos thèmes actifs et choisissez celui qui correspond à l'énergie de votre événement.",
         "bullets": [
-          "Thèmes pour toutes les ambiances",
-          "Classé 16+ par défaut",
-          "Nouveaux thèmes réguliers"
+          "Thème phare Réunion Télé-Réalité ('Love On The Rocks') disponible",
+          "Niveau de piment configurable (Doux PG-13, Épicé ou Ultra Épicé)",
+          "Complexité au choix (Léger, Standard ou Complexe)"
         ]
       },
       "guests": {
-        "title": "Dites-nous qui vient",
-        "desc": "C'est là que la magie opère. Ajoutez vos noms d'invités et leurs relations.",
+        "title": "Distribuez les rôles à vos vrais invités",
+        "desc": "C'est là que la magie opère. Ajoutez les prénoms de vos invités et leurs relations : leurs vrais prénoms deviennent les personnages de l'intrigue.",
         "bullets": [
-          "Noms des invités partout dans l'histoire",
-          "Dynamiques de relations personnalisées",
-          "L'hôte peut aussi jouer"
+          "Prénoms réels des invités partout dans l'histoire",
+          "Dynamiques de relations et blagues internes personnalisées",
+          "Mode Hôte Sans Spoiler pour que l'hôte puisse jouer"
         ]
       },
       "download": {
-        "title": "Téléchargez votre pack",
-        "desc": "En moins de 20 minutes, votre pack est prêt. Imprimez à la maison ou partagez numériquement.",
+        "title": "Lancez le salon mobile ou imprimez votre pack",
+        "desc": "En ~30 minutes, votre pack et votre salon mobile (code PIN à 6 chiffres) sont prêts.",
         "bullets": [
-          "Guide de l'hôte inclus",
-          "Livrets individuels",
-          "Preuves sur mesure",
-          "Format PDF prêt"
+          "Salon mobile interactif via code PIN à 6 chiffres",
+          "Messages de groupe divulgués & écoutes audio",
+          "Livrets PDF individuels prêts à imprimer",
+          "Contrôleur des Rounds 1 à 3 en direct"
         ]
       }
     },
     "packContents": {
       "title": "Qu'y a-t-il, dans le pack ?",
-      "subtitle": "Tout ce dont vous avez besoin pour une soirée mémorable — tout est formaté et personnalisé.",
+      "subtitle": "Tout ce dont vous avez besoin pour une soirée mémorable — sur mobile et prêt à imprimer.",
       "items": {
-        "hostGuide": { "title": "Guide de l'hôte", "desc": "Instructions étape par étape." },
-        "characterPackets": { "title": "Livrets Personnages", "desc": "Enveloppes scellées pour chaque invité." },
-        "clues": { "title": "Indices", "desc": "Révélations structurées sur 4 rounds." },
-        "evidence": { "title": "Preuves Sur Mesure", "desc": "Faux SMS, DMs et reçus." },
-        "reveal": { "title": "Révélation Finale", "desc": "Une conclusion dramatique." },
-        "ready": { "title": "Prêt à imprimer", "desc": "Aucune compétence en design requise." }
+        "hostGuide": { "title": "Guide Hôte Sans Spoiler", "desc": "Instructions étape par étape pour jouer avec vos invités." },
+        "characterPackets": { "title": "Livrets Personnages", "desc": "Rôles personnalisés avec les vrais prénoms de vos invités." },
+        "clues": { "title": "Indices sur 3 Rounds", "desc": "Révélations structurées round après round." },
+        "evidence": { "title": "SMS & Écoutes Audio", "desc": "Captures de discussions de groupe, reçus et notes vocales." },
+        "reveal": { "title": "Vote en Direct & Révélation", "desc": "Votez sur téléphone avant la confession finale." },
+        "ready": { "title": "Salon Mobile + PDF", "desc": "Jouez via code PIN ou imprimez vos enveloppes." }
       }
     },
     "cta": {
@@ -247,12 +247,12 @@
     "bestFor": "Idéal pour",
     "list": {
       "loveOnTheRocks": {
-        "title": "L'Amour sur les Rochers",
-        "desc": "Ex toxiques, affaires secrètes et une mort suspecte lors du week-end d'enterrement de vie de jeune fille.",
+        "title": "Love On The Rocks",
+        "desc": "Les caméras se sont arrêtées il y a six mois, mais le drame continue. Ce soir, le casting de l'émission de télé-réalité la plus regardée se retrouve dans un penthouse de luxe — jusqu'à ce que La Star s'effondre en plein toast au champagne.",
         "difficulty": "Moyen",
-        "category": "Drame / Romance",
-        "tone": "Chaotique",
-        "bestFor": "EVJF, Anniversaires"
+        "category": "Réunion Télé-Réalité",
+        "tone": "Chaotique & Épicé",
+        "bestFor": "EVJF, Anniversaires, Soirées entre Amis & Fans de Télé-Réalité"
       },
       "inheritance": {
         "title": "L'Héritage",
@@ -303,67 +303,26 @@
     }
   },
   "faqPage": {
-    "title": "Frequently Asked Questions.",
-    "subtitle": "Everything you need to know about hosting a personalized murder mystery.",
-    "seoDescription": "Got questions about our custom murder mystery parties? Read our FAQ to learn how our games work, how to customize characters, and more.",
-    "questions": [
-      {
-        "q": "What exactly is a custom murder mystery party?",
-        "a": "Unlike generic kits, our mysteries are generated specifically for your guest list. We take the names, relationships, and dynamics of your real-life friends and weave them into a unique story where everyone gets a character, motives, and secrets tailored to them."
-      },
-      {
-        "q": "How does the process work?",
-        "a": "First, you pick a theme (like 1920s Speakeasy or Gala Heist). Then, you enter your guests' names and how they know each other. Within 20 minutes, our platform takes our human-written stories and personalizes them to generate a complete, print-ready pack including a host guide, character packets, clues, and custom evidence."
-      },
-      {
-        "q": "Can I still play as the host?",
-        "a": "Yes — and that's by design. The host guide tells you exactly when to reveal each clue without spoiling the ending for you. You get to play along as a character and solve the mystery with everyone else."
-      },
-      {
-        "q": "Do I need to print everything?",
-        "a": "Nope! You can share character packets and clues digitally via PDF. If you prefer the tactile experience, everything comes formatted and ready to print at home."
-      },
-      {
-        "q": "What if my guest list changes last minute?",
-        "a": "Reach out to us within 24 hours of your download, and we'll help you re-generate your pack with the updated guest list at no extra cost."
-      },
-      {
-        "q": "How long does a game typically last?",
-        "a": "Depending on the complexity you choose, our games typically last between 1.5 to 3 hours. This makes them perfect for dinner parties, hens nights, or weekend getaways."
-      },
-      {
-        "q": "Is this suitable for work events or corporate team building?",
-        "a": "Absolutely. Our themes are rated 16+ by default and focus on drama, intrigue, and fun without inappropriate content. Themes like 'The Gala Heist' work exceptionally well for corporate groups."
-      },
-      {
-        "q": "Can I buy a pack as a gift?",
-        "a": "Yes! You can purchase a pack and give it to the organizer. They can then input their own guest list and download the customized mystery."
-      },
-      {
-        "q": "Do you ship physical kits?",
-        "a": "We are a fully digital platform. This means you don't have to wait for shipping, and you receive your completely customized, high-quality digital assets in under 20 minutes."
-      },
-      {
-        "q": "How do you handle character appearances in the evidence?",
-        "a": "On our Premium and Grand tiers, you can customize character appearances (hair, eyes, style) so that the AI-generated evidence images perfectly match your group."
-      }
-    ]
+    "title": "Foire Aux Questions.",
+    "subtitle": "Tout ce que vous devez savoir pour organiser une soirée d'enquête personnalisée.",
+    "seoDescription": "Vous avez des questions sur nos soirées murder mystery sur mesure ? Consultez notre FAQ.",
+    "questions": []
   },
   "seoLanding": {
-    "title": "Host a Custom Murder Mystery Party.",
-    "subtitle": "Get a fully personalized, print-ready murder mystery game built around your actual guest list in under 20 minutes.",
-    "seoDescription": "Host a custom murder mystery party personalized for your guests. We take your guest list and weave them into a unique story with custom evidence and characters.",
-    "whyCustomTitle": "Why choose a custom murder mystery?",
-    "whyCustomDesc": "Generic games are fun, but nothing beats the excitement of finding out your best friend is the prime suspect, or that your partner has a secret fictional motive. Our platform takes our human-crafted mystery plots and adapts them entirely around your actual guest list — names, relationships, and all the drama.",
+    "title": "Organisez une Soirée Custom Murder Mystery.",
+    "subtitle": "Obtenez un jeu d'enquête entièrement personnalisé, prêt à imprimer et jouable sur mobile en ~30 minutes.",
+    "seoDescription": "Organisez une soirée murder mystery personnalisée pour vos invités avec salon mobile interactif et livrets sur mesure.",
+    "whyCustomTitle": "Pourquoi choisir une enquête sur mesure ?",
+    "whyCustomDesc": "Les kits génériques obligent vos amis à incarner des inconnus. Notre plateforme adapte nos scénarios autour de votre vraie liste d'invités — leurs vrais prénoms, leurs relations et leurs blagues internes.",
     "features": {
-      "f1": "Guest Names in the Story",
-      "f1Desc": "Your actual guests are the suspects and victims.",
-      "f2": "Custom Evidence",
-      "f2Desc": "AI-generated evidence that matches your guests' descriptions.",
-      "f3": "Instant Delivery",
-      "f3Desc": "Ready to print or play digitally in under 20 minutes."
+      "f1": "Vos Invités au Cœur de l'Histoire",
+      "f1Desc": "Pas de prénoms fictifs imposés : vos amis deviennent La Star, L'Ex, Le Producteur et plus.",
+      "f2": "Indices Interactifs & Salon Mobile",
+      "f2Desc": "Faux SMS de groupe, écoutes audio et salon mobile à 6 chiffres en plus des PDF prêts à imprimer.",
+      "f3": "Mode Hôte Sans Spoiler en ~30 Mins",
+      "f3Desc": "Jouez vous-même un suspect sans connaître le coupable à l'avance."
     },
-    "ctaTitle": "Ready to host your custom party?",
-    "ctaButton": "View Pricing"
+    "ctaTitle": "Prêt à organiser votre soirée sur mesure ?",
+    "ctaButton": "Voir les Tarifs"
   }
 }

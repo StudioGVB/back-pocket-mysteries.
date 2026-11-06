@@ -1,6 +1,7 @@
 import React from 'react';
 import { getMysteryById, getCluesByMysteryId, getCharactersByMysteryId, getPlotBeatsByMysteryId } from '@/services/mysteries';
 import { getSubplotsByMysteryId } from '@/services/subplots';
+import { getCharacterDisplayName, hydrateTextWithCharacters } from '@/utils/hydration';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { connection } from 'next/server';
@@ -120,30 +121,30 @@ export default async function PrintRevealPage({
             <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 print:bg-slate-50 print:border-slate-300">
               <span className="text-[10px] font-black text-[#FF1493] uppercase tracking-widest block mb-2">🩸 The Victim</span>
               <h3 className="text-xl font-bold text-white mb-2 print:text-black">
-                {victim ? (victim.name.split('|')[0] || victim.name) : "No victim assigned"}
+                {victim ? getCharacterDisplayName(victim) : "No victim assigned"}
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed print:text-slate-700">
-                {victim ? (victim.profile_data?.bio || victim.archetype || "The tragic focal point of the night.") : "Configure a victim in characters."}
+                {victim ? hydrateTextWithCharacters(victim.profile_data?.bio || victim.archetype || "The tragic focal point of the night.", characters, 'print') : "Configure a victim in characters."}
               </p>
             </div>
 
             <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 ring-2 ring-red-600/30 print:bg-slate-50 print:border-slate-300 print:ring-0">
               <span className="text-[10px] font-black text-red-500 uppercase tracking-widest block mb-2">🔪 The Killer</span>
               <h3 className="text-xl font-bold text-white mb-2 print:text-black">
-                {killer ? (killer.name.split('|')[0] || killer.name) : "No killer assigned"}
+                {killer ? getCharacterDisplayName(killer) : "No killer assigned"}
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed print:text-slate-700">
-                {killer ? (killer.profile_data?.bio || killer.archetype || "The perpetrator hiding in plain sight.") : "Configure a killer in characters."}
+                {killer ? hydrateTextWithCharacters(killer.profile_data?.bio || killer.archetype || "The perpetrator hiding in plain sight.", characters, 'print') : "Configure a killer in characters."}
               </p>
             </div>
 
             <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 print:bg-slate-50 print:border-slate-300">
               <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest block mb-2">🤝 The Accomplice / Key Witness</span>
               <h3 className="text-xl font-bold text-white mb-2 print:text-black">
-                {assistant ? (assistant.name.split('|')[0] || assistant.name) : "None"}
+                {assistant ? getCharacterDisplayName(assistant) : "None"}
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed print:text-slate-700">
-                {assistant ? (assistant.profile_data?.bio || assistant.archetype || "Assisted in the cover-up or knows too much.") : "No secondary helper assigned."}
+                {assistant ? hydrateTextWithCharacters(assistant.profile_data?.bio || assistant.archetype || "Assisted in the cover-up or knows too much.", characters, 'print') : "No secondary helper assigned."}
               </p>
             </div>
           </div>
@@ -155,7 +156,7 @@ export default async function PrintRevealPage({
                 <span>💭</span> Killer Motive & Intent
               </h4>
               <p className="text-sm text-slate-300 leading-relaxed print:text-slate-800">
-                <strong>{killer.name.split('|')[0] || killer.name}</strong> was driven to eliminate the victim due to:
+                <strong>{getCharacterDisplayName(killer)}</strong> was driven to eliminate the victim due to:
               </p>
               {killerMotive ? (
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl print:bg-white print:border-slate-300">
@@ -163,7 +164,7 @@ export default async function PrintRevealPage({
                     {killerMotive.motive_type || 'SECRET GRUDGE'}
                   </span>
                   <p className="text-sm text-slate-200 italic print:text-slate-900">
-                    &ldquo;{killerMotive.description}&rdquo;
+                    &ldquo;{hydrateTextWithCharacters(killerMotive.description || killerMotive.notes || '', characters, 'print')}&rdquo;
                   </p>
                 </div>
               ) : (
@@ -218,10 +219,10 @@ export default async function PrintRevealPage({
                         )}
                       </div>
                       <h3 className="text-xl font-bold text-white print:text-black mt-1">
-                        {beat.event_title}
+                        {hydrateTextWithCharacters(beat.event_title, characters, 'print')}
                       </h3>
                       <p className="text-sm text-slate-400 mt-2 leading-relaxed print:text-slate-700">
-                        {beat.description}
+                        {hydrateTextWithCharacters(beat.description || '', characters, 'print')}
                       </p>
                     </div>
 
@@ -237,7 +238,7 @@ export default async function PrintRevealPage({
                               key={charId} 
                               className="px-3 py-1 bg-slate-900 text-xs font-bold text-slate-300 rounded-lg border border-slate-850 print:bg-slate-100 print:border-slate-350 print:text-slate-900"
                             >
-                              {char.name.split('|')[0] || char.name}
+                              {getCharacterDisplayName(char)}
                             </span>
                           );
                         })}
@@ -251,11 +252,11 @@ export default async function PrintRevealPage({
                         <div className="grid grid-cols-1 gap-3">
                           {linkedClues.map(c => (
                             <div key={c.id} className="border-l-2 border-red-600 pl-4 space-y-1">
-                              <strong className="text-sm text-white print:text-slate-900 block">{c.title}</strong>
-                              <p className="text-xs text-slate-400 print:text-slate-600 leading-relaxed">{c.description}</p>
+                              <strong className="text-sm text-white print:text-slate-900 block">{hydrateTextWithCharacters(c.title, characters, 'print')}</strong>
+                              <p className="text-xs text-slate-400 print:text-slate-600 leading-relaxed">{hydrateTextWithCharacters(c.description || '', characters, 'print')}</p>
                               {c.internal_notes && (
                                 <p className="text-[10px] italic text-[#FF1493] bg-slate-950 p-2 rounded-lg border border-slate-900/50 print:bg-white print:border-slate-200">
-                                  <strong>Host note:</strong> {c.internal_notes}
+                                  <strong>Host note:</strong> {hydrateTextWithCharacters(c.internal_notes, characters, 'print')}
                                 </p>
                               )}
                             </div>
@@ -300,7 +301,7 @@ export default async function PrintRevealPage({
                   <div key={sub.id} className="bg-slate-900/40 border border-slate-900 rounded-3xl p-8 space-y-6 print:bg-slate-50 print:border-slate-300 print:p-6">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="text-xl font-bold text-white print:text-black">{sub.title}</h3>
+                        <h3 className="text-xl font-bold text-white print:text-black">{hydrateTextWithCharacters(sub.title || '', characters, 'print')}</h3>
                         <p className="text-xs text-slate-500 font-medium mt-1 print:text-slate-700 uppercase tracking-wider">
                           Theme: {sub.theme || "Side Secret"}
                         </p>
@@ -311,21 +312,21 @@ export default async function PrintRevealPage({
                     </div>
 
                     <p className="text-sm text-slate-300 leading-relaxed print:text-slate-800">
-                      {sub.description}
+                      {hydrateTextWithCharacters(sub.description || '', characters, 'print')}
                     </p>
 
                     <div className="flex gap-4 items-center border-t border-slate-900 pt-4 print:border-slate-200">
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Involved:</span>
                       {pChar && (
                         <span className="text-xs font-bold text-white print:text-slate-900">
-                          {pChar.name.split('|')[0]}
+                          {getCharacterDisplayName(pChar)}
                         </span>
                       )}
                       {sChar && (
                         <>
                           <span className="text-xs text-slate-600">&amp;</span>
                           <span className="text-xs font-bold text-white print:text-slate-900">
-                            {sChar.name.split('|')[0]}
+                            {getCharacterDisplayName(sChar)}
                           </span>
                         </>
                       )}
@@ -339,7 +340,7 @@ export default async function PrintRevealPage({
                           {sub.subplot_beats.map((beat: any) => (
                             <div key={beat.id} className="text-xs text-slate-400 print:text-slate-700 flex gap-2">
                               <span className="text-slate-600 font-bold">Beat {beat.beat_number}:</span>
-                              <span>{beat.description}</span>
+                              <span>{hydrateTextWithCharacters(beat.description || '', characters, 'print')}</span>
                             </div>
                           ))}
                         </div>
@@ -355,11 +356,11 @@ export default async function PrintRevealPage({
                         <div className="grid grid-cols-1 gap-4">
                           {linkedClues.map(c => (
                             <div key={c.id} className="space-y-1">
-                              <span className="text-xs font-bold text-white print:text-slate-900 block">{c.title}</span>
-                              <p className="text-xs text-slate-400 print:text-slate-600 leading-relaxed">{c.description}</p>
+                              <span className="text-xs font-bold text-white print:text-slate-900 block">{hydrateTextWithCharacters(c.title, characters, 'print')}</span>
+                              <p className="text-xs text-slate-400 print:text-slate-600 leading-relaxed">{hydrateTextWithCharacters(c.description || '', characters, 'print')}</p>
                               {c.internal_notes && (
                                 <p className="text-[10px] italic text-amber-500 print:text-slate-700">
-                                  <strong>How this misleads:</strong> {c.internal_notes}
+                                  <strong>How this misleads:</strong> {hydrateTextWithCharacters(c.internal_notes, characters, 'print')}
                                 </p>
                               )}
                             </div>

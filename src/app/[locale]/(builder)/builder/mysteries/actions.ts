@@ -6,6 +6,8 @@ import { redirect } from 'next/navigation';
 import crypto from 'crypto';
 import { getCharactersByMysteryId, getMysteryById, getPlotBeatsByMysteryId } from '@/services/mysteries';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import { logAiUsage } from '@/utils/ai-logger';
+import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 
 // Helper to insert a character and throw if it fails
 async function insertCharacter(supabase: any, payload: any): Promise<{ id: string }> {
@@ -35,8 +37,11 @@ export async function createMysteryAction(formData: FormData) {
   const theme = formData.get('theme') as string;
   const isAdmin = formData.get('isAdmin') === 'true';
   const locale = (formData.get('locale') as string) || 'en';
+  const rawMaxPlayers = parseInt((formData.get('max_players') as string) || '6', 10);
+  const pkgInfo = getPackageInfoForMaxPlayers(rawMaxPlayers);
+  const targetCharCount = pkgInfo.requiredCharacters;
 
-  // 1. Insert the initial draft mystery base with exactly 12 players
+  // 1. Insert the initial draft mystery base with the selected package tier's player cap
   const { data: mystery, error } = await supabase
     .from('mysteries')
     .insert({
@@ -44,8 +49,8 @@ export async function createMysteryAction(formData: FormData) {
       theme,
       created_by: user.id,
       status: 'draft',
-      min_players: 12,
-      max_players: 12,
+      min_players: 4,
+      max_players: targetCharCount,
       complexity: 'medium',
       spice_level: 'mild'
     })
@@ -92,7 +97,7 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Pink",
-          bio: "Gabby won Love on the Rocks Season 4. Crowned queen of chaos, she had the most followers, the most airtime, and the most drama. She played the game flawlessly — sweet when the cameras rolled, ruthless when they didn't. Ask anyone in this room and you'll get a different version of Gabby. Gabby walks into the reunion like she's still the main character. She always knew how to keep her enemies close. That's why half the room still calls themselves her friend.",
+          bio: "Gabby won Love on the Rocks Season 3. Crowned queen of chaos, she had the most followers, the most airtime, and the most drama. She played the game flawlessly — sweet when the cameras rolled, ruthless when they didn't. Ask anyone in this room and you'll get a different version of Gabby. Gabby walks into the reunion like she's still the main character. She always knew how to keep her enemies close. That's why half the room still calls themselves her friend.",
           outfit_advice: "Elegant and effortless. Think a silky slip dress or bias-cut skirt in luxe neutrals or muted jewel tones — like someone used to being photographed. Add soft waves, dewy makeup, and a killer heel.",
           act_summary: "You won the show and you're still the fan favourite — but you know people want to see you fall. Smile sweetly, keep it composed, but never let them forget who came out on top.",
           act_bullets: ["Be effortlessly poised, like everything rolls off you", "Stay friendly, but always keep control of the room", "Laugh off shade — or casually mention your brand deals instead", "Never raise your voice — just raise your eyebrows"],
@@ -334,320 +339,374 @@ export async function createMysteryAction(formData: FormData) {
         if (error || !data) throw new Error(`DOA beat insert failed: ${error?.message}`);
         return data;
       };
-      const doaB1 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 1, sort_order: 1, event_title: "The Reunion Kicks Off", description: "The cast arrives at the penthouse. Gabby walks in last, commanding the room. Old tensions surface immediately — Ava's smile doesn't reach her eyes, Dane won't stop staring, and Milo already knows everyone's drink order by heart. Someone already knows they're here for more than just a catch-up.", characters_involved: [skye.id, brooke.id, blaze.id, rex.id, zane.id], is_required: true, beat_type: 'discovery', timeline_phase: 'pre_crime' });
-      const doaB2 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 2, sort_order: 2, event_title: "Dane Discovers The Betrayal", description: "Dane discovers Gabby has been secretly hooking up with Colt since the show ended. A string of leaked texts and group chat drama makes it impossible to ignore. Consumed by jealousy and fuelled by whatever's in their pocket, Dane begins to spiral and starts Googling things they shouldn't.", characters_involved: [blaze.id, skye.id, cole.id, jordan.id], is_required: true, beat_type: 'discovery', timeline_phase: 'pre_crime' });
-      const doaB3 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 3, sort_order: 3, event_title: "Milo Knows Dane's Plan", description: "Milo has been 'documenting' everyone in the building. Through overheard conversations and obsessive note-taking, Milo pieces together that Dane is planning to poison Colt's drink. Milo confesses their love to Gabby one final time. Gabby laughs it off. Milo goes very quiet.", characters_involved: [rex.id, blaze.id, skye.id], is_required: true, beat_type: 'twist', timeline_phase: 'crime' });
-      const doaB4 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 4, sort_order: 4, event_title: "Dane Poisons The Drink", description: "High and heartbroken, Dane slips sedatives mixed with a lethal dose into a glass intended for Colt during the pre-toast drinks set-up. Rikki notices Dane acting strangely near the bar and alerts Jeremy. Jeremy files it away as useful content rather than a crisis.", characters_involved: [blaze.id, cole.id, mara.id, jordan.id], is_required: true, beat_type: 'clue_reveal', timeline_phase: 'crime' });
-      const doaB5 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 5, sort_order: 5, event_title: "Milo Switches The Glasses", description: "Just before the champagne toast, Milo switches Gabby's glass with Colt's poisoned one — a final, twisted act of devotion. 'If I can't have her story, I'll be the ending.' Nobody sees it happen. The cameras are pointed the wrong way.", characters_involved: [rex.id, skye.id, cole.id], is_required: true, beat_type: 'twist', timeline_phase: 'crime' });
-      const doaB6 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 6, sort_order: 6, event_title: "Gabby Collapses", description: "Mid-toast, Gabby drinks the champagne. Within minutes she's pale, then unconscious, then still. The room descends into chaos. Dane stands frozen — they know what's in that glass. But they also know who was supposed to drink it.", characters_involved: [skye.id, blaze.id, rex.id, mara.id, cole.id], is_required: true, beat_type: 'discovery', timeline_phase: 'crime' });
-      const doaB7 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 7, sort_order: 7, event_title: "The Cover-Up Unravels", description: "Jeremy, always filming, caught fragments of everything. Rikki's notes from glam. Milo's too-calm demeanor. Dane's Google history. The pieces start fitting together in ways nobody wants them to. A deleted security camera file is recovered. Its timestamp is damning.", characters_involved: [jordan.id, mara.id, rex.id, blaze.id], is_required: true, beat_type: 'clue_reveal', timeline_phase: 'investigation' });
-      const doaB8 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 8, sort_order: 8, event_title: "The Confession", description: "Milo, believing they've become part of Gabby's legacy forever, leaves a voice note: 'Some people live for the camera. Some people die for it. Either way… I'm part of the story now.' It's the most chilling thing anyone in the room has ever heard.", characters_involved: [rex.id], is_required: true, beat_type: 'twist', timeline_phase: 'resolution' });
+      const doaB1 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 1, sort_order: 1, event_title: "Dane Learns About The Colt Affair", description: "Dane discovers Gabby has been secretly hooking up with Colt off-camera. Leaked video clips, group chat explosions, and producer Jeremy's backstage instigation confirm the betrayal and trigger Dane's motive to poison Colt.", characters_involved: [blaze.id, skye.id, cole.id, jordan.id, zane.id], is_required: true, beat_type: 'discovery', timeline_phase: 'pre_crime' });
+      const doaB2 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 2, sort_order: 2, event_title: "Dane Spirals & Researches Poison", description: "Consumed by jealousy, Dane writes a bitter unsent note vowing not to stay quiet and searches online for sedatives, sleeping pills mixed with alcohol, and how to spike a drink without taste.", characters_involved: [blaze.id, skye.id, cole.id], is_required: true, beat_type: 'discovery', timeline_phase: 'pre_crime' });
+      const doaB3 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 3, sort_order: 3, event_title: "Milo Tracks Dane's Poison Plot", description: "Through his stalking to-do list, iCloud hacking, and Eye Spy spyware on Device 269, Milo intercepts Dane's search history and realizes Dane plans to poison Colt's drink.", characters_involved: [rex.id, blaze.id], is_required: true, beat_type: 'twist', timeline_phase: 'pre_crime' });
+      const doaB4 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 4, sort_order: 4, event_title: "Milo's Rejected Confession to Gabby", description: "Deluded into believing Gabby shares his feelings, Milo confesses his love to her one final time. Gabby laughs it off and rejects him. Humiliated and feeling invisible, Milo writes that there is 'only one way this ends'.", characters_involved: [rex.id, skye.id], is_required: true, beat_type: 'twist', timeline_phase: 'pre_crime' });
+      const doaB5 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 5, sort_order: 5, event_title: "Dane Poisons The Drink With Temazepam", description: "High on cocaine in glam and spiralling, Dane uses his prescribed Temazepam sleep medication — fatal when mixed with alcohol — to spike a champagne glass intended for Colt. Rikki warns Jeremy, who ignores it for content.", characters_involved: [blaze.id, cole.id, mara.id, jordan.id], is_required: true, beat_type: 'clue_reveal', timeline_phase: 'crime' });
+      const doaB6 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 6, sort_order: 6, event_title: "Milo Switches The Poisoned Glass", description: "At 5:38 PM backstage, a hooded Milo reaches across the drinks table and switches the spiked champagne glass so that Gabby — not Colt — will drink the fatal dose.", characters_involved: [rex.id, skye.id, cole.id], is_required: true, beat_type: 'twist', timeline_phase: 'crime' });
+      const doaB7 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 7, sort_order: 7, event_title: "Gabby Collapses Mid-Toast", description: "During the reunion toast, Gabby drinks from the switched champagne glass and collapses. Chaos erupts as the cast realizes the drink was poisoned.", characters_involved: [skye.id, blaze.id, rex.id, mara.id, cole.id], is_required: true, beat_type: 'discovery', timeline_phase: 'investigation' });
+      const doaB8 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 8, sort_order: 8, event_title: "Milo's Manifesto & Killer Confession", description: "Having drafted a viral social post ('Everything changes after tonight. They'll remember me'), Milo records a chilling voice confession admitting he watched Dane's plan and redirected the poisoned glass to become part of Gabby's story forever.", characters_involved: [rex.id], is_required: true, beat_type: 'twist', timeline_phase: 'resolution' });
 
       // ── CLUES ───────────────────────────────────────────────────────────────
       const { error: doaClueErr } = await supabase.from('clues').insert([
-        // Round 1
+        // Round 1 (8 Clues)
         {
           mystery_id: mystery.id,
-          title: "Dane's Google Search History",
-          clue_type: 'physical',
-          implication_type: 'direct',
-          round_number: 1,
-          is_essential: true,
-          linked_plot_beat_id: doaB2.id,
-          description: `🔍 MOBILE SEARCH HISTORY LOG\nDevice: EyeSpy monitoring dump ({{Dane}}'s phone)\n\n- "How to poison someone"\n- "How to spike a drink without taste"\n- "Do sedatives show up in blood test"\n- "Alcohol + sleeping pills dangerous?"\n- "{{Gabby}} Love on the Rocks cute edits"`,
-          generation_prompt: `A dramatic, atmospheric close-up photograph of Dane looking down intensely at a blank, glowing smartphone screen in a dimly-lit penthouse lounge, the cool light of the screen illuminating their face. Gritty noir aesthetic, low-key lighting, moody, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "Rikki's Glam Mirror Note",
-          clue_type: 'physical',
-          implication_type: 'direct',
-          round_number: 1,
-          is_essential: true,
-          linked_plot_beat_id: doaB4.id,
-          description: `📌 Glam room mirror sticky note:\n"FYI — there was white powder all over the corner of my makeup mirror. Pretty sure {{Dane}} used it while I stepped out. Handle it if you need to. Just don't put it on me. – {{Milo}}"`,
-          generation_prompt: `A high-quality photograph of Rikki looking at her own reflection in a vanity mirror. In the corner of the mirror, a blank neon pink sticky note is stuck. Rikki is looking intensely at the blank sticky note with a concerned expression. The sticky note is completely blank with no writing, ink, or text on it. Out-of-focus background reveals clothes racks. Gritty noir aesthetic, dramatic low-key vanity bulbs lighting, sharp focus, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "Rikki's Side Chat",
-          clue_type: 'testimony',
-          implication_type: 'circumstantial',
-          round_number: 1,
-          is_essential: false,
-          linked_plot_beat_id: doaB4.id,
-          description: `💬 PRIVATE DM THREAD\nSender: {{Rikki}}\nRecipient: {{Ava}}\n\n[5:32 PM] {{Rikki}}: "Should I just tell them?"\n[5:33 PM] {{Ava}}: "They're gonna find out at some point. You should be the one. {{Gabby}} would hate it."`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Rikki looking down at a glowing blank smartphone screen in a dimly-lit bar lounge. On the right: Ava looking down at a glowing blank smartphone screen in a luxury bedroom. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "Sienna's Group Chat Drop",
+          title: "Anonymous Text Thread",
           clue_type: 'secret',
           implication_type: 'red_herring',
+          evidence_status: 'fake',
           round_number: 1,
           is_essential: false,
-          linked_plot_beat_id: doaB1.id,
-          description: `💬 CAST GROUP CHAT\nSender: {{Sienna}}\n\n[5:15 PM] {{Sienna}}: "Ik im an a**hole but thought you should know what your sister said..."\n[5:16 PM] {{Gabby}}: "As I said before, IDGAF. {{Sienna}} needs character building anyway."`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Sienna looking down at a glowing blank smartphone screen in a bright dressing room. On the right: Gabby looking down at a glowing blank smartphone screen on a penthouse balcony at night. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:chat] [CODE:R1-C1] Red Herring / Drama Noise — Shows {{Zayn}}/{{Sienna}} tension regarding an unaired blackmail tape, but has zero connection to the poison plot.',
+          description: `Sender: Unless you've got something juicier to give me, I'm dropping the tape.\n{{Gabby}}: Post it. Why would I care. {{Sienna}} wants the attention anyway. God shes desperate.\nSender: Little Heartless {{Gabby_Initial}}. The video leaves nothing to the imagination... {{Sienna_Initial}} would be fully exposed\n{{Gabby}}: As i said before, IDGAF. {{Sienna}} needs character building anyway.\n[Sent 12:14PM]\nSender: Ik im an assh*le for filming but thought you should know what your sister said...`,
+          generation_prompt: `A close-up shot of hands holding a dark cocktail glass against a glamorous, dimly lit party lounge background. (No text on screen).`
         },
         {
           mystery_id: mystery.id,
-          title: "The Leaked DM Thread",
+          title: "Direct Messages",
           clue_type: 'secret',
-          implication_type: 'circumstantial',
+          implication_type: 'red_herring',
+          evidence_status: 'fake',
           round_number: 1,
           is_essential: false,
-          linked_plot_beat_id: doaB2.id,
-          description: `💬 PRIVATE DM THREAD\nSender: {{Dane}}\nRecipient: {{Gabby}}\n\n[5:10 PM] {{Dane}}: "{{Colt}} and I were together at the same time. I'm more devastated than you."\n[5:12 PM] {{Gabby}}: "I can assure you, you're not."`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Dane looking down at a glowing blank smartphone screen in a dimly-lit lounge. On the right: Gabby looking down at a glowing blank smartphone screen in a hotel suite at night. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:chat] [CODE:R1-C2] Red Herring / Distraction — Designed to point suspicion toward runner-up {{Ava}}, though {{Ava}} did not plan or commit the poisoning.',
+          description: `Sender: You don't deserve the win. Everyone sees what you really are. It's time someone did something about it. 🔥\n[Sent 12:14PM]`,
+          generation_prompt: `Two glamorous figures seen in soft focus across a crowded VIP party, tension in the room. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "The Main Cast Group Chat",
-          clue_type: 'secret',
-          implication_type: 'circumstantial',
+          title: "EYE SPY SOFTWARE — Device: 269",
+          clue_type: 'physical',
+          implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 1,
-          is_essential: false,
-          linked_plot_beat_id: doaB1.id,
-          description: `💬 CAST GROUP CHAT (From {{Zayn}}'s phone)\n\n[5:22 PM] {{Ava}}: "You couldn't keep your story straight, could you S"\n[5:23 PM] {{Sienna}}: "Oh f*** off. Why are we talking about this in the main GC"\n[5:24 PM] {{Dane}}: "Actually, why are we talking about this at all."`,
-          generation_prompt: `A grid-style photo collage divided into four separate equal quadrants. In each panel, a different character (Ava, Sienna, Dane, Zayn) is shown from the chest up looking down intensely at a glowing blank smartphone screen in their hand, with distinct backgrounds for each room (dressing room, lounge, balcony, bar). Gritty noir aesthetic, dramatic low-key lighting, 8k.`
+          is_essential: true,
+          linked_plot_beat_id: doaB3.id,
+          internal_notes: '[FORMAT:search_log] [CODE:R1-C3] REAL / CANON (Beat 2 & 3) — Documents searches on sedatives, poisoning, and getting away with murder. {{Dane}} conducted these searches; {{Milo}} discovered them via spyware.',
+          description: `EYE SPY SOFTWARE — Accessing Device: 269\nRecent Tabs / Search History:\n• Do sedatives show up in blood test\n• Alcohol + sleeping pills dangerous?\n• How to spike a drink without taste\n• How to Poison Someone\n• How to Get away with murder\n• {{Gabby}} - Love On The Rocks\n• {{Gabby}} + {{Dane}} cute edits\n• Love On The Rocks`,
+          generation_prompt: `A sleek laptop or tablet sitting on a modern dark desk with subtle blue backlighting, dimly lit room. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "The Seen-Zoned Warning",
+          title: "Direct Messages",
           clue_type: 'secret',
-          implication_type: 'circumstantial',
+          implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 1,
-          is_essential: false,
+          is_essential: true,
           linked_plot_beat_id: doaB1.id,
-          description: `💬 PRIVATE DM THREAD\nSender: RealFan_{{Milo}}\nRecipient: {{Gabby}}\n\n[5:02 PM] RealFan_{{Milo}}: "The reunion's gonna set someone off."\n\n(Status: SEEN 5:05 PM — No Reply)`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Milo (a young man with short orange hair and fair skin, wearing a bright orange jacket) looking down at a glowing blank smartphone screen in a dark hallway. On the right: Gabby looking down at a glowing blank smartphone screen on a penthouse balcony at night. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
+          internal_notes: '[FORMAT:chat] [CODE:R1-C4] REAL / CANON (Beat 1) — {{Dane}} learns about {{Colt}} and {{Gabby}}\'s post-show affair, which triggers {{Dane_his}} motive to poison {{Colt}}.',
+          description: `Sender: Ik we aren't speaking but did you see what I said in the GC\n{{Dane}}: yeah. wtf. how do you know?\nSender: {{Colt}} and I were together at the same time. I'm more pissed than you.\n{{Dane}}: I can assure you, you're not.`,
+          generation_prompt: `A tense silhouette of a man in a doorway checking his watch in an upscale venue. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "The Threatening Text Chain",
+          title: "Direct Messages",
           clue_type: 'secret',
-          implication_type: 'circumstantial',
+          implication_type: 'red_herring',
+          evidence_status: 'fake',
           round_number: 1,
           is_essential: false,
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:chat] [CODE:R1-C5] Red Herring / Drama Noise — General romantic fallout between cast members; not tied to the murder mechanism.',
+          description: `Sender: So that's it? Nothing even happened, right?\n[Status: SEEN]`,
+          generation_prompt: `A moody shot of a half-empty champagne glass left abandoned on a marble ledge. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "{{Ava}} & {{Rikki}}",
+          clue_type: 'testimony',
+          implication_type: 'red_herring',
+          evidence_status: 'fake',
+          round_number: 1,
+          is_essential: false,
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:chat] [CODE:R1-C6] Red Herring / Drama Noise — Shows {{Ava}} dropping gossip to stir up trouble before the reunion, but neither {{Ava}} nor {{Rikki}} poisoned anyone.',
+          description: `{{Ava}}: Should I just tell {{Dane_him}}? Wait, maybe you should...lol\n{{Ava}}: Either way, i feel like {{Dane_he}} deserves to know\n{{Rikki}}: Babe, {{Dane_hes}} gonna find out at some point... You should be the one... you know {{Gabby_Initial}} would hate it. {{Ava}}, take one for the team...\n{{Ava}}: Ok, i'll message now. But ONLY bc {{Dane}} deserves to know... no other reasons...\n{{Rikki}}: HOLY... IN THE GC!? YOU. ARE. BRAVE\n[Status: SEEN]`,
+          generation_prompt: `Makeup brushes, an open vanity mirror, and cosmetic powders scattered on a backstage dressing table. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "LOTR GC",
+          clue_type: 'secret',
+          implication_type: 'direct',
+          evidence_status: 'real',
+          round_number: 1,
+          is_essential: true,
           linked_plot_beat_id: doaB1.id,
-          description: `💬 PRIVATE DM THREAD\nSender: Unknown Number (Saved as: Don't answer.)\nRecipient: {{Gabby}}\n\n[5:42 PM] Unknown: "You don't deserve the win. Everyone sees what you really are. Time someone did something about it."\n\n(Status: SEEN 5:43 PM — No Reply)`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Gabby looking down at a glowing blank smartphone screen on a penthouse balcony at night. On the right: A mysterious dark silhouette looking down at a glowing phone screen in a dark corridor. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
+          internal_notes: '[FORMAT:chat] [CODE:R1-C7] REAL / CANON (Beat 1) — Publicly outs the affair in the cast group chat, confirming {{Colt}}\'s involvement and escalating {{Dane}}\'s fury.',
+          description: `{{Ava}}: Wow... You couldn't keep your legs closed, could u {{Gabby_Initial}}\n{{Gabby}}: Honestly... its none of your business {{Ava}}. Stop it.\nCast Member: Oh F*** off {{Ava}}. Why are we talking about this in the main GC.\nCast Member: Actually, why are we talking about this at all.\n{{Colt}}: Yikes, Drama... Save it for the Reunion tmr.`,
+          generation_prompt: `A bustling party room viewed from a distance, glamorous guests laughing and holding drinks. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "IMG_4875.mov (0:13)",
+          clue_type: 'physical',
+          implication_type: 'direct',
+          evidence_status: 'real',
+          round_number: 1,
+          is_essential: true,
+          linked_plot_beat_id: doaB1.id,
+          internal_notes: '[FORMAT:cctv] [CODE:R1-C8] REAL / Supporting Evidence (Beat 1) — Proves {{Colt}} and {{Gabby}} were physically intimate off-camera, confirming the rumor that set {{Dane}} off.',
+          description: `File: IMG_4875.mov (0:13)\nSource: Recorded on {{Zayn}}'s iPhone\nVisual: Video still capturing {{Colt}} and {{Gabby}} together behind closed doors.`,
+          generation_prompt: `A close, shadowy, intimate silhouette of a man and woman embracing in a private room.`
         },
 
-        // Round 2
+        // Round 2 (10 Clues)
         {
           mystery_id: mystery.id,
-          title: "Dane's Rage Texts",
-          clue_type: 'secret',
+          title: "CONFIDENTIAL — Love On The Rocks",
+          clue_type: 'physical',
           implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 2,
           is_essential: true,
-          linked_plot_beat_id: doaB2.id,
-          description: `💬 PRIVATE DM THREAD\nSender: {{Dane}}\nRecipient: Unknown\n\n[5:44 PM] {{Dane}}: "If I have to watch them stand next to {{Gabby}} again I'll lose it. The cameras are on. But I will. I'm done being quiet."`,
-          generation_prompt: `A dramatic close-up of Dane looking down intensely at a blank, glowing smartphone screen in a dimly-lit penthouse suite, their angry expression highlighted by the cool blue light of the screen. Gritty noir aesthetic, low-key lighting, moody, 8k.`
+          linked_plot_beat_id: doaB5.id,
+          internal_notes: '[FORMAT:call_sheet] [CODE:R2-C1] REAL / CANON (Beat 3 & 5) — Confirms {{Dane}} used cocaine in glam, was twitchy and muttering threats about {{Colt}}, and notes {{Milo}} hovering suspiciously.',
+          description: `CONFIDENTIAL — Love On The Rocks\n• Try Get {{Gabby_Initial}} to talk to [REDACTED ████████]\n• {{Ava_Initial}} spiralling. re: {{Gabby_Initial}} & {{Colt_Initial}}\n• {{Colt_Initial}} and {{Gabby_Initial}} were in closet for AGES\n• {{Milo_Initial}} still hovering. Watch {{Milo_him}}, seems unstable\nYou know what to do...\n-----------------------------------------------\nHandwritten Note at Bottom:\n"FYI - There was coke all over the corner of my makeup mirror. Pretty sure {{Dane_Initial}} used it while I stepped out. {{Dane_Hes}} twitchy AF and muttering stuff about {{Colt_Initial}}. Handle it if you need to. Just don't put it on me.\n- {{Rikki_Initial}}"`,
+          generation_prompt: `A wooden clipboard resting on a production sound case backstage next to coiled cables. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "Gabby's Final Message",
+          title: "Prescription: Temazepam",
+          clue_type: 'physical',
+          implication_type: 'direct',
+          evidence_status: 'real',
+          round_number: 2,
+          is_essential: true,
+          linked_plot_beat_id: doaB5.id,
+          internal_notes: '[FORMAT:medical_rx] [CODE:R2-C2] REAL / CANON (Beat 5 - Murder Weapon) — The exact sedative prescription used in the poisoning, with a medical warning that it is fatal when mixed with alcohol.',
+          description: `Medication: Temazepam (For sleep disturbance)\nPrescribed to: {{Dane}}\nIssue date: 3 weeks ago\nRef: 10-3-204\nWARNING: May cause drowsiness. Fatal when mixed with alcohol.`,
+          generation_prompt: `A metallic tray or dark nightstand with scattered empty prescription blister foil next to a glass of water. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "Real Ones - LOTR",
           clue_type: 'secret',
           implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB6.id,
-          description: `💬 PRIVATE DM THREAD\nSender: {{Gabby}}\nRecipient: {{Colt}}\n\n[5:20 PM] {{Gabby}}: "You okay? I feel like something's off. Let's talk before the toast..."\n\n(Status: SEEN 5:21 PM — No Reply)`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Gabby looking down at a glowing blank smartphone screen in a luxury penthouse kitchen. On the right: Colt looking down at a glowing blank smartphone screen in a dimly-lit bathroom. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
+          internal_notes: '[FORMAT:chat] [CODE:R2-C3] REAL / CANON (Beat 5 & 6) — Eye-witness testimony that {{Dane}} was pacing, staring intently at the champagne bottles, and acting erratic before the glass switch.',
+          description: `Sender 1: {{Dane}}'s in glam pacing like {{Dane_hes}} about to propose or explode 😭\nSender 2: {{Dane_He}} deadass asked ME if {{Gabby}} still talks about {{Dane_him}} 💀\nSender 2: I saw {{Dane_him}} staring at the champagne bottles lol\nSender 1: I'm not tryna get roofied tonight someone talk to {{Dane_him}}...\nSender 3: Is {{Dane_he}} still on {{Dane_his}} meds...?\nSender 4: 🧐📱🤓`,
+          generation_prompt: `Dim backstage green room with leather sofas and illuminated mirror bulbs in background. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "Milo's Cheat Sheet Warning",
+          title: "Crumpled Personal Note",
           clue_type: 'secret',
-          implication_type: 'circumstantial',
-          round_number: 2,
-          is_essential: false,
-          linked_plot_beat_id: doaB3.id,
-          description: `💬 PRIVATE DM THREAD\nSender: {{Milo}}\nRecipient: {{Rikki}}\n\n[5:36 PM] {{Milo}}: "The reunion's gonna set someone off. If someone snaps, it won't be a surprise."\n\n(Status: SEEN 5:37 PM — No Reply)`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Milo (a young man with short orange hair and fair skin, wearing a bright orange jacket) looking down at a glowing blank smartphone screen in a quiet hallway. On the right: Rikki looking down at a glowing blank smartphone screen in a dimly-lit VIP lounge. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "Milo's Diary Entry",
-          clue_type: 'secret',
-          implication_type: 'circumstantial',
-          round_number: 2,
-          is_essential: false,
-          linked_plot_beat_id: doaB3.id,
-          description: `📓 PERSONAL NOTES LOG\nDevice: {{Milo}}'s phone\n\n[Entry dated: Tonight]\n"Tonight felt kind of perfect. I actually think I'm happy — like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening..."`,
-          generation_prompt: `A dramatic close-up of Milo (a young man with short orange hair and fair skin, wearing a bright orange jacket) looking down at a blank, glowing smartphone screen in a quiet, dimly lit corner of a luxury suite. Gritty noir aesthetic, low-key lighting, moody, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "Sienna & Zayn's Plan",
-          clue_type: 'secret',
-          implication_type: 'red_herring',
-          round_number: 2,
-          is_essential: false,
-          linked_plot_beat_id: doaB1.id,
-          description: `💬 PRIVATE DM THREAD\nSender: {{Sienna}}\nRecipient: {{Zayn}}\n\n[5:25 PM] {{Sienna}}: "I cannot believe she said that. Especially after EVERYTHING I've done. I have an idea — let's give her a taste of her own medicine. We look exactly the same."\n[5:27 PM] {{Zayn}}: "God I think I'm in love with you."`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Sienna looking down at a glowing blank smartphone screen in a dressing room. On the right: Zayn looking down at a glowing blank smartphone screen on a dark penthouse balcony. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "The Deleted Security Camera File",
-          clue_type: 'physical',
           implication_type: 'direct',
-          round_number: 2,
-          is_essential: true,
-          linked_plot_beat_id: doaB7.id,
-          description: `💻 SECURITY SYSTEM LOG\nRestored metadata: SEC CAM_4B [Bar Area]\nTime Range: 5:40–6:05 PM\nStatus: Permanently Deleted\nActioned by: {{Jeremy}} (jordan.p@doatv.tv)\nReason: "corrupted audio, unusable"\n\n[Overheard: {{Jeremy}}'s quote]\n"It was mostly {{Rikki}} ranting anyway — no good angles. Not worth a storyline."`,
-          generation_prompt: `A moody, dramatic shot of an empty television control booth with glowing, colorful buttons on the control panel, casting abstract light reflections in the dark room. Gritty noir aesthetic, low-key lighting, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "The Glam Room Production Note",
-          clue_type: 'physical',
-          implication_type: 'direct',
-          round_number: 2,
-          is_essential: true,
-          linked_plot_beat_id: doaB4.id,
-          description: `📋 PRODUCTION LOG SHEET (Glam Room)\n\n"B spiralling re: S & C. C and S were in wardrobe for AGES. R still hovering. Watch them, seems unstable. You know what to do..."`,
-          generation_prompt: `A dramatic close-up photograph of Jeremy holding a clipboard and looking down at a sheet of blank white production stationery with a concerned expression in a dark production booth. The page is completely blank with no text or writing on it, except for a red circle drawn on the blank page. Gritty noir aesthetic, low-key lighting, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "The Inner Circle Group Chat",
-          clue_type: 'secret',
-          implication_type: 'circumstantial',
-          round_number: 2,
-          is_essential: false,
-          linked_plot_beat_id: doaB3.id,
-          description: `💬 CAST GROUP CHAT (From {{Jeremy}}'s phone)\n\n[5:38 PM] {{Rikki}}: "{{Dane}} is in glam pacing like they're about to explode. They deadass asked me if {{Gabby}} still talks about them."\n[5:39 PM] {{Ava}}: "I saw them staring at the champagne bottles. Is {{Dane}} still on their meds...?"\n[5:40 PM] {{Rikki}}: "I'm not tryna get roofied tonight."`,
-          generation_prompt: `A split-screen photograph divided vertically into three separate vertical panels. In each panel, a different character (Rikki, Ava, Jeremy) is shown looking down intensely at a glowing blank smartphone screen in their hand, with distinct backgrounds for each panel (bar lounge, dressing room, production desk). Gritty noir aesthetic, dramatic low-key lighting, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "The Unsigned Bar Note",
-          clue_type: 'physical',
-          implication_type: 'red_herring',
-          round_number: 2,
-          is_essential: false,
-          linked_plot_beat_id: doaB4.id,
-          description: `📌 Folded note found near the bar:\n"Try to get S to talk to ___. [Name crossed out]. You know what to do."`,
-          generation_prompt: `A dramatic close-up photograph of a folded, creased piece of blank cream-colored paper resting on a wet dark marble bar counter under warm, direct spotlighting. The paper is completely blank with no writing, ink, or text on it. Condensation drops from a nearby cocktail glass are visible on the paper. Gritty noir aesthetic, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "The Wardrobe Intercept Audio",
-          clue_type: 'testimony',
-          implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB2.id,
-          description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Backstage Wardrobe Intercept (Duration: 25s)\nSpeakers: {{Jeremy}} & {{Dane}}\n\n[00:08] {{Jeremy}}: "{{Rikki}} said they were in wardrobe for 25 minutes. Just them — {{Colt}} and {{Gabby}}."\n[00:12] {{Dane}}: "You're joking."\n[00:15] {{Jeremy}}: "I'm not. Might be good to get that on camera."\n[00:19] {{Dane}}: "You'll get something."\n\n(Audio cuts off — static)`,
-          generation_prompt: `A premium matte-black podcasting microphone standing on a sleek glossy table, illuminated by a moody green spotlight from behind. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C4] REAL / CANON (Beat 2) — {{Dane}}\'s direct confession of intent to take action because {{Dane_he}} cannot bear seeing {{Colt}} with {{Gabby}}.',
+          description: `"If I have to watch {{Colt_him}} stand next to her again I'll lose it.\n{{Colt_He}} thinks I won't do anything because the cameras are on.\nBut I will. I'm done being quiet."`,
+          generation_prompt: `A crumpled paper page resting next to an empty glass on a wooden coffee table. (No text).`
         },
-
-        // Round 3
         {
           mystery_id: mystery.id,
-          title: "Gabby's Cocktail Napkin",
+          title: "Notes — To Do Checklist",
+          clue_type: 'secret',
+          implication_type: 'direct',
+          evidence_status: 'real',
+          round_number: 2,
+          is_essential: true,
+          linked_plot_beat_id: doaB3.id,
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C5] REAL / CANON (Beat 3) — {{Milo}}\'s stalking checklist proving {{Milo_he}} accessed devices and uncovered {{Dane}}\'s poison plot.',
+          description: `Date: Today at 4:15 PM\nTo do:\n• Check {{Dane_his}} iCloud (same recovery answers as last time? Try 08/11?) [strikethrough]\n• stalk insta DMs [strikethrough]\n• Go Through Camera Roll\n• Go through Safari history. [strikethrough]`,
+          generation_prompt: `A dark workstation with notebooks, smartphone, and glasses resting beside a desk lamp. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "Direct Message",
+          clue_type: 'secret',
+          implication_type: 'red_herring',
+          evidence_status: 'fake',
+          round_number: 2,
+          is_essential: false,
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:chat] [CODE:R2-C6] Red Herring / Distraction — Cast gossip attempt before the toast; not part of the poison exchange.',
+          description: `Sender: You okay? I feel like something's off. Let's talk before the toast...\n[Sent 5:20PM • Status: SEEN]`,
+          generation_prompt: `An elegant velvet armchair in a quiet hotel corridor outside the party. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "New Recording 84 (5:12 PM)",
+          clue_type: 'testimony',
+          implication_type: 'direct',
+          evidence_status: 'real',
+          round_number: 2,
+          is_essential: true,
+          linked_plot_beat_id: doaB2.id,
+          internal_notes: '[FORMAT:audio] [CODE:R2-C7] REAL / CANON (Beat 1 & 2) — Producer {{Jeremy}} instigates {{Dane}} about {{Colt}} and {{Gabby}} being together in wardrobe for 25 minutes.',
+          description: `Recording Duration: 25.04 Seconds\n{{Jeremy}}: "{{Rikki}} said they were in wardrobe for, like, 25 minutes. Just them. {{Colt}} and {{Gabby}}."\n{{Dane}}: "You're joking."\n{{Jeremy}}: "I'm not. {{Ava}}'s about to combust... Might be good to get that on camera..."\n{{Dane}}: "You'll get something."\n[Recording cuts]`,
+          generation_prompt: `A microphone pack and sound mixer console lit by subtle LED displays backstage. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "Journal Entry",
+          clue_type: 'secret',
+          implication_type: 'direct',
+          evidence_status: 'real',
+          round_number: 2,
+          is_essential: true,
+          linked_plot_beat_id: doaB4.id,
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C8] REAL / CANON (Beat 4) — Establishes {{Milo}}\'s delusion that {{Gabby}} truly had feelings for {{Milo_him}} right before {{Milo_he}} confessed to her.',
+          description: `"Tonight felt kind of perfect. I actually think I'm happy - like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening..."`,
+          generation_prompt: `A fountain pen resting over an open journal under warm ambient light. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "Shh",
+          clue_type: 'secret',
+          implication_type: 'red_herring',
+          evidence_status: 'fake',
+          round_number: 2,
+          is_essential: false,
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:chat] [CODE:R2-C9] Red Herring / Petty Revenge — {{Sienna}} and {{Zayn}} plan a public stunt or drama swap, but did not spike any drinks.',
+          description: `{{Sienna}}: God you are an Ass. But WTF. I can't believe she actually said that...\n{{Sienna}}: Especially After EVERYTHING i've done for her\n{{Zayn}}: Yeah Yikes.\n{{Sienna}}: I have an idea tho, Lets give her a taste of her own Medicine... we look the exact same\n{{Zayn}}: God I think im in love with you`,
+          generation_prompt: `Two figures whispering in an intimate, dimly lit alcove of a luxury venue. (No text).`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "Server Audit Log — SEC CAM_4B",
           clue_type: 'physical',
           implication_type: 'red_herring',
+          evidence_status: 'fake',
+          round_number: 2,
+          is_essential: false,
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:search_log] [CODE:R2-C10] Red Herring / Producer Shenanigans — {{Jeremy}} deleting footage of {{Rikki}} ranting; emphasizes producer interference rather than murder prep.',
+          description: `ERROR: FILE NOT FOUND\nFile: SEC CAM_4B [Green Room]\nTime: 5:40PM - 6:05PM\nStatus: Permanently Deleted\nActioned by: jeremy.p@lotv.tv\nReason: "corrupted audio, unusable"\nNote: "I just cut the section. It was mostly {{Rikki}} ranting anyway - no good angles. Not worth a storyline. No one needs to hear that."`,
+          generation_prompt: `A dark broadcast control room with monitors and server rack lights. (No text).`
+        },
+
+        // Round 3 (7 Clues)
+        {
+          mystery_id: mystery.id,
+          title: "Security Cam Still • Backstage",
+          clue_type: 'physical',
+          implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 3,
-          is_essential: false,
+          is_essential: true,
           linked_plot_beat_id: doaB6.id,
-          description: `📌 Cocktail napkin found near the bar:\n"If this goes wrong tonight — it was always going to. -S"\n(The ink is smudged at the edge.)`,
-          generation_prompt: `A paper cocktail napkin lying on a dark, wet bar counter next to spilled champagne. The napkin is completely blank and clean with no writing, text, signatures, or ink on it. Gritty noir aesthetic, dramatic low-key lighting, highly detailed paper texture, atmospheric shadows, cinematic shot, sharp focus, 8k.`
+          internal_notes: '[FORMAT:cctv] [CODE:R3-C1] REAL / CANON (Beat 6) — Shows {{Milo}} backstage switching the glasses on the table so {{Gabby}} receives the spiked champagne.',
+          description: `Header: SECURITY CAM STILL • BACKSTAGE\nTimestamp: 5:38 PM\nVisual: A hooded figure is seen reaching over the table with champagne glasses and wine bottles.`,
+          generation_prompt: `Overhead black-and-white surveillance angle of a round draped cocktail table with wine glasses and a wine bottle; a hooded figure with face blurred reaching toward a glass.`
         },
         {
           mystery_id: mystery.id,
-          title: "Milo's Final Draft",
+          title: "Social Post Draft (6:12 PM)",
           clue_type: 'secret',
           implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 3,
           is_essential: true,
           linked_plot_beat_id: doaB8.id,
-          description: `💬 UNSENT MESSAGE DRAFT\nSender: {{Milo}}\nRecipient: {{Gabby}}\n\n"...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well… there's only one way this ends. –R"`,
-          generation_prompt: `A dramatic close-up of Milo (a young man with short orange hair and fair skin, wearing a bright orange jacket) looking down intensely at a blank, glowing smartphone screen in a dark, empty bedroom, their face lit by the screen. Gritty noir aesthetic, low-key lighting, moody, 8k.`
+          internal_notes: '[FORMAT:social_post] [CODE:R3-C2] REAL / CANON (Beat 8) — {{Milo}} preparing {{Milo_his}} manifesto to go viral as the unforgettable figure tied to {{Gabby}} forever.',
+          description: `Post Draft (6:12 PM):\n"Everything changes after tonight.\nThey'll remember me.\nEven if it means they never look at her the same again."\nTags: #exclusive #truthhurts #watchthisspace\nLocation: The Grand Penthouse • VIP Reunion Lounge\nAudio selected: Reelin' In The Years`,
+          generation_prompt: `A phone screen silhouette glowing against a dark room interior. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "Rikki's Warning Voice Note",
-          clue_type: 'testimony',
-          implication_type: 'circumstantial',
+          title: "Notes App Entry",
+          clue_type: 'secret',
+          implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 3,
           is_essential: true,
-          linked_plot_beat_id: doaB5.id,
-          description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: {{Rikki}}'s Voice Note (Duration: 32s)\nRecipient: {{Jeremy}}\n\n[6:01 PM] {{Rikki}}: "Something isn't right. {{Milo}} was at the bar alone for two minutes when nobody was looking. Just standing there. Switching something. I thought it was their glass. {{Jeremy}}, call me back."`,
-          generation_prompt: `An empty bar lounge in the penthouse at twilight, a single champagne flute left behind, with long shadows stretching across the polished hardwood floor. Gritty noir aesthetic, moody lighting, shallow depth of field, 8k.`
+          linked_plot_beat_id: doaB4.id,
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4) — {{Gabby}} records that {{Milo}} confessed {{Milo_his}} love, she rejected {{Milo_him}}, and {{Milo_he}} took it personally and hovered around her.',
+          description: `Date: Today at 5:34 PM\n"They told me they are in love with me. They said it's always been me.\nI told them it's not like that. That it's never been like that.\nI think they took it personally. Now they're just... hovering.\nGod, they're all liars. Something's gonna happen. I have a bad feeling. I just don't think I'm the target?\nWish me luck\n- {{Gabby_Initial}}"`,
+          generation_prompt: `A luxury metallic clutch bag sitting open on a marble dressing vanity. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "The Burning Heart Thread",
-          clue_type: 'secret',
-          implication_type: 'circumstantial',
+          title: "New Recording 85 (Backstage)",
+          clue_type: 'testimony',
+          implication_type: 'red_herring',
+          evidence_status: 'fake',
           round_number: 3,
           is_essential: false,
-          linked_plot_beat_id: doaB5.id,
-          description: `💬 PRIVATE DM THREAD\nSender: {{Gabby}}\nRecipient: Unsaved Contact\n\n- Only heart-on-fire emojis remain in the chat thread.\n- The final message is {{Gabby}}'s, at 5:52 PM.\n- No reply.`,
-          generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Gabby looking down at a glowing blank smartphone screen with a red neon heart light reflecting on her face. On the right: A mysterious dark silhouette looking down at a glowing phone screen in a dark corridor. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:audio] [CODE:R3-C4] Red Herring / Content Drama — Cast members fighting over video leaks and reality TV screentime, recorded by production.',
+          description: `Recording Duration: 32.25 Seconds\nSpeaker 1: "You think this is just content!? This is my life."\nSpeaker 2: "You said to post it. Don't backpedal now that it's not your **BLEEP** on the line."\nSpeaker 2: "They already think you hooked up with {{Colt_him}} anyway. This just confirms it."\n*Pause*\nSpeaker 1: "I never want to see you again, you're disgusting."\nSpeaker 2: "You're so dramatic."\nSpeaker 3: "You're both on camera."`,
+          generation_prompt: `A sound recordist's boom microphone positioned above a backstage partition wall. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "The Glass Switch Photo",
+          title: "Security Cam Still • Backstage",
+          clue_type: 'physical',
+          implication_type: 'red_herring',
+          evidence_status: 'fake',
+          round_number: 3,
+          is_essential: false,
+          linked_plot_beat_id: null,
+          internal_notes: '[FORMAT:cctv] [CODE:R3-C5] Red Herring / Relationship Fallout — {{Colt}} arguing about off-camera hookups, distracting players into thinking {{Colt}} did the deed.',
+          description: `Header: SECURITY CAM STILL • BACKSTAGE\nTimestamp: 5:52 PM\nVisual: Two figures in formal evening wear in an intense face-to-face confrontation beside the drinks table.`,
+          generation_prompt: `Grainy surveillance feed of a man in a dark suit gesturing aggressively across a table to a dark-haired woman in a sleeveless dress.`
+        },
+        {
+          mystery_id: mystery.id,
+          title: "Torn Unsent Note",
           clue_type: 'physical',
           implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 3,
           is_essential: true,
-          linked_plot_beat_id: doaB5.id,
-          description: `📸 POLAROID SNAPSHOT\nTimestamp: 6:03 PM (Found in guest's pocket)\n\n- In the distant background: A figure in orange ({{Milo}}'s color code) is seen moving two champagne flutes on the serving tray, swapping their positions.`,
-          generation_prompt: `A professional close-up photograph of a physical Polaroid snapshot lying on a wooden table. The photo shows a dark penthouse party room with guests in the foreground. In the distant, blurry background, a figure wearing a bright orange jacket is caught in motion near a cocktail tray. Gritty noir aesthetic, dramatic low-key lighting, cinematic shot, sharp focus on the Polaroid border, 8k.`
+          linked_plot_beat_id: doaB7.id,
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C6] REAL / CANON (Beat 4 & 7) — Direct evidence of {{Milo}}\'s motive found backstage after {{Gabby}} laughed at {{Milo_his}} confession: "Well... there\'s only one way this ends".',
+          description: `"...But when I told you I loved you. you laughed. Like I didn't exist. You made me feel invisible. Well... there's only one way this ends."`,
+          generation_prompt: `A discarded, torn piece of black paper or card on the floor near stage curtains. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "The Love Rejection Note",
-          clue_type: 'physical',
+          title: "Instagram — @{{Gabby}}4ever_edits",
+          clue_type: 'secret',
           implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 3,
           is_essential: true,
-          linked_plot_beat_id: doaB3.id,
-          description: `📌 Crumpled paper found near the champagne table:\n"...But when I told you I loved you, you laughed. Like I didn't exist. You made me feel invisible. Well... there's only one way this ends."\n(No signature — but the handwriting matches {{Milo}}'s fan mail.)`,
-          generation_prompt: `A high-quality, professional photograph of Gabby holding a crumpled piece of blank cream-colored hotel stationery in her hands, looking down at it with a shocked and distressed expression in a dimly lit penthouse corner. The paper is completely blank and text-free with no writing, ink, or words on it. Gritty noir aesthetic, dramatic low-key spotlighting, sharp focus, 8k.`
-        },
-        {
-          mystery_id: mystery.id,
-          title: "The Recorded Argument",
-          clue_type: 'testimony',
-          implication_type: 'direct',
-          round_number: 3,
-          is_essential: true,
-          linked_plot_beat_id: doaB6.id,
-          description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Accidental recording ({{Zayn}}'s phone, 32s)\n\n[00:04] {{Sienna}}: "You think this is just content?! This is my life."\n[00:09] {{Zayn}}: "You said to post it."\n[00:13] {{Sienna}}: "They already think you hooked up anyway."\n[00:18] *Pause*\n[00:20] {{Sienna}}: "I never want to see you again."\n[00:24] {{Zayn}}: "You're so dramatic. We're both on camera."`,
-          generation_prompt: `A moody close-up of a professional sound mixing board in a dimly lit audio suite, with small green and yellow indicator lights glowing in the dark. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+          linked_plot_beat_id: doaB4.id,
+          internal_notes: '[FORMAT:social_post] [CODE:R3-C7] REAL / CANON (Beat 4) — Proves {{Milo}}\'s obsessive stalking and fixation on {{Gabby}} as {{Milo_his}} "#futurewife".',
+          description: `Account: @{{Gabby}}4ever_edits\nStats: 600 Posts • 65K Followers • 1 Following\nBio: "You only see the show. I see the soul. ❤️✨ #realLoveOnTheRocks"\nPost Grid Captions:\n• "The real winner. Always was. Always will be."\n• "One day she'll know the truth. #futurewife"\n• "You can't fake that look. She saw me."\n• "Fate works fast. Meeting her again."`,
+          generation_prompt: `A smartphone propped up on a messy desk showing photo collages in the glow of a ring light. (No text).`
         },
 
-        // Round 4
+        // Round 4 (2 Clues)
         {
           mystery_id: mystery.id,
-          title: "Milo's Confessional Voice Note",
+          title: "Voice Memo Recording",
           clue_type: 'testimony',
           implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 4,
           is_essential: true,
           linked_plot_beat_id: doaB8.id,
-          description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: {{Milo}}'s Voice Note (Duration: 45s)\n\n[00:10] {{Milo}}: "I tried to be quiet. I really did. I watched the whole thing happen. And when the moment came… I directed it to go exactly where it needed to. It's wild how things just fall into place. Some people live for the camera. Some people die for it. Either way… I'm part of the story now."`,
-          generation_prompt: `A vintage studio microphone sitting in a dark, empty recording booth, with a single purple spotlight illuminating the metallic mesh. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+          internal_notes: '[FORMAT:audio] [CODE:R4-C1] REAL / CANON (Beat 6 & 8 - Killer Confession) — {{Milo}} confesses on tape to watching {{Dane}}\'s plan and redirecting the poisoned drink to {{Gabby}} so {{Milo_he}} could become "part of the story".',
+          description: `Recording Duration: 45.21 Seconds\n"I tried to be quiet. I really did. I watched the whole thing happen. And when the moment came... I directed it to go exactly where it needed to. It's wild how things just fall into place.\nSome people live for the camera. Some people die for it. Either way... I'm part of the story now."`,
+          generation_prompt: `An audio voice recorder lying next to a pair of wire-rimmed glasses on a dark reflective surface. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "The Producer's Smoking Gun Audio",
+          title: "5:52PM - Recovered Security Cam Audio",
           clue_type: 'testimony',
           implication_type: 'direct',
+          evidence_status: 'real',
           round_number: 4,
           is_essential: true,
           linked_plot_beat_id: doaB7.id,
-          description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Security camera audio recovery (5:52 PM, 38s)\nSpeakers: {{Rikki}} & {{Jeremy}}\n\n[00:06] {{Rikki}}: "I'm serious — {{Dane}} is not okay. They're twitchy, I'm pretty sure they mixed something into the drinks."\n[00:14] {{Jeremy}}: "And you're telling me this like it's a problem?"\n[00:18] {{Rikki}}: "It's a liability. What if they snap?"\n[00:23] {{Jeremy}}: (laughs) "Then we get the footage. You want safe, go film MasterChef."`,
-          generation_prompt: `A closed metallic laptop resting on a glossy black desk in a dark, empty production office, reflecting yellow and blue window lights. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
+          internal_notes: '[FORMAT:audio] [CODE:R4-C2] REAL / Supporting Evidence (Beat 5 & 7) — Confirms {{Dane}} was high on cocaine and a loose cannon right before the 6:00 PM toast, while {{Jeremy}} refused to intervene for the sake of reality TV drama.',
+          description: `Recording Duration: 38.64 Seconds\nHeader: 5:52PM - Recovered Security Cam Audio\n{{Rikki}}: "I'm serious - {{Dane}}'s not okay. {{Dane_Hes}} twitchy, {{Dane_hes}} muttering shit, I'm pretty sure {{Dane_he}} snorted a line off the f***ing mirror."\n{{Jeremy}}: "And you're telling me this like it's a problem?"\n{{Rikki}}: "Yes, {{Jeremy}}. It's a liability. {{Dane_He}} needs help... What if {{Dane_he}} snaps?"\n{{Jeremy}}: (laughs) "Then we get the footage. You want safe, go film MasterChef."`,
+          generation_prompt: `Backstage audio monitors and headset hanging on a stand near the wings of the stage. (No text).`
         }
       ]);
       if (doaClueErr) throw new Error(`DOA clues failed: ${doaClueErr.message}`);
@@ -1121,6 +1180,9 @@ export async function createMysteryAction(formData: FormData) {
       if (!apiKey) throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured in the environment.');
 
       const genAI = new GoogleGenerativeAI(apiKey);
+      const suspectCount = Math.max(3, targetCharCount - 1);
+      const innocentCount = Math.max(1, targetCharCount - 3);
+      const maxCharIndex = targetCharCount - 1;
       
       const responseSchema: Schema = {
         type: SchemaType.OBJECT,
@@ -1128,7 +1190,7 @@ export async function createMysteryAction(formData: FormData) {
           description: { type: SchemaType.STRING },
           characters: {
             type: SchemaType.ARRAY,
-            description: "Exactly 12 unique characters. Exactly 1 victim, exactly 1 killer, exactly 1 accomplice, exactly 9 suspects.",
+            description: `Exactly ${targetCharCount} unique characters. Exactly 1 victim, exactly 1 killer, exactly 1 accomplice, exactly ${innocentCount} suspects.`,
             items: {
               type: SchemaType.OBJECT,
               properties: {
@@ -1149,12 +1211,12 @@ export async function createMysteryAction(formData: FormData) {
           },
           relationships: {
             type: SchemaType.ARRAY,
-            description: "A list of relationships between characters. The victim MUST connect to all other 11 characters. Include 6-8 inter-suspect connections.",
+            description: `A list of relationships between characters. The victim MUST connect to all other ${suspectCount} characters. Include 4-8 inter-suspect connections.`,
             items: {
               type: SchemaType.OBJECT,
               properties: {
-                char1_index: { type: SchemaType.INTEGER, description: "Index of the first character in the characters array (0 to 11)" },
-                char2_index: { type: SchemaType.INTEGER, description: "Index of the second character in the characters array (0 to 11)" },
+                char1_index: { type: SchemaType.INTEGER, description: `Index of the first character in the characters array (0 to ${maxCharIndex})` },
+                char2_index: { type: SchemaType.INTEGER, description: `Index of the second character in the characters array (0 to ${maxCharIndex})` },
                 dynamics: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
                 notes: { type: SchemaType.STRING }
               },
@@ -1163,11 +1225,11 @@ export async function createMysteryAction(formData: FormData) {
           },
           motives: {
             type: SchemaType.ARRAY,
-            description: "Exactly 11 motives (one for each suspect, linked to the victim).",
+            description: `Exactly ${suspectCount} motives (one for each suspect, linked to the victim).`,
             items: {
               type: SchemaType.OBJECT,
               properties: {
-                char_index: { type: SchemaType.INTEGER, description: "Index of the suspect in the characters array (0 to 11, cannot be the victim index)" },
+                char_index: { type: SchemaType.INTEGER, description: `Index of the suspect in the characters array (0 to ${maxCharIndex}, cannot be the victim index)` },
                 motive_type: { type: SchemaType.STRING, enum: ['revenge', 'greed', 'love', 'fear', 'justice', 'power'], format: 'enum' },
                 strength: { type: SchemaType.STRING, enum: ['low', 'moderate', 'high', 'critical'], format: 'enum' },
                 notes: { type: SchemaType.STRING }
@@ -1244,29 +1306,29 @@ export async function createMysteryAction(formData: FormData) {
 
       const promptText = `
         You are an expert murder mystery party game designer.
-        The user wants to create a new murder mystery base.
+        The user wants to create a new murder mystery base for the ${pkgInfo.label} (${pkgInfo.rangeLabel}).
         Title: "${title}"
         Theme: "${theme}"
 
         Your job is to generate a fully complete, premium murder mystery base in a single JSON response matching the theme perfectly.
 
         CRITICAL CONSTRAINTS:
-        1. **EXACTLY 12 CHARACTERS**: You must generate exactly 12 unique characters. No more, no less.
+        1. **EXACTLY ${targetCharCount} CHARACTERS**: You must generate exactly ${targetCharCount} unique characters. No more, no less.
         2. **PLOT ROLES**: Assign exactly:
            - 1 Victim (plot_role: 'victim', is_victim: true, is_mandatory: true, archetype: 'victim')
            - 1 Killer (plot_role: 'killer', is_victim: false, is_mandatory: true, archetype: 'villain')
            - 1 Assistant/Accomplice (plot_role: 'assistant', is_victim: false, is_mandatory: true, archetype: 'sidekick' or 'villain')
-           - 9 Innocents (plot_role: 'innocent', is_victim: false, is_mandatory: a mix of true and false, archetypes like 'hero', 'witness', 'investigator')
-        3. **VICTIM RELATIONSHIP**: The victim MUST have a direct relationship to EVERY SINGLE suspect (the other 11 characters). No floaters!
-        4. **INTER-SUSPECT RELATIONSHIPS**: Add at least 6 other interesting relationships between suspects to make a rich social web.
-        5. **MOTIVES**: Every suspect (11 characters, excluding the victim) MUST have exactly ONE primary motive targeting the victim. The motive strength for the Killer must be 'critical' or 'high'. The accomplice must have 'high' or 'moderate'. Innocents must have 'low' or 'moderate' (red herrings). Motive types MUST be strictly one of: 'revenge', 'greed', 'love', 'fear', 'justice', 'power'.
+           - ${innocentCount} Innocents (plot_role: 'innocent', is_victim: false, is_mandatory: a mix of true and false, archetypes like 'hero', 'witness', 'investigator')
+        3. **VICTIM RELATIONSHIP**: The victim MUST have a direct relationship to EVERY SINGLE suspect (the other ${suspectCount} characters). No floaters!
+        4. **INTER-SUSPECT RELATIONSHIPS**: Add at least 4 other interesting relationships between suspects to make a rich social web.
+        5. **MOTIVES**: Every suspect (${suspectCount} characters, excluding the victim) MUST have exactly ONE primary motive targeting the victim. The motive strength for the Killer must be 'critical' or 'high'. The accomplice must have 'high' or 'moderate'. Innocents must have 'low' or 'moderate' (red herrings). Motive types MUST be strictly one of: 'revenge', 'greed', 'love', 'fear', 'justice', 'power'.
         6. **PLOT BEATS**: Generate exactly 4 chronological narrative beats covering:
            - Beat 1: The gathering and initial tensions before the murder.
            - Beat 2: The discovery of the murder.
            - Beat 3: Key evidence or alibi cracks.
            - Beat 4: The climax / twist and resolution.
         7. **CLUES**: Generate exactly 6 clue cards linked to the plot beats. Clue types must be strictly one of: 'physical', 'testimony', 'background', 'secret'. Implication types must be strictly one of: 'direct', 'circumstantial', 'red_herring'.
-        8. **SUBPLOT**: Generate exactly 1 secondary subplot arc involving 2 suspects (indexes 0-11, must not be the victim). Include 2 subplot beats linked to the plot beats.
+        8. **SUBPLOT**: Generate exactly 1 secondary subplot arc involving 2 suspects (indexes 0-${maxCharIndex}, must not be the victim). Include 2 subplot beats linked to the plot beats.
         9. **ADAPTABLE GENDERS**: At least 2 characters should have gender 'adaptable', and you must write their name and bio gender-neutrally.
 
         Ensure the theme and setting are fully integrated into all characters, names, outfits, and clues. Use realistic, engaging, and atmospheric details.
@@ -1275,9 +1337,16 @@ export async function createMysteryAction(formData: FormData) {
       const result = await model.generateContent(promptText);
       const generatedData = JSON.parse(result.response.text());
 
+      await logAiUsage({
+        model_name: 'gemini-2.5-flash',
+        feature_name: 'generate_full_mystery',
+        mystery_id: mystery.id,
+        usageMetadata: result.response.usageMetadata as any,
+      });
+
       // Insert dynamic overview description
       await supabase.from('mysteries').update({
-        description: generatedData.description || `A compelling 12-character murder mystery base centered around the theme of ${theme}.`
+        description: generatedData.description || `A compelling ${targetCharCount}-character murder mystery base centered around the theme of ${theme}.`
       }).eq('id', mystery.id);
 
       // Insert Characters
@@ -1481,11 +1550,28 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
   const title = formData.get('title') as string;
   const theme = formData.get('theme') as string;
   const description = formData.get('description') as string;
-  const min_players = parseInt(formData.get('min_players') as string);
-  const max_players = parseInt(formData.get('max_players') as string);
+  const min_players = parseInt(formData.get('min_players') as string) || 4;
+  const max_players = parseInt(formData.get('max_players') as string) || 6;
   const complexity = formData.get('complexity') as any;
   const spice_level = formData.get('spice_level') as any;
   const status = formData.get('status') as any;
+
+  const pkgInfo = getPackageInfoForMaxPlayers(max_players);
+
+  // Enforce package character requirement before allowing status = 'published'
+  if (status === 'published') {
+    const { count: charCount } = await supabase
+      .from('characters')
+      .select('id', { count: 'exact', head: true })
+      .eq('mystery_id', id);
+
+    const actualChars = charCount ?? 0;
+    if (actualChars < pkgInfo.requiredCharacters) {
+      return {
+        error: `Cannot publish this ${pkgInfo.label} (${pkgInfo.rangeLabel}) mystery: it requires ${pkgInfo.requiredCharacters} characters, but currently has ${actualChars}. Please add ${pkgInfo.requiredCharacters - actualChars} more character(s) in the Characters tab before publishing.`,
+      };
+    }
+  }
 
   const { error } = await supabase
     .from('mysteries')
@@ -1494,7 +1580,7 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
       theme,
       description,
       min_players,
-      max_players,
+      max_players: pkgInfo.requiredCharacters,
       complexity,
       spice_level,
       status,
@@ -1504,14 +1590,14 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
 
   if (error) {
     console.error('Error updating mystery:', error);
-    require('fs').appendFileSync('actions_log.txt', new Date().toISOString() + ' ERROR: ' + JSON.stringify(error) + '\n');
     return { error: error.message };
   }
-  
-  require('fs').appendFileSync('actions_log.txt', new Date().toISOString() + ' SUCCESS updating ' + id + '\n');
 
   revalidatePath(`/builder/mysteries/${id}`);
   revalidatePath(`/builder/mysteries/${id}/core`);
+  revalidatePath(`/builder/mysteries/${id}/characters`);
+  revalidatePath(`/builder/mysteries/${id}/status`);
+  revalidatePath('/', 'layout');
   
   return { success: true };
 }
@@ -1558,6 +1644,13 @@ export async function generateDescriptionAction(mysteryId: string) {
 
     const result = await model.generateContent(prompt);
     const synopsis = result.response.text().trim();
+
+    await logAiUsage({
+      model_name: 'gemini-2.5-pro',
+      feature_name: 'generate_mystery_synopsis',
+      mystery_id: mysteryId,
+      usageMetadata: result.response.usageMetadata as any,
+    });
 
     const supabase = await createClient();
     const { error } = await supabase
@@ -1615,10 +1708,10 @@ export async function generateMysteryCoverAction(mysteryId: string) {
       dataUri = cached.image_url;
     } else {
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
       const payload = {
-        instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio: "16:9", outputOptions: { mimeType: "image/jpeg" } }
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ["IMAGE"] }
       };
 
       let res;
@@ -1641,10 +1734,13 @@ export async function generateMysteryCoverAction(mysteryId: string) {
       }
 
       let base64Image = '';
+      let coverUsageMetadata: any = null;
 
       if (res && res.ok) {
         const data = await res.json();
-        base64Image = data.predictions?.[0]?.bytesBase64Encoded;
+        coverUsageMetadata = data.usageMetadata || null;
+        const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+        base64Image = imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
       } else if (res) {
         const errorText = await res.text();
         console.error('Imagen API generation failed:', errorText);
@@ -1656,6 +1752,13 @@ export async function generateMysteryCoverAction(mysteryId: string) {
 
       if (base64Image) {
         dataUri = `data:image/jpeg;base64,${base64Image}`;
+
+        await logAiUsage({
+          model_name: 'gemini-2.5-flash-image',
+          feature_name: 'generate_mystery_cover',
+          mystery_id: mysteryId,
+          usageMetadata: coverUsageMetadata,
+        });
         
         // Save to cache safely
         try {
@@ -1673,9 +1776,13 @@ export async function generateMysteryCoverAction(mysteryId: string) {
       }
     }
 
+    const { parseMysteryImageField, serializeMysteryImageField } = await import('@/utils/moodboard');
+    const existingParsed = parseMysteryImageField(mystery.image_url);
+    const serializedImageUrl = serializeMysteryImageField(dataUri, existingParsed.moodboardPhotos);
+
     const { error } = await supabase
       .from('mysteries')
-      .update({ image_url: dataUri, updated_at: new Date().toISOString() })
+      .update({ image_url: serializedImageUrl, updated_at: new Date().toISOString() })
       .eq('id', mysteryId);
 
     if (error) throw new Error(error.message);

@@ -6,6 +6,8 @@ import { AIGenerateDescriptionButton } from './AIGenerateDescriptionButton';
 import { AIGenerateCoverButton } from './AIGenerateCoverButton';
 import { MysterySettings } from './MysterySettings';
 import { SubmitButton } from './SubmitButton';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import { MoodboardStudio } from '@/components/admin/MoodboardStudio';
 
 export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: string }) {
   const updateWithId = updateMysteryAction.bind(null, mysteryId);
@@ -43,11 +45,12 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
         <div className="space-y-2">
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Theme</label>
           <div className="relative">
-            <select 
+            <CustomSelect 
               name="theme"
               defaultValue={mystery.theme || ''}
               required
-              className="w-full px-0 py-2 bg-transparent border-b-2 border-slate-200 focus:border-brand-pink outline-none font-black text-2xl transition-all appearance-none cursor-pointer text-slate-900"
+              placeholder="Select a theme..."
+              className="w-full px-0 py-2 bg-transparent border-b-2 border-slate-200 focus:border-brand-pink outline-none font-black text-2xl transition-all text-slate-900"
             >
               <option value="" disabled>Select a theme...</option>
               <option value="Reality TV Reunion">Reality TV Reunion</option>
@@ -84,11 +87,7 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
               <option value="Halloween Party">Halloween Party</option>
               <option value="Christmas Party">Christmas Party</option>
               <option value="Custom">Custom / Other</option>
-
-            </select>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-            </div>
+            </CustomSelect>
           </div>
         </div>
       </div>
@@ -111,7 +110,19 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
         <AIGenerateCoverButton mysteryId={mysteryId} currentImageUrl={mystery.image_url} />
       </div>
 
+      {/* Mood Board & Multi-Photo Vibe Uploader */}
+      <div className="pt-2">
+        <MoodboardStudio
+          mysteryId={mysteryId}
+          mysteryTitle={mystery.title}
+          theme={mystery.theme}
+          initialImageUrl={mystery.image_url}
+        />
+      </div>
+
       <MysterySettings 
+        mysteryId={mysteryId}
+        characterCount={Array.isArray(mystery.characters) ? mystery.characters.length : 0}
         initialComplexity={mystery.complexity || 'medium'}
         initialSpiceLevel={mystery.spice_level || 'low'}
         initialStatus={mystery.status}

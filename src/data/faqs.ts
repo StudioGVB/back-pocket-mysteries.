@@ -17,79 +17,79 @@ export const faqsData: FAQ[] = [
   {
     category: "What We Do",
     q: "What is Back Pocket Mysteries?",
-    a: "We create highly personalized murder mystery party packs using AI. Unlike generic kits where you just read a script, our engine takes your real guest list, their names, relationships, and inside jokes, and weaves them into a complete, print-ready mystery experience in under 20 minutes."
+    a: "We create personalized murder mystery party packs powered by human-crafted storylines and AI customization. Unlike generic kits with pre-set fictional names, our engine casts your real guests into iconic archetypes — weaving their real names, relationships, and inside jokes into a complete printable & live mobile mystery experience in ~30 minutes."
   },
   {
     category: "What We Do",
     q: "How is this different from a standard boxed kit?",
-    a: "Standard kits have pre-written characters like 'Lord Bartholomew.' We build the characters around your actual guests. Your friends play stylized versions of themselves, and the clues, motives, and evidence are generated specifically to match your group dynamics."
+    a: "Standard kits force your friends to memorize pre-written strangers like 'Lord Bartholomew.' We cast your actual guests into dramatic roles (like 'The Star', 'The Ex', or 'The Producer') using their real names. The clues, motives, leaked group-chat texts, and audio wiretaps are generated specifically around your group dynamics."
   },
   {
     category: "What We Do",
     q: "How long does it take to get my customized pack?",
-    a: "Once you input your guest details and checkout, your complete, customized murder mystery pack is generated and ready to download in under 20 minutes."
+    a: "Once you input your guest details and complete checkout, your customized murder mystery pack and live interactive game room are generated and ready in ~30 minutes."
   },
   {
     category: "What We Do",
     q: "Do you write these from scratch every time?",
-    a: "We use robust, human-written theme templates (like a 1920s Speakeasy or Gala Heist) as the foundation. Our AI engine then heavily modifies the script, clues, and character arcs to perfectly fit your guest list."
+    a: "We start with human-crafted mystery architectures — like our flagship Reality TV Reunion mystery, Love On The Rocks — and our AI engine adapts the scripts, character booklets, alibis, and evidence around your specific guest roster."
   },
   {
     category: "What We Do",
     q: "Is this suitable for a dinner party?",
-    a: "Absolutely! Our mysteries are designed to be played across 4 structured rounds, which perfectly map to a welcome drink, starter, main course, and dessert."
+    a: "Absolutely! Our mysteries are structured into 3 dramatic rounds plus the Final Accusation & Reveal, which map seamlessly to arrival drinks, starter, main course, and dessert."
   },
   {
     category: "What We Do",
     q: "Can I use this for a corporate team-building event?",
-    a: "Yes. The 'Gala Heist' and 'The Inheritance' themes are highly popular for corporate groups. They provide great interaction and problem-solving without the awkwardness of traditional icebreakers."
+    a: "Yes! Our mysteries are a huge hit for team offsites and work socials. You can also adjust the Spice Level to 'Mild (PG-13)' in the builder so the drama stays work-friendly while keeping everyone laughing and collaborating."
   },
   {
     category: "What We Do",
     q: "Do I need acting experience to play?",
-    a: "Not at all. The character packets give you exactly what to say and what secrets to hide. You can lean into the roleplay as much or as little as you want."
+    a: "Not at all. Your character booklet gives you clear round-by-round talking points, juicy secrets to hide, and questions to ask. You can lean into the roleplay as much or as little as you want."
   },
   {
     category: "What We Do",
     q: "Are these escape rooms?",
-    a: "No. While there are clues to solve, this is a social deduction game focused on conversation, accusations, and character interaction, rather than solving physical puzzles or locks."
+    a: "No. While there is forensic evidence, leaked messages, and timelines to piece together, this is a social deduction party game focused on conversation, accusations, and character interaction rather than physical padlocks."
   },
   {
     category: "What We Do",
     q: "Is it a script we just read out loud?",
-    a: "No! While there are scripted 'confessions' or intro statements, the core of the game involves mingling, questioning other players, and deciding who is lying based on the evidence drops."
+    a: "No! While each round has structured prompts and dramatic reveals, the core of the game involves mingling, interrogating suspects, and catching the killer in a lie using the evidence drops."
   },
   {
     category: "What We Do",
     q: "Can I play this over Zoom or virtual calls?",
-    a: "Yes! Since all our materials are provided digitally, you can easily email or message the character packets to your guests and display the evidence clues via screen share."
+    a: "Yes! Since every mystery includes both downloadable PDFs and a live 6-digit Game PIN lobby that guests can join from any phone or laptop, it works brilliantly both in-person and on Zoom."
   },
 
   // Pricing & Purchasing
   {
     category: "Pricing & Purchasing",
     q: "How much does a custom mystery cost?",
-    a: "Prices start from our Basic tier which covers up to 6 players, with additional costs per extra player. Check our Pricing page for the most up-to-date regional pricing."
+    a: "We charge a single flat price per event based on your player count bracket: Basic (4–6 players), Premium (4–10 players), or Grand (4–16 players). Check our Pricing page for live regional pricing in your currency."
   },
   {
     category: "Pricing & Purchasing",
     q: "What is the difference between Basic, Premium, and Grand tiers?",
-    a: "Basic is a 1-2 hour game for smaller groups. Premium extends the difficulty to 2-3 hours with more clues and custom evidence images. Grand is an epic 3-4 hour experience with maximum drama, evidence, and custom confessional prompts."
+    a: "Every single-event tier includes 100% of our features — AI guest personalization, interactive text/audio clues, Kahoot-style live mobile lobby, Spoiler-Free Host Mode, and any complexity or spice level. The tiers simply scale the number of custom character booklets (4–6, 4–10, or 4–16 suspects) and expand the interlocking web of relationships, motives, and subplots to fit your party size."
   },
   {
     category: "Pricing & Purchasing",
-    q: "Why does the price increase with more guests?",
-    a: "Every guest you add exponentially increases the complexity of the narrative web. Our engine has to generate unique motives, relationships, and clues for every single player to ensure they are deeply involved in the story."
+    q: "Why are packages priced by player bracket?",
+    a: "Larger groups require generating more custom character booklets, personalized alibis, and a wider conflict graph of interlocking relationships and subplots so every single guest in the room is deeply involved in the mystery."
   },
   {
     category: "Pricing & Purchasing",
     q: "Do you offer physical boxed sets?",
-    a: "We are a fully digital platform. You will receive high-quality PDF files that you can easily print at home or at a local print shop, which allows us to deliver your customized game instantly."
+    a: "We are a 100% digital & print-ready platform. You get immediate access to both our Kahoot-style Live Mobile Playroom (guests join via a 6-digit PIN on their phones) and formatted PDF booklets you can print at home."
   },
   {
     category: "Pricing & Purchasing",
     q: "What if I need to change my guest list after I purchase?",
-    a: "We know guest lists change! Reach out to our support team within 24 hours of your download, and we'll help you re-generate your pack with the updated guest list."
+    a: "We know guest lists change! You can reassign guests on your Manage Cast page before Round 1 starts, or reach out to our support team within 24 hours if you need help updating your roster."
   },
   {
     category: "Pricing & Purchasing",
@@ -114,34 +114,34 @@ export const faqsData: FAQ[] = [
   {
     category: "Pricing & Purchasing",
     q: "Are there any hidden fees?",
-    a: "None. The price you see on the calculator for your guest count and tier is the final price."
+    a: "None. The single flat package price you see on the Pricing page for your player count bracket is the final price."
   },
 
   // Gameplay & Hosting
   {
     category: "Gameplay & Hosting",
     q: "Can the host play along as a character?",
-    a: "Yes! The Host Guide is completely spoiler-free. It simply tells you when to read a specific prompt or hand out an evidence card, allowing you to play and guess the murderer alongside your friends."
+    a: "Yes! Our Spoiler-Free Host Mode hides the killer's identity and secret solution behind a blur shield so you can cast yourself in a full suspect role and solve the murder alongside your guests."
   },
   {
     category: "Gameplay & Hosting",
     q: "How long does a game typically last?",
-    a: "Basic games take 1-2 hours. Premium games take 2-3 hours. Grand games can take 3-4 hours. The duration largely depends on how much your group loves to debate and roleplay."
+    a: "Every mystery typically lasts 1.5 to 3 hours across 3 investigation rounds plus the Final Accusation & Reveal — regardless of whether you choose Basic (4–6 players), Premium (4–10 players), or Grand (4–16 players)."
   },
   {
     category: "Gameplay & Hosting",
     q: "What is the difficulty level like?",
-    a: "We balance the clues so the mystery is solvable if players share their information, but challenging enough that the murderer can successfully bluff. The Grand tier offers the most complex logic puzzles."
+    a: "In the builder, you can choose between Light (casual & social), Standard (balanced deduction), or Complex (deep alibis & layered red herrings) on any package tier."
   },
   {
     category: "Gameplay & Hosting",
     q: "How many rounds are there?",
-    a: "Our games are structured into 4 distinct rounds: Introductions & Motives, The Investigation (Clues), The Deep Secrets (More Clues), and Final Accusations & Reveal."
+    a: "Our games are structured into 3 investigation rounds plus the Final Reveal: Round 1 (Introductions, Motives & The Incident), Round 2 (Crime Scene & Leaked Evidence), Round 3 (Deep Secrets & Final Interrogations), and the Final Vote & Reveal."
   },
   {
     category: "Gameplay & Hosting",
     q: "Do players get eliminated if they are 'killed'?",
-    a: "In most of our themes, the victim is an NPC (Non-Player Character) whose death kicks off the event, ensuring all your guests get to play the entire game."
+    a: "Nobody sits on the sidelines! The Story Catalyst / Victim plays a full Round 1 suspect role with secret objectives, and once the murder occurs at the end of Round 1, they immediately transition into leading the investigation alongside everyone else."
   },
   {
     category: "Gameplay & Hosting",
@@ -156,12 +156,12 @@ export const faqsData: FAQ[] = [
   {
     category: "Gameplay & Hosting",
     q: "What if my guests are shy or don't want to roleplay?",
-    a: "That's perfectly fine. Because they are playing stylized versions of themselves, they don't need to put on fake accents or act out of character. They can just focus on solving the puzzle."
+    a: "That's perfectly fine. Because they are playing stylized versions of themselves using their own names, they don't need to put on fake accents or memorize a script. They can focus on the clues and gossip."
   },
   {
     category: "Gameplay & Hosting",
     q: "Do we need costumes?",
-    a: "Costumes are entirely optional but highly recommended! Dressing up to match the theme (e.g., 1920s flappers or black-tie gala) heavily elevates the atmosphere."
+    a: "Costumes are optional but highly recommended! Every character role comes with a tailored costume & prop suggestion (like gold-rimmed sunglasses, a headset, or a red-carpet look) to elevate the atmosphere."
   },
   {
     category: "Gameplay & Hosting",
@@ -173,89 +173,89 @@ export const faqsData: FAQ[] = [
   {
     category: "Customization",
     q: "How much detail do I need to provide about my guests?",
-    a: "Just their names and a brief note on how they know each other (e.g., 'Sarah - Bride's sister, always arguing with Dave'). The more 'vibes' or inside jokes you provide, the better the output."
+    a: "Just their names and optional personality traits, quirks, or relationships (e.g., 'Sarah - Bride's sister, always loses her phone'). Characters don't have pre-set fictional names because your guests bring the roles to life!"
   },
   {
     category: "Customization",
     q: "What if I don't know everyone's relationships?",
-    a: "That's okay! You can leave relationships blank or just specify 'Friend of host'. The engine will generate fun, plausible dynamics to fill the gaps."
+    a: "That's okay! You can leave relationships blank or add guests later on your Manage Cast page. Our engine builds interlocking dynamics between the roles automatically."
   },
   {
     category: "Customization",
     q: "Can I make myself the murderer?",
-    a: "Currently, our engine randomizes the murderer to keep it a surprise for everyone, including the host. It ensures the game is perfectly balanced."
+    a: "Our engine assigns the killer role dynamically and locks it behind Spoiler-Free Host Mode so the ending remains a genuine surprise for everyone, including the host."
   },
   {
     category: "Customization",
-    q: "Can I customize the victim?",
-    a: "The victim is usually an NPC integral to the theme (like the billionaire patriarch or the wedding planner), but they are heavily customized to fit the context of your guest list."
+    q: "Why don't the characters on the theme page have first names?",
+    a: "Because your guests ARE the cast! Instead of forcing your friend to pretend his name is 'Chadwick,' he becomes 'Marco — The Ex' or 'Chloe — The Star.' Every role is an iconic archetype tailored around your real guest's name."
   },
   {
     category: "Customization",
     q: "How do you incorporate inside jokes?",
-    a: "There is a specific field for 'Character Traits / Inside Jokes' when adding guests. Our engine will weave these details into their dialogue prompts and alibis."
+    a: "There is a dedicated field for 'Character Traits / Inside Jokes' in the Guest Roster. Our engine weaves these details directly into dialogue prompts, alibis, and leaked gossip."
   },
   {
     category: "Customization",
-    q: "What is the 'Pro Customizer'?",
-    a: "Available on higher tiers, the Pro Customizer allows you to dictate exact visual traits (hair color, style, glasses) so the AI-generated evidence images actually look like your friends."
+    q: "Can I customize guest avatars and visual appearances?",
+    a: "Yes! On all package tiers, our Guest Roster & Avatar Builder lets you customize each guest's visual appearance (hair, features, style, and accessories) or upload a portrait for their suspect profile card."
   },
   {
     category: "Customization",
-    q: "Can I upload photos of my guests for the evidence?",
-    a: "To avoid privacy issues and deepfake concerns, we do not allow direct photo uploads. Instead, we use your text descriptions to generate stylized evidence that resembles your group."
+    q: "Can I adjust the maturity or 'Spice Level' of the mystery?",
+    a: "Yes! You can choose between Mild (PG-13 work/family friendly), Spicy (scandalous reality-TV gossip & messy exes), or Extra Juicy (unhinged hens-night energy) in the builder."
   },
   {
     category: "Customization",
     q: "What if the AI generates something inaccurate about a guest?",
-    a: "Because the game is a stylized fiction, mild inaccuracies usually play off as hilarious alternate-universe traits. If there's a major error, you can use our 24-hour regeneration guarantee."
+    a: "Because the game is a stylized fiction, exaggerated traits play off as hilarious alternate-universe drama. You can also edit or regenerate your mystery from your Host Dashboard."
   },
   {
     category: "Customization",
     q: "Can you make it a surprise party mystery?",
-    a: "Yes! You can add notes indicating it's a surprise party, and the narrative can incorporate that element into the opening round."
+    a: "Yes! You can cast your guests privately in the dashboard and hand out the character envelopes or share the 6-digit Game PIN right when the party starts."
   },
   {
     category: "Customization",
-    q: "Can I request a completely custom theme not listed?",
-    a: "We currently only support the themes listed in our library, as each one requires extensive structural programming. However, we release new themes regularly!"
+    q: "Are more themes coming soon?",
+    a: "Yes! We only display active, playtested packages on our Themes page — starting with our flagship Reality TV Reunion mystery, Love On The Rocks — and release new themes regularly."
   },
 
   // Delivery & Setup
   {
     category: "Delivery & Setup",
     q: "How is the mystery delivered?",
-    a: "Immediately after generation, you will receive an email with a secure link to download your complete pack as a series of high-resolution PDFs."
+    a: "Inside your Host Dashboard in ~30 minutes! You get both a print-ready PDF kit (Host Guide, Character Booklets, Evidence Cards) AND a live Kahoot-style Game PIN lobby so guests can play directly on their phones."
   },
   {
     category: "Delivery & Setup",
     q: "Do I have to print everything?",
-    a: "No. While printing adds a great physical element, you can easily host the entire game by sending guests their PDFs and displaying evidence on a TV or tablet."
+    a: "No! Guests can scan a QR code or enter your 6-digit Game PIN on their phones to view their secret round objectives, leaked group-chat clues, and audio wiretaps live — or you can print the PDF booklets if you love paper envelopes."
   },
   {
     category: "Delivery & Setup",
     q: "How much ink will printing this take?",
-    a: "We provide 'Print-Friendly' versions of the documents with white backgrounds to save your printer ink, alongside the full-color thematic versions."
+    a: "Our printable PDF booklets are cleanly formatted for standard home printers, or you can go 100% paperless using the Live Mobile Lobby."
   },
   {
     category: "Delivery & Setup",
     q: "How long does it take to set up before the party?",
-    a: "If you are printing, expect to spend about 20-30 minutes printing the documents and placing the character sheets into envelopes. If playing digitally, setup is instant."
+    a: "If playing via the Live Mobile Lobby, setup is instant — just display or share your 6-digit Game PIN. If printing paper booklets, allow 15–20 minutes to print and slip them into envelopes."
   },
   {
     category: "Delivery & Setup",
-    q: "Can I just share the character sheets via WhatsApp?",
-    a: "Absolutely. Many of our hosts simply send the individual character PDF to each guest via WhatsApp or email on the day of the party."
+    q: "Can I share character invites via WhatsApp or text?",
+    a: "Absolutely! From your Manage Cast dashboard, you can copy personalized invite links or share character details directly via WhatsApp, iMessage, or email."
   },
   {
     category: "Delivery & Setup",
-    q: "What format are the files in?",
-    a: "All files are delivered as standard PDFs, ensuring they can be opened on any phone, tablet, or computer without special software."
+    q: "What devices work with the Live Mobile Lobby?",
+    a: "Any smartphone, tablet, or laptop browser — no app download required. Plus, all downloadable files are standard PDFs."
   },
   {
     category: "Delivery & Setup",
     q: "Will I get to see the files before the party?",
-    a: "Yes, as the host you have full access to all files. Just be careful not to read the 'Final Reveal' document if you want to remain unspoiled!"
+    a: "Yes, as the host you have full access to your dashboard and materials, while Spoiler-Free Host Mode keeps the killer's identity hidden until the final reveal!"
   },
 
   // Themes & Content
@@ -271,7 +271,23 @@ export const faqsData: FAQ[] = [
   },
   {
     category: "Themes & Content",
-    q: "Can I request a family-friendly (PG) version?",
-    a: "Currently, our engine is tuned for the 16+ 'Cinematic Noir' and dramatic styles, so we do not offer strictly PG/children's versions at this time."
+    q: "Can I request a milder or work-friendly (PG-13) version?",
+    a: "Yes! While our themes are rated 16+ by default, you can select the 'Mild (PG-13)' Spice Level inside the builder to keep motives and gossip completely work-friendly and suitable for family/teen gatherings."
+  },
+  {
+    category: "Gameplay & Hosting",
+    q: "How does the Host PIN and live round controller work?",
+    a: "When you are ready to start your party, unlock the Host Controls using your Host PIN. Advancing from Round 1 to Round 2 and Round 3 unlocks the corresponding clues, audio voice notes, and secret prompts for your guests in real time."
+  },
+  {
+    category: "Customization",
+    q: "Can I swap or reassign characters to different guests before the party starts?",
+    a: "Yes! You can reassign guests to any character on your Manage Cast page anytime before Round 1 begins. You can also send updated digital invite links or print-ready character sheets straight from your dashboard."
+  },
+  {
+    category: "Delivery & Setup",
+    q: "Where do I go if I need help with my mystery or have a technical issue?",
+    a: "You can raise a support ticket directly inside the Builder / Account Support Portal (complete with screenshots and severity priority) or email us anytime at hello@backpocketgames.com. Our team responds to all tickets within 48 hours."
   }
 ];
+

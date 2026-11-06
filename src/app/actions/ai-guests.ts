@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/database';
 import crypto from 'crypto';
+import { logAiUsage } from '@/utils/ai-logger';
 
 export async function generateGuestAvatarAction(guestId: string, guestData: any) {
   try {
@@ -20,22 +21,46 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       eyeColor = 'true hazel (a natural, warm, muted blend of light brown and olive green, predominantly brown in the center)';
     }
 
+    const rawGender = (guestData.gender || 'unspecified').toLowerCase();
+    const isMasculine = rawGender === 'masculine' || rawGender === 'male';
+    const isFeminine = rawGender === 'feminine' || rawGender === 'female';
+
     if (guestData.avatar_url) {
       try {
         const url = new URL(guestData.avatar_url);
         
         const hl = url.searchParams.get('hairLength');
         const ht = url.searchParams.get('hairTexture');
+        const tex = (ht || 'straight').toLowerCase();
         
         if (hl) {
-          if (hl === 'Bald') hairStyle = 'bald / no hair';
-          else if (['Hijab', 'Turban', 'Beanie'].includes(hl)) hairStyle = `wearing a ${hl.toLowerCase()}`;
-          else hairStyle = `${hl} length, ${ht || 'straight'} texture`;
+          if (hl === 'Bald') {
+            hairStyle = 'bald / no hair';
+          } else if (['Hijab', 'Turban', 'Beanie'].includes(hl)) {
+            hairStyle = `wearing a ${hl.toLowerCase()}`;
+          } else if (isMasculine) {
+            if (hl === 'Short') {
+              hairStyle = `men's short cropped barbershop haircut (neat tapered sides and back, short ${tex} texture on top)`;
+            } else if (hl === 'Medium') {
+              hairStyle = `men's medium-length barbershop haircut (cropped well above the ears and collar, neat tapered sides with a medium-length ${tex} textured top — strictly a masculine men's cut, NOT long hair and NOT touching the shoulders)`;
+            } else if (hl === 'Shoulder-Length') {
+              hairStyle = `men's shoulder-length ${tex} texture hair`;
+            } else {
+              hairStyle = `men's ${hl.toLowerCase()} length, ${tex} texture hair`;
+            }
+          } else {
+            hairStyle = `${hl} length, ${ht || 'straight'} texture`;
+          }
         } else {
           const top = url.searchParams.get('top');
           if (top) {
-            if (top === 'none' || top === 'noHair') hairStyle = 'bald / no hair';
-            else hairStyle = top.replace(/([A-Z])/g, ' $1').toLowerCase().replace(/[0-9]/g, '').trim() + ' hair';
+            if (top === 'none' || top === 'noHair') {
+              hairStyle = 'bald / no hair';
+            } else if (isMasculine && (top === 'curvy' || top === 'shortCurly')) {
+              hairStyle = `men's short-to-medium curly barbershop haircut (cropped above the ears and collar, strictly NOT long hair)`;
+            } else {
+              hairStyle = top.replace(/([A-Z])/g, ' $1').toLowerCase().replace(/[0-9]/g, '').trim() + ' hair';
+            }
           }
         }
 
@@ -99,9 +124,15 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
     
     // Generate a unique facial structure based on the guest ID to prevent "same-face syndrome"
     const hashHex = crypto.createHash('md5').update(guestData.id || guestData.name || 'default').digest('hex');
-    const faceShapes = ['oval', 'round', 'square', 'heart-shaped', 'diamond-shaped', 'oblong', 'angular', 'softly contoured'];
-    const jawlines = ['soft', 'sharp', 'squared', 'rounded', 'defined', 'delicate', 'strong', 'smooth'];
-    const noseShapes = ['straight', 'button', 'slightly wide', 'narrow', 'distinctive', 'subtle aquiline', 'soft rounded', 'elegant'];
+    const faceShapes = isMasculine
+      ? ['square', 'angular', 'rectangular', 'chiseled oval', 'broad', 'oblong']
+      : ['oval', 'round', 'heart-shaped', 'diamond-shaped', 'softly contoured', 'elegant'];
+    const jawlines = isMasculine
+      ? ['strong', 'sharp', 'squared', 'chiseled', 'defined masculine', 'broad']
+      : ['soft', 'defined', 'delicate', 'rounded', 'smooth', 'graceful'];
+    const noseShapes = isMasculine
+      ? ['straight', 'strong', 'slightly wide', 'distinctive', 'subtle aquiline', 'structured']
+      : ['straight', 'button', 'narrow', 'distinctive', 'soft rounded', 'elegant'];
     
     const faceShape = faceShapes[parseInt(hashHex.substring(0, 2), 16) % faceShapes.length];
     const jawline = jawlines[parseInt(hashHex.substring(2, 4), 16) % jawlines.length];
@@ -110,18 +141,20 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
 
     let genderLabel = guestData.gender || 'unspecified';
     let subjectNoun = 'individual';
-    if (genderLabel.toLowerCase() === 'masculine' || genderLabel.toLowerCase() === 'male') {
+    let genderGuardrail = '';
+    if (isMasculine) {
       genderLabel = 'Male (Man, explicitly masculine facial structure)';
       subjectNoun = 'man';
-    } else if (genderLabel.toLowerCase() === 'feminine' || genderLabel.toLowerCase() === 'female') {
+      genderGuardrail = ' CRITICAL FOR MALE SUBJECT: The subject MUST be an unmistakably masculine 24-year-old man with male facial bone structure, masculine brow ridge, strong masculine jaw, no makeup, and a men\'s haircut. Do NOT generate feminine features or women\'s long hairstyles.';
+    } else if (isFeminine) {
       genderLabel = 'Female (Woman)';
       subjectNoun = 'woman';
-    } else if (genderLabel.toLowerCase() === 'neutral' || genderLabel.toLowerCase() === 'adaptable') {
+    } else if (rawGender === 'neutral' || rawGender === 'adaptable') {
       genderLabel = 'Androgynous / Non-binary (Neutral features)';
       subjectNoun = 'person';
     }
 
-    const prompt = `A clear, well-lit, shoulders-up portrait photograph of a ${subjectNoun} who is exactly 24 years old with the following features: Gender: ${genderLabel}, Ethnicity: ${guestData.ethnicity || 'unspecified'}, Eye color: ${eyeColor}, Hair style: ${hairStyle}, Hair color: ${hairColor}, Skin color: ${skinColor}, Facial hair: ${facialHair}, Build/Body Type: ${build} (modest and professional), Facial Bone Structure: ${uniqueFacialStructure}, Distinctive Features: ${distinctiveFeatures}, Accessories/Eyewear: ${accessories}, Height: ${guestData.height || 'unspecified'}. Personality traits: ${(guestData.traits || []).join(', ')}. The subject is facing the camera. The framing MUST show everything from the shoulders up, including the full top of their hair. Bright, broad daylight lighting, completely clear visibility, 8k resolution, professional portrait photography. CRITICAL: This is a real, live-action photograph taken with a DSLR camera. The image MUST be highly photorealistic and the person MUST look exactly 24 years old. Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations, NO stylized art, NO vector graphics. Maintain a professional, family-friendly appearance.`;
+    const prompt = `A clear, well-lit, shoulders-up portrait photograph of a ${subjectNoun} who is exactly 24 years old with the following features: Gender: ${genderLabel}, Ethnicity: ${guestData.ethnicity || 'unspecified'}, Eye color: ${eyeColor}, Hair style: ${hairStyle}, Hair color: ${hairColor}, Skin color: ${skinColor}, Facial hair: ${facialHair}, Build/Body Type: ${build} (modest and professional), Facial Bone Structure: ${uniqueFacialStructure}, Distinctive Features: ${distinctiveFeatures}, Accessories/Eyewear: ${accessories}, Height: ${guestData.height || 'unspecified'}. Personality traits: ${(guestData.traits || []).join(', ')}. The subject is facing the camera. The framing MUST show everything from the shoulders up, including the full top of their hair. Bright, broad daylight lighting, completely clear visibility, 8k resolution, professional portrait photography.${genderGuardrail} CRITICAL: This is a real, live-action photograph taken with a DSLR camera. The image MUST be highly photorealistic and the person MUST look exactly 24 years old. Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations, NO stylized art, NO vector graphics. Maintain a professional, family-friendly appearance.`;
     
     // Hash the prompt to use as cache key
     const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
@@ -156,16 +189,12 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       let isRateLimited = false;
       
       while (retries < 3) {
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`, {
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            instances: [{ prompt }],
-            parameters: { 
-              sampleCount: 1, 
-              aspectRatio: "1:1",
-              personGeneration: "allow_adult"
-            }
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ["IMAGE"] }
           })
         });
         
@@ -184,7 +213,8 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       if (response && response.ok) {
         const data = await response.json();
         rawData = data;
-        base64Str = data.predictions?.[0]?.bytesBase64Encoded;
+        const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+        base64Str = imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
       } else if (response) {
         try {
           rawData = await response.json();
@@ -194,6 +224,12 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       }
 
       if (base64Str) {
+        await logAiUsage({
+          model_name: 'gemini-2.5-flash-image',
+          feature_name: 'generate_guest_avatar',
+          usageMetadata: rawData?.usageMetadata,
+        });
+
         // Upload to Supabase Storage instead of saving base64 directly to database
         const buffer = Buffer.from(base64Str, 'base64');
         const fileName = `${guestId}-${promptHash}.jpg`;

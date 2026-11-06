@@ -13,14 +13,17 @@ interface Mystery {
 
 interface BuilderSidebarProps {
   children?: React.ReactNode;
+  isAdmin?: boolean;
 }
 
-export function BuilderSidebar({ children }: BuilderSidebarProps) {
+export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
+  const dashboardHref = isAdmin ? `/${locale}/admin` : `/${locale}/account`;
+  const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'My Account';
 
   // Extract the current mystery ID from the URL if we are inside a mystery
   const mysteryIdMatch = pathname.match(/\/builder\/mysteries\/([^\/]+)/);
@@ -30,6 +33,13 @@ export function BuilderSidebar({ children }: BuilderSidebarProps) {
   // Global nav items
   const globalNavItems = [
     { label: 'All Mysteries', href: `/${locale}/builder/mysteries`, icon: '🔍' },
+    {
+      label: 'Support & Tickets',
+      href: activeMysteryId
+        ? `/${locale}/builder/support?mysteryId=${activeMysteryId}`
+        : `/${locale}/builder/support`,
+      icon: '🎫',
+    },
   ];
 
   // Context-aware nav items (shown when a mystery is selected)
@@ -51,7 +61,7 @@ export function BuilderSidebar({ children }: BuilderSidebarProps) {
 
       <div className={`p-8 h-28 flex items-center ${isCollapsed ? 'justify-center px-4' : ''}`}>
         {!isCollapsed ? (
-          <a href={`/${locale}/admin`} className="group flex flex-col gap-1 overflow-hidden">
+          <a href={dashboardHref} className="group flex flex-col gap-1 overflow-hidden">
             <Image 
               src="/logo-horizontal-white.png" 
               alt="Back Pocket Mysteries Builder" 
@@ -62,7 +72,7 @@ export function BuilderSidebar({ children }: BuilderSidebarProps) {
             <span className="text-[9px] text-brand-pink font-black uppercase tracking-[0.25em] pl-1 whitespace-nowrap">Builder Studio</span>
           </a>
         ) : (
-          <a href={`/${locale}/admin`} className="font-black text-brand-pink text-2xl hover:scale-110 transition-transform duration-300" title="Admin Dashboard">
+          <a href={dashboardHref} className="font-black text-brand-pink text-2xl hover:scale-110 transition-transform duration-300" title={dashboardLabel}>
             BP
           </a>
         )}
@@ -135,9 +145,9 @@ export function BuilderSidebar({ children }: BuilderSidebarProps) {
       </nav>
       
       <div className={`p-6 border-t border-white/5 bg-[#05080e]/40 flex flex-col gap-4`}>
-        <a href={`/${locale}/admin`} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} text-xs text-slate-400 hover:text-brand-pink font-bold transition-all duration-300`} title={isCollapsed ? "Admin Dashboard" : undefined}>
-          <span className={isCollapsed ? "text-xl" : "text-sm text-slate-500 group-hover:text-brand-pink"}>{isCollapsed ? "⚙️" : "←"}</span>
-          {!isCollapsed && <span className="whitespace-nowrap">Admin Dashboard</span>}
+        <a href={dashboardHref} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} text-xs text-slate-400 hover:text-brand-pink font-bold transition-all duration-300`} title={isCollapsed ? dashboardLabel : undefined}>
+          <span className={isCollapsed ? "text-xl" : "text-sm text-slate-500 group-hover:text-brand-pink"}>{isCollapsed ? (isAdmin ? "⚙️" : "👤") : "←"}</span>
+          {!isCollapsed && <span className="whitespace-nowrap">{dashboardLabel}</span>}
         </a>
         
         <a href={`/${locale}`} className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} text-xs text-slate-400 hover:text-brand-pink font-bold transition-all duration-300`} title={isCollapsed ? "Back to Public Site" : undefined}>

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React from 'react';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
+import { getCharacterDisplayName, getCharacterRoleTitle } from '@/utils/hydration';
 import { MotiveManager } from '../characters/_components/MotiveManager';
 import { AIGenerateMotivesButton } from '../relationships/_components/AIGenerateMotivesButton';
 
@@ -74,13 +75,13 @@ export default async function MysteryMotivesPage({
                     {character.is_victim ? '💀' : '👤'}
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 leading-none mb-1.5">{character.name.split('|')[0]}</h3>
+                    <h3 className="text-lg font-black text-slate-900 leading-none mb-1.5">{getCharacterRoleTitle(character)}</h3>
                     <p className={`text-[10px] font-black uppercase tracking-widest ${
                       character.is_victim ? 'text-red-500' :
                       character.plot_role === 'killer' ? 'text-orange-500' :
                       character.plot_role === 'assistant' ? 'text-blue-500' : 'text-emerald-500'
                     }`}>
-                      {character.name.includes('|') ? character.name.split('|')[1] : (character.archetype || character.plot_role || 'Suspect')}
+                      {character.is_victim ? 'Victim' : character.plot_role === 'killer' ? 'Murderer' : character.plot_role === 'assistant' ? 'Accomplice' : 'Suspect'}
                     </p>
                   </div>
                 </div>

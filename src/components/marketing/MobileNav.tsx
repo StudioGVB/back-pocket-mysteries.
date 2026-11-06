@@ -66,6 +66,9 @@ export default function MobileNav({ locale, dict }: MobileNavProps) {
               <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all w-fit">
                 {dict.common.pricing}
               </Link>
+              <Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-all w-fit">
+                {dict.common.faq}
+              </Link>
               <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all w-fit">
                 {dict.common.contact}
               </Link>
@@ -81,7 +84,7 @@ export default function MobileNav({ locale, dict }: MobileNavProps) {
                 <Link href={`/${locale}/login`} className="text-lg font-black uppercase tracking-widest text-white/80 hover:text-brand-pink transition-colors">
                   {dict.common.login}
                 </Link>
-                <Link href={`/${locale}/create`} className="px-10 py-5 bg-brand-pink text-white rounded-full text-sm font-black uppercase tracking-widest w-full text-center hover:bg-white hover:text-brand-dark transition-colors shadow-2xl">
+                <Link href={`/${locale}/login`} className="px-10 py-5 bg-brand-pink text-white rounded-full text-sm font-black uppercase tracking-widest w-full text-center hover:bg-white hover:text-brand-dark transition-colors shadow-2xl">
                   {dict.common.getStarted}
                 </Link>
               </div>

@@ -2,6 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  getCharacterDisplayName,
+  getCharacterRoleTitle,
+  hydrateTextWithCharacters,
+} from '@/utils/hydration';
 
 export default function PrintCharactersClient({
   mystery,
@@ -123,16 +128,18 @@ export default function PrintCharactersClient({
             {characterPages.map((page, i) => {
                 const guest = page.guest || {};
                 const pres = page.presentation || {};
+                const allChars = characterPages.map(p => p.character);
                 
-                // Prioritize guest name, then character name
+                // Prioritize guest name, then character display name (role title if uncast)
                 const guestNameParts = (guest.name || '').split('|');
-                const charNameParts = (page.character.name || '').split('|');
-                const cleanName = guestNameParts[0]?.trim() || charNameParts[0]?.trim() || 'Unknown';
-                const cleanTitle = (charNameParts[1] || "Guest").trim();
-                const bioSummary = (pres.bio || page.character.profile_data?.bio || guest.bio)
-                    ? (pres.bio || page.character.profile_data?.bio || guest.bio).length > 90 
-                      ? (pres.bio || page.character.profile_data?.bio || guest.bio).substring(0, 90).trim() + '...' 
-                      : (pres.bio || page.character.profile_data?.bio || guest.bio)
+                const cleanName = guestNameParts[0]?.trim() || getCharacterDisplayName(page.character) || 'Unknown';
+                const cleanTitle = getCharacterRoleTitle(page.character);
+                const rawBioText = pres.bio || page.character.profile_data?.bio || guest.bio || '';
+                const hydratedRawBio = hydrateTextWithCharacters(rawBioText, allChars, 'print');
+                const bioSummary = hydratedRawBio
+                    ? hydratedRawBio.length > 90 
+                      ? hydratedRawBio.substring(0, 90).trim() + '...' 
+                      : hydratedRawBio
                     : `${cleanName} is arriving at the reunion with secrets to hide.`;
                 
                 const photoUrl = getAiPhotoUrl(guest.avatar_url) || page.character.image_url;
@@ -173,12 +180,13 @@ export default function PrintCharactersClient({
       {characterPages.map((page, index) => {
          const pres = page.presentation || {};
          const guest = page.guest || {};
+         const allChars = characterPages.map(p => p.character);
          
          const guestNameParts = (guest.name || '').split('|');
-         const charNameParts = (page.character.name || '').split('|');
-         const cleanName = guestNameParts[0]?.trim() || charNameParts[0]?.trim() || 'Unknown';
-         const cleanTitle = (charNameParts[1] || "Guest").trim();
-         const bio = pres.bio || page.character.profile_data?.bio || guest.bio || `${cleanName} is arriving at the reunion with secrets to hide and motives to protect. Watch your back.`;
+         const cleanName = guestNameParts[0]?.trim() || getCharacterDisplayName(page.character) || 'Unknown';
+         const cleanTitle = getCharacterRoleTitle(page.character);
+         const rawBio = pres.bio || page.character.profile_data?.bio || guest.bio || `${cleanName} is arriving at the reunion with secrets to hide and motives to protect. Watch your back.`;
+         const bio = hydrateTextWithCharacters(rawBio, allChars, 'print');
 
          const photoUrl = getAiPhotoUrl(guest.avatar_url) || page.character.image_url;
 
@@ -230,7 +238,7 @@ export default function PrintCharactersClient({
                         <div className="border-t border-white/10 pt-8 print:border-black/20">
                           <h3 className="text-sm md:text-base font-semibold text-[#FF1493] uppercase tracking-[0.2em] mb-4 md:mb-6 print:text-[#FF1493]">How to Dress</h3>
                           <p className="text-base md:text-xl font-light text-slate-300 leading-relaxed print:text-black">
-                            {pres.outfit_advice}
+                            {hydrateTextWithCharacters(pres.outfit_advice, allChars, 'print')}
                           </p>
                         </div>
                       )}
@@ -240,7 +248,7 @@ export default function PrintCharactersClient({
                           <h3 className="text-sm md:text-base font-semibold text-[#FF1493] uppercase tracking-[0.2em] mb-4 md:mb-6 print:text-[#FF1493]">How to Act</h3>
                           {pres.act_summary && (
                             <p className="text-base md:text-xl font-light text-slate-300 leading-relaxed mb-6 md:mb-8 print:text-black">
-                              {pres.act_summary}
+                              {hydrateTextWithCharacters(pres.act_summary, allChars, 'print')}
                             </p>
                           )}
                           {pres.act_bullets && pres.act_bullets.length > 0 && (
@@ -248,7 +256,7 @@ export default function PrintCharactersClient({
                               {pres.act_bullets.map((bullet: string, i: number) => (
                                 <li key={i} className="flex gap-4 md:gap-6 text-base md:text-xl font-light text-slate-300 items-start print:text-black">
                                   <span className="w-1.5 md:w-2 h-1.5 md:h-2 rounded-none bg-[#FF1493] mt-2.5 md:mt-3 shrink-0 print:bg-black"></span>
-                                  <span className="leading-relaxed">{bullet}</span>
+                                  <span className="leading-relaxed">{hydrateTextWithCharacters(bullet, allChars, 'print')}</span>
                                 </li>
                               ))}
                             </ul>

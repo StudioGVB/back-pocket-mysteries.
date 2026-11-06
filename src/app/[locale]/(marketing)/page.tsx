@@ -7,6 +7,7 @@ import { Locale } from '@/lib/i18n-config';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import HeroImageCarousel from '@/components/marketing/HeroImageCarousel';
 import LightsOut from '@/components/marketing/LightsOut';
+import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -17,10 +18,10 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: dict.home.hero.title,
     description: dict.home.hero.subtitle,
     alternates: {
-      canonical: `https://mysteries.backpocketgames.com/${locale}`,
+      canonical: `https://backpocketmysteries.com/${locale}`,
       languages: {
-        en: 'https://mysteries.backpocketgames.com/en',
-        fr: 'https://mysteries.backpocketgames.com/fr',
+        en: 'https://backpocketmysteries.com/en',
+        fr: 'https://backpocketmysteries.com/fr',
       }
     }
   }
@@ -32,6 +33,7 @@ export default async function HomePage(props: {
   const params = await props.params;
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
+  const featuredMystery = ACTIVE_MYSTERIES[0];
 
   // Currency is now handled client-side in PriceDisplay to allow static rendering
 
@@ -67,7 +69,7 @@ export default async function HomePage(props: {
               <p className="mt-6 text-xs text-gray-400 font-bold">
                 {dict.home.hero.priceLabel.replace('{{price}}', '')} 
                 <PriceDisplay tier="basic" locale={locale as Locale} />
-                {' · Instant download · No hosting required'}
+                {' · Ready in ~30 mins · No hosting required'}
               </p>
             </div>
             
@@ -154,6 +156,108 @@ export default async function HomePage(props: {
           </div>
         </div>
       </section>
+
+      {/* Featured Active Mystery Spotlight */}
+      {featuredMystery && (
+        <section className="py-16 lg:py-24 bg-white border-b border-gray-100">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 text-[10px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-brand-pink animate-pulse" />
+                  Featured Active Package
+                </div>
+                <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark uppercase tracking-tight leading-none">
+                  Now Playing: <span className="text-brand-pink italic">{featuredMystery.title}</span>
+                </h2>
+              </div>
+              <Link
+                href={`/${locale}/themes/${featuredMystery.slug}`}
+                className="text-xs font-black uppercase tracking-widest text-brand-pink hover:text-brand-dark transition-colors inline-flex items-center gap-2"
+              >
+                View Full Cast & Promo Photos →
+              </Link>
+            </div>
+
+            <div className="rounded-[2.5rem] bg-brand-dark text-white overflow-hidden shadow-2xl border-4 border-gray-100 grid lg:grid-cols-12">
+              <div className="lg:col-span-6 relative min-h-[340px] lg:min-h-[480px] overflow-hidden group">
+                <Image
+                  src={featuredMystery.coverUrl}
+                  alt={`${featuredMystery.title} — ${featuredMystery.category}`}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 600px"
+                  className="object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-brand-dark/90" />
+                <div className="absolute top-6 left-6 flex flex-wrap gap-2">
+                  <span className="px-3.5 py-1.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest shadow-lg">
+                    {featuredMystery.category}
+                  </span>
+                  <span className="px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest border border-white/15">
+                    {featuredMystery.playersLabel}
+                  </span>
+                </div>
+                <div className="absolute bottom-6 left-6 right-6 grid grid-cols-3 gap-3">
+                  {featuredMystery.moodboardPhotos.slice(1, 4).map((photo, idx) => (
+                    <div key={photo.id || idx} className="relative aspect-[16/10] rounded-xl overflow-hidden border border-white/20 shadow-lg">
+                      <Image
+                        src={photo.url}
+                        alt={photo.caption || featuredMystery.title}
+                        fill
+                        sizes="180px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 flex flex-col justify-center">
+                <p className="text-brand-pink font-black uppercase tracking-[0.2em] text-xs mb-3">
+                  {featuredMystery.theme} • {featuredMystery.tone}
+                </p>
+                <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight mb-4 leading-tight">
+                  {featuredMystery.title}
+                </h3>
+                <p className="text-gray-300 font-medium leading-relaxed mb-8">
+                  {featuredMystery.shortDesc}
+                </p>
+
+                <div className="mb-8">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-3">
+                    9 Iconic Guest Archetypes (Your Friends&apos; Names Become The Cast):
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {featuredMystery.characters.map((char) => (
+                      <span
+                        key={char.id}
+                        className="px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-white text-xs font-bold"
+                      >
+                        {char.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link
+                    href={`/${locale}/themes/${featuredMystery.slug}`}
+                    className="px-8 py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-dark transition-all text-center shadow-xl"
+                  >
+                    Explore Theme & Cast
+                  </Link>
+                  <Link
+                    href={`/${locale}/login?theme=${featuredMystery.slug}`}
+                    className="px-8 py-4 bg-white/10 text-white border border-white/20 rounded-full font-black uppercase tracking-widest text-xs hover:border-brand-pink hover:text-brand-pink transition-all text-center"
+                  >
+                    Customize For Your Group
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* How It Works - Quick Preview */}
       <section className="py-16 lg:py-24 bg-white">
@@ -242,8 +346,8 @@ export default async function HomePage(props: {
                   [dict.home.compare.table.f1, '✓', '✓ (slow)', '✓ (basic)'],
                   [dict.home.compare.table.f2, '✓', '✗', '✗'],
                   [dict.home.compare.table.f3, '✓', 'Varies', 'Rarely'],
-                  [dict.home.compare.table.f4, '< 20 min', '3–21 days', 'Minutes'],
-                  [dict.home.compare.table.f5, <PriceDisplay key="p1" tier="basic" locale={locale as Locale} />, '$60–$150+', '$10–$16'],
+                  [dict.home.compare.table.f4, '~30 min', '3–21 days', 'Hours of prompting'],
+                  [dict.home.compare.table.f5, <PriceDisplay key="p1" tier="basic" locale={locale as Locale} />, '$60–$150+', '$20/mo + DIY layout'],
                   [dict.home.compare.table.f6, '✓', 'Depends', '✗'],
                 ].map(([feat, bpm, etsy, ai], i) => (
                   <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-brand-gray'}>
@@ -271,10 +375,10 @@ export default async function HomePage(props: {
                 {dict.home.ctaSection.title.split('better')[1]}
               </h2>
               <p className="text-gray-400 text-xl lg:text-2xl mb-4 font-bold max-w-xl mx-auto">
-                {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} /> — instant download.
+                {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} /> — ready in ~30 mins.
               </p>
               <p className="text-gray-500 text-sm font-bold mb-12 uppercase tracking-widest">{dict.home.ctaSection.meta}</p>
-              <Link href={`/${locale}/create`} className="inline-block px-14 py-6 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-brand-pink transition-all shadow-2xl hover:translate-y-[-4px] active:scale-95">
+              <Link href={`/${locale}/login`} className="inline-block px-14 py-6 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-brand-pink transition-all shadow-2xl hover:translate-y-[-4px] active:scale-95">
                 {dict.common.buildYourMystery}
               </Link>
             </div>

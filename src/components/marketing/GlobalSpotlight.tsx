@@ -25,6 +25,16 @@ export default function GlobalSpotlight() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [lightsOn]);
 
+  useEffect(() => {
+    if (lightsOn) return;
+
+    const timer = setTimeout(() => {
+      setLightsOn(true);
+    }, 15000);
+
+    return () => clearTimeout(timer);
+  }, [lightsOn]);
+
   return (
     <>
       {/* Dark Overlay */}

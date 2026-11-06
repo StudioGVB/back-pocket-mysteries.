@@ -1,7 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Database } from '@/types/database';
+import {
+  getCharacterRoleTitle,
+  hydrateTextWithCharacters,
+  tokenizeTextWithCharacterRoles,
+} from '@/utils/hydration';
 import { updateBeatAction, removeBeatAction } from '../actions';
 
 type Beat = Database['public']['Tables']['plot_beats']['Row'];
@@ -20,7 +25,12 @@ interface TimelineBeatCardProps {
 export function TimelineBeatCard({ beat, mysteryId, allCharacters, onMoveUp, onMoveDown, isFirst, isLast }: TimelineBeatCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [description, setDescription] = useState(beat.description || '');
+  const hydratedBeatDesc = hydrateTextWithCharacters(beat.description || '', allCharacters, 'role');
+  const [description, setDescription] = useState(hydratedBeatDesc);
+
+  useEffect(() => {
+    setDescription(hydrateTextWithCharacters(beat.description || '', allCharacters, 'role'));
+  }, [beat.description, allCharacters]);
 
   const getRoleColor = (role: string | null) => {
     switch (role?.toLowerCase()) {
@@ -34,17 +44,24 @@ export function TimelineBeatCard({ beat, mysteryId, allCharacters, onMoveUp, onM
 
   const renderHighlightedNarrative = (text: string) => {
     if (!text) return <span className="text-slate-300 italic">Click to add plot line...</span>;
+
+    const hydratedText = hydrateTextWithCharacters(text, allCharacters, 'role');
+    const characterLabels = Array.from(
+      new Set(allCharacters.map(c => getCharacterRoleTitle(c)).filter(Boolean))
+    ).sort((a, b) => b.length - a.length);
+    if (characterLabels.length === 0) return <p className="whitespace-pre-wrap">{hydratedText}</p>;
     
-    const characterNames = allCharacters.map(c => c.name);
-    if (characterNames.length === 0) return <p className="whitespace-pre-wrap">{text}</p>;
-    
-    const regex = new RegExp(`\\b(${characterNames.join('|')})\\b`, 'gi');
-    const parts = text.split(regex);
+    const escapedLabels = characterLabels.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`((?:${escapedLabels.join('|')})(?:'s|’s)?)`, 'gi');
+    const parts = hydratedText.split(regex);
     
     return (
       <p className="whitespace-pre-wrap font-mono text-slate-700 leading-relaxed text-sm">
         {parts.map((part, i) => {
-          const matchedChar = allCharacters.find(c => c.name.toLowerCase() === part.toLowerCase());
+          const basePart = part.replace(/(?:'s|’s)$/i, '');
+          const matchedChar = allCharacters.find(
+            c => getCharacterRoleTitle(c).toLowerCase() === basePart.toLowerCase()
+          );
           if (matchedChar) {
             return (
               <span 
@@ -64,6 +81,8 @@ export function TimelineBeatCard({ beat, mysteryId, allCharacters, onMoveUp, onM
       </p>
     );
   };
+
+  const hydratedEventTitle = hydrateTextWithCharacters(beat.event_title, allCharacters, 'role');
 
   return (
     <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 group flex gap-4">
@@ -88,10 +107,12 @@ export function TimelineBeatCard({ beat, mysteryId, allCharacters, onMoveUp, onM
       <div className="flex-grow space-y-3">
         <div className="flex justify-between items-start gap-4">
           <input 
-            defaultValue={beat.event_title}
+            key={`${beat.id}-${hydratedEventTitle}`}
+            defaultValue={hydratedEventTitle}
             onBlur={async (e) => {
-              if (e.target.value !== beat.event_title) {
-                await updateBeatAction(mysteryId, beat.id, { event_title: e.target.value });
+              const tokenizedTitle = tokenizeTextWithCharacterRoles(e.target.value, allCharacters);
+              if (tokenizedTitle !== beat.event_title && e.target.value !== hydratedEventTitle) {
+                await updateBeatAction(mysteryId, beat.id, { event_title: tokenizedTitle });
               }
             }}
             placeholder="Beat Name..."
@@ -120,8 +141,9 @@ export function TimelineBeatCard({ beat, mysteryId, allCharacters, onMoveUp, onM
               onChange={(e) => setDescription(e.target.value)}
               onBlur={async () => {
                 setIsEditing(false);
-                if (description !== beat.description) {
-                  await updateBeatAction(mysteryId, beat.id, { description });
+                const tokenizedDesc = tokenizeTextWithCharacterRoles(description, allCharacters);
+                if (tokenizedDesc !== beat.description) {
+                  await updateBeatAction(mysteryId, beat.id, { description: tokenizedDesc });
                 }
               }}
               placeholder="Write the plot line here..."

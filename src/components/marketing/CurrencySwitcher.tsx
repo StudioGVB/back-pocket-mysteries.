@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-
+import { detectBrowserCurrency } from '@/utils/localization'
 
 export const AVAILABLE_CURRENCIES = [
   { code: 'USD', symbol: '$', label: 'USD' },
@@ -9,6 +9,7 @@ export const AVAILABLE_CURRENCIES = [
   { code: 'AUD', symbol: 'A$', label: 'AUD' },
   { code: 'EUR', symbol: '€', label: 'EUR' },
   { code: 'CAD', symbol: 'C$', label: 'CAD' },
+  { code: 'NZD', symbol: 'NZ$', label: 'NZD' },
 ]
 
 export default function CurrencySwitcher() {
@@ -17,12 +18,7 @@ export default function CurrencySwitcher() {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    try {
-      const match = document.cookie.match(/(^| )NEXT_CURRENCY=([^;]+)/)
-      if (match) {
-        setCurrentCurrency(match[2])
-      }
-    } catch (e) {}
+    setCurrentCurrency(detectBrowserCurrency('en'))
   }, [])
 
   // Close dropdown when clicking outside

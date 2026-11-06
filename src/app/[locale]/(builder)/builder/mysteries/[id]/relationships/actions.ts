@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { upsertRelationship, deleteRelationship, getRelationshipsByMysteryId } from '@/services/relationships';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import { getCharacterRoleTitle } from '@/utils/hydration';
+import { logAiUsage } from '@/utils/ai-logger';
 
 export async function upsertRelationshipAction(mysteryId: string, relationship: any) {
   try {
@@ -43,8 +45,7 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
     // Build the AI/Mock payload
     const castData = characters.map((c: any) => ({
       id: c.id,
-      name: c.name.split('|')[0],
-      title_or_role: c.name.includes('|') ? c.name.split('|')[1] : null,
+      role_title: getCharacterRoleTitle(c),
       archetype: c.archetype,
       plot_role: c.plot_role,
       is_mandatory: c.is_mandatory,
@@ -164,12 +165,19 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
         5. **No Floaters**: EVERY single character in the list MUST be connected to at least one other character. Do not leave anyone isolated.
         ${!overwrite ? `6. **UPDATE MODE**: ONLY generate relationships that involve AT LEAST ONE character from the following list (who are currently missing relationships): ${charactersNeedingRelationships.map((c: any) => c.id).join(', ')}. Do not generate relationships between two characters who are NOT in this list.` : `6. **The Core Web**: Mandatory/Primary characters (is_mandatory: true) MUST be connected to at least 2 other characters to form a tight web. The VICTIM should be connected to almost everyone.`}
         7. **The Spokes (Crucial)**: If a character is NOT mandatory (e.g., is_mandatory = false), they act as a "dead-end spoke." They MUST ONLY connect to the Victim and/or ONE other major character. They MUST NOT have a wide web of connections. This ensures they can be removed from the game without breaking the plot.
+        8. **Naming Rule**: NEVER invent fake person names. In \`notes\`, refer to characters using their bracketed role title tokens (e.g., \`{{The Sister}}\`, \`{{The Ex}}\`).
         
         CHARACTERS JSON:
         ${JSON.stringify(castData, null, 2)}
       `;
   
       const result = await model.generateContent(prompt);
+      await logAiUsage({
+        model_name: 'gemini-2.5-flash',
+        feature_name: 'generate_relationships',
+        mystery_id: mysteryId,
+        usageMetadata: result.response.usageMetadata as any,
+      });
       const responseText = result.response.text();
       const parsed = JSON.parse(responseText);
   
@@ -229,8 +237,7 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
     // Build the AI payload context
     const castData = characters.map((c: any) => ({
       id: c.id,
-      name: c.name.split('|')[0],
-      title_or_role: c.name.includes('|') ? c.name.split('|')[1] : null,
+      role_title: getCharacterRoleTitle(c),
       archetype: c.archetype,
       plot_role: c.plot_role,
       is_mandatory: c.is_mandatory,
@@ -254,9 +261,9 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
     }
 
     const relationshipGraph = relationships.filter(r => r.know_each_other).map(r => {
-      const charA = characters.find((c: any) => c.id === r.character_a_id)?.name.split('|')[0];
-      const charB = characters.find((c: any) => c.id === r.character_b_id)?.name.split('|')[0];
-      return `${charA} & ${charB}: ${r.dynamics?.join(', ') || 'Connected'}`;
+      const charA = characters.find((c: any) => c.id === r.character_a_id);
+      const charB = characters.find((c: any) => c.id === r.character_b_id);
+      return `{{${getCharacterRoleTitle(charA)}}} & {{${getCharacterRoleTitle(charB)}}}: ${r.dynamics?.join(', ') || 'Connected'}`;
     });
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -303,7 +310,7 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
     const prompt = `
       You are writing murder motives for a mystery party game.
       Theme: ${mystery?.theme || 'General Mystery'}
-      Victim: ${victim.name}
+      Victim: {{${getCharacterRoleTitle(victim)}}}
 
       I am providing a list of characters and their relationship dynamics.
       You must return an array of compelling motives for WHY these characters might want to murder the Victim (or rarely, someone else if they are covering up a crime or being blackmailed).
@@ -315,6 +322,7 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
       4. Use the Relationship Graph to inform the notes. If two people are "rivals", mention it in the notes.
       5. motive_type MUST be one of: 'revenge', 'greed', 'love', 'fear', 'justice', 'power'.
       6. Use EXACT IDs provided in the Characters JSON.
+      7. CRITICAL NAMING RULE: NEVER invent fake person names. Always refer to characters in \`notes\` using their bracketed role title tokens (e.g., \`{{The Sister}}\`, \`{{The Ex}}\`).
       
       CHARACTERS JSON:
       ${JSON.stringify(castData, null, 2)}
@@ -324,6 +332,12 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
     `;
 
     const result = await model.generateContent(prompt);
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'generate_motives',
+      mystery_id: mysteryId,
+      usageMetadata: result.response.usageMetadata as any,
+    });
     const responseText = result.response.text();
     const parsed = JSON.parse(responseText);
 

@@ -1,10 +1,18 @@
 'use client';
 
 import React, { useState, KeyboardEvent } from 'react';
-import { AvatarBuilder } from './AvatarBuilder';
-import { buildAvatarUrl, AvatarConfig } from '@/utils/avatar';
+import { AvatarBuilder, deriveDiceBearTop } from './AvatarBuilder';
+import {
+  buildAvatarUrl,
+  AvatarConfig,
+  GUEST_ACCENT_OPTIONS,
+  GUEST_AGE_OPTIONS,
+  extractAccentFromAvatarUrl,
+  extractAgeFromAvatarUrl,
+} from '@/utils/avatar';
 import Image from 'next/image';
 import { generateRandomQuirk } from '@/app/actions/generator';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface GuestModalProps {
   isOpen: boolean;
@@ -20,6 +28,8 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [gender, setGender] = useState('Masculine');
+  const [age, setAge] = useState<'young' | 'middle_aged' | 'old'>('young');
+  const [accent, setAccent] = useState('Australian');
   const [ethnicity, setEthnicity] = useState('');
   const [isEthnicityDropdownOpen, setIsEthnicityDropdownOpen] = useState(false);
   
@@ -31,41 +41,67 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>({
     seed: 'Felix',
     top: 'shortFlat',
+    hairLength: 'Short',
+    hairTexture: 'Straight',
     hairColor: '282828',
     skinColor: 'eac086',
     eyeColor: 'Brown',
     height: 'Average',
+    accent: 'Australian',
+    age: 'young',
   });
 
   // Load initial data if provided
   React.useEffect(() => {
     if (isOpen) {
       if (initialData) {
+        const initialAccent =
+          initialData.accent ||
+          extractAccentFromAvatarUrl(initialData.avatar_url) ||
+          'Australian';
+        const initialAge =
+          initialData.age ||
+          extractAgeFromAvatarUrl(initialData.avatar_url) ||
+          'young';
+
         setName(initialData.name || '');
         setEmail(initialData.email || '');
         setGender(initialData.gender || 'Unspecified');
+        setAge(initialAge);
+        setAccent(initialAccent);
         setEthnicity(initialData.ethnicity || '');
-        setQuirks(initialData.traits || []);
+        setQuirks((initialData.traits || []).slice(0, 3));
         setBio(initialData.bio || '');
         
         const isDataUri = initialData.avatar_url?.startsWith('data:image/');
         const baseTop = initialData.gender === 'Feminine' ? 'straight01' : 'shortFlat';
+        const baseLength = initialData.gender === 'Feminine' ? 'Long' : 'Short';
         
         let initialConfig: AvatarConfig = {
           seed: initialData.name || 'Felix',
           top: baseTop,
+          hairLength: baseLength,
+          hairTexture: 'Straight',
           hairColor: '282828',
           skinColor: 'ffe0bd',
           eyeColor: initialData.eye_color || 'Brown',
           height: initialData.height || 'Average',
+          accent: initialAccent,
+          age: initialAge,
         };
 
         if (initialData.avatar_url && !isDataUri) {
           try {
             const url = new URL(initialData.avatar_url);
+            const hl = url.searchParams.get('hairLength') || undefined;
+            const ht = url.searchParams.get('hairTexture') || undefined;
+            const g = initialData.gender || 'Masculine';
+            const derivedTop = hl ? deriveDiceBearTop(hl, ht || 'Straight', g) : (url.searchParams.get('top') || baseTop);
             initialConfig = {
               seed: url.searchParams.get('seed') || initialData.name || 'Felix',
-              top: url.searchParams.get('top') || baseTop,
+              top: derivedTop,
+              hairLength: hl || baseLength,
+              hairTexture: ht || 'Straight',
               hairColor: url.searchParams.get('hairColor') || '282828',
               skinColor: url.searchParams.get('skinColor') || 'ffe0bd',
               eyeColor: initialData.eye_color || 'Brown',
@@ -74,6 +110,8 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
               accessories: url.searchParams.get('accessories') || undefined,
               build: url.searchParams.get('build') || undefined,
               distinctiveFeatures: url.searchParams.get('distinctiveFeatures') ? url.searchParams.get('distinctiveFeatures')!.split(',') : undefined,
+              accent: url.searchParams.get('accent') || initialAccent,
+              age: (url.searchParams.get('age') as any) || initialAge,
             };
           } catch (e) {
             // Invalid URL, keep initialConfig
@@ -86,11 +124,13 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
         setName('');
         setEmail('');
         setGender('Masculine');
+        setAge('young');
+        setAccent('Australian');
         setEthnicity('');
         setQuirks([]);
         setBio('');
         setAvatarConfig({
-          seed: 'Felix', top: 'shortFlat', hairColor: '282828', skinColor: 'ffe0bd', eyeColor: 'Brown', height: 'Average',
+          seed: 'Felix', top: 'shortFlat', hairLength: 'Short', hairTexture: 'Straight', hairColor: '282828', skinColor: 'ffe0bd', eyeColor: 'Brown', height: 'Average', accent: 'Australian', age: 'young',
         });
       }
       setActiveTab('basics');
@@ -99,12 +139,16 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
 
   if (!isOpen) return null;
 
+  const MAX_TRAITS = 3;
+  const isAtTraitLimit = quirks.length >= MAX_TRAITS;
+
   const handleGenerateQuirk = async () => {
+    if (quirks.length >= MAX_TRAITS) return;
     setIsGeneratingQuirk(true);
     try {
-      const quirk = await generateRandomQuirk(name, gender);
-      if (quirk && !quirks.includes(quirk)) {
-        setQuirks([...quirks, quirk]);
+      const quirk = await generateRandomQuirk(name, gender, quirks);
+      if (quirk && !quirks.includes(quirk) && quirks.length < MAX_TRAITS) {
+        setQuirks([...quirks, quirk].slice(0, MAX_TRAITS));
       }
     } catch (error) {
       console.error('Failed to generate quirk:', error);
@@ -114,13 +158,13 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   };
 
   // DiceBear Avataaars API URL generator
-  const avatarUrl = buildAvatarUrl(avatarConfig, name);
+  const avatarUrl = buildAvatarUrl({ ...avatarConfig, accent, age }, name);
 
   const handleAddQuirk = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currentQuirk.trim() !== '') {
       e.preventDefault();
-      if (!quirks.includes(currentQuirk.trim())) {
-        setQuirks([...quirks, currentQuirk.trim()]);
+      if (quirks.length < MAX_TRAITS && !quirks.includes(currentQuirk.trim())) {
+        setQuirks([...quirks, currentQuirk.trim()].slice(0, MAX_TRAITS));
       }
       setCurrentQuirk('');
     }
@@ -133,25 +177,34 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   const handleGenderChange = (newGender: string) => {
     setGender(newGender);
     
-    // Automatically adjust the avatar to give a starting point based on gender
-    if (newGender === 'Feminine') {
-      setAvatarConfig(prev => ({
+    setAvatarConfig(prev => {
+      const defaultLength = newGender === 'Feminine' ? 'Long' : 'Short';
+      const length = prev.hairLength || defaultLength;
+      const texture = prev.hairTexture || 'Straight';
+      return {
         ...prev,
-        top: 'straight01',
-        facialHair: undefined
-      }));
-    } else if (newGender === 'Masculine') {
-      setAvatarConfig(prev => ({
-        ...prev,
-        top: 'shortFlat',
-      }));
-    } else {
-      setAvatarConfig(prev => ({
-        ...prev,
-        top: 'shortWaved',
-        facialHair: undefined
-      }));
-    }
+        hairLength: length,
+        hairTexture: texture,
+        top: deriveDiceBearTop(length, texture, newGender),
+        facialHair: newGender === 'Masculine' ? prev.facialHair : undefined,
+      };
+    });
+  };
+
+  const handleAccentChange = (newAccent: string) => {
+    setAccent(newAccent);
+    setAvatarConfig(prev => ({
+      ...prev,
+      accent: newAccent,
+    }));
+  };
+
+  const handleAgeChange = (newAge: 'young' | 'middle_aged' | 'old') => {
+    setAge(newAge);
+    setAvatarConfig(prev => ({
+      ...prev,
+      age: newAge,
+    }));
   };
 
   const handleSave = async () => {
@@ -162,12 +215,14 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
         name: name || 'Unknown Guest',
         email,
         gender,
+        age,
+        accent,
         eyeColor: avatarConfig.eyeColor,
         height: avatarConfig.height,
         ethnicity,
         avatarUrl,
-        traits: quirks,
-        bio,
+        traits: quirks.slice(0, MAX_TRAITS),
+        bio: '',
       });
       onClose();
     } catch (e) {
@@ -208,7 +263,9 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
           
           <div className="text-center w-full">
             <h2 className="text-3xl font-black text-slate-900 truncate px-4">{name || 'New Guest'}</h2>
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">{gender}</p>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
+              {gender}{accent ? ` • 🎙️ ${accent}` : ''}
+            </p>
             
             <div className="mt-6 flex flex-wrap justify-center gap-2 px-4">
               {quirks.slice(0, 3).map((quirk, idx) => (
@@ -291,58 +348,78 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
                     ))}
                   </div>
                 </div>
-                <div className="relative">
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Ethnicity</label>
-                  <div 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center transition-all hover:border-slate-300"
-                    onClick={() => setIsEthnicityDropdownOpen(!isEthnicityDropdownOpen)}
-                  >
-                    <span className={ethnicity ? 'text-slate-900' : 'text-slate-400'}>
-                      {ethnicity || 'Unspecified'}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+                      Age Bracket (For Voice Clues)
+                    </label>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      🎙️ Matched to AI Audio Clues
                     </span>
-                    <svg className={`w-4 h-4 text-slate-400 transition-transform ${isEthnicityDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </div>
-                  
-                  {isEthnicityDropdownOpen && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-10" 
-                        onClick={() => setIsEthnicityDropdownOpen(false)}
-                      />
-                      <div className="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden py-2 max-h-60 overflow-y-auto">
-                        {[
-                          { value: '', label: 'Unspecified' },
-                          { value: 'Caucasian / White', label: 'Caucasian / White' },
-                          { value: 'Black / African Descent', label: 'Black / African Descent' },
-                          { value: 'East Asian', label: 'East Asian' },
-                          { value: 'South Asian', label: 'South Asian' },
-                          { value: 'Southeast Asian', label: 'Southeast Asian' },
-                          { value: 'Hispanic / Latino', label: 'Hispanic / Latino' },
-                          { value: 'Middle Eastern', label: 'Middle Eastern' },
-                          { value: 'Native American / Indigenous', label: 'Native American / Indigenous' },
-                          { value: 'Pacific Islander', label: 'Pacific Islander' },
-                          { value: 'Mixed / Multiracial', label: 'Mixed / Multiracial' },
-                          { value: 'Other', label: 'Other' }
-                        ].map((option) => (
-                          <div
-                            key={option.value}
-                            className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${
-                              ethnicity === option.value ? 'bg-brand-pink/5 text-brand-pink font-bold' : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                            onClick={() => {
-                              setEthnicity(option.value);
-                              setIsEthnicityDropdownOpen(false);
-                            }}
-                          >
-                            {option.label}
-                            {ethnicity === option.value && (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {GUEST_AGE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => handleAgeChange(opt.value)}
+                        className={`px-3 py-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
+                          age === opt.value
+                            ? 'bg-brand-pink/10 border-brand-pink text-brand-pink shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+                      Accent (For Voice Clues)
+                    </label>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      🎙️ Matched to AI Audio Clues
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {GUEST_ACCENT_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => handleAccentChange(opt.value)}
+                        className={`px-3 py-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center gap-2 ${
+                          accent === opt.value
+                            ? 'bg-brand-pink/10 border-brand-pink text-brand-pink shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className="truncate">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Ethnicity</label>
+                  <CustomSelect
+                    value={ethnicity}
+                    onChange={(e) => setEthnicity(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 hover:border-slate-300 transition-all"
+                  >
+                    <option value="">Unspecified</option>
+                    <option value="Caucasian / White">Caucasian / White</option>
+                    <option value="Black / African Descent">Black / African Descent</option>
+                    <option value="East Asian">East Asian</option>
+                    <option value="South Asian">South Asian</option>
+                    <option value="Southeast Asian">Southeast Asian</option>
+                    <option value="Hispanic / Latino">Hispanic / Latino</option>
+                    <option value="Middle Eastern">Middle Eastern</option>
+                    <option value="Native American / Indigenous">Native American / Indigenous</option>
+                    <option value="Pacific Islander">Pacific Islander</option>
+                    <option value="Mixed / Multiracial">Mixed / Multiracial</option>
+                    <option value="Other">Other</option>
+                  </CustomSelect>
                 </div>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Email Address (Optional)</label>
@@ -366,14 +443,21 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
                 <div>
                   <div className="flex justify-between items-end mb-3">
                     <div>
-                      <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Traits & Quirks</label>
-                      <p className="text-xs text-slate-500">Type a quirk and press Enter to add it. (e.g. "Loves gossip", "Scared of bugs")</p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400">Traits &amp; Quirks</label>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          isAtTraitLimit ? 'bg-brand-pink/10 text-brand-pink' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {quirks.length} / {MAX_TRAITS}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500">Add up to 3 fun obsessions, cravings, or fears we can weave into their character&apos;s clues &amp; texts (e.g. &ldquo;Obsessed with bananas&rdquo;, &ldquo;Terrified of pigeons&rdquo;).</p>
                     </div>
                     <button
                       type="button"
                       onClick={handleGenerateQuirk}
-                      disabled={isGeneratingQuirk}
-                      className="flex items-center gap-2 text-xs font-bold text-brand-pink bg-brand-pink/10 hover:bg-brand-pink/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                      disabled={isGeneratingQuirk || isAtTraitLimit}
+                      className="flex items-center gap-2 text-xs font-bold text-brand-pink bg-brand-pink/10 hover:bg-brand-pink/20 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ml-3"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
                       {isGeneratingQuirk ? 'Generating...' : 'Auto-Generate'}
@@ -384,31 +468,72 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
                     {quirks.map((quirk, idx) => (
                       <span key={idx} className="flex items-center gap-1 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 shadow-sm">
                         {quirk}
-                        <button onClick={() => removeQuirk(idx)} className="text-slate-400 hover:text-red-500 ml-1">
+                        <button type="button" onClick={() => removeQuirk(idx)} className="text-slate-400 hover:text-red-500 ml-1">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                       </span>
                     ))}
-                    <input 
-                      type="text" 
-                      value={currentQuirk}
-                      onChange={(e) => setCurrentQuirk(e.target.value)}
-                      onKeyDown={handleAddQuirk}
-                      placeholder="Add a quirk..."
-                      className="flex-grow bg-transparent border-none outline-none text-sm font-medium min-w-[120px]"
-                    />
+                    {!isAtTraitLimit ? (
+                      <input 
+                        type="text" 
+                        value={currentQuirk}
+                        onChange={(e) => setCurrentQuirk(e.target.value)}
+                        onKeyDown={handleAddQuirk}
+                        placeholder="e.g. Loves bananas, Addicted to iced coffee..."
+                        className="flex-grow bg-transparent border-none outline-none text-sm font-medium min-w-[160px]"
+                      />
+                    ) : (
+                      <span className="text-xs font-bold text-slate-400 py-1.5 px-1">
+                        Maximum of 3 traits reached
+                      </span>
+                    )}
                   </div>
                 </div>
-                
+
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Secret Bio (Optional)</label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Any extra context about this person's vibe..."
-                    rows={4}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all resize-none"
-                  />
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Quick-Pick Quirks</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      'Obsessed with bananas',
+                      'Addicted to iced coffee',
+                      'Terrified of pigeons',
+                      'Puts hot sauce on everything',
+                      'Brings up their air fryer constantly',
+                      'Always losing their keys',
+                      'Thinks they can speak to cats',
+                      'Secretly loves cheesy 80s pop',
+                      'Obsessed with sourdough bread',
+                      'Never goes anywhere without chapstick',
+                      'Always carries emergency snacks',
+                      'Constantly quoting 90s movies',
+                    ].map((suggestion) => {
+                      const isSelected = quirks.includes(suggestion);
+                      const isDisabled = !isSelected && isAtTraitLimit;
+                      return (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => {
+                            if (isSelected) {
+                              setQuirks(quirks.filter(q => q !== suggestion));
+                            } else if (quirks.length < MAX_TRAITS) {
+                              setQuirks([...quirks, suggestion]);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                            isSelected
+                              ? 'bg-brand-pink/10 border-brand-pink text-brand-pink'
+                              : isDisabled
+                              ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                              : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          {isSelected ? `✓ ${suggestion}` : `+ ${suggestion}`}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}

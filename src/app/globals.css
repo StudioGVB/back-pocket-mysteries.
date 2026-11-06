@@ -98,11 +98,19 @@ body {
 }
 
 .blog-content ul {
-  @apply list-disc list-inside mb-8 space-y-4 text-gray-500 font-bold;
+  @apply list-disc pl-6 mb-8 space-y-3 text-gray-600 font-semibold;
+}
+
+.blog-content ol {
+  @apply list-decimal pl-6 mb-8 space-y-3 text-gray-600 font-semibold;
 }
 
 .blog-content li {
-  @apply text-lg;
+  @apply text-lg leading-relaxed;
+}
+
+.blog-content strong {
+  @apply text-brand-dark font-black;
 }
 
 .blog-content blockquote {
@@ -111,6 +119,54 @@ body {
 
 .blog-content blockquote p {
   @apply mb-0 text-brand-dark/80;
+}
+
+.blog-content table {
+  @apply w-full border-collapse my-10 text-left rounded-2xl overflow-hidden shadow-lg border border-gray-200;
+}
+
+.blog-content thead {
+  @apply bg-brand-dark text-white;
+}
+
+.blog-content th {
+  @apply py-4 px-5 text-xs font-black uppercase tracking-widest border-b border-white/10;
+}
+
+.blog-content td {
+  @apply py-4 px-5 text-sm lg:text-base font-semibold text-gray-700 border-b border-gray-100 align-top;
+}
+
+.blog-content tbody tr:nth-child(even) {
+  @apply bg-brand-gray/60;
+}
+
+.blog-content tbody tr:hover {
+  @apply bg-brand-pink/5 transition-colors;
+}
+
+/* Global Clean Dropdown / Select Styling */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem 1rem;
+  padding-right: 2.75rem !important;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+}
+
+select option {
+  background-color: #ffffff;
+  color: #0f172a;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
 }
 
 /* Print Styles for Character PDFs */

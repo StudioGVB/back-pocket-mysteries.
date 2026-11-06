@@ -1,8 +1,15 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { upsertRelationshipAction } from '../actions';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import {
+  getCharacterRoleTitle,
+  getCharacterPrefix,
+  hydrateTextWithCharacters,
+  tokenizeTextWithCharacterRoles,
+} from '@/utils/hydration';
 
 interface RelationshipMatrixProps {
   mysteryId: string;
@@ -63,38 +70,39 @@ export function RelationshipMatrix({ mysteryId, characters, relationships }: Rel
               const rel = findRelationship(charA.id, charB.id);
               const pairKey = `${charA.id}-${charB.id}`;
               const isUpdating = isPending === pairKey;
+              const roleA = getCharacterRoleTitle(charA);
+              const prefixA = getCharacterPrefix(charA);
+              const initA = roleA.replace(/^The\s+/i, '').trim()[0]?.toUpperCase() || roleA[0];
+              const roleB = getCharacterRoleTitle(charB);
+              const prefixB = getCharacterPrefix(charB);
+              const initB = roleB.replace(/^The\s+/i, '').trim()[0]?.toUpperCase() || roleB[0];
+              const hydratedNotes = hydrateTextWithCharacters(rel?.notes || '', characters, 'role');
 
               return (
                 <tr key={pairKey} className="hover:bg-slate-50/30 transition-colors group">
                   <td className="px-8 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] font-bold">
-                        {charA.name[0]}
+                        {initA}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs font-black text-slate-900">
-                          {charA.name.split('|')[2] && <span className="text-slate-400 mr-1">{charA.name.split('|')[2]}</span>}
-                          {charA.name.split('|')[0]}
+                          {prefixA && <span className="text-slate-400 mr-1">{prefixA}</span>}
+                          {roleA}
                         </span>
-                        {charA.name.includes('|') && charA.name.split('|')[1] && (
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{charA.name.split('|')[1]}</span>
-                        )}
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] font-bold">
-                        {charB.name[0]}
+                        {initB}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs font-black text-slate-900">
-                          {charB.name.split('|')[2] && <span className="text-slate-400 mr-1">{charB.name.split('|')[2]}</span>}
-                          {charB.name.split('|')[0]}
+                          {prefixB && <span className="text-slate-400 mr-1">{prefixB}</span>}
+                          {roleB}
                         </span>
-                        {charB.name.includes('|') && charB.name.split('|')[1] && (
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{charB.name.split('|')[1]}</span>
-                        )}
                       </div>
                     </div>
                   </td>
@@ -108,8 +116,8 @@ export function RelationshipMatrix({ mysteryId, characters, relationships }: Rel
                   </td>
                   <td className="px-8 py-4">
                     <div className="flex flex-wrap gap-2 group/select relative">
-                       <select 
-                         className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase text-slate-500 outline-none hover:border-brand-pink transition-all appearance-none cursor-pointer pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
+                       <CustomSelect 
+                         className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase text-slate-500 outline-none hover:border-brand-pink transition-all"
                          value=""
                          onChange={(e) => {
                            const val = e.target.value;
@@ -141,7 +149,7 @@ export function RelationshipMatrix({ mysteryId, characters, relationships }: Rel
                            <option value="boss">Boss / Subordinate</option>
                            <option value="competitors">Competitors</option>
                          </optgroup>
-                       </select>
+                       </CustomSelect>
 
                        <div className="flex flex-wrap gap-1 mt-1">
                          {rel?.dynamics?.map(d => (
@@ -162,9 +170,10 @@ export function RelationshipMatrix({ mysteryId, characters, relationships }: Rel
                   </td>
                   <td className="px-8 py-4">
                     <input 
+                      key={`${pairKey}-${hydratedNotes}`}
                       placeholder="Add notes..."
-                      defaultValue={rel?.notes || ''}
-                      onBlur={(e) => handleUpdate(charA.id, charB.id, { notes: e.target.value })}
+                      defaultValue={hydratedNotes}
+                      onBlur={(e) => handleUpdate(charA.id, charB.id, { notes: tokenizeTextWithCharacterRoles(e.target.value, characters) })}
                       className="w-full bg-transparent border-none text-xs text-slate-400 font-medium outline-none"
                     />
                   </td>
@@ -176,9 +185,4 @@ export function RelationshipMatrix({ mysteryId, characters, relationships }: Rel
       </div>
     </div>
   );
-}
-
-// Helper needed for useMemo
-function useMemo(factory: () => any, deps: any[]) {
-  return React.useMemo(factory, deps);
 }

@@ -1,7 +1,11 @@
 // @ts-nocheck
 'use server';
 
+import fs from 'fs/promises';
+import path from 'path';
 import { createClient } from '@/utils/supabase/server';
+import { readLocalAiLogs, StoredAiUsageLog } from '@/utils/ai-logger';
+import { requireAdmin } from '@/utils/admin-auth';
 
 export async function getAdminStats(lastViewStr?: string) {
   const supabase = await createClient();
@@ -216,7 +220,7 @@ export async function getAdmins() {
 }
 
 export async function grantAdminStatus(userId: string, role: string = 'admin') {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { error } = await supabase
     .from('user_roles')
@@ -229,7 +233,7 @@ export async function grantAdminStatus(userId: string, role: string = 'admin') {
 }
 
 export async function getEnquiries() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { data, error } = await supabase
     .from('inquiries')
@@ -254,20 +258,313 @@ export async function getEnquiries() {
   return data || [];
 }
 
-export async function getAiCosts() {
+export async function getLiveAiProviderStatus() {
+  await requireAdmin();
+  const googleKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() || '';
+  const elevenKey = process.env.ELEVENLABS_API_KEY?.trim() || '';
+
+  const maskKey = (k: string) =>
+    k && k.length > 10 ? `${k.slice(0, 6)}••••${k.slice(-4)}` : k ? 'Configured' : 'Missing';
+
+  const googleStatus = {
+    connected: false,
+    maskedKey: maskKey(googleKey),
+    modelsCount: 0,
+    activeModels: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-image'],
+    error: null as string | null,
+  };
+
+  const elevenStatus = {
+    connected: false,
+    maskedKey: maskKey(elevenKey),
+    tier: 'unknown',
+    characterCount: 0,
+    characterLimit: 0,
+    nextInvoiceCents: 0,
+    overageUsd: 0,
+    nextResetUnix: null as number | null,
+    error: null as string | null,
+  };
+
+  await Promise.all([
+    (async () => {
+      if (!googleKey) {
+        googleStatus.error = 'Missing GOOGLE_GENERATIVE_AI_API_KEY';
+        return;
+      }
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${googleKey}`,
+          { cache: 'no-store' }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          googleStatus.connected = true;
+          googleStatus.modelsCount = data.models?.length || 0;
+        } else {
+          googleStatus.error = `HTTP ${res.status}`;
+        }
+      } catch (e: any) {
+        googleStatus.error = e?.message || 'Connection failed';
+      }
+    })(),
+    (async () => {
+      if (!elevenKey) {
+        elevenStatus.error = 'Missing ELEVENLABS_API_KEY';
+        return;
+      }
+      try {
+        const res = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
+          headers: { 'xi-api-key': elevenKey },
+          cache: 'no-store',
+        });
+        if (res.ok) {
+          const sub = await res.json();
+          elevenStatus.connected = true;
+          elevenStatus.tier = sub.tier || 'creator';
+          elevenStatus.characterCount = sub.character_count || 0;
+          elevenStatus.characterLimit = sub.character_limit || 0;
+          elevenStatus.nextInvoiceCents = sub.next_invoice?.amount_due_cents || 0;
+          elevenStatus.overageUsd = Number(sub.current_overage?.amount || 0);
+          elevenStatus.nextResetUnix = sub.next_character_count_reset_unix || null;
+        } else {
+          elevenStatus.error = `HTTP ${res.status}`;
+        }
+      } catch (e: any) {
+        elevenStatus.error = e?.message || 'Connection failed';
+      }
+    })(),
+  ]);
+
+  return { googleStatus, elevenStatus };
+}
+
+export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
   const supabase = await createClient();
+  const mergedMap = new Map<string, StoredAiUsageLog>();
 
-  const { data, error } = await supabase
-    .from('ai_usage_logs')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const addLog = (key: string, entry: StoredAiUsageLog) => {
+    if (!mergedMap.has(key)) {
+      mergedMap.set(key, entry);
+    }
+  };
 
-  if (error) {
-    console.error('Error fetching AI costs:', error);
-    return [];
+  // 1. Read from local persistent JSON log file (`data/ai-usage-logs.json`)
+  const localLogs = await readLocalAiLogs();
+  for (const log of localLogs) {
+    addLog(`local:${log.id}`, log);
   }
 
-  return (data as any[]) || [];
+  // 2. Read from Supabase `ai_usage_logs` table (if RLS permits)
+  try {
+    const { data, error } = await supabase
+      .from('ai_usage_logs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      for (const row of data as any[]) {
+        addLog(`db:${row.id}`, {
+          id: row.id,
+          model_name: row.model_name,
+          prompt_tokens: Number(row.prompt_tokens || 0),
+          completion_tokens: Number(row.completion_tokens || 0),
+          cost_usd: Number(row.cost_usd || 0),
+          feature_name: row.feature_name,
+          mystery_id: row.mystery_id || null,
+          user_id: row.user_id || null,
+          created_at: row.created_at,
+          source: 'logged',
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Error fetching ai_usage_logs table:', err);
+  }
+
+  // 3. Read synced logs from Supabase Storage (`character-images/system/ai-usage-logs.json`) if present
+  try {
+    const { data: storageBlob } = await supabase.storage
+      .from('character-images')
+      .download('system/ai-usage-logs.json');
+    if (storageBlob) {
+      const parsed = JSON.parse(await storageBlob.text());
+      if (Array.isArray(parsed)) {
+        for (const log of parsed) {
+          addLog(`local:${log.id}`, log);
+        }
+      }
+    }
+  } catch {}
+
+  // 4. Discover historical Google Gemini/Imagen generations in Supabase Storage `character-images` bucket
+  try {
+    const { data: rootFiles } = await supabase.storage
+      .from('character-images')
+      .list('', { limit: 200 });
+
+    for (const item of rootFiles || []) {
+      if (item.id && (item.name.endsWith('.jpg') || item.name.endsWith('.png') || item.name.endsWith('.webp'))) {
+        addLog(`storage-avatar:${item.name}`, {
+          id: `storage-${item.id}`,
+          model_name: 'gemini-2.5-flash-image',
+          prompt_tokens: 185,
+          completion_tokens: 1290,
+          cost_usd: 0.039,
+          feature_name: 'generate_guest_avatar',
+          mystery_id: null,
+          user_id: null,
+          created_at: item.created_at || new Date().toISOString(),
+          source: 'google_storage',
+        });
+      } else if (!item.id && item.name !== 'mystery-audio' && item.name !== 'system') {
+        const { data: subFiles } = await supabase.storage
+          .from('character-images')
+          .list(item.name, { limit: 100 });
+        for (const sub of subFiles || []) {
+          if (sub.id && (sub.name.endsWith('.png') || sub.name.endsWith('.jpg') || sub.name.endsWith('.webp'))) {
+            addLog(`storage-char:${item.name}/${sub.name}`, {
+              id: `storage-${sub.id || `${item.name}-${sub.name}`}`,
+              model_name: 'gemini-2.5-flash-image',
+              prompt_tokens: 210,
+              completion_tokens: 1290,
+              cost_usd: 0.039,
+              feature_name: 'generate_character_photo',
+              mystery_id: item.name.length === 36 ? item.name : null,
+              user_id: null,
+              created_at: sub.created_at || new Date().toISOString(),
+              source: 'google_storage',
+            });
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not scan character-images storage for AI costs:', err);
+  }
+
+  // 5. Discover generated Clue Images in `public.clues` (base64 inline images)
+  try {
+    const { data: cluesWithImg } = await supabase
+      .from('clues')
+      .select('id, title, mystery_id, static_image_url, updated_at, created_at')
+      .not('static_image_url', 'is', null);
+
+    for (const c of (cluesWithImg as any[]) || []) {
+      if (typeof c.static_image_url === 'string' && c.static_image_url.startsWith('data:image/')) {
+        addLog(`clue-img:${c.id}`, {
+          id: `clue-img-${c.id}`,
+          model_name: 'gemini-2.5-flash-image',
+          prompt_tokens: 320,
+          completion_tokens: 1290,
+          cost_usd: 0.039,
+          feature_name: `generate_clue_image (${c.title || 'Clue'})`,
+          mystery_id: c.mystery_id || null,
+          user_id: null,
+          created_at: c.updated_at || c.created_at || new Date().toISOString(),
+          source: 'google_storage',
+        });
+      }
+    }
+  } catch {}
+
+  // 6. Discover generated Moodboard & CCTV Clue images in `public/moodboard` and `public/clues`
+  const localAssetDirs: Array<{ dir: string; feature: string }> = [
+    { dir: path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'moodboard', 'lotr'), feature: 'generate_moodboard_image' },
+    { dir: path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'clues', 'doa'), feature: 'generate_clue_image' },
+  ];
+  for (const { dir, feature } of localAssetDirs) {
+    try {
+      const files = await fs.readdir(dir);
+      for (const file of files) {
+        if (file.endsWith('.jpg') || file.endsWith('.png') || file.endsWith('.webp')) {
+          const stat = await fs.stat(path.join(/*turbopackIgnore: true*/ dir, file));
+          const label = file.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+          addLog(`public-img:${feature}:${file}`, {
+            id: `public-${feature}-${file}`,
+            model_name: 'gemini-2.5-flash-image',
+            prompt_tokens: 240,
+            completion_tokens: 1290,
+            cost_usd: 0.039,
+            feature_name: `${feature} (${label})`,
+            mystery_id: null,
+            user_id: null,
+            created_at: stat.mtime.toISOString(),
+            source: 'google_storage',
+          });
+        }
+      }
+    } catch {}
+  }
+
+  // 7. Fetch live ElevenLabs generation history directly from ElevenLabs API
+  const elevenKey = process.env.ELEVENLABS_API_KEY?.trim();
+  if (elevenKey) {
+    try {
+      const res = await fetch('https://api.elevenlabs.io/v1/history?page_size=100', {
+        headers: { 'xi-api-key': elevenKey },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const histData = await res.json();
+        const items: any[] = histData.history || [];
+        // Group consecutive ElevenLabs line syntheses within 45 seconds into logical audio clue generations
+        const groups: Array<{
+          id: string;
+          model: string;
+          chars: number;
+          lines: number;
+          dateUnix: number;
+        }> = [];
+
+        for (const item of items) {
+          const chars = Math.max(
+            0,
+            (item.character_count_change_to || 0) - (item.character_count_change_from || 0)
+          );
+          const model = item.model_id || 'eleven_v3';
+          const dateUnix = item.date_unix || Math.floor(Date.now() / 1000);
+          const prev = groups[groups.length - 1];
+
+          if (prev && prev.model === model && Math.abs(prev.dateUnix - dateUnix) <= 45) {
+            prev.chars += chars;
+            prev.lines += 1;
+          } else {
+            groups.push({
+              id: item.history_item_id,
+              model,
+              chars,
+              lines: 1,
+              dateUnix,
+            });
+          }
+        }
+
+        for (const g of groups) {
+          const ratePer1k = g.model === 'eleven_turbo_v2_5' ? 0.15 : 0.30;
+          const cost = (g.chars / 1000) * ratePer1k;
+          addLog(`elevenlabs:${g.id}`, {
+            id: `el-${g.id}`,
+            model_name: `elevenlabs:${g.model}`,
+            prompt_tokens: g.chars,
+            completion_tokens: g.lines,
+            cost_usd: Number(cost.toFixed(6)),
+            feature_name: `generate_audio_clue (${g.lines} ${g.lines === 1 ? 'line' : 'lines'})`,
+            mystery_id: null,
+            user_id: null,
+            created_at: new Date(g.dateUnix * 1000).toISOString(),
+            source: 'elevenlabs_api',
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch live ElevenLabs history:', err);
+    }
+  }
+
+  return Array.from(mergedMap.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 }
 
 // --- Customer Profile View Data ---
@@ -336,14 +633,83 @@ export async function getCustomerOrders(userId: string) {
 
 export async function getCustomerMysteries(userId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('mysteries')
-    .select('id, title, status, max_players, created_at')
-    .eq('created_by', userId)
-    .order('created_at', { ascending: false });
+  const { getCustomerCrmData } = await import('@/app/actions/admin-users');
+  const [{ data, error }, crm] = await Promise.all([
+    supabase
+      .from('mysteries')
+      .select('id, title, theme, status, min_players, max_players, current_round, created_at')
+      .eq('created_by', userId)
+      .order('created_at', { ascending: false }),
+    getCustomerCrmData(userId),
+  ]);
 
   if (error) console.error('Error fetching customer mysteries:', error);
-  return (data as any[]) || [];
+
+  const revokedSet = new Set(crm.revokedMysteryIds || []);
+  const roundOverrides = crm.mysteryRoundOverrides || {};
+  const map = new Map<string, any>();
+
+  for (const m of (data as any[]) || []) {
+    if (revokedSet.has(m.id)) continue;
+    map.set(m.id, {
+      ...m,
+      current_round: roundOverrides[m.id] ?? m.current_round ?? 1,
+    });
+  }
+
+  for (const gm of crm.giftedMysteries || []) {
+    if (revokedSet.has(gm.id)) continue;
+    if (!map.has(gm.id)) {
+      map.set(gm.id, {
+        ...gm,
+        current_round: roundOverrides[gm.id] ?? gm.current_round ?? 1,
+      });
+    }
+  }
+
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+}
+
+export async function getGiftableCatalogMysteries() {
+  const supabase = await createClient();
+  const { CORE_MYSTERY_PACKAGES } = await import('@/utils/discounts');
+  const { data, error } = await supabase
+    .from('mysteries')
+    .select('id, title, theme, status, min_players, max_players')
+    .order('status', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching giftable catalog mysteries:', error);
+  }
+
+  // Deduplicate by title, preferring published DB mysteries first, then CORE_MYSTERY_PACKAGES
+  const seenTitles = new Set<string>();
+  const unique: any[] = [];
+  for (const m of data || []) {
+    const key = (m.title || '').trim().toLowerCase();
+    if (!key || seenTitles.has(key)) continue;
+    seenTitles.add(key);
+    unique.push(m);
+  }
+
+  for (const pkg of CORE_MYSTERY_PACKAGES) {
+    const key = pkg.title.trim().toLowerCase();
+    if (seenTitles.has(key)) continue;
+    seenTitles.add(key);
+    unique.push({
+      id: pkg.id,
+      title: pkg.title,
+      theme: pkg.theme,
+      status: 'published',
+      min_players: 8,
+      max_players: 12,
+    });
+  }
+
+  return unique;
 }
 
 export async function getCustomerGuests(userId: string) {
@@ -374,24 +740,25 @@ export async function getCustomerGuests(userId: string) {
 
 export async function getCustomerAiUsage(userId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('ai_usage_logs')
-    .select('prompt_tokens, completion_tokens')
-    .eq('user_id', userId);
+  const [allLogs, customerMysteries] = await Promise.all([
+    getAiCosts(),
+    supabase.from('mysteries').select('id').eq('created_by', userId),
+  ]);
 
-  if (error) console.error('Error fetching AI usage:', error);
-  
-  const logs = (data as any[]) || [];
-  const totalPrompt = logs.reduce((sum, log) => sum + (log.prompt_tokens || 0), 0);
-  const totalCompletion = logs.reduce((sum, log) => sum + (log.completion_tokens || 0), 0);
+  const ownedMysteryIds = new Set((customerMysteries.data || []).map((m: any) => m.id));
+  const userLogs = allLogs.filter(
+    (log: any) =>
+      log.user_id === userId || (log.mystery_id && ownedMysteryIds.has(log.mystery_id))
+  );
+
+  const totalPrompt = userLogs.reduce((sum: number, log: any) => sum + (log.prompt_tokens || 0), 0);
+  const totalCompletion = userLogs.reduce((sum: number, log: any) => sum + (log.completion_tokens || 0), 0);
   const totalTokens = totalPrompt + totalCompletion;
-  
-  // Rough estimate: $0.0003 per 1k tokens (Flash 8B/Flash pricing roughly)
-  const estimatedCost = (totalTokens / 1000) * 0.0003;
+  const estimatedCost = userLogs.reduce((sum: number, log: any) => sum + (Number(log.cost_usd) || 0), 0);
 
   return {
-    generationsCount: logs.length,
+    generationsCount: userLogs.length,
     totalTokens,
-    estimatedCost
+    estimatedCost,
   };
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AvatarBuilder } from '@/components/account/AvatarBuilder';
-import { buildAvatarUrl, AvatarConfig } from '@/utils/avatar';
+import { AvatarBuilder, deriveDiceBearTop } from '@/components/account/AvatarBuilder';
+import { buildAvatarUrl, AvatarConfig, GUEST_ACCENT_OPTIONS } from '@/utils/avatar';
 import { saveProfileAction } from '@/app/actions/profile';
 import { generateProfileBioAction, generateProfileFunFactAction } from '@/app/actions/generator';
 
@@ -16,9 +16,12 @@ const PRONOUNS = ['He/Him', 'She/Her', 'They/Them', 'He/They', 'She/They', 'Any'
 const DEFAULT_AVATAR: AvatarConfig = {
   seed: 'player',
   top: 'shortFlat',
+  hairLength: 'Short',
+  hairTexture: 'Straight',
   hairColor: '282828',
   skinColor: 'ffe0bd',
   accessories: 'none',
+  accent: 'Australian',
 };
 
 interface ProfileClientProps {
@@ -46,12 +49,18 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
 
   const handleGenderChange = (g: 'Masculine' | 'Feminine') => {
     setGender(g);
-    // Reset hair to a valid default for the new gender
-    setAvatarConfig(prev => ({
-      ...prev,
-      top: g === 'Feminine' ? 'straight01' : 'shortFlat',
-      facialHair: undefined,
-    }));
+    setAvatarConfig(prev => {
+      const defaultLength = g === 'Feminine' ? 'Long' : 'Short';
+      const length = prev.hairLength || defaultLength;
+      const texture = prev.hairTexture || 'Straight';
+      return {
+        ...prev,
+        hairLength: length,
+        hairTexture: texture,
+        top: deriveDiceBearTop(length, texture, g),
+        facialHair: g === 'Masculine' ? prev.facialHair : undefined,
+      };
+    });
   };
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
     (profile?.avatar_config as AvatarConfig) ?? DEFAULT_AVATAR
@@ -188,7 +197,9 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
           <div>
             <p className="font-black text-slate-900 text-lg">{user.name || 'Your Name'}</p>
             <p className="text-sm text-slate-400 font-medium">{user.email}</p>
-            {pronouns && <p className="text-xs font-bold text-slate-400 mt-1">{pronouns}</p>}
+            <p className="text-xs font-bold text-slate-400 mt-1">
+              {[pronouns, avatarConfig.accent ? `🎙️ ${avatarConfig.accent}` : null].filter(Boolean).join(' · ')}
+            </p>
           </div>
         </div>
 
@@ -241,6 +252,39 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
                       </button>
                     ))}
                   </div>
+                </div>
+              </div>
+
+              {/* Accent (For Voice Clues) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+                    Accent (For Voice Clues)
+                  </label>
+                  <span className="text-[10px] font-bold text-slate-400">
+                    🎙️ Matched to AI Audio Clues
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {GUEST_ACCENT_OPTIONS.map((opt) => {
+                    const currentAccent = avatarConfig.accent || 'Australian';
+                    const isSelected = currentAccent === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setAvatarConfig(prev => ({ ...prev, accent: opt.value }))}
+                        className="px-3.5 py-2.5 rounded-xl text-xs font-bold border-2 transition-all text-left flex items-center gap-2"
+                        style={{
+                          borderColor: isSelected ? '#fe04c6' : '#e2e8f0',
+                          color: isSelected ? '#fe04c6' : '#64748b',
+                          background: isSelected ? 'rgba(254,4,198,0.05)' : '#fff',
+                        }}
+                      >
+                        <span className="truncate">{opt.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

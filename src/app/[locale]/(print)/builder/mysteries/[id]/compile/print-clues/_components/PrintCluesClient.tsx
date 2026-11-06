@@ -4,12 +4,16 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { hydrateTextWithCharacters } from '@/utils/hydration';
+import { stripCustomerFacingTitle } from '@/utils/clue-format';
 
 // Helper function to format clue descriptions for printed cards
 function formatClueDescriptionForPrint(hydratedText: string) {
   if (!hydratedText) return { header: 'EVIDENCE', meta: '', content: '' };
   
-  const lines = hydratedText.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = hydratedText
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !/^context(?:\s*\/\s*participants)?\s*:/i.test(l));
   
   let header = 'EVIDENCE';
   let meta = '';
@@ -34,11 +38,12 @@ function formatClueDescriptionForPrint(hydratedText: string) {
     currentLineIdx = 1;
   }
   
+  const hasRecipient = lines.some(l => l.startsWith('Recipient:'));
   const metaLines: string[] = [];
   while (currentLineIdx < lines.length) {
     const line = lines[currentLineIdx];
     if (
-      line.startsWith('Sender:') || 
+      (hasRecipient && line.startsWith('Sender:')) || 
       line.startsWith('Recipient:') || 
       line.startsWith('Device:') || 
       line.startsWith('Source:') || 
@@ -57,7 +62,15 @@ function formatClueDescriptionForPrint(hydratedText: string) {
     meta = metaLines.join(' | ');
   }
   
-  contentLines = lines.slice(currentLineIdx);
+  contentLines = lines.slice(currentLineIdx).map(line => {
+    let cleaned = line.replace(/^[A-Za-z0-9]{1,3}\s*\[([^\]]+)\]\s*:/, '$1:');
+    if (/\[strikethrough\]/i.test(cleaned)) {
+      cleaned = cleaned
+        .replace(/^[•\-*]\s*/, '☑ ')
+        .replace(/\s*\[strikethrough\]\s*/gi, ' (Done)');
+    }
+    return cleaned;
+  });
   
   return {
     header,
@@ -148,7 +161,7 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
   const [selectedClue, setSelectedClue] = useState<any | null>(null);
 
   // Sort clues by round
-  const cluesByRound: { [key: number]: any[] } = { 1: [], 2: [], 3: [] };
+  const cluesByRound: { [key: number]: any[] } = { 1: [], 2: [], 3: [], 4: [] };
   clues.forEach(clue => {
     const round = clue.round_number || 1;
     if (!cluesByRound[round]) {
@@ -220,7 +233,7 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
             </div>
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 print:border-slate-300 print:bg-slate-50 print:p-4">
               <span className="block text-[10px] font-black text-[#4169E1] uppercase tracking-widest mb-2">2. Group in Envelopes</span>
-              <p className="text-xs text-slate-400 leading-relaxed print:text-slate-700">Sort cards into three separate envelopes: "Round 1 Clues", "Round 2 Clues", and "Round 3 Clues". Do not let players see clues early!</p>
+              <p className="text-xs text-slate-400 leading-relaxed print:text-slate-700">Sort cards into separate envelopes by round ("Round 1 Clues", "Round 2 Clues", etc.). Do not let players see clues early!</p>
             </div>
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 print:border-slate-300 print:bg-slate-50 print:p-4">
               <span className="block text-[10px] font-black text-[#9370DB] uppercase tracking-widest mb-2">3. Distribute & Sleuth</span>
@@ -231,7 +244,7 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
       </div>
 
       {/* Clues for each Round */}
-      {[1, 2, 3].map(roundNum => {
+      {[1, 2, 3, 4].map(roundNum => {
         const roundClues = cluesByRound[roundNum] || [];
         if (roundClues.length === 0) return null;
 
@@ -247,6 +260,7 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
                   {roundNum === 1 && "Initial discoveries and suspicious observations."}
                   {roundNum === 2 && "Hidden connections, secrets, and financial tracks."}
                   {roundNum === 3 && "Smoking guns, incriminating text leaks, and final evidence."}
+                  {roundNum === 4 && "Final confessions and recovered smoking-gun recordings."}
                 </p>
               </div>
               <span className="text-xs font-black text-slate-500 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full uppercase tracking-widest print:bg-slate-100 print:text-slate-700 print:border-slate-300">
@@ -259,7 +273,9 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
                 const colors = ['#FF1493', '#4169E1', '#9370DB', '#00CED1'];
                 const cardColor = colors[idx % colors.length];
 
-                const hydratedTitle = hydrateTextWithCharacters(clue.title || '', characters, 'print');
+                const hydratedTitle = stripCustomerFacingTitle(
+                  hydrateTextWithCharacters(clue.title || '', characters, 'print')
+                );
                 const hydratedDesc = hydrateTextWithCharacters(clue.description || '', characters, 'print');
                 const formatted = formatClueDescriptionForPrint(hydratedDesc);
                 
@@ -409,7 +425,9 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
 
       {/* Clue Details Modal (Only shown on screen) */}
       {selectedClue && (() => {
-        const hydratedTitle = hydrateTextWithCharacters(selectedClue.title || 'Evidence', characters, 'print');
+        const hydratedTitle = stripCustomerFacingTitle(
+          hydrateTextWithCharacters(selectedClue.title || 'Evidence', characters, 'print')
+        );
         const hydratedDesc = hydrateTextWithCharacters(selectedClue.description || '', characters, 'print');
         const isCctv = isCctvOrVideoClue(selectedClue);
         const isAudio = isAudioClue(selectedClue);

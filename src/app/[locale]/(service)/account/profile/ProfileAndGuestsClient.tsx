@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProfileClient from './ProfileClient';
 import GuestsClient from '../guests/GuestsClient';
 import { ProfileCard } from '@/components/account/ProfileCard';
@@ -23,6 +23,18 @@ export default function ProfileAndGuestsClient({
   locale
 }: ProfileAndGuestsClientProps) {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('welcome') === '1') {
+        setIsEditingProfile(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('welcome');
+        window.history.replaceState({}, '', url.toString());
+      }
+    }
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto w-full px-6 py-12">

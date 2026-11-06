@@ -1,62 +1,166 @@
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { createServerClient } from '@supabase/ssr';
 import { Database } from '@/types/database';
 import { headers } from 'next/headers';
+import { markMysteryPaidInStore } from '@/lib/live-session-store';
+import { sendAdminPurchaseNotificationEmail } from '@/utils/purchase-notifications';
 
 export async function POST(req: Request) {
   const body = await req.text();
   const headersList = await headers();
-  const signature = headersList.get('stripe-signature') as string;
+  const signature = headersList.get('stripe-signature');
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!signature || !webhookSecret) {
+    return new NextResponse('Webhook Error: Missing signature or webhook secret', {
+      status: 400,
+    });
+  }
 
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    const stripe = getStripe();
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Webhook signature verification failed: ${errorMessage}`);
     return new NextResponse(`Webhook Error: ${errorMessage}`, { status: 400 });
   }
 
-  // Set up Supabase client (using service role key if needed to bypass RLS, or anon key if RLS allows updates via webhooks. Let's try anon key first or assume we might need a service role key if it's protected).
-  // Assuming a generic update here with a standard key or we bypass RLS for webhooks.
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, // Webhook might need service role if RLS is strict
+    supabaseKey,
     {
       cookies: {
-        getAll() { return [] },
-        setAll() {}
-      }
+        getAll() {
+          return [];
+        },
+        setAll() {},
+      },
     }
   );
 
   switch (event.type) {
     case 'payment_intent.succeeded':
-      const paymentIntent = event.data.object as unknown as Record<string, unknown>;
-      const metadata = paymentIntent.metadata as Record<string, string> | undefined;
+    case 'checkout.session.completed':
+    case 'customer.subscription.created': {
+      const obj = event.data.object as unknown as Record<string, any>;
+      const metadata = (obj.metadata as Record<string, string> | undefined) || {};
+      const mysteryId = metadata.mysteryId;
+      const slug = metadata.slug;
+      const orderId = metadata.orderId;
+      const userId = metadata.userId && metadata.userId !== 'anonymous' && metadata.userId !== 'guest'
+        ? metadata.userId
+        : null;
+      const tier = metadata.tier || (obj.mode === 'subscription' || event.type === 'customer.subscription.created' ? 'subscribe' : 'basic');
 
-      if (metadata && metadata.orderId) {
-        // Update the order status
+      if (mysteryId && mysteryId !== 'subscription' && mysteryId !== 'new') {
+        markMysteryPaidInStore(mysteryId, orderId);
+        if (slug && slug !== mysteryId) {
+          markMysteryPaidInStore(slug, orderId);
+        }
+
+        const { data: chars } = await supabase
+          .from('characters')
+          .select('id, profile_data')
+          .eq('mystery_id', mysteryId)
+          .order('order_index', { ascending: true })
+          .limit(1);
+
+        if (chars && chars.length > 0) {
+          const carrier = chars[0];
+          const existingProfile = (carrier.profile_data as Record<string, any>) || {};
+          const existingSession = existingProfile.__game_session || {};
+          await supabase
+            .from('characters')
+            .update({
+              profile_data: {
+                ...existingProfile,
+                __game_session: {
+                  ...existingSession,
+                  isPaid: true,
+                  paidAt: new Date().toISOString(),
+                  orderId: orderId || existingSession.orderId,
+                },
+              },
+            })
+            .eq('id', carrier.id);
+        }
+      }
+
+      if (orderId) {
         const { error } = await supabase
           .from('orders')
           .update({ status: 'succeeded' })
-          .eq('id', metadata.orderId);
+          .eq('id', orderId);
 
         if (error) {
-          console.error('Error updating order:', error);
+          console.error('Error updating order via webhook:', error);
         }
       }
-      break;
 
-    // Handle other events as needed
+      // Extract amount & customer info for the email to hello@backpocketgames.com
+      const rawCents =
+        typeof obj.amount_total === 'number'
+          ? obj.amount_total
+          : typeof obj.amount_received === 'number'
+          ? obj.amount_received
+          : typeof obj.amount === 'number'
+          ? obj.amount
+          : 0;
+      const amountMajor = rawCents > 0 ? rawCents / 100 : tier === 'subscribe' ? 39 : 25;
+      const currency = String(obj.currency || 'USD').toUpperCase();
+      const customerEmail =
+        obj.customer_details?.email ||
+        obj.customer_email ||
+        obj.receipt_email ||
+        null;
+      const customerName = obj.customer_details?.name || null;
+
+      if (metadata.discountCode) {
+        try {
+          const { recordPromoOrReferralRedemptionOnPaidOrder } = await import(
+            '@/app/actions/referrals'
+          );
+          await recordPromoOrReferralRedemptionOnPaidOrder({
+            code: metadata.discountCode,
+            buyerUserId: userId,
+            buyerEmail: customerEmail,
+            orderId: orderId || String(obj.id || ''),
+            mysteryId: mysteryId || null,
+          });
+        } catch (err) {
+          console.error('Error recording promo/referral redemption in webhook:', err);
+        }
+      }
+
+      await sendAdminPurchaseNotificationEmail({
+        dedupeKey: orderId || String(obj.id || ''),
+        eventType: tier === 'subscribe' ? 'subscription_started' : 'mystery_purchase',
+        customerName,
+        customerEmail,
+        userId,
+        mysteryId: mysteryId || null,
+        mysteryTitle: slug || mysteryId || null,
+        tier,
+        amount: amountMajor,
+        currency,
+        promoCode: metadata.discountCode || null,
+        discountAmount: metadata.discountAmount ? Number(metadata.discountAmount) : undefined,
+        orderId: orderId || String(obj.id || ''),
+      });
+
+      break;
+    }
+
     default:
-      console.log(`Unhandled event type ${event.type}`);
+      break;
   }
 
   return new NextResponse('Webhook processed successfully', { status: 200 });

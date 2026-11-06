@@ -6,7 +6,7 @@ interface CustomerReviewEmailProps {
   rating: number;
 }
 
-const baseUrl = 'https://mysteries.backpocketgames.com';
+const baseUrl = 'https://backpocketmysteries.com';
 
 export default function CustomerReviewEmail({
   name = 'Guest',

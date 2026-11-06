@@ -38,7 +38,8 @@ export async function saveGuestAction(guestData: {
       .from('guests')
       .insert({
         user_id: user.id,
-        ...guestData
+        ...guestData,
+        traits: guestData.traits ? guestData.traits.slice(0, 3) : undefined,
       })
       .select()
       .single();
@@ -87,7 +88,10 @@ export async function updateGuestAction(id: string, guestData: {
 
     const { data, error } = await supabase
       .from('guests')
-      .update(guestData)
+      .update({
+        ...guestData,
+        traits: guestData.traits ? guestData.traits.slice(0, 3) : undefined,
+      })
       .eq('id', id)
       .eq('user_id', user.id)
       .select()

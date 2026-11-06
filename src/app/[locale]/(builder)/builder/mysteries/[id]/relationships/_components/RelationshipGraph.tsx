@@ -4,6 +4,10 @@ import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react'
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { Database } from '@/types/database';
 import { getCharacterColor } from '@/utils/colors';
+import {
+  getCharacterRoleTitle,
+  getCharacterPrefix,
+} from '@/utils/hydration';
 
 type Character = Database['public']['Tables']['characters']['Row'];
 type Relationship = Database['public']['Tables']['relationships']['Row'];
@@ -45,15 +49,17 @@ export function RelationshipGraph({ characters, relationships }: RelationshipGra
       // Pre-spread nodes in a wide circle to prevent initial (0,0) clumping singularity
       const angle = (index / Math.max(characters.length, 1)) * 2 * Math.PI;
       const radius = 300; 
+      const roleTitle = getCharacterRoleTitle(char);
+      const prefix = getCharacterPrefix(char);
       
       return {
         id: char.id,
-        name: char.name.split('|')[0],
-        title: char.name.includes('|') ? char.name.split('|')[1] : null,
-        prefix: char.name.split('|')[2] || null,
+        name: roleTitle,
+        title: roleTitle,
+        prefix: prefix || null,
         role: char.plot_role,
         isVictim: char.is_victim,
-        initials: char.name.split('|')[0].split(' ').map((n: string) => n[0]).join('').toUpperCase(),
+        initials: roleTitle.replace(/^The\s+/i, '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
         x: Math.cos(angle) * radius,
         y: Math.sin(angle) * radius
       };

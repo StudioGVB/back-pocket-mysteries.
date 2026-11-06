@@ -1,5 +1,10 @@
 import { createClient } from '@/utils/supabase/server';
 import { Database } from '@/types/database';
+import {
+  cacheRelationshipsSnapshot,
+  getCachedRelationshipsSnapshot,
+} from '@/lib/live-session-store';
+import { replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
 import { cache } from 'react';
 
 export type Relationship = Database['public']['Tables']['relationships']['Row'];
@@ -14,12 +19,31 @@ export const getRelationshipsByMysteryId = cache(async (mysteryId: string) => {
     .select('*')
     .eq('mystery_id', mysteryId);
 
-  if (error) {
-    console.error('Error fetching relationships:', error);
-    return [];
+  if (error || !data || data.length === 0) {
+    const cached = getCachedRelationshipsSnapshot(mysteryId);
+    if (cached.length > 0) return cached;
+    if (error) {
+      console.error('Error fetching relationships:', error);
+    }
+    return data || [];
   }
 
-  return data;
+  const normalized = data.map((rel: any) => {
+    if (!rel?.notes) return rel;
+    const cleanNotes = replaceLegacyNamesWithRoleTokens(rel.notes);
+    if (cleanNotes !== rel.notes) {
+      supabase
+        .from('relationships')
+        .update({ notes: cleanNotes })
+        .eq('id', rel.id)
+        .then(() => {}, () => {});
+      return { ...rel, notes: cleanNotes };
+    }
+    return rel;
+  });
+
+  cacheRelationshipsSnapshot(mysteryId, normalized);
+  return normalized;
 });
 
 export async function upsertRelationship(relationship: RelationshipInsert) {

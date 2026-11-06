@@ -4,13 +4,16 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { createCharacter, updateCharacter, deleteCharacter } from '@/services/mysteries';
 import { getStaticMockGuests } from '@/utils/mock-guests';
+import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
+import { getCharacterRoleTitle, getCharacterDisplayName } from '@/utils/hydration';
+import { generateStandardCharacterPhotoAction } from '@/app/actions/generator';
 import crypto from 'crypto';
 
 export async function addCharacterAction(mysteryId: string, formData: FormData) {
-  const base_name = formData.get('base_name') as string;
-  const title = formData.get('title') as string;
-  const prefix = formData.get('prefix') as string;
-  const name = `${base_name || ''}|${title || ''}|${prefix || ''}`;
+  const title = ((formData.get('title') as string) || '').trim();
+  const base_name = ((formData.get('base_name') as string) || '').trim() || title;
+  const prefix = ((formData.get('prefix') as string) || '').trim();
+  const name = `${base_name}|${title}|${prefix}`;
   
   const rawArchetype = formData.get('archetype');
   const archetype = (rawArchetype ? rawArchetype : null) as any;
@@ -102,7 +105,6 @@ export async function generateAICharacterAction(mysteryId: string) {
     const responseSchema: Schema = {
       type: SchemaType.OBJECT,
       properties: {
-        name: { type: SchemaType.STRING },
         title: { type: SchemaType.STRING },
         prefix: { type: SchemaType.STRING },
         plot_role: { 
@@ -117,7 +119,7 @@ export async function generateAICharacterAction(mysteryId: string) {
         },
         is_mandatory: { type: SchemaType.BOOLEAN }
       },
-      required: ['name', 'title', 'prefix', 'plot_role', 'gender', 'is_mandatory']
+      required: ['title', 'prefix', 'plot_role', 'gender', 'is_mandatory']
     };
 
     const model = genAI.getGenerativeModel({
@@ -128,26 +130,26 @@ export async function generateAICharacterAction(mysteryId: string) {
       }
     });
 
-    const existingNames = characters.map((c: any) => c.name.split('|')[0]).join(', ');
+    const existingTitles = characters.map((c: any) => getCharacterRoleTitle(c)).join(', ');
     const hasVictim = characters.some((c: any) => c.is_victim);
     const hasKiller = characters.some((c: any) => c.plot_role === 'killer');
 
     const prompt = `
-      You are generating a new character for a murder mystery party game.
+      You are generating a new character role for a murder mystery party game.
       Theme: ${mystery?.theme || 'General Mystery'}
       
-      Existing Characters: ${existingNames || 'None yet'}
+      Existing Character Roles: ${existingTitles || 'None yet'}
       
       RULES:
-      1. Invent a unique name. CRITICAL: Analyze the 'Existing Characters' list. If the existing names are normal/modern (e.g. "Matt", "Gabby", "Luke"), generate a normal modern name (e.g. "Sarah", "David"). Match the tone perfectly! Do not reuse existing names.
-      2. Invent a highly thematic 'title' or occupation based on the theme. For example, if the theme is "Yacht", you might generate "Chief Stew", "Primary Guest", "Chef", "Cheeky Friend", etc.
-      3. Invent a 'prefix' that would appear before the guest's name if applicable (e.g. "Captain", "Doctor", "Mr.", "Mrs.", "Sir", "Lady", etc.). If none makes sense, leave it as an empty string.
+      1. NEVER invent a fake human first/last name. Characters are defined strictly by their iconic Role Title (e.g. "The Star", "The Sister", "The Ex", "The Producer", "The Chief Stew"). Real friend names are tagged later.
+      2. Invent a unique, highly thematic 'title' based on the theme (e.g. "The Star", "The Sister", "The Ex", "The Superfan"). Do not reuse existing roles.
+      3. Invent a 'prefix' that would appear before a guest's name if applicable (e.g. "Captain", "Doctor", "Detective"). If none makes sense, leave it as an empty string "".
       4. Assign a plot_role:
          - If there is no victim yet (${!hasVictim}), you MUST make them the 'victim'.
          - If there is a victim but no killer (${hasVictim && !hasKiller}), you MUST make them the 'killer'.
          - Otherwise, pick 'innocent' or 'assistant'.
       5. If they are the victim or killer, they MUST be mandatory (is_mandatory: true).
-      6. Assign a gender ('male', 'female', or 'adaptable'). If 'adaptable', MUST generate a unisex name (e.g., Alex, Riley) and a gender-neutral title.
+      6. Assign a gender ('male', 'female', or 'adaptable').
     `;
 
     const result = await model.generateContent(prompt);
@@ -163,7 +165,10 @@ export async function generateAICharacterAction(mysteryId: string) {
     const responseText = result.response.text();
     const parsed = JSON.parse(responseText);
 
-    return parsed;
+    return {
+      ...parsed,
+      name: parsed.title,
+    };
     
   } catch (error) {
     console.error('Action Error: generateAICharacterAction', error);
@@ -197,7 +202,7 @@ export async function generateRoleSuggestionsAction(mysteryId: string): Promise<
     });
 
     const existingTitles = characters
-      .map((c: any) => c.name.includes('|') ? c.name.split('|')[1] : null)
+      .map((c: any) => getCharacterRoleTitle(c))
       .filter(Boolean)
       .join(', ');
 
@@ -297,8 +302,7 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
       }
     });
 
-    const characterName = character.name.split('|')[0] || character.name;
-    const characterRole = character.name.includes('|') ? character.name.split('|')[1] : 'Guest';
+    const characterRole = getCharacterRoleTitle(character);
     const roleStatus = character.is_victim ? 'The Victim' : (character.plot_role === 'killer' ? 'The Killer' : 'A Guest');
     const genderInstructions = isAdaptable 
       ? "CRITICAL: This character is 'adaptable' (gender-neutral). You MUST use They/Them pronouns. Keep the bio completely gender-neutral. Provide TWO SETS of advice: one tailored for a male guest playing the role (presentation_male), and one for a female guest playing the role (presentation_female)."
@@ -308,11 +312,11 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
       You are an expert murder mystery party game designer writing a character dossier.
       
       Mystery Theme: ${mystery?.theme || 'General Mystery'}
-      Character Name: ${characterName}
       Character Role/Title: ${characterRole}
       Status: ${roleStatus}
       
       ${genderInstructions}
+      CRITICAL NAMING RULE: Do NOT invent any fake human first or last names! Address the player in second person ("You") or use the dynamic placeholder {{${characterRole}}}.
       
       Generate a rich, immersive profile for this character that will be printed in their personal packet. 
       The tone should match the Noir/Cinematic style of the platform: sharp, dramatic, and engaging.
@@ -347,96 +351,35 @@ export async function updateCharacterProfileAction(mysteryId: string, characterI
 
 export async function generateCharacterOutfitPhotoAction(mysteryId: string, characterId: string, outfitAdvice: string, characterTitle: string, theme: string) {
   try {
-    const prompt = `A cinematic, moody noir WIDE ANGLE FULL BODY SHOT of an approximately 28 year old ${characterTitle} wearing: ${outfitAdvice}. The character is standing. Their entire body, from the very top of their head down to their shoes, MUST be fully visible in the frame. Zoomed out perspective. The aesthetic is ${theme}. Professional lighting, 8k resolution, highly detailed character concept art.`;
-    
-    const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
     const supabase = await createClient();
 
-    // Check Cache
-    const { data: cached } = await supabase
-      .from('image_generation_cache')
-      .select('image_url')
-      .eq('prompt_hash', promptHash)
-      .single();
+    // Ensure the latest outfit_advice from the editor is persisted on the character before generating the Standard Character Photo
+    if (outfitAdvice && outfitAdvice.trim()) {
+      const { data: existingChar } = await supabase
+        .from('characters')
+        .select('profile_data')
+        .eq('id', characterId)
+        .maybeSingle();
 
-    if (cached?.image_url) {
-      return cached.image_url;
+      const updatedProfile = {
+        ...((existingChar?.profile_data as any) || {}),
+        outfit_advice: outfitAdvice.trim(),
+      };
+
+      await supabase
+        .from('characters')
+        .update({ profile_data: updatedProfile })
+        .eq('id', characterId);
     }
 
-    let response;
-    let isRateLimited = false;
-    let retries = 0;
-    while(retries < 3) {
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: { sampleCount: 1, aspectRatio: "9:16" }
-        })
-      });
-
-      if (response.status === 429 || response.status === 403) {
-        isRateLimited = true;
-        retries++;
-        await new Promise(r => setTimeout(r, 2000 * retries));
-        continue;
-      }
-      break;
-    }
-    
-    let base64Str = '';
-    if (response && response.ok) {
-      const data = await response.json();
-      base64Str = data.predictions?.[0]?.bytesBase64Encoded;
-      
-      // Log Imagen request cost
-      await logAiUsage({
-        model_name: 'imagen-4.0-generate-001',
-        feature_name: 'generate_character_photo',
-        mystery_id: mysteryId
-      });
+    const result = await generateStandardCharacterPhotoAction(mysteryId, characterId, true);
+    if (result.error || !result.imageUrl) {
+      throw new Error(result.error || 'Failed to generate standard character photo');
     }
 
-    let publicUrl = '';
-
-    if (base64Str) {
-      const fileName = `${mysteryId}/${characterId}_${Date.now()}.png`;
-      const imageBuffer = Buffer.from(base64Str, 'base64');
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('character-images')
-        .upload(fileName, imageBuffer, {
-          contentType: 'image/png',
-          upsert: true
-        });
-        
-      if (uploadError) {
-        throw new Error(`Failed to upload to Supabase: ${uploadError.message}`);
-      }
-      
-      const { data: urlData } = supabase.storage
-        .from('character-images')
-        .getPublicUrl(fileName);
-
-      publicUrl = urlData.publicUrl;
-
-      // Save to cache
-      await supabase.from('image_generation_cache').insert({
-        prompt_hash: promptHash,
-        image_url: publicUrl
-      });
-      console.log('Saved character photo to cache');
-
-    } else {
-      console.warn('Image generation failed or quota exceeded, using fallback placeholder');
-      publicUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(characterTitle)}&background=random&size=512`;
-    }
-    
-    return publicUrl;
-    
+    return result.imageUrl;
   } catch (err: any) {
-    console.error('Error generating photo', err);
+    console.error('Error generating standard character photo', err);
     throw new Error(err.message || 'Failed to generate photo');
   }
 }
@@ -457,6 +400,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
   }
 
   const profile = { ...((character.profile_data as any) || {}) } as any;
+  const previousGuestId = profile.guest_id;
 
   if (!guestId) {
     // UNASSIGN GUEST: remove all guest keys from character.profile_data
@@ -464,12 +408,17 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
     delete profile.guest_name;
     delete profile.name;
     delete profile.gender;
+    delete profile.accent;
     delete profile.eye_color;
     delete profile.height;
+    delete profile.build;
+    delete profile.ethnicity;
     delete profile.avatar_url;
     delete profile.traits;
     delete profile.guest_bio;
     delete profile.is_linked;
+    delete profile.standard_character_photo_url;
+    delete profile.standard_character_photo_hash;
   } else {
     // Helper to construct avatar URLs from config
     const avatarUrlHelper = (config: any) => {
@@ -481,6 +430,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
         hairColor: config.hairColor || '282828',
         skinColor: config.skinColor || 'ffe0bd',
         ...(config.facialHair ? { facialHair: config.facialHair } : {}),
+        ...(config.accent ? { accent: config.accent } : {}),
         backgroundColor: 'transparent',
       });
       return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
@@ -496,6 +446,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
         id: staticGuest.id,
         name: staticGuest.name,
         gender: staticGuest.gender,
+        accent: (staticGuest as any).accent || extractAccentFromAvatarUrl(staticGuest.avatar_url) || 'Australian',
         eye_color: staticGuest.eye_color,
         height: staticGuest.height,
         avatar_url: staticGuest.avatar_url,
@@ -516,6 +467,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
           id: manualGuest.id,
           name: manualGuest.name,
           gender: manualGuest.gender || 'adaptable',
+          accent: (manualGuest as any).accent || extractAccentFromAvatarUrl(manualGuest.avatar_url) || 'Australian',
           eye_color: manualGuest.eye_color || '',
           height: manualGuest.height || '',
           avatar_url: manualGuest.avatar_url || '',
@@ -532,6 +484,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
             id: dbMockGuest.id,
             name: dbMockGuest.name,
             gender: dbMockGuest.gender || 'adaptable',
+            accent: dbMockGuest.accent || extractAccentFromAvatarUrl(dbMockGuest.avatar_url) || 'Australian',
             eye_color: dbMockGuest.eye_color || '',
             height: dbMockGuest.height || '',
             avatar_url: dbMockGuest.avatar_url || '',
@@ -559,6 +512,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
                 id: profile.id,
                 name: profile.full_name || 'Gabriella Blyth',
                 gender: profile.pronouns?.toLowerCase().includes('she') ? 'female' : profile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
+                accent: profile.avatar_config?.accent || 'Australian',
                 eye_color: profile.avatar_config?.eyeColor || 'Hazel',
                 height: profile.avatar_config?.height || 'Average',
                 avatar_url: avatarUrlHelper(profile.avatar_config) || '',
@@ -599,6 +553,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
                 id: connection.guest_user_id,
                 name: linkedProfile?.full_name || 'Linked Guest',
                 gender: connection.profiles?.pronouns === 'he/him' ? 'male' : connection.profiles?.pronouns === 'she/her' ? 'female' : 'adaptable',
+                accent: connection.profiles?.avatar_config?.accent || 'Australian',
                 eye_color: '',
                 height: '',
                 avatar_url: avatarUrlHelper(connection.profiles?.avatar_config) || '',
@@ -630,12 +585,17 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
           delete siblingProfile.guest_name;
           delete siblingProfile.name;
           delete siblingProfile.gender;
+          delete siblingProfile.accent;
           delete siblingProfile.eye_color;
           delete siblingProfile.height;
+          delete siblingProfile.build;
+          delete siblingProfile.ethnicity;
           delete siblingProfile.avatar_url;
           delete siblingProfile.traits;
           delete siblingProfile.guest_bio;
           delete siblingProfile.is_linked;
+          delete siblingProfile.standard_character_photo_url;
+          delete siblingProfile.standard_character_photo_hash;
           await supabase
             .from('characters')
             .update({ profile_data: siblingProfile })
@@ -644,13 +604,22 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
       }
     }
 
+    if (previousGuestId !== guest.id) {
+      delete profile.standard_character_photo_url;
+      delete profile.standard_character_photo_hash;
+    }
+
     // Merge guest details into current character's profile_data
     profile.guest_id = guest.id;
     profile.guest_name = guest.name;
     profile.name = guest.name;
     profile.gender = guest.gender;
+    profile.accent = guest.accent || extractAccentFromAvatarUrl(guest.avatar_url) || 'Australian';
+    profile.age = guest.age || extractAgeFromAvatarUrl(guest.avatar_url) || 'young';
     profile.eye_color = guest.eye_color;
     profile.height = guest.height;
+    profile.build = guest.build || profile.build || '';
+    profile.ethnicity = guest.ethnicity || profile.ethnicity || '';
     profile.avatar_url = guest.avatar_url;
     profile.traits = guest.traits;
     profile.guest_bio = guest.bio;
@@ -715,6 +684,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
       hairColor: config.hairColor || '282828',
       skinColor: config.skinColor || 'ffe0bd',
       ...(config.facialHair ? { facialHair: config.facialHair } : {}),
+      ...(config.accent ? { accent: config.accent } : {}),
       backgroundColor: 'transparent',
     });
     return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
@@ -737,6 +707,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
       id: mg.id,
       name: mg.name,
       gender: mg.gender || 'adaptable',
+      accent: mg.accent || extractAccentFromAvatarUrl(mg.avatar_url) || 'Australian',
       eye_color: mg.eye_color || '',
       height: mg.height || '',
       avatar_url: mg.avatar_url || '',
@@ -748,6 +719,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
       id: c.guest_user_id,
       name: linkedGuestNames[c.guest_user_id] || 'Linked Guest',
       gender: c.profiles?.pronouns === 'he/him' ? 'male' : c.profiles?.pronouns === 'she/her' ? 'female' : 'adaptable',
+      accent: c.profiles?.avatar_config?.accent || 'Australian',
       eye_color: '',
       height: '',
       avatar_url: avatarUrlHelper(c.profiles?.avatar_config) || '',
@@ -762,6 +734,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
       id: hostProfile.id,
       name: hostProfile.full_name || 'Gabriella Blyth',
       gender: hostProfile.pronouns?.toLowerCase().includes('she') ? 'female' : hostProfile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
+      accent: hostProfile.avatar_config?.accent || 'Australian',
       eye_color: hostProfile.avatar_config?.eyeColor || 'Hazel',
       height: hostProfile.avatar_config?.height || 'Average',
       avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
@@ -791,6 +764,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
         id: rg.id,
         name: rg.name,
         gender: rg.gender || 'adaptable',
+        accent: rg.accent || extractAccentFromAvatarUrl(rg.avatar_url) || 'Australian',
         eye_color: rg.eye_color || '',
         height: rg.height || '',
         avatar_url: rg.avatar_url || '',
@@ -804,6 +778,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
           id: gvbProfile.id,
           name: gvbProfile.full_name || 'Gabriella Blyth',
           gender: gvbProfile.pronouns?.toLowerCase().includes('she') ? 'female' : 'male',
+          accent: gvbProfile.avatar_config?.accent || 'Australian',
           eye_color: gvbProfile.avatar_config?.eyeColor || 'Hazel',
           height: gvbProfile.avatar_config?.height || 'Average',
           avatar_url: avatarUrlHelper(gvbProfile.avatar_config) || '',
@@ -820,6 +795,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
         id: sg.id,
         name: sg.name,
         gender: sg.gender,
+        accent: sg.accent || extractAccentFromAvatarUrl(sg.avatar_url) || 'Australian',
         eye_color: sg.eye_color,
         height: sg.height,
         avatar_url: sg.avatar_url,
@@ -883,6 +859,8 @@ export async function autoAssignGuestsAction(mysteryId: string) {
         guest_name: guest.name,
         name: guest.name,
         gender: guest.gender,
+        accent: guest.accent || extractAccentFromAvatarUrl(guest.avatar_url) || 'Australian',
+        age: guest.age || extractAgeFromAvatarUrl(guest.avatar_url) || 'young',
         eye_color: guest.eye_color,
         height: guest.height,
         avatar_url: guest.avatar_url,
@@ -938,10 +916,11 @@ export async function expandCharacterBioAction(mysteryId: string, character: any
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const roleTitle = getCharacterRoleTitle(character);
 
     const prompt = `You are a master mystery writer. Expand the following character biography into a detailed, compelling 2-3 paragraph backstory. 
 Make it dramatic, juicy, and fit for a murder mystery party titled "${mysteryTitle}". 
-The character's name is ${character.name.split('|')[0]}.
+The character's role title is "${roleTitle}". Do NOT invent any fake human first or last names; address them in second person ("You") or use {{${roleTitle}}}.
 Here is their current short bio/background:
 "${currentBio || character.archetype || 'No background provided.'}"
 
@@ -949,6 +928,13 @@ Focus on adding rich flavor, deep secrets, and dramatic flair. Do not change any
 
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
+
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'expand_character_bio',
+      mystery_id: mysteryId,
+      usageMetadata: result.response.usageMetadata as any,
+    });
     
     return text;
   } catch (error) {

@@ -39,6 +39,7 @@ export async function addClueAction(mysteryId: string, formData: FormData) {
     });
 
     revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+    revalidatePath('/', 'layout');
     return { success: true, clueId: newClue.id };
   } catch (err: any) {
     require('fs').appendFileSync('actions_log.txt', new Date().toISOString() + ' ERROR in addClueAction: ' + err.message + '\n');
@@ -49,9 +50,11 @@ export async function addClueAction(mysteryId: string, formData: FormData) {
 export async function updateClueAction(mysteryId: string, id: string, updates: any) {
   await updateClue(id, updates);
   revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+  revalidatePath('/', 'layout');
 }
 
 export async function removeClueAction(mysteryId: string, id: string) {
   await deleteClue(id);
   revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+  revalidatePath('/', 'layout');
 }

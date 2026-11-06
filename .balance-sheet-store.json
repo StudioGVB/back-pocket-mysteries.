@@ -1,0 +1,29 @@
+{
+  "settings": {
+    "displayCurrency": "GBP",
+    "cardFeePercent": 1.5,
+    "cardFeeFixed": 0.2,
+    "cardFeePreset": "uk_stripe",
+    "salesTaxName": "VAT",
+    "salesTaxPercent": 20,
+    "salesTaxInclusive": true,
+    "incomeTaxName": "Corp / Income Tax",
+    "incomeTaxPercent": 19,
+    "updatedAt": "2026-11-04T20:54:39.638Z"
+  },
+  "customEntries": [
+    {
+      "type": "operating_expense",
+      "category": "hosting_infra",
+      "title": "Squarespace Domain",
+      "vendorOrCustomer": "Provider",
+      "amount": 12,
+      "currency": "GBP",
+      "date": "2026-11-04T00:00:00.000Z",
+      "status": "settled",
+      "isRecurring": true,
+      "billingCycle": "annual",
+      "id": "entry-1793825708277-7q2m"
+    }
+  ]
+}

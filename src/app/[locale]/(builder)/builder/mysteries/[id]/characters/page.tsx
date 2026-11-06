@@ -1,12 +1,15 @@
 // @ts-nocheck
 import React from 'react';
+import Link from 'next/link';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { AddCharacterQuickForm } from './_components/AddCharacterQuickForm';
 import { CharacterCard } from './_components/CharacterCard';
 import { CastingToolbar } from './_components/CastingToolbar';
 import { Locale } from '@/lib/i18n-config';
+import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 import { createClient } from '@/utils/supabase/server';
 import { getStaticMockGuests } from '@/utils/mock-guests';
+import { extractAccentFromAvatarUrl } from '@/utils/avatar';
 
 export default async function MysteryCharactersPage({
   params,
@@ -27,6 +30,7 @@ export default async function MysteryCharactersPage({
       hairColor: config.hairColor || '282828',
       skinColor: config.skinColor || 'ffe0bd',
       ...(config.facialHair ? { facialHair: config.facialHair } : {}),
+      ...(config.accent ? { accent: config.accent } : {}),
       backgroundColor: 'transparent',
     });
     return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
@@ -84,6 +88,7 @@ export default async function MysteryCharactersPage({
         id: mg.id,
         name: mg.name,
         gender: mg.gender || 'adaptable',
+        accent: mg.accent || extractAccentFromAvatarUrl(mg.avatar_url) || 'Australian',
         eye_color: mg.eye_color || '',
         height: mg.height || '',
         avatar_url: mg.avatar_url || '',
@@ -95,6 +100,7 @@ export default async function MysteryCharactersPage({
         id: c.guest_user_id,
         name: linkedGuestNames[c.guest_user_id] || 'Linked Guest',
         gender: c.profiles?.pronouns === 'he/him' ? 'male' : c.profiles?.pronouns === 'she/her' ? 'female' : 'adaptable',
+        accent: c.profiles?.avatar_config?.accent || 'Australian',
         eye_color: '',
         height: '',
         avatar_url: avatarUrlHelper(c.profiles?.avatar_config) || '',
@@ -109,6 +115,7 @@ export default async function MysteryCharactersPage({
         id: hostProfile.id,
         name: hostProfile.full_name || 'Gabriella Blyth',
         gender: hostProfile.pronouns?.toLowerCase().includes('she') ? 'female' : hostProfile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
+        accent: hostProfile.avatar_config?.accent || 'Australian',
         eye_color: hostProfile.avatar_config?.eyeColor || 'Hazel',
         height: hostProfile.avatar_config?.height || 'Average',
         avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
@@ -139,6 +146,7 @@ export default async function MysteryCharactersPage({
           id: rg.id,
           name: rg.name,
           gender: rg.gender || 'adaptable',
+          accent: rg.accent || extractAccentFromAvatarUrl(rg.avatar_url) || 'Australian',
           eye_color: rg.eye_color || '',
           height: rg.height || '',
           avatar_url: rg.avatar_url || '',
@@ -152,6 +160,7 @@ export default async function MysteryCharactersPage({
             id: gvbProfile.id,
             name: gvbProfile.full_name || 'Gabriella Blyth',
             gender: gvbProfile.pronouns?.toLowerCase().includes('she') ? 'female' : 'male',
+            accent: gvbProfile.avatar_config?.accent || 'Australian',
             eye_color: gvbProfile.avatar_config?.eyeColor || 'Hazel',
             height: gvbProfile.avatar_config?.height || 'Average',
             avatar_url: avatarUrlHelper(gvbProfile.avatar_config) || '',
@@ -166,6 +175,7 @@ export default async function MysteryCharactersPage({
           id: sg.id,
           name: sg.name,
           gender: sg.gender,
+          accent: sg.accent || extractAccentFromAvatarUrl(sg.avatar_url) || 'Australian',
           eye_color: sg.eye_color,
           height: sg.height,
           avatar_url: sg.avatar_url,
@@ -185,55 +195,6 @@ export default async function MysteryCharactersPage({
 
   if (!mystery) return null;
 
-  // 3. Smart check: If zero characters are casted, but we have unassigned guests, auto-cast on first render!
-  const unassignedCount = characters.filter(c => !c.profile_data?.guest_id).length;
-  const castCount = characters.length - unassignedCount;
-
-  if (castCount === 0 && unassignedCount > 0 && guests.length > 0) {
-    let availableGuests = [...guests];
-    for (const char of characters) {
-      const charGender = char.gender || 'adaptable';
-      let matchedIndex = -1;
-
-      if (charGender !== 'adaptable') {
-        matchedIndex = availableGuests.findIndex(g => g.gender === charGender);
-      }
-
-      if (matchedIndex === -1 && availableGuests.length > 0) {
-        matchedIndex = 0;
-      }
-
-      if (matchedIndex !== -1) {
-        const guest = availableGuests[matchedIndex];
-        availableGuests.splice(matchedIndex, 1);
-
-        const profile = {
-          ...(char.profile_data || {}),
-          guest_id: guest.id,
-          guest_name: guest.name,
-          name: guest.name,
-          gender: guest.gender,
-          eye_color: guest.eye_color,
-          height: guest.height,
-          avatar_url: guest.avatar_url,
-          traits: guest.traits,
-          bio: guest.bio,
-          is_linked: guest.isLinked
-        };
-
-        await supabase
-          .from('characters')
-          .update({ profile_data: profile })
-          .eq('id', char.id);
-      }
-    }
-
-    // Re-fetch characters to reflect the auto-assigned states instantly
-    const refreshedChars = await getCharactersByMysteryId(id);
-    characters.length = 0;
-    characters.push(...refreshedChars);
-  }
-
   // Group characters by importance and role
   const victim = characters.find(c => c.is_victim);
   const killer = characters.find(c => c.plot_role === 'killer' && !c.is_victim);
@@ -247,8 +208,10 @@ export default async function MysteryCharactersPage({
   const mandatoryCount = remainingMandatory.length + topCharacterIds.size;
   const optionalCount = remainingOptional.length;
 
-  const maxCharacters = mystery.complexity === 'easy' ? 10 : mystery.complexity === 'medium' ? 12 : mystery.complexity === 'hard' ? 16 : 10;
+  const pkgInfo = getPackageInfoForMaxPlayers(mystery.max_players);
+  const maxCharacters = pkgInfo.requiredCharacters;
   const isAtLimit = characters.length >= maxCharacters;
+  const missingCharacters = Math.max(0, maxCharacters - characters.length);
 
   const updatedUnassignedCount = characters.filter(c => !c.profile_data?.guest_id).length;
   const updatedCastCount = characters.length - updatedUnassignedCount;
@@ -261,9 +224,18 @@ export default async function MysteryCharactersPage({
           <div>
             <div className="flex flex-wrap items-center gap-4 mb-1">
               <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Stage Crew</h1>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <span className="text-[9px] font-black text-slate-900 uppercase tracking-widest bg-slate-200 px-3 py-1 rounded-md">
-                  {characters.length} / {maxCharacters} total
+                  {pkgInfo.label} ({pkgInfo.rangeLabel})
+                </span>
+                <span
+                  className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-md ${
+                    characters.length >= maxCharacters
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {characters.length} / {maxCharacters} required roles
                 </span>
                 <span className="text-[9px] font-black text-brand-pink uppercase tracking-widest bg-brand-pink/5 px-3 py-1 rounded-md">
                   {mandatoryCount} mandatory
@@ -273,9 +245,45 @@ export default async function MysteryCharactersPage({
                 </span>
               </div>
             </div>
-            <p className="text-slate-400 font-medium text-sm">Managing {characters.length} out of {maxCharacters} principal suspects and victims.</p>
+            <p className="text-slate-400 font-medium text-sm">
+              Managing {characters.length} out of {maxCharacters} required characters for this {pkgInfo.label}.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link
+              href={`/${locale}/mysteries/${id}/cast`}
+              className="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+            >
+              👥 Customer Spoiler-Free Cast View →
+            </Link>
+            <Link
+              href={`/${locale}/play/${id}`}
+              className="px-4 py-2.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+            >
+              🎮 Open Live Playroom →
+            </Link>
           </div>
         </div>
+
+        {missingCharacters > 0 && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black text-amber-900 uppercase tracking-wide">
+                ⚠️ {missingCharacters} More Character{missingCharacters === 1 ? '' : 's'} Needed to Publish ({characters.length}/{maxCharacters})
+              </p>
+              <p className="text-xs text-amber-700 font-medium mt-0.5">
+                Because this mystery is set to the <strong>{pkgInfo.label} ({pkgInfo.rangeLabel})</strong>, you must create all <strong>{maxCharacters} characters</strong> before it can be posted live.
+              </p>
+            </div>
+            <Link
+              href={`/${locale}/builder/mysteries/${id}`}
+              className="shrink-0 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black uppercase tracking-widest transition-all"
+            >
+              Change Package Tier →
+            </Link>
+          </div>
+        )}
 
         {/* Guest Casting Toolbar */}
         {guests.length > 0 && (
@@ -293,9 +301,11 @@ export default async function MysteryCharactersPage({
             <AddCharacterQuickForm mysteryId={id} />
           </div>
         ) : (
-          <div className="bg-red-50 p-6 rounded-[2rem] border border-red-100 text-center flex flex-col items-center justify-center">
-             <div className="text-red-400 font-black text-xl mb-1">CAST FULL</div>
-             <p className="text-red-500 font-bold text-xs uppercase tracking-widest">You've reached the maximum of {maxCharacters} cast members for this tier.</p>
+          <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-200 text-center flex flex-col items-center justify-center">
+             <div className="text-emerald-700 font-black text-xl mb-1">✓ PACKAGE ROSTER COMPLETE ({characters.length}/{maxCharacters})</div>
+             <p className="text-emerald-600 font-bold text-xs uppercase tracking-widest">
+               All {maxCharacters} characters for this {pkgInfo.label} ({pkgInfo.rangeLabel}) have been created. Ready to publish!
+             </p>
           </div>
         )}
       </div>

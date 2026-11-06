@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { Database } from '@/types/database';
+import { replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
 
 type Subplot = Database['public']['Tables']['subplots']['Row'];
 type SubplotBeat = Database['public']['Tables']['subplot_beats']['Row'];
@@ -34,10 +35,36 @@ export async function getSubplotsByMysteryId(mysteryId: string) {
     return subplots.map(s => ({ ...s, subplot_beats: [] }));
   }
 
-  return subplots.map(s => ({
-    ...s,
-    subplot_beats: beats?.filter(b => b.subplot_id === s.id) || []
-  }));
+  const normalizedBeats = (beats || []).map(b => {
+    const cleanDesc = replaceLegacyNamesWithRoleTokens(b.description);
+    if (cleanDesc !== b.description) {
+      supabase
+        .from('subplot_beats')
+        .update({ description: cleanDesc })
+        .eq('id', b.id)
+        .then(() => {}, () => {});
+      return { ...b, description: cleanDesc };
+    }
+    return b;
+  });
+
+  return subplots.map(s => {
+    const cleanTitle = replaceLegacyNamesWithRoleTokens(s.title);
+    const cleanDesc = s.description ? replaceLegacyNamesWithRoleTokens(s.description) : s.description;
+    if (cleanTitle !== s.title || cleanDesc !== s.description) {
+      supabase
+        .from('subplots')
+        .update({ title: cleanTitle, description: cleanDesc })
+        .eq('id', s.id)
+        .then(() => {}, () => {});
+    }
+    return {
+      ...s,
+      title: cleanTitle,
+      description: cleanDesc,
+      subplot_beats: normalizedBeats.filter(b => b.subplot_id === s.id) || []
+    };
+  });
 }
 
 /**

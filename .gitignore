@@ -40,3 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+.live-game-sessions.json
+.live-mystery-cache.json

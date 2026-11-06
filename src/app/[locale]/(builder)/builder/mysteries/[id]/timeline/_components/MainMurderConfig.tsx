@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Database } from '@/types/database';
+import { getCharacterRoleTitle, hydrateTextWithCharacters } from '@/utils/hydration';
 import { updateMysteryAction } from '@/app/[locale]/(builder)/builder/mysteries/actions';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
@@ -15,6 +16,9 @@ interface MainMurderConfigProps {
 export function MainMurderConfig({ mystery, characters }: MainMurderConfigProps) {
   const [isEditing, setIsEditing] = useState(false);
   const victim = characters.find(c => c.is_victim);
+  const victimDisplay = victim
+    ? getCharacterRoleTitle(victim)
+    : 'No victim assigned yet';
 
   return (
     <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm mb-12 relative overflow-hidden group">
@@ -33,7 +37,7 @@ export function MainMurderConfig({ mystery, characters }: MainMurderConfigProps)
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-1">
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Victim</span>
-                <p className="font-bold text-slate-900">{victim?.name || 'No victim assigned yet'}</p>
+                <p className="font-bold text-slate-900">{victimDisplay}</p>
               </div>
               <div className="space-y-1">
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Estimated Time of Death</span>
@@ -44,7 +48,7 @@ export function MainMurderConfig({ mystery, characters }: MainMurderConfigProps)
             <div className="space-y-2">
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">The "Truth" Summary</span>
               <p className="text-slate-600 font-medium leading-relaxed">
-                {mystery.description || "Provide the secret truth of the murder here. This won't be revealed to players until the end."}
+                {hydrateTextWithCharacters(mystery.description || "Provide the secret truth of the murder here. This won't be revealed to players until the end.", characters, 'role')}
               </p>
             </div>
 

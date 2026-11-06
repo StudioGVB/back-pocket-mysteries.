@@ -14,11 +14,11 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `Custom Murder Mystery | ${dict.common.siteTitle}`,
     description: dict.seoLanding.seoDescription,
     alternates: {
-      canonical: `https://mysteries.backpocketgames.com/${locale}/custom-murder-mystery`,
+      canonical: `https://backpocketmysteries.com/${locale}/custom-murder-mystery`,
       languages: {
-        en: 'https://mysteries.backpocketgames.com/en/custom-murder-mystery',
-        fr: 'https://mysteries.backpocketgames.com/fr/custom-murder-mystery',
-        'x-default': 'https://mysteries.backpocketgames.com/en/custom-murder-mystery',
+        en: 'https://backpocketmysteries.com/en/custom-murder-mystery',
+        fr: 'https://backpocketmysteries.com/fr/custom-murder-mystery',
+        'x-default': 'https://backpocketmysteries.com/en/custom-murder-mystery',
       }
     }
   }
@@ -44,9 +44,9 @@ export default async function CustomMurderMysteryPage(props: {
     "offers": {
       "@type": "AggregateOffer",
       "priceCurrency": "USD",
-      "lowPrice": "10.00",
-      "highPrice": "16.00",
-      "offerCount": "4"
+      "lowPrice": "19.00",
+      "highPrice": "29.00",
+      "offerCount": "3"
     }
   };
 

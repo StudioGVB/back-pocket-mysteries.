@@ -19,8 +19,16 @@ export async function signInAction(formData: FormData) {
   const cookieStore = await cookies()
   cookieStore.set('sb-keep-logged-in', isPermanent ? 'true' : 'false', {
     path: '/',
+    sameSite: 'lax',
     maxAge: isPermanent ? 60 * 60 * 24 * 30 : undefined,
   })
+
+  // Clean up any leftover empty-value sb-*-auth-token* chunk cookies from previous sessions
+  for (const c of cookieStore.getAll()) {
+    if (c.name.startsWith('sb-') && c.name.includes('-auth-token') && !c.value) {
+      cookieStore.set(c.name, '', { path: '/', sameSite: 'lax', maxAge: 0 })
+    }
+  }
 
   const supabase = await createClient(isPermanent)
   const locale = await getLocaleFromHeaders()
@@ -30,10 +38,18 @@ export async function signInAction(formData: FormData) {
     password: formData.get('password') as string,
   }
 
+  const nextPath = (formData.get('next') as string | null)?.trim() || ''
+
   const { data: authData, error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    return redirect(`/${locale}/login?error=` + encodeURIComponent(error.message))
+    const params = new URLSearchParams({
+      error: error.message,
+      email: data.email || '',
+      step: 'login',
+    })
+    if (nextPath) params.set('next', nextPath)
+    return redirect(`/${locale}/login?${params.toString()}`)
   }
 
   // Once logged in, check the user's role in the user_roles table
@@ -44,6 +60,10 @@ export async function signInAction(formData: FormData) {
     .single()
 
   revalidatePath('/', 'layout')
+
+  if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+    redirect(nextPath)
+  }
 
   const role = (userRole?.role as string || '').toLowerCase();
   const isAdminByRole = ['admin', 'superadmin', 'super_admin'].includes(role);

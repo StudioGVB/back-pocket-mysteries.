@@ -1,7 +1,7 @@
 import { Html, Head, Body, Container, Section, Text, Img, Heading, Hr, Link, Button } from '@react-email/components';
 import * as React from 'react';
 
-const baseUrl = 'https://mysteries.backpocketgames.com';
+const baseUrl = 'https://backpocketmysteries.com';
 
 export default function AccountConfirmationEmail() {
   return (

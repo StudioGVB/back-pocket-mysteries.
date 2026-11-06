@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 const HERO_IMAGES = [
-  { src: '/hero/01-vintage.png', label: 'Vintage 1920s' },
-  { src: '/hero/02-boat.png', label: 'Luxury Yacht' },
-  { src: '/hero/03-cabin.png', label: 'Cabin in the Woods' },
-  { src: '/hero/04-reality.png', label: 'Reality TV Set' },
-  { src: '/hero/05-masquerade.png', label: 'Masquerade Ball' },
+  { src: '/moodboard/lotr/main-promo-murder.jpg', label: 'Love On The Rocks' },
+  { src: '/moodboard/lotr/hero-cast.jpg', label: 'Reality TV Reunion' },
+  { src: '/moodboard/lotr/penthouse-vibe.jpg', label: 'Penthouse Watch Party' },
+  { src: '/moodboard/lotr/caught-on-camera.jpg', label: 'Leaked Receipts & DMs' },
+  { src: '/moodboard/lotr/cocktail-hour.jpg', label: 'Drinks & Drama' },
 ];
 
 interface HeroImageCarouselProps {

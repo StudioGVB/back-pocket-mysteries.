@@ -66,10 +66,10 @@ async function CluesStats({
 
   const subplots = mystery.subplots || [];
   const subplotBeatsCount = subplots.reduce((acc: number, sub: any) => acc + (sub.subplot_beats?.length || 0), 0);
-  const targetTotal = (beats.length * 2) + (subplotBeatsCount * 1);
+  const targetTotal = Math.max(clues.length, (beats.length * 2) + (subplotBeatsCount * 1));
   
-  const realClues = clues.filter(c => c.linked_plot_beat_id);
-  const fakeClues = clues.filter(c => c.linked_subplot_beat_id);
+  const realClues = clues.filter(c => c.evidence_status !== 'fake' && Boolean(c.linked_plot_beat_id) && c.implication_type !== 'red_herring');
+  const fakeClues = clues.filter(c => c.evidence_status === 'fake' || !c.linked_plot_beat_id || c.implication_type === 'red_herring');
 
   return (
     <div className="bg-white border border-slate-100 px-6 py-3 rounded-2xl flex items-center gap-6 shadow-sm">

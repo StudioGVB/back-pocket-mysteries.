@@ -1,6 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import {
+  getCharacterDisplayName,
+  getCharacterRoleTitle,
+  hydrateTextWithCharacters,
+} from '@/utils/hydration';
 import { generateNarrativePlotAction, generateBeatsFromNarrativeAction, savePlotBeatsBulkAction } from '../actions';
 
 interface PlotGeneratorModalProps {
@@ -80,25 +85,29 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
 
   const renderHighlightedNarrative = (text: string) => {
     if (!text) return null;
-    
-    // Extract first names
-    const names = allCharacters?.map(c => c.name.split('|')[0].trim()).filter(Boolean) || [];
-    if (names.length === 0) return <span className="whitespace-pre-wrap font-mono text-sm">{text}</span>;
+
+    const hydratedText = hydrateTextWithCharacters(text, allCharacters || [], 'role');
+    const names = Array.from(
+      new Set(allCharacters?.map(c => getCharacterRoleTitle(c)).filter(Boolean) || [])
+    );
+    if (names.length === 0) return <span className="whitespace-pre-wrap font-mono text-sm">{hydratedText}</span>;
 
     // Sort by length descending to match longest names first
     names.sort((a, b) => b.length - a.length);
     
     // Escape for regex
     const escapedNames = names.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const regex = new RegExp(`\\b(${escapedNames.join('|')})\\b`, 'gi');
+    const regex = new RegExp(`((?:${escapedNames.join('|')})(?:'s|’s)?)`, 'gi');
 
-    const parts = text.split(regex);
+    const parts = hydratedText.split(regex);
     
     return (
       <div className="whitespace-pre-wrap font-mono text-sm">
         {parts.map((part, i) => {
-          // Check if part is one of the names (case-insensitive)
-          const charMatch = allCharacters?.find(c => c.name.split('|')[0].trim().toLowerCase() === part.toLowerCase());
+          const basePart = part.replace(/(?:'s|’s)$/i, '');
+          const charMatch = allCharacters?.find(
+            c => getCharacterRoleTitle(c).toLowerCase() === basePart.toLowerCase()
+          );
           if (charMatch) {
             let colorClass = 'text-brand-blue';
             if (charMatch.is_victim || charMatch.plot_role === 'victim') colorClass = 'text-brand-pink';
@@ -154,18 +163,14 @@ export function PlotGeneratorModal({ mysteryId, currentCount, targetBeats, allCh
                     </span>
                   </div>
                   <p className="font-bold text-sm text-slate-900">
-                    {char.name?.split('|').filter(Boolean).join(' ')}
+                    {getCharacterRoleTitle(char)}
                   </p>
-                  
-                  {char.archetype && (
-                    <p className="text-xs text-slate-500 mt-1">{char.archetype}</p>
-                  )}
 
                   {char.motives && char.motives.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-slate-100">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Motive</p>
                       <p className="text-xs text-slate-600 leading-relaxed italic">
-                        "{char.motives[0].notes || char.motives[0].motive_type || 'No details provided.'}"
+                        "{hydrateTextWithCharacters(char.motives[0].notes || char.motives[0].motive_type || 'No details provided.', allCharacters || [], 'role')}"
                       </p>
                     </div>
                   )}

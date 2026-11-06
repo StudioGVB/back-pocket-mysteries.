@@ -26,26 +26,26 @@ export const metadata: Metadata = {
     default: "Custom Murder Mystery Games | Back Pocket Mysteries",
     template: "%s | Back Pocket Mysteries",
   },
-  description: "Host a custom murder mystery party built around your actual guest list. Personalised murder mystery packs ready to print in under 20 minutes. Perfect for birthdays and dinner parties.",
+  description: "Host a custom murder mystery party built around your actual guest list. Personalised murder mystery packs ready to print in ~30 minutes. Perfect for birthdays and dinner parties.",
   keywords: ["custom murder mystery", "murder mystery party", "personalised mystery", "printable games", "dinner party games", "murder mystery kit", "custom party game"],
   authors: [{ name: "Back Pocket Games" }],
   creator: "Back Pocket Games",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://mysteries.backpocketgames.com",
+    url: "https://backpocketmysteries.com",
     siteName: "Back Pocket Mysteries",
     title: "Custom Murder Mystery Games | Back Pocket Mysteries",
-    description: "Host a custom murder mystery party built around your actual guest list. Ready in 20 minutes.",
+    description: "Host a custom murder mystery party built around your actual guest list. Ready in ~30 minutes.",
     images: [{ url: "/og-image.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Custom Murder Mystery Games | Back Pocket Mysteries",
-    description: "Host a custom murder mystery party built around your actual guest list. Ready in 20 minutes.",
+    description: "Host a custom murder mystery party built around your actual guest list. Ready in ~30 minutes.",
     images: ["/og-image.png"],
   },
-  metadataBase: new URL("https://mysteries.backpocketgames.com"),
+  metadataBase: new URL("https://backpocketmysteries.com"),
 };
 
 export async function generateStaticParams() {
@@ -56,8 +56,8 @@ const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Back Pocket Mysteries",
-  "url": "https://mysteries.backpocketgames.com",
-  "logo": "https://mysteries.backpocketgames.com/logo-primary.png",
+  "url": "https://backpocketmysteries.com",
+  "logo": "https://backpocketmysteries.com/logo-primary.png",
   "sameAs": [
     "https://twitter.com/backpocketgames",
     "https://instagram.com/backpocketgames"
@@ -68,13 +68,16 @@ const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "Back Pocket Mysteries",
-  "url": "https://mysteries.backpocketgames.com",
+  "url": "https://backpocketmysteries.com",
   "potentialAction": {
     "@type": "SearchAction",
-    "target": "https://mysteries.backpocketgames.com/themes?q={search_term_string}",
+    "target": "https://backpocketmysteries.com/themes?q={search_term_string}",
     "query-input": "required name=search_term_string"
   }
 };
+
+import { Suspense } from "react";
+import AutoSignInListener from "./(auth)/login/AutoSignInListener";
 
 export default async function RootLayout(props: {
   children: React.ReactNode;
@@ -89,6 +92,9 @@ export default async function RootLayout(props: {
       className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <Suspense fallback={null}>
+          <AutoSignInListener locale={locale} />
+        </Suspense>
         {props.children}
         <script
           type="application/ld+json"

@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import Link from 'next/link';
 import { getAdminStats, getRecentTransactions, getTopMysteries } from './admin-data';
 import { getAnalyticsTimeseries } from '@/app/actions/admin-vercel';
 import { DashboardTrafficWidget } from '@/components/admin/DashboardTrafficWidget';
@@ -72,7 +73,8 @@ async function DashboardStats() {
 }
 
 async function DashboardTraffic() {
-  const timeseries = await getAnalyticsTimeseries(7);
+  const timeseriesRes = await getAnalyticsTimeseries(7);
+  const timeseries = Array.isArray(timeseriesRes) ? timeseriesRes : (timeseriesRes?.data || []);
   const isConnected = !!process.env.VERCEL_ACCESS_TOKEN;
   
   const totalVisitors = timeseries.reduce((acc: any, curr: any) => acc + (curr.visitors || 0), 0);
@@ -87,7 +89,14 @@ async function DashboardTransactions() {
     <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
       <div className="flex justify-between items-center mb-8">
         <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Recent Transactions</h3>
-        <button className="text-xs font-black text-brand-pink uppercase tracking-widest hover:underline">View All</button>
+        <div className="flex items-center gap-4">
+          <Link href="/admin/balance-sheet" className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline">
+            Balance Sheet
+          </Link>
+          <Link href="/admin/transactions" className="text-xs font-black text-brand-pink uppercase tracking-widest hover:underline">
+            View All
+          </Link>
+        </div>
       </div>
       <div className="space-y-6">
         {transactions.length > 0 ? (

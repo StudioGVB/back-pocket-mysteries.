@@ -4,6 +4,7 @@ import { getCharactersByMysteryId, getMysteryById, getPlotBeatsByMysteryId } fro
 import { getRelationshipsByMysteryId } from '@/services/relationships';
 import { MysteryStudioNav } from '@/components/builder/MysteryStudioNav';
 import { Locale } from '@/lib/i18n-config';
+import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 import Link from 'next/link';
 
 export const unstable_instant = false;
@@ -70,6 +71,7 @@ async function MysteryHeader({
 
   const characters = (mystery as any).characters || [];
   const plotBeats = (mystery as any).plot_beats || [];
+  const pkgInfo = getPackageInfoForMaxPlayers(mystery.max_players);
 
   // Calculate Progress
   let progress = 0;
@@ -77,7 +79,7 @@ async function MysteryHeader({
   if (mystery.title && mystery.title !== 'Untitled Mystery' && mystery.theme) {
     progress += 20;
   }
-  if (characters.length > 1 && characters.some((c: any) => c.is_victim)) {
+  if (characters.length >= pkgInfo.requiredCharacters && characters.some((c: any) => c.is_victim)) {
     progress += 20;
   }
   if (relationships.length > 0) {
@@ -97,12 +99,24 @@ async function MysteryHeader({
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">🕵️</div>
           <div>
-             <div className="flex items-center gap-3">
+             <div className="flex items-center gap-3 flex-wrap">
                <h1 className="text-xl font-black text-white uppercase tracking-tighter leading-none">
                  {mystery.title}
                </h1>
                <span className="px-2 py-0.5 bg-brand-pink/20 rounded-md text-[8px] font-black uppercase tracking-widest text-brand-pink border border-brand-pink/20">
                  {mystery.status}
+               </span>
+               <span className="px-2.5 py-0.5 bg-slate-800 rounded-md text-[9px] font-black uppercase tracking-widest text-slate-300 border border-slate-700">
+                 {pkgInfo.label} ({pkgInfo.rangeLabel})
+               </span>
+               <span
+                 className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
+                   characters.length >= pkgInfo.requiredCharacters
+                     ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                     : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                 }`}
+               >
+                 {characters.length}/{pkgInfo.requiredCharacters} Roles
                </span>
              </div>
              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Mystery Builder Studio</p>
