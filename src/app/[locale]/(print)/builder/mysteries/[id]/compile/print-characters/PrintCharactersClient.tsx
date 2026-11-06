@@ -142,7 +142,12 @@ export default function PrintCharactersClient({
                       : hydratedRawBio
                     : `${cleanName} is arriving at the reunion with secrets to hide.`;
                 
-                const photoUrl = getAiPhotoUrl(guest.avatar_url) || page.character.image_url;
+                const photoUrl =
+                  pres.outfit_image_url ||
+                  page.character.profile_data?.outfit_image_url ||
+                  page.character.profile_data?.standard_character_photo_url ||
+                  getAiPhotoUrl(guest.avatar_url || page.character.profile_data?.avatar_url) ||
+                  page.character.image_url;
                 
                 return (
                     <div 
@@ -188,7 +193,12 @@ export default function PrintCharactersClient({
          const rawBio = pres.bio || page.character.profile_data?.bio || guest.bio || `${cleanName} is arriving at the reunion with secrets to hide and motives to protect. Watch your back.`;
          const bio = hydrateTextWithCharacters(rawBio, allChars, 'print');
 
-         const photoUrl = getAiPhotoUrl(guest.avatar_url) || page.character.image_url;
+         const photoUrl =
+           pres.outfit_image_url ||
+           page.character.profile_data?.outfit_image_url ||
+           page.character.profile_data?.standard_character_photo_url ||
+           getAiPhotoUrl(guest.avatar_url || page.character.profile_data?.avatar_url) ||
+           page.character.image_url;
 
          const isActive = activeCharacterId === page.character.id;
 

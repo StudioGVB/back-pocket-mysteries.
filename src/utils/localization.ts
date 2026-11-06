@@ -31,9 +31,9 @@ export const PLAYER_TIER_LIMITS: Record<
   'basic' | 'premium' | 'grand',
   { min: number; max: number; label: string; bracketLabel: string }
 > = {
-  basic: { min: 4, max: 6, label: '4–6 Players', bracketLabel: '4–6 Players' },
-  premium: { min: 4, max: 10, label: '4–10 Players', bracketLabel: '7–10 Players' },
-  grand: { min: 4, max: 16, label: '4–16 Players', bracketLabel: '11–16 Players' },
+  basic: { min: 5, max: 6, label: '5–6 Suspects (1–6 Players)', bracketLabel: '5–6 Suspects' },
+  premium: { min: 5, max: 10, label: '5–10 Suspects (1–10 Players)', bracketLabel: '7–10 Suspects' },
+  grand: { min: 5, max: 16, label: '5–16 Suspects (1–16 Players)', bracketLabel: '11–16 Suspects' },
 }
 
 // Fixed regional pricing across supported currencies
@@ -89,10 +89,10 @@ export const STRIPE_PRICE_IDS: Record<PriceTierKey, Record<string, string>> = {
 }
 
 /**
- * Determines the package pricing tier strictly from the number of attending players:
- * - 4–6 players -> 'basic'
- * - 7–10 players (4–10 player tier) -> 'premium'
- * - 11–16+ players (4–16 player tier) -> 'grand'
+ * Determines the package pricing tier strictly from the number of active suspects in the cast:
+ * - 5–6 suspects -> 'basic'
+ * - 7–10 suspects (5–10 suspect tier) -> 'premium'
+ * - 11–16+ suspects (5–16 suspect tier) -> 'grand'
  */
 export function getTierForPlayerCount(playerCount?: number | null): 'basic' | 'premium' | 'grand' {
   const count = typeof playerCount === 'number' && !isNaN(playerCount) ? playerCount : 8
@@ -113,7 +113,7 @@ export function getPackageInfoForMaxPlayers(maxPlayers?: number | null): {
     return {
       tier: 'basic',
       label: 'Basic Package',
-      rangeLabel: '4–6 Players',
+      rangeLabel: '5–6 Suspects (1–6 Players)',
       requiredCharacters: 6,
       baseUsd: 19,
     }
@@ -122,7 +122,7 @@ export function getPackageInfoForMaxPlayers(maxPlayers?: number | null): {
     return {
       tier: 'premium',
       label: 'Premium Package',
-      rangeLabel: '4–10 Players',
+      rangeLabel: '5–10 Suspects (1–10 Players)',
       requiredCharacters: 10,
       baseUsd: 25,
     }
@@ -130,7 +130,7 @@ export function getPackageInfoForMaxPlayers(maxPlayers?: number | null): {
   return {
     tier: 'grand',
     label: 'Grand Package',
-    rangeLabel: '4–16 Players',
+    rangeLabel: '5–16 Suspects (1–16 Players)',
     requiredCharacters: 16,
     baseUsd: 33,
   }

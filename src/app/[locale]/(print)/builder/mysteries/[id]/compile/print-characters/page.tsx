@@ -40,7 +40,7 @@ export default async function PrintCharactersPage({
   const characterPages: any[] = [];
   
   characters.forEach((char: any) => {
-    const profile = char.profile_data as any || {};
+    const profile = (char.profile_data as any) || {};
     
     // Find assigned guest if any
     const guestId = profile.guest_id;
@@ -48,20 +48,24 @@ export default async function PrintCharactersPage({
     
     if (char.gender === 'adaptable') {
        if (guest) {
-           // If a guest is assigned, only push their specific presentation
+           // If a guest is assigned, only push their specific presentation merged with base profile
            const guestGender = guest.gender?.toLowerCase() || 'neutral';
            if (guestGender.includes('female') || guestGender.includes('she')) {
-               characterPages.push({ character: char, guest, gender: 'Female', presentation: profile.presentation_female || profile });
+               characterPages.push({ character: char, guest, gender: 'Female', presentation: { ...profile, ...(profile.presentation_female || {}) } });
            } else {
-               characterPages.push({ character: char, guest, gender: 'Male', presentation: profile.presentation_male || profile });
+               characterPages.push({ character: char, guest, gender: 'Male', presentation: { ...profile, ...(profile.presentation_male || {}) } });
            }
        } else {
-           // If no guest is assigned, push both so the host can choose which to print
-           if (profile.presentation_female) {
-               characterPages.push({ character: char, guest, gender: 'Female', presentation: profile.presentation_female });
-           }
-           if (profile.presentation_male) {
-               characterPages.push({ character: char, guest, gender: 'Male', presentation: profile.presentation_male });
+           // If no guest is assigned, push both if presentation_female/male exist, otherwise push base profile
+           if (profile.presentation_female || profile.presentation_male) {
+               if (profile.presentation_female) {
+                   characterPages.push({ character: char, guest, gender: 'Female', presentation: { ...profile, ...profile.presentation_female } });
+               }
+               if (profile.presentation_male) {
+                   characterPages.push({ character: char, guest, gender: 'Male', presentation: { ...profile, ...profile.presentation_male } });
+               }
+           } else {
+               characterPages.push({ character: char, guest, gender: 'Adaptable', presentation: profile });
            }
        }
     } else {

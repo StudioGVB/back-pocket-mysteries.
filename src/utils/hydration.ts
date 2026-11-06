@@ -681,8 +681,31 @@ export function tokenizeTextWithCharacterRoles(
   const charList = Array.isArray(characters) ? characters : [];
   if (charList.length === 0) return text;
 
+  // Build alias-to-roleTitle map so suffix tokens like {{Dane_Initial}} become {{The Ex_Initial}}
+  const aliasToRole = new Map<string, string>();
+  charList.forEach((char) => {
+    const roleTitle = getCharacterRoleTitle(char);
+    if (!roleTitle) return;
+    getCharacterCandidateKeys(char).forEach((k) => {
+      aliasToRole.set(k.toLowerCase(), roleTitle);
+    });
+  });
+
+  // Protect suffix tokens (e.g. {{The Ex_Initial}}, {{Dane_Initial}}, {{Gabby_his}}) before hydration
+  const savedSuffixTokens: string[] = [];
+  const protectedText = text.replace(
+    /\{\{\s*([^}]+?)(?:_|\s+)(Initial|he|him|his|hes)\s*\}\}/gi,
+    (_, rawBase, suffix) => {
+      const cleanBase = String(rawBase).trim();
+      const canonicalRole = aliasToRole.get(cleanBase.toLowerCase()) || cleanBase;
+      const idx = savedSuffixTokens.length;
+      savedSuffixTokens.push(`{{${canonicalRole}_${suffix}}}`);
+      return `___SUFFIX_TOKEN_${idx}___`;
+    }
+  );
+
   // 1. Normalize all tokens, legacy names, and guest names into unwrapped canonical Role Titles
-  let normalized = hydrateTextWithCharacters(text, charList, 'role');
+  let normalized = hydrateTextWithCharacters(protectedText, charList, 'role');
 
   // 2. Wrap canonical Role Titles into {{Role Title}} tokens (longest role titles first)
   const roleMap = new Map<string, string>();
@@ -701,6 +724,12 @@ export function tokenizeTextWithCharacterRoles(
       return `{{${canonical}}}`;
     });
   }
+
+  // 3. Restore protected suffix tokens
+  normalized = normalized.replace(/___SUFFIX_TOKEN_(\d+)___/g, (_, idxStr) => {
+    const idx = Number(idxStr);
+    return savedSuffixTokens[idx] || '';
+  });
 
   return normalized;
 }

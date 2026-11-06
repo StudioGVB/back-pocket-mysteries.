@@ -153,9 +153,14 @@ export default function CustomerCastClient({
     characters.length,
     mystery.max_players || characters.length
   );
-  const minRoles = Math.min(mystery.min_players || 4, maxRoles);
+  // Minimum 5 characters must always be in the mystery so backstories & alibis tangle properly
+  const minRoles = Math.min(Math.max(5, mystery.min_players || 5), maxRoles);
 
-  // 1. Attending Guests (In or Out — no 50/50)
+  // Play Mode: 'party' (5+ guests playing 1 character each, zero extra side characters)
+  // vs 'casefile' (1–4 players solving all selected suspect dossiers together like a detective box)
+  const [playMode, setPlayMode] = useState<'party' | 'casefile'>('party');
+
+  // 1. Attending Guests / Selected Profiles (In or Out — minimum 5 characters for the story)
   const [attendingGuestIds, setAttendingGuestIds] = useState<string[]>(() => {
     // Check if characters already have assigned guests
     const preAssignedIds = characters
@@ -165,7 +170,7 @@ export default function CustomerCastClient({
     if (preAssignedIds.length >= minRoles) {
       return Array.from(new Set(preAssignedIds)).slice(0, maxRoles);
     }
-    return initialGuests.slice(0, Math.min(initialGuests.length, maxRoles)).map(g => g.id);
+    return initialGuests.slice(0, Math.min(initialGuests.length, Math.max(minRoles, 6), maxRoles)).map(g => g.id);
   });
 
   // Identify Victim character vs all other characters
@@ -619,31 +624,137 @@ export default function CustomerCastClient({
             </div>
           </div>
 
+      {/* PLAY FORMAT SELECTOR: PARTY ROLEPLAY VS CASE-FILE DETECTIVE MODE */}
+      <section className="bg-slate-900 text-white rounded-[2.5rem] p-6 sm:p-8 shadow-xl border border-slate-800 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
+              How Are You Solving Tonight?
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+              Two Ways to Play Every Mystery Package
+            </h2>
+          </div>
+          <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-white/10 shrink-0">
+            ✓ Min {minRoles} Suspects Required in Story Web
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => setPlayMode('party')}
+            className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer ${
+              playMode === 'party'
+                ? 'border-brand-pink bg-brand-pink/15 shadow-lg'
+                : 'border-white/10 bg-white/5 hover:border-white/25'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+                <span>🎭</span> Full-Cast Party Mode ({minRoles}–{maxRoles} Guests)
+              </span>
+              {playMode === 'party' && (
+                <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
+                  Selected
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-300 font-medium leading-relaxed">
+              <strong>1 Character Per Guest — Zero Random Side Characters.</strong> Select the exact friends attending your party ({minRoles} to {maxRoles} people). We only include the exact number of characters you select so nobody is left unplayed.
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPlayMode('casefile');
+              if (attendingGuestIds.length < minRoles && guests.length >= minRoles) {
+                const autoIds = guests.slice(0, Math.min(guests.length, Math.max(minRoles, 6))).map(g => g.id);
+                setAttendingGuestIds(autoIds);
+                reconcileAssignments(guests.filter(g => autoIds.includes(g.id)));
+              }
+            }}
+            className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer ${
+              playMode === 'casefile'
+                ? 'border-brand-pink bg-brand-pink/15 shadow-lg'
+                : 'border-white/10 bg-white/5 hover:border-white/25'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+                <span>📁</span> Case-File Detective Mode (1–4 Players / Solo / Duo)
+              </span>
+              {playMode === 'casefile' && (
+                <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
+                  Selected
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-300 font-medium leading-relaxed">
+              <strong>Solve It Together Like a Cold-Case Box — No Acting Needed!</strong> Playing solo, as a couple, or with 3–4 friends? Simply select {minRoles}–{maxRoles} profiles below to populate the story&apos;s suspect web, then inspect all character dossiers, texts &amp; audio clues together to catch the killer.
+            </p>
+          </button>
+        </div>
+      </section>
+
       {/* STEP 1: GUEST ATTENDANCE (IN OR OUT) */}
       <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
             <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
-              Step 1 • In or Out
+              Step 1 • {playMode === 'casefile' ? 'Populate Your Suspect File' : 'In or Out (1 Character Per Guest)'}
             </span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-              Who&apos;s Playing Tonight? ({attendingGuestIds.length} / {maxRoles} Selected)
+              {playMode === 'casefile'
+                ? `Select ${minRoles}–${maxRoles} Profiles for the Story Web (${attendingGuestIds.length} / ${maxRoles} Selected)`
+                : `Who's Playing Tonight? (${attendingGuestIds.length} / ${maxRoles} Selected — Min ${minRoles})`}
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Tap guests to mark them <strong>In</strong> or <strong>Out</strong>. We&apos;ll automatically match the exact number of characters behind the scenes.
+              {playMode === 'casefile' ? (
+                <>
+                  Every mystery requires at least <strong>{minRoles} suspects</strong> so the alibis, backstories, and motives tangle properly. Pick {minRoles}–{maxRoles} friends/profiles below to star in your case file — you&apos;ll receive all of their booklets and clues to solve solo or with a friend!
+                </>
+              ) : (
+                <>
+                  Tap guests to mark them <strong>In</strong> or <strong>Out</strong> (minimum <strong>{minRoles}</strong> so the backstories and alibis interlock). We generate <strong>strictly {attendingGuestIds.length} characters</strong> — zero unplayed side characters!
+                </>
+              )}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {attendingGuestIds.length < minRoles && guests.length >= minRoles && (
+              <button
+                type="button"
+                onClick={() => {
+                  const targetCount = Math.min(guests.length, Math.max(minRoles, 6), maxRoles);
+                  const nextIds = guests.slice(0, targetCount).map(g => g.id);
+                  setAttendingGuestIds(nextIds);
+                  reconcileAssignments(guests.filter(g => nextIds.includes(g.id)));
+                }}
+                className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-brand-pink transition-colors cursor-pointer"
+              >
+                ⚡ Auto-Select {Math.min(guests.length, Math.max(minRoles, 6))} Suspects
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setIsGuestModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl border-2 border-dashed border-brand-pink/40 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink/5 transition-colors"
+              className="px-4 py-2.5 rounded-xl border-2 border-dashed border-brand-pink/40 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink/5 transition-colors cursor-pointer"
             >
               + Add Guest
             </button>
           </div>
         </div>
+
+        {attendingGuestIds.length < minRoles && (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <p className="text-xs font-bold text-amber-800">
+              ⚠️ Please select at least <strong>{minRoles} profiles</strong> ({minRoles - attendingGuestIds.length} more needed) so the murder mystery has enough interlocking suspects, alibis, and red herrings. Playing solo or in a duo? Switch to <strong>Case-File Mode</strong> above and keep {minRoles}+ suspects selected!
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
           {guests.map(guest => {
@@ -827,9 +938,14 @@ export default function CustomerCastClient({
           </button>
         </div>
 
-        {activeSuspectCharacters.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 font-bold text-sm border-2 border-dashed border-slate-100 rounded-3xl">
-            Select at least 2 guests in Step 1 to populate your suspect lineup!
+        {activeSuspectCharacters.length < minRoles - 1 ? (
+          <div className="p-12 text-center text-slate-500 font-bold text-sm border-2 border-dashed border-slate-200 rounded-3xl space-y-2">
+            <p className="text-slate-900 font-black text-base">
+              Select at least {minRoles} profiles in Step 1 to build your suspect lineup!
+            </p>
+            <p className="text-xs font-medium text-slate-500 max-w-lg mx-auto">
+              Every mystery needs at least {minRoles} characters (1 Victim + {minRoles - 1} Suspects) so their alibis, motives, and backstories tangle together. Playing solo or in a duo? Use <strong>Case-File Detective Mode</strong> and select {minRoles}+ profiles to inspect all of their files!
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -962,7 +1078,7 @@ export default function CustomerCastClient({
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto shrink-0">
             <button
               type="button"
-              disabled={isSaving || attendingGuests.length < 2}
+              disabled={isSaving || attendingGuests.length < minRoles}
               onClick={handleLockCast}
               className="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all shadow-xl active:scale-95 disabled:opacity-50 cursor-pointer"
               style={{

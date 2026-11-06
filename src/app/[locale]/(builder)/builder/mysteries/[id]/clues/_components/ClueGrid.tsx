@@ -7,7 +7,7 @@ import { addClueAction, updateClueAction } from '../actions';
 import { ClueCard } from './ClueCard';
 import { generateClueImageAction, generateClueDescriptionAction } from '@/app/actions/generator';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
-import { hydrateTextWithCharacters } from '@/utils/hydration';
+import { hydrateTextWithCharacters, tokenizeTextWithCharacterRoles } from '@/utils/hydration';
 import { CLUE_FORMAT_OPTIONS, inferClueFormat, stripCustomerFacingTitle } from '@/utils/clue-format';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
@@ -70,13 +70,13 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
   const resolveBeatTitleForClue = (clue: Clue): string => {
     if (clue.linked_plot_beat_id) {
       const beat = beats.find((b) => b.id === clue.linked_plot_beat_id);
-      if (beat) return hydrateTextWithCharacters(beat.event_title, characters, 'print');
+      if (beat) return tokenizeTextWithCharacterRoles(beat.event_title, characters);
     }
     if (clue.linked_subplot_beat_id) {
       const sBeat = subplots
         ?.flatMap((s) => s.subplot_beats || [])
         .find((b: any) => b.id === clue.linked_subplot_beat_id);
-      if (sBeat) return hydrateTextWithCharacters(sBeat.description, characters, 'print');
+      if (sBeat) return tokenizeTextWithCharacterRoles(sBeat.description, characters);
     }
     return mystery.title || 'A Mysterious Event';
   };
@@ -91,19 +91,21 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
     const rawPrompt =
       clue.generation_prompt?.trim() ||
       (clue.description ? `${clue.title}: ${clue.description}` : clue.title);
-    const hydratedPrompt = hydrateTextWithCharacters(rawPrompt, characters, 'ai');
+    const tokenizedPrompt = tokenizeTextWithCharacterRoles(rawPrompt, characters);
+    const tokenizedTitle = tokenizeTextWithCharacterRoles(clue.title, characters);
 
     if (fmt === 'cctv' || fmt === 'physical_prop') {
       setCurrentlyGeneratingLabel('📸 Generating AI Photo...');
 
       let activeDescription = clue.description || '';
       if (!activeDescription.trim()) {
-        const generatedDesc = await generateClueDescriptionAction(
-          clue.title,
+        const rawGeneratedDesc = await generateClueDescriptionAction(
+          tokenizedTitle,
           beatTitle,
-          hydratedPrompt,
+          tokenizedPrompt,
           fmt
         );
+        const generatedDesc = tokenizeTextWithCharacterRoles(rawGeneratedDesc, characters);
         activeDescription = generatedDesc;
         await updateClueAction(mysteryId, clue.id, {
           description: generatedDesc,
@@ -137,12 +139,13 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
 
       let transcript = clue.description || '';
       if (!transcript.trim()) {
-        transcript = await generateClueDescriptionAction(
-          clue.title,
+        const rawTranscript = await generateClueDescriptionAction(
+          tokenizedTitle,
           beatTitle,
-          hydratedPrompt,
+          tokenizedPrompt,
           'audio'
         );
+        transcript = tokenizeTextWithCharacterRoles(rawTranscript, characters);
         await updateClueAction(mysteryId, clue.id, {
           description: transcript,
           format: 'audio',
@@ -172,12 +175,13 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
 
     // Text-driven digital containers ('chat', 'receipt', 'document', etc.)
     setCurrentlyGeneratingLabel('✨ Writing Clue Content...');
-    const newDescription = await generateClueDescriptionAction(
-      clue.title,
+    const rawNewDescription = await generateClueDescriptionAction(
+      tokenizedTitle,
       beatTitle,
-      hydratedPrompt,
+      tokenizedPrompt,
       fmt
     );
+    const newDescription = tokenizeTextWithCharacterRoles(rawNewDescription, characters);
     await updateClueAction(mysteryId, clue.id, {
       description: newDescription,
       format: fmt,
@@ -310,7 +314,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
     beats.forEach(beat => {
       const linkedCluesCount = clues.filter(c => c.linked_plot_beat_id === beat.id).length;
       const required = 2;
-      const hydratedBeatTitle = hydrateTextWithCharacters(beat.event_title, characters, 'print');
+      const hydratedBeatTitle = hydrateTextWithCharacters(beat.event_title, characters, 'role');
       for (let i = linkedCluesCount; i < required; i++) {
         placeholders.push({
           type: 'main',
@@ -337,7 +341,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
           const hydratedSubTitle = hydrateTextWithCharacters(
             `${subplot.title} - ${sBeat.description}`,
             characters,
-            'print'
+            'role'
           );
           for (let i = linkedCluesCount; i < required; i++) {
             placeholders.push({
@@ -597,7 +601,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
                               hydrateTextWithCharacters(
                                 clue.title || 'Evidence',
                                 characters,
-                                'print'
+                                'role'
                               )
                             ) || 'Evidence';
 

@@ -118,7 +118,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                           Active Package
                         </span>
                         <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest border border-white/15">
-                          4–12 Players
+                          5–12 Suspects (1–12 Players)
                         </span>
                       </div>
                       <div className="absolute bottom-4 left-6 right-6">
@@ -218,8 +218,49 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
           ))}
         </div>
 
+        {/* Two Ways To Play: Theatrical Party vs Detective Case File */}
+        <div className="mt-28 lg:mt-36 p-8 sm:p-12 lg:p-16 bg-brand-dark text-white rounded-[2rem] lg:rounded-[3rem] shadow-2xl border-2 border-brand-pink/30">
+          <div className="max-w-3xl mb-10">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest mb-4">
+              Flexible Format • 1 to 16 People
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.05] mb-4">
+              Host a Full-Cast Party — Or Solve It <span className="text-brand-pink italic">Like a Detective Case File</span>
+            </h2>
+            <p className="text-gray-300 font-medium text-base sm:text-lg leading-relaxed">
+              Every mystery story requires at least <strong>5 characters</strong> so the alibis, motives, and backstories tangle properly — but the player count in the room is purely for theatrics! You don&apos;t need to act out a character to get information.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-3">
+              <span className="text-xs font-black uppercase tracking-widest text-brand-pink block">
+                🎭 Option 1 • Theatrical Party Mode (5–16 Guests)
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight text-white">
+                1 Role Per Guest — Zero Random Side Characters
+              </h3>
+              <p className="text-sm text-gray-300 font-medium leading-relaxed">
+                Having friends over for a dinner party, birthday, or hen night? Select the exact number of guests attending (minimum 5). Every guest plays 1 suspect, and we never include unplayed side characters that nobody in the room is playing.
+              </p>
+            </div>
+
+            <div className="bg-brand-pink/10 border border-brand-pink/30 rounded-3xl p-8 space-y-3">
+              <span className="text-xs font-black uppercase tracking-widest text-brand-pink block">
+                📁 Option 2 • Detective Case-File Mode (Solo, Couple or 3–4 Friends)
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight text-white">
+                Solve the Whole Package Together Over Wine
+              </h3>
+              <p className="text-sm text-gray-300 font-medium leading-relaxed">
+                Want to solve the mystery by yourself or on a date night? Simply select 5–9 characters for the story (cast your friends just for the hilarious personalized DMs!) and inspect all of their suspect booklets, group chats, and audio wiretaps together to deduce who did it.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* What's In The Pack */}
-        <div className="mt-32 lg:mt-48 py-12 sm:py-20 px-8 sm:px-12 lg:px-24 bg-brand-gray rounded-[2rem] lg:rounded-[3rem] border-2 border-gray-100">
+        <div className="mt-24 lg:mt-36 py-12 sm:py-20 px-8 sm:px-12 lg:px-24 bg-brand-gray rounded-[2rem] lg:rounded-[3rem] border-2 border-gray-100">
           <div className="text-center mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark mb-4 uppercase tracking-tight">
               {dict.howItWorks.packContents.title.split(',').map((part, i) => (

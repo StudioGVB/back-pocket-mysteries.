@@ -78,35 +78,35 @@ export default function PricingCalculator({
     <div className="max-w-6xl mx-auto mb-20">
       <div className="text-center mb-16">
         <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-4 uppercase tracking-tight">
-          Priced By <span className="text-brand-pink italic">Group Size</span>
+          Priced By <span className="text-brand-pink italic">Suspect Cast Size</span>
         </h2>
-        <p className="text-gray-400 font-bold text-lg">
-          Every complexity and spice level is included — you only pay for your player bracket.
+        <p className="text-gray-500 font-bold text-lg max-w-3xl mx-auto">
+          Every mystery requires at least <strong>5 suspects</strong> so the backstories and alibis tangle. Play as a <strong>5–16 guest roleplay party</strong> (1 role per guest, zero unplayed side characters) — OR solve the full suspect web <strong>solo or as a duo</strong> like a detective case file!
         </p>
       </div>
 
       <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
         {/* Left Column: Inputs */}
         <div className="lg:col-span-3 space-y-12">
-          {/* Step 1: Guest Count Slider */}
+          {/* Step 1: Guest / Suspect Count Slider */}
           <div>
             <div className="flex justify-between items-end mb-4">
               <h3 className="text-xl font-black uppercase tracking-widest text-brand-dark">
-                1. How Many Players Are Coming?
+                1. How Many Suspects In The Story?
               </h3>
               <div className="text-sm font-bold text-brand-pink bg-brand-pink/10 px-3.5 py-1 rounded-full uppercase tracking-wider">
                 {selectedTierId === 'basic'
-                  ? 'Basic (4–6 Players)'
+                  ? 'Basic (5–6 Suspects)'
                   : selectedTierId === 'premium'
-                  ? 'Premium (4–10 Players)'
-                  : 'Grand (4–16 Players)'}
+                  ? 'Premium (5–10 Suspects)'
+                  : 'Grand (5–16 Suspects)'}
               </div>
             </div>
 
             <div className="bg-white p-8 rounded-3xl border-2 border-gray-100 shadow-sm">
               <div className="flex items-center gap-6">
                 <button
-                  onClick={() => setGuests(Math.max(4, guests - 1))}
+                  onClick={() => setGuests(Math.max(5, guests - 1))}
                   className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-brand-dark hover:bg-gray-200 hover:text-brand-pink transition-colors font-black text-xl cursor-pointer"
                 >
                   -
@@ -117,7 +117,7 @@ export default function PricingCalculator({
                     {guests}
                   </div>
                   <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
-                    ✓ {activeTier.name} Package — All {guests} Players Included
+                    ✓ {activeTier.name} Package — {guests} Suspect Dossiers (For {guests} Party Guests OR 1–4 Case-File Sleuths)
                   </div>
                 </div>
 
@@ -131,14 +131,14 @@ export default function PricingCalculator({
 
               <input
                 type="range"
-                min={4}
+                min={5}
                 max={16}
                 value={guests}
                 onChange={(e) => setGuests(parseInt(e.target.value, 10))}
                 className="w-full mt-8 accent-brand-pink h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
               <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400 mt-3">
-                <span>4–6 Basic</span>
+                <span>5–6 Basic</span>
                 <span>7–10 Premium</span>
                 <span>11–16 Grand</span>
               </div>
@@ -148,13 +148,13 @@ export default function PricingCalculator({
           {/* Step 2: Package Brackets */}
           <div>
             <h3 className="text-xl font-black uppercase tracking-widest text-brand-dark mb-4">
-              2. Your Player Count Bracket
+              2. Your Suspect Cast Bracket
             </h3>
             <div className="grid sm:grid-cols-3 gap-4">
               {[
-                { id: 'basic' as const, name: 'Basic', players: '4–6 Players', tier: basicTier },
-                { id: 'premium' as const, name: 'Premium', players: '4–10 Players', tier: premiumTier },
-                { id: 'grand' as const, name: 'Grand', players: '4–16 Players', tier: grandTier },
+                { id: 'basic' as const, name: 'Basic', players: '5–6 Suspects (1–6 Players)', tier: basicTier },
+                { id: 'premium' as const, name: 'Premium', players: '5–10 Suspects (1–10 Players)', tier: premiumTier },
+                { id: 'grand' as const, name: 'Grand', players: '5–16 Suspects (1–16 Players)', tier: grandTier },
               ].map((opt) => {
                 const optBase = getRegionalPrice(opt.id, effectiveCurrency)
                 const optDisc = mounted
@@ -205,14 +205,24 @@ export default function PricingCalculator({
               })}
             </div>
 
-            {/* Package Difference Callout */}
-            <div className="mt-6 p-6 rounded-3xl bg-slate-50 border border-slate-200/80">
-              <p className="text-xs font-black uppercase tracking-widest text-brand-dark mb-2">
-                💡 What&apos;s the difference between Basic, Premium &amp; Grand?
-              </p>
-              <p className="text-xs font-semibold text-gray-600 leading-relaxed">
-                <strong>Every single-event package includes 100% of our features</strong> — AI guest personalization, custom text/audio clues, Kahoot-style live mobile lobby, Spoiler-Free Host Mode, and any complexity or spice level. Your package bracket simply scales the <strong>number of custom character booklets (4–6, 4–10, or 4–16 suspects)</strong> and expands the <strong>interlocking web of relationships, motives, and red-herring subplots</strong> generated so every guest in the room is woven into the crime.
-              </p>
+            {/* Package Difference & 2 Ways to Play Callout */}
+            <div className="mt-6 grid sm:grid-cols-2 gap-4">
+              <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/80">
+                <p className="text-xs font-black uppercase tracking-widest text-brand-dark mb-2">
+                  🎭 Hosting a Party (5–16 Guests)?
+                </p>
+                <p className="text-xs font-semibold text-gray-600 leading-relaxed">
+                  Select the exact number of friends coming to your party (minimum 5 so the alibis and backstories tangle). <strong>Every guest gets 1 custom character, and there are zero random side characters</strong> that nobody in the room is playing.
+                </p>
+              </div>
+              <div className="p-6 rounded-3xl bg-brand-pink/5 border border-brand-pink/20">
+                <p className="text-xs font-black uppercase tracking-widest text-brand-pink mb-2">
+                  📁 Solving Solo or as a Duo (1–4 Players)?
+                </p>
+                <p className="text-xs font-semibold text-gray-600 leading-relaxed">
+                  <strong>No acting required!</strong> The player count is purely for theatrics. Pick 5–6+ characters for the story (cast your friends just for the hilarious DMs!), and you&apos;ll receive all character dossiers, group chats, and audio wiretaps to solve together like a cold-case file.
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -46,18 +46,28 @@ export const faqsData: FAQ[] = [
   },
   {
     category: "What We Do",
+    q: "Can I solve a mystery solo, as a couple, or with just 2–3 friends (like a detective case file)?",
+    a: "Yes! The player count is purely for party theatrics — you do NOT need to act out a character to get information. Every mystery requires at least 5 characters in the story so the alibis, motives, and backstories tangle properly. If you are playing solo, as a duo, or with a small group, simply select 5–8 characters in Case-File Mode (you can cast your friends just for the hilarious personalized DMs!) and you will receive all of their suspect booklets, text threads, and audio wiretaps to solve the entire mystery together."
+  },
+  {
+    category: "What We Do",
+    q: "If I host a party with guests, will there be random side characters that nobody is playing?",
+    a: "Never! In Party Mode (5–16 guests), we generate strictly the exact number of characters to match your attending guest list (1 character per guest, minimum 5). If 7 friends are coming to your dinner party, there are 7 characters in the mystery — zero unplayed side characters."
+  },
+  {
+    category: "What We Do",
     q: "Do I need acting experience to play?",
-    a: "Not at all. Your character booklet gives you clear round-by-round talking points, juicy secrets to hide, and questions to ask. You can lean into the roleplay as much or as little as you want."
+    a: "Not at all. In Party Mode, your character booklet gives you clear round-by-round talking points, juicy secrets to hide, and questions to ask. Or, if your group prefers zero acting, you can solve all the character files and clues together in Detective Case-File Mode!"
   },
   {
     category: "What We Do",
     q: "Are these escape rooms?",
-    a: "No. While there is forensic evidence, leaked messages, and timelines to piece together, this is a social deduction party game focused on conversation, accusations, and character interaction rather than physical padlocks."
+    a: "No. While there is forensic evidence, leaked messages, and timelines to piece together, this is a social deduction and investigative mystery game focused on alibis, motives, and evidence rather than physical padlocks."
   },
   {
     category: "What We Do",
     q: "Is it a script we just read out loud?",
-    a: "No! While each round has structured prompts and dramatic reveals, the core of the game involves mingling, interrogating suspects, and catching the killer in a lie using the evidence drops."
+    a: "No! While each round has structured prompts and dramatic reveals, the core of the game involves mingling, interrogating suspects (or cross-referencing dossiers in Case-File Mode), and catching the killer in a lie using the evidence drops."
   },
   {
     category: "What We Do",
@@ -69,17 +79,17 @@ export const faqsData: FAQ[] = [
   {
     category: "Pricing & Purchasing",
     q: "How much does a custom mystery cost?",
-    a: "We charge a single flat price per event based on your player count bracket: Basic (4–6 players), Premium (4–10 players), or Grand (4–16 players). Check our Pricing page for live regional pricing in your currency."
+    a: "We charge a single flat price per event based on your suspect cast bracket: Basic (5–6 suspects), Premium (5–10 suspects), or Grand (5–16 suspects). Every package can be played as a full-cast roleplay party OR solved solo/duo as a detective case file."
   },
   {
     category: "Pricing & Purchasing",
     q: "What is the difference between Basic, Premium, and Grand tiers?",
-    a: "Every single-event tier includes 100% of our features — AI guest personalization, interactive text/audio clues, Kahoot-style live mobile lobby, Spoiler-Free Host Mode, and any complexity or spice level. The tiers simply scale the number of custom character booklets (4–6, 4–10, or 4–16 suspects) and expand the interlocking web of relationships, motives, and subplots to fit your party size."
+    a: "Every single-event tier includes 100% of our features — AI guest personalization, interactive text/audio clues, Kahoot-style live mobile lobby, Spoiler-Free Host Mode, and any complexity or spice level. The tiers simply scale the number of custom character booklets (5–6, 5–10, or 5–16 suspects, with a minimum of 5 so backstories tangle) and expand the interlocking web of relationships, motives, and subplots."
   },
   {
     category: "Pricing & Purchasing",
-    q: "Why are packages priced by player bracket?",
-    a: "Larger groups require generating more custom character booklets, personalized alibis, and a wider conflict graph of interlocking relationships and subplots so every single guest in the room is deeply involved in the mystery."
+    q: "Why does every mystery require at least 5 characters selected?",
+    a: "To make a murder mystery genuinely challenging and fun to deduce, the story needs at least 5 characters (1 Victim + at least 4 Suspects) so their timelines, alibis, and secret motives tangle together. Even if you are solving the mystery solo or as a couple in Case-File Mode, you still select 5+ characters so you get the full web of suspects and clues to investigate!"
   },
   {
     category: "Pricing & Purchasing",

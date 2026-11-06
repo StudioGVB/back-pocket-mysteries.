@@ -35,6 +35,7 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
     const hydratedBio = hydrateTextWithCharacters(data.bio || '', allCharacters, 'role');
     if (isAdaptable) {
       return {
+        ...data,
         bio: hydratedBio,
         presentation_male: data.presentation_male
           ? {
@@ -46,6 +47,7 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
             }
           : {
               outfit_advice: data.outfit_advice || '',
+              outfit_image_url: data.outfit_image_url,
               act_summary: hydrateTextWithCharacters(data.act_summary || '', allCharacters, 'role'),
               act_bullets: (data.act_bullets || ['', '', '']).map((b: string) =>
                 hydrateTextWithCharacters(b, allCharacters, 'role')
@@ -59,10 +61,11 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
                 hydrateTextWithCharacters(b, allCharacters, 'role')
               ),
             }
-          : { ...defaultPresentation },
+          : { ...defaultPresentation, outfit_image_url: data.outfit_image_url },
       };
     } else {
       return {
+        ...data,
         bio: hydratedBio,
         outfit_advice: data.outfit_advice || '',
         act_summary: hydrateTextWithCharacters(data.act_summary || '', allCharacters, 'role'),
@@ -82,13 +85,60 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
   const characterTitle = getCharacterRoleTitle(character);
   const characterName = characterTitle;
 
+  const normalizeProfileForSave = (rawProfile: any) => {
+    const next = { ...rawProfile };
+    if (next.bio) {
+      next.bio = hydrateTextWithCharacters(next.bio, allCharacters, 'role');
+    }
+    if (next.act_summary) {
+      next.act_summary = hydrateTextWithCharacters(next.act_summary, allCharacters, 'role');
+    }
+    if (Array.isArray(next.act_bullets)) {
+      next.act_bullets = next.act_bullets.map((b: string) =>
+        hydrateTextWithCharacters(b, allCharacters, 'role')
+      );
+    }
+    if (next.presentation_male) {
+      next.presentation_male = {
+        ...next.presentation_male,
+        ...(next.presentation_male.act_summary
+          ? { act_summary: hydrateTextWithCharacters(next.presentation_male.act_summary, allCharacters, 'role') }
+          : {}),
+        ...(Array.isArray(next.presentation_male.act_bullets)
+          ? {
+              act_bullets: next.presentation_male.act_bullets.map((b: string) =>
+                hydrateTextWithCharacters(b, allCharacters, 'role')
+              ),
+            }
+          : {}),
+      };
+    }
+    if (next.presentation_female) {
+      next.presentation_female = {
+        ...next.presentation_female,
+        ...(next.presentation_female.act_summary
+          ? { act_summary: hydrateTextWithCharacters(next.presentation_female.act_summary, allCharacters, 'role') }
+          : {}),
+        ...(Array.isArray(next.presentation_female.act_bullets)
+          ? {
+              act_bullets: next.presentation_female.act_bullets.map((b: string) =>
+                hydrateTextWithCharacters(b, allCharacters, 'role')
+              ),
+            }
+          : {}),
+      };
+    }
+    return next;
+  };
+
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
       const generated = await generateCharacterProfileAIAction(mystery.id, character, mystery);
-      setProfileData(generated);
+      const merged = normalizeProfileForSave({ ...profileData, ...generated });
+      setProfileData(merged);
       // Auto-save
-      await updateCharacterProfileAction(mystery.id, character.id, generated);
+      await updateCharacterProfileAction(mystery.id, character.id, merged);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
@@ -102,10 +152,11 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
   const handleExpandBio = async () => {
     setIsExpandingBio(true);
     try {
-      const expandedBio = await expandCharacterBioAction(mystery.id, character, profileData.bio, mystery.title);
+      const rawExpandedBio = await expandCharacterBioAction(mystery.id, character, profileData.bio, mystery.title);
+      const expandedBio = hydrateTextWithCharacters(rawExpandedBio, allCharacters, 'role');
       updateField('bio', expandedBio);
       
-      const newProfileData = { ...profileData, bio: expandedBio };
+      const newProfileData = normalizeProfileForSave({ ...profileData, bio: expandedBio });
       await updateCharacterProfileAction(mystery.id, character.id, newProfileData);
       
     } catch (err: any) {
@@ -119,7 +170,9 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateCharacterProfileAction(mystery.id, character.id, profileData);
+      const normalized = normalizeProfileForSave(profileData);
+      setProfileData(normalized);
+      await updateCharacterProfileAction(mystery.id, character.id, normalized);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {

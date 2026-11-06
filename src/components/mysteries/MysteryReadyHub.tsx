@@ -588,6 +588,25 @@ export function MysteryReadyHub({
             </div>
           </div>
 
+          {/* SOLO / DUO DETECTIVE CASE-FILE MODE BANNER */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-pink-50/50 border border-brand-pink/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1 max-w-2xl">
+              <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
+                📁 Solving Solo or as a Duo (Case-File Detective Mode)?
+              </span>
+              <p className="text-xs sm:text-sm font-bold text-slate-900">
+                No need to send individual character links! Open the <strong>All-Suspects Selection Hub</strong> and switch between any of the {characters.length} suspect dossiers as you unlock Rounds 1–3 in the Live Playroom.
+              </p>
+            </div>
+            <Link
+              href={`/${locale}/play/${mystery.id}?select=1`}
+              target="_blank"
+              className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-brand-pink text-white text-xs font-black uppercase tracking-widest transition-colors shrink-0 text-center"
+            >
+              📁 Open Master Case File ({characters.length} Suspects) ↗
+            </Link>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {characters.map(char => {
               const guestId = assignments[char.id] || '';

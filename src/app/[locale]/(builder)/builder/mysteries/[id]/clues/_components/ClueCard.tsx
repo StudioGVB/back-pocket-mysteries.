@@ -90,11 +90,11 @@ export function ClueCard({
       ? '🎙️ Synthesizing Voice Note...'
       : '✨ Writing Clue Content...';
 
-  // Hydrate title and description with guest/character names BEFORE passing to subcomponents
+  // Hydrate title and description with Character Types for the Builder Studio
   const hydratedTitle = stripCustomerFacingTitle(
-    hydrateTextWithCharacters(clue.title || 'Evidence', characters, 'print')
+    hydrateTextWithCharacters(clue.title || 'Evidence', characters, 'role')
   ) || 'Evidence';
-  const hydratedDesc = hydrateTextWithCharacters(clue.description || '', characters, 'print');
+  const hydratedDesc = hydrateTextWithCharacters(clue.description || '', characters, 'role');
 
   const renderFormatView = () => {
     const viewProps = {

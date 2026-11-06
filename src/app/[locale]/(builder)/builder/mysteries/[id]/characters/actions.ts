@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createCharacter, updateCharacter, deleteCharacter } from '@/services/mysteries';
 import { getStaticMockGuests } from '@/utils/mock-guests';
 import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
-import { getCharacterRoleTitle, getCharacterDisplayName } from '@/utils/hydration';
+import { getCharacterRoleTitle, getCharacterDisplayName, hydrateTextWithCharacters } from '@/utils/hydration';
 import { generateStandardCharacterPhotoAction } from '@/app/actions/generator';
 import crypto from 'crypto';
 
@@ -342,11 +342,24 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
 }
 
 export async function updateCharacterProfileAction(mysteryId: string, characterId: string, profileData: any) {
+  const supabase = await createClient();
+  const { data: existingChar } = await supabase
+    .from('characters')
+    .select('profile_data')
+    .eq('id', characterId)
+    .maybeSingle();
+
+  const mergedProfile = {
+    ...((existingChar?.profile_data as any) || {}),
+    ...(profileData || {}),
+  };
+
   await updateCharacter(characterId, {
-    profile_data: profileData
+    profile_data: mergedProfile
   });
   revalidatePath(`/[locale]/builder/mysteries/${mysteryId}/characters`);
   revalidatePath(`/[locale]/builder/mysteries/${mysteryId}/characters/${characterId}`);
+  revalidatePath(`/[locale]/builder/mysteries/${mysteryId}/compile`);
 }
 
 export async function generateCharacterOutfitPhotoAction(mysteryId: string, characterId: string, outfitAdvice: string, characterTitle: string, theme: string) {
@@ -916,18 +929,24 @@ export async function expandCharacterBioAction(mysteryId: string, character: any
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const allCharacters = await getCharactersByMysteryId(mysteryId);
     const roleTitle = getCharacterRoleTitle(character);
+    const allRolesList = allCharacters.map((c: any) => getCharacterRoleTitle(c)).join(', ');
+    const cleanInputBio = hydrateTextWithCharacters(currentBio || character.archetype || 'No background provided.', allCharacters, 'role');
 
     const prompt = `You are a master mystery writer. Expand the following character biography into a detailed, compelling 2-3 paragraph backstory. 
 Make it dramatic, juicy, and fit for a murder mystery party titled "${mysteryTitle}". 
-The character's role title is "${roleTitle}". Do NOT invent any fake human first or last names; address them in second person ("You") or use {{${roleTitle}}}.
+The character's role title is "${roleTitle}".
+Other character roles in the cast: ${allRolesList}.
+CRITICAL NAMING RULE: Do NOT invent or use any human first or last names! Address the player in second person ("You") or refer to characters strictly by their Role Titles (${allRolesList}).
 Here is their current short bio/background:
-"${currentBio || character.archetype || 'No background provided.'}"
+"${cleanInputBio}"
 
 Focus on adding rich flavor, deep secrets, and dramatic flair. Do not change any fundamental facts given, just expand and embellish them beautifully. Return ONLY the expanded bio text.`;
 
     const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const rawText = result.response.text().trim();
+    const text = hydrateTextWithCharacters(rawText, allCharacters, 'role');
 
     await logAiUsage({
       model_name: 'gemini-2.5-flash',

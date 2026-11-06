@@ -16,6 +16,7 @@ import { VoiceRegion, VOICE_REGION_OPTIONS, parseAudioTranscript } from '@/lib/v
 import { ElevenLabsModelId } from '@/lib/elevenlabs';
 import {
   hydrateTextWithCharacters,
+  tokenizeTextWithCharacterRoles,
   getCharacterRoleTitle,
   getCharacterDisplayName,
   findInvolvedCharactersInText,
@@ -152,8 +153,9 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
         activeBeatTitle = 'Fake Clue / Unlinked to Story Timeline';
       }
 
-      const results = await suggestCluePrompts(activeBeatTitle);
-      setSuggestions(results);
+      const tokenizedBeatTitle = tokenizeTextWithCharacterRoles(activeBeatTitle, characters);
+      const results = await suggestCluePrompts(tokenizedBeatTitle);
+      setSuggestions(results.map(r => tokenizeTextWithCharacterRoles(r, characters)));
     } catch (e: any) {
       console.error('Action Error:', e);
       alert('Failed to fetch suggestions: ' + (e?.message || String(e)));
@@ -181,10 +183,17 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
         activeBeatTitle = 'Fake Clue / Unlinked to Story Timeline';
       }
 
-      // Hydrate characters in prompt so the generated text has correct genders & attributes
-      const hydratedPrompt = hydrateTextWithCharacters(generationPrompt, characters, 'ai');
+      const tokenizedTitle = tokenizeTextWithCharacterRoles(title, characters);
+      const tokenizedBeatTitle = tokenizeTextWithCharacterRoles(activeBeatTitle, characters);
+      const tokenizedPrompt = tokenizeTextWithCharacterRoles(generationPrompt, characters);
 
-      const result = await generateClueDescriptionAction(title, activeBeatTitle, hydratedPrompt, format);
+      const rawResult = await generateClueDescriptionAction(
+        tokenizedTitle,
+        tokenizedBeatTitle,
+        tokenizedPrompt,
+        format
+      );
+      const result = tokenizeTextWithCharacterRoles(rawResult, characters);
       setDescription(result);
     } catch (e: any) {
       console.error('Description Gen Error:', e);
@@ -196,8 +205,9 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
   const handleTestPrompt = async () => {
     setIsGeneratingPreview(true);
     try {
-      const hydratedPrompt = hydrateTextWithCharacters(generationPrompt, characters, 'ai');
-      const result = await generateCluePreview(hydratedPrompt, templateText);
+      const tokenizedPrompt = tokenizeTextWithCharacterRoles(generationPrompt, characters);
+      const rawResult = await generateCluePreview(tokenizedPrompt, templateText);
+      const result = tokenizeTextWithCharacterRoles(rawResult, characters);
       setTemplateText(result);
       if (!description) {
         setDescription(result);
@@ -348,9 +358,9 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
     }, 50);
   };
 
-  const hydratedTitle = hydrateTextWithCharacters(title || 'Unnamed Evidence', characters, 'print');
+  const hydratedTitle = hydrateTextWithCharacters(title || 'Unnamed Evidence', characters, 'role');
   const hydratedDesc = description.trim()
-    ? hydrateTextWithCharacters(description, characters, 'print')
+    ? hydrateTextWithCharacters(description, characters, 'role')
     : '';
 
   const clueTypes: ClueType[] = ['physical', 'testimony', 'background', 'secret'];
@@ -395,22 +405,23 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                 evidence_status = 'fake';
               }
 
+              const rawInternalNotes = (formData.get('internal_notes') as string) || '';
               const updates = {
-                title,
-                description,
+                title: tokenizeTextWithCharacterRoles(title, characters) || title,
+                description: tokenizeTextWithCharacterRoles(description, characters) || description,
                 format,
                 round_number: Number(formData.get('round_number')) || clue.round_number || 1,
                 audio_url: audioUrl,
                 voice_region: voiceRegion,
-                generation_prompt: generationPrompt,
-                template_text: templateText,
+                generation_prompt: tokenizeTextWithCharacterRoles(generationPrompt, characters) || generationPrompt,
+                template_text: tokenizeTextWithCharacterRoles(templateText, characters) || templateText,
                 linked_plot_beat_id,
                 linked_subplot_beat_id,
                 evidence_status,
                 clue_type: (formData.get('clue_type') as ClueType) || clue.clue_type,
                 implication_type: (formData.get('implication_type') as ImplicationType) || clue.implication_type,
                 is_essential: formData.get('is_essential') === 'on',
-                internal_notes: formData.get('internal_notes') as string,
+                internal_notes: rawInternalNotes ? tokenizeTextWithCharacterRoles(rawInternalNotes, characters) : rawInternalNotes,
                 asset_mode: (formData.get('asset_mode') as any) || clue.asset_mode,
               };
 
@@ -638,7 +649,6 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                <div className="flex flex-wrap gap-2">
                  {characters.map(char => {
                    const roleTitle = getCharacterRoleTitle(char);
-                   const displayName = getCharacterDisplayName(char);
                    const tag = `{{${roleTitle}}}`;
                    return (
                      <button
@@ -648,9 +658,6 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                        className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] font-bold text-slate-700 hover:text-brand-pink hover:border-brand-pink hover:bg-brand-pink/5 transition-all shadow-sm flex items-center gap-1 active:scale-95 cursor-pointer"
                      >
                        <span>{tag}</span>
-                       {displayName !== roleTitle && (
-                         <span className="text-brand-pink font-black">({displayName})</span>
-                       )}
                      </button>
                    );
                  })}
@@ -999,7 +1006,6 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                         <div className="grid grid-cols-1 gap-2">
                           {involvedCharactersForImage.map((char, idx) => {
                             const roleTitle = getCharacterRoleTitle(char);
-                            const displayName = getCharacterDisplayName(char);
                             const profile = (char.profile_data as any) || {};
                             const physicalTraits = getGuestPhysicalDescription(profile, char.gender || profile.gender);
                             const stdPhotoUrl = standardPhotosByCharId[char.id] || profile.standard_character_photo_url || profile.outfit_image_url || (char as any).image_url;
@@ -1014,7 +1020,7 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                                   {stdPhotoUrl ? (
                                     <img
                                       src={stdPhotoUrl}
-                                      alt={displayName}
+                                      alt={roleTitle}
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
@@ -1032,11 +1038,6 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                                     <span className="text-xs font-black text-slate-900 truncate">
                                       {roleTitle}
                                     </span>
-                                    {displayName && displayName !== roleTitle && (
-                                      <span className="text-[10px] font-bold text-brand-pink">
-                                        ({displayName})
-                                      </span>
-                                    )}
                                     <span
                                       className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
                                         stdPhotoUrl
@@ -1184,7 +1185,7 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                     <label className="block text-xs font-bold text-slate-500 mb-2">Designer Notes</label>
                     <textarea 
                       name="internal_notes"
-                      defaultValue={clue.internal_notes || ''}
+                      defaultValue={hydrateTextWithCharacters(clue.internal_notes || '', characters, 'role')}
                       rows={3}
                       placeholder="Internal clues, logic trails, or hidden details..."
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-xs outline-none focus:ring-2 focus:ring-brand-blue/20 resize-none italic"

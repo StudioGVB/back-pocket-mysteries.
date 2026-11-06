@@ -31,9 +31,14 @@ export default async function CompilePage({
       if (!p.bio) return false;
 
       if (char.gender === 'adaptable') {
-        return !!(p.presentation_male?.outfit_image_url || p.presentation_female?.outfit_image_url);
+        return !!(
+          p.outfit_image_url ||
+          p.standard_character_photo_url ||
+          p.presentation_male?.outfit_image_url ||
+          p.presentation_female?.outfit_image_url
+        );
       }
-      return !!p.outfit_image_url;
+      return !!(p.outfit_image_url || p.standard_character_photo_url);
     });
 
   const guestPlayUrl = `/${locale}/play/${id}`;

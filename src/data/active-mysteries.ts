@@ -69,9 +69,9 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
   spice_level: 'Spicy',
   complexity: 'medium',
   difficultyLabel: 'Medium',
-  min_players: 4,
+  min_players: 5,
   max_players: 12,
-  playersLabel: '4–12 Players',
+  playersLabel: '5–12 Suspects (1–12 Players)',
   gameTime: '2–3 Hours',
   shortDesc:
     'The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3’s biggest dating show reunites at a luxury penthouse — until The Star collapses mid-champagne-toast.',

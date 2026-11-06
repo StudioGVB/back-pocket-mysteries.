@@ -279,27 +279,51 @@ export default function WizardClient({
         </div>
       )}
 
-      {/* Step 2: Player Count */}
+      {/* Step 2: Suspect Cast Size & Play Mode */}
       {step === 2 && (
         <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 mb-2">How many players?</h2>
-            <p className="text-slate-500">We will generate exactly this many unique, fully-fleshed out character profiles.</p>
+            <h2 className="text-3xl font-black text-slate-900 mb-2">How many suspects in the story?</h2>
+            <p className="text-slate-500">
+              Every mystery requires at least <strong>5 characters</strong> so the alibis, backstories, and motives tangle properly. Hosting a party? Pick your exact guest count (5–16) so there are zero unplayed side characters. Playing solo or as a duo? Pick 5–8 characters and solve all their dossiers together like a detective case file!
+            </p>
           </div>
 
           <div className="bg-white border border-slate-200 p-8 rounded-3xl flex flex-col items-center">
-            <div className="text-7xl font-black text-brand-dark mb-8">{playerCount}</div>
+            <div className="text-7xl font-black text-brand-dark mb-2">{Math.max(5, playerCount)}</div>
+            <div className="text-xs font-black uppercase tracking-widest text-brand-pink mb-8">
+              Suspect Dossiers Generated (Playable by 1–{Math.max(5, playerCount)} People)
+            </div>
             <input 
               type="range" 
-              min="4" 
-              max="20" 
-              value={playerCount}
+              min="5" 
+              max="16" 
+              value={Math.max(5, playerCount)}
               onChange={(e) => setPlayerCount(parseInt(e.target.value))}
               className="w-full h-3 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-brand-pink"
             />
             <div className="w-full flex justify-between mt-4 text-sm font-bold text-slate-400">
-              <span>4</span>
-              <span>20+</span>
+              <span>5 Suspects (Min Web)</span>
+              <span>16 Suspects (Full House)</span>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+              <p className="text-xs font-black uppercase tracking-widest text-brand-dark mb-1">
+                🎭 Hosting a Party (5–16 Guests)?
+              </p>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                Set the slider to your exact guest count. Every guest plays 1 suspect, and there are zero random side characters that nobody is playing.
+              </p>
+            </div>
+            <div className="p-5 rounded-2xl bg-brand-pink/5 border border-brand-pink/20">
+              <p className="text-xs font-black uppercase tracking-widest text-brand-pink mb-1">
+                📁 Solving Solo or as a Duo (1–4 Players)?
+              </p>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                Leave the slider at 5–8 suspects! You don&apos;t need to act out a role to get information — you&apos;ll receive the full case file of all suspects, texts, and audio clues to solve together.
+              </p>
             </div>
           </div>
 
@@ -318,9 +342,9 @@ export default function WizardClient({
       {step === 3 && (
         <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Cast your friends.</h2>
+            <h2 className="text-3xl font-black text-slate-900 mb-2">Cast the {Math.max(5, playerCount)} suspects.</h2>
             <p className="text-slate-500">
-              Select {playerCount} friends to play. You've assigned <strong className="text-brand-pink">{assignedGuests.length}</strong> so far.
+              Select {Math.max(5, playerCount)} friends/profiles to star in the mystery (minimum 5 so the backstories tangle). Playing solo or in a duo? Cast your friends or favourite personalities just for the hilarious personalized DMs! You&apos;ve assigned <strong className="text-brand-pink">{assignedGuests.length} / {Math.max(5, playerCount)}</strong> so far.
             </p>
           </div>
 
@@ -390,10 +414,10 @@ export default function WizardClient({
             </button>
             <button 
               onClick={handleNext} 
-              disabled={assignedGuests.length === 0}
+              disabled={assignedGuests.length < 5}
               className="btn-pill px-8 py-4 bg-brand-pink text-white font-black uppercase tracking-widest text-sm hover:bg-brand-dark disabled:opacity-50"
             >
-              Next Step &rarr;
+              {assignedGuests.length < 5 ? `Select ${5 - assignedGuests.length} More (Min 5)` : 'Next Step →'}
             </button>
           </div>
         </div>
