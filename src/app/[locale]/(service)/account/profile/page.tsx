@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { acceptInvitation } from '@/app/actions/guest-invitations';
 import ProfileAndGuestsClient from './ProfileAndGuestsClient';
 
-export const metadata = { title: 'My Roster — Back Pocket Mysteries' };
+export const metadata = { title: 'My Roster - Back Pocket Mysteries' };
 
 export default async function ProfilePage({
   params,

@@ -161,7 +161,7 @@ export default function InviteClient({
               </Link>
             </div>
           ) : (
-            /* Valid invite — main state */
+            /* Valid invite, main state */
             <div>
               {isHostPreview && (
                 <div className="mb-6 p-4 rounded-2xl border border-amber-200 bg-amber-50/80">
@@ -184,7 +184,7 @@ export default function InviteClient({
               )}
 
               <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#fe04c6' }}>
-                {invitedGuestName ? `Hey ${invitedGuestName} — You're Invited!` : "You're Invited"}
+                {invitedGuestName ? `Hey ${invitedGuestName} - You're Invited!` : "You're Invited"}
               </p>
               <h1 className="text-2xl font-black text-slate-900 mb-3 leading-tight">
                 {hostName} wants you on their mystery roster.
@@ -193,7 +193,7 @@ export default function InviteClient({
               {personalNote && (
                 <div className="mb-5 p-4 rounded-xl text-sm italic text-slate-600 font-medium" style={{ background: 'rgba(254,4,198,0.05)', borderLeft: '3px solid #fe04c6' }}>
                   &ldquo;{personalNote}&rdquo;
-                  <span className="block mt-1.5 text-xs font-black not-italic" style={{ color: '#fe04c6' }}>— {hostName}</span>
+                  <span className="block mt-1.5 text-xs font-black not-italic" style={{ color: '#fe04c6' }}> - {hostName}</span>
                 </div>
               )}
 

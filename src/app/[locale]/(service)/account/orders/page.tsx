@@ -125,7 +125,7 @@ export default async function OrdersPage({
             My Mysteries (Stories)
           </h1>
           <p className="text-slate-500 font-medium text-base">
-            Your custom murder mystery packages — open your Pre-Party Ready Hub for How to Play, 1-Click Group Chat Links, Character Outfits &amp; Host Set-Up Guide.
+            Your custom murder mystery packages, open your Pre-Party Ready Hub for How to Play, 1-Click Group Chat Links, Character Outfits &amp; Host Set-Up Guide.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -263,7 +263,7 @@ export default async function OrdersPage({
                   <div className="pt-4 border-t border-slate-100 space-y-2">
                     <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
                       <span>
-                        ✅ Safe to close browser — we&apos;ll email <strong>{user.email}</strong> when your mystery is ready!
+                        ✅ Safe to close browser, we&apos;ll email <strong>{user.email}</strong> when your mystery is ready!
                       </span>
                       <span className="font-mono font-black text-brand-pink">{progress}%</span>
                     </div>
@@ -301,7 +301,7 @@ export default async function OrdersPage({
             </h3>
 
             <p className="text-slate-300 font-medium max-w-lg text-base sm:text-lg leading-relaxed mb-4">
-              Thanks for signing up! We&apos;re putting the finishing touches on our murder mystery party packages. <strong className="text-white">Check back shortly</strong> — our first playable stories will be live right here very soon!
+              Thanks for signing up! We&apos;re putting the finishing touches on our murder mystery party packages. <strong className="text-white">Check back shortly</strong> - our first playable stories will be live right here very soon!
             </p>
 
             <p className="text-xs font-bold uppercase tracking-widest text-brand-pink mb-10">

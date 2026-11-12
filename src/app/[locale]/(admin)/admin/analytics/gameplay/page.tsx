@@ -220,7 +220,7 @@ async function GameplayAnalyticsContent({ locale }: { locale: string }) {
                     {s.solveRatePercent !== null ? (
                       <span className="text-emerald-600 font-black">{s.solveRatePercent}%</span>
                     ) : (
-                      <span className="text-gray-300 text-xs">—</span>
+                      <span className="text-gray-300 text-xs">-</span>
                     )}
                   </td>
                 </tr>

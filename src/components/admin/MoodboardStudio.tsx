@@ -417,7 +417,7 @@ export function MoodboardStudio({
         <div>
           <div className="flex items-center justify-between mb-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Uploaded Mood Board Photos ({photos.length}) — Drag order, edit captions, or set as main cover
+              Uploaded Mood Board Photos ({photos.length}) - Drag order, edit captions, or set as main cover
             </label>
           </div>
 

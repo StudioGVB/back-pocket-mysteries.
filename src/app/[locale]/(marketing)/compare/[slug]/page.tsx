@@ -122,7 +122,7 @@ export default async function CompetitorComparisonPage(props: { params: Promise<
                   <li>Your friends&apos; real names become the cast (no awkward pre-set stranger names).</li>
                   <li>Inside jokes, quirks, and real-life relationships are woven directly into the motives and alibis.</li>
                   <li>Includes a Kahoot-style Live Mobile Lobby (6-digit Game PIN) with leaked group-chat texts &amp; audio wiretaps alongside printable PDF booklets.</li>
-                  <li>Spoiler-Free Host Mode lets the host play along as a full suspect — ready in ~30 minutes.</li>
+                  <li>Spoiler-Free Host Mode lets the host play along as a full suspect, ready in ~30 minutes.</li>
                 </ul>
               </div>
             </section>

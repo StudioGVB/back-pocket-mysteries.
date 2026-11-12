@@ -268,7 +268,7 @@ export async function claimSubscriberMonthlyGiftPassAction(params: {
               <div style="background-color: #1a1a1a; color: #ffffff; text-align: center; padding: 20px; border-radius: 10px; margin: 24px 0;">
                 <p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #F02882; font-weight: bold;">Your 100% Off Gift Code</p>
                 <p style="margin: 8px 0 0 0; font-size: 28px; font-family: monospace; font-weight: 900; letter-spacing: 3px;">${code}</p>
-                <p style="margin: 8px 0 0 0; font-size: 12px; color: #aaa;">Valid for 1 full mystery package (Basic, Premium, or Grand — up to 16 players)</p>
+                <p style="margin: 8px 0 0 0; font-size: 12px; color: #aaa;">Valid for 1 full mystery package (Basic, Premium, or Grand, up to 16 players)</p>
               </div>
 
               <div style="text-align: center; margin-top: 24px;">

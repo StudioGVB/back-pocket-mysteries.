@@ -795,7 +795,7 @@ export function CustomerDashboard({
                         <p className="text-sm font-black text-brand-dark">
                           {isMemberIn && initialCrm.membership.renewsAt
                             ? formatDate(initialCrm.membership.renewsAt)
-                            : '—'}
+                            : '-'}
                         </p>
                       </div>
                     </div>
@@ -1183,7 +1183,7 @@ export function CustomerDashboard({
                         type="text"
                         value={newNoteText}
                         onChange={e => setNewNoteText(e.target.value)}
-                        placeholder="Add a private note (e.g. 'TikTok creator — gifted Love On The Rocks')..."
+                        placeholder="Add a private note (e.g. 'TikTok creator, gifted Love On The Rocks')..."
                         className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold text-brand-dark outline-none focus:border-brand-pink"
                       />
                       <button
@@ -1479,9 +1479,7 @@ export function CustomerDashboard({
                                   💸 Refund
                                 </button>
                               ) : (
-                                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">
-                                  —
-                                </span>
+                                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">-</span>
                               )}
                             </td>
                           </tr>

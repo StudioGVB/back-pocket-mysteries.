@@ -36,8 +36,8 @@ export async function generateMetadata(props: {
     };
   }
 
-  const title = `${mystery.title} — ${mystery.theme} Murder Mystery Party Game | Back Pocket Mysteries`;
-  const description = `${mystery.shortDesc} Cast your real friends into 9 iconic roles — personalized with their names, avatars, and quirks in ~30 minutes.`;
+  const title = `${mystery.title} - ${mystery.theme} Murder Mystery Party Game | Back Pocket Mysteries`;
+  const description = `${mystery.shortDesc} Cast your real friends into 9 iconic roles, personalized with their names, avatars, and quirks in ~30 minutes.`;
   const ogImageUrl = `https://backpocketmysteries.com${mystery.coverUrl}`;
 
   return {
@@ -64,7 +64,7 @@ export async function generateMetadata(props: {
           url: ogImageUrl,
           width: 1200,
           height: 630,
-          alt: `${mystery.title} — ${mystery.theme} Murder Mystery Party Promo Photo`,
+          alt: `${mystery.title} - ${mystery.theme} Murder Mystery Party Promo Photo`,
         },
       ],
     },
@@ -153,7 +153,7 @@ export default async function ThemeDetailPage(props: {
       },
       {
         '@type': 'Product',
-        name: `${mystery.title} — ${mystery.theme} Custom Murder Mystery Party Kit`,
+        name: `${mystery.title} - ${mystery.theme} Custom Murder Mystery Party Kit`,
         description: mystery.description,
         image: mystery.moodboardPhotos.map((p) => `https://backpocketmysteries.com${p.url}`),
         brand: {
@@ -190,7 +190,7 @@ export default async function ThemeDetailPage(props: {
             name: `Why don't the characters in ${mystery.title} have pre-set first names?`,
             acceptedAnswer: {
               '@type': 'Answer',
-              text: `Because every role is named after your actual guests! Instead of playing a generic stranger, your friends are cast into iconic archetypes like The Star, The Ex, The Host, and The Superfan — and our engine weaves their real names, pronouns, avatars, and personal quirks directly into the character booklets and story.`,
+              text: `Because every role is named after your actual guests! Instead of playing a generic stranger, your friends are cast into iconic archetypes like The Star, The Ex, The Host, and The Superfan, and our engine weaves their real names, pronouns, avatars, and personal quirks directly into the character booklets and story.`,
             },
           },
           {
@@ -232,7 +232,7 @@ export default async function ThemeDetailPage(props: {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={mystery.coverUrl}
-                alt={`${mystery.title} — ${mystery.theme} Murder Mystery Party Promo Photo`}
+                alt={`${mystery.title} - ${mystery.theme} Murder Mystery Party Promo Photo`}
                 className="w-full h-full object-cover"
               />
               <div
@@ -279,7 +279,7 @@ export default async function ThemeDetailPage(props: {
                 <div className="flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                      Full Custom Mystery Kit — Starting From
+                      Full Custom Mystery Kit - Starting From
                     </p>
                     <PriceDisplay
                       tier="basic"
@@ -332,7 +332,7 @@ export default async function ThemeDetailPage(props: {
                     <span style={{ color: '#fe04c6' }}>✦</span> Your Group Chat, Main-Character Edition
                   </p>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                    Characters don&apos;t have pre-set names — because they are named after <strong>your actual guests</strong>. Cast your friends as the bombshells, exes, and producers, and their real names, pronouns, avatars, and quirks drop straight into the story.
+                    Characters don&apos;t have pre-set names, because they are named after <strong>your actual guests</strong>. Cast your friends as the bombshells, exes, and producers, and their real names, pronouns, avatars, and quirks drop straight into the story.
                   </p>
                 </div>
               </div>
@@ -389,7 +389,7 @@ export default async function ThemeDetailPage(props: {
               <div className="p-4 rounded-2xl bg-slate-50">
                 <p className="text-xs font-black text-slate-900 mb-1">1. Couple Up Your Cast</p>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Assign your friends to the {mystery.characters.length} iconic reality-TV roles below — from The Star to The Ex and The Superfan.
+                  Assign your friends to the {mystery.characters.length} iconic reality-TV roles below, from The Star to The Ex and The Superfan.
                 </p>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50">

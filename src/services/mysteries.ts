@@ -7,7 +7,7 @@ import {
   stripFormatTagFromNotes,
   embedFormatTagInNotes,
 } from '@/utils/clue-format';
-import { getCharacterRoleTitle, hydrateTextWithCharacters } from '@/utils/hydration';
+import { getCharacterRoleTitle, hydrateTextWithCharacters, stripEmDashes } from '@/utils/hydration';
 import {
   LOTR_GOSSIP_MOODBOARD,
   LOTR_MAIN_COVER_URL,
@@ -586,12 +586,12 @@ export const LOTR_CANONICAL_BEATS: Record<number, { event_title: string; descrip
   5: {
     event_title: '{{The Ex}} Poisons The Drink With Temazepam',
     description:
-      "High on cocaine in glam and spiralling, {{The Ex}} uses his prescribed Temazepam sleep medication — fatal when mixed with alcohol — to spike a champagne glass intended for {{The Host}}. {{The Hair & Makeup Artist}} warns {{The Producer Plant}}, who ignores it for content.",
+      "High on cocaine in glam and spiralling, {{The Ex}} uses his prescribed Temazepam sleep medication, fatal when mixed with alcohol, to spike a champagne glass intended for {{The Host}}. {{The Hair & Makeup Artist}} warns {{The Producer Plant}}, who ignores it for content.",
   },
   6: {
     event_title: '{{The Superfan}} Switches The Poisoned Glass',
     description:
-      'At 5:38 PM backstage, a hooded {{The Superfan}} reaches across the drinks table and switches the spiked champagne glass so that {{The Star}} — not {{The Host}} — will drink the fatal dose.',
+      'At 5:38 PM backstage, a hooded {{The Superfan}} reaches across the drinks table and switches the spiked champagne glass so that {{The Star}}, not {{The Host}}, will drink the fatal dose.',
   },
   7: {
     event_title: '{{The Star}} Collapses Mid-Toast',

@@ -183,7 +183,7 @@ export default async function HomePage(props: {
               <div className="lg:col-span-6 relative min-h-[340px] lg:min-h-[480px] overflow-hidden group">
                 <Image
                   src={featuredMystery.coverUrl}
-                  alt={`${featuredMystery.title} — ${featuredMystery.category}`}
+                  alt={`${featuredMystery.title} - ${featuredMystery.category}`}
                   fill
                   sizes="(max-width: 1024px) 100vw, 600px"
                   className="object-cover group-hover:scale-105 transition-transform duration-700"
@@ -375,7 +375,7 @@ export default async function HomePage(props: {
                 {dict.home.ctaSection.title.split('better')[1]}
               </h2>
               <p className="text-gray-400 text-xl lg:text-2xl mb-4 font-bold max-w-xl mx-auto">
-                {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} /> — ready in ~30 mins.
+                {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} /> - ready in ~30 mins.
               </p>
               <p className="text-gray-500 text-sm font-bold mb-12 uppercase tracking-widest">{dict.home.ctaSection.meta}</p>
               <Link href={`/${locale}/login`} className="inline-block px-14 py-6 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-brand-pink transition-all shadow-2xl hover:translate-y-[-4px] active:scale-95">

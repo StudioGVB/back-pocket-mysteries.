@@ -185,7 +185,7 @@ function buildOfficialTicketEmailHtml(params: {
       ? `<p style="color: #444444; font-size: 15px; line-height: 24px; margin: 0 0 24px 0;">
            ${
              isCustomerConfirmation
-               ? `We aim to respond to all support tickets within <strong>48 hours</strong>. In the meantime, if you aren't sure about something, please take a look at our <a href="${faqUrl}" target="_blank" style="color: #F02882; font-weight: 600; text-decoration: underline;">FAQs page</a> &mdash; most common hosting, PIN, and setup questions are answered there.`
+               ? `We aim to respond to all support tickets within <strong>48 hours</strong>. In the meantime, if you aren't sure about something, please take a look at our <a href="${faqUrl}" target="_blank" style="color: #F02882; font-weight: 600; text-decoration: underline;">FAQs page</a> - most common hosting, PIN, and setup questions are answered there.`
                : `You can reply directly in your Support Portal or check our <a href="${faqUrl}" target="_blank" style="color: #F02882; font-weight: 600; text-decoration: underline;">FAQs page</a> anytime.`
            }
          </p>`
@@ -236,7 +236,7 @@ function buildOfficialTicketEmailHtml(params: {
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px; color: #333333; line-height: 24px;">
                       <tr>
                         <td width="110" style="color: #777777; font-weight: 600;">Ticket:</td>
-                        <td><strong>${ticketRef}</strong> &mdash; ${safeSubject}</td>
+                        <td><strong>${ticketRef}</strong> - ${safeSubject}</td>
                       </tr>
                       <tr>
                         <td style="color: #777777; font-weight: 600;">Status:</td>

@@ -10,6 +10,7 @@ import {
   getGuestPhysicalDescription,
   getCharacterCandidateKeys,
   findInvolvedCharactersInText,
+  stripEmDashes,
 } from '@/utils/hydration';
 import { getStaticMockGuests } from '@/utils/mock-guests';
 import { inferClueFormat } from '@/utils/clue-format';
@@ -76,9 +77,9 @@ export async function generateRandomQuirk(name: string, gender: string, existing
     : '';
 
   const prompt = `Generate a single, short, funny, concrete personal obsession, food craving, irrational fear, or everyday habit for ${characterDescription} that can easily be woven into a murder mystery clue, text message, or dialogue line later (for example, if someone "Loves bananas", a text clue might say "What I would do for a banana right now").
-Keep it between 3 and 6 words. Make it specific, concrete, and relatable — NOT a plot spoiler or vague personality label.
+Keep it between 3 and 6 words. Make it specific, concrete, and relatable - NOT a plot spoiler or vague personality label.
 Great examples: "Obsessed with bananas", "Addicted to iced coffee", "Terrified of pigeons", "Puts hot sauce on everything", "Brings up their air fryer constantly", "Always losing their keys", "Thinks they can speak to cats", "Obsessed with sourdough bread".${avoidClause}
-Respond with ONLY the quirk itself, no quotes, no period at the end, and do not include the person's name.`;
+Respond with ONLY the quirk itself, no quotes, no period at the end, no em dashes, and do not include the person's name.`;
 
   try {
     const result = await model.generateContent(prompt);
@@ -91,7 +92,7 @@ Respond with ONLY the quirk itself, no quotes, no period at the end, and do not 
       feature_name: 'generate_random_quirk'
     });
 
-    const cleaned = response.text().trim().replace(/^["']|["']$/g, '').replace(/\.$/, '').trim();
+    const cleaned = stripEmDashes(response.text().trim().replace(/^["']|["']$/g, '').replace(/\.$/, '').trim());
     if (!cleaned || normalizedExisting.has(cleaned.toLowerCase())) {
       return pickCuratedFallback();
     }
@@ -110,7 +111,7 @@ export async function generateCluePreview(prompt: string, templateText: string) 
   const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
   const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const systemInstruction = `You are a mystery game clue generator. Based on the provided prompt and template, generate the text for a single clue. Output ONLY the generated clue content, do not add any conversational fluff. Keep it concise, engaging, and in-character for a murder mystery. NEVER invent fake person names; preserve any {{Role Title}} tokens.`;
+  const systemInstruction = `You are a mystery game clue generator. Based on the provided prompt and template, generate the text for a single clue. Output ONLY the generated clue content, do not add any conversational fluff. Keep it concise, engaging, and in-character for a murder mystery. NEVER invent fake person names; preserve any {{Role Title}} tokens. CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes; use standard commas, periods, or colons instead.`;
 
   const fullPrompt = `${systemInstruction}\n\nPROMPT:\n${prompt}\n\nTEMPLATE / FORMAT (if provided):\n${templateText || 'None provided.'}`;
 
@@ -125,7 +126,7 @@ export async function generateCluePreview(prompt: string, templateText: string) 
       feature_name: 'generate_clue_preview'
     });
 
-    return response.text().trim();
+    return stripEmDashes(response.text().trim());
   } catch (error) {
     console.error('Error generating clue preview:', error);
     throw new Error("Failed to generate clue preview.");
@@ -155,7 +156,7 @@ Output:
 1. A crystal coupe glass with a dark crimson lipstick stain sitting on a vintage mahogany bar counter under warm amber lamplight, shallow depth of field, 35mm film grain, 8k.
 2. A cinematic photograph of {{KILLER}} and {{VICTIM}} sitting in a moody cocktail lounge whispering in the shadows under warm neon reflections, 35mm film grain, dramatic low-key lighting, 8k.
 
-Return exactly 2 lines. Do not use numbers, bullet points, or any extra conversational text. Just the two raw suggestions separated by a newline.`;
+Return exactly 2 lines. Do not use numbers, bullet points, em dashes, or any extra conversational text. Just the two raw suggestions separated by a newline.`;
 
   try {
     const result = await model.generateContent(prompt);
@@ -168,7 +169,7 @@ Return exactly 2 lines. Do not use numbers, bullet points, or any extra conversa
       feature_name: 'suggest_clue_prompts'
     });
 
-    const text = response.text().trim();
+    const text = stripEmDashes(response.text().trim());
     // Split by newline, remove any stray numbers/bullets at start, filter empties
     const suggestions = text.split('\n')
       .map(line => line.replace(/^[\d\.\-\*\s]+/, '').trim())
@@ -254,6 +255,7 @@ Context / Prompt: "${generationPrompt}"
 ${formatInstructions}
 
 CRITICAL NAMING RULE: NEVER invent fake person names or nicknames. Always preserve and use the exact bracketed character tokens (e.g., {{The Sister}}, {{The Ex}}, {{The Reality TV Queen}}) present in the title, beat, or prompt.
+CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
 CRITICAL: Output ONLY the raw clue content itself following the format above. No markdown code fences, no introduction, no conversational filler.`;
 
   try {
@@ -267,7 +269,7 @@ CRITICAL: Output ONLY the raw clue content itself following the format above. No
       feature_name: 'generate_clue_description'
     });
 
-    return response.text().trim().replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+    return stripEmDashes(response.text().trim().replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim());
   } catch (error) {
     console.error('Error generating clue description:', error);
     throw new Error("Failed to generate clue description.");
@@ -809,7 +811,7 @@ export async function generateStandardCharacterPhotoAction(
 function getInvolvedCharacters(clue: any, characters: any[], livePromptText?: string): any[] {
   const involved = new Set<any>();
 
-  // 1. Scan the live visual prompt (or saved generation_prompt) first — this is the primary source of truth for what should be in the image
+  // 1. Scan the live visual prompt (or saved generation_prompt) first - this is the primary source of truth for what should be in the image
   const promptSource = [livePromptText, clue.generation_prompt, clue.title].filter(Boolean).join('\n');
   for (const char of findInvolvedCharactersInText(promptSource, characters)) {
     involved.add(char);
@@ -873,7 +875,7 @@ function buildCharDescription(char: any, refId?: number): string {
 
   let details = '';
   if (refStr && mergedDesc) {
-    details = `(${refStr} — ${mergedDesc})`;
+    details = `(${refStr} - ${mergedDesc})`;
   } else if (refStr) {
     details = `(${refStr})`;
   } else if (mergedDesc) {
@@ -1039,11 +1041,11 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
     // Build Strict Character Consistency Manifest binding each attached Standard Character Photo to its character in the scene
     const referenceManifest = referenceImages.length > 0
       ? `\n\nCHARACTER VISUAL CONSISTENCY LOCK (MANDATORY):
-You are provided ${referenceImages.length} canonical Standard Character Reference Photo(s) attached in order. Every character depicted in this scene MUST look 100% identical to their attached Standard Character Reference Photo — preserve their exact facial identity, bone structure, age, skin tone, hair color/style, glasses/accessories, body build, and their exact signature costume:\n` +
+You are provided ${referenceImages.length} canonical Standard Character Reference Photo(s) attached in order. Every character depicted in this scene MUST look 100% identical to their attached Standard Character Reference Photo, preserve their exact facial identity, bone structure, age, skin tone, hair color/style, glasses/accessories, body build, and their exact signature costume:\n` +
         referenceImages.map(ref => {
           const name = getCharacterDisplayName(ref.char);
           const role = getCharacterRoleTitle(ref.char);
-          return `- Attached Reference Image #${ref.referenceId} (subject [${ref.referenceId}]): ${name} (${role}) — Physical traits: ${ref.standardPhoto.physicalDesc || 'match reference photo exactly'}. Signature outfit: ${ref.standardPhoto.outfit}.`;
+          return `- Attached Reference Image #${ref.referenceId} (subject [${ref.referenceId}]): ${name} (${role}) - Physical traits: ${ref.standardPhoto.physicalDesc || 'match reference photo exactly'}. Signature outfit: ${ref.standardPhoto.outfit}.`;
         }).join('\n')
       : '';
 

@@ -60,7 +60,7 @@ export async function GET(request: Request) {
         max_players: 12,
         complexity: 'medium',
         spice_level: 'mild',
-        description: "Under the striped canvas of the Grand Pavilion Circus, the lights are bright, but the shadows are deadly. Tonight, the domineering ringmaster Barnaby Frost was found dead inside the lion's cage, but the lion wasn't the killer. One of the tight-knit circus performers has blood on their hands—and the show must not go on until the truth is revealed.",
+        description: "Under the striped canvas of the Grand Pavilion Circus, the lights are bright, but the shadows are deadly. Tonight, the domineering ringmaster Barnaby Frost was found dead inside the lion's cage, but the lion wasn't the killer. One of the tight-knit circus performers has blood on their hands, and the show must not go on until the truth is revealed.",
         created_by: user.id,
         inside_jokes: "Remember: never trust a mime, and always watch your pockets!"
       })
@@ -654,7 +654,7 @@ export async function GET(request: Request) {
       mystery_id: mystery.id,
       beat_number: 4,
       event_title: "The Burning Ledger Scraps",
-      description: "Ring Barker Rory Vance spots Zephyr burning papers in a metal tin behind the trapeze rigging. Rory retrieves a charred fragment—it is a portion of Barnaby's private financial ledgers showing massive debt skimming.",
+      description: "Ring Barker Rory Vance spots Zephyr burning papers in a metal tin behind the trapeze rigging. Rory retrieves a charred fragment, it is a portion of Barnaby's private financial ledgers showing massive debt skimming.",
       characters_involved: [rory.name.split('|')[0], zephyr.name.split('|')[0], penny.name.split('|')[0], gigi.name.split('|')[0]],
       is_required: true
     }).select().single();

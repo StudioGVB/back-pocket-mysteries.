@@ -81,7 +81,7 @@ export default function PricingCalculator({
           Priced By <span className="text-brand-pink italic">Suspect Cast Size</span>
         </h2>
         <p className="text-gray-500 font-bold text-lg max-w-3xl mx-auto">
-          Every mystery requires at least <strong>5 suspects</strong> so the backstories and alibis tangle. Play as a <strong>5–16 guest roleplay party</strong> (1 role per guest, zero unplayed side characters) — OR solve the full suspect web <strong>solo or as a duo</strong> like a detective case file!
+          Every mystery requires at least <strong>5 suspects</strong> so the backstories and alibis tangle. Play as a <strong>5–16 guest roleplay party</strong> (1 role per guest, zero unplayed side characters) - OR solve the full suspect web <strong>solo or as a duo</strong> like a detective case file!
         </p>
       </div>
 
@@ -117,7 +117,7 @@ export default function PricingCalculator({
                     {guests}
                   </div>
                   <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
-                    ✓ {activeTier.name} Package — {guests} Suspect Dossiers (For {guests} Party Guests OR 1–4 Case-File Sleuths)
+                    ✓ {activeTier.name} Package - {guests} Suspect Dossiers (For {guests} Party Guests OR 1–4 Case-File Sleuths)
                   </div>
                 </div>
 

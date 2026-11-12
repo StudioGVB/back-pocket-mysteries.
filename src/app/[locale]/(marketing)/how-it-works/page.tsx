@@ -107,7 +107,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                     <div className="relative aspect-[16/10] w-full overflow-hidden">
                       <Image
                         src="/moodboard/lotr/main-promo-murder.jpg"
-                        alt="Love On The Rocks — Reality TV Reunion Murder Mystery"
+                        alt="Love On The Rocks - Reality TV Reunion Murder Mystery"
                         fill
                         sizes="(max-width: 1024px) 100vw, 600px"
                         className="object-cover group-hover:scale-105 transition-transform duration-700"
@@ -225,10 +225,10 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
               Flexible Format • 1 to 16 People
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.05] mb-4">
-              Host a Full-Cast Party — Or Solve It <span className="text-brand-pink italic">Like a Detective Case File</span>
+              Host a Full-Cast Party - Or Solve It <span className="text-brand-pink italic">Like a Detective Case File</span>
             </h2>
             <p className="text-gray-300 font-medium text-base sm:text-lg leading-relaxed">
-              Every mystery story requires at least <strong>5 characters</strong> so the alibis, motives, and backstories tangle properly — but the player count in the room is purely for theatrics! You don&apos;t need to act out a character to get information.
+              Every mystery story requires at least <strong>5 characters</strong> so the alibis, motives, and backstories tangle properly, but the player count in the room is purely for theatrics! You don&apos;t need to act out a character to get information.
             </p>
           </div>
 
@@ -238,7 +238,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                 🎭 Option 1 • Theatrical Party Mode (5–16 Guests)
               </span>
               <h3 className="text-2xl font-black uppercase tracking-tight text-white">
-                1 Role Per Guest — Zero Random Side Characters
+                1 Role Per Guest - Zero Random Side Characters
               </h3>
               <p className="text-sm text-gray-300 font-medium leading-relaxed">
                 Having friends over for a dinner party, birthday, or hen night? Select the exact number of guests attending (minimum 5). Every guest plays 1 suspect, and we never include unplayed side characters that nobody in the room is playing.

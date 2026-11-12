@@ -31,7 +31,7 @@
     "hero": {
       "badge": "Your party, sorted in 30 minutes",
       "title": "Murder mystery, built around, your people.",
-      "subtitle": "Real names. Real relationships. Real drama. We workshop a fully personalised, print-ready murder mystery pack — in ~30 minutes, not days.",
+      "subtitle": "Real names. Real relationships. Real drama. We workshop a fully personalised, print-ready murder mystery pack, in ~30 minutes, not days.",
       "ctaPick": "Pick a Theme",
       "ctaHow": "How it Works",
       "priceLabel": "From {{price}}",
@@ -39,7 +39,7 @@
     },
     "why": {
       "title": "Not just a kit. Your kit.",
-      "desc": "Every other mystery pack gives you a fixed story with blank spaces to fill in. We take our human-crafted mystery plots and adapt them entirely around your actual guest list — names, relationships, and all the drama — so every clue, character, and confession feels like it was written just for your party.",
+      "desc": "Every other mystery pack gives you a fixed story with blank spaces to fill in. We take our human-crafted mystery plots and adapt them entirely around your actual guest list, names, relationships, and all the drama, so every clue, character, and confession feels like it was written just for your party.",
       "features": {
         "guestStory": {
           "title": "Guest-Specific Story",
@@ -48,12 +48,12 @@
         },
         "evidence": {
           "title": "Real Evidence Images",
-          "desc": "Fake texts, DM screenshots, and 'receipts' — enhanced by AI to match your exact story. Evidence that actually names your guests.",
+          "desc": "Fake texts, DM screenshots, and 'receipts', enhanced by AI to match your exact story. Evidence that actually names your guests.",
           "badge": "Custom Graphics"
         },
         "instant": {
           "title": "Print-Ready in ~30 Mins",
-          "desc": "Download your complete pack — host guide, character packets, and evidence assets — all formatted and ready to print.",
+          "desc": "Download your complete pack, host guide, character packets, and evidence assets, all formatted and ready to print.",
           "badge": "Ready in ~30 Mins"
         }
       }
@@ -63,7 +63,7 @@
       "subtitle": "No planning. No stress. No spoilers for the host.",
       "step1": {
         "title": "Pick a theme that fits your crowd",
-        "desc": "Reality TV reunion scandal? Poisoned champagne toast? Secret NDA drama? Choose your active theme — we handle the rest."
+        "desc": "Reality TV reunion scandal? Poisoned champagne toast? Secret NDA drama? Choose your active theme, we handle the rest."
       },
       "step2": {
         "title": "Tell us who's coming",
@@ -106,7 +106,7 @@
     },
     "compare": {
       "title": "Etsy takes weeks. We take 30 minutes.",
-      "subtitle": "The same level of personalisation — without the wait, the Canva faff, or the £150 price tag.",
+      "subtitle": "The same level of personalisation, without the wait, the Canva faff, or the £150 price tag.",
       "table": {
         "feature": "Feature",
         "bpm": "Back Pocket Mysteries",
@@ -128,7 +128,7 @@
   },
   "pricing": {
     "title": "One pack. Your whole night.",
-    "subtitle": "Priced flat by group size — $0 extra per-player fees. Choose a single mystery pack for your party or unlock Unlimited monthly access + 1 Free Monthly Gift Pass.",
+    "subtitle": "Priced flat by group size - $0 extra per-player fees. Choose a single mystery pack for your party or unlock Unlimited monthly access + 1 Free Monthly Gift Pass.",
     "mostPopular": "Most Popular",
     "event": "/ event",
     "bestFor": "Best for:",
@@ -147,7 +147,7 @@
       "premium": {
         "name": "Premium",
         "tagline": "4–10 Players • The Main Event.",
-        "desc": "Our most popular group size — ideal for birthdays, hens nights, and medium parties up to 10 guests.",
+        "desc": "Our most popular group size, ideal for birthdays, hens nights, and medium parties up to 10 guests.",
         "cta": "Browse Mysteries",
         "bestFor": "Birthdays & hens nights (4–10 guests)"
       },
@@ -169,7 +169,7 @@
   },
   "howItWorks": {
     "title": "Your party sorted, in ~30 minutes.",
-    "subtitle": "You've got enough on your plate. We handle the script, the evidence, the character booklets, the live mobile lobby, and the host guide — all personalised to your actual guest list.",
+    "subtitle": "You've got enough on your plate. We handle the script, the evidence, the character booklets, the live mobile lobby, and the host guide, all personalised to your actual guest list.",
     "badge": "The Process",
     "steps": {
       "pick": {
@@ -203,7 +203,7 @@
     },
     "packContents": {
       "title": "What's in, the pack?",
-      "subtitle": "Everything you need to run a seamless, memorable night — both digitally on guest phones and ready to print.",
+      "subtitle": "Everything you need to run a seamless, memorable night, both digitally on guest phones and ready to print.",
       "items": {
         "hostGuide": { "title": "Spoiler-Free Host Guide", "desc": "Step-by-step facilitation & live round controller so you can play too." },
         "characterPackets": { "title": "Custom Suspect Booklets", "desc": "Individual character scripts cast with your guests' real names." },
@@ -239,7 +239,7 @@
   },
   "themes": {
     "title": "Pick the vibe. We handle the rest.",
-    "subtitle": "Every theme is a complete, human-crafted mystery engine — plot, characters, clues, and evidence — all personalised with your guest list. New themes added regularly.",
+    "subtitle": "Every theme is a complete, human-crafted mystery engine, plot, characters, clues, and evidence, all personalised with your guest list. New themes added regularly.",
     "badge": "Choose Your Theme",
     "viewTheme": "View Theme",
     "guests": "{{count}} Guests",
@@ -247,7 +247,7 @@
     "list": {
       "loveOnTheRocks": {
         "title": "Love On The Rocks",
-        "desc": "The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest dating show reunites at a luxury penthouse — until The Star collapses mid-champagne-toast.",
+        "desc": "The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest dating show reunites at a luxury penthouse, until The Star collapses mid-champagne-toast.",
         "difficulty": "Medium",
         "category": "Reality TV Reunion",
         "tone": "Chaotic & Spicy",
@@ -312,10 +312,10 @@
     "subtitle": "Get a fully personalized, print-ready & mobile-ready murder mystery game built around your actual guest list in ~30 minutes.",
     "seoDescription": "Host a custom murder mystery party personalized for your guests. We cast your real friends into iconic roles with custom evidence, audio wiretaps, and a live mobile lobby.",
     "whyCustomTitle": "Why choose a custom murder mystery?",
-    "whyCustomDesc": "Generic boxed games force your friends to read stiff scripts for pre-named strangers. Our platform takes human-crafted mystery plots and adapts them entirely around your actual guest list — casting your friends' real names into iconic archetypes, weaving in their relationships and inside jokes, and delivering both printable booklets and a live Kahoot-style mobile lobby.",
+    "whyCustomDesc": "Generic boxed games force your friends to read stiff scripts for pre-named strangers. Our platform takes human-crafted mystery plots and adapts them entirely around your actual guest list, casting your friends' real names into iconic archetypes, weaving in their relationships and inside jokes, and delivering both printable booklets and a live Kahoot-style mobile lobby.",
     "features": {
       "f1": "Real Guests Cast Into Iconic Roles",
-      "f1Desc": "No pre-set stranger names — your actual guests become The Star, The Villain, The Ex, and more.",
+      "f1Desc": "No pre-set stranger names, your actual guests become The Star, The Villain, The Ex, and more.",
       "f2": "Interactive Clues & Live Mobile Lobby",
       "f2Desc": "Leaked group-chat texts, audio wiretaps, and a 6-digit Game PIN lobby alongside printable PDF booklets.",
       "f3": "Spoiler-Free Host Mode in ~30 Mins",

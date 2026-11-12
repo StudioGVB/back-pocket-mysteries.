@@ -83,7 +83,7 @@ function getThemeVibeKit(theme: string | null, title: string) {
       lighting: 'Warm table lamps, candlesticks, and dimmed overhead lights for a moody drawing-room atmosphere.',
       signatureDrink: 'The Old Money Old Fashioned (Bourbon, bitters, orange peel) or Mulled Spiced Red Wine',
       mocktail: 'Smoked Earl Grey & Blackberry Fizz',
-      propTip: 'Place a sealed envelope labeled "LAST WILL & TESTAMENT — DO NOT OPEN" on the mantelpiece as a centerpiece.',
+      propTip: 'Place a sealed envelope labeled "LAST WILL & TESTAMENT - DO NOT OPEN" on the mantelpiece as a centerpiece.',
     };
   }
 
@@ -114,7 +114,7 @@ const PRE_PARTY_CHECKLIST = [
     id: 'speaker-check',
     phase: '1 Day Before',
     title: 'Have a Bluetooth speaker ready for Voice Memo clues',
-    detail: 'Some rounds include AI voice recordings with your guests’ accents — playing them out loud to the room is a huge crowd moment!',
+    detail: 'Some rounds include AI voice recordings with your guests’ accents - playing them out loud to the room is a huge crowd moment!',
   },
   {
     id: 'phone-charge',
@@ -249,7 +249,7 @@ export function MysteryReadyHub({
 
   const buildGroupChatSelectInvite = () => {
     const url = `${getOrigin()}/${locale}/play/${mystery.id}?select=1`;
-    return `🕵️‍♀️ You're invited to our Murder Mystery party: "${mystery.title}"!\n\n🎭 Tap the link below to open our Character Selection page — find your name and click into your character to see your Character Outline, Outfit & Dress Code, and Vibe (no login needed!):\n${url}\n\n📱 Party Night Reminder: Please bring a charged phone or device on the night so you can access live clues, voice memos, and vote on suspects each round!\n🔢 Game PIN: ${formattedPin}`;
+    return `🕵️‍♀️ You're invited to our Murder Mystery party: "${mystery.title}"!\n\n🎭 Tap the link below to open our Character Selection page, find your name and click into your character to see your Character Outline, Outfit & Dress Code, and Vibe (no login needed!):\n${url}\n\n📱 Party Night Reminder: Please bring a charged phone or device on the night so you can access live clues, voice memos, and vote on suspects each round!\n🔢 Game PIN: ${formattedPin}`;
   };
 
   const sentCount = characters.filter(c => sentCharIds.includes(c.id)).length;
@@ -277,7 +277,7 @@ export function MysteryReadyHub({
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-              {mystery.title} — Pre-Party Host Hub
+              {mystery.title} - Pre-Party Host Hub
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
@@ -559,7 +559,7 @@ export function MysteryReadyHub({
                     if (typeof navigator !== 'undefined' && navigator.share) {
                       try {
                         await navigator.share({
-                          title: `${mystery.title} — Pick Your Character`,
+                          title: `${mystery.title} - Pick Your Character`,
                           text: buildGroupChatSelectInvite(),
                           url,
                         });
@@ -633,7 +633,7 @@ export function MysteryReadyHub({
                   char.actBullets && char.actBullets.length > 0
                     ? `\n🎭 How to Play Them: ${char.actBullets.join(' • ')}`
                     : '';
-                return `🕵️‍♀️ ${guest ? `Hey ${guest.name}! ` : ''}You're cast in our Murder Mystery party: "${mystery.title}"!\n\n🎭 Your Role: ${char.roleTitle}\n📖 Character Outline: ${char.cleanBio}${vibeLine}\n👗 What to Wear: ${outfitText}\n📱 What to Bring: Please bring a charged phone or device on the night — you'll use it to access live clues, leaked messages, voice memos, and play along each round!\n\n🔗 Tap to open your Character Dossier (Game PIN: ${formattedPin} — no login needed):\n${url}`;
+                return `🕵️‍♀️ ${guest ? `Hey ${guest.name}! ` : ''}You're cast in our Murder Mystery party: "${mystery.title}"!\n\n🎭 Your Role: ${char.roleTitle}\n📖 Character Outline: ${char.cleanBio}${vibeLine}\n👗 What to Wear: ${outfitText}\n📱 What to Bring: Please bring a charged phone or device on the night, you'll use it to access live clues, leaked messages, voice memos, and play along each round!\n\n🔗 Tap to open your Character Dossier (Game PIN: ${formattedPin} - no login needed):\n${url}`;
               };
 
               return (
@@ -798,7 +798,7 @@ export function MysteryReadyHub({
                           if (typeof navigator !== 'undefined' && navigator.share) {
                             try {
                               await navigator.share({
-                                title: `${char.roleTitle} — ${mystery.title}`,
+                                title: `${char.roleTitle} - ${mystery.title}`,
                                 text: buildInviteText(),
                                 url,
                               });
@@ -859,7 +859,7 @@ export function MysteryReadyHub({
                 badge: 'Round 0 (Lobby)',
                 points: [
                   'Guests arrive in their character outfits and grab a drink.',
-                  'Everyone opens the Group Chat link or enters your 6-digit PIN at /play — zero login or app download needed.',
+                  'Everyone opens the Group Chat link or enters your 6-digit PIN at /play - zero login or app download needed.',
                   'Guests tap their name to claim their character and read their Full Backstory, How to Act tips, and Pre-Existing Relationships.',
                   'Encourage everyone to introduce themselves in character before the crime happens!',
                 ],
@@ -936,7 +936,7 @@ export function MysteryReadyHub({
                 💀 How Does The Victim Play?
               </p>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                The Victim mingles in character during the Lobby, has a dramatic 30-second &ldquo;death&rdquo; when Round 1 starts, and immediately becomes the <strong>Ghost / Lead Detective</strong> — they still receive every clue and vote in every round!
+                The Victim mingles in character during the Lobby, has a dramatic 30-second &ldquo;death&rdquo; when Round 1 starts, and immediately becomes the <strong>Ghost / Lead Detective</strong> - they still receive every clue and vote in every round!
               </p>
             </div>
 
@@ -954,7 +954,7 @@ export function MysteryReadyHub({
                 🔄 Someone Cancelled Last Minute?
               </p>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                Click <strong>✏️ Swap / Edit Cast</strong> at the top of this page to mark them Out or swap another friend into their role in 10 seconds — all clues update automatically!
+                Click <strong>✏️ Swap / Edit Cast</strong> at the top of this page to mark them Out or swap another friend into their role in 10 seconds, all clues update automatically!
               </p>
             </div>
           </div>
@@ -1172,7 +1172,7 @@ export function MysteryReadyHub({
                   id: 'hype-day',
                   when: 'Send 24 Hours Before',
                   title: '2. Night-Before Reminder',
-                  text: `🔪 TOMORROW NIGHT: "${mystery.title}"!\n\nQuick reminders:\n1️⃣ Come dressed in your character’s outfit vibe!\n2️⃣ Arrive with your phone charged (50%+) — all clues, leaked texts & suspect voting happen live on your phone.\n3️⃣ Trust nobody. See you all tomorrow! 🥂`,
+                  text: `🔪 TOMORROW NIGHT: "${mystery.title}"!\n\nQuick reminders:\n1️⃣ Come dressed in your character’s outfit vibe!\n2️⃣ Arrive with your phone charged (50%+) - all clues, leaked texts & suspect voting happen live on your phone.\n3️⃣ Trust nobody. See you all tomorrow! 🥂`,
                 },
                 {
                   id: 'hype-live',

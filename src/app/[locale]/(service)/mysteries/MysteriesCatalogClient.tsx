@@ -60,7 +60,7 @@ export default function MysteriesCatalogClient({
         <div>
           <h1 className="text-4xl font-black text-slate-900 mb-2">Available Stories</h1>
           <p className="text-slate-500 font-medium text-lg">
-            Pick a theme and customize it for your crew — ready in ~30 minutes.
+            Pick a theme and customize it for your crew, ready in ~30 minutes.
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function MysteriesCatalogClient({
             Mysteries Coming Soon!
           </h3>
           <p className="text-slate-300 font-medium max-w-md text-base leading-relaxed mb-8">
-            We&apos;re putting the final touches on our murder mystery party packages. <strong className="text-white">Check back shortly</strong> — our first playable stories will appear right here very soon!
+            We&apos;re putting the final touches on our murder mystery party packages. <strong className="text-white">Check back shortly</strong> - our first playable stories will appear right here very soon!
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link

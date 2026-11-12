@@ -265,7 +265,7 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
                   Admin Mood Board Studio
                 </p>
                 <h2 className="text-2xl font-black text-slate-900">
-                  {mystery.title} — Vibe &amp; Mood Board Photos
+                  {mystery.title} - Vibe &amp; Mood Board Photos
                 </h2>
               </div>
               <button

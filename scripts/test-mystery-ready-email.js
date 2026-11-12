@@ -1,5 +1,5 @@
 const { Resend } = require('resend');
-const resend = new Resend('re_cLjxv47E_N7dyBwjy5DALFfKXLgQupexF');
+const resend = new Resend('process.env.RESEND_API_KEY');
 
 const year = new Date().getFullYear();
 
@@ -29,7 +29,7 @@ const html = `<!DOCTYPE html>
             <h1 style="color:#111;font-size:28px;font-weight:900;margin:0 0 8px;letter-spacing:-0.5px;">The suspects have assembled. 🎭</h1>
             <p style="color:#888;font-size:16px;font-weight:600;margin:0 0 24px;font-style:italic;">${mysteryTitle}</p>
             <p style="color:#555;font-size:16px;line-height:1.7;margin:0 0 16px;">Hi ${customerName},</p>
-            <p style="color:#555;font-size:16px;line-height:1.7;margin:0 0 36px;">Great news — your custom mystery is fully built and waiting for you! Head to your account to review everything, download your host guide, and get ready for the big night.</p>
+            <p style="color:#555;font-size:16px;line-height:1.7;margin:0 0 36px;">Great news, your custom mystery is fully built and waiting for you! Head to your account to review everything, download your host guide, and get ready for the big night.</p>
 
             <!-- CTA Button -->
             <table cellpadding="0" cellspacing="0" width="100%">
@@ -90,7 +90,7 @@ const html = `<!DOCTYPE html>
               </tr>
             </table>
 
-            <p style="color:#aaa;font-size:13px;line-height:1.7;margin:0 0 20px;">If you have any questions, just reply to this email — we're always happy to help.</p>
+            <p style="color:#aaa;font-size:13px;line-height:1.7;margin:0 0 20px;">If you have any questions, just reply to this email, we're always happy to help.</p>
             <p style="color:#555;font-size:16px;line-height:1.7;margin:0;">Happy sleuthing,<br/><strong>The Back Pocket Mysteries Team</strong></p>
           </td>
         </tr>
@@ -113,7 +113,7 @@ const html = `<!DOCTYPE html>
 resend.emails.send({
   from: 'Back Pocket Mysteries <noreply@backpocketgames.com>',
   to: 'Hello@backpocketgames.com',
-  subject: `[Test] Your mystery is ready — ${mysteryTitle}`,
+  subject: `[Test] Your mystery is ready - ${mysteryTitle}`,
   html
 }).then(r => {
   if (r.error) { console.error('FAILED:', JSON.stringify(r.error)); process.exit(1); }

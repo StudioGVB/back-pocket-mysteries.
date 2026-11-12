@@ -57,7 +57,7 @@ export default async function PrintRevealPage({
 
       {/* Screen view layout helper notice */}
       <div className="bg-gradient-to-r from-red-600 to-[#FF1493] text-white px-8 py-3 text-center text-sm font-bold tracking-wide shadow-md print:hidden flex items-center justify-center gap-2">
-        <span>🚨 <strong>SPOILER WARNING</strong> — This page contains the master solution to the mystery. Protect the secrets!</span>
+        <span>🚨 <strong>SPOILER WARNING</strong> - This page contains the master solution to the mystery. Protect the secrets!</span>
       </div>
 
       {/* Title / Cover Page */}

@@ -15,7 +15,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
 
   const title = `Murder Mystery Party Themes & Storylines | Back Pocket Mysteries`;
   const description =
-    'Explore our active, human-crafted murder mystery party themes. Cast your real friends into iconic roles — personalized with their names, avatars, and quirks in ~30 minutes.';
+    'Explore our active, human-crafted murder mystery party themes. Cast your real friends into iconic roles, personalized with their names, avatars, and quirks in ~30 minutes.';
 
   return {
     title,
@@ -41,7 +41,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
           url: 'https://backpocketmysteries.com/moodboard/lotr/main-promo-murder.jpg',
           width: 1200,
           height: 630,
-          alt: 'Love On The Rocks — Reality TV Reunion Murder Mystery Theme',
+          alt: 'Love On The Rocks - Reality TV Reunion Murder Mystery Theme',
         },
       ],
     },
@@ -93,7 +93,7 @@ export default async function ThemesPage(props: {
       },
       {
         '@type': 'ItemList',
-        name: 'Back Pocket Mysteries — Active Murder Mystery Party Themes',
+        name: 'Back Pocket Mysteries - Active Murder Mystery Party Themes',
         description:
           'Personalized murder mystery party kits built around your real guest list, names, relationships, and quirks.',
         numberOfItems: activeMysteries.length,
@@ -103,7 +103,7 @@ export default async function ThemesPage(props: {
           url: `https://backpocketmysteries.com/${locale}/themes/${m.slug}`,
           item: {
             '@type': 'Product',
-            name: `${m.title} — ${m.theme} Murder Mystery Kit`,
+            name: `${m.title} - ${m.theme} Murder Mystery Kit`,
             description: m.description,
             image: `https://backpocketmysteries.com${m.coverUrl}`,
             brand: {
@@ -167,7 +167,7 @@ export default async function ThemesPage(props: {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={mystery.coverUrl}
-                      alt={`${mystery.title} — ${mystery.theme} Murder Mystery Party Promo Photo`}
+                      alt={`${mystery.title} - ${mystery.theme} Murder Mystery Party Promo Photo`}
                       itemProp="image"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
@@ -340,10 +340,10 @@ export default async function ThemesPage(props: {
               <div className="mt-10 pt-8 border-t border-gray-100">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                   <p className="text-xs font-black uppercase tracking-widest text-brand-dark">
-                    🎭 {mystery.characters.length} Iconic Archetypes — Named After Your Actual Guests
+                    🎭 {mystery.characters.length} Iconic Archetypes - Named After Your Actual Guests
                   </p>
                   <p className="text-xs font-bold text-gray-400">
-                    No pre-set character names — your friends play stylized versions of themselves
+                    No pre-set character names, your friends play stylized versions of themselves
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2.5">

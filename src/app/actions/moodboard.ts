@@ -267,7 +267,7 @@ export async function generateAIMoodboardPhotoAction(
         : vibeTag === 'Cocktail Hour'
         ? 'Atmospheric close-up of signature cocktails, crystal glassware, candlelit table setting, and mysterious party details'
         : vibeTag === 'Crime Scene Vibe'
-        ? 'Suspenseful cinematic detail shot of a luxury room after a dramatic incident — spilled champagne flute, velvet ropes, dramatic shadows, noir atmosphere'
+        ? 'Suspenseful cinematic detail shot of a luxury room after a dramatic incident, spilled champagne flute, velvet ropes, dramatic shadows, noir atmosphere'
         : 'Wide architectural & interior moodboard photograph of the venue setting with dramatic lighting, moody atmosphere, and immersive party ambiance');
 
     const prompt = `A high-end editorial lifestyle and moodboard photograph for a "${title}" (${theme}) murder mystery party. Visual focus: ${focusInstruction}. Rich colors, cinematic lighting, shallow depth of field, magazine-quality photography, 8k resolution, photorealistic DSLR shot, no text or watermarks.`;

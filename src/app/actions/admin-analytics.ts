@@ -561,7 +561,7 @@ export async function getConversionAndPromoAnalytics() {
     discounts: discounts.map((d: any) => ({
       id: d.id,
       name: d.name,
-      code: d.code || (d.auto_apply ? 'AUTO-APPLY' : '—'),
+      code: d.code || (d.auto_apply ? 'AUTO-APPLY' : '-'),
       discountType: d.discount_type,
       discountValue: Number(d.discount_value) || 0,
       appliesTo: d.applies_to || 'all',

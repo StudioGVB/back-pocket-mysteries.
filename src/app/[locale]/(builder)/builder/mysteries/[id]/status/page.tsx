@@ -85,7 +85,7 @@ async function StatusPageContent({ params }: StatusPageProps) {
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Avg. Order Value</p>
           <p className="text-4xl font-black text-slate-900">
-            {totalPurchases > 0 ? `$${(totalRevenue / totalPurchases).toFixed(2)}` : '—'}
+            {totalPurchases > 0 ? `$${(totalRevenue / totalPurchases).toFixed(2)}` : '-'}
           </p>
         </div>
       </div>

@@ -160,7 +160,7 @@ export default function CustomerCastClient({
   // vs 'casefile' (1–4 players solving all selected suspect dossiers together like a detective box)
   const [playMode, setPlayMode] = useState<'party' | 'casefile'>('party');
 
-  // 1. Attending Guests / Selected Profiles (In or Out — minimum 5 characters for the story)
+  // 1. Attending Guests / Selected Profiles (In or Out, minimum 5 characters for the story)
   const [attendingGuestIds, setAttendingGuestIds] = useState<string[]>(() => {
     // Check if characters already have assigned guests
     const preAssignedIds = characters
@@ -661,7 +661,7 @@ export default function CustomerCastClient({
               )}
             </div>
             <p className="text-xs text-slate-300 font-medium leading-relaxed">
-              <strong>1 Character Per Guest — Zero Random Side Characters.</strong> Select the exact friends attending your party ({minRoles} to {maxRoles} people). We only include the exact number of characters you select so nobody is left unplayed.
+              <strong>1 Character Per Guest - Zero Random Side Characters.</strong> Select the exact friends attending your party ({minRoles} to {maxRoles} people). We only include the exact number of characters you select so nobody is left unplayed.
             </p>
           </button>
 
@@ -692,7 +692,7 @@ export default function CustomerCastClient({
               )}
             </div>
             <p className="text-xs text-slate-300 font-medium leading-relaxed">
-              <strong>Solve It Together Like a Cold-Case Box — No Acting Needed!</strong> Playing solo, as a couple, or with 3–4 friends? Simply select {minRoles}–{maxRoles} profiles below to populate the story&apos;s suspect web, then inspect all character dossiers, texts &amp; audio clues together to catch the killer.
+              <strong>Solve It Together Like a Cold-Case Box - No Acting Needed!</strong> Playing solo, as a couple, or with 3–4 friends? Simply select {minRoles}–{maxRoles} profiles below to populate the story&apos;s suspect web, then inspect all character dossiers, texts &amp; audio clues together to catch the killer.
             </p>
           </button>
         </div>
@@ -708,16 +708,16 @@ export default function CustomerCastClient({
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
               {playMode === 'casefile'
                 ? `Select ${minRoles}–${maxRoles} Profiles for the Story Web (${attendingGuestIds.length} / ${maxRoles} Selected)`
-                : `Who's Playing Tonight? (${attendingGuestIds.length} / ${maxRoles} Selected — Min ${minRoles})`}
+                : `Who's Playing Tonight? (${attendingGuestIds.length} / ${maxRoles} Selected - Min ${minRoles})`}
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1">
               {playMode === 'casefile' ? (
                 <>
-                  Every mystery requires at least <strong>{minRoles} suspects</strong> so the alibis, backstories, and motives tangle properly. Pick {minRoles}–{maxRoles} friends/profiles below to star in your case file — you&apos;ll receive all of their booklets and clues to solve solo or with a friend!
+                  Every mystery requires at least <strong>{minRoles} suspects</strong> so the alibis, backstories, and motives tangle properly. Pick {minRoles}–{maxRoles} friends/profiles below to star in your case file, you&apos;ll receive all of their booklets and clues to solve solo or with a friend!
                 </>
               ) : (
                 <>
-                  Tap guests to mark them <strong>In</strong> or <strong>Out</strong> (minimum <strong>{minRoles}</strong> so the backstories and alibis interlock). We generate <strong>strictly {attendingGuestIds.length} characters</strong> — zero unplayed side characters!
+                  Tap guests to mark them <strong>In</strong> or <strong>Out</strong> (minimum <strong>{minRoles}</strong> so the backstories and alibis interlock). We generate <strong>strictly {attendingGuestIds.length} characters</strong> - zero unplayed side characters!
                 </>
               )}
             </p>
@@ -1071,7 +1071,7 @@ export default function CustomerCastClient({
                   {tier} ({PLAYER_TIER_LIMITS[tier].label}):{' '}
                   <PriceDisplay tier={tier} locale={locale as Locale} />
                 </strong>{' '}
-                flat — up to {maxRoles} players included). Once paid, our site will generate your custom package in ~20 minutes and email you when it&apos;s ready in <strong>My Mysteries (Stories)</strong>!
+                flat - up to {maxRoles} players included). Once paid, our site will generate your custom package in ~20 minutes and email you when it&apos;s ready in <strong>My Mysteries (Stories)</strong>!
               </>
             )}
           </div>

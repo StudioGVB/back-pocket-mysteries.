@@ -279,11 +279,11 @@ export async function createCheckoutSessionAction({
                 : {
                     product_data: {
                       name: isSubscription
-                        ? 'Back Pocket Mysteries — Unlimited Monthly Pass (+ 1 Free Monthly Gift Pass)'
+                        ? 'Back Pocket Mysteries - Unlimited Monthly Pass (+ 1 Free Monthly Gift Pass)'
                         : `Murder Mystery Package (${tier.toUpperCase()})`,
                       description: isSubscription
                         ? 'Unlimited access to all murder mysteries (up to 16 players per event) + 1 Free Monthly Gift Pass every month.'
-                        : `Flat package price — includes all ${guests} players, Kahoot live lobby & host controls${
+                        : `Flat package price, includes all ${guests} players, Kahoot live lobby & host controls${
                             discountInfo.discountLabel ? ` (${discountInfo.discountLabel} applied)` : ''
                           }.`,
                     },
@@ -421,8 +421,8 @@ export async function createPaymentIntentAction({
           currency: currency.toLowerCase(),
           description:
             tier === 'subscribe'
-              ? 'Back Pocket Mysteries — Unlimited Monthly Pass (+ 1 Free Monthly Gift Pass)'
-              : `Back Pocket Mysteries — ${tier.toUpperCase()} Package (${guests} Players)`,
+              ? 'Back Pocket Mysteries - Unlimited Monthly Pass (+ 1 Free Monthly Gift Pass)'
+              : `Back Pocket Mysteries - ${tier.toUpperCase()} Package (${guests} Players)`,
           automatic_payment_methods: {
             enabled: true,
           },

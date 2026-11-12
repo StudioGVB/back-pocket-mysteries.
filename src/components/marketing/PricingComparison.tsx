@@ -62,7 +62,7 @@ export default function PricingComparison() {
         <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
           Compare <span className="text-brand-pink italic">Packages</span>
         </h2>
-        <p className="text-gray-400 font-bold text-lg">Same full-featured experience on every tier — only your group size changes the price.</p>
+        <p className="text-gray-400 font-bold text-lg">Same full-featured experience on every tier, only your group size changes the price.</p>
       </div>
 
       <div className="overflow-x-auto rounded-[2rem] border-2 border-gray-100 shadow-xl">

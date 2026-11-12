@@ -7,12 +7,12 @@ import { OnboardingWizard } from '@/components/account/OnboardingWizard';
 import { getEffectiveCoverUrl } from '@/utils/moodboard';
 
 const HOST_TIPS = [
-  "Assign the loudest guest as the red herring character — they'll commit to the bit.",
+  "Assign the loudest guest as the red herring character, they'll commit to the bit.",
   'Print character sheets double-sided. Save a tree, save a clue.',
   'Dim the lights and put on a jazz playlist before guests arrive. Atmosphere is everything.',
-  'Tell guests to stay in character until the big reveal — even at dinner.',
+  'Tell guests to stay in character until the big reveal, even at dinner.',
   'The killer should be the last person anyone suspects. Cast accordingly.',
-  "Have a 'game cheat sheet' ready for yourself — you'll thank yourself later.",
+  "Have a 'game cheat sheet' ready for yourself, you'll thank yourself later.",
   "Take a group photo before the mystery starts. They'll love it afterwards.",
 ];
 
@@ -163,7 +163,7 @@ export default function DashboardClient({
       <div>
         <p className="text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: '#fe04c6' }}>{today}</p>
         <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Welcome back, {firstName} 👋</h1>
-        <p className="text-slate-500 font-medium mt-1">Pick one of our most popular themes below and build it for your group — ready in ~30 minutes.</p>
+        <p className="text-slate-500 font-medium mt-1">Pick one of our most popular themes below and build it for your group, ready in ~30 minutes.</p>
       </div>
 
       {/* Most Popular Selling Themes OR Mysteries Coming Soon Banner */}
@@ -196,10 +196,10 @@ export default function DashboardClient({
                 Dropping Shortly
               </div>
               <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
-                Mysteries Coming Soon — Check Back Shortly!
+                Mysteries Coming Soon - Check Back Shortly!
               </h3>
               <p className="text-sm text-slate-300 font-medium leading-relaxed">
-                We&apos;re putting the final touches on our inaugural murder mystery packages. Check back shortly to pick your theme and cast your friends — or add your guests below right now so you&apos;re ready to play!
+                We&apos;re putting the final touches on our inaugural murder mystery packages. Check back shortly to pick your theme and cast your friends, or add your guests below right now so you&apos;re ready to play!
               </p>
             </div>
             <button
@@ -323,7 +323,7 @@ export default function DashboardClient({
             icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
           },
           {
-            label: 'Next Event', value: '—', sub: 'no date set yet',
+            label: 'Next Event', value: '-', sub: 'no date set yet',
             href: null,
             icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
           },
@@ -533,7 +533,7 @@ export default function DashboardClient({
             <div>
               <h3 className="font-black text-lg text-white">Upgrade to Unlimited + Get 1 Free Monthly Gift Pass</h3>
               <p className="text-sm text-slate-300 font-medium leading-snug mt-1">
-                Host unlimited mysteries every month for up to 16 players — plus get 1 Free Monthly Gift Pass to send any mystery to a friend!
+                Host unlimited mysteries every month for up to 16 players, plus get 1 Free Monthly Gift Pass to send any mystery to a friend!
               </p>
             </div>
           </div>
@@ -602,7 +602,7 @@ export default function DashboardClient({
               </div>
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  Friend&apos;s Email (Optional — emails them the gift code)
+                  Friend&apos;s Email (Optional - emails them the gift code)
                 </label>
                 <input
                   type="email"

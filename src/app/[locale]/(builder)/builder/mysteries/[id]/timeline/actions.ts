@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createPlotBeat, updatePlotBeat, deletePlotBeat, getMysteryById, getCharactersByMysteryId } from '@/services/mysteries';
 import { TimelinePhase, BeatType } from '@/types/database';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
-import { getCharacterRoleTitle } from '@/utils/hydration';
+import { getCharacterRoleTitle, stripEmDashes } from '@/utils/hydration';
 import { logAiUsage } from '@/utils/ai-logger';
 
 export async function addBeatAction(mysteryId: string, currentCount: number) {
@@ -154,10 +154,11 @@ export async function generateNarrativePlotAction(mysteryId: string, userIdeas: 
       6. Strictly adhere to the character definitions provided. If a character is marked as "Role: assistant", they MUST be directly involved in the twist or the murder mechanics.
       7. TWIST GUIDELINES: Make sure the twist fundamentally changes the nature of the crime. Do not use weak twists like "the accomplice swapped the killer's poison for a different poison." Good twists include: "the victim was actually trying to kill someone else and it backfired," "the victim wasn't the intended target," "the killer chickened out, but the victim was killed by someone else simultaneously," or "the killer's trap was triggered accidentally by the victim."
       8. CRITICAL NAMING RULE: NEVER invent fake person names. Always refer to characters using their exact bracketed Role Title tokens (e.g., {{The Reality TV Queen}}, {{The Ex}}).
+      9. CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
       
       EXAMPLE FORMAT:
       The Murder Explained
-      {{The Reality TV Queen}} was poisoned during the champagne toast — but she wasn’t the original target. {{The Fan-Favourite Flameout}} discovered {{The Reality TV Queen}} had been secretly hooking up with {{The Ex}}. Consumed by jealousy and rage, he decided to kill {{The Ex}} by spiking a drink. {{The Superfan}}, obsessively in love with {{The Reality TV Queen}}, found out about {{The Fan-Favourite Flameout}}’s plan through stalking. After being rejected by {{The Reality TV Queen}} one final time, {{The Superfan}} deliberately switched the glasses — letting her drink the poison instead. {{The Reality TV Queen}} dies.
+      {{The Reality TV Queen}} was poisoned during the champagne toast, but she wasn’t the original target. {{The Fan-Favourite Flameout}} discovered {{The Reality TV Queen}} had been secretly hooking up with {{The Ex}}. Consumed by jealousy and rage, he decided to kill {{The Ex}} by spiking a drink. {{The Superfan}}, obsessively in love with {{The Reality TV Queen}}, found out about {{The Fan-Favourite Flameout}}’s plan through stalking. After being rejected by {{The Reality TV Queen}} one final time, {{The Superfan}} deliberately switched the glasses, letting her drink the poison instead. {{The Reality TV Queen}} dies.
     `;
 
     const result = await model.generateContent(prompt);
@@ -167,7 +168,7 @@ export async function generateNarrativePlotAction(mysteryId: string, userIdeas: 
       mystery_id: mysteryId,
       usageMetadata: result.response.usageMetadata as any,
     });
-    return result.response.text().trim();
+    return stripEmDashes(result.response.text().trim());
   } catch (error) {
     console.error('Action Error: generateNarrativePlotAction', error);
     throw error;
@@ -217,10 +218,11 @@ export async function generateBeatsFromNarrativeAction(mysteryId: string, curren
 
       RULES:
       1. Generate exactly ${targetBeats} plot beats.
-      2. PACE THE STORY SLOWLY. Dedicate the majority of the beats (at least the first 60-70%) to the build-up—the shifting motives, secret discoveries, stalkings, and setup BEFORE the murder weapon is even introduced. Do not rush to the murder in Beat 1 or 2.
+      2. PACE THE STORY SLOWLY. Dedicate the majority of the beats (at least the first 60-70%) to the build-up, the shifting motives, secret discoveries, stalkings, and setup BEFORE the murder weapon is even introduced. Do not rush to the murder in Beat 1 or 2.
       3. The final few beats should cover the execution of the crime itself and the twist.
       4. The beats MUST strictly follow the events described in the Narrative Plot. Do not invent new story elements that contradict it.
       5. CRITICAL NAMING RULE: Preserve all bracketed character Role Title tokens (e.g. {{The Reality TV Queen}}, {{The Ex}}) in both event_title and description. NEVER invent fake person names.
+      6. CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
     `;
 
     const result = await model.generateContent(prompt);
@@ -247,8 +249,8 @@ export async function generateBeatsFromNarrativeAction(mysteryId: string, curren
         mystery_id: mysteryId,
         beat_number: currentCount + i + 1,
         sort_order: currentCount + i + 1,
-        event_title: beat.event_title || 'New Story Beat',
-        description: beat.description || '',
+        event_title: stripEmDashes(beat.event_title || 'New Story Beat'),
+        description: stripEmDashes(beat.description || ''),
         beat_type: bType,
         timeline_phase: tPhase,
         intensity_level: Number(beat.intensity_level) || 5,

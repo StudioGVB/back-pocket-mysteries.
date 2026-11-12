@@ -140,7 +140,7 @@ export function hasAssignedGuest(char: any): boolean {
 /**
  * Returns the name to display for a character across the UI and clues:
  * - If a friend/guest is tagged to the character, returns that friend's name (e.g. "Elia", "Scarlett").
- * - If no friend is tagged yet, returns the character's Role / Title (e.g. "The Star", "The Sister") — NEVER a fake name.
+ * - If no friend is tagged yet, returns the character's Role / Title (e.g. "The Star", "The Sister") - NEVER a fake name.
  */
 export function getCharacterDisplayName(
   char: any,
@@ -666,7 +666,41 @@ export function hydrateTextWithCharacters(
     });
   }
 
-  return hydrated;
+  return stripEmDashes(hydrated);
+}
+
+/**
+ * Removes AI-style em dashes (\u2014) and spaced en dashes (\u2013), replacing them with natural
+ * commas for parenthetical/sentence clauses or standard hyphens for headers/labels.
+ */
+export function stripEmDashes(text: string | null | undefined): string {
+  if (!text) return '';
+  if (!text.includes('\u2014') && !text.includes(' \u2013 ') && !text.includes('&mdash;')) {
+    return text;
+  }
+
+  let cleaned = text.replace(/&mdash;/g, '-');
+
+  // 1. Paired em-dashes within a single line where the continuation starts with a lowercase letter
+  cleaned = cleaned.replace(
+    /([a-zA-Z0-9\}"”'\)\]])\s*\u2014\s*([^\n\u2014]{2,120}?)\s*\u2014\s*([a-z])/g,
+    '$1, $2, $3'
+  );
+
+  // 2. Unspaced em-dash between words where right side is lowercase
+  cleaned = cleaned.replace(/([a-zA-Z0-9"”'\)\]])\u2014([a-z])/g, '$1, $2');
+
+  // 3. Spaced em-dash or en-dash after a clause (2+ words before it) followed by a lowercase word
+  cleaned = cleaned.replace(
+    /(\b\w+\s+[\w"”'\}\)\]]+)\s+[\u2014\u2013]\s+([a-z])/g,
+    '$1, $2'
+  );
+
+  // 4. Remaining em-dashes and spaced en-dashes -> standard hyphen
+  cleaned = cleaned.replace(/\s*\u2014\s*/g, (m) => (m.includes(' ') ? ' - ' : '-'));
+  cleaned = cleaned.replace(/ \u2013 /g, ' - ');
+
+  return cleaned;
 }
 
 /**
@@ -679,7 +713,7 @@ export function tokenizeTextWithCharacterRoles(
 ): string {
   if (!text) return '';
   const charList = Array.isArray(characters) ? characters : [];
-  if (charList.length === 0) return text;
+  if (charList.length === 0) return stripEmDashes(text);
 
   // Build alias-to-roleTitle map so suffix tokens like {{Dane_Initial}} become {{The Ex_Initial}}
   const aliasToRole = new Map<string, string>();
@@ -693,7 +727,7 @@ export function tokenizeTextWithCharacterRoles(
 
   // Protect suffix tokens (e.g. {{The Ex_Initial}}, {{Dane_Initial}}, {{Gabby_his}}) before hydration
   const savedSuffixTokens: string[] = [];
-  const protectedText = text.replace(
+  const protectedText = stripEmDashes(text).replace(
     /\{\{\s*([^}]+?)(?:_|\s+)(Initial|he|him|his|hes)\s*\}\}/gi,
     (_, rawBase, suffix) => {
       const cleanBase = String(rawBase).trim();
@@ -731,7 +765,7 @@ export function tokenizeTextWithCharacterRoles(
     return savedSuffixTokens[idx] || '';
   });
 
-  return normalized;
+  return stripEmDashes(normalized);
 }
 
 /**
@@ -858,7 +892,7 @@ export function replacePlaceholderNamesWithRoles(
   });
 
   result = result.replace(/\{\{([A-Za-z0-9\s'._&-]+)\}\}/g, '$1');
-  return result;
+  return stripEmDashes(result);
 }
 
 

@@ -136,8 +136,8 @@ export async function sendAdminPurchaseNotificationEmail(
     : `${siteUrl}/en/admin`;
 
   const subject = isSubscription
-    ? `👑 New Monthly Subscription (${formattedAmount}) — ${customerDisplay}`
-    : `🎉 New Mystery Purchase: ${productDisplay} (${formattedAmount}) — ${customerDisplay}`;
+    ? `👑 New Monthly Subscription (${formattedAmount}) - ${customerDisplay}`
+    : `🎉 New Mystery Purchase: ${productDisplay} (${formattedAmount}) - ${customerDisplay}`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 24px; border-radius: 12px; border-top: 5px solid #F02882;">
@@ -321,7 +321,7 @@ export async function sendCustomerGenerationStartedEmail(
   const myStoriesUrl = `${siteUrl}/${locale}/account/orders`;
   const greetingName = payload.customerName ? payload.customerName.split(' ')[0] : 'Detective';
 
-  const subject = `☕ We're Brewing Your Mystery Package! ("${payload.mysteryTitle}") — Ready in ~20 Mins`;
+  const subject = `☕ We're Brewing Your Mystery Package! ("${payload.mysteryTitle}") - Ready in ~20 Mins`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0b0914; color: #ffffff; padding: 32px 24px; border-radius: 16px; border-top: 6px solid #fe04c6;">
@@ -427,7 +427,7 @@ export async function sendCustomerMysteryReadyEmail(
     ? `${payload.pin.slice(0, 3)} ${payload.pin.slice(3)}`
     : 'Ready in Hub';
 
-  const subject = `🎉 Your Murder Mystery Package is Ready! — "${payload.mysteryTitle}"`;
+  const subject = `🎉 Your Murder Mystery Package is Ready! - "${payload.mysteryTitle}"`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0b0914; color: #ffffff; padding: 32px 24px; border-radius: 16px; border-top: 6px solid #10b981;">
@@ -457,9 +457,9 @@ export async function sendCustomerMysteryReadyEmail(
           What's Waiting Inside Your Ready Hub:
         </p>
         <ul style="margin: 0; padding-left: 18px; color: #e2e8f0; font-size: 13px; line-height: 1.7;">
-          <li><strong>1-Click Group Chat Character Link</strong> — Drop one link in the group chat so guests can click their character &amp; see their outfit!</li>
-          <li><strong>Individual Character Invites</strong> — Outlines, dress code, vibe &amp; reminder to bring a charged phone.</li>
-          <li><strong>How to Play Run-Through &amp; Host Set-Up Guide</strong> — Everything you need before party night starts.</li>
+          <li><strong>1-Click Group Chat Character Link</strong> - Drop one link in the group chat so guests can click their character &amp; see their outfit!</li>
+          <li><strong>Individual Character Invites</strong> - Outlines, dress code, vibe &amp; reminder to bring a charged phone.</li>
+          <li><strong>How to Play Run-Through &amp; Host Set-Up Guide</strong> - Everything you need before party night starts.</li>
         </ul>
       </div>
 

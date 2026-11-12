@@ -530,7 +530,7 @@ export function parseChatClue(title: string, rawText: string): ParsedChatClue {
       return;
     }
 
-    // Handle status lines like "(Status: SEEN 5:21 PM — No Reply)"
+    // Handle status lines like "(Status: SEEN 5:21 PM - No Reply)"
     const statusLineMatch = line.match(/^[\(\[]?Status\s*:\s*([^\)\]]+)[\)\]]?$/i);
     if (statusLineMatch) {
       explicitStatusFooter = statusLineMatch[1].trim();
@@ -593,7 +593,7 @@ export function parseChatClue(title: string, rawText: string): ParsedChatClue {
     contextLines.push(line);
   });
 
-  // Apply explicit status footer (e.g. "SEEN 5:21 PM — No Reply") to the last bubble if present
+  // Apply explicit status footer (e.g. "SEEN 5:21 PM - No Reply") to the last bubble if present
   if (explicitStatusFooter && bubbles.length > 0) {
     bubbles[bubbles.length - 1].status = `${explicitStatusFooter} ✓✓`;
   }
@@ -812,7 +812,7 @@ export function parseDocumentClue(title: string, rawText: string): ParsedDocumen
       return;
     }
 
-    // Parse "EYE SPY SOFTWARE — Accessing Device: 269" into structured metadata
+    // Parse "EYE SPY SOFTWARE - Accessing Device: 269" into structured metadata
     const eyeSpyMatch = line.match(/^EYE SPY SOFTWARE\s*[—\-–]\s*Accessing Device:\s*(.+)$/i);
     if (eyeSpyMatch) {
       department = 'DIGITAL FORENSICS INTERCEPT';
@@ -1346,7 +1346,7 @@ export function parseCallSheetClue(title: string, rawText: string): ParsedCallSh
     .map(l => l.trim())
     .filter(Boolean);
 
-  let headerTitle = cleanTitle || 'CONFIDENTIAL — PRODUCTION MEMO';
+  let headerTitle = cleanTitle || 'CONFIDENTIAL - PRODUCTION MEMO';
   const directives: string[] = [];
   let footerDirective: string | undefined;
   const stickyLines: string[] = [];

@@ -42,11 +42,11 @@ export default async function PricingPage(props: {
       id: 'basic' as const,
       name: 'Basic',
       tagline: '5–6 SUSPECTS • SOLO/DUO CASE FILE OR SMALL PARTY.',
-      desc: 'Includes 5 to 6 interlocking suspect dossiers — play as an intimate 5–6 guest roleplay party OR solve the entire case file solo or as a duo!',
+      desc: 'Includes 5 to 6 interlocking suspect dossiers, play as an intimate 5–6 guest roleplay party OR solve the entire case file solo or as a duo!',
       features: [
         '5–6 custom suspect roles & character booklets (minimum 5 so backstories tangle)',
         'Play 2 Ways: 5–6 Guest Roleplay Party OR 1–4 Player Detective Case File',
-        'Zero unplayed side characters when hosting a party — 1 role per guest',
+        'Zero unplayed side characters when hosting a party - 1 role per guest',
         'Interactive clues (texts, receipts, CCTV, voice memos)',
         'Guest names, avatars & real-life quirks woven into the story',
         'Kahoot-style 6-digit Game PIN & Spoiler-free Host Mode',
@@ -61,7 +61,7 @@ export default async function PricingPage(props: {
       id: 'premium' as const,
       name: 'Premium',
       tagline: '5–10 SUSPECTS • THE MAIN EVENT.',
-      desc: 'Our most popular package — ideal for birthdays, hens nights, and parties up to 10 guests (or an expanded 10-suspect detective case file).',
+      desc: 'Our most popular package, ideal for birthdays, hens nights, and parties up to 10 guests (or an expanded 10-suspect detective case file).',
       features: [
         '5–10 custom suspect roles & character booklets',
         'Expanded relationship web, rival alliances & tangled side-plots',
@@ -84,7 +84,7 @@ export default async function PricingPage(props: {
       features: [
         '5–16 custom suspect roles & character booklets',
         'Full-house conflict graph, multi-faction subplots & red herrings',
-        'Every attending guest gets a tailored role — no unplayed side characters',
+        'Every attending guest gets a tailored role, no unplayed side characters',
         'Interactive clues (group chats, audio wiretaps, forensics)',
         'Guest names, avatars & real-life quirks woven into the story',
         'Kahoot-style 6-digit Game PIN & Spoiler-free Host Mode',
@@ -103,7 +103,7 @@ export default async function PricingPage(props: {
       features: [
         'Unlimited mystery events every month',
         '🎁 1 Free Monthly Gift Pass (gift any mystery to a friend)',
-        'All cast sizes included (5–16 suspects — play solo, duo, or full party)',
+        'All cast sizes included (5–16 suspects, play solo, duo, or full party)',
         'Every complexity & spice level in the catalog',
         'Guest names, avatars & quirks woven into every game',
         'Kahoot-style live game lobbies & printable kits',
@@ -191,7 +191,7 @@ export default async function PricingPage(props: {
           <p className="text-gray-400 font-bold text-sm max-w-2xl mx-auto leading-relaxed">
             For context: hiring a human to write a custom mystery costs $500+ and takes weeks. <br />
             A generic boxed kit costs $40–$80 and has zero personalization. <br />
-            We deliver a fully customized, film-quality experience — for your whole group — in ~30 minutes.
+            We deliver a fully customized, film-quality experience, for your whole group, in ~30 minutes.
           </p>
         </div>
         

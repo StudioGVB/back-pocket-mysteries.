@@ -560,11 +560,11 @@ export function BalanceSheetClient({ initialReport }: Props) {
                 }
                 className="w-full bg-slate-800 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white"
               >
-                <option value="GBP">GBP (£) — British Pound</option>
-                <option value="USD">USD ($) — US Dollar</option>
-                <option value="EUR">EUR (€) — Euro</option>
-                <option value="AUD">AUD (A$) — Australian Dollar</option>
-                <option value="CAD">CAD (C$) — Canadian Dollar</option>
+                <option value="GBP">GBP (£) - British Pound</option>
+                <option value="USD">USD ($) - US Dollar</option>
+                <option value="EUR">EUR (€) - Euro</option>
+                <option value="AUD">AUD (A$) - Australian Dollar</option>
+                <option value="CAD">CAD (C$) - Canadian Dollar</option>
               </select>
             </div>
 
@@ -1067,7 +1067,7 @@ export function BalanceSheetClient({ initialReport }: Props) {
                 </div>
                 <div className="flex justify-between items-center text-sm text-gray-600">
                   <span>
-                    Google AI (Gemini &amp; Imagen — {initialReport.aiSummary.googleGenerationsCount} generations)
+                    Google AI (Gemini &amp; Imagen - {initialReport.aiSummary.googleGenerationsCount} generations)
                   </span>
                   <span className="font-bold text-brand-pink">
                     -{formatMoney(financials.googleAiCost)}
@@ -1643,7 +1643,7 @@ export function BalanceSheetClient({ initialReport }: Props) {
                   <tr>
                     <td colSpan={6} className="px-8 py-14 text-center">
                       <p className="text-xs font-black uppercase tracking-widest text-gray-400">
-                        No manual credit top-ups or bills logged yet — click &quot;+ Log Credit / Expense&quot; to record a bill
+                        No manual credit top-ups or bills logged yet, click &quot;+ Log Credit / Expense&quot; to record a bill
                       </p>
                     </td>
                   </tr>

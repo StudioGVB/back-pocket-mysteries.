@@ -84,7 +84,7 @@ export default async function CompareHubPage(props: { params: Promise<{ locale: 
             Why Back Pocket Mysteries Wins
           </h2>
           <p className="text-lg text-gray-600 font-bold max-w-2xl mx-auto mb-12">
-            Traditional murder mystery kits are static — the same story, the same characters, the same clues for every buyer. Back Pocket Mysteries uses AI to generate a completely unique, highly personalised mystery based on your theme, your guest list, and your inside jokes.
+            Traditional murder mystery kits are static, the same story, the same characters, the same clues for every buyer. Back Pocket Mysteries uses AI to generate a completely unique, highly personalised mystery based on your theme, your guest list, and your inside jokes.
           </p>
           <Link 
             href={`/${locale}/custom-murder-mystery`}

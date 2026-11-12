@@ -62,11 +62,11 @@ export function MysteryMoodboard({
           <p className="text-sm text-slate-500 font-medium mt-1">
             {isRealityGlam ? (
               <>
-                Think <strong>Gossip Girl</strong> meets <strong>Love Island</strong> — rooftop infinity pools, rosé champagne towers, 35mm paparazzi flash, and group-chat receipts.
+                Think <strong>Gossip Girl</strong> meets <strong>Love Island</strong> - rooftop infinity pools, rosé champagne towers, 35mm paparazzi flash, and group-chat receipts.
               </>
             ) : (
               <>
-                Step inside the world of <strong>{mysteryTitle}</strong> — setting inspiration, dress code energy, and party atmosphere.
+                Step inside the world of <strong>{mysteryTitle}</strong> - setting inspiration, dress code energy, and party atmosphere.
               </>
             )}
           </p>
@@ -238,7 +238,7 @@ export function MysteryMoodboard({
                   </span>
                 )}
                 <p className="text-xs font-bold text-slate-800 leading-snug">
-                  {photo.caption || `${mysteryTitle} — Scene #${idx + 1}`}
+                  {photo.caption || `${mysteryTitle} - Scene #${idx + 1}`}
                 </p>
               </button>
             );
@@ -300,7 +300,7 @@ export function MysteryMoodboard({
                   </span>
                 )}
                 <p className="text-sm font-bold text-slate-200">
-                  {activePhoto.caption || `${mysteryTitle} — Mood Board Photo ${lightboxIndex + 1} of ${photos.length}`}
+                  {activePhoto.caption || `${mysteryTitle} - Mood Board Photo ${lightboxIndex + 1} of ${photos.length}`}
                 </p>
               </div>
               <span className="text-xs font-black text-slate-500 uppercase tracking-widest">

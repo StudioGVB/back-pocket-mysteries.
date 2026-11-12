@@ -1,0 +1,14 @@
+[
+  {
+    "id": "f45cf968-d1bd-4401-ba92-89afe790059a",
+    "model_name": "gemini-2.5-pro",
+    "prompt_tokens": 157,
+    "completion_tokens": 570,
+    "cost_usd": 0.005896,
+    "feature_name": "generate_character_profile",
+    "mystery_id": "69b65a91-1cc2-4267-94a4-59297428af28",
+    "user_id": "4903bd39-e54f-42e4-b679-2af5d128bb8f",
+    "created_at": "2026-11-12T20:40:54.098Z",
+    "source": "logged"
+  }
+]

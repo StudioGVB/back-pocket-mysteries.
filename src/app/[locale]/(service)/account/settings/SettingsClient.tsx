@@ -254,7 +254,7 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
         list.unshift({
           code: rv.code,
           discount: `${rv.discountPercent}% Off Referral Reward`,
-          status: rv.used ? 'Used' : 'Unlocked — Ready for checkout!',
+          status: rv.used ? 'Used' : 'Unlocked - Ready for checkout!',
         });
       }
     }
@@ -262,7 +262,7 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
       list.unshift({
         code: user.appliedSignupPromo,
         discount: 'Welcome / Friend Promo Code',
-        status: 'Saved — Auto-applies at checkout',
+        status: 'Saved - Auto-applies at checkout',
       });
     }
     return list;
@@ -406,7 +406,7 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
       {
         code,
         discount: res.label || '20% Off Voucher',
-        status: 'Active — Auto-applies at checkout',
+        status: 'Active - Auto-applies at checkout',
       },
       ...prev,
     ]);
@@ -640,7 +640,7 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
               </div>
               <div>
                 <p className="font-black text-emerald-900">Verified Host Account</p>
-                <p className="text-sm text-emerald-700">{user.email} — Your account is active and ready to host.</p>
+                <p className="text-sm text-emerald-700">{user.email} - Your account is active and ready to host.</p>
               </div>
             </div>
           )}

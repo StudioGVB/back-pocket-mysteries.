@@ -223,7 +223,7 @@ export async function deleteAccount() {
     return { error: 'Not authenticated.' };
   }
 
-  // Delete user data first (guests, etc.) — RLS policies will scope this to the user
+  // Delete user data first (guests, etc.) - RLS policies will scope this to the user
   await supabase.from('guests').delete().eq('user_id', user.id);
 
   // Sign out first so the session is cleared

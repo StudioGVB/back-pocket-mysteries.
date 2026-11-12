@@ -37,7 +37,7 @@ export function CreateMysteryButton() {
               setIsPending(true);
               try {
                 await createMysteryAction(formData);
-                // Next.js redirect() throws a special object — this won't run on success
+                // Next.js redirect() throws a special object, this won't run on success
               } catch (e: any) {
                 // Re-throw Next.js redirect objects so navigation works
                 if (e?.digest?.startsWith('NEXT_REDIRECT')) {

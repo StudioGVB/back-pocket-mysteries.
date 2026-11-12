@@ -46,7 +46,7 @@ function toDatetimeLocalValue(isoString: string | null | undefined): string {
 function formatReadableDateTime(isoString: string | null | undefined): string {
   if (!isoString) return 'No End Date';
   const d = new Date(isoString);
-  if (isNaN(d.getTime())) return '—';
+  if (isNaN(d.getTime())) return '-';
   return d.toLocaleString('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -1157,7 +1157,7 @@ export default function DiscountsManagerClient({
                       />
                     ) : (
                       <div className="px-3.5 py-2.5 rounded-xl border border-dashed border-gray-200 bg-white/60 text-xs font-bold text-gray-400">
-                        No expiration — runs until manually paused
+                        No expiration, runs until manually paused
                       </div>
                     )}
                   </div>

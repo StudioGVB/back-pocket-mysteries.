@@ -261,7 +261,7 @@ export function PlayroomClient({
         try {
           await navigator.share({
             title: `Join ${mystery.title}`,
-            text: `Tap to join our Murder Mystery party! (PIN: ${pin.slice(0, 3)} ${pin.slice(3)} — No login needed)`,
+            text: `Tap to join our Murder Mystery party! (PIN: ${pin.slice(0, 3)} ${pin.slice(3)} - No login needed)`,
             url: cleanGuestUrl,
           });
           return;
@@ -1031,7 +1031,7 @@ export function PlayroomClient({
     );
   };
 
-  // Reusable Host Controls Modal Overlay ("Console" — Full Flow)
+  // Reusable Host Controls Modal Overlay ("Console" - Full Flow)
   const renderHostControlsModal = () => {
     if (!isHostPanelOpen) return null;
     const claimedCount = Object.keys(claimedCharacters).length;

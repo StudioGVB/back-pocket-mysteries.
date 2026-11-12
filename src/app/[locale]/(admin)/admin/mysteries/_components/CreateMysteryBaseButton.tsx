@@ -60,9 +60,9 @@ export function CreateMysteryBaseButton() {
                 setError(null);
                 try {
                   await createMysteryAction(formData);
-                  // On success, Next.js redirect() throws a special error — this won't run
+                  // On success, Next.js redirect() throws a special error, this won't run
                 } catch (e: any) {
-                  // Next.js redirect throws a special non-error object — rethrow it
+                  // Next.js redirect throws a special non-error object, rethrow it
                   if (e?.digest?.startsWith('NEXT_REDIRECT')) {
                     throw e;
                   }

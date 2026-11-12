@@ -17,7 +17,7 @@ export const faqsData: FAQ[] = [
   {
     category: "What We Do",
     q: "What is Back Pocket Mysteries?",
-    a: "We create personalized murder mystery party packs powered by human-crafted storylines and AI customization. Unlike generic kits with pre-set fictional names, our engine casts your real guests into iconic archetypes — weaving their real names, relationships, and inside jokes into a complete printable & live mobile mystery experience in ~30 minutes."
+    a: "We create personalized murder mystery party packs powered by human-crafted storylines and AI customization. Unlike generic kits with pre-set fictional names, our engine casts your real guests into iconic archetypes, weaving their real names, relationships, and inside jokes into a complete printable & live mobile mystery experience in ~30 minutes."
   },
   {
     category: "What We Do",
@@ -32,7 +32,7 @@ export const faqsData: FAQ[] = [
   {
     category: "What We Do",
     q: "Do you write these from scratch every time?",
-    a: "We start with human-crafted mystery architectures — like our flagship Reality TV Reunion mystery, Love On The Rocks — and our AI engine adapts the scripts, character booklets, alibis, and evidence around your specific guest roster."
+    a: "We start with human-crafted mystery architectures, like our flagship Reality TV Reunion mystery, Love On The Rocks, and our AI engine adapts the scripts, character booklets, alibis, and evidence around your specific guest roster."
   },
   {
     category: "What We Do",
@@ -47,12 +47,12 @@ export const faqsData: FAQ[] = [
   {
     category: "What We Do",
     q: "Can I solve a mystery solo, as a couple, or with just 2–3 friends (like a detective case file)?",
-    a: "Yes! The player count is purely for party theatrics — you do NOT need to act out a character to get information. Every mystery requires at least 5 characters in the story so the alibis, motives, and backstories tangle properly. If you are playing solo, as a duo, or with a small group, simply select 5–8 characters in Case-File Mode (you can cast your friends just for the hilarious personalized DMs!) and you will receive all of their suspect booklets, text threads, and audio wiretaps to solve the entire mystery together."
+    a: "Yes! The player count is purely for party theatrics, you do NOT need to act out a character to get information. Every mystery requires at least 5 characters in the story so the alibis, motives, and backstories tangle properly. If you are playing solo, as a duo, or with a small group, simply select 5–8 characters in Case-File Mode (you can cast your friends just for the hilarious personalized DMs!) and you will receive all of their suspect booklets, text threads, and audio wiretaps to solve the entire mystery together."
   },
   {
     category: "What We Do",
     q: "If I host a party with guests, will there be random side characters that nobody is playing?",
-    a: "Never! In Party Mode (5–16 guests), we generate strictly the exact number of characters to match your attending guest list (1 character per guest, minimum 5). If 7 friends are coming to your dinner party, there are 7 characters in the mystery — zero unplayed side characters."
+    a: "Never! In Party Mode (5–16 guests), we generate strictly the exact number of characters to match your attending guest list (1 character per guest, minimum 5). If 7 friends are coming to your dinner party, there are 7 characters in the mystery, zero unplayed side characters."
   },
   {
     category: "What We Do",
@@ -84,7 +84,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Pricing & Purchasing",
     q: "What is the difference between Basic, Premium, and Grand tiers?",
-    a: "Every single-event tier includes 100% of our features — AI guest personalization, interactive text/audio clues, Kahoot-style live mobile lobby, Spoiler-Free Host Mode, and any complexity or spice level. The tiers simply scale the number of custom character booklets (5–6, 5–10, or 5–16 suspects, with a minimum of 5 so backstories tangle) and expand the interlocking web of relationships, motives, and subplots."
+    a: "Every single-event tier includes 100% of our features - AI guest personalization, interactive text/audio clues, Kahoot-style live mobile lobby, Spoiler-Free Host Mode, and any complexity or spice level. The tiers simply scale the number of custom character booklets (5–6, 5–10, or 5–16 suspects, with a minimum of 5 so backstories tangle) and expand the interlocking web of relationships, motives, and subplots."
   },
   {
     category: "Pricing & Purchasing",
@@ -136,7 +136,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Gameplay & Hosting",
     q: "How long does a game typically last?",
-    a: "Every mystery typically lasts 1.5 to 3 hours across 3 investigation rounds plus the Final Accusation & Reveal — regardless of whether you choose Basic (4–6 players), Premium (4–10 players), or Grand (4–16 players)."
+    a: "Every mystery typically lasts 1.5 to 3 hours across 3 investigation rounds plus the Final Accusation & Reveal - regardless of whether you choose Basic (4–6 players), Premium (4–10 players), or Grand (4–16 players)."
   },
   {
     category: "Gameplay & Hosting",
@@ -198,7 +198,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Customization",
     q: "Why don't the characters on the theme page have first names?",
-    a: "Because your guests ARE the cast! Instead of forcing your friend to pretend his name is 'Chadwick,' he becomes 'Marco — The Ex' or 'Chloe — The Star.' Every role is an iconic archetype tailored around your real guest's name."
+    a: "Because your guests ARE the cast! Instead of forcing your friend to pretend his name is 'Chadwick,' he becomes 'Marco - The Ex' or 'Chloe - The Star.' Every role is an iconic archetype tailored around your real guest's name."
   },
   {
     category: "Customization",
@@ -228,7 +228,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Customization",
     q: "Are more themes coming soon?",
-    a: "Yes! We only display active, playtested packages on our Themes page — starting with our flagship Reality TV Reunion mystery, Love On The Rocks — and release new themes regularly."
+    a: "Yes! We only display active, playtested packages on our Themes page, starting with our flagship Reality TV Reunion mystery, Love On The Rocks, and release new themes regularly."
   },
 
   // Delivery & Setup
@@ -240,7 +240,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Delivery & Setup",
     q: "Do I have to print everything?",
-    a: "No! Guests can scan a QR code or enter your 6-digit Game PIN on their phones to view their secret round objectives, leaked group-chat clues, and audio wiretaps live — or you can print the PDF booklets if you love paper envelopes."
+    a: "No! Guests can scan a QR code or enter your 6-digit Game PIN on their phones to view their secret round objectives, leaked group-chat clues, and audio wiretaps live, or you can print the PDF booklets if you love paper envelopes."
   },
   {
     category: "Delivery & Setup",
@@ -250,7 +250,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Delivery & Setup",
     q: "How long does it take to set up before the party?",
-    a: "If playing via the Live Mobile Lobby, setup is instant — just display or share your 6-digit Game PIN. If printing paper booklets, allow 15–20 minutes to print and slip them into envelopes."
+    a: "If playing via the Live Mobile Lobby, setup is instant, just display or share your 6-digit Game PIN. If printing paper booklets, allow 15–20 minutes to print and slip them into envelopes."
   },
   {
     category: "Delivery & Setup",
@@ -260,7 +260,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Delivery & Setup",
     q: "What devices work with the Live Mobile Lobby?",
-    a: "Any smartphone, tablet, or laptop browser — no app download required. Plus, all downloadable files are standard PDFs."
+    a: "Any smartphone, tablet, or laptop browser, no app download required. Plus, all downloadable files are standard PDFs."
   },
   {
     category: "Delivery & Setup",

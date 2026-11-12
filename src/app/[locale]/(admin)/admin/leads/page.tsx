@@ -70,7 +70,7 @@ async function LeadsContent() {
                     <div className="text-sm font-black text-brand-dark">{lead.email}</div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="text-sm font-bold text-gray-500">{lead.full_name || '—'}</div>
+                    <div className="text-sm font-bold text-gray-500">{lead.full_name || '-'}</div>
                   </td>
                   <td className="px-8 py-6">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full">

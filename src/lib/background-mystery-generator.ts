@@ -238,7 +238,7 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
       const resolvedEmail = params.customerEmail || session?.customerEmail || null;
       const resolvedName = params.customerName || session?.customerName || null;
 
-      // 1. Send immediate "Go get a coffee — we're brewing your mystery!" confirmation email
+      // 1. Send immediate "Go get a coffee, we're brewing your mystery!" confirmation email
       if (resolvedEmail) {
         await sendCustomerGenerationStartedEmail({
           customerEmail: resolvedEmail,

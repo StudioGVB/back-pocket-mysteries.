@@ -821,7 +821,7 @@ export async function submitGuestMysteryReviewAction(payload: {
   const cleanComment = payload.comment.trim();
   const commentText = cleanComment
     ? `[${payload.mysteryTitle}${payload.characterRole ? ` • Played ${payload.characterRole}` : ''}] ${cleanComment}`
-    : `Played ${payload.mysteryTitle}${payload.characterRole ? ` as ${payload.characterRole}` : ''} — ${rating}/5 stars!`;
+    : `Played ${payload.mysteryTitle}${payload.characterRole ? ` as ${payload.characterRole}` : ''} - ${rating}/5 stars!`;
 
   const reviewEntry: GuestReviewItem = {
     id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,

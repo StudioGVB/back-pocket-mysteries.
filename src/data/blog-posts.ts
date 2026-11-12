@@ -49,7 +49,7 @@ export const blogPosts: BlogPost[] = [
       <p>Let’s be honest: most party hosts are time-poor but high-ambition. You want the drama, the laughs, and the "best night ever" compliments, but you don't want to spend three weeks writing scripts. That’s where a DIY Murder Mystery comes in. Whether you're celebrating a birthday, hosting a Halloween blowout, or just looking for an excuse to drink wine in a wig, a murder mystery is the perfect vehicle for an unforgettable night.</p>
       
       <h3>1. Choose Your Vibe and Theme</h3>
-      <p>Every great mystery starts with a setting. Are you feeling like a 1920s Gatsby-style <i>Speakeasy</i>? Or maybe a dark <i>Victorian Gothic</i> manor? The theme sets the dress code, the menu, and the stakes. When choosing, consider your guest list—how many "actors" do you have versus "detectives"? If you need inspiration, platforms like <a href="https://www.pinterest.com/search/pins/?q=murder%20mystery%20party%20ideas" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Pinterest offer thousands of mood boards</a> to get your creative juices flowing.</p>
+      <p>Every great mystery starts with a setting. Are you feeling like a 1920s Gatsby-style <i>Speakeasy</i>? Or maybe a dark <i>Victorian Gothic</i> manor? The theme sets the dress code, the menu, and the stakes. When choosing, consider your guest list, how many "actors" do you have versus "detectives"? If you need inspiration, platforms like <a href="https://www.pinterest.com/search/pins/?q=murder%20mystery%20party%20ideas" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Pinterest offer thousands of mood boards</a> to get your creative juices flowing.</p>
       <p>Also, consider the physical space you have available. A roaring 20s theme might require open floor space for dancing, while a tense psychological thriller might be best suited around a dimly lit dining table.</p>
       
       <div class="bg-brand-pink/10 p-8 rounded-3xl border-2 border-brand-pink my-10">
@@ -58,11 +58,11 @@ export const blogPosts: BlogPost[] = [
       </div>
 
       <h3>2. Curating The Guest List & Characters</h3>
-      <p>Assignments are key. Give the "Main Character" roles to your most dramatic friends—the ones who won't hesitate to yell or fake-cry. Give the quieter, more observant roles (like the lead detective) to introverts who prefer solving puzzles over performing.</p>
+      <p>Assignments are key. Give the "Main Character" roles to your most dramatic friends, the ones who won't hesitate to yell or fake-cry. Give the quieter, more observant roles (like the lead detective) to introverts who prefer solving puzzles over performing.</p>
       <p>Send out character packets at least a week in advance so people can source their costumes. According to <a href="https://www.vogue.com/fashion/trends" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Vogue's party etiquette experts</a>, giving guests ample time to prepare their outfits dramatically increases attendance and enthusiasm. Remember: the more detail you give them about their motives and secrets, the better the improvisation will be.</p>
 
       <h3>3. Set the Scene (Literally)</h3>
-      <p>Lighting is 90% of the atmosphere. Switch off the overhead lights and use neon strips, candles, or colored bulbs. Create "activity zones"—a bar for the suspects to gossip, and a "Crime Scene" where the clues are discovered.</p>
+      <p>Lighting is 90% of the atmosphere. Switch off the overhead lights and use neon strips, candles, or colored bulbs. Create "activity zones", a bar for the suspects to gossip, and a "Crime Scene" where the clues are discovered.</p>
       <p>Music is equally important. Create a playlist that builds tension throughout the night. Start with upbeat, era-appropriate music during cocktail hour, and transition to moody, cinematic soundtracks (think Hans Zimmer or Bernard Herrmann) after the murder occurs.</p>
 
       <h3>4. The Food and Drink Strategy</h3>
@@ -121,7 +121,7 @@ export const blogPosts: BlogPost[] = [
       <p>Set during the reunion of a competitive reality show (like our flagship mystery <i>Love On The Rocks</i>). The star collapses mid-champagne-toast, and every cast member has a motive to hide their secrets. It's modern, highly relatable, and encourages hilarious "confessional" moments.</p>
 
       <h3>The Final Verdict</h3>
-      <p>Choosing a theme is half the fun. Pick something that matches your friendship group's energy—whether they're goofy, serious, or ready for a high-fashion costume contest.</p>
+      <p>Choosing a theme is half the fun. Pick something that matches your friendship group's energy, whether they're goofy, serious, or ready for a high-fashion costume contest.</p>
     `
   },
   {
@@ -147,7 +147,7 @@ export const blogPosts: BlogPost[] = [
       <p>We’ve all been there: a corporate retreat that involves building a bridge out of straws or doing trust falls in a hotel conference room. It’s uninspired, and frankly, most employees dread it. According to studies highlighted in the <a href="https://hbr.org/topic/team-building" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Harvard Business Review</a>, poorly executed team-building exercises can actually decrease morale. But what if "team building" felt like an escape room on a grand scale?</p>
       
       <h3>Communication Under Pressure</h3>
-      <p>In a murder mystery, information is currency. Teams must interview suspects, analyze clues, and—most importantly—communicate with each other to solve the crime. It naturally breaks down silos and encourages departments (like Sales and Engineering) to work together in a fun, low-stakes environment. They have to negotiate for clues, collaborate on theories, and present their findings.</p>
+      <p>In a murder mystery, information is currency. Teams must interview suspects, analyze clues, and, most importantly, communicate with each other to solve the crime. It naturally breaks down silos and encourages departments (like Sales and Engineering) to work together in a fun, low-stakes environment. They have to negotiate for clues, collaborate on theories, and present their findings.</p>
 
       <div class="bg-brand-dark p-12 rounded-[3rem] text-white my-12 shadow-2xl relative overflow-hidden">
         <div class="relative z-10">
@@ -191,7 +191,7 @@ export const blogPosts: BlogPost[] = [
       <p>Writing a mystery is like building a clock. If one gear is slightly off, the whole thing stops. At Back Pocket Mysteries, we use a three-pillar system to ensure every game is unsolvable until it’s perfectly solvable. Whether you're an aspiring novelist studying the works of <a href="https://www.agathachristie.com/" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Agatha Christie</a>, or a host trying to write your own game, these principles apply.</p>
       
       <h3>1. The "Why" is Greater Than the "How"</h3>
-      <p>The mechanics of the murder (the weapon, the time) are secondary to the motive. Every character MUST have a reason to want the victim gone. This creates the "Red Herring" effect—every guest feels slightly guilty, keeping the suspicion alive. A good motive is visceral: jealousy, greed, revenge, or fear of exposure. If the motive is weak, the payoff feels unearned.</p>
+      <p>The mechanics of the murder (the weapon, the time) are secondary to the motive. Every character MUST have a reason to want the victim gone. This creates the "Red Herring" effect, every guest feels slightly guilty, keeping the suspicion alive. A good motive is visceral: jealousy, greed, revenge, or fear of exposure. If the motive is weak, the payoff feels unearned.</p>
 
       <h3>2. The Trail of Crumbs</h3>
       <p>A good mystery shouldn't be a random guess. There should be a logical through-line of clues. We divide clues into "Hard Clues" (physical evidence like a dropped receipt or a torn fabric) and "Soft Clues" (dialogue and behavior, such as catching someone in a lie about their alibi). The best detectives are the ones who can bridge the two.</p>
@@ -336,7 +336,7 @@ export const blogPosts: BlogPost[] = [
 
       <div class="bg-brand-dark p-10 rounded-[2rem] text-center my-10">
         <h4 class="text-white text-2xl font-black uppercase tracking-tight mb-4">Need a Theme?</h4>
-        <p class="text-gray-400 mb-6">Explore our flagship Reality TV Reunion mystery <i>Love On The Rocks</i> — built for unforgettable birthdays and hens nights.</p>
+        <p class="text-gray-400 mb-6">Explore our flagship Reality TV Reunion mystery <i>Love On The Rocks</i> - built for unforgettable birthdays and hens nights.</p>
         <a href="/themes" class="px-8 py-3 bg-white text-brand-dark rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-colors">Browse Party Themes</a>
       </div>
 
@@ -407,7 +407,7 @@ export const blogPosts: BlogPost[] = [
     },
     content: `
       <h2>So, You've Been Invited to a Murder...</h2>
-      <p>Getting invited to a murder mystery party is thrilling, but if you've never been to one, it can also feel a bit intimidating. Will you have to act? Do you have to memorize lines? What if you're the killer and you ruin the game? Relax—here is exactly what will happen and how to survive the night.</p>
+      <p>Getting invited to a murder mystery party is thrilling, but if you've never been to one, it can also feel a bit intimidating. Will you have to act? Do you have to memorize lines? What if you're the killer and you ruin the game? Relax, here is exactly what will happen and how to survive the night.</p>
       
       <h3>Before the Party: Costumes and Prep</h3>
       <p>You will receive your character assignment from your host prior to the party. This includes your character role, backstory, costume suggestions, and a few secrets. <strong>Your only job right now is to find an outfit.</strong> You do NOT need to memorize a script. Just get a feel for your character's vibe. (Need help? Check out <a href="https://www.wikihow.com/Dress-for-a-Murder-Mystery-Party" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">WikiHow's guide on dressing for a mystery party</a>).</p>
@@ -421,7 +421,7 @@ export const blogPosts: BlogPost[] = [
       </div>
 
       <h3>The Murder & The Investigation</h3>
-      <p>Eventually, someone will "die" (usually dramatically at the end of Round 1). The host will unlock Round 2 and present new evidence—like leaked group-chat screenshots, audio wiretaps, and forensic clues. From there, it’s a free-for-all. You will gossip, accuse, defend yourself, and try to piece together the timeline.</p>
+      <p>Eventually, someone will "die" (usually dramatically at the end of Round 1). The host will unlock Round 2 and present new evidence, like leaked group-chat screenshots, audio wiretaps, and forensic clues. From there, it’s a free-for-all. You will gossip, accuse, defend yourself, and try to piece together the timeline.</p>
 
       <h3>Don't Worry About Being a Good Actor</h3>
       <p>You don't need an Oscar. In fact, simply reading your clues with a dramatic voice is usually the funniest part of the night. The pressure is low, and everyone is in the same boat. If you're ready to dive in, suggest a <a href="/compare" class="text-brand-pink font-bold hover:underline">modern, easy-to-play game format</a> to your host for their next party!</p>
@@ -447,7 +447,7 @@ export const blogPosts: BlogPost[] = [
     },
     content: `
       <h2>Scaling the Suspense</h2>
-      <p>Hosting a mystery for 6 people around a dinner table is intimate. Hosting a mystery for 16 people — or running multiple tables across a company offsite — requires the right structure. Traditional boxed kits fall apart when the player count gets high because they rely on everyone sitting quietly and listening to one person read a static script. For larger events, you need a dynamic mingle strategy.</p>
+      <p>Hosting a mystery for 6 people around a dinner table is intimate. Hosting a mystery for 16 people, or running multiple tables across a company offsite, requires the right structure. Traditional boxed kits fall apart when the player count gets high because they rely on everyone sitting quietly and listening to one person read a static script. For larger events, you need a dynamic mingle strategy.</p>
       
       <h3>The "Mingle" Format is Mandatory</h3>
       <p>For larger groups, you must use a "mingle" or round-based social deduction format. Instead of reading a central script aloud to the room, guests are given individual secrets and objectives for each round, and they roam the room to interrogate each other in small groups. It creates a chaotic, highly energetic atmosphere similar to a bustling cocktail party. <a href="https://www.bizbash.com/" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Event professionals at BizBash</a> frequently recommend mingle formats to maximize networking.</p>
@@ -460,7 +460,7 @@ export const blogPosts: BlogPost[] = [
       </ul>
 
       <div class="bg-brand-dark p-12 rounded-[3rem] text-white my-10 shadow-xl">
-        <h4 class="text-3xl font-black mb-4 uppercase tracking-tighter">Up to 16 Suspects Per Game — Or Unlimited Tables</h4>
+        <h4 class="text-3xl font-black mb-4 uppercase tracking-tighter">Up to 16 Suspects Per Game - Or Unlimited Tables</h4>
         <p class="text-gray-300 mb-8 font-bold">Our Grand tier supports up to 16 fully customized suspects in a single mystery, while our Unlimited Monthly Pass lets event organizers generate unlimited mysteries for multi-table events.</p>
         <a href="/pricing" class="inline-block px-8 py-3 bg-brand-pink rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-pink transition-colors">See Group Pricing</a>
       </div>
@@ -532,7 +532,7 @@ export const blogPosts: BlogPost[] = [
     },
     content: `
       <h2>A Killer Halloween</h2>
-      <p>Halloween is already about costumes, acting, and the macabre—making it the absolute perfect holiday for a <strong>Halloween murder mystery party</strong>. Instead of just bobbing for apples and playing monster mash, give your guests a thrilling whodunit that will keep them engaged all night long.</p>
+      <p>Halloween is already about costumes, acting, and the macabre, making it the absolute perfect holiday for a <strong>Halloween murder mystery party</strong>. Instead of just bobbing for apples and playing monster mash, give your guests a thrilling whodunit that will keep them engaged all night long.</p>
       
       <h3>1. Spooky Themes That Work</h3>
       <p>While any mystery can be played on Halloween, leaning into the season makes it special. Consider themes like <em>The Haunted Asylum</em>, <em>Vampire Aristocracy</em>, or a classic <em>Victorian Ghost Hunt</em>. A <a href="https://en.wikipedia.org/wiki/Gothic_fiction" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Gothic Horror setting</a> provides an incredible aesthetic for costumes and decor.</p>
@@ -572,7 +572,7 @@ export const blogPosts: BlogPost[] = [
     },
     content: `
       <h2>Food to Die For</h2>
-      <p>One of the most common questions hosts ask is: <em>"What should I serve?"</em> A <strong>murder mystery dinner menu</strong> needs to balance theme, flavor, and most importantly—logistics. You want food that guests can eat while holding a clue card and interrogating the suspect across the room.</p>
+      <p>One of the most common questions hosts ask is: <em>"What should I serve?"</em> A <strong>murder mystery dinner menu</strong> needs to balance theme, flavor, and most importantly, logistics. You want food that guests can eat while holding a clue card and interrogating the suspect across the room.</p>
       
       <h3>1. The "Poisoned" Cocktail Hour</h3>
       <p>Start the night with signature drinks. A "Black Widow" blackberry smash or an "Arsenic" green apple martini sets the mood instantly. Use dry ice stirrers for a smoking effect, or rim the glasses with red-dyed sugar. For culinary inspiration, <a href="https://www.epicurious.com/" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Epicurious</a> has fantastic holiday cocktail guides.</p>

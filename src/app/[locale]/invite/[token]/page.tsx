@@ -8,7 +8,7 @@ interface Props {
 
 export const unstable_instant = false;
 
-export const metadata = { title: 'You\'re Invited — Back Pocket Mysteries' };
+export const metadata = { title: 'You\'re Invited - Back Pocket Mysteries' };
 
 export default async function InvitePage({ params }: Props) {
   const { locale, token } = await params;

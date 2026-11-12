@@ -195,7 +195,7 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
 
       {/* Screen view layout helper notice */}
       <div className="bg-gradient-to-r from-[#FF1493] to-[#4169E1] text-white px-8 py-3 text-center text-sm font-bold tracking-wide shadow-md print:hidden flex items-center justify-center gap-2">
-        <span>✨ <strong>Print Preview Mode</strong> — This page is formatted specifically for A4/Letter printing. Click any Polaroid to inspect clue details.</span>
+        <span>✨ <strong>Print Preview Mode</strong> - This page is formatted specifically for A4/Letter printing. Click any Polaroid to inspect clue details.</span>
       </div>
 
       {/* Title / Cover Page */}

@@ -1,5 +1,11 @@
-import React from 'react';
-import { GscStatsResult } from '@/app/actions/admin-vercel';
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  GscStatsResult,
+  saveGoogleSearchConsoleConfigAction,
+} from '@/app/actions/admin-vercel';
 
 interface DimensionRow {
   key: string;
@@ -22,7 +28,44 @@ export function TrafficTables({
   browsers?: DimensionRow[];
   gsc?: GscStatsResult;
 }) {
+  const router = useRouter();
   const totalDeviceVisitors = devices.reduce((s, d) => s + (d.visitors || 0), 0);
+
+  const [showSetupForm, setShowSetupForm] = useState(false);
+  const [siteUrlInput, setSiteUrlInput] = useState(
+    gsc?.siteUrl || 'sc-domain:backpocketmysteries.com'
+  );
+  const [jsonOrEmailInput, setJsonOrEmailInput] = useState('');
+  const [privateKeyInput, setPrivateKeyInput] = useState('');
+  const [isSavingGsc, setIsSavingGsc] = useState(false);
+  const [gscFormMsg, setGscFormMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(
+    null
+  );
+
+  const handleSaveGsc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingGsc(true);
+    setGscFormMsg(null);
+    const res = await saveGoogleSearchConsoleConfigAction({
+      siteUrl: siteUrlInput,
+      serviceAccountJsonOrEmail: jsonOrEmailInput,
+      privateKey: privateKeyInput,
+    });
+    setIsSavingGsc(false);
+    if (res.ok) {
+      setGscFormMsg({
+        type: 'ok',
+        text: 'Google Search Console credentials saved! Refreshing live search data...',
+      });
+      setShowSetupForm(false);
+      router.refresh();
+    } else {
+      setGscFormMsg({
+        type: 'err',
+        text: res.error || 'Could not save credentials.',
+      });
+    }
+  };
 
   return (
     <div className="space-y-8 mt-8">
@@ -199,42 +242,115 @@ export function TrafficTables({
                 Direct search queries, organic impressions, clicks &amp; ranking positions from Google
               </p>
             </div>
-            {gsc.siteUrl && (
-              <span className="text-xs font-mono font-bold text-gray-500 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-                {gsc.siteUrl}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {gsc.siteUrl && (
+                <span className="text-xs font-mono font-bold text-gray-500 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
+                  {gsc.siteUrl}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowSetupForm((v) => !v)}
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest transition-colors cursor-pointer"
+              >
+                {gsc.isConnected && !gsc.error ? '⚙️ Update Credentials' : '🔌 Connect Search Console'}
+              </button>
+            </div>
           </div>
 
-          {!gsc.isConnected ? (
-            <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-6">
-              <p className="text-sm font-black text-brand-dark mb-1">
-                Google Search Console API credentials not detected
-              </p>
-              <p className="text-xs font-semibold text-gray-500 leading-relaxed mb-4">
-                We never display fake search numbers. To stream live organic search queries, impressions, clicks, and average ranking position directly from Google Search Console, add your Service Account credentials to <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200 text-brand-dark">.env.local</code> or Vercel Environment Variables:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono bg-white p-4 rounded-xl border border-gray-200 text-slate-700">
-                <div>
-                  <span className="font-black text-brand-pink block mb-0.5">1. Site Property</span>
-                  GOOGLE_SEARCH_CONSOLE_SITE_URL=&quot;sc-domain:backpocketmysteries.com&quot;
-                </div>
-                <div>
-                  <span className="font-black text-brand-pink block mb-0.5">2. Service Account Email</span>
-                  GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL=&quot;...@....iam.gserviceaccount.com&quot;
-                </div>
-                <div>
-                  <span className="font-black text-brand-pink block mb-0.5">3. Private Key</span>
-                  GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY=&quot;-----BEGIN PRIVATE KEY-----...&quot;
-                </div>
-              </div>
+          {gscFormMsg && (
+            <div
+              className={`mb-6 p-4 rounded-2xl text-xs font-bold border ${
+                gscFormMsg.type === 'ok'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-red-50 border-red-200 text-red-600'
+              }`}
+            >
+              {gscFormMsg.text}
             </div>
-          ) : gsc.error ? (
+          )}
+
+          {(!gsc.isConnected || showSetupForm) && (
+            <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-6 mb-6 space-y-5">
+              <div>
+                <p className="text-sm font-black text-brand-dark mb-1">
+                  Connect Google Search Console (Takes 60 Seconds)
+                </p>
+                <p className="text-xs font-semibold text-gray-600 leading-relaxed">
+                  Paste your Google Cloud Service Account JSON file below (or add <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200">GOOGLE_SEARCH_CONSOLE_CREDENTIALS_JSON</code> in Vercel). Remember to add the Service Account&apos;s <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200">client_email</code> as a <strong>Read-Only User</strong> in <strong>Google Search Console → Settings → Users and permissions</strong> for <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200">backpocketmysteries.com</code>.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveGsc} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">
+                    1. Search Console Property URL
+                  </label>
+                  <input
+                    type="text"
+                    value={siteUrlInput}
+                    onChange={(e) => setSiteUrlInput(e.target.value)}
+                    placeholder="sc-domain:backpocketmysteries.com or https://backpocketmysteries.com/"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-brand-pink"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">
+                    2. Paste Full Service Account JSON (or Service Account Email)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={jsonOrEmailInput}
+                    onChange={(e) => setJsonOrEmailInput(e.target.value)}
+                    placeholder='Paste the entire {"type": "service_account", "client_email": "...", "private_key": "..."} JSON here...'
+                    className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-brand-pink"
+                  />
+                </div>
+
+                {!jsonOrEmailInput.trim().startsWith('{') && jsonOrEmailInput.trim().length > 0 && (
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">
+                      3. Private Key (only needed if you entered email instead of full JSON above)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={privateKeyInput}
+                      onChange={(e) => setPrivateKeyInput(e.target.value)}
+                      placeholder="-----BEGIN PRIVATE KEY-----\n..."
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-brand-pink"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3">
+                  {showSetupForm && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSetupForm(false)}
+                      className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isSavingGsc || !jsonOrEmailInput.trim()}
+                    className="px-6 py-2.5 rounded-xl bg-brand-pink hover:bg-brand-dark text-white text-xs font-black uppercase tracking-widest transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSavingGsc ? 'Connecting...' : '✓ Save & Connect Search Console'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {gsc.isConnected && gsc.error ? (
             <div className="rounded-2xl bg-red-50 border border-red-200 p-6 text-xs font-bold text-red-600">
               {gsc.error}
             </div>
-          ) : (
-            <div className="space-y-6">
+          ) : gsc.isConnected ? (
+            <div className="space-y-8">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Organic Clicks</p>
@@ -262,45 +378,85 @@ export function TrafficTables({
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      <th className="py-3 pr-4">Search Query</th>
-                      <th className="py-3 px-4 text-right">Clicks</th>
-                      <th className="py-3 px-4 text-right">Impressions</th>
-                      <th className="py-3 px-4 text-right">CTR</th>
-                      <th className="py-3 pl-4 text-right">Avg Position</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 text-sm">
-                    {gsc.topQueries.map((q, idx) => (
-                      <tr key={idx}>
-                        <td className="py-3 pr-4 font-bold text-gray-800">{q.query}</td>
-                        <td className="py-3 px-4 text-right font-black text-brand-dark">{q.clicks}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-gray-500">
-                          {q.impressions.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-right font-semibold text-gray-500">
-                          {(q.ctr * 100).toFixed(1)}%
-                        </td>
-                        <td className="py-3 pl-4 text-right font-bold text-brand-pink">
-                          {q.position.toFixed(1)}
-                        </td>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="overflow-x-auto">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-brand-dark mb-3">
+                    Top Organic Search Queries
+                  </h4>
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        <th className="py-3 pr-4">Search Query</th>
+                        <th className="py-3 px-3 text-right">Clicks</th>
+                        <th className="py-3 px-3 text-right">Impr.</th>
+                        <th className="py-3 pl-3 text-right">Pos.</th>
                       </tr>
-                    ))}
-                    {gsc.topQueries.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="py-6 text-center text-gray-400 text-sm">
-                          No search queries recorded in this date window.
-                        </td>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-sm">
+                      {gsc.topQueries.map((q, idx) => (
+                        <tr key={idx}>
+                          <td className="py-2.5 pr-4 font-bold text-gray-800">{q.query}</td>
+                          <td className="py-2.5 px-3 text-right font-black text-brand-dark">{q.clicks}</td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-gray-500">
+                            {q.impressions.toLocaleString()}
+                          </td>
+                          <td className="py-2.5 pl-3 text-right font-bold text-brand-pink">
+                            {q.position.toFixed(1)}
+                          </td>
+                        </tr>
+                      ))}
+                      {gsc.topQueries.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="py-6 text-center text-gray-400 text-sm">
+                            No search queries recorded in this date window yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-brand-dark mb-3">
+                    Top Organic Landing Pages
+                  </h4>
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        <th className="py-3 pr-4">Landing Page</th>
+                        <th className="py-3 px-3 text-right">Clicks</th>
+                        <th className="py-3 px-3 text-right">Impr.</th>
+                        <th className="py-3 pl-3 text-right">Pos.</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-sm">
+                      {(gsc.topPages || []).map((p, idx) => (
+                        <tr key={idx}>
+                          <td className="py-2.5 pr-4 font-mono text-xs font-bold text-gray-700 truncate max-w-[220px]">
+                            {p.page.replace(/^https?:\/\/[^/]+/, '') || '/'}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-black text-brand-dark">{p.clicks}</td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-gray-500">
+                            {p.impressions.toLocaleString()}
+                          </td>
+                          <td className="py-2.5 pl-3 text-right font-bold text-brand-pink">
+                            {p.position.toFixed(1)}
+                          </td>
+                        </tr>
+                      ))}
+                      {(!gsc.topPages || gsc.topPages.length === 0) && (
+                        <tr>
+                          <td colSpan={4} className="py-6 text-center text-gray-400 text-sm">
+                            No organic page impressions recorded in this window yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

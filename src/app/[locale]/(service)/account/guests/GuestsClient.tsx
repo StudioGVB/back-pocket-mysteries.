@@ -263,7 +263,7 @@ function PendingCard({ invite, locale, onCancel }: { invite: PendingInvite; loca
       </div>
       <p className="font-black text-slate-900 text-sm truncate mb-1">{displayTarget}</p>
       <p className="text-xs text-slate-400 font-medium mb-4">
-        {isShareLink ? 'Link ready — waiting for your friend to claim.' : 'Invite sent — waiting for them to join.'}
+        {isShareLink ? 'Link ready, waiting for your friend to claim.' : 'Invite sent, waiting for them to join.'}
       </p>
       <div className="flex items-center justify-between mt-auto pt-2">
         {invite.invite_token ? (
@@ -440,7 +440,7 @@ function InviteModal({
         {/* Optional Personal Note (applies to both Link & Email) */}
         <div className="mb-5">
           <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
-            Personal Note <span className="font-medium normal-case tracking-normal text-slate-300">(optional — shown on their invite card)</span>
+            Personal Note <span className="font-medium normal-case tracking-normal text-slate-300">(optional - shown on their invite card)</span>
           </label>
           <textarea
             className={`${inputClass} resize-none`}
@@ -660,7 +660,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
         <div>
           <h1 className="text-4xl font-black text-slate-900 mb-2">My Guests</h1>
           <p className="text-slate-500 font-medium text-lg">
-            Save your crew for quick casting — or invite them to create their own profile.
+            Save your crew for quick casting, or invite them to create their own profile.
           </p>
           <div className="mt-3">
             <Link href={`/${locale}/account/profile`} className="inline-flex items-center gap-1.5 text-sm font-bold transition-colors hover:opacity-80" style={{ color: '#fe04c6' }}>
@@ -695,7 +695,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
           </div>
           <h3 className="text-2xl font-black text-slate-900 mb-3">No guests yet</h3>
           <p className="text-slate-500 font-medium max-w-sm mb-10">
-            Add guests manually or invite friends to create their own profile — their details will automatically appear here.
+            Add guests manually or invite friends to create their own profile, their details will automatically appear here.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <button

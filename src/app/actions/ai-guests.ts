@@ -42,7 +42,7 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
             if (hl === 'Short') {
               hairStyle = `men's short cropped barbershop haircut (neat tapered sides and back, short ${tex} texture on top)`;
             } else if (hl === 'Medium') {
-              hairStyle = `men's medium-length barbershop haircut (cropped well above the ears and collar, neat tapered sides with a medium-length ${tex} textured top — strictly a masculine men's cut, NOT long hair and NOT touching the shoulders)`;
+              hairStyle = `men's medium-length barbershop haircut (cropped well above the ears and collar, neat tapered sides with a medium-length ${tex} textured top, strictly a masculine men's cut, NOT long hair and NOT touching the shoulders)`;
             } else if (hl === 'Shoulder-Length') {
               hairStyle = `men's shoulder-length ${tex} texture hair`;
             } else {

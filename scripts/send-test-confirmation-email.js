@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Quick test script — sends the AccountConfirmationEmail template
+ * Quick test script, sends the AccountConfirmationEmail template
  * to Hello@backpocketgames.com via Resend.
  * Run with: node scripts/send-test-confirmation-email.js
  */
@@ -12,7 +12,7 @@ const React = require('react');
 // Inline the email template so we don't need to transpile TSX
 const { default: AccountConfirmationEmail } = require('../src/emails/AccountConfirmationEmail');
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_cLjxv47E_N7dyBwjy5DALFfKXLgQupexF');
+const resend = new Resend(process.env.RESEND_API_KEY || 'process.env.RESEND_API_KEY');
 
 async function sendTest() {
   const html = await renderAsync(React.createElement(AccountConfirmationEmail));
@@ -20,7 +20,7 @@ async function sendTest() {
   const { data, error } = await resend.emails.send({
     from: 'Back Pocket Mysteries <noreply@backpocketgames.com>',
     to: 'Hello@backpocketgames.com',
-    subject: '🎭 [Test] Confirm Your Email — Back Pocket Mysteries',
+    subject: '🎭 [Test] Confirm Your Email - Back Pocket Mysteries',
     html,
   });
 

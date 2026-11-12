@@ -13,7 +13,7 @@ export const CURRENCY_MAP: Record<string, string> = {
 
 export const DEFAULT_CURRENCY = 'USD'
 
-// Pricing tiers in base USD — priced strictly by player count:
+// Pricing tiers in base USD, priced strictly by player count:
 // basic: 4–6 players ($19)
 // premium: 4–10 players ($25)
 // grand: 4–16 players ($33)

@@ -307,7 +307,7 @@ export default function CheckoutClient({
                 Step 1 • Select Your Package
               </span>
               <h2 className="text-xl font-black text-slate-900">
-                Flat Price — All {guests} Cast Guests Included
+                Flat Price - All {guests} Cast Guests Included
               </h2>
             </div>
 
@@ -399,7 +399,7 @@ export default function CheckoutClient({
                 <div className="h-14 bg-slate-200 rounded-2xl w-full" />
               </div>
             ) : totalCost === 0 ? (
-              /* 100% Discount Applied — Free Unlock */
+              /* 100% Discount Applied - Free Unlock */
               <form onSubmit={handleTestSimulationSubmit} className="space-y-4">
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
                   🎉 Your promotion reduced the total to {formattedTotal}! Click below to unlock your mystery and 6-digit Kahoot Game PIN immediately.

@@ -51,7 +51,7 @@ export default function KahootPinJoinPage() {
             Enter Game PIN
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 font-medium mt-2">
-            Enter the 6-digit code from your host&apos;s screen to join the lobby immediately — no account or sign-up required.
+            Enter the 6-digit code from your host&apos;s screen to join the lobby immediately, no account or sign-up required.
           </p>
         </div>
 

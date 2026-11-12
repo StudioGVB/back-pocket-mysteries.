@@ -150,9 +150,9 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
             <p style="color:#555;font-size:16px;line-height:1.7;margin:0 0 16px;">
               They're using Back Pocket Mysteries to build custom murder mystery nights and have invited you to collaborate! Create your own player profile so you can join their roster, connect your profiles, and be cast perfectly in their upcoming mysteries.
             </p>
-            ${note ? `<div style="background:#f9f9f9;border-left:3px solid #fe04c6;border-radius:4px;padding:16px 20px;margin:0 0 24px;"><p style="color:#555;font-size:15px;line-height:1.7;margin:0;font-style:italic;">"${note}"</p><p style="color:#aaa;font-size:12px;margin:8px 0 0;font-weight:700;">— ${hostName}</p></div>` : ''}
+            ${note ? `<div style="background:#f9f9f9;border-left:3px solid #fe04c6;border-radius:4px;padding:16px 20px;margin:0 0 24px;"><p style="color:#555;font-size:15px;line-height:1.7;margin:0;font-style:italic;">"${note}"</p><p style="color:#aaa;font-size:12px;margin:8px 0 0;font-weight:700;"> - ${hostName}</p></div>` : ''}
             <p style="color:#555;font-size:16px;line-height:1.7;margin:0 0 36px;">
-              Create your free account, build your avatar, set your character preferences and dietary needs — then you're on the list for future mystery nights.
+              Create your free account, build your avatar, set your character preferences and dietary needs, then you're on the list for future mystery nights.
             </p>
 
             <table cellpadding="0" cellspacing="0" width="100%">
@@ -211,7 +211,7 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
   });
 
   if (emailError) {
-    // Still created the DB record — soft fail on email
+    // Still created the DB record, soft fail on email
     console.error('Invite email failed:', emailError);
   }
 

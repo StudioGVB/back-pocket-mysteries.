@@ -1,7 +1,7 @@
 {
   "common": {
     "siteTitle": "Back Pocket Mysteries | Packs d'Enquête Personnalisés et Créés par des Humains",
-    "siteDescription": "Votre liste d'invités. Vos relations. Votre drame — tissé dans un pack d'enquête prêt à imprimer en ~30 minutes.",
+    "siteDescription": "Votre liste d'invités. Vos relations. Votre drame, tissé dans un pack d'enquête prêt à imprimer en ~30 minutes.",
     "howItWorks": "Comment ça marche",
     "themes": "Thèmes",
     "pricing": "Tarifs",
@@ -32,7 +32,7 @@
     "hero": {
       "badge": "Votre fête organisée en ~30 minutes",
       "title": "Une enquête, construite autour, de vos proches.",
-      "subtitle": "Vrais noms. Vraies relations. Vrai drame. Nous créons un pack d'enquête entièrement personnalisé et prêt à imprimer — en ~30 minutes.",
+      "subtitle": "Vrais noms. Vraies relations. Vrai drame. Nous créons un pack d'enquête entièrement personnalisé et prêt à imprimer, en ~30 minutes.",
       "ctaPick": "Choisir un Thème",
       "ctaHow": "Comment ça marche",
       "priceLabel": "À partir de {{price}}",
@@ -40,7 +40,7 @@
     },
     "why": {
       "title": "Pas juste un kit. Votre kit.",
-      "desc": "Tous les autres packs d'enquête vous donnent une histoire fixe avec des espaces vides à remplir. Nous générons l'ensemble autour de votre liste d'invités réelle — noms, relations et tout le drame — afin que chaque indice, personnage et confession semble avoir été écrit juste pour votre fête.",
+      "desc": "Tous les autres packs d'enquête vous donnent une histoire fixe avec des espaces vides à remplir. Nous générons l'ensemble autour de votre liste d'invités réelle, noms, relations et tout le drame, afin que chaque indice, personnage et confession semble avoir été écrit juste pour votre fête.",
       "features": {
         "guestStory": {
           "title": "Histoire spécifique aux invités",
@@ -49,7 +49,7 @@
         },
         "evidence": {
           "title": "Images de preuves & Audio",
-          "desc": "Faux SMS, captures d'écran DM, notes vocales et reçus — enrichis pour correspondre à votre histoire.",
+          "desc": "Faux SMS, captures d'écran DM, notes vocales et reçus, enrichis pour correspondre à votre histoire.",
           "badge": "Graphismes Sur Mesure"
         },
         "instant": {
@@ -64,7 +64,7 @@
       "subtitle": "Pas de planification. Pas de stress. Pas de spoilers pour l'hôte.",
       "step1": {
         "title": "Choisissez un thème qui convient à votre groupe",
-        "desc": "Réunion de télé-réalité explosive ? Toast au champagne empoisonné ? Choisissez votre thème actif — on s'occupe du reste."
+        "desc": "Réunion de télé-réalité explosive ? Toast au champagne empoisonné ? Choisissez votre thème actif, on s'occupe du reste."
       },
       "step2": {
         "title": "Dites-nous qui vient",
@@ -107,7 +107,7 @@
     },
     "compare": {
       "title": "Etsy prend des semaines. Nous prenons 30 minutes.",
-      "subtitle": "Le même niveau de personnalisation — sans l'attente, les outils de design, ou le prix élevé.",
+      "subtitle": "Le même niveau de personnalisation, sans l'attente, les outils de design, ou le prix élevé.",
       "table": {
         "feature": "Fonctionnalité",
         "bpm": "Back Pocket Mysteries",
@@ -129,7 +129,7 @@
   },
   "pricing": {
     "title": "Un pack. Toute votre soirée.",
-    "subtitle": "Tarif fixe selon la taille du groupe — 0 $ de frais par joueur. Choisissez un pack unique ou l'accès mensuel Illimité + 1 Pass Cadeau Mensuel Gratuit.",
+    "subtitle": "Tarif fixe selon la taille du groupe - 0 $ de frais par joueur. Choisissez un pack unique ou l'accès mensuel Illimité + 1 Pass Cadeau Mensuel Gratuit.",
     "mostPopular": "Le Plus Populaire",
     "event": "/ événement",
     "bestFor": "Idéal pour :",
@@ -148,7 +148,7 @@
       "premium": {
         "name": "Premium",
         "tagline": "4–10 Joueurs • L'Événement Principal.",
-        "desc": "Notre format le plus populaire — idéal pour les anniversaires, EVJF et soirées jusqu'à 10 invités.",
+        "desc": "Notre format le plus populaire, idéal pour les anniversaires, EVJF et soirées jusqu'à 10 invités.",
         "cta": "Voir les Enquêtes",
         "bestFor": "Anniversaires, EVJF/EVG (4–10 invités)"
       },
@@ -170,7 +170,7 @@
   },
   "howItWorks": {
     "title": "Votre fête organisée, en ~30 minutes.",
-    "subtitle": "On s'occupe de tout : scénario, preuves, livrets de personnages, salon mobile en direct et guide de l'hôte — tout est personnalisé pour votre liste d'invités.",
+    "subtitle": "On s'occupe de tout : scénario, preuves, livrets de personnages, salon mobile en direct et guide de l'hôte, tout est personnalisé pour votre liste d'invités.",
     "badge": "Le Processus",
     "steps": {
       "pick": {
@@ -204,7 +204,7 @@
     },
     "packContents": {
       "title": "Qu'y a-t-il, dans le pack ?",
-      "subtitle": "Tout ce dont vous avez besoin pour une soirée mémorable — sur mobile et prêt à imprimer.",
+      "subtitle": "Tout ce dont vous avez besoin pour une soirée mémorable, sur mobile et prêt à imprimer.",
       "items": {
         "hostGuide": { "title": "Guide Hôte Sans Spoiler", "desc": "Instructions étape par étape pour jouer avec vos invités." },
         "characterPackets": { "title": "Livrets Personnages", "desc": "Rôles personnalisés avec les vrais prénoms de vos invités." },
@@ -240,7 +240,7 @@
   },
   "themes": {
     "title": "Choisissez l'ambiance. On gère le reste.",
-    "subtitle": "Chaque thème est un moteur de mystère complet — intrigue, personnages, indices et preuves — le tout personnalisé avec votre liste d'invités.",
+    "subtitle": "Chaque thème est un moteur de mystère complet, intrigue, personnages, indices et preuves, le tout personnalisé avec votre liste d'invités.",
     "badge": "Choisissez Votre Thème",
     "viewTheme": "Voir le Thème",
     "guests": "{{count}} Invités",
@@ -248,7 +248,7 @@
     "list": {
       "loveOnTheRocks": {
         "title": "Love On The Rocks",
-        "desc": "Les caméras se sont arrêtées il y a six mois, mais le drame continue. Ce soir, le casting de l'émission de télé-réalité la plus regardée se retrouve dans un penthouse de luxe — jusqu'à ce que La Star s'effondre en plein toast au champagne.",
+        "desc": "Les caméras se sont arrêtées il y a six mois, mais le drame continue. Ce soir, le casting de l'émission de télé-réalité la plus regardée se retrouve dans un penthouse de luxe, jusqu'à ce que La Star s'effondre en plein toast au champagne.",
         "difficulty": "Moyen",
         "category": "Réunion Télé-Réalité",
         "tone": "Chaotique & Épicé",
@@ -313,7 +313,7 @@
     "subtitle": "Obtenez un jeu d'enquête entièrement personnalisé, prêt à imprimer et jouable sur mobile en ~30 minutes.",
     "seoDescription": "Organisez une soirée murder mystery personnalisée pour vos invités avec salon mobile interactif et livrets sur mesure.",
     "whyCustomTitle": "Pourquoi choisir une enquête sur mesure ?",
-    "whyCustomDesc": "Les kits génériques obligent vos amis à incarner des inconnus. Notre plateforme adapte nos scénarios autour de votre vraie liste d'invités — leurs vrais prénoms, leurs relations et leurs blagues internes.",
+    "whyCustomDesc": "Les kits génériques obligent vos amis à incarner des inconnus. Notre plateforme adapte nos scénarios autour de votre vraie liste d'invités, leurs vrais prénoms, leurs relations et leurs blagues internes.",
     "features": {
       "f1": "Vos Invités au Cœur de l'Histoire",
       "f1Desc": "Pas de prénoms fictifs imposés : vos amis deviennent La Star, L'Ex, Le Producteur et plus.",

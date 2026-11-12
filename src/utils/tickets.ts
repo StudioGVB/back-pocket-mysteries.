@@ -118,7 +118,7 @@ export const STATUS_CONFIG: Record<
 > = {
   open: {
     label: 'Open',
-    customerLabel: 'Open — Awaiting Review',
+    customerLabel: 'Open - Awaiting Review',
     badgeBg: 'bg-pink-50',
     badgeText: 'text-brand-pink',
     badgeBorder: 'border-pink-200',
@@ -126,7 +126,7 @@ export const STATUS_CONFIG: Record<
   },
   in_progress: {
     label: 'In Progress',
-    customerLabel: 'In Progress — Being Investigated',
+    customerLabel: 'In Progress - Being Investigated',
     badgeBg: 'bg-indigo-50',
     badgeText: 'text-indigo-700',
     badgeBorder: 'border-indigo-200',
@@ -134,7 +134,7 @@ export const STATUS_CONFIG: Record<
   },
   waiting_on_customer: {
     label: 'Waiting on Customer',
-    customerLabel: 'Action Needed — Reply Requested',
+    customerLabel: 'Action Needed - Reply Requested',
     badgeBg: 'bg-amber-50',
     badgeText: 'text-amber-700',
     badgeBorder: 'border-amber-200',

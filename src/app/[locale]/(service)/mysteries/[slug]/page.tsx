@@ -243,8 +243,8 @@ export default async function ServiceMysteryDetailPage({
                 </p>
                 <p className="text-xs text-slate-600 font-medium leading-relaxed">
                   {isRealityGlam
-                    ? 'Cast your actual friends as the bombshells, exes, and producers — their names, initials, pronouns, and real-life quirks drop straight into the leaked DMs, burn-book notes, and backstage voice memos.'
-                    : 'Cast your saved friends into these roles — their names, avatars, and personal quirks are woven straight into the clues, text threads, and character booklets.'}
+                    ? 'Cast your actual friends as the bombshells, exes, and producers, their names, initials, pronouns, and real-life quirks drop straight into the leaked DMs, burn-book notes, and backstage voice memos.'
+                    : 'Cast your saved friends into these roles, their names, avatars, and personal quirks are woven straight into the clues, text threads, and character booklets.'}
                 </p>
               </div>
             </div>
@@ -306,7 +306,7 @@ export default async function ServiceMysteryDetailPage({
               </p>
               <p className="text-xs text-slate-500 font-medium leading-relaxed">
                 {isRealityGlam
-                  ? 'Assign your friends to the 9 iconic reality-TV roles below — from The Star to The Bitter Ex and The Superfan.'
+                  ? 'Assign your friends to the 9 iconic reality-TV roles below, from The Star to The Bitter Ex and The Superfan.'
                   : 'Assign your saved guests to the character archetypes below, or let us auto-cast them based on their vibe.'}
               </p>
             </div>

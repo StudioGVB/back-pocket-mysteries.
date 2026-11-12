@@ -186,7 +186,7 @@ export async function verifySignupPromoCodeAction(code: string): Promise<{
       return {
         valid: true,
         code: cleanCode,
-        label: `${cleanCode} applied (${valueDesc} — ${d.name})`,
+        label: `${cleanCode} applied (${valueDesc} - ${d.name})`,
       }
     }
 
@@ -324,7 +324,7 @@ export async function signup(formData: FormData) {
   }
 
   const params = new URLSearchParams({
-    message: 'Welcome to Back Pocket Mysteries! Check your email to confirm your account — our new mysteries are coming soon, so check back shortly!',
+    message: 'Welcome to Back Pocket Mysteries! Check your email to confirm your account, our new mysteries are coming soon, so check back shortly!',
     email,
     step: 'login',
   })

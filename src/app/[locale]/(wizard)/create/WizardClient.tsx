@@ -322,7 +322,7 @@ export default function WizardClient({
                 📁 Solving Solo or as a Duo (1–4 Players)?
               </p>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                Leave the slider at 5–8 suspects! You don&apos;t need to act out a role to get information — you&apos;ll receive the full case file of all suspects, texts, and audio clues to solve together.
+                Leave the slider at 5–8 suspects! You don&apos;t need to act out a role to get information, you&apos;ll receive the full case file of all suspects, texts, and audio clues to solve together.
               </p>
             </div>
           </div>

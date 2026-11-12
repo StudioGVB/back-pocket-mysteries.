@@ -2,7 +2,13 @@
 import React, { useState } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
-export function TrafficChart({ data }: { data: any[] }) {
+export function TrafficChart({
+  data,
+  totals,
+}: {
+  data: any[];
+  totals?: { visitors: number; pageviews: number };
+}) {
   const [activeTab, setActiveTab] = useState<'visitors' | 'pageviews'>('visitors');
 
   const formattedData = data.map(d => {
@@ -13,8 +19,10 @@ export function TrafficChart({ data }: { data: any[] }) {
     };
   });
 
-  const totalVisitors = data.reduce((acc, curr) => acc + (curr.visitors || 0), 0);
-  const totalPageviews = data.reduce((acc, curr) => acc + (curr.pageviews || 0), 0);
+  const sumVisitors = data.reduce((acc, curr) => acc + (curr.visitors || 0), 0);
+  const sumPageviews = data.reduce((acc, curr) => acc + (curr.pageviews || 0), 0);
+  const totalVisitors = totals && totals.visitors > 0 ? totals.visitors : sumVisitors;
+  const totalPageviews = totals && totals.pageviews > 0 ? totals.pageviews : sumPageviews;
 
   return (
     <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">

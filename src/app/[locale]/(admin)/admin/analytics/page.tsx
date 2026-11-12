@@ -86,7 +86,7 @@ async function AnalyticsData() {
           </p>
         </div>
       ) : (
-        <TrafficChart data={timeseriesRes.data} />
+        <TrafficChart data={timeseriesRes.data} totals={timeseriesRes.totals} />
       )}
 
       <TrafficTables

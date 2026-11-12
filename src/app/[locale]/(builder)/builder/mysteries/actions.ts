@@ -74,7 +74,7 @@ export async function createMysteryAction(formData: FormData) {
     await supabase.from('mysteries').update({ min_players: 9, max_players: 9 }).eq('id', mystery.id);
   }
 
-  // NOTE: No try/catch here — errors must surface so we can debug them
+  // NOTE: No try/catch here, errors must surface so we can debug them
   if (true) {  // scope block
     if (isDOA) {
       console.log('Seeding Love On The Rocks mystery for ID:', mystery.id);
@@ -82,7 +82,7 @@ export async function createMysteryAction(formData: FormData) {
       await supabase.from('mysteries').update({
         title: "Love On The Rocks",
         theme: "Reality TV Reunion",
-        description: "The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of \"Love On The Rocks\" — Season 3's most-watched dating show — have reunited for the glitzy wrap party at a five-star hotel penthouse. Gabby walked away with the crown, the following, and the guy. But in this room, everyone has a score to settle. When Gabby collapses mid-champagne-toast, poisoned in front of fifty witnesses and a rolling camera, everyone becomes a suspect. One person planned to kill. Another switched the target. And now the story has a very different ending.",
+        description: "The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of \"Love On The Rocks\", Season 3's most-watched dating show, have reunited for the glitzy wrap party at a five-star hotel penthouse. Gabby walked away with the crown, the following, and the guy. But in this room, everyone has a score to settle. When Gabby collapses mid-champagne-toast, poisoned in front of fifty witnesses and a rolling camera, everyone becomes a suspect. One person planned to kill. Another switched the target. And now the story has a very different ending.",
         inside_jokes: "Remember: the cameras are always on. Even when they shouldn't be."
       }).eq('id', mystery.id);
 
@@ -97,10 +97,10 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Pink",
-          bio: "Gabby won Love on the Rocks Season 3. Crowned queen of chaos, she had the most followers, the most airtime, and the most drama. She played the game flawlessly — sweet when the cameras rolled, ruthless when they didn't. Ask anyone in this room and you'll get a different version of Gabby. Gabby walks into the reunion like she's still the main character. She always knew how to keep her enemies close. That's why half the room still calls themselves her friend.",
-          outfit_advice: "Elegant and effortless. Think a silky slip dress or bias-cut skirt in luxe neutrals or muted jewel tones — like someone used to being photographed. Add soft waves, dewy makeup, and a killer heel.",
-          act_summary: "You won the show and you're still the fan favourite — but you know people want to see you fall. Smile sweetly, keep it composed, but never let them forget who came out on top.",
-          act_bullets: ["Be effortlessly poised, like everything rolls off you", "Stay friendly, but always keep control of the room", "Laugh off shade — or casually mention your brand deals instead", "Never raise your voice — just raise your eyebrows"],
+          bio: "Gabby won Love on the Rocks Season 3. Crowned queen of chaos, she had the most followers, the most airtime, and the most drama. She played the game flawlessly, sweet when the cameras rolled, ruthless when they didn't. Ask anyone in this room and you'll get a different version of Gabby. Gabby walks into the reunion like she's still the main character. She always knew how to keep her enemies close. That's why half the room still calls themselves her friend.",
+          outfit_advice: "Elegant and effortless. Think a silky slip dress or bias-cut skirt in luxe neutrals or muted jewel tones, like someone used to being photographed. Add soft waves, dewy makeup, and a killer heel.",
+          act_summary: "You won the show and you're still the fan favourite, but you know people want to see you fall. Smile sweetly, keep it composed, but never let them forget who came out on top.",
+          act_bullets: ["Be effortlessly poised, like everything rolls off you", "Stay friendly, but always keep control of the room", "Laugh off shade, or casually mention your brand deals instead", "Never raise your voice, just raise your eyebrows"],
           traits: ["Poised", "Strategic", "Charming", "Untouchable"]
         }
       });
@@ -115,9 +115,9 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Pink (lighter shade)",
-          bio: "Sienna was never supposed to be on Love on the Rocks — but she showed up to every red carpet and finale taping like she was born for it. Half the fandom didn't realise she wasn't a cast member. She's younger, louder, and tired of living in Gabby's shadow. She says she's just here to support her sister. But that dress, that flirty laugh, and that weird tension with Zayn? Feels more like she's here to make a name for herself.",
+          bio: "Sienna was never supposed to be on Love on the Rocks, but she showed up to every red carpet and finale taping like she was born for it. Half the fandom didn't realise she wasn't a cast member. She's younger, louder, and tired of living in Gabby's shadow. She says she's just here to support her sister. But that dress, that flirty laugh, and that weird tension with Zayn? Feels more like she's here to make a name for herself.",
           outfit_advice: "Slinky, sultry, and just a little too polished for a reunion. Soft clingy fabrics, neutral or warm tones, mini skirts or a maxi with a cutout. Sunglasses (yes, indoors) and a smug little smirk.",
-          act_summary: "Sienna is always performing — for the cameras, for the group, for herself. She's charming until she's not.",
+          act_summary: "Sienna is always performing, for the cameras, for the group, for herself. She's charming until she's not.",
           act_bullets: ["Always has a comeback (even if it makes no sense)", "Drops gossip like it's casual conversation", "Jealousy masked as confidence", "Thinks she's the main character", "Flirts to cause chaos, not connection"],
           traits: ["Loud", "Ambitious", "Jealous", "Unpredictable"]
         }
@@ -133,16 +133,16 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Green",
-          bio: "Dane was Love on the Rocks' poster person — gorgeous, magnetic, and completely toxic. They and Gabby were the golden couple… until Betrayal Week, when Dane kissed another cast member 'for the challenge' and tried to gaslight their way out of it. Now they're back claiming to be chill. They're jittery, distracted, constantly checking their phone. Peace doesn't usually come in crushed-up capsules.",
+          bio: "Dane was Love on the Rocks' poster person, gorgeous, magnetic, and completely toxic. They and Gabby were the golden couple… until Betrayal Week, when Dane kissed another cast member 'for the challenge' and tried to gaslight their way out of it. Now they're back claiming to be chill. They're jittery, distracted, constantly checking their phone. Peace doesn't usually come in crushed-up capsules.",
           presentation_female: {
-            bio: "She and Gabby were the golden couple of Season 3 until Betrayal Week. She's back, claiming inner peace — but her hands won't stop shaking.",
-            outfit_advice: "Something clean and curated — white or beige button-up, relaxed pants, silver or leather chain — like you're trying to look peaceful but still hot.",
+            bio: "She and Gabby were the golden couple of Season 3 until Betrayal Week. She's back, claiming inner peace, but her hands won't stop shaking.",
+            outfit_advice: "Something clean and curated, white or beige button-up, relaxed pants, silver or leather chain, like you're trying to look peaceful but still hot.",
             act_summary: "Speak in therapy buzzwords. Act like everything's chill… until someone mentions Gabby.",
             act_bullets: ["Pretend to be zen even when you're clearly not", "Use phrases like 'I'm holding space'", "Get passive-aggressive if people don't agree with you"]
           },
           presentation_male: {
-            bio: "He and Gabby were the golden couple of Season 3 until Betrayal Week. He's back, claiming inner peace — but his hands won't stop shaking.",
-            outfit_advice: "Something clean and curated — white or beige button-up, relaxed pants, silver or leather chain — like you're trying to look peaceful but still hot.",
+            bio: "He and Gabby were the golden couple of Season 3 until Betrayal Week. He's back, claiming inner peace, but his hands won't stop shaking.",
+            outfit_advice: "Something clean and curated, white or beige button-up, relaxed pants, silver or leather chain, like you're trying to look peaceful but still hot.",
             act_summary: "Speak in therapy buzzwords. Act like everything's chill… until someone mentions Gabby.",
             act_bullets: ["Pretend to be zen even when you're clearly not", "Use phrases like 'I'm holding space'", "Get passive-aggressive if people don't agree with you"]
           },
@@ -160,18 +160,18 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Gold",
-          bio: "Colt was the host of Love on the Rocks — smooth, flirty, and always camera-ready. Supposed to stay neutral. Off-camera, they blurred a few lines, but fans forgave them — great TV. Everyone remembers the banter, the cocktail toasts, and that one moment they 'accidentally' kissed a contestant. It got edited out, of course.",
+          bio: "Colt was the host of Love on the Rocks, smooth, flirty, and always camera-ready. Supposed to stay neutral. Off-camera, they blurred a few lines, but fans forgave them, great TV. Everyone remembers the banter, the cocktail toasts, and that one moment they 'accidentally' kissed a contestant. It got edited out, of course.",
           presentation_female: {
-            bio: "She was the host of Love On The Rocks — smooth, flirty, camera-ready. Supposed to stay neutral. Didn't.",
-            outfit_advice: "Slick but low-effort. A fitted shirt (one-too-few buttons), nice dark jeans, a statement gold necklace — like you're still trying to look bookable for a panel show.",
-            act_summary: "You're not the drama — you just film it. Stay smooth, funny, and never admit to anything.",
-            act_bullets: ["Be charming and flirty with everyone", "Speak like you're still mic'd up", "Act above the drama — even if you're behind it"]
+            bio: "She was the host of Love On The Rocks, smooth, flirty, camera-ready. Supposed to stay neutral. Didn't.",
+            outfit_advice: "Slick but low-effort. A fitted shirt (one-too-few buttons), nice dark jeans, a statement gold necklace, like you're still trying to look bookable for a panel show.",
+            act_summary: "You're not the drama, you just film it. Stay smooth, funny, and never admit to anything.",
+            act_bullets: ["Be charming and flirty with everyone", "Speak like you're still mic'd up", "Act above the drama, even if you're behind it"]
           },
           presentation_male: {
-            bio: "He was the host of Love On The Rocks — smooth, flirty, camera-ready. Supposed to stay neutral. Didn't.",
-            outfit_advice: "Slick but low-effort. A fitted shirt (one-too-few buttons), nice dark jeans, a gold chain — like you're still trying to look bookable for a panel show.",
-            act_summary: "You're not the drama — you just film it. Stay smooth, funny, and never admit to anything.",
-            act_bullets: ["Be charming and flirty with everyone", "Speak like you're still mic'd up", "Act above the drama — even if you're behind it"]
+            bio: "He was the host of Love On The Rocks, smooth, flirty, camera-ready. Supposed to stay neutral. Didn't.",
+            outfit_advice: "Slick but low-effort. A fitted shirt (one-too-few buttons), nice dark jeans, a gold chain, like you're still trying to look bookable for a panel show.",
+            act_summary: "You're not the drama, you just film it. Stay smooth, funny, and never admit to anything.",
+            act_bullets: ["Be charming and flirty with everyone", "Speak like you're still mic'd up", "Act above the drama, even if you're behind it"]
           },
           traits: ["Smooth", "Strategic", "Flirtatious", "Evasive"]
         }
@@ -187,16 +187,16 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Orange",
-          bio: "Milo wasn't part of the original cast — they were a fan-voted wildcard for the reunion special. Their TikTok edits, Reddit theories, and obsessive posts made them a cult favourite. Charming in a 'knows too much' kind of way. Obsessed with the show, and maybe a little more obsessed with Gabby. They say they're just here to experience it all… but they've been watching for years. Every move. Every scandal. Every deleted scene.",
+          bio: "Milo wasn't part of the original cast, they were a fan-voted wildcard for the reunion special. Their TikTok edits, Reddit theories, and obsessive posts made them a cult favourite. Charming in a 'knows too much' kind of way. Obsessed with the show, and maybe a little more obsessed with Gabby. They say they're just here to experience it all… but they've been watching for years. Every move. Every scandal. Every deleted scene.",
           presentation_female: {
-            bio: "She campaigned to join the reunion like her life depended on it. Because, in a way, it did. She's obsessed with Gabby — and convinced this is her big moment.",
-            outfit_advice: "Bookish but curated. Tucked-in shirts, jumpers over collars, wide-leg trousers — like she spent hours crafting an 'I'm Smart but Hot' outfit. Round glasses, neat hair.",
+            bio: "She campaigned to join the reunion like her life depended on it. Because, in a way, it did. She's obsessed with Gabby, and convinced this is her big moment.",
+            outfit_advice: "Bookish but curated. Tucked-in shirts, jumpers over collars, wide-leg trousers, like she spent hours crafting an 'I'm Smart but Hot' outfit. Round glasses, neat hair.",
             act_summary: "You were chosen by the fans, and you've made that everyone's problem. Get weirdly intense if someone challenges your place here.",
             act_bullets: ["Overshare show trivia like it's normal conversation", "Stare a little too long; smile a little too wide", "Mention Gabby in casual conversation… constantly"]
           },
           presentation_male: {
-            bio: "He campaigned to join the reunion like his life depended on it. Because, in a way, it did. He's obsessed with Gabby — and convinced this is his big moment.",
-            outfit_advice: "Bookish but curated. Tucked-in shirts, jumpers over collars, wide-leg trousers — like he spent hours crafting an 'I'm Smart but Hot' outfit. Round glasses, neat hair.",
+            bio: "He campaigned to join the reunion like his life depended on it. Because, in a way, it did. He's obsessed with Gabby, and convinced this is his big moment.",
+            outfit_advice: "Bookish but curated. Tucked-in shirts, jumpers over collars, wide-leg trousers, like he spent hours crafting an 'I'm Smart but Hot' outfit. Round glasses, neat hair.",
             act_summary: "You were chosen by the fans, and you've made that everyone's problem. Get weirdly intense if someone challenges your place here.",
             act_bullets: ["Overshare show trivia like it's normal conversation", "Stare a little too long; smile a little too wide", "Mention Gabby in casual conversation… constantly"]
           },
@@ -214,16 +214,16 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Blue",
-          bio: "Jeremy wasn't just a contestant — they were a twist. A 'regular person' fan-favourite who came in mid-season and shook things up. But what the cast didn't know? Jeremy was planted by production to stir drama. Every whisper, every fight, every 'accidental' reveal — Jeremy was the match. Off contract now, but still taking notes. Still pushing buttons. Why does Jeremy still know everything that happens off-camera?",
+          bio: "Jeremy wasn't just a contestant, they were a twist. A 'regular person' fan-favourite who came in mid-season and shook things up. But what the cast didn't know? Jeremy was planted by production to stir drama. Every whisper, every fight, every 'accidental' reveal - Jeremy was the match. Off contract now, but still taking notes. Still pushing buttons. Why does Jeremy still know everything that happens off-camera?",
           presentation_female: {
-            bio: "She was planted by production as a contestant. She knows everything that happens off-camera — and deleted the security footage that would have saved Gabby.",
-            outfit_advice: "Creative but harmless — tucked tee, rolled-sleeve blazer, chinos, and a too-cool notebook. The vibe is 'I'm just here to observe'... but you're controlling the narrative.",
+            bio: "She was planted by production as a contestant. She knows everything that happens off-camera - and deleted the security footage that would have saved Gabby.",
+            outfit_advice: "Creative but harmless, tucked tee, rolled-sleeve blazer, chinos, and a too-cool notebook. The vibe is 'I'm just here to observe'... but you're controlling the narrative.",
             act_summary: "Act like a casual friend while calculating everything. Never raise your voice, never show your cards.",
             act_bullets: ["Smile like you're in on something", "Drop passive little bombs, then walk away", "If cornered, claim 'that's not really my role anymore'"]
           },
           presentation_male: {
-            bio: "He was planted by production as a contestant. He knows everything that happens off-camera — and deleted the security footage that would have saved Gabby.",
-            outfit_advice: "Creative but harmless — tucked tee, rolled-sleeve blazer, chinos, and a too-cool notebook. The vibe is 'I'm just here to observe'... but you're controlling the narrative.",
+            bio: "He was planted by production as a contestant. He knows everything that happens off-camera - and deleted the security footage that would have saved Gabby.",
+            outfit_advice: "Creative but harmless, tucked tee, rolled-sleeve blazer, chinos, and a too-cool notebook. The vibe is 'I'm just here to observe'... but you're controlling the narrative.",
             act_summary: "Act like a casual friend while calculating everything. Never raise your voice, never show your cards.",
             act_bullets: ["Smile like you're in on something", "Drop passive little bombs, then walk away", "If cornered, claim 'that's not really my role anymore'"]
           },
@@ -241,10 +241,10 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Yellow",
-          bio: "Ava made it to the final two — and then watched Gabby get the crown and the guy. It was close. Too close. For weeks the hashtags trended her way: #JusticeForAva, #WrongGirlWon. She and Gabby were tight. Until they weren't. Ava swears nothing happened, that Gabby just stopped texting. Still, she showed up to this reunion polished, prepared, and one glass of wine away from a breakdown.",
-          outfit_advice: "High-glam and high-stakes. Sequins, metallics, or anything body-hugging and eye-catching — the outfit that says 'I'm fine' while setting the room on fire. Heels, glossy lips, too much bronzer.",
+          bio: "Ava made it to the final two, and then watched Gabby get the crown and the guy. It was close. Too close. For weeks the hashtags trended her way: #JusticeForAva, #WrongGirlWon. She and Gabby were tight. Until they weren't. Ava swears nothing happened, that Gabby just stopped texting. Still, she showed up to this reunion polished, prepared, and one glass of wine away from a breakdown.",
+          outfit_advice: "High-glam and high-stakes. Sequins, metallics, or anything body-hugging and eye-catching - the outfit that says 'I'm fine' while setting the room on fire. Heels, glossy lips, too much bronzer.",
           act_summary: "You're here to be civil, mature, and definitely not bitter. But the second someone brings up Gabby, your smile gets tight and your voice gets just a little too loud.",
-          act_bullets: ["Overcompensate with confidence and sass", "Throw 'no shade' shade constantly", "Pretend not to care — while watching everything Gabby does", "Look for opportunities to steal back the spotlight"],
+          act_bullets: ["Overcompensate with confidence and sass", "Throw 'no shade' shade constantly", "Pretend not to care, while watching everything Gabby does", "Look for opportunities to steal back the spotlight"],
           traits: ["Bitter", "Polished", "Competitive", "Wounded"]
         }
       });
@@ -259,18 +259,18 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Black",
-          bio: "Zayn came into Love on the Rocks bold, loud, and instantly iconic. They flirted with everyone, stirred the pot on purpose, and gave the kind of messy interviews that live forever online. They didn't win — but they won the internet. At least until the final cut. Most of Zayn's scenes were edited out of the reunion special. Now Zayn's holding onto that rage — cryptic posts, bitter captions. Tonight: fresh spray tan, vengeance arc, nothing left to lose.",
+          bio: "Zayn came into Love on the Rocks bold, loud, and instantly iconic. They flirted with everyone, stirred the pot on purpose, and gave the kind of messy interviews that live forever online. They didn't win, but they won the internet. At least until the final cut. Most of Zayn's scenes were edited out of the reunion special. Now Zayn's holding onto that rage, cryptic posts, bitter captions. Tonight: fresh spray tan, vengeance arc, nothing left to lose.",
           presentation_female: {
-            bio: "She flirted with everyone, gave messy interviews, and won the internet — until production edited her out of the reunion. She's back. She's bitter. She's got nothing to lose.",
+            bio: "She flirted with everyone, gave messy interviews, and won the internet, until production edited her out of the reunion. She's back. She's bitter. She's got nothing to lose.",
             outfit_advice: "All black, all attitude. Fitted tops, wide-leg pants, leather or layered textures. Chunky rings, a crossbody strap, boots you can storm out in.",
             act_summary: "You're flirty, shady, and deeply unserious… until someone brings up the edit. Then the façade slips.",
-            act_bullets: ["Flirt with everyone — especially people you shouldn't", "Drop snarky one-liners and play innocent", "Refer to 'the edit' constantly"]
+            act_bullets: ["Flirt with everyone, especially people you shouldn't", "Drop snarky one-liners and play innocent", "Refer to 'the edit' constantly"]
           },
           presentation_male: {
-            bio: "He flirted with everyone, gave messy interviews, and won the internet — until production edited him out of the reunion. He's back. He's bitter. He's got nothing to lose.",
+            bio: "He flirted with everyone, gave messy interviews, and won the internet, until production edited him out of the reunion. He's back. He's bitter. He's got nothing to lose.",
             outfit_advice: "All black, all attitude. Fitted tops, wide-leg pants, leather or layered textures. Chunky rings, a crossbody strap, boots you can storm out in.",
             act_summary: "You're flirty, shady, and deeply unserious… until someone brings up the edit. Then the façade slips.",
-            act_bullets: ["Flirt with everyone — especially people you shouldn't", "Drop snarky one-liners and play innocent", "Refer to 'the edit' constantly"]
+            act_bullets: ["Flirt with everyone, especially people you shouldn't", "Drop snarky one-liners and play innocent", "Refer to 'the edit' constantly"]
           },
           traits: ["Chaotic", "Magnetic", "Vengeful", "Theatrical"]
         }
@@ -286,43 +286,43 @@ export async function createMysteryAction(formData: FormData) {
         is_mandatory: true,
         profile_data: {
           color: "Purple",
-          bio: "Rikki was the glam guru behind the scenes — head of hair and makeup for Love On The Rocks. She and Gabby got close during filming, late-night-spill-your-guts close. But after the finale, Gabby stopped replying. No call. No thank you. Just silence. Now Rikki's been dragged into the reunion, touch-up kit in tow. She says she's just here to powder noses and sip champagne… but someone's been feeding behind-the-scenes tea to a certain someone.",
-          outfit_advice: "Vibrant, artsy, and emotionally layered. Bold patterns, rainbow knits, playful textures, or anything vintage-inspired. Dopamine dressing with zero subtlety — you make colour look dangerous.",
-          act_summary: "You know too much and you're not above letting it slip. Sarcastic, cutting, always one step ahead — but you pretend you're just here for the vibes.",
-          act_bullets: ["Make everything sound like a joke… until it's not", "Give compliments that feel like insults", "Watch everything, say nothing (until it matters)", "Be casually petty — especially toward Gabby", "If accused of drama: 'I don't start it, I just retouch it'"],
+          bio: "Rikki was the glam guru behind the scenes, head of hair and makeup for Love On The Rocks. She and Gabby got close during filming, late-night-spill-your-guts close. But after the finale, Gabby stopped replying. No call. No thank you. Just silence. Now Rikki's been dragged into the reunion, touch-up kit in tow. She says she's just here to powder noses and sip champagne… but someone's been feeding behind-the-scenes tea to a certain someone.",
+          outfit_advice: "Vibrant, artsy, and emotionally layered. Bold patterns, rainbow knits, playful textures, or anything vintage-inspired. Dopamine dressing with zero subtlety, you make colour look dangerous.",
+          act_summary: "You know too much and you're not above letting it slip. Sarcastic, cutting, always one step ahead, but you pretend you're just here for the vibes.",
+          act_bullets: ["Make everything sound like a joke… until it's not", "Give compliments that feel like insults", "Watch everything, say nothing (until it matters)", "Be casually petty, especially toward Gabby", "If accused of drama: 'I don't start it, I just retouch it'"],
           traits: ["Perceptive", "Petty", "Artistic", "Emotionally Guarded"]
         }
       });
 
       // ── MOTIVES ─────────────────────────────────────────────────────────────
       const { error: doaMotErr } = await supabase.from('motives').insert([
-        { mystery_id: mystery.id, character_id: nova.id, motive_type: 'power', strength: 'moderate', linked_character_id: skye.id, notes: "Tired of being Gabby's shadow. Wants the spotlight — but murder wasn't on her mood board." },
-        { mystery_id: mystery.id, character_id: blaze.id, motive_type: 'love', strength: 'critical', linked_character_id: skye.id, notes: "Prepared the poison for Colt, not Gabby — but jealousy and drug use made them a puppet in Milo's hands." },
+        { mystery_id: mystery.id, character_id: nova.id, motive_type: 'power', strength: 'moderate', linked_character_id: skye.id, notes: "Tired of being Gabby's shadow. Wants the spotlight, but murder wasn't on her mood board." },
+        { mystery_id: mystery.id, character_id: blaze.id, motive_type: 'love', strength: 'critical', linked_character_id: skye.id, notes: "Prepared the poison for Colt, not Gabby, but jealousy and drug use made them a puppet in Milo's hands." },
         { mystery_id: mystery.id, character_id: cole.id, motive_type: 'fear', strength: 'low', linked_character_id: skye.id, notes: "Knew Dane was unstable; said nothing because it made for good TV." },
-        { mystery_id: mystery.id, character_id: rex.id, motive_type: 'love', strength: 'critical', linked_character_id: skye.id, notes: "Rejected by Gabby for the last time, Milo switched the glasses — a twisted act of 'being part of her story forever'." },
+        { mystery_id: mystery.id, character_id: rex.id, motive_type: 'love', strength: 'critical', linked_character_id: skye.id, notes: "Rejected by Gabby for the last time, Milo switched the glasses, a twisted act of 'being part of her story forever'." },
         { mystery_id: mystery.id, character_id: jordan.id, motive_type: 'greed', strength: 'high', linked_character_id: skye.id, notes: "Deleted the security footage. Knew something was wrong and let it happen for the content." },
         { mystery_id: mystery.id, character_id: brooke.id, motive_type: 'revenge', strength: 'high', linked_character_id: skye.id, notes: "Never forgave Gabby for stealing the win and going silent. Had motive, opportunity, and a very convenient alibi." },
         { mystery_id: mystery.id, character_id: zane.id, motive_type: 'revenge', strength: 'moderate', linked_character_id: skye.id, notes: "Had most of their footage cut from the reunion special. Came with a vengeance arc but no actual plan." },
-        { mystery_id: mystery.id, character_id: mara.id, motive_type: 'revenge', strength: 'moderate', linked_character_id: skye.id, notes: "Ghosted by Gabby post-show after a deep friendship. Sent the warning — but too late." }
+        { mystery_id: mystery.id, character_id: mara.id, motive_type: 'revenge', strength: 'moderate', linked_character_id: skye.id, notes: "Ghosted by Gabby post-show after a deep friendship. Sent the warning, but too late." }
       ]);
       if (doaMotErr) throw new Error(`DOA motives failed: ${doaMotErr.message}`);
 
       // ── RELATIONSHIPS ───────────────────────────────────────────────────────
       const doaRawRels = [
-        { char1: skye, char2: nova, dynamics: ['family'], notes: "Sisters — but Sienna lives entirely in Gabby's shadow and resents every second of it." },
+        { char1: skye, char2: nova, dynamics: ['family'], notes: "Sisters - but Sienna lives entirely in Gabby's shadow and resents every second of it." },
         { char1: skye, char2: blaze, dynamics: ['romantic', 'rivals'], notes: "The ex. They were the golden couple until Dane kissed someone else 'for the challenge'." },
         { char1: skye, char2: cole, dynamics: ['romantic', 'co-workers'], notes: "Secretly hooking up since the show ended. The catalyst for Dane's breakdown." },
         { char1: skye, char2: rex, dynamics: ['co-workers'], notes: "Milo is obsessively devoted to Skye; Gabby laughed off Milo's love confession an hour before dying." },
         { char1: skye, char2: jordan, dynamics: ['co-workers'], notes: "Jeremy planted as a producer to stir drama around Skye; knows all her secrets." },
-        { char1: skye, char2: brooke, dynamics: ['rivals', 'besties'], notes: "Were close allies on the show — until Gabby won and stopped texting back." },
+        { char1: skye, char2: brooke, dynamics: ['rivals', 'besties'], notes: "Were close allies on the show, until Gabby won and stopped texting back." },
         { char1: skye, char2: zane, dynamics: ['co-workers'], notes: "Gabby's edit overshadowed Zayn's best footage; Zayn holds a low-grade grudge." },
         { char1: skye, char2: mara, dynamics: ['friends', 'co-workers'], notes: "Gabby ghosted Rikki post-show despite a close friendship during filming." },
         { char1: blaze, char2: rex, dynamics: ['rivals'], notes: "Both obsessed with Gabby but for very different reasons. Milo knows Dane's plan." },
-        { char1: blaze, char2: cole, dynamics: ['rivals'], notes: "Dane discovered Colt and Gabby's secret hookups — the trigger for the whole plot." },
+        { char1: blaze, char2: cole, dynamics: ['rivals'], notes: "Dane discovered Colt and Gabby's secret hookups, the trigger for the whole plot." },
         { char1: jordan, char2: mara, dynamics: ['co-workers'], notes: "Rikki tried to alert Jeremy about Dane's behaviour; Jeremy used it as entertainment." },
         { char1: brooke, char2: nova, dynamics: ['besties'], notes: "Bonded over being sidelined by Gabby. Sienna promised to 'handle it'." },
         { char1: zane, char2: nova, dynamics: ['romantic', 'co-workers'], notes: "Flirtatious and chaotic; Sienna suggested they 'give Gabby a taste of her own medicine'." },
-        { char1: cole, char2: jordan, dynamics: ['co-workers', 'friends'], notes: "Jeremy tipped Colt off about Dane's behaviour — mainly for the footage." },
+        { char1: cole, char2: jordan, dynamics: ['co-workers', 'friends'], notes: "Jeremy tipped Colt off about Dane's behaviour, mainly for the footage." },
         { char1: rex, char2: mara, dynamics: ['co-workers'], notes: "Rikki noticed Milo at the bar right before the toast and sent a warning to Jeremy." },
         { char1: brooke, char2: mara, dynamics: ['friends'], notes: "Drinking buddies who gossip about cast drama and production secrets." }
       ];
@@ -343,8 +343,8 @@ export async function createMysteryAction(formData: FormData) {
       const doaB2 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 2, sort_order: 2, event_title: "Dane Spirals & Researches Poison", description: "Consumed by jealousy, Dane writes a bitter unsent note vowing not to stay quiet and searches online for sedatives, sleeping pills mixed with alcohol, and how to spike a drink without taste.", characters_involved: [blaze.id, skye.id, cole.id], is_required: true, beat_type: 'discovery', timeline_phase: 'pre_crime' });
       const doaB3 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 3, sort_order: 3, event_title: "Milo Tracks Dane's Poison Plot", description: "Through his stalking to-do list, iCloud hacking, and Eye Spy spyware on Device 269, Milo intercepts Dane's search history and realizes Dane plans to poison Colt's drink.", characters_involved: [rex.id, blaze.id], is_required: true, beat_type: 'twist', timeline_phase: 'pre_crime' });
       const doaB4 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 4, sort_order: 4, event_title: "Milo's Rejected Confession to Gabby", description: "Deluded into believing Gabby shares his feelings, Milo confesses his love to her one final time. Gabby laughs it off and rejects him. Humiliated and feeling invisible, Milo writes that there is 'only one way this ends'.", characters_involved: [rex.id, skye.id], is_required: true, beat_type: 'twist', timeline_phase: 'pre_crime' });
-      const doaB5 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 5, sort_order: 5, event_title: "Dane Poisons The Drink With Temazepam", description: "High on cocaine in glam and spiralling, Dane uses his prescribed Temazepam sleep medication — fatal when mixed with alcohol — to spike a champagne glass intended for Colt. Rikki warns Jeremy, who ignores it for content.", characters_involved: [blaze.id, cole.id, mara.id, jordan.id], is_required: true, beat_type: 'clue_reveal', timeline_phase: 'crime' });
-      const doaB6 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 6, sort_order: 6, event_title: "Milo Switches The Poisoned Glass", description: "At 5:38 PM backstage, a hooded Milo reaches across the drinks table and switches the spiked champagne glass so that Gabby — not Colt — will drink the fatal dose.", characters_involved: [rex.id, skye.id, cole.id], is_required: true, beat_type: 'twist', timeline_phase: 'crime' });
+      const doaB5 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 5, sort_order: 5, event_title: "Dane Poisons The Drink With Temazepam", description: "High on cocaine in glam and spiralling, Dane uses his prescribed Temazepam sleep medication, fatal when mixed with alcohol, to spike a champagne glass intended for Colt. Rikki warns Jeremy, who ignores it for content.", characters_involved: [blaze.id, cole.id, mara.id, jordan.id], is_required: true, beat_type: 'clue_reveal', timeline_phase: 'crime' });
+      const doaB6 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 6, sort_order: 6, event_title: "Milo Switches The Poisoned Glass", description: "At 5:38 PM backstage, a hooded Milo reaches across the drinks table and switches the spiked champagne glass so that Gabby, not Colt, will drink the fatal dose.", characters_involved: [rex.id, skye.id, cole.id], is_required: true, beat_type: 'twist', timeline_phase: 'crime' });
       const doaB7 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 7, sort_order: 7, event_title: "Gabby Collapses Mid-Toast", description: "During the reunion toast, Gabby drinks from the switched champagne glass and collapses. Chaos erupts as the cast realizes the drink was poisoned.", characters_involved: [skye.id, blaze.id, rex.id, mara.id, cole.id], is_required: true, beat_type: 'discovery', timeline_phase: 'investigation' });
       const doaB8 = await doaInsertBeat({ mystery_id: mystery.id, beat_number: 8, sort_order: 8, event_title: "Milo's Manifesto & Killer Confession", description: "Having drafted a viral social post ('Everything changes after tonight. They'll remember me'), Milo records a chilling voice confession admitting he watched Dane's plan and redirected the poisoned glass to become part of Gabby's story forever.", characters_involved: [rex.id], is_required: true, beat_type: 'twist', timeline_phase: 'resolution' });
 
@@ -360,7 +360,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 1,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:chat] [CODE:R1-C1] Red Herring / Drama Noise — Shows {{Zayn}}/{{Sienna}} tension regarding an unaired blackmail tape, but has zero connection to the poison plot.',
+          internal_notes: '[FORMAT:chat] [CODE:R1-C1] Red Herring / Drama Noise - Shows {{Zayn}}/{{Sienna}} tension regarding an unaired blackmail tape, but has zero connection to the poison plot.',
           description: `Sender: Unless you've got something juicier to give me, I'm dropping the tape.\n{{Gabby}}: Post it. Why would I care. {{Sienna}} wants the attention anyway. God shes desperate.\nSender: Little Heartless {{Gabby_Initial}}. The video leaves nothing to the imagination... {{Sienna_Initial}} would be fully exposed\n{{Gabby}}: As i said before, IDGAF. {{Sienna}} needs character building anyway.\n[Sent 12:14PM]\nSender: Ik im an assh*le for filming but thought you should know what your sister said...`,
           generation_prompt: `A close-up shot of hands holding a dark cocktail glass against a glamorous, dimly lit party lounge background. (No text on screen).`
         },
@@ -373,21 +373,21 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 1,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:chat] [CODE:R1-C2] Red Herring / Distraction — Designed to point suspicion toward runner-up {{Ava}}, though {{Ava}} did not plan or commit the poisoning.',
+          internal_notes: '[FORMAT:chat] [CODE:R1-C2] Red Herring / Distraction - Designed to point suspicion toward runner-up {{Ava}}, though {{Ava}} did not plan or commit the poisoning.',
           description: `Sender: You don't deserve the win. Everyone sees what you really are. It's time someone did something about it. 🔥\n[Sent 12:14PM]`,
           generation_prompt: `Two glamorous figures seen in soft focus across a crowded VIP party, tension in the room. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "EYE SPY SOFTWARE — Device: 269",
+          title: "EYE SPY SOFTWARE - Device: 269",
           clue_type: 'physical',
           implication_type: 'direct',
           evidence_status: 'real',
           round_number: 1,
           is_essential: true,
           linked_plot_beat_id: doaB3.id,
-          internal_notes: '[FORMAT:search_log] [CODE:R1-C3] REAL / CANON (Beat 2 & 3) — Documents searches on sedatives, poisoning, and getting away with murder. {{Dane}} conducted these searches; {{Milo}} discovered them via spyware.',
-          description: `EYE SPY SOFTWARE — Accessing Device: 269\nRecent Tabs / Search History:\n• Do sedatives show up in blood test\n• Alcohol + sleeping pills dangerous?\n• How to spike a drink without taste\n• How to Poison Someone\n• How to Get away with murder\n• {{Gabby}} - Love On The Rocks\n• {{Gabby}} + {{Dane}} cute edits\n• Love On The Rocks`,
+          internal_notes: '[FORMAT:search_log] [CODE:R1-C3] REAL / CANON (Beat 2 & 3) - Documents searches on sedatives, poisoning, and getting away with murder. {{Dane}} conducted these searches; {{Milo}} discovered them via spyware.',
+          description: `EYE SPY SOFTWARE - Accessing Device: 269\nRecent Tabs / Search History:\n• Do sedatives show up in blood test\n• Alcohol + sleeping pills dangerous?\n• How to spike a drink without taste\n• How to Poison Someone\n• How to Get away with murder\n• {{Gabby}} - Love On The Rocks\n• {{Gabby}} + {{Dane}} cute edits\n• Love On The Rocks`,
           generation_prompt: `A sleek laptop or tablet sitting on a modern dark desk with subtle blue backlighting, dimly lit room. (No text).`
         },
         {
@@ -399,7 +399,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 1,
           is_essential: true,
           linked_plot_beat_id: doaB1.id,
-          internal_notes: '[FORMAT:chat] [CODE:R1-C4] REAL / CANON (Beat 1) — {{Dane}} learns about {{Colt}} and {{Gabby}}\'s post-show affair, which triggers {{Dane_his}} motive to poison {{Colt}}.',
+          internal_notes: '[FORMAT:chat] [CODE:R1-C4] REAL / CANON (Beat 1) - {{Dane}} learns about {{Colt}} and {{Gabby}}\'s post-show affair, which triggers {{Dane_his}} motive to poison {{Colt}}.',
           description: `Sender: Ik we aren't speaking but did you see what I said in the GC\n{{Dane}}: yeah. wtf. how do you know?\nSender: {{Colt}} and I were together at the same time. I'm more pissed than you.\n{{Dane}}: I can assure you, you're not.`,
           generation_prompt: `A tense silhouette of a man in a doorway checking his watch in an upscale venue. (No text).`
         },
@@ -412,7 +412,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 1,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:chat] [CODE:R1-C5] Red Herring / Drama Noise — General romantic fallout between cast members; not tied to the murder mechanism.',
+          internal_notes: '[FORMAT:chat] [CODE:R1-C5] Red Herring / Drama Noise - General romantic fallout between cast members; not tied to the murder mechanism.',
           description: `Sender: So that's it? Nothing even happened, right?\n[Status: SEEN]`,
           generation_prompt: `A moody shot of a half-empty champagne glass left abandoned on a marble ledge. (No text).`
         },
@@ -425,7 +425,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 1,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:chat] [CODE:R1-C6] Red Herring / Drama Noise — Shows {{Ava}} dropping gossip to stir up trouble before the reunion, but neither {{Ava}} nor {{Rikki}} poisoned anyone.',
+          internal_notes: '[FORMAT:chat] [CODE:R1-C6] Red Herring / Drama Noise - Shows {{Ava}} dropping gossip to stir up trouble before the reunion, but neither {{Ava}} nor {{Rikki}} poisoned anyone.',
           description: `{{Ava}}: Should I just tell {{Dane_him}}? Wait, maybe you should...lol\n{{Ava}}: Either way, i feel like {{Dane_he}} deserves to know\n{{Rikki}}: Babe, {{Dane_hes}} gonna find out at some point... You should be the one... you know {{Gabby_Initial}} would hate it. {{Ava}}, take one for the team...\n{{Ava}}: Ok, i'll message now. But ONLY bc {{Dane}} deserves to know... no other reasons...\n{{Rikki}}: HOLY... IN THE GC!? YOU. ARE. BRAVE\n[Status: SEEN]`,
           generation_prompt: `Makeup brushes, an open vanity mirror, and cosmetic powders scattered on a backstage dressing table. (No text).`
         },
@@ -438,7 +438,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 1,
           is_essential: true,
           linked_plot_beat_id: doaB1.id,
-          internal_notes: '[FORMAT:chat] [CODE:R1-C7] REAL / CANON (Beat 1) — Publicly outs the affair in the cast group chat, confirming {{Colt}}\'s involvement and escalating {{Dane}}\'s fury.',
+          internal_notes: '[FORMAT:chat] [CODE:R1-C7] REAL / CANON (Beat 1) - Publicly outs the affair in the cast group chat, confirming {{Colt}}\'s involvement and escalating {{Dane}}\'s fury.',
           description: `{{Ava}}: Wow... You couldn't keep your legs closed, could u {{Gabby_Initial}}\n{{Gabby}}: Honestly... its none of your business {{Ava}}. Stop it.\nCast Member: Oh F*** off {{Ava}}. Why are we talking about this in the main GC.\nCast Member: Actually, why are we talking about this at all.\n{{Colt}}: Yikes, Drama... Save it for the Reunion tmr.`,
           generation_prompt: `A bustling party room viewed from a distance, glamorous guests laughing and holding drinks. (No text).`
         },
@@ -451,7 +451,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 1,
           is_essential: true,
           linked_plot_beat_id: doaB1.id,
-          internal_notes: '[FORMAT:cctv] [CODE:R1-C8] REAL / Supporting Evidence (Beat 1) — Proves {{Colt}} and {{Gabby}} were physically intimate off-camera, confirming the rumor that set {{Dane}} off.',
+          internal_notes: '[FORMAT:cctv] [CODE:R1-C8] REAL / Supporting Evidence (Beat 1) - Proves {{Colt}} and {{Gabby}} were physically intimate off-camera, confirming the rumor that set {{Dane}} off.',
           description: `File: IMG_4875.mov (0:13)\nSource: Recorded on {{Zayn}}'s iPhone\nVisual: Video still capturing {{Colt}} and {{Gabby}} together behind closed doors.`,
           generation_prompt: `A close, shadowy, intimate silhouette of a man and woman embracing in a private room.`
         },
@@ -459,15 +459,15 @@ export async function createMysteryAction(formData: FormData) {
         // Round 2 (10 Clues)
         {
           mystery_id: mystery.id,
-          title: "CONFIDENTIAL — Love On The Rocks",
+          title: "CONFIDENTIAL - Love On The Rocks",
           clue_type: 'physical',
           implication_type: 'direct',
           evidence_status: 'real',
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB5.id,
-          internal_notes: '[FORMAT:call_sheet] [CODE:R2-C1] REAL / CANON (Beat 3 & 5) — Confirms {{Dane}} used cocaine in glam, was twitchy and muttering threats about {{Colt}}, and notes {{Milo}} hovering suspiciously.',
-          description: `CONFIDENTIAL — Love On The Rocks\n• Try Get {{Gabby_Initial}} to talk to [REDACTED ████████]\n• {{Ava_Initial}} spiralling. re: {{Gabby_Initial}} & {{Colt_Initial}}\n• {{Colt_Initial}} and {{Gabby_Initial}} were in closet for AGES\n• {{Milo_Initial}} still hovering. Watch {{Milo_him}}, seems unstable\nYou know what to do...\n-----------------------------------------------\nHandwritten Note at Bottom:\n"FYI - There was coke all over the corner of my makeup mirror. Pretty sure {{Dane_Initial}} used it while I stepped out. {{Dane_Hes}} twitchy AF and muttering stuff about {{Colt_Initial}}. Handle it if you need to. Just don't put it on me.\n- {{Rikki_Initial}}"`,
+          internal_notes: '[FORMAT:call_sheet] [CODE:R2-C1] REAL / CANON (Beat 3 & 5) - Confirms {{Dane}} used cocaine in glam, was twitchy and muttering threats about {{Colt}}, and notes {{Milo}} hovering suspiciously.',
+          description: `CONFIDENTIAL - Love On The Rocks\n• Try Get {{Gabby_Initial}} to talk to [REDACTED ████████]\n• {{Ava_Initial}} spiralling. re: {{Gabby_Initial}} & {{Colt_Initial}}\n• {{Colt_Initial}} and {{Gabby_Initial}} were in closet for AGES\n• {{Milo_Initial}} still hovering. Watch {{Milo_him}}, seems unstable\nYou know what to do...\n-----------------------------------------------\nHandwritten Note at Bottom:\n"FYI - There was coke all over the corner of my makeup mirror. Pretty sure {{Dane_Initial}} used it while I stepped out. {{Dane_Hes}} twitchy AF and muttering stuff about {{Colt_Initial}}. Handle it if you need to. Just don't put it on me.\n- {{Rikki_Initial}}"`,
           generation_prompt: `A wooden clipboard resting on a production sound case backstage next to coiled cables. (No text).`
         },
         {
@@ -479,7 +479,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB5.id,
-          internal_notes: '[FORMAT:medical_rx] [CODE:R2-C2] REAL / CANON (Beat 5 - Murder Weapon) — The exact sedative prescription used in the poisoning, with a medical warning that it is fatal when mixed with alcohol.',
+          internal_notes: '[FORMAT:medical_rx] [CODE:R2-C2] REAL / CANON (Beat 5 - Murder Weapon) - The exact sedative prescription used in the poisoning, with a medical warning that it is fatal when mixed with alcohol.',
           description: `Medication: Temazepam (For sleep disturbance)\nPrescribed to: {{Dane}}\nIssue date: 3 weeks ago\nRef: 10-3-204\nWARNING: May cause drowsiness. Fatal when mixed with alcohol.`,
           generation_prompt: `A metallic tray or dark nightstand with scattered empty prescription blister foil next to a glass of water. (No text).`
         },
@@ -492,7 +492,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB6.id,
-          internal_notes: '[FORMAT:chat] [CODE:R2-C3] REAL / CANON (Beat 5 & 6) — Eye-witness testimony that {{Dane}} was pacing, staring intently at the champagne bottles, and acting erratic before the glass switch.',
+          internal_notes: '[FORMAT:chat] [CODE:R2-C3] REAL / CANON (Beat 5 & 6) - Eye-witness testimony that {{Dane}} was pacing, staring intently at the champagne bottles, and acting erratic before the glass switch.',
           description: `Sender 1: {{Dane}}'s in glam pacing like {{Dane_hes}} about to propose or explode 😭\nSender 2: {{Dane_He}} deadass asked ME if {{Gabby}} still talks about {{Dane_him}} 💀\nSender 2: I saw {{Dane_him}} staring at the champagne bottles lol\nSender 1: I'm not tryna get roofied tonight someone talk to {{Dane_him}}...\nSender 3: Is {{Dane_he}} still on {{Dane_his}} meds...?\nSender 4: 🧐📱🤓`,
           generation_prompt: `Dim backstage green room with leather sofas and illuminated mirror bulbs in background. (No text).`
         },
@@ -505,20 +505,20 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB2.id,
-          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C4] REAL / CANON (Beat 2) — {{Dane}}\'s direct confession of intent to take action because {{Dane_he}} cannot bear seeing {{Colt}} with {{Gabby}}.',
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C4] REAL / CANON (Beat 2) - {{Dane}}\'s direct confession of intent to take action because {{Dane_he}} cannot bear seeing {{Colt}} with {{Gabby}}.',
           description: `"If I have to watch {{Colt_him}} stand next to her again I'll lose it.\n{{Colt_He}} thinks I won't do anything because the cameras are on.\nBut I will. I'm done being quiet."`,
           generation_prompt: `A crumpled paper page resting next to an empty glass on a wooden coffee table. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "Notes — To Do Checklist",
+          title: "Notes - To Do Checklist",
           clue_type: 'secret',
           implication_type: 'direct',
           evidence_status: 'real',
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB3.id,
-          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C5] REAL / CANON (Beat 3) — {{Milo}}\'s stalking checklist proving {{Milo_he}} accessed devices and uncovered {{Dane}}\'s poison plot.',
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C5] REAL / CANON (Beat 3) - {{Milo}}\'s stalking checklist proving {{Milo_he}} accessed devices and uncovered {{Dane}}\'s poison plot.',
           description: `Date: Today at 4:15 PM\nTo do:\n• Check {{Dane_his}} iCloud (same recovery answers as last time? Try 08/11?) [strikethrough]\n• stalk insta DMs [strikethrough]\n• Go Through Camera Roll\n• Go through Safari history. [strikethrough]`,
           generation_prompt: `A dark workstation with notebooks, smartphone, and glasses resting beside a desk lamp. (No text).`
         },
@@ -531,7 +531,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 2,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:chat] [CODE:R2-C6] Red Herring / Distraction — Cast gossip attempt before the toast; not part of the poison exchange.',
+          internal_notes: '[FORMAT:chat] [CODE:R2-C6] Red Herring / Distraction - Cast gossip attempt before the toast; not part of the poison exchange.',
           description: `Sender: You okay? I feel like something's off. Let's talk before the toast...\n[Sent 5:20PM • Status: SEEN]`,
           generation_prompt: `An elegant velvet armchair in a quiet hotel corridor outside the party. (No text).`
         },
@@ -544,7 +544,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB2.id,
-          internal_notes: '[FORMAT:audio] [CODE:R2-C7] REAL / CANON (Beat 1 & 2) — Producer {{Jeremy}} instigates {{Dane}} about {{Colt}} and {{Gabby}} being together in wardrobe for 25 minutes.',
+          internal_notes: '[FORMAT:audio] [CODE:R2-C7] REAL / CANON (Beat 1 & 2) - Producer {{Jeremy}} instigates {{Dane}} about {{Colt}} and {{Gabby}} being together in wardrobe for 25 minutes.',
           description: `Recording Duration: 25.04 Seconds\n{{Jeremy}}: "{{Rikki}} said they were in wardrobe for, like, 25 minutes. Just them. {{Colt}} and {{Gabby}}."\n{{Dane}}: "You're joking."\n{{Jeremy}}: "I'm not. {{Ava}}'s about to combust... Might be good to get that on camera..."\n{{Dane}}: "You'll get something."\n[Recording cuts]`,
           generation_prompt: `A microphone pack and sound mixer console lit by subtle LED displays backstage. (No text).`
         },
@@ -557,7 +557,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 2,
           is_essential: true,
           linked_plot_beat_id: doaB4.id,
-          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C8] REAL / CANON (Beat 4) — Establishes {{Milo}}\'s delusion that {{Gabby}} truly had feelings for {{Milo_him}} right before {{Milo_he}} confessed to her.',
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C8] REAL / CANON (Beat 4) - Establishes {{Milo}}\'s delusion that {{Gabby}} truly had feelings for {{Milo_him}} right before {{Milo_he}} confessed to her.',
           description: `"Tonight felt kind of perfect. I actually think I'm happy - like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening..."`,
           generation_prompt: `A fountain pen resting over an open journal under warm ambient light. (No text).`
         },
@@ -570,20 +570,20 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 2,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:chat] [CODE:R2-C9] Red Herring / Petty Revenge — {{Sienna}} and {{Zayn}} plan a public stunt or drama swap, but did not spike any drinks.',
+          internal_notes: '[FORMAT:chat] [CODE:R2-C9] Red Herring / Petty Revenge - {{Sienna}} and {{Zayn}} plan a public stunt or drama swap, but did not spike any drinks.',
           description: `{{Sienna}}: God you are an Ass. But WTF. I can't believe she actually said that...\n{{Sienna}}: Especially After EVERYTHING i've done for her\n{{Zayn}}: Yeah Yikes.\n{{Sienna}}: I have an idea tho, Lets give her a taste of her own Medicine... we look the exact same\n{{Zayn}}: God I think im in love with you`,
           generation_prompt: `Two figures whispering in an intimate, dimly lit alcove of a luxury venue. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "Server Audit Log — SEC CAM_4B",
+          title: "Server Audit Log - SEC CAM_4B",
           clue_type: 'physical',
           implication_type: 'red_herring',
           evidence_status: 'fake',
           round_number: 2,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:search_log] [CODE:R2-C10] Red Herring / Producer Shenanigans — {{Jeremy}} deleting footage of {{Rikki}} ranting; emphasizes producer interference rather than murder prep.',
+          internal_notes: '[FORMAT:search_log] [CODE:R2-C10] Red Herring / Producer Shenanigans - {{Jeremy}} deleting footage of {{Rikki}} ranting; emphasizes producer interference rather than murder prep.',
           description: `ERROR: FILE NOT FOUND\nFile: SEC CAM_4B [Green Room]\nTime: 5:40PM - 6:05PM\nStatus: Permanently Deleted\nActioned by: jeremy.p@lotv.tv\nReason: "corrupted audio, unusable"\nNote: "I just cut the section. It was mostly {{Rikki}} ranting anyway - no good angles. Not worth a storyline. No one needs to hear that."`,
           generation_prompt: `A dark broadcast control room with monitors and server rack lights. (No text).`
         },
@@ -598,7 +598,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 3,
           is_essential: true,
           linked_plot_beat_id: doaB6.id,
-          internal_notes: '[FORMAT:cctv] [CODE:R3-C1] REAL / CANON (Beat 6) — Shows {{Milo}} backstage switching the glasses on the table so {{Gabby}} receives the spiked champagne.',
+          internal_notes: '[FORMAT:cctv] [CODE:R3-C1] REAL / CANON (Beat 6) - Shows {{Milo}} backstage switching the glasses on the table so {{Gabby}} receives the spiked champagne.',
           description: `Header: SECURITY CAM STILL • BACKSTAGE\nTimestamp: 5:38 PM\nVisual: A hooded figure is seen reaching over the table with champagne glasses and wine bottles.`,
           generation_prompt: `Overhead black-and-white surveillance angle of a round draped cocktail table with wine glasses and a wine bottle; a hooded figure with face blurred reaching toward a glass.`
         },
@@ -611,7 +611,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 3,
           is_essential: true,
           linked_plot_beat_id: doaB8.id,
-          internal_notes: '[FORMAT:social_post] [CODE:R3-C2] REAL / CANON (Beat 8) — {{Milo}} preparing {{Milo_his}} manifesto to go viral as the unforgettable figure tied to {{Gabby}} forever.',
+          internal_notes: '[FORMAT:social_post] [CODE:R3-C2] REAL / CANON (Beat 8) - {{Milo}} preparing {{Milo_his}} manifesto to go viral as the unforgettable figure tied to {{Gabby}} forever.',
           description: `Post Draft (6:12 PM):\n"Everything changes after tonight.\nThey'll remember me.\nEven if it means they never look at her the same again."\nTags: #exclusive #truthhurts #watchthisspace\nLocation: The Grand Penthouse • VIP Reunion Lounge\nAudio selected: Reelin' In The Years`,
           generation_prompt: `A phone screen silhouette glowing against a dark room interior. (No text).`
         },
@@ -624,7 +624,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 3,
           is_essential: true,
           linked_plot_beat_id: doaB4.id,
-          internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4) — {{Gabby}} records that {{Milo}} confessed {{Milo_his}} love, she rejected {{Milo_him}}, and {{Milo_he}} took it personally and hovered around her.',
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4) - {{Gabby}} records that {{Milo}} confessed {{Milo_his}} love, she rejected {{Milo_him}}, and {{Milo_he}} took it personally and hovered around her.',
           description: `Date: Today at 5:34 PM\n"They told me they are in love with me. They said it's always been me.\nI told them it's not like that. That it's never been like that.\nI think they took it personally. Now they're just... hovering.\nGod, they're all liars. Something's gonna happen. I have a bad feeling. I just don't think I'm the target?\nWish me luck\n- {{Gabby_Initial}}"`,
           generation_prompt: `A luxury metallic clutch bag sitting open on a marble dressing vanity. (No text).`
         },
@@ -637,7 +637,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 3,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:audio] [CODE:R3-C4] Red Herring / Content Drama — Cast members fighting over video leaks and reality TV screentime, recorded by production.',
+          internal_notes: '[FORMAT:audio] [CODE:R3-C4] Red Herring / Content Drama - Cast members fighting over video leaks and reality TV screentime, recorded by production.',
           description: `Recording Duration: 32.25 Seconds\nSpeaker 1: "You think this is just content!? This is my life."\nSpeaker 2: "You said to post it. Don't backpedal now that it's not your **BLEEP** on the line."\nSpeaker 2: "They already think you hooked up with {{Colt_him}} anyway. This just confirms it."\n*Pause*\nSpeaker 1: "I never want to see you again, you're disgusting."\nSpeaker 2: "You're so dramatic."\nSpeaker 3: "You're both on camera."`,
           generation_prompt: `A sound recordist's boom microphone positioned above a backstage partition wall. (No text).`
         },
@@ -650,7 +650,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 3,
           is_essential: false,
           linked_plot_beat_id: null,
-          internal_notes: '[FORMAT:cctv] [CODE:R3-C5] Red Herring / Relationship Fallout — {{Colt}} arguing about off-camera hookups, distracting players into thinking {{Colt}} did the deed.',
+          internal_notes: '[FORMAT:cctv] [CODE:R3-C5] Red Herring / Relationship Fallout - {{Colt}} arguing about off-camera hookups, distracting players into thinking {{Colt}} did the deed.',
           description: `Header: SECURITY CAM STILL • BACKSTAGE\nTimestamp: 5:52 PM\nVisual: Two figures in formal evening wear in an intense face-to-face confrontation beside the drinks table.`,
           generation_prompt: `Grainy surveillance feed of a man in a dark suit gesturing aggressively across a table to a dark-haired woman in a sleeveless dress.`
         },
@@ -663,20 +663,20 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 3,
           is_essential: true,
           linked_plot_beat_id: doaB7.id,
-          internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C6] REAL / CANON (Beat 4 & 7) — Direct evidence of {{Milo}}\'s motive found backstage after {{Gabby}} laughed at {{Milo_his}} confession: "Well... there\'s only one way this ends".',
+          internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C6] REAL / CANON (Beat 4 & 7) - Direct evidence of {{Milo}}\'s motive found backstage after {{Gabby}} laughed at {{Milo_his}} confession: "Well... there\'s only one way this ends".',
           description: `"...But when I told you I loved you. you laughed. Like I didn't exist. You made me feel invisible. Well... there's only one way this ends."`,
           generation_prompt: `A discarded, torn piece of black paper or card on the floor near stage curtains. (No text).`
         },
         {
           mystery_id: mystery.id,
-          title: "Instagram — @{{Gabby}}4ever_edits",
+          title: "Instagram - @{{Gabby}}4ever_edits",
           clue_type: 'secret',
           implication_type: 'direct',
           evidence_status: 'real',
           round_number: 3,
           is_essential: true,
           linked_plot_beat_id: doaB4.id,
-          internal_notes: '[FORMAT:social_post] [CODE:R3-C7] REAL / CANON (Beat 4) — Proves {{Milo}}\'s obsessive stalking and fixation on {{Gabby}} as {{Milo_his}} "#futurewife".',
+          internal_notes: '[FORMAT:social_post] [CODE:R3-C7] REAL / CANON (Beat 4) - Proves {{Milo}}\'s obsessive stalking and fixation on {{Gabby}} as {{Milo_his}} "#futurewife".',
           description: `Account: @{{Gabby}}4ever_edits\nStats: 600 Posts • 65K Followers • 1 Following\nBio: "You only see the show. I see the soul. ❤️✨ #realLoveOnTheRocks"\nPost Grid Captions:\n• "The real winner. Always was. Always will be."\n• "One day she'll know the truth. #futurewife"\n• "You can't fake that look. She saw me."\n• "Fate works fast. Meeting her again."`,
           generation_prompt: `A smartphone propped up on a messy desk showing photo collages in the glow of a ring light. (No text).`
         },
@@ -691,7 +691,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 4,
           is_essential: true,
           linked_plot_beat_id: doaB8.id,
-          internal_notes: '[FORMAT:audio] [CODE:R4-C1] REAL / CANON (Beat 6 & 8 - Killer Confession) — {{Milo}} confesses on tape to watching {{Dane}}\'s plan and redirecting the poisoned drink to {{Gabby}} so {{Milo_he}} could become "part of the story".',
+          internal_notes: '[FORMAT:audio] [CODE:R4-C1] REAL / CANON (Beat 6 & 8 - Killer Confession) - {{Milo}} confesses on tape to watching {{Dane}}\'s plan and redirecting the poisoned drink to {{Gabby}} so {{Milo_he}} could become "part of the story".',
           description: `Recording Duration: 45.21 Seconds\n"I tried to be quiet. I really did. I watched the whole thing happen. And when the moment came... I directed it to go exactly where it needed to. It's wild how things just fall into place.\nSome people live for the camera. Some people die for it. Either way... I'm part of the story now."`,
           generation_prompt: `An audio voice recorder lying next to a pair of wire-rimmed glasses on a dark reflective surface. (No text).`
         },
@@ -704,7 +704,7 @@ export async function createMysteryAction(formData: FormData) {
           round_number: 4,
           is_essential: true,
           linked_plot_beat_id: doaB7.id,
-          internal_notes: '[FORMAT:audio] [CODE:R4-C2] REAL / Supporting Evidence (Beat 5 & 7) — Confirms {{Dane}} was high on cocaine and a loose cannon right before the 6:00 PM toast, while {{Jeremy}} refused to intervene for the sake of reality TV drama.',
+          internal_notes: '[FORMAT:audio] [CODE:R4-C2] REAL / Supporting Evidence (Beat 5 & 7) - Confirms {{Dane}} was high on cocaine and a loose cannon right before the 6:00 PM toast, while {{Jeremy}} refused to intervene for the sake of reality TV drama.',
           description: `Recording Duration: 38.64 Seconds\nHeader: 5:52PM - Recovered Security Cam Audio\n{{Rikki}}: "I'm serious - {{Dane}}'s not okay. {{Dane_Hes}} twitchy, {{Dane_hes}} muttering shit, I'm pretty sure {{Dane_he}} snorted a line off the f***ing mirror."\n{{Jeremy}}: "And you're telling me this like it's a problem?"\n{{Rikki}}: "Yes, {{Jeremy}}. It's a liability. {{Dane_He}} needs help... What if {{Dane_he}} snaps?"\n{{Jeremy}}: (laughs) "Then we get the footage. You want safe, go film MasterChef."`,
           generation_prompt: `Backstage audio monitors and headset hanging on a stand near the wings of the stage. (No text).`
         }
@@ -715,7 +715,7 @@ export async function createMysteryAction(formData: FormData) {
       const { data: doaSubplot, error: doaSubErr } = await supabase.from('subplots').insert({
         mystery_id: mystery.id,
         title: "Sienna & Zayn's Revenge Pact",
-        description: "Sienna and Zayn conspired to publicly humiliate Gabby by leaking old footage of her behaving badly — a red herring that makes them look guilty while Milo and Dane carry out the real crime.",
+        description: "Sienna and Zayn conspired to publicly humiliate Gabby by leaking old footage of her behaving badly, a red herring that makes them look guilty while Milo and Dane carry out the real crime.",
         primary_character_id: nova.id,
         secondary_character_id: zane.id,
         theme: "revenge"
@@ -723,7 +723,7 @@ export async function createMysteryAction(formData: FormData) {
       if (doaSubErr || !doaSubplot) throw new Error(`DOA subplot failed: ${doaSubErr?.message}`);
 
       const { error: doaSubBeatErr } = await supabase.from('subplot_beats').insert([
-        { subplot_id: doaSubplot.id, beat_number: 1, description: "Sienna and Zayn discover they look similar enough to be confused for each other on camera. Sienna suggests impersonating Gabby to cause chaos. Zayn agrees — mostly because they're falling for Sienna.", linked_plot_beat_id: doaB1.id },
+        { subplot_id: doaSubplot.id, beat_number: 1, description: "Sienna and Zayn discover they look similar enough to be confused for each other on camera. Sienna suggests impersonating Gabby to cause chaos. Zayn agrees, mostly because they're falling for Sienna.", linked_plot_beat_id: doaB1.id },
         { subplot_id: doaSubplot.id, beat_number: 2, description: "Zayn is caught near Gabby's bag. They claim they were grabbing their own phone. Jeremy watches. Says nothing. Files it away.", linked_plot_beat_id: doaB7.id }
       ]);
       if (doaSubBeatErr) throw new Error(`DOA subplot beats failed: ${doaSubBeatErr.message}`);
@@ -737,7 +737,7 @@ export async function createMysteryAction(formData: FormData) {
       await supabase.from('mysteries').update({
         title: "The Ringmaster's Last Bow",
         theme: "Retro Circus Noir",
-        description: "Under the striped canvas of the Grand Pavilion Circus, the lights are bright, but the shadows are deadly. Tonight, the domineering ringmaster Barnaby Frost was found dead inside the lion's cage, but the lion wasn't the killer. One of the tight-knit circus performers has blood on their hands—and the show must not go on until the truth is revealed.",
+        description: "Under the striped canvas of the Grand Pavilion Circus, the lights are bright, but the shadows are deadly. Tonight, the domineering ringmaster Barnaby Frost was found dead inside the lion's cage, but the lion wasn't the killer. One of the tight-knit circus performers has blood on their hands, and the show must not go on until the truth is revealed.",
         inside_jokes: "Remember: never trust a mime, and always watch your pockets!"
       }).eq('id', mystery.id);
 
@@ -1033,7 +1033,7 @@ export async function createMysteryAction(formData: FormData) {
         }
       });
 
-      // Insert motives — all 11 suspects linked to the victim
+      // Insert motives, all 11 suspects linked to the victim
       const { error: motErr } = await supabase.from('motives').insert([
         { mystery_id: mystery.id, character_id: zara.id, motive_type: 'revenge', strength: 'critical', linked_character_id: barnaby.id, notes: "Barnaby stole her savings to buy out the circus and abandoned her romantic partnership years ago. Tonight was her final vengeance." },
         { mystery_id: mystery.id, character_id: silas.id, motive_type: 'revenge', strength: 'moderate', linked_character_id: barnaby.id, notes: "Tired of being forced to perform humiliating slapstick for no pay while Barnaby took all the credit and fame." },
@@ -1088,7 +1088,7 @@ export async function createMysteryAction(formData: FormData) {
       const { error: relErr } = await supabase.from('relationships').insert(sortedRelationships);
       if (relErr) throw new Error(`Failed to insert relationships: ${relErr.message}`);
 
-      // Plot Beats — check each for errors
+      // Plot Beats, check each for errors
       const insertBeat = async (payload: any) => {
         const { data, error } = await supabase.from('plot_beats').insert(payload).select().single();
         if (error || !data) throw new Error(`Failed to insert beat "${payload.event_title}": ${error?.message}`);
@@ -1136,7 +1136,7 @@ export async function createMysteryAction(formData: FormData) {
         beat_number: 4,
         sort_order: 4,
         event_title: "The Burning Ledger Scraps",
-        description: "Ring Barker Rory Vance spots Zephyr burning papers in a metal tin behind the trapeze rigging. Rory retrieves a charred fragment—it is a portion of Barnaby's private financial ledgers showing massive debt skimming.",
+        description: "Ring Barker Rory Vance spots Zephyr burning papers in a metal tin behind the trapeze rigging. Rory retrieves a charred fragment, it is a portion of Barnaby's private financial ledgers showing massive debt skimming.",
         characters_involved: [rory.id, zephyr.id, penny.id, gigi.id],
         is_required: true,
         beat_type: 'twist',

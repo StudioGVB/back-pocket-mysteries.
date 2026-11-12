@@ -623,7 +623,7 @@ export async function adminGiftMystery(
 
     prependAuditNote(
       record,
-      `Gifted free murder mystery "${newMystery.title}"${options.note ? ` — Note: ${options.note}` : ''}.`,
+      `Gifted free murder mystery "${newMystery.title}"${options.note ? ` - Note: ${options.note}` : ''}.`,
       'gift'
     );
 
@@ -752,7 +752,7 @@ export async function adminRefundOrder(
     const formattedAmt = `$${(options.refundAmountCents / 100).toFixed(2)}`;
     prependAuditNote(
       record,
-      `Issued ${options.refundType.toUpperCase()} refund of ${formattedAmt} on "${options.mysteryTitle || 'Order'}"${options.reason ? ` — Reason: ${options.reason}` : ''}${options.revokeMysteryAccess ? ' (Mystery access revoked)' : ''}.`,
+      `Issued ${options.refundType.toUpperCase()} refund of ${formattedAmt} on "${options.mysteryTitle || 'Order'}"${options.reason ? ` - Reason: ${options.reason}` : ''}${options.revokeMysteryAccess ? ' (Mystery access revoked)' : ''}.`,
       'refund'
     );
 
@@ -827,7 +827,7 @@ export async function adminCreateCustomerPromo(
 
     prependAuditNote(
       record,
-      `Created personal promo code ${cleanCode} (${desc})${promoInput.note ? ` — ${promoInput.note}` : ''}.`,
+      `Created personal promo code ${cleanCode} (${desc})${promoInput.note ? ` - ${promoInput.note}` : ''}.`,
       'promo'
     );
 
@@ -873,7 +873,7 @@ export async function adminAdjustCreditBalance(
     const sign = deltaUsd >= 0 ? `+` : `-`;
     prependAuditNote(
       record,
-      `Adjusted account store credit by ${sign}$${Math.abs(deltaUsd).toFixed(2)} (New balance: $${nextBalance.toFixed(2)})${reason ? ` — ${reason}` : ''}.`,
+      `Adjusted account store credit by ${sign}$${Math.abs(deltaUsd).toFixed(2)} (New balance: $${nextBalance.toFixed(2)})${reason ? ` - ${reason}` : ''}.`,
       'promo'
     );
 

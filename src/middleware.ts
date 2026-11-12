@@ -20,7 +20,7 @@ const NOINDEX_PREFIXES = [
 
 function getLocale(request: NextRequest): string {
   // Only use locale from an explicit cookie set by the user via the language switcher.
-  // Never auto-detect from accept-language — that causes redirect loops.
+  // Never auto-detect from accept-language - that causes redirect loops.
   const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value
   if (cookieLocale && i18n.locales.includes(cookieLocale as any)) {
     return cookieLocale

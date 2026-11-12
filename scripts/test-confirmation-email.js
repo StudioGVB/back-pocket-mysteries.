@@ -1,5 +1,5 @@
 const { Resend } = require('resend');
-const resend = new Resend('re_cLjxv47E_N7dyBwjy5DALFfKXLgQupexF');
+const resend = new Resend('process.env.RESEND_API_KEY');
 
 const year = new Date().getFullYear();
 
@@ -77,7 +77,7 @@ const html = `<!DOCTYPE html>
                     <td style="font-size:22px;padding-right:14px;vertical-align:top;padding-top:2px;">📦</td>
                     <td>
                       <p style="margin:0 0 2px;color:#222;font-size:14px;font-weight:700;">Everything in one place</p>
-                      <p style="margin:0;color:#888;font-size:13px;line-height:1.6;">Scripts, clues, and host guides — all ready to download.</p>
+                      <p style="margin:0;color:#888;font-size:13px;line-height:1.6;">Scripts, clues, and host guides, all ready to download.</p>
                     </td>
                   </tr></table>
                 </td>
@@ -108,7 +108,7 @@ const html = `<!DOCTYPE html>
 resend.emails.send({
   from: 'Back Pocket Mysteries <noreply@backpocketgames.com>',
   to: 'Hello@backpocketgames.com',
-  subject: '[Test] Confirm Your Email — Back Pocket Mysteries',
+  subject: '[Test] Confirm Your Email - Back Pocket Mysteries',
   html
 }).then(r => {
   if (r.error) { console.error('FAILED:', JSON.stringify(r.error)); process.exit(1); }

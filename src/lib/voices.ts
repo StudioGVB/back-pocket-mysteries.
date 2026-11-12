@@ -261,15 +261,15 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
     'the sister': 'XrExE9yKIg1WjnnlVkGX',
 
     // Legacy aliases
-    dane: 'pNInz6obpgDQGcFmaJgB',       // Adam — dominant / intense ex
-    gabby: 'cgSgspJ2msm6clMCkdW9',      // Jessica — glamorous winner
-    colt: 'iP95p4xoKVk53GoZ742B',       // Chris — charismatic host
-    milo: 'N2lVS1w4EtoT3dr4eOWO',       // Callum — bookish / intense superfan
-    rikki: 'FGY2WhTYpPnrIDTdsKH5',      // Laura — sassy / quick glam artist
-    jeremy: 'cjVigY5qzO86Huf0OWal',     // Eric — calm / calculating producer
-    ava: 'EXAVITQu4vr4xnSDxMaL',        // Sarah — dramatic / polished runner-up
-    zayn: 'nPczCjzI2devNBz1zQrb',       // Brian — deep / smooth
-    sienna: 'XrExE9yKIg1WjnnlVkGX',     // Matilda — bold sister
+    dane: 'pNInz6obpgDQGcFmaJgB',       // Adam - dominant / intense ex
+    gabby: 'cgSgspJ2msm6clMCkdW9',      // Jessica - glamorous winner
+    colt: 'iP95p4xoKVk53GoZ742B',       // Chris - charismatic host
+    milo: 'N2lVS1w4EtoT3dr4eOWO',       // Callum - bookish / intense superfan
+    rikki: 'FGY2WhTYpPnrIDTdsKH5',      // Laura - sassy / quick glam artist
+    jeremy: 'cjVigY5qzO86Huf0OWal',     // Eric - calm / calculating producer
+    ava: 'EXAVITQu4vr4xnSDxMaL',        // Sarah - dramatic / polished runner-up
+    zayn: 'nPczCjzI2devNBz1zQrb',       // Brian - deep / smooth
+    sienna: 'XrExE9yKIg1WjnnlVkGX',     // Matilda - bold sister
 
     // Dead On Arrival aliases
     blaze: 'pNInz6obpgDQGcFmaJgB',
@@ -322,15 +322,15 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
     'the sister': 'FGY2WhTYpPnrIDTdsKH5',
 
     // Legacy aliases
-    dane: 'SOYHLrjzK2X1ezoPC6cr',       // Harry — tense, volatile ex
-    gabby: 'pFZP5JQG7iQjIQuC4Bku',      // Lily — velvety British actress
-    colt: 'JBFqnCBsd6RMkjVDRZzb',       // George — warm charismatic British host
-    milo: 'N2lVS1w4EtoT3dr4eOWO',       // Callum — husky / intense superfan
-    rikki: 'Xb7hH8MSUJpSbSDYk0k2',      // Alice — sharp, perceptive British
-    jeremy: 'onwK4e9ZLuTAKqWW03F9',     // Daniel — formal, calculating British producer
-    ava: 'EXAVITQu4vr4xnSDxMaL',        // Sarah — posh, dramatic runner-up
-    zayn: 'nPczCjzI2devNBz1zQrb',       // Brian — deep, smooth
-    sienna: 'FGY2WhTYpPnrIDTdsKH5',     // Laura — bold, sassy sister
+    dane: 'SOYHLrjzK2X1ezoPC6cr',       // Harry - tense, volatile ex
+    gabby: 'pFZP5JQG7iQjIQuC4Bku',      // Lily - velvety British actress
+    colt: 'JBFqnCBsd6RMkjVDRZzb',       // George - warm charismatic British host
+    milo: 'N2lVS1w4EtoT3dr4eOWO',       // Callum - husky / intense superfan
+    rikki: 'Xb7hH8MSUJpSbSDYk0k2',      // Alice - sharp, perceptive British
+    jeremy: 'onwK4e9ZLuTAKqWW03F9',     // Daniel - formal, calculating British producer
+    ava: 'EXAVITQu4vr4xnSDxMaL',        // Sarah - posh, dramatic runner-up
+    zayn: 'nPczCjzI2devNBz1zQrb',       // Brian - deep, smooth
+    sienna: 'FGY2WhTYpPnrIDTdsKH5',     // Laura - bold, sassy sister
 
     // Dead On Arrival aliases
     blaze: 'SOYHLrjzK2X1ezoPC6cr',
@@ -383,15 +383,15 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
     'the sister': 'cgSgspJ2msm6clMCkdW9',
 
     // Legacy aliases
-    dane: 'IKne3meq5aSn9XLyUdCD',       // Charlie (AU) — deep, confident Australian
-    gabby: '7AT99iuMA9sXzwoSxG9H',      // Gabby (AU) — soft young Australian
-    colt: 'TX3LPaxmHKxFdv7VOQHJ',       // Liam — charismatic host
-    milo: 'bIHbv24MWmeRgasZH58o',       // Will — earnest / obsessive superfan
-    rikki: 'FGY2WhTYpPnrIDTdsKH5',      // Laura — sassy / quick glam artist
-    jeremy: 'CwhRBWXzGAHq8TQ4Fs17',     // Roger — dry, calculating producer
-    ava: 'EXAVITQu4vr4xnSDxMaL',        // Sarah — polished / dramatic runner-up
-    zayn: 'nPczCjzI2devNBz1zQrb',       // Brian — deep / smooth
-    sienna: 'cgSgspJ2msm6clMCkdW9',     // Jessica — bright, bold sister
+    dane: 'IKne3meq5aSn9XLyUdCD',       // Charlie (AU) - deep, confident Australian
+    gabby: '7AT99iuMA9sXzwoSxG9H',      // Gabby (AU) - soft young Australian
+    colt: 'TX3LPaxmHKxFdv7VOQHJ',       // Liam - charismatic host
+    milo: 'bIHbv24MWmeRgasZH58o',       // Will - earnest / obsessive superfan
+    rikki: 'FGY2WhTYpPnrIDTdsKH5',      // Laura - sassy / quick glam artist
+    jeremy: 'CwhRBWXzGAHq8TQ4Fs17',     // Roger - dry, calculating producer
+    ava: 'EXAVITQu4vr4xnSDxMaL',        // Sarah - polished / dramatic runner-up
+    zayn: 'nPczCjzI2devNBz1zQrb',       // Brian - deep / smooth
+    sienna: 'cgSgspJ2msm6clMCkdW9',     // Jessica - bright, bold sister
 
     // Dead On Arrival aliases
     blaze: 'IKne3meq5aSn9XLyUdCD',

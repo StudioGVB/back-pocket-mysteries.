@@ -232,7 +232,7 @@ export default function MysteryGeneratingScreen({
             ) : (
               <>
                 <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white max-w-2xl leading-tight">
-                  Your Package Will Be Ready in 20 Minutes — Go Get a Coffee! ☕
+                  Your Package Will Be Ready in 20 Minutes - Go Get a Coffee! ☕
                 </h1>
                 <p className="text-sm sm:text-base text-slate-300 font-medium max-w-2xl leading-relaxed">
                   Your cast for <strong className="text-white">{mysteryTitle}</strong> is locked in! Our AI studio is now generating your standard character portraits, scene clues, and audio evidence.{' '}

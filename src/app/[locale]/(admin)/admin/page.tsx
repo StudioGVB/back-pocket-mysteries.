@@ -77,8 +77,10 @@ async function DashboardTraffic() {
   const timeseries = Array.isArray(timeseriesRes) ? timeseriesRes : (timeseriesRes?.data || []);
   const isConnected = !!process.env.VERCEL_ACCESS_TOKEN;
   
-  const totalVisitors = timeseries.reduce((acc: any, curr: any) => acc + (curr.visitors || 0), 0);
-  const totalPageviews = timeseries.reduce((acc: any, curr: any) => acc + (curr.pageviews || 0), 0);
+  const sumVisitors = timeseries.reduce((acc: any, curr: any) => acc + (curr.visitors || 0), 0);
+  const sumPageviews = timeseries.reduce((acc: any, curr: any) => acc + (curr.pageviews || 0), 0);
+  const totalVisitors = timeseriesRes?.totals?.visitors > 0 ? timeseriesRes.totals.visitors : sumVisitors;
+  const totalPageviews = timeseriesRes?.totals?.pageviews > 0 ? timeseriesRes.totals.pageviews : sumPageviews;
 
   return <DashboardTrafficWidget data={timeseries} totalVisitors={totalVisitors} totalPageviews={totalPageviews} isConnected={isConnected} />;
 }

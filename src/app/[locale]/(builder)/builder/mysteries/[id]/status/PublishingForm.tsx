@@ -99,7 +99,7 @@ export function PublishingForm({ mystery, characterCount = 0, locale = 'en' }: P
           <div className="mx-6 mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <p className="text-xs font-black text-amber-900 uppercase tracking-wide">
-                🔒 Publishing Locked — {missingCharacters} More Character{missingCharacters === 1 ? '' : 's'} Required
+                🔒 Publishing Locked - {missingCharacters} More Character{missingCharacters === 1 ? '' : 's'} Required
               </p>
               <p className="text-xs text-amber-700 font-medium mt-0.5">
                 This mystery is assigned to the <strong>{pkgInfo.label} ({pkgInfo.rangeLabel})</strong>, which requires all <strong>{pkgInfo.requiredCharacters} characters</strong> to be created before you can post it live (currently has {characterCount}).

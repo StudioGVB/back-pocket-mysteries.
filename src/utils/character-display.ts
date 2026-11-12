@@ -155,7 +155,7 @@ export function getCleanCharacterPresentation(
     (!isGuestPersonalBio ? profile.bio : '') ||
     rawActSummary ||
     (char?.is_victim
-      ? `${roleTitle} commands the spotlight at tonight’s gathering — until a fatal turn sets the mystery in motion.`
+      ? `${roleTitle} commands the spotlight at tonight’s gathering, until a fatal turn sets the mystery in motion.`
       : `A key figure at tonight’s gathering with their own motives, secrets, and alibis to defend.`);
 
   const cleanedBio = cleanText(rawBio, allCharacters, mode);

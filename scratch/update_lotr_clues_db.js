@@ -22,7 +22,7 @@ const supabase = createClient(
 const CLUE_UPDATES = {
   "The Threatening Letter": {
     newTitle: "The Threatening Text Chain",
-    description: `💬 PRIVATE DM THREAD\nSender: Unknown Number (Saved as: Don't answer.)\nRecipient: {{Gabby}}\n\n[5:42 PM] Unknown: "You don't deserve the win. Everyone sees what you really are. Time someone did something about it."\n\n(Status: SEEN 5:43 PM — No Reply)`,
+    description: `💬 PRIVATE DM THREAD\nSender: Unknown Number (Saved as: Don't answer.)\nRecipient: {{Gabby}}\n\n[5:42 PM] Unknown: "You don't deserve the win. Everyone sees what you really are. Time someone did something about it."\n\n(Status: SEEN 5:43 PM - No Reply)`,
     generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Gabby looking down at a glowing blank smartphone screen on a penthouse balcony at night. On the right: A mysterious dark silhouette looking down at a glowing phone screen in a dark corridor. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
   },
   "Sienna's Torn Note": {
@@ -42,7 +42,7 @@ const CLUE_UPDATES = {
   },
   "The Warning Coaster": {
     newTitle: "The Seen-Zoned Warning",
-    description: `💬 PRIVATE DM THREAD\nSender: RealFan_{{Milo}}\nRecipient: {{Gabby}}\n\n[5:02 PM] RealFan_{{Milo}}: "The reunion's gonna set someone off."\n\n(Status: SEEN 5:05 PM — No Reply)`,
+    description: `💬 PRIVATE DM THREAD\nSender: RealFan_{{Milo}}\nRecipient: {{Gabby}}\n\n[5:02 PM] RealFan_{{Milo}}: "The reunion's gonna set someone off."\n\n(Status: SEEN 5:05 PM - No Reply)`,
     generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Milo (a young man with short orange hair and fair skin, wearing a bright orange jacket) looking down at a glowing blank smartphone screen in a dark hallway. On the right: Gabby looking down at a glowing blank smartphone screen on a penthouse balcony at night. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
   },
   "Rikki's Secret Diary Entry": {
@@ -61,7 +61,7 @@ const CLUE_UPDATES = {
 Location: Glam room mirror
 Handwriting: Matches {{Milo}}'s handwriting
 
-"FYI — there was white powder all over the corner of my makeup mirror. Pretty sure {{Dane}} used it while I stepped out. Handle it if you need to. Just don't put it on me. – {{Milo}}"`,
+"FYI, there was white powder all over the corner of my makeup mirror. Pretty sure {{Dane}} used it while I stepped out. Handle it if you need to. Just don't put it on me. - {{Milo}}"`,
     generation_prompt: `A high-quality photograph of Rikki looking at her own reflection in a vanity mirror. In the corner of the mirror, a blank neon pink sticky note is stuck. Rikki is looking intensely at the blank sticky note with a concerned expression. The sticky note is completely blank with no writing, ink, or text on it. Out-of-focus background reveals clothes racks. Gritty noir aesthetic, dramatic low-key vanity bulbs lighting, sharp focus, 8k.`
   },
   "The Glam Room Production Note": {
@@ -92,32 +92,32 @@ Location: Found near the bar
   },
   "Milo's Lipstick Warning": {
     newTitle: "Milo's Cheat Sheet Warning",
-    description: `💬 PRIVATE DM THREAD\nSender: {{Milo}}\nRecipient: {{Rikki}}\n\n[5:36 PM] {{Milo}}: "The reunion's gonna set someone off. If someone snaps, it won't be a surprise."\n\n(Status: SEEN 5:37 PM — No Reply)`,
+    description: `💬 PRIVATE DM THREAD\nSender: {{Milo}}\nRecipient: {{Rikki}}\n\n[5:36 PM] {{Milo}}: "The reunion's gonna set someone off. If someone snaps, it won't be a surprise."\n\n(Status: SEEN 5:37 PM - No Reply)`,
     generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Milo (a young man with short orange hair and fair skin, wearing a bright orange jacket) looking down at a glowing blank smartphone screen in a quiet hallway. On the right: Rikki looking down at a glowing blank smartphone screen in a dimly-lit VIP lounge. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
   },
   "Gabby's Unsent Letter": {
     newTitle: "Gabby's Final Message",
-    description: `💬 PRIVATE DM THREAD\nSender: {{Gabby}}\nRecipient: {{Colt}}\n\n[5:20 PM] {{Gabby}}: "You okay? I feel like something's off. Let's talk before the toast..."\n\n(Status: SEEN 5:21 PM — No Reply)`,
+    description: `💬 PRIVATE DM THREAD\nSender: {{Gabby}}\nRecipient: {{Colt}}\n\n[5:20 PM] {{Gabby}}: "You okay? I feel like something's off. Let's talk before the toast..."\n\n(Status: SEEN 5:21 PM - No Reply)`,
     generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Gabby looking down at a glowing blank smartphone screen in a luxury penthouse kitchen. On the right: Colt looking down at a glowing blank smartphone screen in a dimly-lit bathroom. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
   },
   "The Wardrobe Eavesdropping Log": {
     newTitle: "The Wardrobe Intercept Audio",
-    description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Backstage Wardrobe Intercept (Duration: 25s)\nSpeakers: {{Jeremy}} & {{Dane}}\n\n[00:08] {{Jeremy}}: "{{Rikki}} said they were in wardrobe for 25 minutes. Just them — {{Colt}} and {{Gabby}}."\n[00:12] {{Dane}}: "You're joking."\n[00:15] {{Jeremy}}: "I'm not. Might be good to get that on camera."\n[00:19] {{Dane}}: "You'll get something."\n\n(Audio cuts off — static)`,
+    description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Backstage Wardrobe Intercept (Duration: 25s)\nSpeakers: {{Jeremy}} & {{Dane}}\n\n[00:08] {{Jeremy}}: "{{Rikki}} said they were in wardrobe for 25 minutes. Just them - {{Colt}} and {{Gabby}}."\n[00:12] {{Dane}}: "You're joking."\n[00:15] {{Jeremy}}: "I'm not. Might be good to get that on camera."\n[00:19] {{Dane}}: "You'll get something."\n\n(Audio cuts off, static)`,
     generation_prompt: `A premium matte-black podcasting microphone standing on a sleek glossy table, illuminated by a moody green spotlight from behind. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
   },
   "Milo's Leather Journal": {
     newTitle: "Milo's Diary Entry",
-    description: `📓 PERSONAL NOTES LOG\nDevice: {{Milo}}'s phone\n\n[Entry dated: Tonight]\n"Tonight felt kind of perfect. I actually think I'm happy — like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening..."`,
+    description: `📓 PERSONAL NOTES LOG\nDevice: {{Milo}}'s phone\n\n[Entry dated: Tonight]\n"Tonight felt kind of perfect. I actually think I'm happy, like, the real kind. You looked at me like you meant it this time. Maybe this is it? Maybe it's finally happening..."`,
     generation_prompt: `A dramatic close-up of Milo (a young man with short orange hair and fair skin, wearing a bright orange jacket) looking down at a blank, glowing smartphone screen in a quiet, dimly lit corner of a luxury suite. Gritty noir aesthetic, low-key lighting, moody, 8k.`
   },
   "The Shredded Security Log": {
     newTitle: "The Deleted Security Camera File",
-    description: `💻 SECURITY SYSTEM LOG\nRestored metadata: SEC CAM_4B [Bar Area]\nTime Range: 5:40–6:05 PM\nStatus: Permanently Deleted\nActioned by: {{Jeremy}} (jordan.p@doatv.tv)\nReason: "corrupted audio, unusable"\n\n[Overheard: {{Jeremy}}'s quote]\n"It was mostly {{Rikki}} ranting anyway — no good angles. Not worth a storyline."`,
+    description: `💻 SECURITY SYSTEM LOG\nRestored metadata: SEC CAM_4B [Bar Area]\nTime Range: 5:40–6:05 PM\nStatus: Permanently Deleted\nActioned by: {{Jeremy}} (jordan.p@doatv.tv)\nReason: "corrupted audio, unusable"\n\n[Overheard: {{Jeremy}}'s quote]\n"It was mostly {{Rikki}} ranting anyway, no good angles. Not worth a storyline."`,
     generation_prompt: `A moody, dramatic shot of an empty television control booth with glowing, colorful buttons on the control panel, casting abstract light reflections in the dark room. Gritty noir aesthetic, low-key lighting, 8k.`
   },
   "Sienna & Zayn's Blueprint Map": {
     newTitle: "Sienna & Zayn's Plan",
-    description: `💬 PRIVATE DM THREAD\nSender: {{Sienna}}\nRecipient: {{Zayn}}\n\n[5:25 PM] {{Sienna}}: "I cannot believe she said that. Especially after EVERYTHING I've done. I have an idea — let's give her a taste of her own medicine. We look exactly the same."\n[5:27 PM] {{Zayn}}: "God I think I'm in love with you."`,
+    description: `💬 PRIVATE DM THREAD\nSender: {{Sienna}}\nRecipient: {{Zayn}}\n\n[5:25 PM] {{Sienna}}: "I cannot believe she said that. Especially after EVERYTHING I've done. I have an idea, let's give her a taste of her own medicine. We look exactly the same."\n[5:27 PM] {{Zayn}}: "God I think I'm in love with you."`,
     generation_prompt: `Split screen photograph with a clean vertical divide line in the middle. On the left: Sienna looking down at a glowing blank smartphone screen in a dressing room. On the right: Zayn looking down at a glowing blank smartphone screen on a dark penthouse balcony. Two distinct separate backgrounds separated by the vertical line. Gritty noir aesthetic, dramatic low-key lighting, text-free, no words, 8k.`
   },
   "The Burning Heart Letter": {
@@ -135,7 +135,7 @@ Location: Found near the bar
     description: `📌 COCKTAIL NAPKIN
 Location: Found near the bar
 
-"If this goes wrong tonight — it was always going to. -S"
+"If this goes wrong tonight, it was always going to. -S"
 
 (The ink is smudged at the edge.)`,
     generation_prompt: `A paper cocktail napkin lying on a dark, wet bar counter next to spilled champagne. The napkin is completely blank and clean with no writing, text, signatures, or ink on it. Gritty noir aesthetic, dramatic low-key lighting, highly detailed paper texture, atmospheric shadows, cinematic shot, sharp focus, 8k.`
@@ -171,7 +171,7 @@ Handwriting: Matches {{Milo}}'s fan mail
   },
   "The Producer's Secret Tape Log": {
     newTitle: "The Producer's Smoking Gun Audio",
-    description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Security camera audio recovery (5:52 PM, 38s)\nSpeakers: {{Rikki}} & {{Jeremy}}\n\n[00:06] {{Rikki}}: "I'm serious — {{Dane}} is not okay. They're twitchy, I'm pretty sure they mixed something into the drinks."\n[00:14] {{Jeremy}}: "And you're telling me this like it's a problem?"\n[00:18] {{Rikki}}: "It's a liability. What if they snap?"\n[00:23] {{Jeremy}}: (laughs) "Then we get the footage. You want safe, go film MasterChef."`,
+    description: `🎙️ AUDIO RECORDING TRANSCRIPT\nSource: Security camera audio recovery (5:52 PM, 38s)\nSpeakers: {{Rikki}} & {{Jeremy}}\n\n[00:06] {{Rikki}}: "I'm serious - {{Dane}} is not okay. They're twitchy, I'm pretty sure they mixed something into the drinks."\n[00:14] {{Jeremy}}: "And you're telling me this like it's a problem?"\n[00:18] {{Rikki}}: "It's a liability. What if they snap?"\n[00:23] {{Jeremy}}: (laughs) "Then we get the footage. You want safe, go film MasterChef."`,
     generation_prompt: `A closed metallic laptop resting on a glossy black desk in a dark, empty production office, reflecting yellow and blue window lights. Gritty noir aesthetic, low-key lighting, shallow depth of field, 8k.`
   }
 };

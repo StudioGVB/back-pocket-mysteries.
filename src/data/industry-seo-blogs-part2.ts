@@ -28,11 +28,11 @@ export const industrySeoBlogsPart2: BlogPost[] = [
     },
     content: `
       <h2>The 4 Eras of At-Home Murder Mystery Games (And Why Most Hosts Buy the Wrong One)</h2>
-      <p>Every weekend, thousands of well-intentioned dinner party hosts, Maids of Honour, and birthday organizers type <em>"best murder mystery party game for adults"</em> into a search engine—and immediately walk into a trap. They purchase a $35 cardboard box from a big-box retailer or a $55 downloadable zip file from a 2008-era mystery website, assuming all murder mystery games work roughly the same way.</p>
+      <p>Every weekend, thousands of well-intentioned dinner party hosts, Maids of Honour, and birthday organizers type <em>"best murder mystery party game for adults"</em> into a search engine, and immediately walk into a trap. They purchase a $35 cardboard box from a big-box retailer or a $55 downloadable zip file from a 2008-era mystery website, assuming all murder mystery games work roughly the same way.</p>
       <p>Then Friday night arrives. The host opens the package at 9:00 PM the night before the party and discovers two horrifying realities:</p>
       <ol>
-        <li><strong>The 4-Hour Printer &amp; Scissors Marathon:</strong> They have to print 110 single-sided pages, cut out 64 tiny paper clue slips, stuff them into 24 separate envelopes labeled "Round 2 — Character B," and pray their printer doesn’t run out of cyan toner.</li>
-        <li><strong>The "Spoiled Host" Curse:</strong> Page 3 of the Host Instruction Manual immediately reveals who the killer is, how they did it, and when the murder happens—effectively relegating the host to an unpaid stage manager who can’t actually play the game at their own party.</li>
+        <li><strong>The 4-Hour Printer &amp; Scissors Marathon:</strong> They have to print 110 single-sided pages, cut out 64 tiny paper clue slips, stuff them into 24 separate envelopes labeled "Round 2 - Character B," and pray their printer doesn’t run out of cyan toner.</li>
+        <li><strong>The "Spoiled Host" Curse:</strong> Page 3 of the Host Instruction Manual immediately reveals who the killer is, how they did it, and when the murder happens, effectively relegating the host to an unpaid stage manager who can’t actually play the game at their own party.</li>
       </ol>
       <p>According to consumer tabletop reviews aggregated on <a href="https://boardgamegeek.com/" target="_blank" rel="noopener noreferrer">BoardGameGeek</a> and digital marketplace feedback trends tracked by <a href="https://www.statista.com/topics/1164/toy-industry/" target="_blank" rel="noopener noreferrer">Statista’s Toy &amp; Hobby Research Division</a>, <strong>over 62% of first-time murder mystery hosts cite "excessive pre-party prep" and "accidentally spoiling the ending while setting up" as their top two frustrations.</strong></p>
       <p>To help you choose the exact right format for your group, we audited the four major architectures in the 2026 murder mystery market: <strong>Retail Boxed Escape-Style Kits</strong>, <strong>Legacy Printable PDF Kits</strong>, <strong>Hired Live-Actor Troupes</strong>, and <strong>Next-Gen Custom AI Hybrid Mysteries</strong>.</p>
@@ -54,16 +54,16 @@ export const industrySeoBlogsPart2: BlogPost[] = [
           <tbody>
             <tr>
               <td><strong>Total Cost (Group of 8–16)</strong></td>
-              <td>$30 – $120 per box</td>
-              <td>$45 – $85 + ~$25 printing/envelopes</td>
-              <td>$950 – $2,800+ private booking</td>
-              <td><strong>£15 – £25 ($19 – $29) Flat Fee</strong></td>
+              <td>$30 - $120 per box</td>
+              <td>$45 - $85 + ~$25 printing/envelopes</td>
+              <td>$950 - $2,800+ private booking</td>
+              <td><strong>£15 - £25 ($19 - $29) Flat Fee</strong></td>
             </tr>
             <tr>
               <td><strong>Cost Per Guest (12 Guests)</strong></td>
-              <td>~$3.50 – $10.00</td>
-              <td>~$6.00 – $9.00</td>
-              <td>~$85.00 – $220.00</td>
+              <td>~$3.50 - $10.00</td>
+              <td>~$6.00 - $9.00</td>
+              <td>~$85.00 - $220.00</td>
               <td><strong>~£1.65 / $2.10 per guest</strong></td>
             </tr>
             <tr>
@@ -76,9 +76,9 @@ export const industrySeoBlogsPart2: BlogPost[] = [
             <tr>
               <td><strong>Can the Host Play Unspoiled?</strong></td>
               <td>Usually Yes (cooperative puzzle box)</td>
-              <td><strong>Rarely</strong> — Host reads the solution packet to sort clues</td>
+              <td><strong>Rarely</strong> - Host reads the solution packet to sort clues</td>
               <td>Yes (actors run the show)</td>
-              <td><strong>100% Yes</strong> — Cryptographic <a href="/en/how-it-works">Spoiler-Free Host Mode</a></td>
+              <td><strong>100% Yes</strong> - Cryptographic <a href="/en/how-it-works">Spoiler-Free Host Mode</a></td>
             </tr>
             <tr>
               <td><strong>Character Names &amp; Backstories</strong></td>
@@ -90,9 +90,9 @@ export const industrySeoBlogsPart2: BlogPost[] = [
             <tr>
               <td><strong>What Happens If a Guest Cancels Last Minute?</strong></td>
               <td>No impact (not role-based)</td>
-              <td><strong>High Risk</strong> — Missing a core suspect breaks the clue chain</td>
+              <td><strong>High Risk</strong> - Missing a core suspect breaks the clue chain</td>
               <td>Lost per-head ticket deposit ($80+)</td>
-              <td><strong>Flexible</strong> — Re-assign or toggle guest slots in the builder before launch</td>
+              <td><strong>Flexible</strong> - Re-assign or toggle guest slots in the builder before launch</td>
             </tr>
             <tr>
               <td><strong>Clue Delivery Medium</strong></td>
@@ -106,14 +106,14 @@ export const industrySeoBlogsPart2: BlogPost[] = [
               <td><strong>Zero</strong> (single fixed solution; once solved, box is dead)</td>
               <td><strong>Zero</strong> (same character is always the killer)</td>
               <td>Low (standard touring script)</td>
-              <td><strong>Infinite</strong> — AI can randomize the killer &amp; rewrite motives on every run</td>
+              <td><strong>Infinite</strong> - AI can randomize the killer &amp; rewrite motives on every run</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <h2>Category 1: Retail Boxed "Tabletop Detective" Games (Great for 2 People, Terrible for a Party of 10)</h2>
-      <p>Walk down the board game aisle at Target, Barnes &amp; Noble, or Waterstones, and you will see dozens of sleek cardboard mystery boxes from brands like <em>Hunt A Killer</em>, <em>Chronicles of Crime</em>, or <em>Exit: The Game</em>. These products deservedly won acclaim during the pandemic lockdown era—reported by <a href="https://www.nytimes.com/wirecutter/reviews/best-board-games/" target="_blank" rel="noopener noreferrer">The New York Times Wirecutter</a> as top picks for couples’ date nights—because they replicate the feeling of sifting through a cold-case file folder.</p>
+      <p>Walk down the board game aisle at Target, Barnes &amp; Noble, or Waterstones, and you will see dozens of sleek cardboard mystery boxes from brands like <em>Hunt A Killer</em>, <em>Chronicles of Crime</em>, or <em>Exit: The Game</em>. These products deservedly won acclaim during the pandemic lockdown era, reported by <a href="https://www.nytimes.com/wirecutter/reviews/best-board-games/" target="_blank" rel="noopener noreferrer">The New York Times Wirecutter</a> as top picks for couples’ date nights, because they replicate the feeling of sifting through a cold-case file folder.</p>
       <p>However, there is a critical structural misunderstanding that ruins dinner parties when a host buys a cold-case box for ten friends: <strong>cold-case boxes are NOT roleplaying party games.</strong></p>
       <ul>
         <li><strong>The "Huddled Over One Piece of Paper" Bottleneck:</strong> In a boxed cold-case game, players do not dress up as suspects or accuse each other. Instead, everyone sits around a coffee table trying to read the same 8.5x11 autopsy report and decode a Morse code cipher. With 2 or 3 players, this is cozy. With 10 players holding cocktails, 7 people are physically unable to see the paper and tune out within twenty minutes.</li>
@@ -122,12 +122,12 @@ export const industrySeoBlogsPart2: BlogPost[] = [
       <p><em>Verdict:</em> Buy a boxed cold-case kit for a rainy Tuesday night on the couch with your partner. Never buy one for a birthday dinner, bachelorette party, or holiday cocktail gathering (<a href="/en/compare/hunt-a-killer">read our full deep-dive comparison with Hunt A Killer here</a>).</p>
 
       <h2>Category 2: Legacy Printable PDF Kits (The 1990s Envelope Problem)</h2>
-      <p>For the past twenty years, the dominant alternative to retail boxes has been the downloadable PDF party kit—pioneered by sites like <a href="/en/compare/night-of-mystery">Night of Mystery</a>, <a href="/en/compare/my-mystery-party">My Mystery Party</a>, and <a href="/en/compare/playing-with-murder">Playing With Murder</a>, as well as thousands of independent Etsy templates. These kits correctly understood that a real party needs <strong>social roleplay</strong>: every guest gets a character, wears an outfit, and mingles across three rounds.</p>
+      <p>For the past twenty years, the dominant alternative to retail boxes has been the downloadable PDF party kit, pioneered by sites like <a href="/en/compare/night-of-mystery">Night of Mystery</a>, <a href="/en/compare/my-mystery-party">My Mystery Party</a>, and <a href="/en/compare/playing-with-murder">Playing With Murder</a>, as well as thousands of independent Etsy templates. These kits correctly understood that a real party needs <strong>social roleplay</strong>: every guest gets a character, wears an outfit, and mingles across three rounds.</p>
       <p>So why are modern hosts migrating away from static PDF kits in 2026? Because static PDFs suffer from three architectural limitations that technology couldn’t solve until recently:</p>
 
       <h3>1. The "Fictional Stranger Name" Cognitive Tax</h3>
       <p>In a static PDF kit written ten years ago, characters have pun-heavy fictional names like <em>"Harry Hollister,"</em> <em>"Lola Lovegood,"</em> or <em>"Chef Boy-Ar-Dead."</em> When twelve friends arrive at a party, forcing everyone to call Sarah "Baroness Beatrice" and Dave "Doctor Doom" creates an immediate barrier to immersion. Guests spend the entire first hour breaking character to ask, <em>"Wait, who is Major Payne again? Is that Mark in the kitchen?"</em></p>
-      <p>By contrast, modern role-only systems like <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a> cast Mark as <strong>Mark — The Producer</strong> and Sarah as <strong>Sarah — The Villain</strong>. Everybody uses their real names while embodying a clear, delicious archetype.</p>
+      <p>By contrast, modern role-only systems like <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a> cast Mark as <strong>Mark - The Producer</strong> and Sarah as <strong>Sarah - The Villain</strong>. Everybody uses their real names while embodying a clear, delicious archetype.</p>
 
       <h3>2. The 4-Hour Host Craft Project (And Accidental Spoilers)</h3>
       <p>We timed five experienced hosts setting up a standard 12-player downloadable PDF kit from a leading legacy provider. Here is the actual time log of what "instant download" really means for the host’s weekend:</p>
@@ -152,7 +152,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
             <tr>
               <td><strong>Printing &amp; Collating Character Packets</strong></td>
               <td>55 mins (90–140 pages + buying extra printer ink)</td>
-              <td>10 mins (clean 2-page Suspect Booklets—or go 100% digital on phones!)</td>
+              <td>10 mins (clean 2-page Suspect Booklets, or go 100% digital on phones!)</td>
               <td><strong>45 mins saved</strong></td>
             </tr>
             <tr>
@@ -178,7 +178,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
       </div>
 
       <h3>3. The Static Script Problem: What About Inside Jokes?</h3>
-      <p>A pre-written PDF has no idea that your friend group survived a disastrous camping trip in Wales, that the birthday boy is famously obsessed with his espresso machine, or that the bride met her fiancé on a delayed Ryanair flight. Every line of dialogue is generic. When you use a generative story engine like our <a href="/en/custom-murder-mystery">Custom Mystery Builder</a>, those real-world quirks aren’t just pasted into a header—they are woven into the alibis, the leaked text messages, and the motives for murder.</p>
+      <p>A pre-written PDF has no idea that your friend group survived a disastrous camping trip in Wales, that the birthday boy is famously obsessed with his espresso machine, or that the bride met her fiancé on a delayed Ryanair flight. Every line of dialogue is generic. When you use a generative story engine like our <a href="/en/custom-murder-mystery">Custom Mystery Builder</a>, those real-world quirks aren’t just pasted into a header, they are woven into the alibis, the leaked text messages, and the motives for murder.</p>
 
       <h2>Category 3: Hired Live-Actor Dinner Theater (Spectacle Without Participation)</h2>
       <p>What about hiring a professional traveling murder mystery company or booking tables at a ticketed dinner theater? According to live event pricing benchmarks published by <a href="https://www.thumbtack.com/" target="_blank" rel="noopener noreferrer">Thumbtack</a> and <a href="https://www.thebash.com/" target="_blank" rel="noopener noreferrer">The Bash</a>, hiring a professional 3-to-4-actor murder mystery troupe for a private home or restaurant event in 2026 costs between <strong>$950 and $2,800 (£750–£2,200)</strong> before food and beverage minimums.</p>
@@ -191,7 +191,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
         <li><strong>Printed Booklets Keep Eye Contact Alive:</strong> During the mingling rounds, guests hold a sleek, custom-printed Suspect Booklet containing their character backstory, relationship matrix, and round talking points. They are looking at each other, clinking glasses, and arguing face-to-face.</li>
         <li><strong>The 6-Digit PIN Mobile Lobby Eliminates Paper Envelopes:</strong> Instead of the host passing out 36 paper envelopes, every guest joins the live party lobby on their smartphone using a 6-digit Game PIN (zero app download required). When the Host taps "Unlock Round 2," leaked group-chat screenshots, crime-scene photos, and audio wiretaps drop onto everyone’s screens simultaneously.</li>
         <li><strong>Spoiler-Free Host Mode Protects the Organizer:</strong> Whether you let the AI randomly select the killer or manually pick a suspect behind our cryptographic blur shield, the Host never sees the killer’s identity or the Round 2/3 twists during setup. You get to play, accuse, and vote right alongside your guests.</li>
-        <li><strong>Transparent Flat-Rate Package Pricing:</strong> No per-head ticket traps. Our <a href="/en/pricing">Small Gathering Package (4–6 guests) is £15 ($19)</a>, <a href="/en/pricing">Party Night (7–11 guests) is £20 ($24)</a>, and <a href="/en/pricing">Big Bash (12–16 guests) is £25 ($29)</a>—and every single package includes the exact same full suite of custom scripts, physical clue guides, audio wiretaps, and the live mobile lobby.</li>
+        <li><strong>Transparent Flat-Rate Package Pricing:</strong> No per-head ticket traps. Our <a href="/en/pricing">Small Gathering Package (4–6 guests) is £15 ($19)</a>, <a href="/en/pricing">Party Night (7–11 guests) is £20 ($24)</a>, and <a href="/en/pricing">Big Bash (12–16 guests) is £25 ($29)</a>-and every single package includes the exact same full suite of custom scripts, physical clue guides, audio wiretaps, and the live mobile lobby.</li>
       </ul>
 
       <h2>Decision Flowchart: Which Format Should You Buy Tonight?</h2>
@@ -199,7 +199,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
       <ol>
         <li><strong>Are there only 2 or 3 of you staying in for a quiet puzzle night?</strong> Buy a retail boxed cold-case game (like <em>Sherlock Holmes Consulting Detective</em> or <em>Hunt A Killer</em>).</li>
         <li><strong>Are you organizing a 200-person corporate auditorium dinner where guests don’t know each other and don’t want to roleplay?</strong> Hire a live-actor comedy troupe.</li>
-        <li><strong>Are you hosting 4 to 16 friends for a birthday, dinner party, bachelorette/hen night, or holiday gathering where you want everyone laughing, dressing up, and accusing each other—and you want to play too without spending 4 hours cutting paper slips?</strong> Launch a <a href="/en/custom-murder-mystery">Back Pocket Custom Mystery</a> or dive straight into <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>.</li>
+        <li><strong>Are you hosting 4 to 16 friends for a birthday, dinner party, bachelorette/hen night, or holiday gathering where you want everyone laughing, dressing up, and accusing each other, and you want to play too without spending 4 hours cutting paper slips?</strong> Launch a <a href="/en/custom-murder-mystery">Back Pocket Custom Mystery</a> or dive straight into <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>.</li>
       </ol>
 
       <div class="bg-brand-pink/10 p-10 rounded-[2.5rem] border-2 border-brand-pink my-12 text-center">
@@ -215,8 +215,8 @@ export const industrySeoBlogsPart2: BlogPost[] = [
   {
     slug: 'interactive-clue-design-audio-wiretaps-group-chats',
     title: 'Beyond Paper Envelopes: How Leaked Group Chats, Audio Wiretaps & Live Mobile Lobbies Are Reinventing Party Clues',
-    subtitle: 'Inside the narrative architecture of multi-modal mystery design—and why mixing physical suspect booklets with synchronized smartphone drops triples guest immersion.',
-    excerpt: 'For thirty years, murder mystery clues meant squinting at a slip of printer paper pulled from a Lick-and-Stick envelope. Discover how modern game designers use multi-sensory evidence—from backstage audio wiretaps to leaked group-chat receipts—to electrify a dinner party.',
+    subtitle: 'Inside the narrative architecture of multi-modal mystery design, and why mixing physical suspect booklets with synchronized smartphone drops triples guest immersion.',
+    excerpt: 'For thirty years, murder mystery clues meant squinting at a slip of printer paper pulled from a Lick-and-Stick envelope. Discover how modern game designers use multi-sensory evidence, from backstage audio wiretaps to leaked group-chat receipts, to electrify a dinner party.',
     image: '/blog/interactive-clues-wiretaps.png',
     date: 'November 4, 2026',
     readTime: '15 min read',
@@ -227,7 +227,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
     },
     seo: {
       title: 'Interactive Murder Mystery Clue Ideas: Audio Wiretaps, Leaked DMs & Live Mobile Lobbies',
-      description: 'Learn how modern murder mystery parties use multi-modal clues—including leaked group chats, audio wiretaps, physical crime scene props, and 6-digit PIN mobile lobbies—to maximize immersion.',
+      description: 'Learn how modern murder mystery parties use multi-modal clues, including leaked group chats, audio wiretaps, physical crime scene props, and 6-digit PIN mobile lobbies, to maximize immersion.',
       keywords: [
         'interactive murder mystery clues',
         'murder mystery party clue ideas',
@@ -265,7 +265,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
       </div>
 
       <h2>The 4 Pillars of Modern Murder Mystery Clue Design</h2>
-      <p>When our narrative engine builds a custom mystery—or when you launch our flagship Reality TV Reunion theme, <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>—every single clue belongs to one of four distinct sensory layers. Here is how each modality functions inside the room and why they interlock so effectively:</p>
+      <p>When our narrative engine builds a custom mystery, or when you launch our flagship Reality TV Reunion theme, <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>, every single clue belongs to one of four distinct sensory layers. Here is how each modality functions inside the room and why they interlock so effectively:</p>
 
       <div class="overflow-x-auto">
         <table>
@@ -308,7 +308,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
 
       <h2>Inside the Mechanics: How an Interlocking 3-Step Clue Chain Works</h2>
       <p>Amateur mystery writers often make one of two fatal design errors: either they write a <strong>Single-Smoking-Gun Clue</strong> (one guest pulls a card that says <em>"I saw The Villain poison the drink,"</em> ending the game in ten seconds), or they write <strong>Unconnected Fluff Clues</strong> where everyone argues for two hours and then has to guess the killer at random because the evidence never pointed to anyone specific.</p>
-      <p>Professional mystery architecture—rooted in the classic "Fair Play Whodunit" principles codified by Ronald Knox and Agatha Christie’s <a href="https://en.wikipedia.org/wiki/Detection_Club" target="_blank" rel="noopener noreferrer">Detection Club</a>—requires <strong>Triangulated Information Asymmetry</strong>. No single clue names the killer. Instead, three separate guests hold three separate pieces of evidence across different modalities that only reveal the killer when combined out loud:</p>
+      <p>Professional mystery architecture, rooted in the classic "Fair Play Whodunit" principles codified by Ronald Knox and Agatha Christie’s <a href="https://en.wikipedia.org/wiki/Detection_Club" target="_blank" rel="noopener noreferrer">Detection Club</a>-requires <strong>Triangulated Information Asymmetry</strong>. No single clue names the killer. Instead, three separate guests hold three separate pieces of evidence across different modalities that only reveal the killer when combined out loud:</p>
 
       <blockquote>
         <p><strong>The Rule of Triangulation:</strong> Clue A establishes <em>How</em> the murder happened. Clue B eliminates the obvious Red Herring’s <em>Timeline</em>. Clue C connects a specific suspect’s hidden trait or possession to the crime scene. Only when Guests A, B, and C talk to each other does the trap snap shut.</p>
@@ -329,28 +329,28 @@ export const industrySeoBlogsPart2: BlogPost[] = [
           <tbody>
             <tr>
               <td><strong>Node A: The Forensic Receipt</strong></td>
-              <td><strong>Round 2</strong> — Digital Evidence Card in the Mobile Lobby</td>
-              <td>VIP Bartender Log &amp; Toxicology Note: The fatal toxin wasn’t poured into the bottle—it was dissolved onto the rim of <em>one specific gold-stemmed champagne coupe</em> at 8:02 PM.</td>
+              <td><strong>Round 2</strong> - Digital Evidence Card in the Mobile Lobby</td>
+              <td>VIP Bartender Log &amp; Toxicology Note: The fatal toxin wasn’t poured into the bottle, it was dissolved onto the rim of <em>one specific gold-stemmed champagne coupe</em> at 8:02 PM.</td>
               <td><strong>Alone:</strong> We know the murder weapon was the gold coupe, not the bottle. <em>(Eliminates suspects who only touched the ice bucket.)</em></td>
             </tr>
             <tr>
               <td><strong>Node B: The Leaked DM Thread</strong></td>
-              <td><strong>Round 2</strong> — Leaked Group-Chat Screenshot on Phones + <em>The Influencer’s</em> Booklet</td>
-              <td>A timestamped 8:01 PM text from <em>The Villain</em> to <em>The Producer</em> from the rooftop patio—complete with a background reflection showing both of them outside during the toast prep.</td>
+              <td><strong>Round 2</strong> - Leaked Group-Chat Screenshot on Phones + <em>The Influencer’s</em> Booklet</td>
+              <td>A timestamped 8:01 PM text from <em>The Villain</em> to <em>The Producer</em> from the rooftop patio, complete with a background reflection showing both of them outside during the toast prep.</td>
               <td><strong>Combined with A:</strong> Even though <em>The Villain</em> threatened the victim all night, she has an airtight timestamped alibi outside at 8:02 PM!</td>
             </tr>
             <tr>
               <td><strong>Node C: The Hot-Mic Audio Wiretap</strong></td>
-              <td><strong>Round 3</strong> — Audio Clip played in the Mobile Lobby + <em>The Bestie’s</em> Secret Prompt</td>
+              <td><strong>Round 3</strong> - Audio Clip played in the Mobile Lobby + <em>The Bestie’s</em> Secret Prompt</td>
               <td>An accidental wireless lapel-mic recording from 8:01:45 PM inside the bar pantry: the distinct jingle of a custom charm bracelet against crystal glass, followed by a whispered apology.</td>
-              <td><strong>All Three Combined:</strong> Only one suspect at the party was gifted the signature charm bracelet in Round 1—and claimed they never entered the bar pantry!</td>
+              <td><strong>All Three Combined:</strong> Only one suspect at the party was gifted the signature charm bracelet in Round 1, and claimed they never entered the bar pantry!</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <h2>Why the 6-Digit PIN Mobile Lobby Changes Everything for the Host</h2>
-      <p>If you have ever hosted a party using our <a href="/en/how-it-works">Live Party Dashboard</a>, you know that the biggest beneficiary of digital clue delivery isn’t just the guests—it’s the Host.</p>
+      <p>If you have ever hosted a party using our <a href="/en/how-it-works">Live Party Dashboard</a>, you know that the biggest beneficiary of digital clue delivery isn’t just the guests, it’s the Host.</p>
       <p>In a traditional paper-envelope game, the host is constantly checking a stopwatch, hunting down guests in the bathroom to hand them their Round 2 envelope, and trying to stop impatient players from peeking ahead at Round 3. Worse, if one envelope gets lost under a charcuterie board, the entire mystery stalls.</p>
       <p>With a synchronized browser lobby (accessible instantly on any iPhone or Android via QR code or 6-digit PIN at <code>backpocketmysteries.com/join</code>), the entire room moves in lockstep:</p>
       <ol>
@@ -362,7 +362,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
       <h2>DIY Stagings: 5 Tactile Props You Can Pair With Digital Clues in 10 Minutes</h2>
       <p>Want to blend our digital mobile lobby drops with tactile, real-world props scattered around your dining table? Every Back Pocket Mystery includes a <strong>Physical Clue Setup Guide</strong> with optional household props you can stage without reading a single spoiler:</p>
       <ul>
-        <li><strong>The Locked VIP Phone Prop:</strong> Leave an old spare smartphone or printed screenshot card face-down near the bar with a sticky note reading <em>"FOUND IN VIP CABANA — DO NOT UNLOCK UNTIL ROUND 2."</em></li>
+        <li><strong>The Locked VIP Phone Prop:</strong> Leave an old spare smartphone or printed screenshot card face-down near the bar with a sticky note reading <em>"FOUND IN VIP CABANA - DO NOT UNLOCK UNTIL ROUND 2."</em></li>
         <li><strong>The Red-String Evidence Board:</strong> Hang a $10 corkboard or tape polaroid photos of each guest (snapped as they arrive at the door!) to a wall or mirror. As Round 2 and Round 3 clues drop on their phones, guests use red yarn or post-it notes to draw accusation lines between suspects.</li>
         <li><strong>The Torn NDA Contract:</strong> Print the included prop document from your kit, tear it in half, crumple it lightly, and leave one half by the drinks station and the other half near the snacks.</li>
         <li><strong>The Lipstick Glass Rim:</strong> Smudge bright hot-pink lipstick on the rim of a single coupe glass labeled with an Evidence Tent Card (#04) on the bar cart.</li>
@@ -371,8 +371,8 @@ export const industrySeoBlogsPart2: BlogPost[] = [
 
       <h2>The Science of Red Herrings: How to Fool Smart Friends Without Frustrating Them</h2>
       <p>The hardest balance in interactive mystery writing is calibration. If your clues are too obvious, your sharpest guest solves the murder at 8:20 PM and spends the rest of the evening waiting for dessert. If your clues are too obscure, nobody solves it and the final reveal feels arbitrary.</p>
-      <p>Our narrative engine solves this through <strong>Structured Red-Herring Layering</strong>. Every innocent suspect in a Back Pocket Mystery is assigned a <strong>Secondary Non-Murder Scandal</strong>—an embarrassing financial debt, a secret romantic rendezvous, a forged contract, or a sabotaged brand deal—that happened inside the exact same thirty-minute window as the murder.</p>
-      <p>When you interrogate an innocent suspect in Round 2, they <em>are</em> lying to you—not because they poisoned the champagne, but because they were busy stealing the victim’s PR client list in the VIP lounge! Disentangling the secondary scandals from the fatal crime is what generates two hours of electric debate.</p>
+      <p>Our narrative engine solves this through <strong>Structured Red-Herring Layering</strong>. Every innocent suspect in a Back Pocket Mystery is assigned a <strong>Secondary Non-Murder Scandal</strong>, an embarrassing financial debt, a secret romantic rendezvous, a forged contract, or a sabotaged brand deal, that happened inside the exact same thirty-minute window as the murder.</p>
+      <p>When you interrogate an innocent suspect in Round 2, they <em>are</em> lying to you, not because they poisoned the champagne, but because they were busy stealing the victim’s PR client list in the VIP lounge! Disentangling the secondary scandals from the fatal crime is what generates two hours of electric debate.</p>
 
       <div class="overflow-x-auto">
         <table>
@@ -389,7 +389,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
               <td><strong>Download / Login Friction</strong></td>
               <td>Zero digital, high physical sorting</td>
               <td>High (guests must download a 200MB app &amp; create accounts)</td>
-              <td><strong>Zero</strong> — Instant mobile browser join via 6-digit PIN or QR scan</td>
+              <td><strong>Zero</strong> - Instant mobile browser join via 6-digit PIN or QR scan</td>
             </tr>
             <tr>
               <td><strong>Eye Contact vs. Screen Time</strong></td>
@@ -405,7 +405,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
             </tr>
             <tr>
               <td><strong>Spoiler Protection for Host</strong></td>
-              <td>None — Host sees every envelope while cutting &amp; stuffing</td>
+              <td>None - Host sees every envelope while cutting &amp; stuffing</td>
               <td>Varies</td>
               <td><strong>100% Cryptographic Spoiler-Free Host Mode</strong></td>
             </tr>
