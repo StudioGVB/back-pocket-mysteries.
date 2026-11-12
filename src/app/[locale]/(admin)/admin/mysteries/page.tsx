@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { getMysteries } from '@/services/admin';
 import { CreateMysteryBaseButton } from './_components/CreateMysteryBaseButton';
 import { MysteryCard } from './_components/MysteryCard';
+import { BrainstormWorksheetButton } from '@/components/builder/BrainstormWorksheetModal';
 
 export const unstable_instant = false;
 
@@ -12,12 +13,15 @@ export default async function AdminMysteries({
 }) {
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
           <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">Mystery Bases</h2>
           <p className="text-gray-500 text-sm font-medium">Create and manage the foundation of your murder mysteries</p>
         </div>
-        <CreateMysteryBaseButton />
+        <div className="flex flex-wrap items-center gap-3">
+          <BrainstormWorksheetButton variant="admin-pill" />
+          <CreateMysteryBaseButton />
+        </div>
       </div>
 
       <Suspense fallback={<AdminMysteriesSkeleton />}>
@@ -52,7 +56,7 @@ async function AdminMysteriesList({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-      {mysteries.map((item) => (
+      {mysteries.map((item: any) => (
         <MysteryCard key={item.id} mystery={item} locale={locale} />
       ))}
     </div>

@@ -31,10 +31,11 @@ export function ChatClueView({
   compact = false,
   showImage = true,
 }: ClueViewProps) {
-  const rawTitle = hydratedTitle || clue.title || 'Direct Messages';
-  const title = stripCustomerFacingTitle(rawTitle) || 'Direct Messages';
+  const rawTitle = hydratedTitle || clue.title || '';
+  const title = stripCustomerFacingTitle(rawTitle);
   const rawText = hydratedDescription ?? clue.description ?? '';
   const parsed = parseChatClue(title, rawText);
+  const displayHeaderTitle = parsed.headerTitle || title || '🔒 Unknown Number';
 
   return (
     <div className="w-full rounded-2xl overflow-hidden bg-[#0b101b] border border-slate-800/90 text-slate-100 shadow-xl font-sans">
@@ -43,7 +44,7 @@ export function ChatClueView({
         <div className={`relative w-full ${compact ? 'h-32' : 'h-44'} overflow-hidden border-b border-slate-800/80`}>
           <img
             src={clue.static_image_url}
-            alt={title}
+            alt={displayHeaderTitle}
             className="w-full h-full object-cover opacity-85"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b101b] via-[#0b101b]/30 to-transparent" />
@@ -60,10 +61,12 @@ export function ChatClueView({
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex -space-x-1.5 shrink-0">
             {(parsed.participants.length > 0 ? parsed.participants.slice(0, 2) : ['?']).map((p, i) => {
+              const cleaned = p.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase();
+              const emojiMatch = p.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u);
               const initials =
                 p === '?'
                   ? '?'
-                  : p.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || '?';
+                  : cleaned || (emojiMatch ? emojiMatch[0] : '?');
               return (
                 <div
                   key={i}
@@ -80,7 +83,7 @@ export function ChatClueView({
           </div>
           <div className="min-w-0">
             <div className="text-xs font-black text-white leading-tight line-clamp-2">
-              {title}
+              {displayHeaderTitle}
             </div>
             <div className="text-[10px] font-semibold text-emerald-400 flex items-center gap-1 truncate mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block shrink-0" />
@@ -112,7 +115,9 @@ export function ChatClueView({
             );
           }
 
-          const showSenderLabel = !/^(sender|unknown)$/i.test(bubble.sender.trim());
+          const showSenderLabel = !/^(sender|unknown|me|you|self|outgoing)$/i.test(
+            bubble.sender.trim()
+          );
 
           return (
             <div

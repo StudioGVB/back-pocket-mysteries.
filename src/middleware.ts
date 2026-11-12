@@ -61,12 +61,12 @@ export async function middleware(request: NextRequest) {
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
   )
 
-  // Redirect if there is no locale
+  // Redirect if there is no locale (308 Permanent Redirect so search engines index the localized canonical URL)
   if (pathnameIsMissingLocale) {
     const locale = getLocale(request)
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`
-    return NextResponse.redirect(redirectUrl)
+    return NextResponse.redirect(redirectUrl, 308)
   }
 
   // Proceed with Supabase session update

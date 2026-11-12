@@ -60,7 +60,7 @@ export function buildAvatarUrl(config: AvatarConfig | any, name?: string): strin
   const isBald = config.top === 'none';
   const hasGlasses = config.distinctiveFeatures?.includes('Glasses');
   
-  return `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed)}` +
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed)}` +
     `&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=transparent` +
     `${isBald ? '&topProbability=0' : `&top=${config.top}`}` +
     `&hairColor=${config.hairColor}&hatColor=${config.hairColor}&skinColor=${config.skinColor}` +
@@ -76,11 +76,11 @@ export function buildAvatarUrl(config: AvatarConfig | any, name?: string): strin
 
 /**
  * Extracts the embedded `aiPhotoUrl` query parameter from a DiceBear avatar URL if present,
- * otherwise returns the original avatar URL.
+ * otherwise returns the original avatar URL (rewriting retired 8.x/avataaars to 7.x/avataaars).
  */
 export function resolveDisplayAvatarUrl(avatarUrl?: string | null): string {
   if (!avatarUrl) return '';
-  if (avatarUrl.startsWith('data:')) return avatarUrl;
+  if (avatarUrl.startsWith('data:') || avatarUrl.startsWith('/')) return avatarUrl;
   try {
     const parsed = new URL(avatarUrl);
     const aiPhoto = parsed.searchParams.get('aiPhotoUrl');
@@ -97,7 +97,7 @@ export function resolveDisplayAvatarUrl(avatarUrl?: string | null): string {
       }
     }
   }
-  return avatarUrl;
+  return avatarUrl.replace('api.dicebear.com/8.x/avataaars', 'api.dicebear.com/7.x/avataaars');
 }
 
 

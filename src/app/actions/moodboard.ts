@@ -260,17 +260,20 @@ export async function generateAIMoodboardPhotoAction(
 
     const theme = mystery.theme || 'Glamorous Murder Mystery';
     const title = mystery.title || 'Mystery Party';
+    const description = mystery.description || '';
     const focusInstruction =
       customPrompt?.trim() ||
       (vibeTag === 'Dress Code Inspo'
-        ? 'Editorial fashion & wardrobe moodboard shot showing stylish guests in evening attire from the waist or shoulders down / atmospheric party details, luxury fabrics, champagne glasses, and accessories matching the theme'
+        ? `Editorial fashion and wardrobe moodboard shot showing 3 close friends in stylish "${theme}" party attire from the chin/shoulders down, holding drinks with authentic "${theme}" background decor`
         : vibeTag === 'Cocktail Hour'
-        ? 'Atmospheric close-up of signature cocktails, crystal glassware, candlelit table setting, and mysterious party details'
+        ? `Atmospheric close-up of signature "${theme}" drinks and cocktails, glassware, candlelit table setting, and mysterious party details matching "${theme}"`
         : vibeTag === 'Crime Scene Vibe'
-        ? 'Suspenseful cinematic detail shot of a luxury room after a dramatic incident, spilled champagne flute, velvet ropes, dramatic shadows, noir atmosphere'
-        : 'Wide architectural & interior moodboard photograph of the venue setting with dramatic lighting, moody atmosphere, and immersive party ambiance');
+        ? `Suspenseful cinematic detail shot inside the "${theme}" venue after a dramatic incident, spilled drink, dramatic shadows, and subtle clue details`
+        : vibeTag === 'The Cast' || vibeTag === 'Party Atmosphere'
+        ? `Candid, warm 35mm film party photograph of a tight-knit group of 5-6 close young adult friends (ages 24-35, natural best-friend chemistry) laughing, clinking glasses, and whispering secrets together inside the exact "${theme}" setting`
+        : `Wide architectural and interior moodboard photograph of the exact "${theme}" venue setting with warm, authentic lighting, decor, and immersive party ambiance`);
 
-    const prompt = `A high-end editorial lifestyle and moodboard photograph for a "${title}" (${theme}) murder mystery party. Visual focus: ${focusInstruction}. Rich colors, cinematic lighting, shallow depth of field, magazine-quality photography, 8k resolution, photorealistic DSLR shot, no text or watermarks.`;
+    const prompt = `A high-end editorial lifestyle and moodboard photograph for a "${title}" murder mystery party among close friends. Theme & Setting: "${theme}". Story & Venue Context: ${description}. Visual focus: ${focusInstruction}. Strictly match the exact venue and season of "${theme}" (never show a boat or yacht unless the theme explicitly mentions a boat/yacht; if Christmas/Holiday/Cabin, feature warm Christmas tree fairy lights, pine garlands, roaring fireplace, snow outside, and festive holiday colors). Rich colors, 35mm film aesthetic, shallow depth of field, magazine-quality photography, 8k resolution, photorealistic DSLR shot, no text or watermarks.`;
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
     const res = await fetch(url, {

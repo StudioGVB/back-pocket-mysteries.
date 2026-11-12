@@ -35,6 +35,7 @@ import {
   submitGuestMysteryReviewAction,
   RoundSubmission,
 } from '@/app/actions/customer-mystery';
+import { RelationshipGraph } from '@/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipGraph';
 
 interface Mystery {
   id: string;
@@ -130,6 +131,11 @@ export function PlayroomClient({
 
   // Track which clues this player has viewed so we can badge unread clues
   const [viewedClueIds, setViewedClueIds] = useState<string[]>([]);
+  const [lightboxPhoto, setLightboxPhoto] = useState<{
+    url: string;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
 
   // Initialize playerToken, saved character, host mode, and viewed clues from localStorage
   useEffect(() => {
@@ -1290,8 +1296,54 @@ export function PlayroomClient({
     );
   };
 
+  const renderPhotoLightboxModal = () => {
+    if (!lightboxPhoto) return null;
+    return (
+      <div
+        className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150"
+        onClick={() => setLightboxPhoto(null)}
+      >
+        <div
+          className="relative max-w-2xl w-full bg-slate-950 border border-white/15 rounded-3xl overflow-hidden shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxPhoto(null)}
+            className="absolute top-4 right-4 z-20 px-3.5 py-2 rounded-full bg-black/75 hover:bg-brand-pink text-white text-xs font-black uppercase tracking-widest border border-white/20 transition-colors cursor-pointer"
+          >
+            ✕ Close
+          </button>
+          <div className="w-full max-h-[75vh] aspect-square bg-slate-900 flex items-center justify-center overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxPhoto.url}
+              alt={lightboxPhoto.title}
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="p-5 bg-slate-950 border-t border-white/10 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-black text-white">{lightboxPhoto.title}</h3>
+              {lightboxPhoto.subtitle && (
+                <p className="text-xs font-bold text-emerald-400">{lightboxPhoto.subtitle}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setLightboxPhoto(null)}
+              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-wider cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ============================================================================
-  // 1. CHARACTER SELECTION LOBBY (COMPACT & EXCLUSIVE CLAIMING)
+  // 1. CHARACTER SELECTION LOBBY (LARGE PORTRAITS & EXCLUSIVE CLAIMING)
   // ============================================================================
   const { coverUrl: mysteryCoverUrl } = parseMysteryImageField(mystery.image_url);
   const claimedCount = Object.keys(claimedCharacters).length;
@@ -1302,6 +1354,7 @@ export function PlayroomClient({
         {renderHostControlsModal()}
         {renderNextConfirmModal()}
         {renderRoundUnlockToast()}
+        {renderPhotoLightboxModal()}
 
         {/* Compact Lobby Header */}
         <header className="relative border-b border-white/10 bg-slate-950/90 overflow-hidden sticky top-0 z-30 backdrop-blur-md">
@@ -1313,7 +1366,7 @@ export function PlayroomClient({
               className="absolute inset-0 w-full h-full object-cover opacity-15 blur-[2px] pointer-events-none"
             />
           )}
-          <div className="relative z-10 max-w-4xl mx-auto px-3.5 sm:px-6 py-3 flex items-center justify-between gap-2.5">
+          <div className="relative z-10 max-w-6xl mx-auto px-3.5 sm:px-6 py-3 flex items-center justify-between gap-2.5">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-pink bg-brand-pink/10 px-2 py-0.5 rounded-full border border-brand-pink/20">
@@ -1366,7 +1419,7 @@ export function PlayroomClient({
         </header>
 
         {/* Character Selection Grid (Opened from Generic Group Chat Link) */}
-        <div className="flex-grow max-w-4xl mx-auto w-full px-3.5 sm:px-6 py-4 sm:py-5 space-y-4">
+        <div className="flex-grow max-w-6xl mx-auto w-full px-3.5 sm:px-6 py-4 sm:py-6 space-y-5">
           {/* Top Selection Banner + Device Reminder */}
           <div className="bg-slate-900/70 border border-white/15 rounded-2xl p-4 sm:p-5 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
@@ -1417,7 +1470,7 @@ export function PlayroomClient({
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {activeCharacters.map(char => {
               const { name, archetype, guestName } = parseCharacter(char);
               const charPres = getCleanCharacterPresentation(char, characters, { mode: 'generic' });
@@ -1428,86 +1481,149 @@ export function PlayroomClient({
               const isClaimedByMe = Boolean(
                 claimInfo && playerToken && claimInfo.token === playerToken
               );
+              const isClaimedByOther = Boolean(
+                claimInfo && (!playerToken || claimInfo.token !== playerToken)
+              );
               const isClaimingThis = isClaimingCharId === char.id;
 
               return (
-                <button
+                <div
                   key={char.id}
-                  type="button"
-                  disabled={isClaimingThis}
-                  onClick={() => handleSelectCharacterInLobby(char.id)}
-                  className={`rounded-2xl p-4 text-left transition-all flex flex-col justify-between gap-3 border relative cursor-pointer ${
+                  onClick={() => {
+                    if (!isClaimingThis && !isClaimedByOther) {
+                      handleSelectCharacterInLobby(char.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => {
+                    if (
+                      (e.key === 'Enter' || e.key === ' ') &&
+                      !isClaimingThis &&
+                      !isClaimedByOther
+                    ) {
+                      e.preventDefault();
+                      handleSelectCharacterInLobby(char.id);
+                    }
+                  }}
+                  className={`group rounded-3xl overflow-hidden text-left transition-all flex flex-col justify-between border relative ${
                     isClaimedByMe
-                      ? 'bg-brand-pink/15 border-brand-pink shadow-lg'
-                      : 'bg-slate-900/60 border-white/12 hover:border-brand-pink/60 hover:bg-slate-900/90 active:scale-[0.99]'
+                      ? 'bg-brand-pink/15 border-brand-pink shadow-[0_0_25px_rgba(254,4,198,0.25)] cursor-pointer'
+                      : isClaimedByOther
+                      ? 'bg-slate-900/40 border-white/10 opacity-75 cursor-not-allowed'
+                      : 'bg-slate-900/70 border-white/15 hover:border-brand-pink/70 hover:bg-slate-900/95 active:scale-[0.99] shadow-xl cursor-pointer'
                   }`}
                 >
-                  <div className="space-y-3 w-full">
-                    {/* Top Badges: Assigned Guest Name + Role Type */}
-                    <div className="flex items-center justify-between gap-2">
+                  {/* Extra-Large Full-Width Character Portrait (4:5 aspect on mobile so faces never crop horizontally) */}
+                  <div className="relative w-full aspect-[4/5] sm:aspect-auto sm:h-[440px] md:h-[480px] bg-slate-950 overflow-hidden border-b border-white/10">
+                    {charAvatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={charAvatarUrl}
+                        alt={name}
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-7xl bg-gradient-to-br from-slate-900 to-slate-950">
+                        {char.is_victim ? '💀' : '🕵️'}
+                      </div>
+                    )}
+
+                    {/* Subtle bottom gradient for badge/title contrast */}
+                    <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/95 via-slate-950/45 to-transparent pointer-events-none" />
+
+                    {/* Top Overlay Badges: Assigned Guest Name + Role Type */}
+                    <div className="absolute top-3.5 sm:top-4 inset-x-3.5 sm:inset-x-4 flex items-center justify-between gap-2 z-10">
                       {guestName ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider max-w-[70%] truncate shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-brand-pink/95 backdrop-blur-md text-white text-xs sm:text-sm font-black uppercase tracking-wider max-w-[68%] truncate shadow-lg">
                           👤 {guestName}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/10 text-[9px] font-bold uppercase tracking-wider text-slate-300">
+                        <span className="inline-flex items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-200">
                           Cast Role
                         </span>
                       )}
 
-                      <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-wider text-slate-300 shrink-0">
+                      <span className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[11px] sm:text-xs font-black uppercase tracking-wider text-white shrink-0">
                         {char.is_victim ? '💀 Victim' : '🕵️ Suspect'}
                       </span>
                     </div>
 
-                    {/* Avatar + Role Title */}
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-2xl overflow-hidden border border-white/15 bg-slate-950 flex items-center justify-center relative shrink-0">
-                        {charAvatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={charAvatarUrl} alt={name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xl">{char.is_victim ? '💀' : '🕵️'}</span>
-                        )}
-                      </div>
+                    {/* Bottom Overlay Row: Enlarge Photo + Claimed Status Pill */}
+                    <div className="absolute bottom-3 sm:bottom-3.5 inset-x-3.5 sm:inset-x-4 flex items-center justify-between gap-2 z-10">
+                      {charAvatarUrl ? (
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setLightboxPhoto({
+                              url: charAvatarUrl,
+                              title: charPres.roleTitle || archetype,
+                              subtitle: guestName ? `Played by ${guestName}` : undefined,
+                            });
+                          }}
+                          className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-black/75 hover:bg-brand-pink text-white text-[10px] sm:text-[11px] font-black uppercase tracking-wider border border-white/20 backdrop-blur-md transition-colors cursor-pointer shrink-0"
+                        >
+                          🔍 Enlarge Photo
+                        </button>
+                      ) : (
+                        <span />
+                      )}
 
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-sm sm:text-base font-black text-white leading-tight">
-                          {charPres.roleTitle || archetype}
-                        </h3>
-                        {guestName && (
-                          <p className="text-[11px] font-bold text-emerald-400 truncate mt-0.5">
-                            Played by {guestName}
-                          </p>
-                        )}
-                      </div>
+                      {(isClaimedByMe || isClaimedByOther) && (
+                        <span
+                          className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-md backdrop-blur-md truncate ${
+                            isClaimedByMe
+                              ? 'bg-emerald-500 text-slate-950'
+                              : 'bg-black/80 text-amber-300 border border-amber-400/40'
+                          }`}
+                        >
+                          {isClaimedByMe ? '✓ Claimed by You' : '🔒 Taken'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Body: Role Title + Teaser Blurb + Footer Action */}
+                  <div className="p-4 sm:p-6 flex flex-col justify-between gap-3 sm:gap-3.5 flex-grow w-full">
+                    <div className="space-y-1.5">
+                      <h3 className="text-lg sm:text-xl font-black text-white leading-snug group-hover:text-brand-pink transition-colors">
+                        {charPres.roleTitle || archetype}
+                      </h3>
+                      {guestName && (
+                        <p className="text-xs sm:text-sm font-black text-emerald-400 truncate">
+                          Played by {guestName}
+                        </p>
+                      )}
+                      <p className="text-xs sm:text-sm text-slate-300 font-medium line-clamp-2 leading-relaxed pt-0.5">
+                        {charPres.shortBlurb}
+                      </p>
                     </div>
 
-                    {/* Short Character Teaser Blurb */}
-                    <p className="text-xs text-slate-300 font-medium line-clamp-2 leading-relaxed">
-                      {charPres.shortBlurb}
-                    </p>
+                    <div className="pt-3 border-t border-white/10 w-full flex items-center justify-between gap-2">
+                      <span className="text-[11px] sm:text-xs font-bold text-slate-400 truncate">
+                        👗 Outfit + 🎭 Vibe Inside
+                      </span>
+                      <span
+                        className={`inline-block text-[11px] sm:text-xs font-black uppercase tracking-wider px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl shrink-0 ${
+                          isClaimedByMe
+                            ? 'bg-emerald-500 text-slate-950'
+                            : isClaimedByOther
+                            ? 'bg-white/5 text-slate-400 border border-white/10'
+                            : 'bg-brand-pink/20 text-brand-pink border border-brand-pink/30 group-hover:bg-brand-pink group-hover:text-white transition-colors'
+                        }`}
+                      >
+                        {isClaimingThis
+                          ? 'Opening...'
+                          : isClaimedByMe
+                          ? '✓ Your Character →'
+                          : isClaimedByOther
+                          ? 'Already Selected'
+                          : 'Select Character →'}
+                      </span>
+                    </div>
                   </div>
-
-                  <div className="pt-2 border-t border-white/10 w-full flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-400">
-                      👗 Outfit + 🎭 Vibe Inside
-                    </span>
-                    <span
-                      className={`inline-block text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl ${
-                        isClaimedByMe
-                          ? 'bg-emerald-500 text-slate-950'
-                          : 'bg-brand-pink/20 text-brand-pink border border-brand-pink/30'
-                      }`}
-                    >
-                      {isClaimingThis
-                        ? 'Opening...'
-                        : isClaimedByMe
-                        ? '✓ Your Character →'
-                        : 'View Character →'}
-                    </span>
-                  </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -1606,27 +1722,40 @@ export function PlayroomClient({
       {renderHostControlsModal()}
       {renderNextConfirmModal()}
       {renderRoundUnlockToast()}
+      {renderPhotoLightboxModal()}
 
       {/* Compact Sticky Player & Navigation Bar */}
       <header className="bg-slate-950/90 border-b border-white/10 sticky top-0 z-40 backdrop-blur-md">
-        <div className="max-w-3xl mx-auto w-full px-3 sm:px-5 py-2 flex items-center justify-between gap-2">
+        <div className="max-w-5xl mx-auto w-full px-3 sm:px-5 py-2 flex items-center justify-between gap-2">
           {/* Left: Compact Player Identity + Switch Role */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-white/15 relative bg-slate-900 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedChar && selectedCharAvatar) {
+                  setLightboxPhoto({
+                    url: selectedCharAvatar,
+                    title: selectedName,
+                    subtitle: selectedArchetype,
+                  });
+                }
+              }}
+              className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl overflow-hidden border border-white/20 relative bg-slate-900 shrink-0 cursor-pointer"
+            >
               {selectedChar && selectedCharAvatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={selectedCharAvatar}
                   alt={selectedName}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs">🕵️</div>
+                <div className="w-full h-full flex items-center justify-center text-sm">🕵️</div>
               )}
-            </div>
+            </button>
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-xs sm:text-sm font-black text-white tracking-tight truncate max-w-[125px] sm:max-w-none">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <h1 className="text-xs sm:text-sm font-black text-white tracking-tight truncate max-w-[100px] sm:max-w-none">
                   {selectedName}
                 </h1>
                 <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink border border-brand-pink/30 shrink-0">
@@ -1635,9 +1764,10 @@ export function PlayroomClient({
                 <button
                   type="button"
                   onClick={handleSwitchCharacter}
-                  className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 ml-0.5 shrink-0 cursor-pointer transition-colors"
+                  className="text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 shrink-0 cursor-pointer transition-colors"
                 >
-                  ← All Characters
+                  <span className="sm:hidden">← Switch</span>
+                  <span className="hidden sm:inline">← All Characters</span>
                 </button>
               </div>
               <p className="text-[10px] font-bold text-slate-400 truncate">
@@ -1672,7 +1802,7 @@ export function PlayroomClient({
 
         {/* Desktop/Tablet Slim Tab Navigation Strip (Hidden on Mobile Phones in favor of Thumb Bottom Nav Bar) */}
         <div className="hidden sm:block border-t border-white/5 bg-slate-950/60">
-          <div className="max-w-3xl mx-auto w-full px-3 sm:px-5 py-1.5 flex items-center gap-1 overflow-x-auto no-scrollbar">
+          <div className="max-w-5xl mx-auto w-full px-3 sm:px-5 py-1.5 flex items-center gap-1 overflow-x-auto no-scrollbar">
             {!isClueOnlySleuth && (
               <>
                 <button
@@ -1737,8 +1867,8 @@ export function PlayroomClient({
         </div>
       </header>
 
-      {/* Compact Main Content Area */}
-      <main className="flex-grow max-w-3xl mx-auto w-full px-3 sm:px-5 py-4 space-y-4">
+      {/* Main Content Area */}
+      <main className="flex-grow max-w-5xl mx-auto w-full px-3 sm:px-5 py-4 space-y-4">
         {/* Slim Status Strip (When in Lobby or when Clues/Guess are live on another tab) */}
         {currentRound <= 0 && (
           <div className="bg-brand-pink/10 border border-brand-pink/25 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3">
@@ -1784,87 +1914,139 @@ export function PlayroomClient({
           return (
             <div className="space-y-4 animate-in fade-in duration-200">
               {/* 1. Hero Character Identity & Quick Hook Card */}
-              <div className="bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950/90 border border-white/15 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 shadow-lg">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-brand-pink/30 bg-slate-950 shrink-0 flex items-center justify-center shadow-md">
+              <div className="bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950/90 border border-white/15 rounded-3xl p-4 sm:p-7 flex flex-col md:flex-row items-center md:items-start gap-5 sm:gap-8 shadow-xl">
+                <div
+                  onClick={() => {
+                    if (heroPortraitUrl) {
+                      setLightboxPhoto({
+                        url: heroPortraitUrl,
+                        title: charPres.roleTitle,
+                        subtitle: charPres.guestName ? `Played by ${charPres.guestName}` : undefined,
+                      });
+                    }
+                  }}
+                  className="w-full aspect-[4/5] sm:aspect-auto sm:w-80 md:w-96 sm:h-96 md:h-[420px] rounded-3xl overflow-hidden border-2 border-brand-pink/50 bg-slate-950 shrink-0 flex items-center justify-center shadow-2xl relative group cursor-pointer"
+                >
                   {heroPortraitUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={heroPortraitUrl}
-                      alt={charPres.roleTitle}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={heroPortraitUrl}
+                        alt={charPres.roleTitle}
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/75 text-white text-[11px] font-black uppercase tracking-wider border border-white/20 backdrop-blur-md">
+                        🔍 Tap to Enlarge
+                      </span>
+                    </>
                   ) : (
-                    <span className="text-3xl">🕵️</span>
+                    <span className="text-7xl">🕵️</span>
                   )}
                 </div>
 
-                <div className="space-y-2 text-center sm:text-left flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
+                <div className="space-y-3 text-center md:text-left flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-brand-pink text-white">
                       {charPres.isVictim ? '💀 The Story Catalyst' : '🕵️ Suspect Dossier'}
                     </span>
                     {charPres.guestName && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 text-slate-200 border border-white/10">
+                      <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white/10 text-emerald-300 border border-emerald-400/30">
                         👤 Cast: {charPres.guestName}
                       </span>
                     )}
                   </div>
 
-                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                     {charPres.roleTitle}
                   </h2>
 
-                  <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+                  <p className="text-sm sm:text-base text-slate-200 font-medium leading-relaxed">
                     {charPres.shortBlurb}
                   </p>
                 </div>
               </div>
 
               {/* 2. What to Wear (Your Costume & Style Vibe) */}
-              <div className="bg-slate-900/50 border border-emerald-500/25 rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="bg-slate-900/50 border border-emerald-500/25 rounded-2xl p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
                     <span>👗</span> What to Wear Tonight
                   </h3>
                   <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                    Costume &amp; Look
+                    Costume &amp; 3 Outfit Options
                   </span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="space-y-2 flex-1">
-                    <p className="text-slate-100 text-sm font-medium leading-relaxed">
-                      {charPres.outfitAdvice}
-                    </p>
+                <div className="space-y-4">
+                  <p className="text-slate-100 text-sm sm:text-base font-medium leading-relaxed">
+                    {charPres.outfitAdvice}
+                  </p>
 
-                    {charPres.outfitVariants && !charPres.guestName && (
-                      <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300">
-                        <div className="p-2.5 rounded-xl bg-white/5">
-                          <span className="block text-[9px] font-black uppercase tracking-wider text-brand-pink mb-0.5">
-                            ♀ Feminine Option
-                          </span>
-                          <span>{charPres.outfitVariants.feminine}</span>
-                        </div>
-                        <div className="p-2.5 rounded-xl bg-white/5">
-                          <span className="block text-[9px] font-black uppercase tracking-wider text-sky-400 mb-0.5">
-                            ♂ Masculine Option
-                          </span>
-                          <span>{charPres.outfitVariants.masculine}</span>
-                        </div>
+                  {charPres.outfitVariants && !charPres.guestName && (
+                    <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300">
+                      <div className="p-2.5 rounded-xl bg-white/5">
+                        <span className="block text-[9px] font-black uppercase tracking-wider text-brand-pink mb-0.5">
+                          ♀ Feminine Option
+                        </span>
+                        <span>{charPres.outfitVariants.feminine}</span>
                       </div>
-                    )}
-                  </div>
+                      <div className="p-2.5 rounded-xl bg-white/5">
+                        <span className="block text-[9px] font-black uppercase tracking-wider text-sky-400 mb-0.5">
+                          ♂ Masculine Option
+                        </span>
+                        <span>{charPres.outfitVariants.masculine}</span>
+                      </div>
+                    </div>
+                  )}
 
-                  {charPres.characterPhotoUrl && (
-                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden border border-white/15 bg-slate-950 shrink-0">
+                  {charPres.outfitReferenceImages && charPres.outfitReferenceImages.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                      {charPres.outfitReferenceImages.slice(0, 3).map((refUrl, optIdx) => (
+                        <div
+                          key={optIdx}
+                          onClick={() =>
+                            setLightboxPhoto({
+                              url: refUrl,
+                              title: `${charPres.roleTitle} - Outfit Option ${optIdx + 1}`,
+                            })
+                          }
+                          className="rounded-2xl overflow-hidden border border-white/15 bg-slate-950 flex flex-col shadow-lg cursor-pointer group"
+                        >
+                          <div className="aspect-[3/4] w-full overflow-hidden bg-slate-900">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={refUrl}
+                              alt={`${charPres.roleTitle} Outfit Option ${optIdx + 1}`}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                          <span className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-emerald-300 bg-slate-950/90 border-t border-white/10">
+                            🔍 Option {optIdx + 1} (Tap to Enlarge)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : charPres.characterPhotoUrl ? (
+                    <div
+                      onClick={() =>
+                        setLightboxPhoto({
+                          url: charPres.characterPhotoUrl!,
+                          title: `${charPres.roleTitle} - Character & Outfit Look`,
+                        })
+                      }
+                      className="w-full sm:w-80 md:w-96 h-80 sm:h-96 rounded-3xl overflow-hidden border border-white/15 bg-slate-950 shrink-0 shadow-xl relative cursor-pointer group"
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={charPres.characterPhotoUrl}
                         alt={`${charPres.roleTitle} Outfit Reference`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                       />
+                      <span className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/75 text-white text-[11px] font-black uppercase tracking-wider border border-white/20 backdrop-blur-md">
+                        🔍 Tap to Enlarge
+                      </span>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -1952,11 +2134,12 @@ export function PlayroomClient({
                 You don&apos;t have any seeded connections with other characters.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {charConnections.map(conn => {
                   const { name: otherName, archetype: otherArch } = parseCharacter(conn.character);
+                  const otherPres = getCleanCharacterPresentation(conn.character, characters, { mode: 'generic' });
                   const otherAvatarUrl = resolveDisplayAvatarUrl(
-                    conn.character.profile_data?.avatar_url || conn.character.image_url
+                    otherPres.characterPhotoUrl || conn.character.profile_data?.avatar_url || conn.character.image_url
                   );
                   const dynamics = conn.relationship.dynamics;
                   const notes = conn.relationship.notes;
@@ -1964,26 +2147,37 @@ export function PlayroomClient({
                   return (
                     <div
                       key={conn.character.id}
-                      className="p-4 bg-slate-900/40 border border-white/10 rounded-2xl space-y-2.5"
+                      className="p-4 sm:p-5 bg-slate-900/40 border border-white/10 rounded-2xl space-y-3"
                     >
-                      <div className="flex items-center gap-2.5 border-b border-white/5 pb-2">
-                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 relative bg-slate-950 shrink-0">
+                      <div className="flex items-center gap-4 border-b border-white/5 pb-3.5">
+                        <div
+                          onClick={() => {
+                            if (otherAvatarUrl) {
+                              setLightboxPhoto({
+                                url: otherAvatarUrl,
+                                title: otherName,
+                                subtitle: otherArch,
+                              });
+                            }
+                          }}
+                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-white/15 relative bg-slate-950 shrink-0 shadow-lg cursor-pointer"
+                        >
                           {otherAvatarUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={otherAvatarUrl}
                               alt={otherName}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover object-top"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs">
+                            <div className="w-full h-full flex items-center justify-center text-3xl">
                               👤
                             </div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-xs font-black text-white truncate">{otherName}</h3>
-                          <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate">
+                          <h3 className="text-base font-black text-white truncate">{otherName}</h3>
+                          <p className="text-xs font-black uppercase tracking-wider text-slate-400 truncate">
                             {otherArch}
                           </p>
                         </div>
@@ -2567,6 +2761,41 @@ export function PlayroomClient({
                 </div>
               )}
             </section>
+
+            {/* 2B. FULL CHARACTER RELATIONSHIP & SECRET WEB (UNLOCKED AT FINAL REVEAL) */}
+            {solutionData && relationships.length > 0 && (
+              <section className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                    Unlocked Secret Dynamics
+                  </span>
+                  <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
+                    🕸️ Full Character Relationship Web
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Now that the truth is out, explore how every character, affair, rivalry, and hidden motive connected across the room.
+                  </p>
+                </div>
+
+                <RelationshipGraph
+                  characters={activeCharacters.map(c => ({
+                    ...c,
+                    is_victim: Boolean(c.is_victim || solutionData?.victim?.id === c.id),
+                    plot_role:
+                      c.is_victim || solutionData?.victim?.id === c.id
+                        ? 'victim'
+                        : solutionData?.killer?.id === c.id
+                        ? 'killer'
+                        : solutionData?.assistant?.id === c.id
+                        ? 'assistant'
+                        : 'suspect',
+                  }))}
+                  relationships={relationships}
+                  variant="dark"
+                  revealPlotRoles={true}
+                />
+              </section>
+            )}
 
             {/* 3. 5-STAR GUEST REVIEW & COMMENT CARD */}
             <section className="bg-slate-900/50 border border-brand-pink/30 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">

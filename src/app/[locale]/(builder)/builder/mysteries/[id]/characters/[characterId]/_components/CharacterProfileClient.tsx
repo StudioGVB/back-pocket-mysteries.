@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { generateCharacterProfileAIAction, updateCharacterProfileAction, updateCharacterAction, generateCharacterOutfitPhotoAction, expandCharacterBioAction } from '../../actions';
+import { generateCharacterProfileAIAction, updateCharacterProfileAction, updateCharacterAction, generateCharacterOutfitPhotoAction, generateCharacterOutfitOptionsAction, expandCharacterBioAction } from '../../actions';
 import { getCharacterColor } from '@/utils/colors';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
@@ -21,12 +21,13 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [generatingOptionIdx, setGeneratingOptionIdx] = useState<number | null>(null);
   const [isExpandingBio, setIsExpandingBio] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   
   const isAdaptable = character.gender === 'adaptable';
-  const defaultPresentation = { outfit_advice: '', act_summary: '', act_bullets: ['', '', ''] };
+  const defaultPresentation = { outfit_advice: '', outfit_reference_images: [], act_summary: '', act_bullets: ['', '', ''] };
 
   const [activeTab, setActiveTab] = useState<'male' | 'female'>('male');
   
@@ -40,6 +41,7 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
         presentation_male: data.presentation_male
           ? {
               ...data.presentation_male,
+              outfit_reference_images: data.presentation_male.outfit_reference_images || data.outfit_reference_images || [],
               act_summary: hydrateTextWithCharacters(data.presentation_male.act_summary || '', allCharacters, 'role'),
               act_bullets: (data.presentation_male.act_bullets || ['', '', '']).map((b: string) =>
                 hydrateTextWithCharacters(b, allCharacters, 'role')
@@ -48,6 +50,7 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
           : {
               outfit_advice: data.outfit_advice || '',
               outfit_image_url: data.outfit_image_url,
+              outfit_reference_images: data.outfit_reference_images || [],
               act_summary: hydrateTextWithCharacters(data.act_summary || '', allCharacters, 'role'),
               act_bullets: (data.act_bullets || ['', '', '']).map((b: string) =>
                 hydrateTextWithCharacters(b, allCharacters, 'role')
@@ -56,18 +59,20 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
         presentation_female: data.presentation_female
           ? {
               ...data.presentation_female,
+              outfit_reference_images: data.presentation_female.outfit_reference_images || data.outfit_reference_images || [],
               act_summary: hydrateTextWithCharacters(data.presentation_female.act_summary || '', allCharacters, 'role'),
               act_bullets: (data.presentation_female.act_bullets || ['', '', '']).map((b: string) =>
                 hydrateTextWithCharacters(b, allCharacters, 'role')
               ),
             }
-          : { ...defaultPresentation, outfit_image_url: data.outfit_image_url },
+          : { ...defaultPresentation, outfit_image_url: data.outfit_image_url, outfit_reference_images: data.outfit_reference_images || [] },
       };
     } else {
       return {
         ...data,
         bio: hydratedBio,
         outfit_advice: data.outfit_advice || '',
+        outfit_reference_images: data.outfit_reference_images || [],
         act_summary: hydrateTextWithCharacters(data.act_summary || '', allCharacters, 'role'),
         act_bullets: (data.act_bullets || ['', '', '']).map((b: string) =>
           hydrateTextWithCharacters(b, allCharacters, 'role')
@@ -183,43 +188,43 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
     }
   };
 
-  const handleGenerateImage = async () => {
-    setIsGeneratingImage(true);
+  const handleGenerateOutfitOptions = async (singleOptionIndex?: number) => {
+    const outfitAdvice = currentPresentation.outfit_advice;
+    if (!outfitAdvice) {
+      alert('Please enter or generate outfit advice first before generating outfit reference photos.');
+      return;
+    }
+
+    if (typeof singleOptionIndex === 'number') {
+      setGeneratingOptionIdx(singleOptionIndex);
+    } else {
+      setIsGeneratingImage(true);
+    }
+
     try {
-      const outfitAdvice = currentPresentation.outfit_advice;
-      if (!outfitAdvice) {
-        alert("Please generate outfit advice first before generating a photo.");
-        setIsGeneratingImage(false);
-        return;
-      }
-      
-      const imageUrl = await generateCharacterOutfitPhotoAction(
+      const genderForOutfit: 'male' | 'female' = isAdaptable
+        ? activeTab
+        : character.gender === 'male'
+        ? 'male'
+        : 'female';
+
+      const nextUrls = await generateCharacterOutfitOptionsAction(
         mystery.id,
         character.id,
         outfitAdvice,
         characterTitle,
-        mystery.theme || 'Cinematic Noir'
+        mystery.theme || 'Cinematic Noir',
+        genderForOutfit,
+        singleOptionIndex
       );
-      
-      updateField('outfit_image_url', imageUrl);
-      
-      const newProfileData = { ...profileData };
-      if (isAdaptable) {
-        const presentationKey = activeTab === 'male' ? 'presentation_male' : 'presentation_female';
-        newProfileData[presentationKey] = {
-          ...(newProfileData[presentationKey] || {}),
-          outfit_image_url: imageUrl
-        };
-      } else {
-        newProfileData.outfit_image_url = imageUrl;
-      }
-      await updateCharacterProfileAction(mystery.id, character.id, newProfileData);
-      
+
+      updateField('outfit_reference_images', nextUrls);
     } catch (err: any) {
       console.error(err);
-      alert('Failed to generate image: ' + err.message);
+      alert('Failed to generate outfit reference photos: ' + err.message);
     } finally {
       setIsGeneratingImage(false);
+      setGeneratingOptionIdx(null);
     }
   };
 
@@ -287,6 +292,15 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
   const currentPresentation = isAdaptable
     ? (profileData[activeTab === 'male' ? 'presentation_male' : 'presentation_female'] || {})
     : profileData;
+
+  const outfitReferenceImages: string[] = Array.isArray(currentPresentation.outfit_reference_images) &&
+    currentPresentation.outfit_reference_images.filter(Boolean).length > 0
+      ? currentPresentation.outfit_reference_images.slice(0, 3)
+      : Array.isArray(profileData.outfit_reference_images) && profileData.outfit_reference_images.filter(Boolean).length > 0
+      ? profileData.outfit_reference_images.slice(0, 3)
+      : currentPresentation.outfit_image_url
+      ? [currentPresentation.outfit_image_url]
+      : [];
 
   return (
     <div className="space-y-8">
@@ -419,36 +433,77 @@ export function CharacterProfileClient({ mystery, character, allCharacters }: Ch
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
-                    Outfit Advice
+                    Outfit Advice &amp; 3 Reference Options
                   </label>
                   <button 
-                    onClick={handleGenerateImage} 
-                    disabled={isGeneratingImage || !currentPresentation.outfit_advice}
+                    onClick={() => handleGenerateOutfitOptions()} 
+                    disabled={isGeneratingImage || generatingOptionIdx !== null || !currentPresentation.outfit_advice}
                     className="text-xs font-bold hover:opacity-80 flex items-center gap-1 disabled:opacity-50 transition-opacity"
                     style={{ color: charColor }}
                   >
-                    {isGeneratingImage ? 'Generating Photo...' : '✨ Generate Photo'}
+                    {isGeneratingImage ? 'Generating 3 Options...' : '✨ Generate 3 Outfit Options'}
                   </button>
                 </div>
-                
-                {currentPresentation.outfit_image_url && (
-                  <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 relative bg-slate-50 flex justify-center p-2">
-                    <img 
-                      src={currentPresentation.outfit_image_url} 
-                      alt="Outfit Reference" 
-                      className="object-contain rounded-lg shadow-sm"
-                      style={{ maxHeight: '400px' }}
-                    />
-                  </div>
-                )}
                 
                 <textarea
                   value={currentPresentation.outfit_advice || ''}
                   onChange={(e) => updateField('outfit_advice', e.target.value)}
                   placeholder="Think money. Not flashy, not trendy..."
-                  className="w-full h-24 rounded-xl border border-slate-200 p-4 text-sm resize-none focus:ring-2 focus:border-transparent transition-all"
+                  className="w-full h-24 rounded-xl border border-slate-200 p-4 text-sm resize-none focus:ring-2 focus:border-transparent transition-all mb-4"
                   style={{ '--tw-ring-color': charColor } as any}
                 />
+
+                {/* 3 Outfit Reference Photo Slots */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[0, 1, 2].map((optIdx) => {
+                    const imgUrl = outfitReferenceImages[optIdx];
+                    const isRegeneratingThis = generatingOptionIdx === optIdx || isGeneratingImage;
+                    return (
+                      <div
+                        key={optIdx}
+                        className="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 flex flex-col"
+                      >
+                        <div className="aspect-[3/4] w-full relative overflow-hidden bg-slate-100 flex items-center justify-center">
+                          {imgUrl ? (
+                            <img
+                              src={imgUrl}
+                              alt={`${characterTitle} Outfit Option ${optIdx + 1}`}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="text-center p-3">
+                              <span className="block text-xl mb-1">👗</span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                Option {optIdx + 1}
+                              </span>
+                            </div>
+                          )}
+                          {isRegeneratingThis && (
+                            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-white animate-pulse">
+                                Styling...
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="px-2.5 py-2 bg-white border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            Option {optIdx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateOutfitOptions(optIdx)}
+                            disabled={isRegeneratingThis || !currentPresentation.outfit_advice}
+                            className="text-[10px] font-bold text-slate-400 hover:text-slate-900 disabled:opacity-40 transition-colors cursor-pointer"
+                            title={`Regenerate Option ${optIdx + 1}`}
+                          >
+                            ↻ Redo
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>

@@ -35,15 +35,17 @@ export function MysterySelectClient({
 
   return (
     <div className="relative w-full">
-      <label htmlFor="mystery-select" className="sr-only">Select Mystery</label>
+      <label htmlFor="mystery-select" className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1.5 px-1">
+        Active Mystery
+      </label>
       <CustomSelect
         id="mystery-select"
         variant="dark"
         value={activeMysteryId || ''}
         onChange={handleMysteryChange}
-        className="w-full bg-[#05080e] border border-white/10 text-slate-100 text-xs font-black uppercase tracking-widest rounded-xl focus:border-brand-pink focus:ring-1 focus:ring-brand-pink/50 py-3.5 px-4 outline-none hover:bg-slate-900/60 transition-all duration-300"
+        className="w-full bg-white/[0.04] border border-white/10 text-white text-xs font-bold rounded-lg focus:border-brand-pink focus:ring-1 focus:ring-brand-pink/50 py-2 px-3 outline-none hover:bg-white/[0.07] transition-all"
       >
-        <option value="">Select Mystery</option>
+        <option value="">All Mysteries...</option>
         {mysteries.map(mystery => (
           <option key={mystery.id} value={mystery.id}>
             {mystery.title || 'Untitled Mystery'}

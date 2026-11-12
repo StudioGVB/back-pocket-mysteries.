@@ -252,8 +252,22 @@ export async function adminAddGuest(
       console.error('Error in adminAddGuest:', error);
       return { error: error.message };
     }
+
+    let finalGuest = data;
+    if (data && !(data.avatar_url || '').includes('aiPhotoUrl=')) {
+      try {
+        const { generateGuestAvatarAction } = await import('@/app/actions/ai-guests');
+        const aiRes = await generateGuestAvatarAction(data.id, data);
+        if (aiRes?.publicUrl) {
+          finalGuest = { ...data, avatar_url: aiRes.publicUrl };
+        }
+      } catch (aiErr) {
+        console.error('Auto AI avatar generation in adminAddGuest failed:', aiErr);
+      }
+    }
+
     revalidatePath(`/en/admin/users/${targetUserId}`);
-    return { success: true, guest: data };
+    return { success: true, guest: finalGuest };
   } catch (err: any) {
     console.error('adminAddGuest auth error:', err);
     return { error: err.message || 'Unauthorized' };
@@ -288,7 +302,21 @@ export async function adminUpdateGuest(
       console.error('Error in adminUpdateGuest:', error);
       return { error: error.message };
     }
-    return { success: true, guest: data };
+
+    let finalGuest = data;
+    if (data && !(data.avatar_url || '').includes('aiPhotoUrl=')) {
+      try {
+        const { generateGuestAvatarAction } = await import('@/app/actions/ai-guests');
+        const aiRes = await generateGuestAvatarAction(data.id, data);
+        if (aiRes?.publicUrl) {
+          finalGuest = { ...data, avatar_url: aiRes.publicUrl };
+        }
+      } catch (aiErr) {
+        console.error('Auto AI avatar generation in adminUpdateGuest failed:', aiErr);
+      }
+    }
+
+    return { success: true, guest: finalGuest };
   } catch (err: any) {
     console.error('adminUpdateGuest auth error:', err);
     return { error: err.message || 'Unauthorized' };

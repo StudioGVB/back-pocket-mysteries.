@@ -777,12 +777,12 @@ export default function CustomerCastClient({
                     : 'border-slate-200 hover:border-slate-300 bg-white'
                 }`}
               >
-                <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-slate-200">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
                   {guestAvatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={guestAvatar} alt={guest.name} className="w-full h-full object-cover" />
+                    <img src={guestAvatar} alt={guest.name} className="w-full h-full object-cover object-top" />
                   ) : (
-                    <span className="text-lg">👤</span>
+                    <span className="text-2xl">👤</span>
                   )}
                 </div>
                 <div className="min-w-0 flex-grow">
@@ -852,30 +852,30 @@ export default function CustomerCastClient({
             </div>
 
             {/* Victim Guest Selector Card */}
-            <div className="bg-white/5 border border-white/15 rounded-3xl p-6 w-full lg:w-80 shrink-0 space-y-4 backdrop-blur-md">
+            <div className="bg-white/5 border border-white/15 rounded-3xl p-6 w-full lg:w-96 shrink-0 space-y-4 backdrop-blur-md">
               <label className="block text-[10px] font-black uppercase tracking-widest text-brand-pink">
                 Who is getting murdered tonight?
               </label>
 
               {victimAssignedGuest && (
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/10 border border-white/10">
-                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 shrink-0 flex items-center justify-center">
+                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/10 border border-white/10">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-800 shrink-0 flex items-center justify-center border border-white/15 shadow-lg">
                     {resolveDisplayAvatarUrl(victimAssignedGuest.avatar_url) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={resolveDisplayAvatarUrl(victimAssignedGuest.avatar_url)}
                         alt={victimAssignedGuest.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top"
                       />
                     ) : (
-                      <span className="text-xl">💀</span>
+                      <span className="text-3xl">💀</span>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-white truncate">
+                    <p className="text-base font-black text-white truncate">
                       {victimAssignedGuest.name}
                     </p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-300 mt-0.5">
                       Assigned as {victimCharacter.roleTitle}
                     </p>
                   </div>
@@ -948,7 +948,7 @@ export default function CustomerCastClient({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {activeSuspectCharacters.map(char => {
               const assignedGuestId = assignments[char.id] || '';
               const assignedGuest = guests.find(g => g.id === assignedGuestId);
@@ -960,89 +960,120 @@ export default function CustomerCastClient({
                   : guestNormGender === 'male' && char.outfitMasculine
                   ? char.outfitMasculine
                   : char.outfitAdvice;
+              const suspectPhotoUrl = resolveDisplayAvatarUrl(
+                assignedGuest?.avatar_url || char.characterPhotoUrl || undefined
+              );
 
               return (
                 <div
                   key={char.id}
-                  className="rounded-3xl border border-slate-200 bg-slate-50/50 hover:bg-white p-6 flex flex-col justify-between transition-all hover:shadow-md"
+                  className="rounded-3xl border border-slate-200 bg-slate-50/50 hover:bg-white overflow-hidden flex flex-col justify-between transition-all hover:shadow-md"
                 >
-                  <div className="space-y-4">
+                  {/* Large Suspect / Assigned Guest Portrait Header */}
+                  <div className="relative w-full aspect-[4/5] sm:aspect-auto sm:h-80 bg-slate-900 overflow-hidden border-b border-slate-200">
+                    {suspectPhotoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={suspectPhotoUrl}
+                        alt={assignedGuest?.name || char.roleTitle}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-6xl text-white">
+                        🕵️
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent pointer-events-none" />
+
                     {/* Top Spoiler-Free Badges */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white">
-                        🕵️ Suspect
-                      </span>
+                    <div className="absolute top-3.5 sm:top-4 inset-x-3.5 sm:inset-x-4 flex items-center justify-between gap-2 z-10">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900/90 text-white border border-white/15 backdrop-blur-md shrink-0">
+                          🕵️ Suspect
+                        </span>
+                        {assignedGuest && (
+                          <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-black bg-brand-pink text-white shadow-md truncate max-w-[140px] sm:max-w-[200px]">
+                            👤 {assignedGuest.name}
+                          </span>
+                        )}
+                      </div>
                       <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${genderBadge.badgeClass}`}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border shadow-sm shrink-0 ${genderBadge.badgeClass}`}
                       >
                         {genderBadge.label}
                       </span>
                     </div>
 
                     {/* Role Title */}
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                      {char.roleTitle}
-                    </h3>
-
-                    {/* Clean Blurb Box */}
-                    <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1.5">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                        📖 The Blurb
-                      </p>
-                      <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                        {char.cleanBio}
-                      </p>
-                    </div>
-
-                    {/* Clean Outfit Guide */}
-                    <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1.5 mb-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                          👗 What to Wear
-                        </p>
-                        {assignedGuest && (char.outfitFeminine || char.outfitMasculine) && (
-                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                            Matched for {assignedGuest.name}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                        {resolvedOutfit}
-                      </p>
+                    <div className="absolute bottom-3.5 inset-x-4 sm:inset-x-5 z-10">
+                      <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-md">
+                        {char.roleTitle}
+                      </h3>
                     </div>
                   </div>
 
-                  {/* Guest Assignment / Swap Selector */}
-                  <div className="pt-4 border-t border-slate-200/70 space-y-2.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      Assigned Guest (Select to Swap)
-                    </label>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-200 shrink-0 flex items-center justify-center border border-slate-300">
-                        {resolveDisplayAvatarUrl(assignedGuest?.avatar_url) ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={resolveDisplayAvatarUrl(assignedGuest?.avatar_url)}
-                            alt={assignedGuest?.name || 'Guest'}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-sm">👤</span>
-                        )}
+                  <div className="p-4 sm:p-6 flex flex-col justify-between flex-grow gap-4">
+                    <div className="space-y-4">
+                      {/* Clean Blurb Box */}
+                      <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1.5">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                          📖 The Blurb
+                        </p>
+                        <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                          {char.cleanBio}
+                        </p>
                       </div>
-                      <CustomSelect
-                        value={assignedGuestId}
-                        onChange={e => commitAssignment(char.id, e.target.value)}
-                        variant="light"
-                        className="flex-grow min-w-0 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-black text-slate-900 hover:border-slate-300 focus:outline-none focus:border-brand-pink cursor-pointer"
-                      >
-                        <option value="">Unassigned</option>
-                        {attendingGuests.map(g => (
-                          <option key={g.id} value={g.id}>
-                            {g.name} ({formatGenderLabel(g.gender).shortLabel})
-                          </option>
-                        ))}
-                      </CustomSelect>
+
+                      {/* Clean Outfit Guide */}
+                      <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            👗 What to Wear
+                          </p>
+                          {assignedGuest && (char.outfitFeminine || char.outfitMasculine) && (
+                            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                              Matched for {assignedGuest.name}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                          {resolvedOutfit}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Guest Assignment / Swap Selector */}
+                    <div className="pt-4 border-t border-slate-200/70 space-y-2.5">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Assigned Guest (Select to Swap)
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0 flex items-center justify-center border border-slate-300">
+                          {resolveDisplayAvatarUrl(assignedGuest?.avatar_url) ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={resolveDisplayAvatarUrl(assignedGuest?.avatar_url)}
+                              alt={assignedGuest?.name || 'Guest'}
+                              className="w-full h-full object-cover object-top"
+                            />
+                          ) : (
+                            <span className="text-base">👤</span>
+                          )}
+                        </div>
+                        <CustomSelect
+                          value={assignedGuestId}
+                          onChange={e => commitAssignment(char.id, e.target.value)}
+                          variant="light"
+                          className="flex-grow min-w-0 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-black text-slate-900 hover:border-slate-300 focus:outline-none focus:border-brand-pink cursor-pointer"
+                        >
+                          <option value="">Unassigned</option>
+                          {attendingGuests.map(g => (
+                            <option key={g.id} value={g.id}>
+                              {g.name} ({formatGenderLabel(g.gender).shortLabel})
+                            </option>
+                          ))}
+                        </CustomSelect>
+                      </div>
                     </div>
                   </div>
                 </div>

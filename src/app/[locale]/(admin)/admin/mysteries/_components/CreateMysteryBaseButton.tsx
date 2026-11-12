@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { createMysteryAction } from '../../../../(builder)/builder/mysteries/actions';
 import { useParams, useRouter } from 'next/navigation';
+import { ThemeCombobox } from '@/components/ui/ThemeCombobox';
 
 export function CreateMysteryBaseButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -130,17 +131,22 @@ export function CreateMysteryBaseButton() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                  Theme / Setting
-                </label>
-                <input
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Theme / Setting
+                  </label>
+                  <span className="text-[10px] font-bold text-slate-400">
+                    Pick from list or type any custom theme
+                  </span>
+                </div>
+                <ThemeCombobox
                   name="theme"
                   required
-                  placeholder="e.g. Victorian London, Spooky Carnival"
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink transition-all font-bold placeholder:text-slate-300"
+                  variant="boxed"
+                  placeholder="Select a preset or type your own theme..."
                 />
                 <p className="mt-2 text-[10px] text-slate-400 font-medium">
-                  💡 Tip: Include &quot;circus&quot; or &quot;carnival&quot; in the title or theme to get the full curated Circus mystery seeded instantly.
+                  💡 Tip: You can pick any preset from the list or type any custom theme directly into the box.
                 </p>
               </div>
 

@@ -122,6 +122,20 @@ export async function synthesizeSpeechLine({
       }
     }
 
+    if (response.status === 403 && voiceId !== 'pFZP5JQG7iQjIQuC4Bku') {
+      console.warn(
+        `[ElevenLabs] Voice ${voiceId} returned 403 (requires Creator tier); retrying with premade voice pFZP5JQG7iQjIQuC4Bku`
+      );
+      return synthesizeSpeechLine({
+        voiceId: 'pFZP5JQG7iQjIQuC4Bku',
+        text,
+        modelId,
+        voiceSettings,
+        previousText,
+        nextText,
+      });
+    }
+
     lastError = new Error(`ElevenLabs TTS failed (${response.status}): ${detail}`);
     break;
   }

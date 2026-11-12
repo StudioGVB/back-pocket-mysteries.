@@ -122,8 +122,14 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
 
     // Preserve any linked guest info while replacing bio/act/outfit with canonical Christmas Nightmare profile
     const mergedProfile: Record<string, any> = {
-      ...existingProfile,
       ...spec.profile_data,
+      ...existingProfile,
+      color: spec.profile_data.color,
+      bio: spec.profile_data.bio,
+      outfit_advice: spec.profile_data.outfit_advice,
+      outfit_reference_images: spec.profile_data.outfit_reference_images,
+      act_summary: spec.profile_data.act_summary,
+      act_bullets: spec.profile_data.act_bullets,
     };
     if (spec.gender !== 'adaptable') {
       delete mergedProfile.presentation_male;
@@ -299,13 +305,29 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         const clueId = existingClue?.id || cSpec.legacyId || crypto.randomUUID();
         const linkedBeatId = cSpec.beatNumber ? beatIdByNumber[cSpec.beatNumber] || null : null;
 
+        const preservedAudioUrl =
+          existingClue?.audio_url || extractAudioUrlFromNotes(existingClue?.internal_notes) || null;
+        const preservedVoiceRegion =
+          existingClue?.voice_region || extractVoiceRegionFromNotes(existingClue?.internal_notes) || null;
+        const preservedStaticImage =
+          existingClue?.static_image_url ?? cSpec.static_image_url ?? null;
+
+        const desiredRawNotes = embedFormatTagInNotes(
+          stripFormatTagFromNotes(cSpec.internal_notes),
+          cSpec.format as any,
+          {
+            audioUrl: preservedAudioUrl,
+            voiceRegion: preservedVoiceRegion,
+          }
+        );
+
         if (
           supabase &&
           mysteryId &&
           (!existingClue ||
             existingClue.title !== cSpec.title ||
             existingClue.description !== cSpec.description ||
-            existingClue.internal_notes !== cSpec.internal_notes)
+            stripFormatTagFromNotes(existingClue.internal_notes) !== stripFormatTagFromNotes(cSpec.internal_notes))
         ) {
           if (existingClue?.id) {
             supabase
@@ -319,8 +341,8 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
                 round_number: cSpec.round_number,
                 is_essential: cSpec.is_essential,
                 linked_plot_beat_id: linkedBeatId,
-                static_image_url: cSpec.static_image_url ?? null,
-                internal_notes: cSpec.internal_notes,
+                static_image_url: preservedStaticImage,
+                internal_notes: desiredRawNotes,
                 generation_prompt: cSpec.generation_prompt,
               })
               .eq('id', existingClue.id)
@@ -339,8 +361,8 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
                 round_number: cSpec.round_number,
                 is_essential: cSpec.is_essential,
                 linked_plot_beat_id: linkedBeatId,
-                static_image_url: cSpec.static_image_url ?? null,
-                internal_notes: cSpec.internal_notes,
+                static_image_url: preservedStaticImage,
+                internal_notes: desiredRawNotes,
                 generation_prompt: cSpec.generation_prompt,
               })
               .then(() => {}, () => {});
@@ -359,8 +381,10 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
           round_number: cSpec.round_number,
           is_essential: cSpec.is_essential,
           linked_plot_beat_id: linkedBeatId,
-          static_image_url: cSpec.static_image_url ?? null,
+          static_image_url: preservedStaticImage,
           format: cSpec.format,
+          audio_url: preservedAudioUrl,
+          voice_region: preservedVoiceRegion,
           internal_notes: stripFormatTagFromNotes(cSpec.internal_notes),
           generation_prompt: cSpec.generation_prompt,
         };
@@ -879,20 +903,12 @@ function normalizeCharacterList(
     profileStr = stripEmDashes(profileStr);
     const cleanedProfile = JSON.parse(profileStr);
 
-    // Preserve real guest names so a guest named "Gabby" isn't overwritten with "The Star"
+    // Preserve real guest names so a guest's custom name isn't overwritten with a role title
     if (origGuestName !== undefined) {
-      if (origGuestName === 'The Star' && roleTitle === 'The Star' && cleanedProfile.guest_id) {
-        cleanedProfile.guest_name = 'Gabby';
-      } else {
-        cleanedProfile.guest_name = origGuestName;
-      }
+      cleanedProfile.guest_name = origGuestName;
     }
     if (origProfileName !== undefined) {
-      if (origProfileName === 'The Star' && roleTitle === 'The Star' && cleanedProfile.guest_id) {
-        cleanedProfile.name = 'Gabby';
-      } else {
-        cleanedProfile.name = origProfileName;
-      }
+      cleanedProfile.name = origProfileName;
     }
 
     // Ensure canonical role bio/outfit/act_summary are present if missing
@@ -901,20 +917,20 @@ function normalizeCharacterList(
     );
     let profileRestored = false;
 
-    // Recover AI guest portrait if character has a guest_id and lacks aiPhotoUrl=
+    // Recover AI guest portrait ONLY for the exact same guest_id (never by char.id across tenants)
     const curAvatarUrl = String(cleanedProfile.avatar_url || '');
     if (cleanedProfile.guest_id && !curAvatarUrl.includes('aiPhotoUrl=')) {
       const guestIdStr = String(cleanedProfile.guest_id);
       let recoveredAiPhotoUrl: string | null = null;
 
-      // 1. Check cached mysteries for an upgraded avatar_url for this character or guest_id
+      // 1. Check cached mysteries for an upgraded avatar_url for this specific guest_id
       for (const cm of cachedMysteriesList) {
         if (!Array.isArray(cm?.characters)) continue;
         for (const cc of cm.characters) {
           const ccPd = cc?.profile_data;
           if (
             ccPd &&
-            (cc.id === char.id || String(ccPd.guest_id || '') === guestIdStr) &&
+            String(ccPd.guest_id || '') === guestIdStr &&
             typeof ccPd.avatar_url === 'string' &&
             ccPd.avatar_url.includes('aiPhotoUrl=')
           ) {
@@ -1143,12 +1159,6 @@ export const getMysteryById = cache(async (id: string) => {
 });
 
 export const getCharactersByMysteryId = cache(async (mysteryId: string) => {
-  const cached = getCachedMysterySnapshot(mysteryId);
-  if (cached && isChristmasNightmareMystery(cached.title, cached.theme)) {
-    const upgraded = ensureChristmasNightmareCanon(cached);
-    return normalizeCharacterList(upgraded.characters || []);
-  }
-
   const supabase = await createClient();
   
   const { data, error } = (await supabase
@@ -1168,11 +1178,28 @@ export const getCharactersByMysteryId = cache(async (mysteryId: string) => {
       .eq('mystery_id', mysteryId)
       .order('created_at', { ascending: true });
 
-    if (fallbackError) {
+    if (fallbackError || !fallbackData || fallbackData.length === 0) {
+      const cached = getCachedMysterySnapshot(mysteryId);
+      if (cached && Array.isArray(cached.characters) && cached.characters.length > 0) {
+        const upgraded = isChristmasNightmareMystery(cached.title, cached.theme)
+          ? ensureChristmasNightmareCanon(cached)
+          : cached;
+        return normalizeCharacterList(upgraded.characters || []);
+      }
       console.error('Fallback fetch characters error:', fallbackError);
       return [];
     }
     return normalizeCharacterList(fallbackData, supabase);
+  }
+
+  if (!data || data.length === 0) {
+    const cached = getCachedMysterySnapshot(mysteryId);
+    if (cached && Array.isArray(cached.characters) && cached.characters.length > 0) {
+      const upgraded = isChristmasNightmareMystery(cached.title, cached.theme)
+        ? ensureChristmasNightmareCanon(cached)
+        : cached;
+      return normalizeCharacterList(upgraded.characters || []);
+    }
   }
 
   return normalizeCharacterList(data, supabase);
@@ -1336,12 +1363,6 @@ export function normalizePlotBeats(
 }
 
 export const getPlotBeatsByMysteryId = cache(async (mysteryId: string) => {
-  const cached = getCachedMysterySnapshot(mysteryId);
-  if (cached && isChristmasNightmareMystery(cached.title, cached.theme)) {
-    const upgraded = ensureChristmasNightmareCanon(cached);
-    return normalizePlotBeats(upgraded.plot_beats || [], mysteryId);
-  }
-
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('plot_beats')
@@ -1349,8 +1370,17 @@ export const getPlotBeatsByMysteryId = cache(async (mysteryId: string) => {
     .eq('mystery_id', mysteryId)
     .order('sort_order', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching plot beats:', error);
+  if (error || !data || data.length === 0) {
+    const cached = getCachedMysterySnapshot(mysteryId);
+    if (cached && Array.isArray(cached.plot_beats) && cached.plot_beats.length > 0) {
+      const upgraded = isChristmasNightmareMystery(cached.title, cached.theme)
+        ? ensureChristmasNightmareCanon(cached)
+        : cached;
+      return normalizePlotBeats(upgraded.plot_beats || [], mysteryId);
+    }
+    if (error) {
+      console.error('Error fetching plot beats:', error);
+    }
     return [];
   }
 
@@ -1460,12 +1490,6 @@ function normalizeClueList(
 }
 
 export const getCluesByMysteryId = cache(async (mysteryId: string) => {
-  const cached = getCachedMysterySnapshot(mysteryId);
-  if (cached && isChristmasNightmareMystery(cached.title, cached.theme)) {
-    const upgraded = ensureChristmasNightmareCanon(cached);
-    return normalizeClueList(upgraded.clues || []);
-  }
-
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('clues')
@@ -1473,8 +1497,17 @@ export const getCluesByMysteryId = cache(async (mysteryId: string) => {
     .eq('mystery_id', mysteryId)
     .order('created_at', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching clues:', error);
+  if (error || !data || data.length === 0) {
+    const cached = getCachedMysterySnapshot(mysteryId);
+    if (cached && Array.isArray(cached.clues) && cached.clues.length > 0) {
+      const upgraded = isChristmasNightmareMystery(cached.title, cached.theme)
+        ? ensureChristmasNightmareCanon(cached)
+        : cached;
+      return normalizeClueList(upgraded.clues || []);
+    }
+    if (error) {
+      console.error('Error fetching clues:', error);
+    }
     return [];
   }
 

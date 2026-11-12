@@ -366,8 +366,8 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
   'en-AU': {
     // Love On The Rocks cast by Role Title (all distinct voices)
     'the ex': 'IKne3meq5aSn9XLyUdCD',
-    'the reality tv queen': '7AT99iuMA9sXzwoSxG9H',
-    'the star': '7AT99iuMA9sXzwoSxG9H',
+    'the reality tv queen': 'pFZP5JQG7iQjIQuC4Bku',
+    'the star': 'pFZP5JQG7iQjIQuC4Bku',
     'the bombshell': 'TX3LPaxmHKxFdv7VOQHJ',
     'the host': 'TX3LPaxmHKxFdv7VOQHJ',
     'the superfan': 'bIHbv24MWmeRgasZH58o',
@@ -384,7 +384,7 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
 
     // Legacy aliases
     dane: 'IKne3meq5aSn9XLyUdCD',       // Charlie (AU) - deep, confident Australian
-    gabby: '7AT99iuMA9sXzwoSxG9H',      // Gabby (AU) - soft young Australian
+    gabby: 'pFZP5JQG7iQjIQuC4Bku',      // Lily - dramatic lead star
     colt: 'TX3LPaxmHKxFdv7VOQHJ',       // Liam - charismatic host
     milo: 'bIHbv24MWmeRgasZH58o',       // Will - earnest / obsessive superfan
     rikki: 'FGY2WhTYpPnrIDTdsKH5',      // Laura - sassy / quick glam artist
@@ -395,7 +395,7 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
 
     // Dead On Arrival aliases
     blaze: 'IKne3meq5aSn9XLyUdCD',
-    skye: '7AT99iuMA9sXzwoSxG9H',
+    skye: 'pFZP5JQG7iQjIQuC4Bku',
     cole: 'TX3LPaxmHKxFdv7VOQHJ',
     rex: 'bIHbv24MWmeRgasZH58o',
     mara: 'FGY2WhTYpPnrIDTdsKH5',
@@ -408,30 +408,29 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
     barnaby: 'IKne3meq5aSn9XLyUdCD',
     zara: 'pFZP5JQG7iQjIQuC4Bku',
     silas: 'N2lVS1w4EtoT3dr4eOWO',
-    zephyr: '7AT99iuMA9sXzwoSxG9H',
+    zephyr: 'hpp4J3VqNfWAUOO0d1Us',
     jax: 'SOYHLrjzK2X1ezoPC6cr',
     gigi: 'EXAVITQu4vr4xnSDxMaL',
     lucius: 'CwhRBWXzGAHq8TQ4Fs17',
     seraphina: 'cgSgspJ2msm6clMCkdW9',
 
     // Generic speaker slots (all distinct)
-    'speaker 1': '7AT99iuMA9sXzwoSxG9H',
+    'speaker 1': 'pFZP5JQG7iQjIQuC4Bku',
     'speaker 2': 'IKne3meq5aSn9XLyUdCD',
     'speaker 3': 'CwhRBWXzGAHq8TQ4Fs17',
     'speaker 4': 'FGY2WhTYpPnrIDTdsKH5',
     narrator: 'IKne3meq5aSn9XLyUdCD',
-    default_female: '7AT99iuMA9sXzwoSxG9H',
+    default_female: 'pFZP5JQG7iQjIQuC4Bku',
     default_male: 'IKne3meq5aSn9XLyUdCD',
     default_neutral: 'SAz9YHcvj6GT2YYXdXww',
   },
 };
 
 const DISTINCT_FEMALE_VOICE_POOL = [
-  '7AT99iuMA9sXzwoSxG9H', // Gabby (AU)
+  'pFZP5JQG7iQjIQuC4Bku', // Lily
   'FGY2WhTYpPnrIDTdsKH5', // Laura
   'EXAVITQu4vr4xnSDxMaL', // Sarah
   'cgSgspJ2msm6clMCkdW9', // Jessica
-  'pFZP5JQG7iQjIQuC4Bku', // Lily (UK)
   'Xb7hH8MSUJpSbSDYk0k2', // Alice (UK)
   'XrExE9yKIg1WjnnlVkGX', // Matilda
   'hpp4J3VqNfWAUOO0d1Us', // Bella
@@ -454,11 +453,10 @@ const DISTINCT_MALE_VOICE_POOL = [
 
 const REGIONAL_FEMALE_VOICE_POOLS: Record<VoiceRegion, string[]> = {
   'en-AU': [
-    '7AT99iuMA9sXzwoSxG9H', // Gabby (AU)
+    'pFZP5JQG7iQjIQuC4Bku', // Lily
     'FGY2WhTYpPnrIDTdsKH5', // Laura
     'EXAVITQu4vr4xnSDxMaL', // Sarah
     'cgSgspJ2msm6clMCkdW9', // Jessica
-    'pFZP5JQG7iQjIQuC4Bku', // Lily (UK)
     'Xb7hH8MSUJpSbSDYk0k2', // Alice (UK)
     'XrExE9yKIg1WjnnlVkGX', // Matilda
     'hpp4J3VqNfWAUOO0d1Us', // Bella
@@ -468,7 +466,6 @@ const REGIONAL_FEMALE_VOICE_POOLS: Record<VoiceRegion, string[]> = {
     'Xb7hH8MSUJpSbSDYk0k2', // Alice (UK)
     'hpp4J3VqNfWAUOO0d1Us', // Bella
     'EXAVITQu4vr4xnSDxMaL', // Sarah
-    '7AT99iuMA9sXzwoSxG9H', // Gabby (AU)
     'FGY2WhTYpPnrIDTdsKH5', // Laura
     'XrExE9yKIg1WjnnlVkGX', // Matilda
     'cgSgspJ2msm6clMCkdW9', // Jessica
@@ -479,7 +476,6 @@ const REGIONAL_FEMALE_VOICE_POOLS: Record<VoiceRegion, string[]> = {
     'FGY2WhTYpPnrIDTdsKH5', // Laura (US)
     'XrExE9yKIg1WjnnlVkGX', // Matilda (US)
     'hpp4J3VqNfWAUOO0d1Us', // Bella (US)
-    '7AT99iuMA9sXzwoSxG9H', // Gabby (AU)
     'pFZP5JQG7iQjIQuC4Bku', // Lily (UK)
     'Xb7hH8MSUJpSbSDYk0k2', // Alice (UK)
   ],

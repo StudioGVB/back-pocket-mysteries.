@@ -1,7 +1,9 @@
 import React from 'react';
 import { getMysteryById, getCluesByMysteryId, getCharactersByMysteryId, getPlotBeatsByMysteryId } from '@/services/mysteries';
+import { getRelationshipsByMysteryId } from '@/services/relationships';
 import { getSubplotsByMysteryId } from '@/services/subplots';
 import { getCharacterDisplayName, hydrateTextWithCharacters } from '@/utils/hydration';
+import { RelationshipGraph } from '@/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipGraph';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { connection } from 'next/server';
@@ -15,12 +17,13 @@ export default async function PrintRevealPage({
 }) {
   await connection();
   const { id, locale } = await params;
-  const [mystery, clues, characters, plotBeats, subplots] = await Promise.all([
+  const [mystery, clues, characters, plotBeats, subplots, relationships] = await Promise.all([
     getMysteryById(id),
     getCluesByMysteryId(id),
     getCharactersByMysteryId(id),
     getPlotBeatsByMysteryId(id),
-    getSubplotsByMysteryId(id)
+    getSubplotsByMysteryId(id),
+    getRelationshipsByMysteryId(id)
   ]);
 
   if (!mystery) return notFound();
@@ -170,6 +173,31 @@ export default async function PrintRevealPage({
               ) : (
                 <p className="text-xs text-slate-500 print:text-slate-700 italic">No specific motive records found in the database. Rely on the character bio and story plot points.</p>
               )}
+            </div>
+          )}
+
+          {/* Full Character Relationship & Secret Web */}
+          {relationships && relationships.length > 0 && (
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-lg font-black text-white uppercase tracking-tight print:text-black flex items-center gap-2">
+                    <span>🕸️</span> Full Character Relationship &amp; Secret Web
+                  </h4>
+                  <p className="text-xs text-slate-400 print:text-slate-600 mt-0.5">
+                    Every secret affair, rivalry, and hidden alliance across the entire cast.
+                  </p>
+                </div>
+                <span className="text-[10px] font-black text-[#FF1493] uppercase tracking-widest">
+                  Master Web
+                </span>
+              </div>
+              <RelationshipGraph
+                characters={characters}
+                relationships={relationships}
+                variant="dark"
+                revealPlotRoles={true}
+              />
             </div>
           )}
 

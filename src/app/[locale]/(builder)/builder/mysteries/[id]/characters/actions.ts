@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createCharacter, updateCharacter, deleteCharacter } from '@/services/mysteries';
 import { getStaticMockGuests } from '@/utils/mock-guests';
 import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
-import { getCharacterRoleTitle, getCharacterDisplayName, hydrateTextWithCharacters } from '@/utils/hydration';
+import { getCharacterRoleTitle, getCharacterDisplayName, hydrateTextWithCharacters, stripEmDashes } from '@/utils/hydration';
 import { generateStandardCharacterPhotoAction } from '@/app/actions/generator';
 import crypto from 'crypto';
 
@@ -317,6 +317,7 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
       
       ${genderInstructions}
       CRITICAL NAMING RULE: Do NOT invent any fake human first or last names! Address the player in second person ("You") or use the dynamic placeholder {{${characterRole}}}.
+      CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes anywhere in the bio, outfit advice, acting summary, or bullet points. Use standard commas, periods, or colons instead.
       
       Generate a rich, immersive profile for this character that will be printed in their personal packet. 
       The tone should match the Noir/Cinematic style of the platform: sharp, dramatic, and engaging.
@@ -332,7 +333,7 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
       mystery_id: mysteryId
     });
 
-    const parsed = JSON.parse(result.response.text());
+    const parsed = JSON.parse(stripEmDashes(result.response.text()));
     
     return parsed;
   } catch (error) {
@@ -395,6 +396,135 @@ export async function generateCharacterOutfitPhotoAction(mysteryId: string, char
     console.error('Error generating standard character photo', err);
     throw new Error(err.message || 'Failed to generate photo');
   }
+}
+
+export async function generateCharacterOutfitOptionsAction(
+  mysteryId: string,
+  characterId: string,
+  outfitAdvice: string,
+  characterTitle: string,
+  theme: string,
+  genderOption: 'male' | 'female' = 'female',
+  singleOptionIndex?: number
+): Promise<string[]> {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
+  }
+
+  const supabase = await createClient();
+  const { data: existingChar } = await supabase
+    .from('characters')
+    .select('gender, profile_data')
+    .eq('id', characterId)
+    .maybeSingle();
+
+  const isAdaptable = existingChar?.gender === 'adaptable';
+  const genderNoun = genderOption === 'male' ? 'man' : 'woman';
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const textModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  const promptCount = typeof singleOptionIndex === 'number' ? 1 : 3;
+  const variationPrompt = `You are a luxury fashion stylist creating ${promptCount} distinct outfit option lookbook descriptions for a guest playing "${characterTitle}" (${genderNoun}) at a "${theme || 'Murder Mystery'}" party.
+Outfit Direction: "${outfitAdvice}"
+Write ${promptCount} distinct, specific, head-to-toe outfit descriptions (clothing pieces, fabrics, colors, footwear, and accessories).
+Return ONLY ${promptCount} lines separated by newlines, with no numbering, no bullets, and no em dashes.`;
+
+  let outfitVariations: string[] = [];
+  try {
+    const textRes = await textModel.generateContent(variationPrompt);
+    outfitVariations = textRes.response
+      .text()
+      .split('\n')
+      .map((l) => l.replace(/^[\d\.\-\*\s]+/, '').trim())
+      .filter((l) => l.length > 10)
+      .slice(0, promptCount);
+  } catch {
+    // Fallback to variations of outfitAdvice
+  }
+
+  while (outfitVariations.length < promptCount) {
+    outfitVariations.push(
+      `${outfitAdvice} (Option ${outfitVariations.length + 1} styling variation)`
+    );
+  }
+
+  const generateSingleLookbookImage = async (desc: string, idx: number): Promise<string | null> => {
+    const imgPrompt = `High-fashion editorial wardrobe lookbook photograph (neck-down / cropped at chin, no eyes or upper face shown) at an atmospheric ${theme || 'evening'} party, warm cinematic lighting, 35mm film aesthetic, photorealistic, no text: a ${genderNoun} wearing ${desc}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: imgPrompt }] }],
+        generationConfig: { responseModalities: ['IMAGE'] },
+      }),
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+    const b64 = imgPart?.inlineData?.data;
+    if (!b64) return null;
+
+    const fileBuffer = Buffer.from(b64, 'base64');
+    const fileName = `outfit-options/${mysteryId}/${characterId}-${genderOption}-opt${idx + 1}-${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from('character-images')
+      .upload(fileName, fileBuffer, { contentType: 'image/jpeg', upsert: true });
+
+    if (!uploadError) {
+      const { data: pubData } = supabase.storage.from('character-images').getPublicUrl(fileName);
+      if (pubData?.publicUrl) return pubData.publicUrl;
+    }
+
+    return `data:image/jpeg;base64,${b64}`;
+  };
+
+  const existingProfile = { ...((existingChar?.profile_data as any) || {}) };
+  const presKey = genderOption === 'male' ? 'presentation_male' : 'presentation_female';
+  const currentImages: string[] = isAdaptable
+    ? [...(existingProfile[presKey]?.outfit_reference_images || existingProfile.outfit_reference_images || [])]
+    : [...(existingProfile.outfit_reference_images || [])];
+
+  let nextImages: string[] = [...currentImages];
+
+  if (typeof singleOptionIndex === 'number') {
+    const newUrl = await generateSingleLookbookImage(outfitVariations[0], singleOptionIndex);
+    if (newUrl) {
+      while (nextImages.length <= singleOptionIndex) nextImages.push('');
+      nextImages[singleOptionIndex] = newUrl;
+    }
+  } else {
+    const generatedUrls = await Promise.all(
+      outfitVariations.map((desc, idx) => generateSingleLookbookImage(desc, idx))
+    );
+    nextImages = generatedUrls.map((u, idx) => u || currentImages[idx] || '').filter(Boolean);
+  }
+
+  if (isAdaptable) {
+    existingProfile[presKey] = {
+      ...(existingProfile[presKey] || {}),
+      outfit_advice: outfitAdvice,
+      outfit_reference_images: nextImages,
+    };
+    if (!existingProfile.outfit_reference_images || existingProfile.outfit_reference_images.length === 0) {
+      existingProfile.outfit_reference_images = nextImages;
+    }
+  } else {
+    existingProfile.outfit_advice = outfitAdvice;
+    existingProfile.outfit_reference_images = nextImages;
+  }
+
+  await supabase
+    .from('characters')
+    .update({ profile_data: existingProfile })
+    .eq('id', characterId);
+
+  revalidatePath(`/[locale]/builder/mysteries/${mysteryId}/characters/${characterId}`);
+  revalidatePath(`/[locale]/builder/mysteries/${mysteryId}/compile`);
+  return nextImages;
 }
 
 export async function assignGuestToCharacterAction(mysteryId: string, characterId: string, guestId: string | null) {
@@ -939,13 +1069,14 @@ Make it dramatic, juicy, and fit for a murder mystery party titled "${mysteryTit
 The character's role title is "${roleTitle}".
 Other character roles in the cast: ${allRolesList}.
 CRITICAL NAMING RULE: Do NOT invent or use any human first or last names! Address the player in second person ("You") or refer to characters strictly by their Role Titles (${allRolesList}).
+CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
 Here is their current short bio/background:
 "${cleanInputBio}"
 
 Focus on adding rich flavor, deep secrets, and dramatic flair. Do not change any fundamental facts given, just expand and embellish them beautifully. Return ONLY the expanded bio text.`;
 
     const result = await model.generateContent(prompt);
-    const rawText = result.response.text().trim();
+    const rawText = stripEmDashes(result.response.text().trim());
     const text = hydrateTextWithCharacters(rawText, allCharacters, 'role');
 
     await logAiUsage({

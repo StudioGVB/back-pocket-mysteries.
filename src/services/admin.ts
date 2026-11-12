@@ -1,22 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import { Database } from '@/types/database';
+import { getMysteries as getNormalizedMysteries } from '@/services/mysteries';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
 
 export async function getMysteries() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('mysteries')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching mysteries:', error);
-    return [];
-  }
-
-  return data;
+  return getNormalizedMysteries();
 }
 
 export async function createMystery(mystery: MysteryInsert) {

@@ -17,6 +17,7 @@ export interface ReadyHubCharacter {
   outfitMasculine?: string | null;
   actBullets?: string[];
   characterPhotoUrl?: string | null;
+  outfitReferenceImages?: string[];
 }
 
 export interface ReadyHubGuest {
@@ -622,7 +623,7 @@ export function MysteryReadyHub({
               const isSent = sentCharIds.includes(char.id);
               const copyInviteKey = `invite-msg-${char.id}`;
               const copyUrlKey = `invite-url-${char.id}`;
-              const guestAvatar = resolveDisplayAvatarUrl(guest?.avatar_url || char.characterPhotoUrl || undefined);
+              const guestAvatar = resolveDisplayAvatarUrl(char.characterPhotoUrl || guest?.avatar_url || undefined);
 
               const buildCharacterUrl = () =>
                 `${getOrigin()}/${locale}/play/${mystery.id}?char=${char.id}`;
@@ -639,7 +640,7 @@ export function MysteryReadyHub({
               return (
                 <div
                   key={char.id}
-                  className={`rounded-3xl border p-6 flex flex-col justify-between gap-5 transition-all ${
+                  className={`rounded-3xl border overflow-hidden flex flex-col justify-between transition-all ${
                     isSent
                       ? 'bg-emerald-50/20 border-emerald-200'
                       : char.is_victim
@@ -647,61 +648,69 @@ export function MysteryReadyHub({
                       : 'bg-slate-50/60 border-slate-200 hover:bg-white hover:shadow-md'
                   }`}
                 >
-                  <div className="space-y-4">
-                    {/* Top Row: Guest + Role Badge + Sent Checkbox */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-200 border border-slate-300 shrink-0 flex items-center justify-center">
-                          {guestAvatar ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={guestAvatar}
-                              alt={guest?.name || char.roleTitle}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-xl">{char.is_victim ? '💀' : '🕵️'}</span>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                char.is_victim
-                                  ? 'bg-brand-pink text-white'
-                                  : 'bg-slate-900 text-white'
-                              }`}
-                            >
-                              {char.is_victim ? '💀 The Victim' : '🕵️ Suspect'}
-                            </span>
-                            {guest ? (
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
-                                👤 {guest.name}
-                              </span>
-                            ) : (
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                                Unassigned
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="text-xl font-black text-slate-900 tracking-tight mt-1 truncate">
-                            {char.roleTitle}
-                          </h3>
-                        </div>
+                  {/* Large Full-Width Character / Guest Portrait Header */}
+                  <div className="relative w-full aspect-[4/5] sm:aspect-auto sm:h-96 bg-slate-900 overflow-hidden border-b border-slate-200">
+                    {guestAvatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={guestAvatar}
+                        alt={guest?.name || char.roleTitle}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-6xl bg-slate-900 text-white">
+                        {char.is_victim ? '💀' : '🕵️'}
+                      </div>
+                    )}
+
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/85 via-slate-950/35 to-transparent pointer-events-none" />
+
+                    {/* Top Overlay Badges */}
+                    <div className="absolute top-3.5 sm:top-4 inset-x-3.5 sm:inset-x-4 flex items-center justify-between gap-2 z-10">
+                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                        <span
+                          className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md shrink-0 ${
+                            char.is_victim
+                              ? 'bg-brand-pink text-white'
+                              : 'bg-slate-900/90 text-white border border-white/15 backdrop-blur-md'
+                          }`}
+                        >
+                          {char.is_victim ? '💀 The Victim' : '🕵️ Suspect'}
+                        </span>
+                        {guest ? (
+                          <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-slate-950 shadow-md truncate max-w-[140px] sm:max-w-[200px]">
+                            👤 {guest.name}
+                          </span>
+                        ) : (
+                          <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold bg-amber-400 text-slate-950 shadow-md">
+                            Unassigned
+                          </span>
+                        )}
                       </div>
 
                       <button
                         type="button"
                         onClick={() => toggleSentChar(char.id)}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all shrink-0 cursor-pointer ${
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all shrink-0 cursor-pointer shadow-md backdrop-blur-md ${
                           isSent
-                            ? 'bg-emerald-500 text-white border-emerald-500'
-                            : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                            ? 'bg-emerald-500 text-white border-emerald-400'
+                            : 'bg-black/75 text-white border-white/20 hover:bg-brand-pink'
                         }`}
                       >
                         {isSent ? '✓ Sent' : 'Mark Sent'}
                       </button>
                     </div>
+
+                    {/* Bottom Role Title on Portrait */}
+                    <div className="absolute bottom-3.5 inset-x-4 sm:inset-x-5 z-10">
+                      <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-md">
+                        {char.roleTitle}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-6 space-y-4 flex-grow flex flex-col justify-between">
+                    <div className="space-y-4">
 
                     {/* 1. Character Outline / Blurb */}
                     <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1">
@@ -714,13 +723,35 @@ export function MysteryReadyHub({
                     </div>
 
                     {/* 2. Outfit & Dress Code */}
-                    <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1">
+                    <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-2.5">
                       <span className="block text-[9px] font-black uppercase tracking-widest text-emerald-600">
                         👗 Outfit &amp; Dress Code
                       </span>
                       <p className="text-xs text-slate-700 font-medium leading-relaxed">
                         {outfitText}
                       </p>
+                      {char.outfitReferenceImages && char.outfitReferenceImages.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 pt-1">
+                          {char.outfitReferenceImages.slice(0, 3).map((refUrl, optIdx) => (
+                            <div
+                              key={optIdx}
+                              className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex flex-col"
+                            >
+                              <div className="aspect-[3/4] w-full overflow-hidden bg-slate-100">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={refUrl}
+                                  alt={`${char.roleTitle} Outfit Option ${optIdx + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <span className="py-1 text-center text-[8px] font-black uppercase tracking-widest text-slate-500 bg-white border-t border-slate-100">
+                                Option {optIdx + 1}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* 3. Vibe & How to Act */}
@@ -825,6 +856,7 @@ export function MysteryReadyHub({
                         Preview ↗
                       </Link>
                     </div>
+                  </div>
                   </div>
                 </div>
               );

@@ -4,7 +4,10 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/database';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { logAiUsage } from '@/utils/ai-logger';
+import { getAllCachedMysteries, updateCachedMysteryCharacters } from '@/lib/live-session-store';
 
 export async function generateGuestAvatarAction(guestId: string, guestData: any) {
   try {
@@ -154,7 +157,7 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       subjectNoun = 'person';
     }
 
-    const prompt = `A clear, well-lit, shoulders-up portrait photograph of a ${subjectNoun} who is exactly 24 years old with the following features: Gender: ${genderLabel}, Ethnicity: ${guestData.ethnicity || 'unspecified'}, Eye color: ${eyeColor}, Hair style: ${hairStyle}, Hair color: ${hairColor}, Skin color: ${skinColor}, Facial hair: ${facialHair}, Build/Body Type: ${build} (modest and professional), Facial Bone Structure: ${uniqueFacialStructure}, Distinctive Features: ${distinctiveFeatures}, Accessories/Eyewear: ${accessories}, Height: ${guestData.height || 'unspecified'}. Personality traits: ${(guestData.traits || []).join(', ')}. The subject is facing the camera. The framing MUST show everything from the shoulders up, including the full top of their hair. Bright, broad daylight lighting, completely clear visibility, 8k resolution, professional portrait photography.${genderGuardrail} CRITICAL: This is a real, live-action photograph taken with a DSLR camera. The image MUST be highly photorealistic and the person MUST look exactly 24 years old. Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations, NO stylized art, NO vector graphics. Maintain a professional, family-friendly appearance.`;
+    const prompt = `A clean, front-facing shoulders-up studio headshot photograph of a ${subjectNoun} who is 24 years old, photographed against a completely plain, solid, seamless pure white studio background (#FFFFFF / #F4F4F4). Physical features: Gender: ${genderLabel}, Ethnicity: ${guestData.ethnicity || 'unspecified'}, Eye color: ${eyeColor}, Hair style: ${hairStyle}, Hair color: ${hairColor}, Skin color: ${skinColor}, Facial hair: ${facialHair}, Build/Body Type: ${build}, Facial Bone Structure: ${uniqueFacialStructure}, Distinctive Features: ${distinctiveFeatures}, Accessories/Eyewear: ${accessories}, Height: ${guestData.height || 'unspecified'}. The subject is looking directly at the camera with a natural, neutral-to-slight expression, wearing a simple plain white or black crew-neck t-shirt or tank top (NO suits, NO blazers, NO costumes). The framing MUST show everything from the shoulders up, including the full top of their hair, centered in the frame. Soft, even, flat studio headshot lighting (like a clean casting agency digital polaroid).${genderGuardrail} CRITICAL BACKGROUND RULE: The background MUST be 100% plain solid white or very light neutral studio paper with ZERO outdoor scenery, ZERO trees, ZERO buildings, and ZERO props. CRITICAL REALISM RULE: This is a real, live-action studio headshot photograph taken with a DSLR camera (85mm portrait lens). Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations.`;
     
     // Hash the prompt to use as cache key
     const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
@@ -230,9 +233,9 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
           usageMetadata: rawData?.usageMetadata,
         });
 
-        // Upload to Supabase Storage instead of saving base64 directly to database
+        // Upload to Supabase Storage, with local public/generated-avatars fallback
         const buffer = Buffer.from(base64Str, 'base64');
-        const fileName = `${guestId}-${promptHash}.jpg`;
+        const fileName = `${guestId}-${promptHash.slice(0, 32)}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('character-images')
           .upload(fileName, buffer, {
@@ -240,16 +243,20 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
             upsert: true
           });
 
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError);
-          throw new Error('Failed to upload the generated image to Supabase Storage.');
-        } else {
+        if (!uploadError) {
           const { data: { publicUrl } } = supabase.storage
             .from('character-images')
             .getPublicUrl(fileName);
-          
           dataUri = publicUrl;
-          console.log('Saved to storage with public URL:', dataUri);
+        } else {
+          try {
+            const outDir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'generated-avatars');
+            fs.mkdirSync(outDir, { recursive: true });
+            fs.writeFileSync(path.join(outDir, fileName), buffer);
+            dataUri = `/generated-avatars/${fileName}`;
+          } catch {
+            dataUri = `data:image/jpeg;base64,${base64Str}`;
+          }
         }
       } else {
         let errorMsg = rawData?.error?.message;
@@ -288,14 +295,61 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       newAvatarUrl = dataUri;
     }
 
-    const { data: updateData, error: updateError } = await supabase
+    await supabase
       .from('guests')
       .update({ avatar_url: newAvatarUrl })
-      .eq('id', guestId)
-      .select();
+      .eq('id', guestId);
 
-    if (updateError || !updateData || updateData.length === 0) {
-      throw new Error(updateError?.message || 'Failed to update guest (RLS blocked update or guest not found)');
+    // Propagate the new AI avatar URL, accent, age, and gender to any character assigned to this guest in the live session cache & DB
+    try {
+      let extractedAccent: string | undefined;
+      let extractedAge: string | undefined;
+      try {
+        const parsedUrl = new URL(newAvatarUrl);
+        extractedAccent = parsedUrl.searchParams.get('accent') || undefined;
+        extractedAge = parsedUrl.searchParams.get('age') || undefined;
+      } catch {
+        const accMatch = newAvatarUrl.match(/[?&]accent=([^&]+)/);
+        if (accMatch) extractedAccent = decodeURIComponent(accMatch[1]);
+        const ageMatch = newAvatarUrl.match(/[?&]age=([^&]+)/);
+        if (ageMatch) extractedAge = decodeURIComponent(ageMatch[1]);
+      }
+
+      const allCached = getAllCachedMysteries();
+      for (const [mId, cachedMystery] of Object.entries(allCached || {})) {
+        const chars = cachedMystery?.characters || [];
+        let changed = false;
+        const nextChars = chars.map((c: any) => {
+          const pd = c.profile_data || {};
+          if (
+            pd.guest_id === guestId ||
+            (guestData?.name &&
+              pd.guest_name &&
+              String(pd.guest_name).toLowerCase() === String(guestData.name).toLowerCase())
+          ) {
+            changed = true;
+            const nextPd = {
+              ...pd,
+              avatar_url: newAvatarUrl,
+              ...(extractedAccent ? { accent: extractedAccent } : {}),
+              ...(extractedAge ? { age: extractedAge } : {}),
+              ...(guestData?.gender ? { gender: guestData.gender } : {}),
+            };
+            supabase
+              .from('characters')
+              .update({ profile_data: nextPd })
+              .eq('id', c.id)
+              .then(() => {});
+            return { ...c, profile_data: nextPd };
+          }
+          return c;
+        });
+        if (changed) {
+          updateCachedMysteryCharacters(mId, nextChars);
+        }
+      }
+    } catch {
+      // Non-fatal if cache propagation fails
     }
 
     return { publicUrl: newAvatarUrl };

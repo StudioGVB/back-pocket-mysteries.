@@ -4,6 +4,7 @@ import {
   hydrateTextWithCharacters,
   replacePlaceholderNamesWithRoles,
 } from './hydration';
+import { resolveDisplayAvatarUrl } from './avatar';
 
 export interface CleanCharacterPresentation {
   roleTitle: string;
@@ -31,6 +32,8 @@ export interface CleanCharacterPresentation {
   secrets: string;
   /** Canonical Standard Character Photo or Outfit Photo URL */
   characterPhotoUrl: string | null;
+  /** Up to 3 reference photos for outfit options */
+  outfitReferenceImages: string[];
 }
 
 function cleanText(text: string | null | undefined, allCharacters: any[], mode: 'generic' | 'print' = 'print'): string {
@@ -172,8 +175,16 @@ export function getCleanCharacterPresentation(
   // 4. Secrets
   const secrets = cleanText(profile.secrets || '', allCharacters, mode);
 
-  // 5. Standard Character Photo / Outfit Photo
+  // 5. Standard Character Photo / Outfit Photo / Guest AI Portrait
+  const resolvedAvatar = profile.avatar_url ? resolveDisplayAvatarUrl(profile.avatar_url) : '';
+  const hasAiGuestPortrait =
+    Boolean(resolvedAvatar) &&
+    (String(profile.avatar_url || '').includes('aiPhotoUrl=') ||
+      resolvedAvatar.startsWith('/generated-avatars/') ||
+      resolvedAvatar.includes('/character-images/'));
+
   const characterPhotoUrl =
+    (hasAiGuestPortrait ? resolvedAvatar : null) ||
     profile.standard_character_photo_url ||
     profile.outfit_image_url ||
     activePres?.outfit_image_url ||
@@ -181,6 +192,26 @@ export function getCleanCharacterPresentation(
     presMale?.outfit_image_url ||
     char?.image_url ||
     null;
+
+  // 6. 3 Outfit Reference Photos
+  const rawOutfitImages: string[] =
+    (Array.isArray(activePres?.outfit_reference_images) &&
+    activePres.outfit_reference_images.filter(Boolean).length > 0
+      ? activePres.outfit_reference_images
+      : Array.isArray(profile.outfit_reference_images) &&
+        profile.outfit_reference_images.filter(Boolean).length > 0
+      ? profile.outfit_reference_images
+      : Array.isArray(presFemale?.outfit_reference_images) &&
+        presFemale.outfit_reference_images.filter(Boolean).length > 0
+      ? presFemale.outfit_reference_images
+      : Array.isArray(presMale?.outfit_reference_images) &&
+        presMale.outfit_reference_images.filter(Boolean).length > 0
+      ? presMale.outfit_reference_images
+      : []) || [];
+
+  const outfitReferenceImages = rawOutfitImages
+    .filter((u: any) => typeof u === 'string' && u.trim().length > 0)
+    .slice(0, 3);
 
   return {
     roleTitle,
@@ -197,5 +228,6 @@ export function getCleanCharacterPresentation(
     actBullets,
     secrets,
     characterPhotoUrl,
+    outfitReferenceImages,
   };
 }

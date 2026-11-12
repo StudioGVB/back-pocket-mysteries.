@@ -9,6 +9,7 @@ import {
   sendCustomerMysteryReadyEmail,
 } from '@/utils/purchase-notifications';
 import { ensureStandardCharacterPhoto } from '@/app/actions/generator';
+import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
 
 export interface BackgroundGenerationParams {
   mysteryId: string;
@@ -186,6 +187,9 @@ export async function finalizeMysteryGenerationNow(
     activeGenerationTimers.delete(params.mysteryId);
   }
 
+  // Ensure any remaining audio clues are generated so they play immediately on click
+  void pregenerateAllAudioCluesForMystery(params.mysteryId);
+
   const session = getStoredGameSession(params.mysteryId);
   const nowIso = new Date().toISOString();
   const resolvedEmail = params.customerEmail || session?.customerEmail || null;
@@ -276,13 +280,29 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
             // Non-fatal if image API key is not configured in local dev
           }
           completedCount += 1;
-          const pct = Math.min(75, 28 + Math.round((completedCount / activeChars.length) * 45));
+          const pct = Math.min(68, 28 + Math.round((completedCount / activeChars.length) * 40));
           updateMysteryGenerationInStore(params.mysteryId, {
             generationStep: `Generated character reference portrait (${completedCount}/${activeChars.length}) & weaving into visual clues...`,
             generationProgress: pct,
           });
         }
       }
+
+      // 2.5 Pre-generate all custom voice recordings / audio clues with cast guest names & accents
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep: 'Synthesizing custom voice memos, accents & round audio clues...',
+        generationProgress: 74,
+      });
+      await pregenerateAllAudioCluesForMystery(params.mysteryId, {
+        forceRegenerate: true,
+        onProgress: (completed, total) => {
+          const pct = Math.min(94, 74 + Math.round((completed / Math.max(1, total)) * 20));
+          updateMysteryGenerationInStore(params.mysteryId, {
+            generationStep: `Synthesized custom voice recording (${completed}/${total})...`,
+            generationProgress: pct,
+          });
+        },
+      });
 
       // 3. Schedule automatic completion & "Your Mystery is Ready!" email when the 20-minute window finishes
       const latestSession = getStoredGameSession(params.mysteryId);

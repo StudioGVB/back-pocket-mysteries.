@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { formatDate } from '@/utils/date';
 import { getUserMysteries } from '@/services/mysteries';
 import { CreateMysteryButton } from './_components/CreateMysteryButton';
+import { BrainstormWorksheetButton } from '@/components/builder/BrainstormWorksheetModal';
 import { Locale } from '@/lib/i18n-config';
 
 export const unstable_instant = false;
@@ -14,12 +15,15 @@ export default async function BuilderMysteriesPage({
 }) {
   return (
     <div className="p-12 max-w-6xl mx-auto h-full">
-      <div className="flex justify-between items-center mb-10">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Your Mysteries</h1>
           <p className="text-slate-500 font-medium text-sm">Manage and edit your interactive experiences.</p>
         </div>
-        <CreateMysteryButton />
+        <div className="flex flex-wrap items-center gap-3">
+          <BrainstormWorksheetButton variant="builder-pill" />
+          <CreateMysteryButton />
+        </div>
       </div>
       
       <Suspense fallback={<BuilderMysteriesSkeleton />}>

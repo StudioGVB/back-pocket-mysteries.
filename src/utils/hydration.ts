@@ -59,6 +59,20 @@ const LEGACY_PLACEHOLDER_TO_ROLE: Record<string, string> = {
   zane: 'The Fan-Favourite Flameout',
   rikki: 'The Hair & Makeup Artist',
   mara: 'The Hair & Makeup Artist',
+  'elias thorne': 'The Tycoon',
+  elias: 'The Tycoon',
+  'vivienne thorne': 'The Artist',
+  vivienne: 'The Artist',
+  'dr. aris thorne': 'The Doctor',
+  'aris thorne': 'The Doctor',
+  aris: 'The Doctor',
+  'sergeant vance': 'The Sergeant',
+  'sgt. vance': 'The Sergeant',
+  'mallory vance': 'The Sergeant',
+  mallory: 'The Sergeant',
+  'clara bellwether': 'The Entrepreneur',
+  clara: 'The Entrepreneur',
+  robin: 'The Caretaker',
 };
 
 const LEGACY_ROLES_BY_BASE: Record<string, string[]> = {
@@ -71,6 +85,12 @@ const LEGACY_ROLES_BY_BASE: Record<string, string[]> = {
   ava: ['The Runner-Up'],
   zayn: ['The Fan-Favourite Flameout'],
   rikki: ['The Hair & Makeup Artist', 'The Stylist', 'The Makeup Artist'],
+  elias: ['The Tycoon', 'Tycoon'],
+  vivienne: ['The Artist', 'Artist'],
+  aris: ['The Doctor', 'Doctor'],
+  mallory: ['The Sergeant', 'Sergeant'],
+  clara: ['The Entrepreneur', 'Entrepreneur'],
+  robin: ['The Caretaker', 'Caretaker'],
 };
 
 const LEGACY_NICKNAMES_BY_BASE: Record<string, string[]> = {
@@ -83,9 +103,31 @@ const LEGACY_NICKNAMES_BY_BASE: Record<string, string[]> = {
   ava: ['Ava', 'Aves', 'Brooke'],
   zayn: ['Zayn', 'Zane'],
   rikki: ['Rikki', 'Rikks', 'Mara'],
+  elias: ['Elias Thorne', 'Elias'],
+  vivienne: ['Vivienne Thorne', 'Vivienne'],
+  aris: ['Dr. Aris Thorne', 'Aris Thorne', 'Aris'],
+  mallory: ['Sergeant Vance', 'Sgt. Vance', 'Mallory Vance', 'Mallory'],
+  clara: ['Clara Bellwether', 'Clara'],
+  robin: ['Robin'],
 };
 
 const IGNORED_PREFIX_LABELS = new Set(['victim', 'suspect', 'innocent', 'killer', 'assistant']);
+
+const HONORIFIC_ROLE_PREFIXES = /^(?:the|madame|professor|prof\.?|captain|capt\.?|doctor|dr\.?|lady|lord|sir|detective|inspector|general|colonel|father|sister|brother|coach|judge|mayor|senator|prince|princess|king|queen|chef)\b/i;
+
+export function ensureRoleTitleHasThe(rawRole: string): string {
+  const trimmed = (rawRole || '').trim();
+  if (!trimmed) return 'The Suspect';
+  const mapped = LEGACY_PLACEHOLDER_TO_ROLE[trimmed.toLowerCase()];
+  if (mapped) return mapped;
+  if (/^the\s+/i.test(trimmed)) return trimmed;
+  // Single-word role nouns (e.g. "Tycoon", "Artist", "Doctor", "Sergeant", "Entrepreneur", "Caretaker")
+  // or multi-word role titles that don't start with an honorific name prefix get "The " prepended
+  if (!trimmed.includes(' ') || !HONORIFIC_ROLE_PREFIXES.test(trimmed)) {
+    return `The ${trimmed}`;
+  }
+  return trimmed;
+}
 
 /**
  * Returns the character's Role / Title (e.g. "The Star", "The Sister", "The Runner-Up").
@@ -98,13 +140,11 @@ export function getCharacterRoleTitle(char: any): string {
   const rawTitle = (parts[1] || '').trim();
 
   if (rawTitle) {
-    return rawTitle;
+    return ensureRoleTitleHasThe(rawTitle);
   }
 
   if (rawBase) {
-    const mapped = LEGACY_PLACEHOLDER_TO_ROLE[rawBase.toLowerCase()];
-    if (mapped) return mapped;
-    return rawBase;
+    return ensureRoleTitleHasThe(rawBase);
   }
 
   return char.is_victim ? 'The Victim' : 'The Suspect';

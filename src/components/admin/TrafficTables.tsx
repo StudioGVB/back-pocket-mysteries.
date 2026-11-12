@@ -373,7 +373,7 @@ export function TrafficTables({
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Avg Position</p>
                   <p className="text-2xl font-black text-brand-dark mt-1">
-                    {gsc.totals.position > 0 ? gsc.totals.position.toFixed(1) : '—'}
+                    {gsc.totals.position > 0 ? gsc.totals.position.toFixed(1) : '-'}
                   </p>
                 </div>
               </div>

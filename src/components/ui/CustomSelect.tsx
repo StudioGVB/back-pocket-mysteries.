@@ -173,6 +173,7 @@ export function CustomSelect({
   const currentValue = isControlled ? String(value) : internalValue;
   const selectedOption =
     flatOptions.find((opt) => opt.value === currentValue) ||
+    (currentValue ? { value: currentValue, label: currentValue } : null) ||
     flatOptions[0] ||
     null;
 

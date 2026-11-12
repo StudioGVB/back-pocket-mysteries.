@@ -94,11 +94,13 @@ export function SearchLogClueView({
             </div>
           )}
 
-          {/* Search Queries List */}
+          {/* Search Queries / System Events List */}
           {parsed.queries.length > 0 && (
             <div className="space-y-1.5">
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center justify-between">
-                <span>Recent Tabs / Search History</span>
+                <span>
+                  {parsed.mode === 'audit' ? 'Recorded System Events' : 'Recent Tabs / Search History'}
+                </span>
                 <span>{parsed.queries.length} Entries</span>
               </div>
               <div className="space-y-1.5">

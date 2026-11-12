@@ -17,6 +17,13 @@ import {
   inferDefaultVoiceRegion,
   parseAudioTranscript,
 } from '@/lib/voices';
+import {
+  inferClueFormat,
+  extractFormatTagFromNotes,
+  extractAudioUrlFromNotes,
+  extractVoiceRegionFromNotes,
+} from '@/utils/clue-format';
+import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
 
 export interface GenerateAudioClueInput {
   clueId: string;
@@ -61,14 +68,128 @@ export async function generateAudioClueAction({
 
     const supabase = await createClient();
 
-    // Fetch mystery & characters for region resolution and {{Character}} token hydration
-    const [{ data: mystery }, { data: charactersData }, { data: clueRow }] = await Promise.all([
+    // Fetch mystery, characters, clue, and the user's guest roster so live friend accents are always used
+    const [
+      { data: mystery },
+      { data: charactersData },
+      { data: clueRow },
+      { data: authData },
+    ] = await Promise.all([
       supabase.from('mysteries').select('*').eq('id', mysteryId).single(),
-      supabase.from('characters').select('id, name, gender, profile_data').eq('mystery_id', mysteryId),
+      supabase
+        .from('characters')
+        .select('id, name, gender, profile_data')
+        .eq('mystery_id', mysteryId)
+        .order('created_at', { ascending: true }),
       supabase.from('clues').select('id, title, internal_notes').eq('id', clueId).single(),
+      supabase.auth.getUser(),
     ]);
 
-    const characters = charactersData || [];
+    const hostUserId = mystery?.created_by || authData?.user?.id;
+    let guestRoster: any[] = [];
+    if (hostUserId) {
+      const [{ data: guestsRows }, { data: hostProfile }] = await Promise.all([
+        supabase.from('guests').select('*').eq('user_id', hostUserId),
+        supabase.from('profiles').select('*').eq('id', hostUserId).maybeSingle(),
+      ]);
+      guestRoster = [...(guestsRows || [])];
+      if (hostProfile) {
+        const hp = hostProfile as any;
+        guestRoster.push({
+          id: hp.id,
+          name: hp.full_name || 'Host',
+          gender: hp.pronouns?.toLowerCase().includes('she')
+            ? 'female'
+            : hp.pronouns?.toLowerCase().includes('he')
+            ? 'male'
+            : 'adaptable',
+          accent: hp.avatar_config?.accent,
+          age: hp.avatar_config?.age,
+          avatar_url: '',
+        });
+      }
+    }
+
+    const guestById = new Map<string, any>();
+    const guestByName = new Map<string, any>();
+    for (const g of guestRoster) {
+      if (g?.id) guestById.set(g.id, g);
+      if (g?.name) guestByName.set(String(g.name).trim().toLowerCase(), g);
+    }
+
+    const usedGuestIds = new Set<string>();
+    const rawCharacters = charactersData || [];
+    for (const ch of rawCharacters) {
+      const pd = (ch.profile_data as any) || {};
+      if (pd.guest_id && guestById.has(pd.guest_id)) {
+        usedGuestIds.add(pd.guest_id);
+      } else if (pd.guest_name && guestByName.has(String(pd.guest_name).trim().toLowerCase())) {
+        usedGuestIds.add(guestByName.get(String(pd.guest_name).trim().toLowerCase()).id);
+      }
+    }
+
+    // Hydrate characters with their assigned friend's live accent/age/gender from the guest roster
+    // (or deterministically match unassigned draft characters against the user's guest roster by gender)
+    const characters = rawCharacters.map((char: any) => {
+      const charProfile = (char.profile_data as any) || {};
+      const guestNameKey = String(charProfile.guest_name || charProfile.name || '')
+        .trim()
+        .toLowerCase();
+      let matchedGuest =
+        (charProfile.guest_id && guestById.get(charProfile.guest_id)) ||
+        (guestNameKey && guestByName.get(guestNameKey)) ||
+        null;
+
+      if (!matchedGuest && guestRoster.length > 0) {
+        const charGenderRaw = String(charProfile.gender || char.gender || '').toLowerCase();
+        const wantsFemale = charGenderRaw === 'female' || charGenderRaw === 'f' || charGenderRaw.includes('fem');
+        const wantsMale = charGenderRaw === 'male' || charGenderRaw === 'm' || charGenderRaw.includes('masc');
+
+        matchedGuest =
+          guestRoster.find((g: any) => {
+            if (usedGuestIds.has(g.id)) return false;
+            const gGen = String(g.gender || '').toLowerCase();
+            if (wantsFemale) return gGen === 'female' || gGen === 'f' || gGen.includes('fem');
+            if (wantsMale) return gGen === 'male' || gGen === 'm' || gGen.includes('masc');
+            return true;
+          }) || null;
+
+        if (matchedGuest) {
+          usedGuestIds.add(matchedGuest.id);
+        }
+      }
+
+      if (matchedGuest) {
+        const guestAvatarUrl = matchedGuest.avatar_url || charProfile.avatar_url || '';
+        const liveAccent =
+          extractAccentFromAvatarUrl(guestAvatarUrl) ||
+          matchedGuest.accent ||
+          extractAccentFromAvatarUrl(charProfile.avatar_url) ||
+          charProfile.accent;
+        const liveAge =
+          extractAgeFromAvatarUrl(guestAvatarUrl) ||
+          matchedGuest.age ||
+          extractAgeFromAvatarUrl(charProfile.avatar_url) ||
+          charProfile.age;
+
+        return {
+          ...char,
+          gender: matchedGuest.gender || char.gender,
+          profile_data: {
+            ...charProfile,
+            guest_id: matchedGuest.id,
+            guest_name: charProfile.guest_name || matchedGuest.name,
+            gender: matchedGuest.gender || charProfile.gender || char.gender,
+            avatar_url: guestAvatarUrl,
+            ...(liveAccent ? { accent: liveAccent } : {}),
+            ...(liveAge ? { age: liveAge } : {}),
+          },
+        };
+      }
+
+      return char;
+    });
+
     const resolvedRegion: VoiceRegion =
       voiceRegion || inferDefaultVoiceRegion(mystery as any);
     const resolvedTitle = title || clueRow?.title || '';
@@ -201,9 +322,13 @@ export async function generateAudioClueAction({
       mystery_id: mysteryId,
     });
 
-    revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
-    revalidatePath(`/play/${mysteryId}`);
-    revalidatePath('/', 'layout');
+    try {
+      revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+      revalidatePath(`/play/${mysteryId}`);
+      revalidatePath('/', 'layout');
+    } catch {
+      // Safe when invoked from detached background package generation
+    }
 
     return {
       success: true,
@@ -217,6 +342,67 @@ export async function generateAudioClueAction({
       success: false,
       error: err?.message || 'Failed to generate audio clue.',
     };
+  }
+}
+
+/**
+ * Pre-generates all audio clues (`format === 'audio'`) for a mystery so that when the package
+ * is ready and players open the Playroom, every voice recording plays out loud immediately on click.
+ */
+export async function pregenerateAllAudioCluesForMystery(
+  mysteryId: string,
+  options?: {
+    forceRegenerate?: boolean;
+    onProgress?: (completed: number, total: number) => void;
+  }
+): Promise<{ generatedCount: number; totalAudioClues: number }> {
+  try {
+    const supabase = await createClient();
+    const { data: cluesData } = await supabase
+      .from('clues')
+      .select('*')
+      .eq('mystery_id', mysteryId);
+
+    const clues = (cluesData || []).map((c: any) => ({
+      ...c,
+      format: c.format || extractFormatTagFromNotes(c.internal_notes) || inferClueFormat(c),
+      audio_url: c.audio_url || extractAudioUrlFromNotes(c.internal_notes) || null,
+      voice_region: c.voice_region || extractVoiceRegionFromNotes(c.internal_notes) || null,
+    }));
+
+    const audioClues = clues.filter(
+      (c: any) => c.format === 'audio' && c.description && String(c.description).trim().length > 0
+    );
+
+    let generatedCount = 0;
+    for (let i = 0; i < audioClues.length; i++) {
+      const clue = audioClues[i];
+      if (!options?.forceRegenerate && clue.audio_url) {
+        options?.onProgress?.(i + 1, audioClues.length);
+        continue;
+      }
+
+      const res = await generateAudioClueAction({
+        clueId: clue.id,
+        mysteryId,
+        transcript: clue.description,
+        voiceRegion: clue.voice_region || undefined,
+        title: clue.title || undefined,
+      });
+
+      if (res.success) {
+        generatedCount += 1;
+      }
+      options?.onProgress?.(i + 1, audioClues.length);
+    }
+
+    return {
+      generatedCount,
+      totalAudioClues: audioClues.length,
+    };
+  } catch (err) {
+    console.error('[pregenerateAllAudioCluesForMystery] Error:', err);
+    return { generatedCount: 0, totalAudioClues: 0 };
   }
 }
 
@@ -244,9 +430,13 @@ export async function deleteAudioClueAction({
       updated_at: new Date().toISOString(),
     });
 
-    revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
-    revalidatePath(`/play/${mysteryId}`);
-    revalidatePath('/', 'layout');
+    try {
+      revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+      revalidatePath(`/play/${mysteryId}`);
+      revalidatePath('/', 'layout');
+    } catch {
+      // Safe when invoked outside request context
+    }
 
     return { success: true };
   } catch (err: any) {

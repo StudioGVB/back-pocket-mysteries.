@@ -1,4 +1,17 @@
-import { LOTR_GOSSIP_MOODBOARD, LOTR_MAIN_COVER_URL, MoodboardPhoto } from '@/utils/moodboard';
+import {
+  CHRISTMAS_CABIN_MOODBOARD,
+  CHRISTMAS_MAIN_COVER_URL,
+  LOTR_GOSSIP_MOODBOARD,
+  LOTR_MAIN_COVER_URL,
+  MoodboardPhoto,
+} from '@/utils/moodboard';
+import {
+  CHRISTMAS_NIGHTMARE_CHARACTERS,
+  CHRISTMAS_NIGHTMARE_DESCRIPTION,
+  CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
+  CHRISTMAS_NIGHTMARE_THEME,
+  CHRISTMAS_NIGHTMARE_TITLE,
+} from '@/data/christmas-nightmare';
 
 export interface CanonicalCharacterRole {
   id: string;
@@ -15,18 +28,21 @@ export interface CanonicalCharacterRole {
     color: string;
     bio: string;
     outfit_advice: string;
+    outfit_reference_images?: string[];
     act_summary: string;
     act_bullets: string[];
     traits: string[];
     presentation_female?: {
       bio: string;
       outfit_advice: string;
+      outfit_reference_images?: string[];
       act_summary: string;
       act_bullets: string[];
     };
     presentation_male?: {
       bio: string;
       outfit_advice: string;
+      outfit_reference_images?: string[];
       act_summary: string;
       act_bullets: string[];
     };
@@ -113,6 +129,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Star won Love on the Rocks Season 3. Crowned queen of chaos, she had the most followers, the most airtime, and the most drama. She played the game flawlessly, sweet when the cameras rolled, ruthless when they didn’t. Ask anyone in this room and you’ll get a different version of The Star. She walks into the reunion like she’s still the main character, knowing how to keep her enemies close.',
         outfit_advice:
           'Elegant and effortless. Think a silky slip dress or bias-cut skirt in luxe neutrals or muted jewel tones, like someone used to being photographed. Add soft waves, dewy makeup, and a killer heel.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-star-1.jpg',
+          '/outfits/lotr/the-star-2.jpg',
+          '/outfits/lotr/the-star-3.jpg',
+        ],
         act_summary:
           'You won the show and you’re still the fan favourite, but you know people want to see you fall. Smile sweetly, keep it composed, and never let them forget who came out on top.',
         act_bullets: [
@@ -139,6 +160,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Sister was never supposed to be on Love on the Rocks, but she showed up to every red carpet and finale taping like she was born for it. Half the fandom didn’t realise she wasn’t a cast member. She’s younger, louder, and tired of living in The Star’s shadow. She says she’s just here to support her sister, but that dress, that flirty laugh, and that weird tension with The Fan-Favourite Flameout say she’s here to make a name for herself.',
         outfit_advice:
           'Slinky, sultry, and just a little too polished for a reunion. Soft clingy fabrics, neutral or warm tones, mini skirts or a maxi with a cutout. Sunglasses (yes, indoors) and a smug little smirk.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-sister-1.jpg',
+          '/outfits/lotr/the-sister-2.jpg',
+          '/outfits/lotr/the-sister-3.jpg',
+        ],
         act_summary:
           'The Sister is always performing, for the cameras, for the group, for herself. Charming until she’s not.',
         act_bullets: [
@@ -165,6 +191,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Ex was Love on the Rocks’ poster person, gorgeous, magnetic, and completely toxic. They and The Star were the golden couple… until Betrayal Week, when The Ex kissed another cast member "for the challenge" and tried to gaslight their way out of it. Now they’re back claiming inner peace, yet jittery, distracted, and constantly checking their phone.',
         outfit_advice:
           'Something clean and curated, white or beige button-up, relaxed pants, silver or leather chain, like you’re trying to look peaceful but still hot.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-ex-m-1.jpg',
+          '/outfits/lotr/the-ex-f-1.jpg',
+          '/outfits/lotr/the-ex-m-2.jpg',
+        ],
         act_summary:
           'Speak in therapy buzzwords and act like everything is chill… until someone mentions The Star.',
         act_bullets: [
@@ -176,6 +207,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'She and The Star were the golden couple of Season 3 until Betrayal Week. She’s back, claiming inner peace, but her hands won’t stop shaking.',
           outfit_advice:
             'Something clean and curated, white or beige linen set or silk button-up, relaxed tailored trousers, and layered silver jewellery.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-ex-f-1.jpg',
+            '/outfits/lotr/the-ex-f-2.jpg',
+            '/outfits/lotr/the-ex-f-3.jpg',
+          ],
           act_summary:
             'Speak in therapy buzzwords. Act like everything’s chill… until someone mentions The Star.',
           act_bullets: [
@@ -188,6 +224,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'He and The Star were the golden couple of Season 3 until Betrayal Week. He’s back, claiming inner peace, but his hands won’t stop shaking.',
           outfit_advice:
             'Something clean and curated, white or beige unbuttoned linen shirt, relaxed tailored trousers, and a silver or leather chain.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-ex-m-1.jpg',
+            '/outfits/lotr/the-ex-m-2.jpg',
+            '/outfits/lotr/the-ex-m-3.jpg',
+          ],
           act_summary:
             'Speak in therapy buzzwords. Act like everything’s chill… until someone mentions The Star.',
           act_bullets: [
@@ -214,6 +255,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Host was the face of Love on the Rocks, smooth, flirty, and always camera-ready. Supposed to stay neutral, they blurred more than a few lines off-camera, though fans forgave them because it made for great TV. Everyone remembers the banter, the cocktail toasts, and that rumoured backstage hookup that mysteriously got edited out.',
         outfit_advice:
           'Slick but low-effort. A fitted shirt (one-too-few buttons), dark tailored trousers or jeans, and statement gold jewellery, like you’re still trying to look bookable for a panel show.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-host-m-1.jpg',
+          '/outfits/lotr/the-host-f-1.jpg',
+          '/outfits/lotr/the-host-m-2.jpg',
+        ],
         act_summary:
           'You’re not the drama, you just host it. Stay smooth, funny, and never admit to anything.',
         act_bullets: [
@@ -225,6 +271,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'She was the host of Love On The Rocks, smooth, flirty, camera-ready. Supposed to stay neutral. Didn’t.',
           outfit_advice:
             'Slick but effortless. A tailored blazer dress or fitted silk shirt, statement gold necklace, and camera-ready heels.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-host-f-1.jpg',
+            '/outfits/lotr/the-host-f-2.jpg',
+            '/outfits/lotr/the-host-f-3.jpg',
+          ],
           act_summary:
             'You’re not the drama, you just film it. Stay smooth, funny, and never admit to anything.',
           act_bullets: [
@@ -237,6 +288,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'He was the host of Love On The Rocks, smooth, flirty, camera-ready. Supposed to stay neutral. Didn’t.',
           outfit_advice:
             'Slick but low-effort. A fitted shirt (one-too-few buttons), dark tailored jeans or trousers, and a gold chain.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-host-m-1.jpg',
+            '/outfits/lotr/the-host-m-2.jpg',
+            '/outfits/lotr/the-host-m-3.jpg',
+          ],
           act_summary:
             'You’re not the drama, you just film it. Stay smooth, funny, and never admit to anything.',
           act_bullets: [
@@ -263,6 +319,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Superfan wasn’t part of the original villa cast, they won the fan-voted wildcard spot for the reunion special. Their TikTok edits, Reddit theories, and encyclopedic posts made them a cult favourite. Charming in a "knows way too much" kind of way, they’ve been watching every move, every scandal, and every deleted scene for years.',
         outfit_advice:
           'Bookish but curated. Tucked-in shirts, knit jumpers over collars, wide-leg trousers, and round glasses, like they spent hours crafting an "I’m Smart but Hot" reunion look.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-superfan-m-1.jpg',
+          '/outfits/lotr/the-superfan-f-1.jpg',
+          '/outfits/lotr/the-superfan-m-2.jpg',
+        ],
         act_summary:
           'You were chosen by the fans, and you’ve made that everyone’s problem. Get weirdly intense if anyone questions why you’re invited.',
         act_bullets: [
@@ -274,6 +335,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'She campaigned to join the reunion like her life depended on it. She knows every deleted scene and every secret in the villa.',
           outfit_advice:
             'Bookish but curated. Tucked-in shirt, cropped jumper over collar, wide-leg trousers or pleated mini skirt, and chic glasses.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-superfan-f-1.jpg',
+            '/outfits/lotr/the-superfan-f-2.jpg',
+            '/outfits/lotr/the-superfan-f-3.jpg',
+          ],
           act_summary:
             'You were chosen by the fans, and you’ve made that everyone’s problem.',
           act_bullets: [
@@ -286,6 +352,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'He campaigned to join the reunion like his life depended on it. He knows every deleted scene and every secret in the villa.',
           outfit_advice:
             'Bookish but curated. Tucked-in shirt, jumper over collar, wide-leg trousers, and round frames.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-superfan-m-1.jpg',
+            '/outfits/lotr/the-superfan-m-2.jpg',
+            '/outfits/lotr/the-superfan-m-3.jpg',
+          ],
           act_summary:
             'You were chosen by the fans, and you’ve made that everyone’s problem.',
           act_bullets: [
@@ -312,6 +383,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Producer Plant wasn’t just a mid-season bombshell, they were an industry twist. Secretly planted by executive producers to stir drama in the villa, every whisper, every fight, and every "accidental" reveal traced back to them. Off contract now, yet still taking notes and still pushing everyone’s buttons.',
         outfit_advice:
           'Creative industry cool, tucked tee, rolled-sleeve blazer, tailored trousers, and a VIP lanyard or notebook. The vibe is "I’m just here to observe" while secretly running the room.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-producer-plant-m-1.jpg',
+          '/outfits/lotr/the-producer-plant-f-1.jpg',
+          '/outfits/lotr/the-producer-plant-m-2.jpg',
+        ],
         act_summary:
           'Act like a supportive friend while calculating every angle for maximum ratings. Never raise your voice, never show your cards.',
         act_bullets: [
@@ -322,7 +398,12 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         presentation_female: {
           bio: 'Planted by production as a contestant, she knows everything that happens off-camera - and always puts ratings first.',
           outfit_advice:
-            'Oversizedrolled-sleeve blazer, sleek camisole or tucked tee, tailored trousers, and an earpiece or notebook.',
+            'Oversized rolled-sleeve blazer, sleek camisole or tucked tee, tailored trousers, and an earpiece or notebook.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-producer-plant-f-1.jpg',
+            '/outfits/lotr/the-producer-plant-f-2.jpg',
+            '/outfits/lotr/the-producer-plant-f-3.jpg',
+          ],
           act_summary:
             'Act like a casual friend while calculating everything. Never raise your voice, never show your cards.',
           act_bullets: [
@@ -335,6 +416,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'Planted by production as a contestant, he knows everything that happens off-camera - and always puts ratings first.',
           outfit_advice:
             'Tucked tee, rolled-sleeve blazer, chinos, and a too-cool notebook.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-producer-plant-m-1.jpg',
+            '/outfits/lotr/the-producer-plant-m-2.jpg',
+            '/outfits/lotr/the-producer-plant-m-3.jpg',
+          ],
           act_summary:
             'Act like a casual friend while calculating everything. Never raise your voice, never show your cards.',
           act_bullets: [
@@ -361,6 +447,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Runner-Up made it to the final two, and then watched The Star take the crown. For weeks the hashtags trended her way: #WrongGirlWon. She and The Star were inseparable in the villa until The Star stopped replying after the finale. Tonight she arrived polished, prepared, and one glass of champagne away from a breakdown.',
         outfit_advice:
           'High-glam revenge look. Sequins, metallics, or anything body-hugging and eye-catching - the outfit that says "I’m thriving" while setting the room on fire. Heels, glossy lips, and sharp jewellery.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-runner-up-1.jpg',
+          '/outfits/lotr/the-runner-up-2.jpg',
+          '/outfits/lotr/the-runner-up-3.jpg',
+        ],
         act_summary:
           'You’re here to be civil, mature, and definitely not bitter. But the second someone brings up the finale vote, your smile gets tight.',
         act_bullets: [
@@ -386,6 +477,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Fan-Favourite Flameout walked into the villa bold, loud, and instantly iconic. They flirted with everyone, stirred the pot on purpose, and gave the kind of messy confessionals that live forever as viral audio. They won the internet, until production edited most of their scenes out of the reunion cut. Tonight: fresh spray tan, vengeance arc, nothing left to lose.',
         outfit_advice:
           'All black, all attitude. Fitted top or mesh shirt, leather or wide-leg trousers, chunky rings, and boots you can dramatically storm out in.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-flameout-m-1.jpg',
+          '/outfits/lotr/the-flameout-f-1.jpg',
+          '/outfits/lotr/the-flameout-m-2.jpg',
+        ],
         act_summary:
           'You’re flirty, shady, and deeply unserious… until someone brings up how your best scenes got cut.',
         act_bullets: [
@@ -397,6 +493,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'She flirted with everyone, gave messy interviews, and won the internet, until production edited her out of the reunion. She’s back with nothing to lose.',
           outfit_advice:
             'All black, all attitude. Leather jacket or corset top, wide-leg trousers or mini skirt, chunky silver rings, and statement boots.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-flameout-f-1.jpg',
+            '/outfits/lotr/the-flameout-f-2.jpg',
+            '/outfits/lotr/the-flameout-f-3.jpg',
+          ],
           act_summary:
             'You’re flirty, shady, and deeply unserious… until someone brings up the edit.',
           act_bullets: [
@@ -409,6 +510,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
           bio: 'He flirted with everyone, gave messy interviews, and won the internet, until production edited him out of the reunion. He’s back with nothing to lose.',
           outfit_advice:
             'All black, all attitude. Fitted black shirt or leather jacket, wide-leg trousers, chunky rings, and boots.',
+          outfit_reference_images: [
+            '/outfits/lotr/the-flameout-m-1.jpg',
+            '/outfits/lotr/the-flameout-m-2.jpg',
+            '/outfits/lotr/the-flameout-m-3.jpg',
+          ],
           act_summary:
             'You’re flirty, shady, and deeply unserious… until someone brings up the edit.',
           act_bullets: [
@@ -435,6 +541,11 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
         bio: 'The Hair & Makeup Artist was the glam guru behind the scenes of Love On The Rocks. Everyone spills their secrets in the makeup chair at 2 AM, and she heard every single one of them. After being ghosted by The Star post-finale, she’s back in the green room with her touch-up kit in tow, and she knows where all the bodies are buried.',
         outfit_advice:
           'Vibrant, artsy, and expressive. Bold patterns, statement knits, playful textures, or vintage-inspired pieces, dopamine dressing with a makeup brush in your clutch.',
+        outfit_reference_images: [
+          '/outfits/lotr/the-glam-artist-1.jpg',
+          '/outfits/lotr/the-glam-artist-2.jpg',
+          '/outfits/lotr/the-glam-artist-3.jpg',
+        ],
         act_summary:
           'You know too much and you’re not above letting it slip. Sarcastic, observant, and always one step ahead.',
         act_bullets: [
@@ -448,7 +559,61 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
   ],
 };
 
-export const ACTIVE_MYSTERIES: CanonicalActiveMystery[] = [LOVE_ON_THE_ROCKS_MYSTERY];
+export const CHRISTMAS_NIGHTMARE_MYSTERY: CanonicalActiveMystery = {
+  id: '61196e53-09c3-427f-8862-30151f2ca75b',
+  slug: 'christmas-nightmare',
+  title: CHRISTMAS_NIGHTMARE_TITLE,
+  theme: CHRISTMAS_NIGHTMARE_THEME,
+  category: 'Holiday Dinner Party',
+  tone: 'Cozy & Spicy',
+  spice_level: 'Spicy',
+  complexity: 'medium',
+  difficultyLabel: 'Medium',
+  min_players: 6,
+  max_players: 6,
+  playersLabel: '6 Suspects (6 Players)',
+  gameTime: '2–3 Hours',
+  shortDesc:
+    'Two sisters and two neighbour brothers grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when The Husband is found dead wrapped in Christmas tree lights.',
+  description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
+  inside_jokes: CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
+  bestFor: 'Christmas Parties, Friendsmas Dinners, Couples Nights & Tight-Knit Friend Groups',
+  occasions: [
+    '🎄 Christmas & Holiday Dinner Parties',
+    '🥂 Friendsmas Gatherings',
+    '❄️ Winter Cabin Weekends',
+    '🍷 Couples & Neighbour Game Nights',
+    '🔥 Messy Friend Groups',
+  ],
+  image_url: CHRISTMAS_MAIN_COVER_URL,
+  coverUrl: CHRISTMAS_MAIN_COVER_URL,
+  moodboardPhotos: CHRISTMAS_CABIN_MOODBOARD,
+  whatIsIncluded: [
+    'Custom Holiday Character Booklets Named After Your Guests',
+    'Intercepted Lock-Screen Texts, Smart-Home Sensor Logs & Audio Clips',
+    'Crime Scene Reports, CCTV Stills & Childhood Polaroid Evidence',
+    'Festive Cocktail Dress Code & Holiday Hosting Guide',
+    'Spoiler-Free Host Mode (Play & Sip Alongside Your Guests)',
+    'Kahoot-Style Live Mobile Lobby, Theory Voting & Final Killer Reveal',
+  ],
+  characters: CHRISTMAS_NIGHTMARE_CHARACTERS.map((c) => ({
+    id: c.legacyId || `xmas-${c.key}`,
+    name: c.name,
+    roleTitle: c.name,
+    gender: c.gender,
+    is_victim: c.is_victim,
+    plot_role: c.plot_role,
+    archetype: c.archetype,
+    is_mandatory: c.is_mandatory,
+    vibeTag: c.profile_data.traits.slice(0, 3).join(' • '),
+    profile_data: c.profile_data,
+  })),
+};
+
+export const ACTIVE_MYSTERIES: CanonicalActiveMystery[] = [
+  LOVE_ON_THE_ROCKS_MYSTERY,
+  CHRISTMAS_NIGHTMARE_MYSTERY,
+];
 
 export function getCanonicalActiveMysteryBySlugOrId(slugOrId: string): CanonicalActiveMystery | null {
   const normalized = (slugOrId || '').trim().toLowerCase();

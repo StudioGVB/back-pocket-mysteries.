@@ -1,11 +1,9 @@
 import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getCharactersByMysteryId, getMysteryById, getPlotBeatsByMysteryId } from '@/services/mysteries';
-import { getRelationshipsByMysteryId } from '@/services/relationships';
-import { MysteryStudioNav } from '@/components/builder/MysteryStudioNav';
-import { Locale } from '@/lib/i18n-config';
-import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 import Link from 'next/link';
+import { getMysteryById } from '@/services/mysteries';
+import { getRelationshipsByMysteryId } from '@/services/relationships';
+import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 
 export const unstable_instant = false;
 
@@ -17,13 +15,13 @@ export default async function MysteryStudioLayout({
   params: Promise<{ id: string; locale: string }>;
 }) {
   const { id, locale } = await params;
-  
+
   const mysteryPromise = getMysteryById(id);
   const relationshipsPromise = getRelationshipsByMysteryId(id);
 
   return (
     <div className="flex flex-col min-h-full bg-[#f8fafc]">
-      <header className="sticky top-0 z-40 bg-slate-900 border-l border-slate-800">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
         <Suspense fallback={<MysteryHeaderSkeleton />}>
           <MysteryHeader
             id={id}
@@ -32,18 +30,11 @@ export default async function MysteryStudioLayout({
             relationshipsPromise={relationshipsPromise}
           />
         </Suspense>
-
-        {/* Bottom Tier: Pinned Navigation */}
-        <div className="w-full">
-          <MysteryStudioNav mysteryId={id} />
-        </div>
       </header>
 
       {/* Main Studio Content */}
-      <main className="flex-grow animate-in fade-in duration-700 px-12 pt-10">
-        <div className="pb-24 max-w-[1600px] mx-auto w-full">
-          {children}
-        </div>
+      <main className="flex-grow animate-in fade-in duration-500 px-8 lg:px-10 pt-8">
+        <div className="pb-24 max-w-[1500px] mx-auto w-full">{children}</div>
       </main>
     </div>
   );
@@ -53,17 +44,14 @@ async function MysteryHeader({
   id,
   locale,
   mysteryPromise,
-  relationshipsPromise
+  relationshipsPromise,
 }: {
   id: string;
   locale: string;
   mysteryPromise: ReturnType<typeof getMysteryById>;
   relationshipsPromise: ReturnType<typeof getRelationshipsByMysteryId>;
 }) {
-  const [mystery, relationships] = await Promise.all([
-    mysteryPromise,
-    relationshipsPromise
-  ]);
+  const [mystery, relationships] = await Promise.all([mysteryPromise, relationshipsPromise]);
 
   if (!mystery) {
     notFound();
@@ -75,11 +63,13 @@ async function MysteryHeader({
 
   // Calculate Progress
   let progress = 0;
-  
   if (mystery.title && mystery.title !== 'Untitled Mystery' && mystery.theme) {
     progress += 20;
   }
-  if (characters.length >= pkgInfo.requiredCharacters && characters.some((c: any) => c.is_victim)) {
+  if (
+    characters.length >= pkgInfo.requiredCharacters &&
+    characters.some((c: any) => c.is_victim)
+  ) {
     progress += 20;
   }
   if (relationships.length > 0) {
@@ -93,49 +83,64 @@ async function MysteryHeader({
   }
 
   return (
-    <div className="px-12 pt-6 pb-10 max-w-[1600px] mx-auto w-full">
-      {/* Top Tier: Identity & Actions */}
-      <div className="flex items-center justify-between gap-8">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">🕵️</div>
-          <div>
-             <div className="flex items-center gap-3 flex-wrap">
-               <h1 className="text-xl font-black text-white uppercase tracking-tighter leading-none">
-                 {mystery.title}
-               </h1>
-               <span className="px-2 py-0.5 bg-brand-pink/20 rounded-md text-[8px] font-black uppercase tracking-widest text-brand-pink border border-brand-pink/20">
-                 {mystery.status}
-               </span>
-               <span className="px-2.5 py-0.5 bg-slate-800 rounded-md text-[9px] font-black uppercase tracking-widest text-slate-300 border border-slate-700">
-                 {pkgInfo.label} ({pkgInfo.rangeLabel})
-               </span>
-               <span
-                 className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
-                   characters.length >= pkgInfo.requiredCharacters
-                     ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                     : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                 }`}
-               >
-                 {characters.length}/{pkgInfo.requiredCharacters} Roles
-               </span>
-             </div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Mystery Builder Studio</p>
+    <div className="px-8 lg:px-10 py-3.5 max-w-[1500px] mx-auto w-full flex flex-wrap items-center justify-between gap-4">
+      {/* Left: Mystery Title & Badges */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <h1 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight leading-none">
+          {mystery.title}
+        </h1>
+        <span
+          className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
+            mystery.status === 'published'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-brand-pink/10 text-brand-pink border-brand-pink/20'
+          }`}
+        >
+          {mystery.status === 'published' ? 'Live' : mystery.status}
+        </span>
+        <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold text-slate-600 border border-slate-200">
+          {pkgInfo.label} ({pkgInfo.rangeLabel})
+        </span>
+        <span
+          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border ${
+            characters.length >= pkgInfo.requiredCharacters
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-amber-50 text-amber-700 border-amber-200'
+          }`}
+        >
+          {characters.length}/{pkgInfo.requiredCharacters} Roles
+        </span>
+      </div>
+
+      {/* Right: Completion & Digital Quick Actions */}
+      <div className="flex items-center gap-4">
+        <div className="hidden sm:flex items-center gap-2.5 bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-xl">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+            Ready
+          </span>
+          <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-brand-pink rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${progress}%` }}
+            />
           </div>
+          <span className="text-[10px] font-black text-brand-pink">{progress}%</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col items-end gap-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Completion</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">{progress}%</span>
-            </div>
-            <div className="w-48 h-2 bg-slate-800 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-brand-pink rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/${locale}/mysteries/${id}/cast`}
+            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-black uppercase tracking-wider transition-all"
+          >
+            Cast View
+          </Link>
+          <Link
+            href={`/${locale}/play/${id}`}
+            target="_blank"
+            className="px-3.5 py-1.5 rounded-lg bg-brand-pink hover:opacity-90 text-white text-[11px] font-black uppercase tracking-wider transition-all shadow-xs"
+          >
+            Live Playroom ↗
+          </Link>
         </div>
       </div>
     </div>
@@ -144,19 +149,12 @@ async function MysteryHeader({
 
 function MysteryHeaderSkeleton() {
   return (
-    <div className="px-12 pt-6 pb-10 max-w-[1600px] mx-auto w-full animate-pulse">
-      <div className="flex items-center justify-between gap-8">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-slate-800 rounded-xl"></div>
-          <div className="space-y-2">
-            <div className="h-5 bg-slate-800 rounded w-48"></div>
-            <div className="h-3 bg-slate-800 rounded w-24"></div>
-          </div>
-        </div>
-        <div className="w-48 h-8 bg-slate-800 rounded-xl"></div>
+    <div className="px-8 lg:px-10 py-3.5 max-w-[1500px] mx-auto w-full flex items-center justify-between gap-4 animate-pulse">
+      <div className="flex items-center gap-3">
+        <div className="h-5 bg-slate-200 rounded w-48" />
+        <div className="h-5 bg-slate-100 rounded w-20" />
       </div>
+      <div className="h-7 bg-slate-100 rounded-lg w-40" />
     </div>
   );
 }
-
-

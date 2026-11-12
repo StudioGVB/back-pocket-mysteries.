@@ -1099,22 +1099,40 @@ export function parseSearchLogClue(title: string, rawText: string): ParsedSearch
     .map(l => l.trim())
     .filter(Boolean);
 
-  let mode: 'search' | 'audit' = /audit|sec cam|file unfound|actioned by/i.test(`${cleanTitle} ${rawText}`)
-    ? 'audit'
-    : 'search';
-  let systemName = mode === 'audit' ? 'SECURITY SERVER AUDIT' : 'EYE SPY INTERCEPT';
-  let deviceOrUrl = mode === 'audit' ? 'sys://server-log/sec-cam-4b' : 'eyespy://device-269/history';
+  const isSmartHomeOrSensorLog = /smart[- ]?home|sensor\s*log|power\s*log|smart[- ]?outlet|chimney\s*sensor/i.test(
+    `${cleanTitle} ${rawText}`
+  );
+  let mode: 'search' | 'audit' =
+    isSmartHomeOrSensorLog || /audit|sec cam|file unfound|actioned by/i.test(`${cleanTitle} ${rawText}`)
+      ? 'audit'
+      : 'search';
+  let systemName = isSmartHomeOrSensorLog
+    ? 'SMART HOME HUB LOG'
+    : mode === 'audit'
+    ? 'SECURITY SERVER AUDIT'
+    : 'EYE SPY INTERCEPT';
+  let deviceOrUrl = isSmartHomeOrSensorLog
+    ? 'homelink://local-hub/sensor-events'
+    : mode === 'audit'
+    ? 'sys://server-log/sec-cam-4b'
+    : 'eyespy://device-269/history';
   let errorBanner: string | undefined;
   const metaRows: { label: string; value: string }[] = [];
   const queries: SearchQueryItem[] = [];
   const noteLines: string[] = [];
 
-  const flaggedRegex = /poison|murder|sedative|spike|sleeping pill|roofie|blood test|dangerous|fatal|kill/i;
+  const flaggedRegex = /poison|murder|sedative|spike|sleeping pill|roofie|blood test|dangerous|fatal|kill|short-circuit|fault|surge/i;
 
   lines.forEach((line, idx) => {
     if (/^context(?:\s*\/\s*participants)?\s*:/i.test(line)) return;
     if (idx === 0 && /^[💻🔍]\s*/.test(line)) {
       systemName = line.replace(/^[💻🔍]\s*/, '').trim().toUpperCase();
+      return;
+    }
+
+    // Handle top uppercase system banner like "SMART HOME SENSOR LOG • HALLWAY STORAGE CLOSET:"
+    if (idx === 0 && /^[A-Z0-9\s•\-_]{8,}:?$/.test(line) && !/^(ERROR|NOTE|FILE|TIME|STATUS):/i.test(line)) {
+      systemName = line.replace(/:$/, '').trim();
       return;
     }
 
@@ -1137,7 +1155,7 @@ export function parseSearchLogClue(title: string, rawText: string): ParsedSearch
       return;
     }
 
-    const kvMatch = line.match(/^(File|Time|Status|Actioned by|Reason|Device|Software|Source)\s*:\s*(.+)$/i);
+    const kvMatch = line.match(/^(File|Time|Timestamp|Zone|Sensor|Location|Status|Actioned by|Reason|Device|Software|Source)\s*:\s*(.+)$/i);
     if (kvMatch) {
       const key = kvMatch[1].toUpperCase();
       const val = kvMatch[2].trim();

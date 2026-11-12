@@ -572,6 +572,36 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
 
   const [generatingAvatars, setGeneratingAvatars] = useState<Set<string>>(new Set());
 
+  // Auto-generate AI standard profile pic for any existing guest missing aiPhotoUrl
+  useEffect(() => {
+    const missing = initialGuests.filter(
+      g => g.id && !(g.avatar_url || '').includes('aiPhotoUrl=')
+    );
+    if (missing.length === 0) return;
+
+    import('@/app/actions/ai-guests').then(({ generateGuestAvatarAction }) => {
+      missing.forEach(guest => {
+        setGeneratingAvatars(prev => new Set(prev).add(guest.id));
+        generateGuestAvatarAction(guest.id, guest)
+          .then(res => {
+            if (res?.publicUrl) {
+              setGuests(prev =>
+                prev.map(g => (g.id === guest.id ? { ...g, avatar_url: res.publicUrl } : g))
+              );
+            }
+          })
+          .catch(err => console.error('Auto-backfill guest avatar failed:', err))
+          .finally(() => {
+            setGeneratingAvatars(prev => {
+              const next = new Set(prev);
+              next.delete(guest.id);
+              return next;
+            });
+          });
+      });
+    });
+  }, [initialGuests]);
+
   const handleSaveGuest = async (newGuest: any) => {
     setError(null);
     const guestPayload = {
@@ -606,22 +636,24 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
         setGuests(prev => [savedGuest, ...prev]);
       }
 
-      // Background generation of avatar
-      setGeneratingAvatars(prev => new Set(prev).add(savedGuest.id));
-      import('@/app/actions/ai-guests').then(({ generateGuestAvatarAction }) => {
-        generateGuestAvatarAction(savedGuest.id, guestPayload)
-          .then((res) => {
-            setGuests(prev => prev.map(g => g.id === savedGuest.id ? { ...g, avatar_url: res.publicUrl } : g));
-          })
-          .catch(err => console.error('Failed to generate guest avatar:', err))
-          .finally(() => {
-            setGeneratingAvatars(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(savedGuest.id);
-              return newSet;
+      // Only trigger client-side fallback if server action didn't already attach aiPhotoUrl
+      if (!(savedGuest.avatar_url || '').includes('aiPhotoUrl=')) {
+        setGeneratingAvatars(prev => new Set(prev).add(savedGuest.id));
+        import('@/app/actions/ai-guests').then(({ generateGuestAvatarAction }) => {
+          generateGuestAvatarAction(savedGuest.id, guestPayload)
+            .then((res) => {
+              setGuests(prev => prev.map(g => g.id === savedGuest.id ? { ...g, avatar_url: res.publicUrl } : g));
+            })
+            .catch(err => console.error('Failed to generate guest avatar:', err))
+            .finally(() => {
+              setGeneratingAvatars(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(savedGuest.id);
+                return newSet;
+              });
             });
-          });
-      });
+        });
+      }
     }
   };
   const handleInviteSent = (invite: PendingInvite) => {

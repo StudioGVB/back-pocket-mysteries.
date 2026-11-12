@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 export interface StoredRoundSubmission {
   id: string;
@@ -24,6 +25,8 @@ export interface StoredGuestReview {
 
 export interface StoredGameSession {
   mysteryId: string;
+  templateMysteryId?: string;
+  hostUserId?: string;
   pin: string;
   currentRound: number;
   activeCharacterIds: string[];
@@ -236,6 +239,8 @@ export function saveStoredGameSession(
   const existing = store.sessions[mysteryId];
   store.sessions[mysteryId] = {
     ...session,
+    templateMysteryId: session.templateMysteryId ?? existing?.templateMysteryId,
+    hostUserId: session.hostUserId ?? existing?.hostUserId ?? session.paidByUserId ?? existing?.paidByUserId,
     isPaid: session.isPaid ?? existing?.isPaid ?? false,
     paidAt: session.paidAt ?? existing?.paidAt,
     paidByUserId: session.paidByUserId ?? existing?.paidByUserId,
@@ -260,6 +265,7 @@ export function markMysteryPaidInStore(
   orderId?: string,
   options?: {
     paidByUserId?: string | null;
+    templateMysteryId?: string | null;
     customerEmail?: string | null;
     customerName?: string | null;
     durationMinutes?: number;
@@ -280,6 +286,8 @@ export function markMysteryPaidInStore(
 
   store.sessions[mysteryId] = {
     mysteryId,
+    templateMysteryId: options?.templateMysteryId || existing?.templateMysteryId,
+    hostUserId: options?.paidByUserId || existing?.hostUserId || existing?.paidByUserId,
     pin: existing?.pin || '482910',
     currentRound: existing?.currentRound ?? 0,
     activeCharacterIds: existing?.activeCharacterIds || [],
@@ -367,6 +375,7 @@ export function getPaidMysteryIdsForUserInStore(
     .filter(s => {
       if (!s || !s.isPaid) return false;
       if (userId && s.paidByUserId && s.paidByUserId === userId) return true;
+      if (userId && s.hostUserId && s.hostUserId === userId) return true;
       if (cleanEmail && s.customerEmail && s.customerEmail.trim().toLowerCase() === cleanEmail) {
         return true;
       }
@@ -389,3 +398,129 @@ export function updateCachedMysteryCharacters(
     writeMysteryCache(cache);
   }
 }
+
+/**
+ * Generates a deterministic, valid UUID for a specific customer's isolated copy of a mystery/character
+ * so that two customers never share the same mysteryId, Game PIN, cast, or round state.
+ */
+export function deriveUserMysteryInstanceId(baseId: string, userId: string): string {
+  const hash = crypto
+    .createHash('sha256')
+    .update(`bpm-tenant-v1:${baseId}:${userId}`)
+    .digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
+/**
+ * Ensures a customer has their own isolated mystery instance in the server store
+ * (stripped of any admin/other-customer guest assignments or session state).
+ */
+export function ensureIsolatedCustomerMysteryInstance(
+  templateMystery: any,
+  templateRelationships: any[],
+  userId: string
+): { mystery: any; relationships: any[]; instanceId: string } {
+  const baseMysteryId = String(templateMystery.template_mystery_id || templateMystery.id);
+  const instanceId = deriveUserMysteryInstanceId(baseMysteryId, userId);
+
+  const existingSnapshot = getCachedMysterySnapshot(instanceId);
+  if (existingSnapshot && existingSnapshot.created_by === userId && Array.isArray(existingSnapshot.characters) && existingSnapshot.characters.length > 0) {
+    const existingRels = getCachedRelationshipsSnapshot(instanceId);
+    return {
+      mystery: existingSnapshot,
+      relationships: existingRels.length > 0 ? existingRels : templateRelationships,
+      instanceId,
+    };
+  }
+
+  // Map template character IDs -> customer-scoped character IDs and strip any pre-cast guest data
+  const charIdMap = new Map<string, string>();
+  const cleanCharacters = (templateMystery.characters || []).map((char: any) => {
+    const scopedCharId = deriveUserMysteryInstanceId(String(char.id), userId);
+    charIdMap.set(String(char.id), scopedCharId);
+
+    const rawPd = { ...((char.profile_data as Record<string, any>) || {}) };
+    delete rawPd.guest_id;
+    delete rawPd.guest_name;
+    delete rawPd.name;
+    delete rawPd.guest_bio;
+    delete rawPd.is_linked;
+    delete rawPd.standard_character_photo_url;
+    delete rawPd.standard_character_photo_hash;
+    delete rawPd.__game_session;
+    rawPd.is_active_in_session = true;
+
+    // Strip any ?aiPhotoUrl= query param from avatar_url that belonged to the admin's cast
+    if (typeof rawPd.avatar_url === 'string' && rawPd.avatar_url.includes('aiPhotoUrl=')) {
+      rawPd.avatar_url = rawPd.avatar_url
+        .replace(/[?&]aiPhotoUrl=[^&]+/g, '')
+        .replace(/\?&/, '?')
+        .replace(/\?$/, '');
+    }
+
+    const mappedMotives = Array.isArray(char.motives)
+      ? char.motives.map((m: any) => ({
+          ...m,
+          id: deriveUserMysteryInstanceId(String(m.id || `${char.id}-motive`), userId),
+          mystery_id: instanceId,
+          character_id: scopedCharId,
+          linked_character_id: m.linked_character_id
+            ? deriveUserMysteryInstanceId(String(m.linked_character_id), userId)
+            : null,
+        }))
+      : [];
+
+    return {
+      ...char,
+      id: scopedCharId,
+      mystery_id: instanceId,
+      profile_data: rawPd,
+      motives: mappedMotives,
+    };
+  });
+
+  const cleanPlotBeats = (templateMystery.plot_beats || []).map((beat: any) => ({
+    ...beat,
+    id: deriveUserMysteryInstanceId(String(beat.id || `beat-${beat.beat_number}`), userId),
+    mystery_id: instanceId,
+    characters_involved: Array.isArray(beat.characters_involved)
+      ? beat.characters_involved.map((cid: string) => charIdMap.get(String(cid)) || cid)
+      : beat.characters_involved,
+  }));
+
+  const cleanClues = (templateMystery.clues || []).map((clue: any) => ({
+    ...clue,
+    id: deriveUserMysteryInstanceId(String(clue.id || clue.title), userId),
+    mystery_id: instanceId,
+  }));
+
+  const cleanRelationships = (templateRelationships || []).map((rel: any) => ({
+    ...rel,
+    id: deriveUserMysteryInstanceId(String(rel.id || `${rel.character_a_id}-${rel.character_b_id}`), userId),
+    mystery_id: instanceId,
+    character_a_id: charIdMap.get(String(rel.character_a_id)) || rel.character_a_id,
+    character_b_id: charIdMap.get(String(rel.character_b_id)) || rel.character_b_id,
+  }));
+
+  const isolatedMystery = {
+    ...templateMystery,
+    id: instanceId,
+    template_mystery_id: baseMysteryId,
+    created_by: userId,
+    status: 'draft',
+    current_round: 0,
+    characters: cleanCharacters,
+    plot_beats: cleanPlotBeats,
+    clues: cleanClues,
+  };
+
+  cacheMysterySnapshot(instanceId, isolatedMystery);
+  cacheRelationshipsSnapshot(instanceId, cleanRelationships);
+
+  return {
+    mystery: isolatedMystery,
+    relationships: cleanRelationships,
+    instanceId,
+  };
+}
+

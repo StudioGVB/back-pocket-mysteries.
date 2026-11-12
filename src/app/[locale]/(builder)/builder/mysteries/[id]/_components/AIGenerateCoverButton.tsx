@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { generateMysteryCoverAction } from '../../actions';
-import Image from 'next/image';
+import { parseMysteryImageField } from '@/utils/moodboard';
 
 export function AIGenerateCoverButton({ mysteryId, currentImageUrl }: { mysteryId: string, currentImageUrl?: string | null }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const resolvedCoverUrl = parseMysteryImageField(currentImageUrl).coverUrl || currentImageUrl;
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -48,13 +49,13 @@ export function AIGenerateCoverButton({ mysteryId, currentImageUrl }: { mysteryI
       {error && <div className="text-red-500 text-xs font-bold bg-red-50 p-2 rounded-lg">{error}</div>}
 
       <div className="w-full aspect-[21/9] bg-slate-100 rounded-2xl border-2 border-slate-200 overflow-hidden relative group">
-        {currentImageUrl ? (
+        {resolvedCoverUrl ? (
           <div className="absolute inset-0">
-            {/* Using standard img to support base64 natively without next/image remote patterns complexity */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src={currentImageUrl} 
+              src={resolvedCoverUrl} 
               alt="Mystery Cover" 
-              className="w-full h-full object-cover grayscale-[30%] sepia-[20%] contrast-125 brightness-90 group-hover:grayscale-0 transition-all duration-700"
+              className="w-full h-full object-cover transition-all duration-700"
             />
             <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-2xl"></div>
           </div>

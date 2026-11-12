@@ -464,7 +464,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
   // ── ROUND 1 (6 Clues: 4 Main Beat 1-2 Clues + 2 Double-Duty Step-1 Fake Clues, Shuffled) ──
   {
     legacyId: '82260be6-6171-4572-886d-33144a966086',
-    title: 'Wifey 🎄❤️',
+    title: '❤️',
     clue_type: 'secret',
     implication_type: 'direct',
     evidence_status: 'real',
@@ -474,7 +474,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R1-C1] REAL / CANON (Beat 1) - Exposes the secret affair between {{The Husband}} and {{The Mistress}}, and shows {{The Sister-in-Law}} was suspicious.',
     description:
-      'Wifey 🎄❤️ (7:32 PM): Sneak into the coat closet before dinner. I can\'t keep pretending around my husband and your wife.\n{{The Husband}} (7:33 PM): Keep your voice down. Her sister has been staring at us all night like she knows.\nWifey 🎄❤️ (7:34 PM): Relax, she\'s literally my current bestie. She\'d never suspect me.',
+      '❤️ (7:32 PM): Sneak into the coat closet before dinner. I can\'t keep smiling across the table like we\'re all just one big happy street.\nMe (7:33 PM): Keep your voice down. Someone\'s been staring at us all night like they know.\n❤️ (7:34 PM): Relax, she\'s my best friend. She\'d never suspect me.',
     generation_prompt: 'A glowing smartphone resting beside a crystal glass of mulled wine and pine branches on a dark wooden table. (No text).',
   },
   {
@@ -501,10 +501,10 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     round_number: 1,
     is_essential: true,
     beatNumber: 1,
-    format: 'handwritten_note',
-    internal_notes: '[FORMAT:handwritten_note] [CODE:R1-C3] REAL / CANON (Beat 1) - Someone stood outside the coat closet at 7:40 PM and caught {{The Husband}} and {{The Mistress}} together, dropping a family snowflake pin.',
+    format: 'physical_prop',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Someone stood outside the coat closet at 7:40 PM and caught {{The Husband}} and {{The Mistress}} together, dropping a family snowflake pin.',
     description:
-      'Found in the hallway carpet just outside the slatted coat closet door (7:40 PM):\n• Inside the closet: a bent gold earring back and lipstick on {{The Husband}}\'s spare collar.\n• Outside the door: a vintage silver snowflake hairpin passed down to the two sisters from their mother, dropped by whoever stood watching through the slats.',
+      'Found in the hallway carpet just outside the slatted coat closet door at 7:40 PM: a vintage silver snowflake hairpin with a broken clasp, passed down to the two sisters from their mother. Inside the closet, investigators also noted lipstick on {{The Husband}}\'s spare collar and a bent gold earring back.',
     generation_prompt: 'A vintage silver snowflake hairpin lying on a dark patterned hallway runner beside a partially open wooden closet door. (No text).',
   },
   {
@@ -516,15 +516,15 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     round_number: 1,
     is_essential: true,
     beatNumber: 2,
-    format: 'handwritten_note',
-    internal_notes: '[FORMAT:handwritten_note] [CODE:R1-C4] REAL / CANON (Beat 2) - Establishes the 25-foot heavy-duty Christmas lights went missing from the hallway storage closet before 7:55 PM.',
+    format: 'physical_prop',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C4] REAL / CANON (Beat 2) - Establishes the 25-foot heavy-duty Christmas lights went missing from the hallway storage closet before 7:55 PM.',
     description:
-      'Item: Empty cardboard storage box for a 25-foot strand of heavy-duty braided vintage Christmas tree lights, found kicked behind the hallway storage closet at 7:55 PM.\nNote: The box was confirmed full when the guests arrived at 7:00 PM.',
+      'An empty cardboard storage box for a 25-foot strand of heavy-duty braided vintage Christmas tree lights, found kicked behind the hallway storage closet at 7:55 PM. The box was confirmed full when the guests arrived at 7:00 PM.',
     generation_prompt: 'An open vintage holiday storage box with packing tissue in a shadowy hallway. (No text).',
   },
   {
     legacyId: '57288d71-e579-48ed-8e09-40251d2b67b7',
-    title: 'Work Ops 💼🔒',
+    title: '🤫💼',
     clue_type: 'secret',
     implication_type: 'red_herring',
     evidence_status: 'fake',
@@ -534,7 +534,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R1-C5] Fake Arc Step 1 ({{The Mistress}} + {{The Bestie}}) - Exposes that co-workers {{The Mistress}} and {{The Bestie}} were both threatened by {{The Husband}} and plotted to wipe his phone.',
     description:
-      'Co-Worker A (7:35 PM): He just told me in the kitchen he\'s NEVER leaving his wife, and if I make a scene tonight, he\'s telling my husband about us AND reporting the missing money from our work account.\nCo-Worker B (7:36 PM): Are you kidding?! He just cornered me too. Said if I don\'t end my secret fling with his sister-in-law tonight, he\'s telling my brother everything.\nCo-Worker A (7:37 PM): All his proof is on his phone. If we don\'t get his phone unlocked and wiped before dessert, we\'re both ruined.',
+      '🤫💼 (7:35 PM): He just cornered me in the kitchen. Said he\'s never leaving her, and if I make a scene tonight he\'s telling my husband AND reporting the missing money from our work account.\nMe (7:36 PM): Are you kidding?! He just threatened me too. Said if I don\'t end my little secret tonight, he\'s telling my brother everything.\n🤫💼 (7:37 PM): Everything he has on us is on his phone. Help me get it unlocked before dessert or we\'re both done.',
     generation_prompt: 'Two smartphones lying side by side on a marble bar counter next to cocktail napkins. (No text).',
   },
   {
@@ -563,10 +563,10 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     round_number: 2,
     is_essential: false,
     beatNumber: null,
-    format: 'handwritten_note',
-    internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C1] Fake Arc Step 2 ({{The Wife}} + {{The Co-Worker}}) - Shows why the study breaker was flipped and why work gloves were taken.',
+    format: 'physical_prop',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R2-C1] Fake Arc Step 2 ({{The Wife}} + {{The Co-Worker}}) - Shows why the study breaker was flipped and why work gloves were taken.',
     description:
-      'Upstairs Study Inspection (8:06 PM):\n"The upstairs study circuit breaker was flipped off at 8:03 PM so the safe alarm wouldn\'t trigger, and the wall safe was pried open with a brass letter opener. Found on the rug: one heavy-duty work glove from the hallway closet and a drop of blood from a scratched hand."',
+      'The upstairs study circuit breaker was flipped off at 8:03 PM so the safe alarm wouldn\'t trigger, and the wall safe was pried open with a brass letter opener at 8:06 PM. Found on the study rug: one heavy-duty work glove from the hallway closet and a drop of blood from a scratched hand.',
     generation_prompt: 'An open wall safe behind a framed painting in a dark wood-paneled study, with a heavy work glove on the desk. (No text).',
   },
   {
@@ -581,7 +581,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'audio',
     internal_notes: '[FORMAT:audio] [CODE:R2-C2] REAL / CANON (Beat 3) - Captures the explosive marital fight between {{The Husband}} and {{The Wife}}, overheard outside the door at 8:12 PM.',
     description:
-      'Smart-Speaker Voice Log (8:12 PM • Upstairs Master Hallway):\n{{The Wife}}: "Why are you doing this to me?! Everyone downstairs knows our marriage is a lie! Just let me go!"\n{{The Husband}}: "You\'re never leaving me. You\'ll fix your makeup, come downstairs, and play the grateful wife, or I\'ll ruin your whole family."\n[Sound of footsteps retreating from the door and a hushed voice in the hallway: "He\'s never going to let her be happy..."]',
+      'Recording Duration: 19.2 Seconds (8:12 PM • Upstairs Master Hallway):\n{{The Wife}}: "Why are you doing this to me?! Everyone downstairs knows our marriage is a lie! Just let me go!"\n{{The Husband}}: "You\'re never leaving me. You\'ll fix your makeup, come downstairs, and play the grateful wife, or I\'ll ruin your whole family."\n[Sound of footsteps retreating from the door and a hushed voice in the hallway: "He\'s never going to let her be happy..."]',
     generation_prompt: 'A dimly lit upstairs hallway with warm light spilling from underneath a closed wooden door and festive garland on the banister. (No text).',
   },
   {
@@ -601,7 +601,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111106',
-    title: 'Spiked Eggnog & Sleep-Drop Search (8:08 PM)',
+    title: 'Prescription: Zolpidem Tartrate Drops',
     clue_type: 'physical',
     implication_type: 'red_herring',
     evidence_status: 'fake',
@@ -609,14 +609,14 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'medical_rx',
-    internal_notes: '[FORMAT:medical_rx] [CODE:R2-C4] Fake Arc Step 2 ({{The Mistress}} + {{The Bestie}}) - Shows the co-workers spiked {{The Husband}}\'s eggnog with sleeping drops to unlock his phone.',
+    internal_notes: '[FORMAT:medical_rx] [CODE:R2-C4] Fake Arc Step 2 ({{The Mistress}} + {{The Bestie}}) - Shows the co-workers spiked {{The Husband}}\'s eggnog with fast-acting sleeping drops to unlock his phone.',
     description:
-      'Recovered from Kitchen Bar Trash (8:08 PM):\n• Empty glass bottle of fast-acting liquid melatonin/valerian sleep drops.\n• Phone Search History (8:01 PM): "How many drops knock someone out for 20 minutes in spiced rum eggnog"\n• Note: The crystal nutmeg cup carried into the living room for {{The Husband}} at 8:10 PM contained traces of the sedative.',
-    generation_prompt: 'A crystal glass of spiced eggnog with a cinnamon stick beside a small amber glass dropper bottle on a dark bar tray. (No text).',
+      'Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)\nPrescribed to: Label Torn (Corporate Health Plan #04)\nIssue date: 2 Weeks Ago\nRef: RX-409-12\nWARNING: Causes rapid 20-minute sleep onset when mixed with spiced alcohol. Non-lethal at standard dropper dose.\nRecovered empty from the kitchen bar trash at 8:08 PM beside the nutmeg grater and the crystal eggnog cup carried into the living room for {{The Husband}}.',
+    generation_prompt: 'A crystal glass of spiced eggnog with a cinnamon stick beside a small amber glass prescription dropper bottle on a dark bar tray. (No text).',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111103',
-    title: '{{The Sister-in-Law}} 🤫🎄',
+    title: '❤️‍🔥',
     clue_type: 'secret',
     implication_type: 'direct',
     evidence_status: 'real',
@@ -626,7 +626,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R2-C5] REAL / CANON (Beat 4) - Proves {{The Sister-in-Law}} left {{The Bestie}} alone in the pantry from 8:15 to 8:25 PM and asked him to lie for her alibi.',
     description:
-      '{{The Bestie}} (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n{{The Sister-in-Law}} (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\n{{The Bestie}} (8:27 PM): Of course I\'ll cover for you, if {{The Husband}} or my brother found out about our fling we\'d be dead. Wait, why are your hands shaking?',
+      'Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\nMe (8:27 PM): Of course I\'ll cover for you, if my brother found out about us we\'d be dead. Wait, why are your hands shaking?',
     generation_prompt: 'Two champagne flutes left behind on a marble pantry counter beside holiday ribbon and pine cones. (No text).',
   },
   {
@@ -655,10 +655,10 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     round_number: 3,
     is_essential: true,
     beatNumber: 5,
-    format: 'handwritten_note',
-    internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19 PM (not the sedative drops or work gloves), and matches the matching sister snowflake pin.',
+    format: 'document',
+    internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19 PM (not the sedative drops or work gloves), and matches the matching sister snowflake pin.',
     description:
-      'LIVING ROOM CRIME SCENE REPORT (8:30 PM):\n• Cause: {{The Husband}} was found dead beside the tree, tightly wrapped in the missing 25-foot strand of heavy-duty Christmas lights plugged into Wall Outlet #2 at 8:19 PM.\n• Trace Evidence: The sedative in his eggnog was non-lethal, and there is zero fireplace soot or work-glove fiber on the cord. Tangled in the knotted light wire is the matching second half of the sisters\' heirloom snowflake clasp.',
+      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: 8:30 PM • LIVING ROOM\n• Cause of Death: {{The Husband}} was found beside the Christmas tree, tightly wrapped in the missing 25-foot strand of heavy-duty vintage Christmas lights plugged into Wall Outlet #2 at 8:19 PM.\n• Toxicology: The Zolpidem sedative in his spiced eggnog only made him groggy and was completely non-lethal.\n• Trace Evidence: Zero fireplace soot or work-glove fibers on the light cord. Snagged inside the knotted wire is the broken half of the sisters\' silver snowflake hairpin clasp.',
     generation_prompt: 'Tangled glowing red and green vintage Christmas tree lights coiled across a dark hardwood floor. (No text).',
   },
   {
@@ -673,7 +673,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'search_log',
     internal_notes: '[FORMAT:search_log] [CODE:R3-C2] Fake Arc Step 3 & Fatal Hole ({{The Wife}} + {{The Co-Worker}}) - Proves {{The Wife}} and {{The Co-Worker}} were locked upstairs burning documents at 8:19 PM when the living room murder happened downstairs.',
     description:
-      'UPSTAIRS STUDY CHIMNEY SENSOR & ASH RECOVERY:\n• Timestamp: 8:18 PM - 8:21 PM (Simultaneous with the downstairs living room power surge at 8:19 PM).\n• Finding: Upstairs study door was latched from the inside while {{The Wife}} and {{The Co-Worker}} burned the stolen company audit spreadsheets and marriage prenup clause in the study fireplace.',
+      'UPSTAIRS STUDY CHIMNEY SENSOR & ASH RECOVERY:\n• Timestamp: 8:18 PM - 8:21 PM (Simultaneous with the downstairs living room power surge at 8:19 PM).\n• Sensor: Upstairs study door latched from the inside while fireplace damper registers high heat.\n• Ash Recovery: Half-burnt pages of the company audit folder and marriage prenup clause.',
     generation_prompt: 'Glowing embers and half-burnt financial papers inside a brick study fireplace. (No text).',
   },
   {
@@ -688,7 +688,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'handwritten_note',
     internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Reveals {{The Sister-in-Law}} didn\'t act to protect her fling with {{The Bestie}}, but chose for her sister ({{The Wife}}) to finally be happy and free.',
     description:
-      'Found tucked inside {{The Sister-in-Law}}\'s clutch beside a receipt for a one-way holiday flight booked in {{The Wife}}\'s name:\nA childhood Polaroid of the two sisters outside their old house, with a note written on the back at 8:15 PM:\n"Let everyone think I was just hiding my fling in the pantry. After seeing what he did with my best friend and hearing him tell you that you\'d never escape him, I made my choice. This Christmas, you are finally going to be happy and free, sis."',
+      'Found tucked inside a velvet clutch near the pantry beside a receipt for a one-way holiday flight:\nA childhood Polaroid of the two sisters outside their old house, with a note written on the back at 8:15 PM:\n"Let everyone think I was just hiding my fling in the pantry. After seeing what he did with my best friend and hearing him tell you that you\'d never escape him, I made my choice. This Christmas, you are finally going to be happy and free, sis."',
     generation_prompt: 'A vintage instant photograph of two young sisters in winter coats resting beside a holiday airline ticket envelope on velvet fabric. (No text).',
   },
   {
@@ -704,7 +704,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/clues/doa/cctv-r2-hooded-table.jpg',
     internal_notes: '[FORMAT:cctv] [CODE:R3-C4] Fake Arc Step 3 & Fatal Hole ({{The Mistress}} + {{The Bestie}}) - Proves {{The Husband}} was still alive at 8:16 PM when {{The Mistress}} took his phone, and she was back at the dining table by 8:18 PM.',
     description:
-      'CORRIDOR CAMERA STILL (8:16 PM - 3 Minutes Before the 8:19 PM Power Surge):\n• 8:16 PM: {{The Mistress}} slips out of the living room holding {{The Husband}}\'s unlocked phone to delete his files while {{The Husband}} is seen groggy but alive on the sofa from the spiked eggnog.\n• 8:18 PM: Dining room witnesses confirm {{The Mistress}} was seated at the dinner table pouring wine when the living room lights went out at 8:19 PM.',
+      'Header: CAM 02 • LIVING ROOM CORRIDOR\nTimestamp: 8:16 PM (3 MINS BEFORE SURGE)\n• 8:16 PM: {{The Mistress}} slips out of the living room holding {{The Husband}}\'s unlocked phone while {{The Husband}} is seen groggy from the eggnog but still alive on the sofa.\n• 8:18 PM: Dining room witnesses confirm {{The Mistress}} was back at the dinner table pouring wine when the living room lights shorted out at 8:19 PM.',
     generation_prompt: 'Grainy surveillance angle of a woman in an evening dress slipping out of a doorway holding a glowing smartphone. (No text).',
   },
 ];

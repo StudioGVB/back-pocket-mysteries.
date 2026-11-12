@@ -4,10 +4,29 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import crypto from 'crypto';
-import { getCharactersByMysteryId, getMysteryById, getPlotBeatsByMysteryId } from '@/services/mysteries';
+import { getCharactersByMysteryId, getMysteryById, getPlotBeatsByMysteryId, replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { logAiUsage } from '@/utils/ai-logger';
 import { getPackageInfoForMaxPlayers } from '@/utils/localization';
+import {
+  getCharacterRoleTitle,
+  ensureRoleTitleHasThe,
+  hydrateTextWithCharacters,
+  stripEmDashes,
+} from '@/utils/hydration';
+import {
+  CHRISTMAS_NIGHTMARE_BEATS,
+  CHRISTMAS_NIGHTMARE_CHARACTERS,
+  CHRISTMAS_NIGHTMARE_CLUES,
+  CHRISTMAS_NIGHTMARE_DESCRIPTION,
+  CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
+  CHRISTMAS_NIGHTMARE_RELATIONSHIPS,
+  CHRISTMAS_NIGHTMARE_SUBPLOT,
+  CHRISTMAS_NIGHTMARE_THEME,
+  CHRISTMAS_NIGHTMARE_TITLE,
+  CHRISTMAS_WIFE_MOTIVE,
+  isChristmasNightmareMystery,
+} from '@/data/christmas-nightmare';
 
 // Helper to insert a character and throw if it fails
 async function insertCharacter(supabase: any, payload: any): Promise<{ id: string }> {
@@ -67,16 +86,130 @@ export async function createMysteryAction(formData: FormData) {
   const themeLower = theme.toLowerCase();
   const isCircus = titleLower.includes('circus') || titleLower.includes('ringmaster') || themeLower.includes('circus') || themeLower.includes('carnival');
   const isDOA = titleLower.includes('love on the rocks') || titleLower.includes('lotr') || titleLower.includes('dead on arrival') || titleLower.includes('doa') || themeLower.includes('reality tv') || themeLower.includes('reality show') || themeLower.includes('dead on arrival') || themeLower.includes('doa');
+  const isChristmas = isChristmasNightmareMystery(title, theme);
 
-
-  // Update player count for 9-character DOA mystery
+  // Update player count for 9-character DOA mystery or 6-character Christmas Nightmare
   if (isDOA) {
     await supabase.from('mysteries').update({ min_players: 9, max_players: 9 }).eq('id', mystery.id);
+  } else if (isChristmas) {
+    await supabase.from('mysteries').update({ min_players: 6, max_players: 6 }).eq('id', mystery.id);
   }
 
   // NOTE: No try/catch here, errors must surface so we can debug them
   if (true) {  // scope block
-    if (isDOA) {
+    if (isChristmas) {
+      console.log('Seeding Christmas Nightmare mystery for ID:', mystery.id);
+
+      await supabase.from('mysteries').update({
+        title: CHRISTMAS_NIGHTMARE_TITLE,
+        theme: CHRISTMAS_NIGHTMARE_THEME,
+        description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
+        inside_jokes: CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
+        min_players: 6,
+        max_players: 6,
+      }).eq('id', mystery.id);
+
+      const insertedCharsByKey: Record<string, { id: string }> = {};
+      for (const spec of CHRISTMAS_NIGHTMARE_CHARACTERS) {
+        const row = await insertCharacter(supabase, {
+          mystery_id: mystery.id,
+          name: spec.name,
+          gender: spec.gender,
+          is_victim: spec.is_victim,
+          plot_role: spec.plot_role,
+          archetype: spec.archetype,
+          is_mandatory: spec.is_mandatory,
+          profile_data: spec.profile_data,
+        });
+        insertedCharsByKey[spec.key] = row;
+      }
+
+      const husbandId = insertedCharsByKey.husband.id;
+      const motivesPayload = CHRISTMAS_NIGHTMARE_CHARACTERS
+        .filter((spec) => !spec.is_victim)
+        .map((spec) => {
+          const m = spec.key === 'wife' ? CHRISTMAS_WIFE_MOTIVE : spec.motive!;
+          return {
+            mystery_id: mystery.id,
+            character_id: insertedCharsByKey[spec.key].id,
+            linked_character_id: husbandId,
+            motive_type: m.motive_type,
+            strength: m.strength,
+            notes: m.notes,
+          };
+        });
+      const { error: xmasMotErr } = await supabase.from('motives').insert(motivesPayload);
+      if (xmasMotErr) throw new Error(`Christmas motives failed: ${xmasMotErr.message}`);
+
+      const xmasRels = dedupeRelationships(
+        CHRISTMAS_NIGHTMARE_RELATIONSHIPS.map((rel) => {
+          const [a, b] = [insertedCharsByKey[rel.charAKey].id, insertedCharsByKey[rel.charBKey].id].sort();
+          return {
+            mystery_id: mystery.id,
+            character_a_id: a,
+            character_b_id: b,
+            know_each_other: true,
+            dynamics: rel.dynamics,
+            notes: rel.notes,
+          };
+        })
+      );
+      const { error: xmasRelErr } = await supabase.from('relationships').insert(xmasRels);
+      if (xmasRelErr) throw new Error(`Christmas relationships failed: ${xmasRelErr.message}`);
+
+      const beatIdByNumber: Record<number, string> = {};
+      for (const bSpec of CHRISTMAS_NIGHTMARE_BEATS) {
+        const { data: bData, error: bErr } = await supabase
+          .from('plot_beats')
+          .insert({
+            mystery_id: mystery.id,
+            beat_number: bSpec.beat_number,
+            sort_order: bSpec.sort_order,
+            event_title: bSpec.event_title,
+            description: bSpec.description,
+            beat_type: bSpec.beat_type,
+            timeline_phase: bSpec.timeline_phase,
+            characters_involved: bSpec.involvedKeys.map((k) => insertedCharsByKey[k].id),
+            is_required: true,
+          })
+          .select()
+          .single();
+        if (bErr || !bData) throw new Error(`Christmas beat insert failed: ${bErr?.message}`);
+        beatIdByNumber[bSpec.beat_number] = bData.id;
+      }
+
+      const cluesPayload = CHRISTMAS_NIGHTMARE_CLUES.map((cSpec) => ({
+        mystery_id: mystery.id,
+        title: cSpec.title,
+        clue_type: cSpec.clue_type,
+        implication_type: cSpec.implication_type,
+        evidence_status: cSpec.evidence_status,
+        round_number: cSpec.round_number,
+        is_essential: cSpec.is_essential,
+        linked_plot_beat_id: cSpec.beatNumber ? beatIdByNumber[cSpec.beatNumber] : null,
+        internal_notes: cSpec.internal_notes,
+        description: cSpec.description,
+        generation_prompt: cSpec.generation_prompt,
+      }));
+      const { error: xmasClueErr } = await supabase.from('clues').insert(cluesPayload);
+      if (xmasClueErr) throw new Error(`Christmas clues failed: ${xmasClueErr.message}`);
+
+      const { data: xmasSub, error: xmasSubErr } = await supabase
+        .from('subplots')
+        .insert({
+          mystery_id: mystery.id,
+          title: CHRISTMAS_NIGHTMARE_SUBPLOT.title,
+          theme: CHRISTMAS_NIGHTMARE_SUBPLOT.theme,
+          description: CHRISTMAS_NIGHTMARE_SUBPLOT.description,
+          primary_character_id: insertedCharsByKey[CHRISTMAS_NIGHTMARE_SUBPLOT.primaryKey].id,
+          secondary_character_id: insertedCharsByKey[CHRISTMAS_NIGHTMARE_SUBPLOT.secondaryKey].id,
+        })
+        .select()
+        .single();
+      if (xmasSubErr || !xmasSub) throw new Error(`Christmas subplot failed: ${xmasSubErr?.message}`);
+
+      console.log('✅ Seeded Christmas Nightmare mystery successfully!');
+    } else if (isDOA) {
       console.log('Seeding Love On The Rocks mystery for ID:', mystery.id);
 
       await supabase.from('mysteries').update({
@@ -353,7 +486,7 @@ export async function createMysteryAction(formData: FormData) {
         // Round 1 (8 Clues)
         {
           mystery_id: mystery.id,
-          title: "Anonymous Text Thread",
+          title: "🔒 Unknown Number",
           clue_type: 'secret',
           implication_type: 'red_herring',
           evidence_status: 'fake',
@@ -366,7 +499,7 @@ export async function createMysteryAction(formData: FormData) {
         },
         {
           mystery_id: mystery.id,
-          title: "Direct Messages",
+          title: "👑 #WrongGirlWon",
           clue_type: 'secret',
           implication_type: 'red_herring',
           evidence_status: 'fake',
@@ -392,7 +525,7 @@ export async function createMysteryAction(formData: FormData) {
         },
         {
           mystery_id: mystery.id,
-          title: "Direct Messages",
+          title: "{{Dane}} 💔",
           clue_type: 'secret',
           implication_type: 'direct',
           evidence_status: 'real',
@@ -405,7 +538,7 @@ export async function createMysteryAction(formData: FormData) {
         },
         {
           mystery_id: mystery.id,
-          title: "Direct Messages",
+          title: "Late Night 🥂",
           clue_type: 'secret',
           implication_type: 'red_herring',
           evidence_status: 'fake',
@@ -1187,26 +1320,31 @@ export async function createMysteryAction(formData: FormData) {
       const responseSchema: Schema = {
         type: SchemaType.OBJECT,
         properties: {
-          description: { type: SchemaType.STRING },
+          description: {
+            type: SchemaType.STRING,
+            description: "A gripping 3-4 sentence mystery synopsis. CRITICAL: NEVER use or invent any human first or last names! Refer to the victim and characters strictly by their Role Title starting with 'The ' (e.g. 'The Tycoon', 'The Artist'). Do not spoil who the killer is."
+          },
           characters: {
             type: SchemaType.ARRAY,
-            description: `Exactly ${targetCharCount} unique characters. Exactly 1 victim, exactly 1 killer, exactly 1 accomplice, exactly ${innocentCount} suspects.`,
+            description: `Exactly ${targetCharCount} unique characters. Exactly 1 victim, exactly 1 killer, exactly 1 accomplice, exactly ${innocentCount} suspects. CRITICAL: Characters are defined ONLY by their Role Title starting with 'The ' (e.g. 'The Tycoon', 'The Estranged Sister') - NEVER invent human first or last names.`,
             items: {
               type: SchemaType.OBJECT,
               properties: {
-                name: { type: SchemaType.STRING },
-                title: { type: SchemaType.STRING },
+                title: {
+                  type: SchemaType.STRING,
+                  description: "Iconic Role Title starting with 'The ' (e.g. 'The Tycoon', 'The Estranged Sister', 'The Caretaker'). NEVER include a human first or last name."
+                },
                 prefix: { type: SchemaType.STRING, description: "Honorific (e.g. Captain, Madame, Doctor, Lady). Return empty string if not applicable." },
                 gender: { type: SchemaType.STRING, enum: ['male', 'female', 'adaptable'], format: 'enum' },
                 plot_role: { type: SchemaType.STRING, enum: ['victim', 'killer', 'assistant', 'innocent'], format: 'enum' },
                 archetype: { type: SchemaType.STRING, enum: ['victim', 'villain', 'hero', 'witness', 'sidekick', 'investigator'], format: 'enum' },
-                bio: { type: SchemaType.STRING },
+                bio: { type: SchemaType.STRING, description: "Character backstory using ONLY bracketed Role Title tokens (e.g. {{The Tycoon}}) or 'you'. NEVER use human names." },
                 outfit_advice: { type: SchemaType.STRING },
                 act_summary: { type: SchemaType.STRING },
                 act_bullets: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
                 traits: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
               },
-              required: ['name', 'title', 'prefix', 'gender', 'plot_role', 'archetype', 'bio', 'outfit_advice', 'act_summary', 'act_bullets', 'traits']
+              required: ['title', 'prefix', 'gender', 'plot_role', 'archetype', 'bio', 'outfit_advice', 'act_summary', 'act_bullets', 'traits']
             }
           },
           relationships: {
@@ -1218,7 +1356,7 @@ export async function createMysteryAction(formData: FormData) {
                 char1_index: { type: SchemaType.INTEGER, description: `Index of the first character in the characters array (0 to ${maxCharIndex})` },
                 char2_index: { type: SchemaType.INTEGER, description: `Index of the second character in the characters array (0 to ${maxCharIndex})` },
                 dynamics: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-                notes: { type: SchemaType.STRING }
+                notes: { type: SchemaType.STRING, description: "Relationship notes referring to characters strictly by their bracketed Role Title tokens (e.g. {{The Tycoon}}). NEVER use human names." }
               },
               required: ['char1_index', 'char2_index', 'dynamics', 'notes']
             }
@@ -1232,7 +1370,7 @@ export async function createMysteryAction(formData: FormData) {
                 char_index: { type: SchemaType.INTEGER, description: `Index of the suspect in the characters array (0 to ${maxCharIndex}, cannot be the victim index)` },
                 motive_type: { type: SchemaType.STRING, enum: ['revenge', 'greed', 'love', 'fear', 'justice', 'power'], format: 'enum' },
                 strength: { type: SchemaType.STRING, enum: ['low', 'moderate', 'high', 'critical'], format: 'enum' },
-                notes: { type: SchemaType.STRING }
+                notes: { type: SchemaType.STRING, description: "Motive notes referring to characters strictly by their bracketed Role Title tokens (e.g. {{The Tycoon}}). NEVER use human names." }
               },
               required: ['char_index', 'motive_type', 'strength', 'notes']
             }
@@ -1245,7 +1383,7 @@ export async function createMysteryAction(formData: FormData) {
               properties: {
                 beat_number: { type: SchemaType.INTEGER, description: "1 to 4" },
                 event_title: { type: SchemaType.STRING },
-                description: { type: SchemaType.STRING }
+                description: { type: SchemaType.STRING, description: "Narrative beat referring to characters strictly by their bracketed Role Title tokens (e.g. {{The Tycoon}}). NEVER use human names." }
               },
               required: ['beat_number', 'event_title', 'description']
             }
@@ -1256,12 +1394,15 @@ export async function createMysteryAction(formData: FormData) {
             items: {
               type: SchemaType.OBJECT,
               properties: {
-                title: { type: SchemaType.STRING },
+                title: {
+                  type: SchemaType.STRING,
+                  description: "Clue title. CRITICAL RULE FOR TEXT/CHAT CLUES: If the clue is a text chain, SMS, or chat message thread, the title MUST be a realistic phone contact name (e.g. '{{The Doctor}}'), an emoji/codename (e.g. 'Wifey 🎄❤️', '🔒 Burner'), or a group chat name (e.g. 'Work Ops 💼', 'The Inner Circle'). NEVER call a text chain 'Intercepted Texts...', 'Text Thread...', or 'Direct Messages'."
+                },
                 clue_type: { type: SchemaType.STRING, enum: ['physical', 'testimony', 'background', 'secret'], format: 'enum' },
                 implication_type: { type: SchemaType.STRING, enum: ['direct', 'circumstantial', 'red_herring'], format: 'enum' },
                 round_number: { type: SchemaType.INTEGER, description: "Round of the game: 1, 2, or 3" },
                 is_essential: { type: SchemaType.BOOLEAN },
-                description: { type: SchemaType.STRING },
+                description: { type: SchemaType.STRING, description: "Clue description referring to characters strictly by their bracketed Role Title tokens (e.g. {{The Tycoon}}). NEVER use human names." },
                 beat_index: { type: SchemaType.INTEGER, description: "Index of the linked plot beat in the plot_beats array (0 to 3)" }
               },
               required: ['title', 'clue_type', 'implication_type', 'round_number', 'is_essential', 'description', 'beat_index']
@@ -1272,7 +1413,7 @@ export async function createMysteryAction(formData: FormData) {
             description: "Exactly 1 secondary subplot arc involving 2 suspects.",
             properties: {
               title: { type: SchemaType.STRING },
-              description: { type: SchemaType.STRING },
+              description: { type: SchemaType.STRING, description: "Subplot summary referring to characters strictly by their bracketed Role Title tokens (e.g. {{The Doctor}}). NEVER use human names." },
               primary_char_index: { type: SchemaType.INTEGER },
               secondary_char_index: { type: SchemaType.INTEGER },
               theme: { type: SchemaType.STRING },
@@ -1312,6 +1453,13 @@ export async function createMysteryAction(formData: FormData) {
 
         Your job is to generate a fully complete, premium murder mystery base in a single JSON response matching the theme perfectly.
 
+        CRITICAL NAMING RULE (ZERO HUMAN NAMES ALLOWED):
+        - NEVER invent or mention any fake human first or last names (e.g., NO "Elias", "Thorne", "Vivienne", "Clara", "Arthur", "Robin", etc.) anywhere in the JSON response (NOT in description, characters, bios, relationships, motives, plot_beats, clues, or subplot).
+        - Because real friends/guests will be cast into these roles later, every character MUST be defined exclusively by an iconic Role Title starting with "The " (e.g., "The Tycoon", "The Artist", "The Doctor", "The Caretaker", "The Holiday Host").
+        - In the mystery \`description\`, refer to the victim and characters strictly by their Role Title (e.g., "The Tycoon"), and do NOT spoil who the killer is.
+        - Across all \`bio\`, \`relationships.notes\`, \`motives.notes\`, \`plot_beats\`, \`clues\`, and \`subplot\` fields, always refer to characters using their bracketed Role Title tokens (e.g., \`{{The Tycoon}}\`, \`{{The Artist}}\`).
+        - CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
+
         CRITICAL CONSTRAINTS:
         1. **EXACTLY ${targetCharCount} CHARACTERS**: You must generate exactly ${targetCharCount} unique characters. No more, no less.
         2. **PLOT ROLES**: Assign exactly:
@@ -1328,10 +1476,11 @@ export async function createMysteryAction(formData: FormData) {
            - Beat 3: Key evidence or alibi cracks.
            - Beat 4: The climax / twist and resolution.
         7. **CLUES**: Generate exactly 6 clue cards linked to the plot beats. Clue types must be strictly one of: 'physical', 'testimony', 'background', 'secret'. Implication types must be strictly one of: 'direct', 'circumstantial', 'red_herring'.
+           - **REALISTIC TEXT / CHAT TITLE RULE**: If any clue is a text chain, SMS, or chat message thread, its \`title\` MUST be a realistic contact name (\`{{Role Title}}\`), an emoji/codename (e.g., \`Wifey 🎄❤️\`, \`🔒 Unknown Number\`), or a group chat name (e.g., \`Work Ops 💼\`, \`Family GC\`). NEVER call a text chain "Intercepted Texts...", "Leaked Text Chain...", or "Direct Messages".
         8. **SUBPLOT**: Generate exactly 1 secondary subplot arc involving 2 suspects (indexes 0-${maxCharIndex}, must not be the victim). Include 2 subplot beats linked to the plot beats.
-        9. **ADAPTABLE GENDERS**: At least 2 characters should have gender 'adaptable', and you must write their name and bio gender-neutrally.
+        9. **ADAPTABLE GENDERS**: At least 2 characters should have gender 'adaptable', and you must write their role title and bio gender-neutrally.
 
-        Ensure the theme and setting are fully integrated into all characters, names, outfits, and clues. Use realistic, engaging, and atmospheric details.
+        Ensure the theme and setting are fully integrated into all character roles, outfits, and clues. Use realistic, engaging, and atmospheric details without any human names.
       `;
 
       const result = await model.generateContent(promptText);
@@ -1344,35 +1493,40 @@ export async function createMysteryAction(formData: FormData) {
         usageMetadata: result.response.usageMetadata as any,
       });
 
-      // Insert dynamic overview description
-      await supabase.from('mysteries').update({
-        description: generatedData.description || `A compelling ${targetCharCount}-character murder mystery base centered around the theme of ${theme}.`
-      }).eq('id', mystery.id);
-
       // Insert Characters
       const charIdMap: string[] = [];
+      const insertedCharsForHydration: any[] = [];
       const victimIndex = generatedData.characters.findIndex((c: any) => c.plot_role === 'victim' || c.is_victim === true);
       const activeVictimIndex = victimIndex !== -1 ? victimIndex : 0;
 
       for (let i = 0; i < generatedData.characters.length; i++) {
         const char = generatedData.characters[i];
-        const dbName = `${char.name}|${char.title}|${char.prefix || ''}`;
+        const roleTitle = ensureRoleTitleHasThe(char.title || char.name || (i === activeVictimIndex ? 'The Victim' : `The Suspect ${i + 1}`));
+        const rawPrefix = (char.prefix || '').trim();
+        const dbName = rawPrefix ? `${roleTitle} | ${roleTitle} | ${rawPrefix}` : roleTitle;
         const isVictim = i === activeVictimIndex;
         const finalPlotRole = isVictim ? 'victim' : (char.plot_role === 'victim' ? 'innocent' : char.plot_role);
 
         const isAdaptable = char.gender === 'adaptable';
+        const cleanBio = stripEmDashes(replaceLegacyNamesWithRoleTokens(char.bio || ''));
+        const cleanOutfit = stripEmDashes(replaceLegacyNamesWithRoleTokens(char.outfit_advice || ''));
+        const cleanActSummary = stripEmDashes(replaceLegacyNamesWithRoleTokens(char.act_summary || ''));
+        const cleanActBullets = Array.isArray(char.act_bullets)
+          ? char.act_bullets.map((b: string) => stripEmDashes(replaceLegacyNamesWithRoleTokens(b)))
+          : [];
+
         const profile_data: any = {
-          bio: char.bio,
+          bio: cleanBio,
           traits: char.traits || []
         };
 
         if (isAdaptable) {
-          profile_data.presentation_male = { outfit_advice: char.outfit_advice, act_summary: char.act_summary, act_bullets: char.act_bullets };
-          profile_data.presentation_female = { outfit_advice: char.outfit_advice, act_summary: char.act_summary, act_bullets: char.act_bullets };
+          profile_data.presentation_male = { outfit_advice: cleanOutfit, act_summary: cleanActSummary, act_bullets: cleanActBullets };
+          profile_data.presentation_female = { outfit_advice: cleanOutfit, act_summary: cleanActSummary, act_bullets: cleanActBullets };
         } else {
-          profile_data.outfit_advice = char.outfit_advice;
-          profile_data.act_summary = char.act_summary;
-          profile_data.act_bullets = char.act_bullets;
+          profile_data.outfit_advice = cleanOutfit;
+          profile_data.act_summary = cleanActSummary;
+          profile_data.act_bullets = cleanActBullets;
         }
 
         const { data: insertedChar, error: charErr } = await supabase
@@ -1396,7 +1550,19 @@ export async function createMysteryAction(formData: FormData) {
         }
 
         charIdMap.push(insertedChar.id);
+        insertedCharsForHydration.push(insertedChar);
       }
+
+      // Insert sanitized dynamic overview description
+      const rawDesc = generatedData.description || `A compelling ${targetCharCount}-character murder mystery base centered around the theme of ${theme}.`;
+      const cleanDescription = hydrateTextWithCharacters(
+        replaceLegacyNamesWithRoleTokens(rawDesc),
+        insertedCharsForHydration,
+        'role'
+      );
+      await supabase.from('mysteries').update({
+        description: cleanDescription
+      }).eq('id', mystery.id);
 
       // Insert Motives
       const victimId = charIdMap[activeVictimIndex];
@@ -1408,7 +1574,7 @@ export async function createMysteryAction(formData: FormData) {
           motive_type: mot.motive_type,
           strength: mot.strength,
           linked_character_id: victimId,
-          notes: mot.notes
+          notes: stripEmDashes(replaceLegacyNamesWithRoleTokens(mot.notes))
         };
       }).filter((m: any) => m.character_id !== victimId);
 
@@ -1431,7 +1597,7 @@ export async function createMysteryAction(formData: FormData) {
           character_b_id: b,
           know_each_other: true,
           dynamics: rel.dynamics,
-          notes: rel.notes
+          notes: stripEmDashes(replaceLegacyNamesWithRoleTokens(rel.notes))
         };
       }).filter(Boolean);
 
@@ -1451,8 +1617,8 @@ export async function createMysteryAction(formData: FormData) {
             mystery_id: mystery.id,
             beat_number: beat.beat_number,
             sort_order: beat.beat_number,
-            event_title: beat.event_title,
-            description: beat.description,
+            event_title: stripEmDashes(replaceLegacyNamesWithRoleTokens(beat.event_title)),
+            description: stripEmDashes(replaceLegacyNamesWithRoleTokens(beat.description)),
             is_required: true,
             beat_type: i === 3 ? 'twist' : 'discovery',
             timeline_phase: i === 0 ? 'pre_crime' : (i === 1 ? 'crime' : 'investigation'),
@@ -1472,12 +1638,12 @@ export async function createMysteryAction(formData: FormData) {
       const cluesToInsert = generatedData.clues.map((clue: any) => {
         return {
           mystery_id: mystery.id,
-          title: clue.title,
+          title: stripEmDashes(replaceLegacyNamesWithRoleTokens(clue.title)),
           clue_type: clue.clue_type,
           implication_type: clue.implication_type,
           round_number: clue.round_number,
           is_essential: clue.is_essential,
-          description: clue.description,
+          description: stripEmDashes(replaceLegacyNamesWithRoleTokens(clue.description)),
           linked_plot_beat_id: beatIdMap[clue.beat_index] || beatIdMap[0]
         };
       });
@@ -1498,8 +1664,8 @@ export async function createMysteryAction(formData: FormData) {
           .from('subplots')
           .insert({
             mystery_id: mystery.id,
-            title: sp.title,
-            description: sp.description,
+            title: stripEmDashes(replaceLegacyNamesWithRoleTokens(sp.title)),
+            description: stripEmDashes(replaceLegacyNamesWithRoleTokens(sp.description)),
             primary_character_id: primarySubChar,
             secondary_character_id: secondarySubChar,
             theme: sp.theme
@@ -1514,7 +1680,7 @@ export async function createMysteryAction(formData: FormData) {
             return {
               subplot_id: insertedSubplot.id,
               beat_number: beat.beat_number,
-              description: beat.description,
+              description: stripEmDashes(replaceLegacyNamesWithRoleTokens(beat.description)),
               linked_plot_beat_id: beatIdMap[beat.linked_plot_beat_index] || beatIdMap[0]
             };
           });
@@ -1549,7 +1715,7 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
 
   const title = formData.get('title') as string;
   const theme = formData.get('theme') as string;
-  const description = formData.get('description') as string;
+  const rawDescription = formData.get('description') as string;
   const min_players = parseInt(formData.get('min_players') as string) || 4;
   const max_players = parseInt(formData.get('max_players') as string) || 6;
   const complexity = formData.get('complexity') as any;
@@ -1557,6 +1723,12 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
   const status = formData.get('status') as any;
 
   const pkgInfo = getPackageInfoForMaxPlayers(max_players);
+  const characters = await getCharactersByMysteryId(id);
+  const description = hydrateTextWithCharacters(
+    replaceLegacyNamesWithRoleTokens(rawDescription),
+    characters,
+    'role'
+  );
 
   // Enforce package character requirement before allowing status = 'published'
   if (status === 'published') {
@@ -1627,23 +1799,35 @@ export async function generateDescriptionAction(mysteryId: string) {
       model: "gemini-2.5-pro",
     });
 
+    const victimRole = getCharacterRoleTitle(victim);
+    const allRoleTitles = characters.map((c: any) => getCharacterRoleTitle(c)).join(', ');
+    const sanitizedBeats = plotBeats
+      .map((b, i) => `${i + 1}. ${hydrateTextWithCharacters(replaceLegacyNamesWithRoleTokens(b.description), characters, 'role')}`)
+      .join('\n');
+
     const prompt = `
       Write a gripping, suspenseful 3-4 sentence murder mystery synopsis (like the back of a novel or a game box).
       Theme: ${mystery.theme || 'General Mystery'}
       Title: ${mystery.title}
 
       Requirements:
-      1. Explicitly name the victim: ${victim.name} (${victim.archetype || 'Victim'}).
-      2. Explicitly name the murderer/killer: ${killer.name} (${killer.archetype || 'Killer'}).
-      3. Set the scene and explain that someone has been murdered, and mention the killer by name as the true culprit in a dramatic way.
-      4. Incorporate the following plot beats into the narrative flow:
-      ${plotBeats.map((b, i) => `${i + 1}. ${b.description}`).join('\n')}
+      1. Refer to the victim strictly by their Role Title: "${victimRole}" (e.g., "When ${victimRole} is found dead...").
+      2. Set the scene, build tension around why everyone in the room has a score to settle, and tease the murder without spoiling who the killer is.
+      3. CRITICAL NAMING RULE (ZERO HUMAN NAMES ALLOWED): NEVER invent or mention any human first or last names! Characters in a mystery base must ONLY be referred to by their Role Titles (${allRoleTitles}), because real guests are cast into these roles later.
+      4. CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
+      5. Draw atmospheric context from the setup of these plot beats:
+      ${sanitizedBeats}
       
       Do not output any JSON or formatting, just plain text paragraphs. Make it punchy and dramatic.
     `;
 
     const result = await model.generateContent(prompt);
-    const synopsis = result.response.text().trim();
+    const rawSynopsis = stripEmDashes(result.response.text().trim());
+    const synopsis = hydrateTextWithCharacters(
+      replaceLegacyNamesWithRoleTokens(rawSynopsis),
+      characters,
+      'role'
+    );
 
     await logAiUsage({
       model_name: 'gemini-2.5-pro',
@@ -1679,13 +1863,12 @@ export async function generateMysteryCoverAction(mysteryId: string) {
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) throw new Error('Google Generative AI API Key is missing.');
 
-    const characterNames = characters.map((c: any) => c.name).join(', ');
-    const theme = mystery.theme || 'Cinematic Noir Mystery';
-    const description = mystery.description || 'A dramatic murder mystery.';
+    const characterNames = characters.map((c: any) => getCharacterRoleTitle(c)).join(', ');
+    const theme = mystery.theme || 'Atmospheric Party Mystery';
+    const description = mystery.description || 'A dramatic murder mystery party among close friends.';
     
-    // We use a highly descriptive prompt to ensure the output matches the "Cinematic Noir" style.
-    // Explicitly ask for diversity and younger adults (20-40) based on user preference.
-    const prompt = `A highly cinematic, gritty noir photograph. 5 characters standing together at the scene of the crime. Wide angle shot, full body or medium-full framing, leave plenty of headroom above the characters so no heads are cropped out. Theme: ${theme}. Context: ${description}. Characters: ${characterNames}. The characters are young adults (ages 20 to 40) and feature a highly diverse mix of ethnicities (e.g., Black, Asian, Hispanic, White). Dramatic low-key lighting, deep shadows, sepia or desaturated tones, mystery, suspense. Professional photography, sharp focus, 8k resolution.`;
+    // Match the exact setting, season, and color palette of the theme & synopsis, depicting a tight-knit group of close friends.
+    const prompt = `A high-end, atmospheric editorial party photograph of 5 to 6 close young adult friends (ages 24 to 36, diverse mix of ethnicities, natural best-friend chemistry, gathered closely together laughing, clinking glasses, and exchanging dramatic knowing glances) at the exact venue and setting of "${mystery.title}". Theme & Setting: ${theme}. Story Context & Venue: ${description}. Character roles present: ${characterNames}. Wide-angle medium-full shot with plenty of headroom so no heads are cropped. Rich, vibrant, authentic lighting and decor that strictly matches "${theme}" (for example, if Christmas/Holiday/Cabin: warm golden fairy lights, a decorated Christmas tree, roaring stone fireplace, festive holiday velvet and knit outfits, mulled wine, snow outside the cabin window; never place on a boat unless the theme explicitly says boat/yacht). Warm 35mm film aesthetic with a subtle hint of murder mystery intrigue, sharp focus, 8k resolution, photorealistic, no text.`;
 
     const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
     const supabase = await createClient();

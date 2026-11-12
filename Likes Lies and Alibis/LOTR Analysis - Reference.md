@@ -1,4 +1,4 @@
-# Analysis: Love on the Rocks — Structural Breakdown
+# Analysis: Love on the Rocks - Structural Breakdown
 
 ## 1. Document Structure (76 pages)
 
@@ -9,10 +9,10 @@
 | How to Play | 11–13 | Rounds format, confessionals |
 | Characters (Spoiler-Free) | 14–17 | Cast list overview, role assignment tips, victim warning |
 | Character Sheets (Spoiler) | 18–36 | 2 pages per character (backstory + outfit/acting guide) |
-| Clues — Round 1 | 37–42 | 8 clues (R1-C1 through R1-C8) |
-| Clues — Round 2 | 43–48 | 10 clues (R2-C1 through R2-C10) |
-| Clues — Round 3 | 49–54 | 7 clues (R3-C1 through R3-C7) + confessional prompt |
-| Clues — Round 4 | 55–56 | 2 clues (R4-C1, R4-C2) |
+| Clues - Round 1 | 37–42 | 8 clues (R1-C1 through R1-C8) |
+| Clues - Round 2 | 43–48 | 10 clues (R2-C1 through R2-C10) |
+| Clues - Round 3 | 49–54 | 7 clues (R3-C1 through R3-C7) + confessional prompt |
+| Clues - Round 4 | 55–56 | 2 clues (R4-C1, R4-C2) |
 | Cheat Sheets | 57–61 | Per-round hint summaries |
 | The Reveal | 62–73 | Murder explanation + 8 key beats with clue references |
 | Thank You / Legal | 74–76 | Credits, review request, copyright |
@@ -41,9 +41,9 @@ Each character has:
 |---|---|---|---|---|
 | **Gabby** | Victim | Pink | The Star / Winner | Dies at end of Round 3 (champagne toast) |
 | **Sienna** | Gabby's sister | Pink | The Shadow | Used in identity-swap scheme, jealous |
-| **Dane** | Gabby's ex | Green | The Ex / "Reformed" toxic boy | **Poisoner** — intended to kill Colt, not Gabby |
+| **Dane** | Gabby's ex | Green | The Ex / "Reformed" toxic boy | **Poisoner** - intended to kill Colt, not Gabby |
 | **Colt** | Show host | Electric | The Charmer / Host | Secret affair with Gabby; the intended target |
-| **Milo** | Fan-voted superfan | Orange | The Obsessive Fan | **Glass-switcher** — redirected poison to Gabby |
+| **Milo** | Fan-voted superfan | Orange | The Obsessive Fan | **Glass-switcher** - redirected poison to Gabby |
 | **Jeremy** | Producer plant | Blue | The Puppet Master | Manipulated events, deleted footage, stirred drama |
 | **Ava** | Runner-up finalist | Yellow | The Bitter Rival | Jealous, kept evidence, gossip-prone |
 | **Rikki** | Hair & makeup artist | Purple | The Insider / Informant | Knew secrets, leaked info, fed gossip to others |
@@ -64,16 +64,16 @@ Each character has:
 1. **Discovery**: Dane discovers Gabby & Colt were secretly hooking up
 2. **Decision**: Dane decides to kill Colt out of jealous, coke-fuelled rage
 3. **Stalking**: Milo finds out about Dane's plan through obsessive monitoring
-4. **Rejection**: Milo confesses love to Gabby — gets laughed at/rejected
+4. **Rejection**: Milo confesses love to Gabby, gets laughed at/rejected
 5. **Poisoning**: Dane gets high and poisons a drink intended for Colt
 6. **The Switch**: Milo switches the glasses, redirecting poison to Gabby
 7. **Death**: Gabby drinks the poisoned champagne during the toast
 8. **Delusion**: Milo believes he's now part of Gabby's legacy forever
 
 ### Key Design Principles:
-- **Dual culprit**: One person poisons, another redirects — neither is "the" killer alone
+- **Dual culprit**: One person poisons, another redirects, neither is "the" killer alone
 - **Misdirected target**: The intended victim (Colt) survives; the actual victim (Gabby) was collateral
-- **Twisted motive**: Milo's motive isn't hate — it's obsessive love / "if I can't have her, I'll be part of her story"
+- **Twisted motive**: Milo's motive isn't hate, it's obsessive love / "if I can't have her, I'll be part of her story"
 - **Multiple red herrings**: Ava (jealousy), Zayn (chaos), Jeremy (manipulation), Sienna (identity swap scheme)
 - **Murder method**: Poisoned drink (sedatives/sleeping pills + alcohol in champagne)
 
@@ -92,7 +92,7 @@ Each character has:
 | **Handwritten/scrawled notes** | Shorthand producer notes, to-do lists | 2-3 instances |
 | **Diary/journal entries** | Milo's emotional entries ("Tonight felt kind of perfect...") | 2 instances |
 | **Audio recordings** | "Recorded on Zayn's iPhone", security cam audio | 2 instances |
-| **Photos** | Visual clues (implied — harder to extract from PDF) | 1-2 instances |
+| **Photos** | Visual clues (implied, harder to extract from PDF) | 1-2 instances |
 
 ### Clue Design Principles:
 - **Real vs. Fake vs. Messy**: Players must judge which clues are genuine evidence, which are misleading, which are just drama
@@ -105,7 +105,7 @@ Each character has:
 - Round 1: 8 clues (relationship establishment, old drama, threats)
 - Round 2: 10 clues (escalation, drug use, secret affairs, producer manipulation)
 - Round 3: 7 clues (the death happens, confessions, key evidence)
-- Round 4: 2 clues (final damning evidence — voice memo confession, security audio)
+- Round 4: 2 clues (final damning evidence, voice memo confession, security audio)
 
 ---
 
@@ -132,7 +132,7 @@ Each round's cheat sheet contains:
 ## 8. Reveal Structure
 
 The reveal section (12 pages) contains:
-1. **Summary paragraph**: "The Murder Explained" — 1 paragraph overview
+1. **Summary paragraph**: "The Murder Explained" - 1 paragraph overview
 2. **"The Key 8 Beats"**: Numbered list of the murder chain
 3. **Beat-by-beat breakdown** (1 page each): Each beat shows the SPECIFIC CLUES that prove it, with the clue images/screenshots reprinted alongside the explanation
 
@@ -153,4 +153,4 @@ The reveal section (12 pages) contains:
 - **Tone**: Messy, chaotic, dramatic, funny, Gen-Z/millennial social media culture
 - **Language**: Casual, sweary, emoji-laden, text-speak in clues
 - **Themes**: Jealousy, obsession, fame, betrayal, toxic relationships, social media culture
-- **Humour**: Dark comedy throughout — "It's okay to bend the truth. In fact, it's encouraged."
+- **Humour**: Dark comedy throughout - "It's okay to bend the truth. In fact, it's encouraged."

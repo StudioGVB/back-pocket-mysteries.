@@ -566,7 +566,21 @@ export default function DashboardClient({
       <GuestModal
         isOpen={isGuestModalOpen}
         onClose={() => setIsGuestModalOpen(false)}
-        onSave={() => setIsGuestModalOpen(false)}
+        onSave={async (guestData) => {
+          const { saveGuestAction } = await import('@/app/actions/guests');
+          await saveGuestAction({
+            name: guestData.name,
+            email: guestData.email,
+            gender: guestData.gender,
+            eye_color: guestData.eyeColor,
+            height: guestData.height,
+            ethnicity: guestData.ethnicity,
+            avatar_url: guestData.avatarUrl || guestData.avatar_url,
+            traits: guestData.traits,
+            bio: guestData.bio,
+          });
+          setIsGuestModalOpen(false);
+        }}
       />
 
       {isGiftModalOpen && (

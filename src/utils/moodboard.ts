@@ -131,6 +131,53 @@ export function isRealityReunionMystery(theme?: string | null, title?: string | 
   );
 }
 
+export const CHRISTMAS_MAIN_COVER_URL = '/moodboard/christmas/main-christmas-cabin.jpg';
+
+export const CHRISTMAS_CABIN_MOODBOARD: MoodboardPhoto[] = [
+  {
+    id: 'xmas-cast-party',
+    url: '/moodboard/christmas/main-christmas-cabin.jpg',
+    tag: 'Close Friends & Secrets',
+    caption: 'Best friends, couples, and co-workers gathered around the Christmas tree before a tangled web of secrets snaps',
+  },
+  {
+    id: 'xmas-setting',
+    url: '/moodboard/christmas/christmas-setting.jpg',
+    tag: 'The Setting',
+    caption: 'An intimate living and dining room glowing with vintage Christmas tree lights, pine garlands, and candlelit holiday cheer',
+  },
+  {
+    id: 'xmas-toast',
+    url: '/moodboard/christmas/christmas-friends-toast.jpg',
+    tag: 'Party Atmosphere',
+    caption: 'Close friends toasting over Christmas dinner, paper cracker crowns, and whispered betrayals across the table',
+  },
+  {
+    id: 'xmas-dresscode',
+    url: '/moodboard/christmas/christmas-dress-code.jpg',
+    tag: 'Dress Code Inspo',
+    caption: 'Crimson velvet, emerald silk, shimmering silver, and festive holiday dinner party glamour',
+  },
+  {
+    id: 'xmas-cocktails',
+    url: '/moodboard/christmas/christmas-cocktails.jpg',
+    tag: 'Cocktail Hour',
+    caption: 'Spiced cranberry cocktails, mulled wine with cinnamon sticks, and a spilled glass beside the Christmas lights',
+  },
+];
+
+export function isChristmasMystery(theme?: string | null, title?: string | null): boolean {
+  const combined = `${title || ''} ${theme || ''}`.toLowerCase();
+  return (
+    combined.includes('christmas') ||
+    combined.includes('holiday') ||
+    combined.includes('chalet') ||
+    combined.includes('cabin') ||
+    combined.includes('snowfall') ||
+    combined.includes('xmas')
+  );
+}
+
 export function getEffectiveCoverUrl(
   rawImageUrl?: string | null,
   theme?: string | null,
@@ -139,6 +186,11 @@ export function getEffectiveCoverUrl(
   const { coverUrl } = parseMysteryImageField(rawImageUrl);
   if (isRealityReunionMystery(theme, title)) {
     return LOTR_MAIN_COVER_URL;
+  }
+  if (isChristmasMystery(theme, title)) {
+    if (!coverUrl || coverUrl.startsWith('data:image/') || coverUrl.includes('ui-avatars.com')) {
+      return CHRISTMAS_MAIN_COVER_URL;
+    }
   }
   return coverUrl;
 }
@@ -162,6 +214,10 @@ export function getEffectiveMoodboardPhotos(
 
   if (moodboardPhotos.length > 0) {
     return moodboardPhotos;
+  }
+
+  if (isChristmasMystery(theme, title)) {
+    return CHRISTMAS_CABIN_MOODBOARD;
   }
 
   const combined = `${title || ''} ${theme || ''}`.toLowerCase();
@@ -201,13 +257,13 @@ export function getEffectiveMoodboardPhotos(
 
   const genericDefaults: MoodboardPhoto[] = [
     ...(coverUrl
-      ? [{ id: 'def-cover', url: coverUrl, tag: 'Main Aesthetic', caption: title || 'The scene of the mystery' }]
+      ? [{ id: 'def-cover', url: coverUrl, tag: 'The Cast & Setting', caption: title || 'Close friends gathered at the scene of the mystery' }]
       : []),
     {
       id: 'def-1',
-      url: '/hero/05-masquerade.png',
-      tag: 'The Vibe',
-      caption: 'High-society intrigue, dramatic lighting, and hidden motives',
+      url: '/blog/birthday-dinner.png',
+      tag: 'Close Friends & Drama',
+      caption: 'Unfold clues round-by-round with your favorite people over drinks and dinner',
     },
     {
       id: 'def-2',
@@ -219,21 +275,26 @@ export function getEffectiveMoodboardPhotos(
       id: 'def-3',
       url: '/blog/mystery-menu.png',
       tag: 'Table & Cocktails',
-      caption: 'Set the mood with themed drinks, dim lighting, and sealed envelopes',
+      caption: 'Set the mood with themed drinks, warm lighting, and sealed envelopes',
     },
     {
       id: 'def-4',
-      url: '/hero/02-boat.png',
-      tag: 'The Setting',
-      caption: 'No one leaves until the final accusation is cast',
+      url: '/hero/05-masquerade.png',
+      tag: 'The Vibe',
+      caption: 'High-stakes intrigue, candid moments, and hidden motives among friends',
     },
-    {
-      id: 'def-5',
-      url: '/blog/birthday-dinner.png',
-      tag: 'Host & Play',
-      caption: 'Unfold clues round-by-round with your favorite people',
-    },
+    ...(combined.includes('boat') || combined.includes('yacht') || combined.includes('cruise')
+      ? [
+          {
+            id: 'def-boat',
+            url: '/hero/02-boat.png',
+            tag: 'The Setting',
+            caption: 'No one leaves the deck until the final accusation is cast',
+          },
+        ]
+      : []),
   ];
 
   return genericDefaults.slice(0, 5);
 }
+

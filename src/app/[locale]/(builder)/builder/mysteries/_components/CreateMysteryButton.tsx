@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { createMysteryAction } from '../actions';
 import { useParams } from 'next/navigation';
+import { ThemeCombobox } from '@/components/ui/ThemeCombobox';
 
 export function CreateMysteryButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -102,12 +103,19 @@ export function CreateMysteryButton() {
               </div>
               
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Theme / Setting</label>
-                <input 
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Theme / Setting
+                  </label>
+                  <span className="text-[10px] font-bold text-slate-400">
+                    Pick from list or type any custom theme
+                  </span>
+                </div>
+                <ThemeCombobox
                   name="theme"
                   required
-                  placeholder="e.g. 1920s Art Deco Lounge"
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink transition-all font-bold placeholder:text-slate-300"
+                  variant="boxed"
+                  placeholder="Select a preset or type your own theme..."
                 />
               </div>
 

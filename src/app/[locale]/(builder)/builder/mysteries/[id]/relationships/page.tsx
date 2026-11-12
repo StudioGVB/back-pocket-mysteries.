@@ -69,29 +69,31 @@ export default async function MysteryRelationshipsPage({
           </p>
         </div>
       ) : (
-        <div className="space-y-24">
-          
-          {/* Split Layout: Graph (Left) / Matrix (Right) */}
-          <div className="grid grid-cols-1 xl:grid-cols-[45%_55%] gap-12 items-start relative">
-            
-            {/* Left: Sticky Relationship Graph */}
-            <div className="sticky top-8 space-y-6">
-              <div className="flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-brand-pink" />
-                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Relationship Web</h2>
-              </div>
-              <RelationshipGraph characters={activeCharacters} relationships={relationships} />
+        <div className="space-y-14">
+          {/* Top: Full-Width Interactive Relationship Web */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-brand-pink" />
+              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                Interactive Relationship Web
+              </h2>
             </div>
+            <RelationshipGraph characters={activeCharacters} relationships={relationships} />
+          </div>
 
-            {/* Right: Scrollable Matrix */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-slate-300" />
-                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Relationship Actions</h2>
-              </div>
-              <RelationshipMatrix mysteryId={id} characters={activeCharacters} relationships={relationships} />
+          {/* Bottom: Full-Width Relationship Actions Matrix */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-slate-300" />
+              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                Relationship Actions &amp; Notes
+              </h2>
             </div>
-
+            <RelationshipMatrix
+              mysteryId={id}
+              characters={activeCharacters}
+              relationships={relationships}
+            />
           </div>
         </div>
       )}

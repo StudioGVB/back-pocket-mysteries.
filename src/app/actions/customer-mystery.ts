@@ -18,6 +18,8 @@ import {
   checkAndFinalizeGenerationIfDue,
   finalizeMysteryGenerationNow,
 } from '@/lib/background-mystery-generator';
+import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
+import { isUserAdmin } from '@/utils/admin-auth';
 
 export interface RoundSubmission {
   id: string;
@@ -34,6 +36,7 @@ export type GuestReviewItem = StoredGuestReview;
 
 export interface GameSessionMeta {
   pin: string;
+  hostUserId?: string;
   currentRound?: number;
   activeCharacterIds: string[];
   claimedCharacters: Record<string, { token: string; claimedAt: string }>;
@@ -128,6 +131,7 @@ async function readSessionFromCharacters(
 
   const session: GameSessionMeta = {
     pin: stored?.pin || raw?.pin || defaultPin,
+    hostUserId: stored?.hostUserId || raw?.hostUserId || stored?.paidByUserId,
     currentRound: resolvedRound,
     activeCharacterIds:
       preferStored && Array.isArray(stored?.activeCharacterIds) && stored!.activeCharacterIds.length > 0
@@ -150,6 +154,7 @@ async function readSessionFromCharacters(
   // Keep server store synchronized
   saveStoredGameSession(mysteryId, {
     mysteryId,
+    hostUserId: session.hostUserId,
     pin: session.pin,
     currentRound: resolvedRound,
     activeCharacterIds: session.activeCharacterIds,
@@ -179,6 +184,7 @@ async function writeSessionToCarrier(
   // 1. Always persist to server-side live session store (works for unauthenticated guests too)
   saveStoredGameSession(mysteryId, {
     mysteryId,
+    hostUserId: updatedSession.hostUserId,
     pin: updatedSession.pin,
     currentRound: updatedSession.currentRound ?? 0,
     activeCharacterIds: updatedSession.activeCharacterIds,
@@ -308,6 +314,7 @@ export async function saveCustomerCastAction(
 
   const sessionMeta: GameSessionMeta = {
     pin,
+    hostUserId: user.id,
     currentRound: 0,
     activeCharacterIds,
     claimedCharacters: {},
@@ -342,18 +349,36 @@ export async function saveCustomerCastAction(
         delete nextProfile.standard_character_photo_url;
         delete nextProfile.standard_character_photo_hash;
       }
+      let resolvedGuestAvatarUrl =
+        assignedGuest.avatar_url ||
+        (existingProfile.guest_id === assignedGuest.id ? existingProfile.avatar_url : '') ||
+        '';
+      if (!resolvedGuestAvatarUrl.includes('aiPhotoUrl=')) {
+        try {
+          const { generateGuestAvatarAction } = await import('@/app/actions/ai-guests');
+          const aiRes = await generateGuestAvatarAction(assignedGuest.id, {
+            ...assignedGuest,
+            avatar_url: resolvedGuestAvatarUrl,
+          });
+          if (aiRes?.publicUrl) {
+            resolvedGuestAvatarUrl = aiRes.publicUrl;
+          }
+        } catch (aiErr) {
+          console.error('Auto AI avatar generation during saveCustomerCastAction failed:', aiErr);
+        }
+      }
       nextProfile.guest_id = assignedGuest.id;
       nextProfile.guest_name = assignedGuest.name;
       nextProfile.name = assignedGuest.name;
       nextProfile.gender = assignedGuest.gender || char.gender || 'adaptable';
       nextProfile.accent =
         assignedGuest.accent ||
-        extractAccentFromAvatarUrl(assignedGuest.avatar_url || '') ||
+        extractAccentFromAvatarUrl(resolvedGuestAvatarUrl) ||
         'Australian';
-      nextProfile.age = extractAgeFromAvatarUrl(assignedGuest.avatar_url || '') || 'young';
+      nextProfile.age = extractAgeFromAvatarUrl(resolvedGuestAvatarUrl) || 'young';
       nextProfile.eye_color = assignedGuest.eye_color || '';
       nextProfile.height = assignedGuest.height || '';
-      nextProfile.avatar_url = assignedGuest.avatar_url || existingProfile.avatar_url || '';
+      nextProfile.avatar_url = resolvedGuestAvatarUrl;
       nextProfile.traits = assignedGuest.traits || [];
       nextProfile.guest_bio = assignedGuest.bio || '';
       nextProfile.is_linked = Boolean(assignedGuest.isLinked);
@@ -393,6 +418,7 @@ export async function saveCustomerCastAction(
   saveStoredGameSession(mysteryId, {
     mysteryId,
     pin,
+    hostUserId: user.id,
     currentRound: 0,
     activeCharacterIds,
     claimedCharacters: {},
@@ -403,6 +429,10 @@ export async function saveCustomerCastAction(
     updatedAt: sessionMeta.updatedAt,
   });
   updateCachedMysteryCharacters(mysteryId, updatedCharObjects, 0);
+
+  // Pre-generate all audio clues in the background with the newly locked cast names & accents
+  // so that when players open the Playroom, every audio clue plays out loud immediately on click.
+  void pregenerateAllAudioCluesForMystery(mysteryId, { forceRegenerate: true });
 
   revalidatePath(`/play/${mysteryId}`);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
@@ -453,7 +483,16 @@ export async function getGameSessionAction(mysteryId: string) {
     mysteryId,
     mystery.current_round
   );
-  const isHost = Boolean(user);
+  const storedSession = getStoredGameSession(mysteryId);
+  const isAdmin = user ? await isUserAdmin(supabase, user) : false;
+  const isHost = Boolean(
+    user &&
+      (mystery.created_by === user.id ||
+        session.hostUserId === user.id ||
+        storedSession?.hostUserId === user.id ||
+        storedSession?.paidByUserId === user.id ||
+        isAdmin)
+  );
 
   // If the host is polling and there are new guest submissions from the server store, sync them back to Supabase JSONB
   if (isHost && carrierCharacter) {
@@ -743,12 +782,14 @@ export async function updateHostGameControlAction(
     return { error: 'Please log into your host account to control the game flow.' };
   }
 
-  if (typeof updates.currentRound === 'number') {
-    await supabase
-      .from('mysteries')
-      .update({ current_round: Math.floor(updates.currentRound) })
-      .eq('id', mysteryId);
-  }
+  const { data: dbMystery } = (await supabase
+    .from('mysteries')
+    .select('id, created_by')
+    .eq('id', mysteryId)
+    .maybeSingle()) as any;
+  const cachedMystery = getCachedMysterySnapshot(mysteryId);
+  const storedSession = getStoredGameSession(mysteryId);
+  const isAdmin = await isUserAdmin(supabase, user);
 
   let { data: characters } = await supabase
     .from('characters')
@@ -756,8 +797,7 @@ export async function updateHostGameControlAction(
     .eq('mystery_id', mysteryId);
 
   if (!characters || characters.length === 0) {
-    const cached = getCachedMysterySnapshot(mysteryId);
-    characters = cached?.characters || [];
+    characters = cachedMystery?.characters || [];
   }
 
   const { session, carrierCharacter } = await readSessionFromCharacters(
@@ -765,6 +805,25 @@ export async function updateHostGameControlAction(
     mysteryId,
     Math.floor(updates.currentRound ?? 0)
   );
+
+  const isAuthorizedHost =
+    dbMystery?.created_by === user.id ||
+    cachedMystery?.created_by === user.id ||
+    session.hostUserId === user.id ||
+    storedSession?.hostUserId === user.id ||
+    storedSession?.paidByUserId === user.id ||
+    isAdmin;
+
+  if (!isAuthorizedHost) {
+    return { error: 'Only the party host who owns this session can control the game flow.' };
+  }
+
+  if (typeof updates.currentRound === 'number') {
+    await supabase
+      .from('mysteries')
+      .update({ current_round: Math.floor(updates.currentRound) })
+      .eq('id', mysteryId);
+  }
 
   if (typeof updates.currentRound === 'number') {
     session.currentRound = updates.currentRound;
@@ -790,7 +849,6 @@ export async function updateHostGameControlAction(
   await writeSessionToCarrier(supabase, mysteryId, carrierCharacter, session);
 
   // Also keep cached mystery current_round updated
-  const cachedMystery = getCachedMysterySnapshot(mysteryId);
   if (cachedMystery && typeof updates.currentRound === 'number') {
     cacheMysterySnapshot(mysteryId, {
       ...cachedMystery,

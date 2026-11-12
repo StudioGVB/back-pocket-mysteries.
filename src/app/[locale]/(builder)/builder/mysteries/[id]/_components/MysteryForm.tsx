@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useActionState } from 'react';
+import React, { useActionState, useState } from 'react';
 import { updateMysteryAction } from '../../actions';
 import { AIGenerateDescriptionButton } from './AIGenerateDescriptionButton';
 import { AIGenerateCoverButton } from './AIGenerateCoverButton';
 import { MysterySettings } from './MysterySettings';
 import { SubmitButton } from './SubmitButton';
-import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ThemeCombobox } from '@/components/ui/ThemeCombobox';
 import { MoodboardStudio } from '@/components/admin/MoodboardStudio';
 
 export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: string }) {
   const updateWithId = updateMysteryAction.bind(null, mysteryId);
   const [state, formAction] = useActionState(updateWithId, null);
+  const [themeValue, setThemeValue] = useState<string>(mystery.theme || '');
 
   return (
     <form action={formAction} className="space-y-8">
@@ -43,52 +44,22 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
         </div>
         
         <div className="space-y-2">
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Theme</label>
-          <div className="relative">
-            <CustomSelect 
-              name="theme"
-              defaultValue={mystery.theme || ''}
-              required
-              placeholder="Select a theme..."
-              className="w-full px-0 py-2 bg-transparent border-b-2 border-slate-200 focus:border-brand-pink outline-none font-black text-2xl transition-all text-slate-900"
-            >
-              <option value="" disabled>Select a theme...</option>
-              <option value="Reality TV Reunion">Reality TV Reunion</option>
-              <option value="Retro Circus Noir">Retro Circus Noir</option>
-              <option value="1920s Speakeasy / Great Gatsby">1920s Speakeasy / Great Gatsby</option>
-              <option value="Yacht / Luxury Cruise">Yacht / Luxury Cruise</option>
-              <option value="Corporate Retreat">Corporate Retreat</option>
-              <option value="Haunted Mansion">Haunted Mansion</option>
-              <option value="Masquerade Ball">Masquerade Ball</option>
-              <option value="Wild West Saloon">Wild West Saloon</option>
-              <option value="Hollywood Premiere">Hollywood Premiere</option>
-              <option value="80s Prom">80s Prom</option>
-              <option value="Casino Royale">Casino Royale</option>
-              <option value="Winter Chalet">Winter Chalet</option>
-              <option value="Tropical Island Resort">Tropical Island Resort</option>
-              <option value="Pirate Ship">Pirate Ship</option>
-              <option value="High School Reunion">High School Reunion</option>
-              <option value="Space Station">Space Station</option>
-              <option value="Art Gallery Opening">Art Gallery Opening</option>
-              <option value="Fantasy Kingdom">Fantasy Kingdom</option>
-              <option value="Cyberpunk City">Cyberpunk City</option>
-              <option value="Vintage Circus">Vintage Circus</option>
-              <option value="Wedding Reception">Wedding Reception</option>
-              <option value="Vineyard / Wine Tasting">Vineyard / Wine Tasting</option>
-              <option value="Country Club Golf Tournament">Country Club Golf Tournament</option>
-              <option value="Gothic Castle">Gothic Castle</option>
-              <option value="Mafia / Mobster">Mafia / Mobster</option>
-              <option value="Roaring 20s Jazz Club">Roaring 20s Jazz Club</option>
-              <option value="Victorian London / Sherlock">Victorian London / Sherlock</option>
-              <option value="Medieval Banquet">Medieval Banquet</option>
-              <option value="Summer Camp">Summer Camp</option>
-              <option value="Billionaire's Private Island">Billionaire's Private Island</option>
-              <option value="Train Journey (Orient Express)">Train Journey (Orient Express)</option>
-              <option value="Halloween Party">Halloween Party</option>
-              <option value="Christmas Party">Christmas Party</option>
-              <option value="Custom">Custom / Other</option>
-            </CustomSelect>
+          <div className="flex items-center justify-between">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Theme
+            </label>
+            <span className="text-[10px] font-bold text-slate-400">
+              Pick from list or type any custom theme
+            </span>
           </div>
+          <ThemeCombobox
+            name="theme"
+            value={themeValue}
+            onChange={setThemeValue}
+            required
+            variant="underline"
+            placeholder="Select a theme or type your own..."
+          />
         </div>
       </div>
 
@@ -115,7 +86,7 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
         <MoodboardStudio
           mysteryId={mysteryId}
           mysteryTitle={mystery.title}
-          theme={mystery.theme}
+          theme={themeValue || mystery.theme}
           initialImageUrl={mystery.image_url}
         />
       </div>

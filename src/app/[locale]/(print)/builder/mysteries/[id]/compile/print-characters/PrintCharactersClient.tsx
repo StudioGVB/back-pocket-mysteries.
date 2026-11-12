@@ -247,9 +247,43 @@ export default function PrintCharactersClient({
                       {pres.outfit_advice && (
                         <div className="border-t border-white/10 pt-8 print:border-black/20">
                           <h3 className="text-sm md:text-base font-semibold text-[#FF1493] uppercase tracking-[0.2em] mb-4 md:mb-6 print:text-[#FF1493]">How to Dress</h3>
-                          <p className="text-base md:text-xl font-light text-slate-300 leading-relaxed print:text-black">
+                          <p className="text-base md:text-xl font-light text-slate-300 leading-relaxed print:text-black mb-6">
                             {hydrateTextWithCharacters(pres.outfit_advice, allChars, 'print')}
                           </p>
+                          {(() => {
+                            const outfitRefs: string[] = (
+                              Array.isArray(pres.outfit_reference_images) && pres.outfit_reference_images.filter(Boolean).length > 0
+                                ? pres.outfit_reference_images
+                                : Array.isArray(page.character.profile_data?.outfit_reference_images) &&
+                                  page.character.profile_data.outfit_reference_images.filter(Boolean).length > 0
+                                ? page.character.profile_data.outfit_reference_images
+                                : []
+                            ).slice(0, 3);
+
+                            if (outfitRefs.length === 0) return null;
+
+                            return (
+                              <div className="grid grid-cols-3 gap-4 md:gap-6 mt-6">
+                                {outfitRefs.map((refUrl: string, refIdx: number) => (
+                                  <div
+                                    key={refIdx}
+                                    className="bg-white/5 border border-white/10 p-2.5 pb-4 print:bg-white print:border-black/20"
+                                  >
+                                    <div className="aspect-[3/4] w-full overflow-hidden bg-[#1a1a1a] mb-2">
+                                      <img
+                                        src={refUrl}
+                                        alt={`${cleanTitle} Outfit Option ${refIdx + 1}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    <span className="block text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 print:text-slate-700">
+                                      Outfit Option {refIdx + 1}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
 

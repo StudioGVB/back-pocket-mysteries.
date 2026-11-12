@@ -11,6 +11,13 @@ export async function GET(request: Request) {
     }
 
     const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
 
     const { data } = await supabase
       .from('image_generation_cache')

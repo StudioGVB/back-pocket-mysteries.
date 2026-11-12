@@ -14,6 +14,7 @@ import { confirmMysteryOrderAction } from '@/app/actions/stripe';
 import {
   getPaidMysteryIdsForUserInStore,
   getAllCachedMysteries,
+  ensureIsolatedCustomerMysteryInstance,
 } from '@/lib/live-session-store';
 import { checkAndFinalizeGenerationIfDue } from '@/lib/background-mystery-generator';
 import { getTierForPlayerCount } from '@/utils/localization';
@@ -120,9 +121,21 @@ export default async function CustomerMysteryCastPage({
   }
 
   // Ensure relationships snapshot is also warmed in disk cache so unauthenticated guests can open the copyable link immediately
-  await getRelationshipsByMysteryId(mystery.id);
+  const templateMysteryId = String(mystery.template_mystery_id || mystery.id);
+  const templateRelationships = await getRelationshipsByMysteryId(templateMysteryId);
 
-  // 2. Load user's guest roster (manual + linked + host profile, or fallback 12-person mock roster)
+  // If this mystery is a shared template not created by this user, provision an isolated per-customer instance
+  // so every signup has their own private cast, unique 6-digit Game PIN, and isolated round state.
+  if (user && mystery.created_by !== user.id) {
+    const isolated = ensureIsolatedCustomerMysteryInstance(
+      mystery,
+      templateRelationships,
+      user.id
+    );
+    mystery = isolated.mystery;
+  }
+
+  // 2. Load user's guest roster (manual + linked + host profile)
   const avatarUrlHelper = (config: any) => {
     if (!config) return '';
     const search = new URLSearchParams({
@@ -173,12 +186,18 @@ export default async function CustomerMysteryCastPage({
       });
     }
 
+    const manualGuestIdSet = new Set((manualGuests || []).map((mg: any) => String(mg.id)));
     const cachedMysteries = getAllCachedMysteries();
     const cachedAvatarByGuestId = new Map<string, string>();
     for (const m of Object.values(cachedMysteries || {})) {
+      if ((m as any)?.created_by && (m as any).created_by !== user.id) continue;
       for (const c of (m as any)?.characters || []) {
         const pd = c.profile_data || {};
-        if (pd.guest_id && String(pd.avatar_url || '').includes('aiPhotoUrl=')) {
+        if (
+          pd.guest_id &&
+          manualGuestIdSet.has(String(pd.guest_id)) &&
+          String(pd.avatar_url || '').includes('aiPhotoUrl=')
+        ) {
           cachedAvatarByGuestId.set(pd.guest_id, pd.avatar_url);
         }
       }
@@ -333,6 +352,7 @@ export default async function CustomerMysteryCastPage({
     isAdmin ||
     verifiedFromRedirect ||
     userPaidStoreIds.has(mystery.id) ||
+    userPaidStoreIds.has(templateMysteryId) ||
     userPaidStoreIds.has(slug) ||
     rawCharacters.some((c: any) => {
       const sess = c.profile_data?.__game_session;
@@ -353,7 +373,7 @@ export default async function CustomerMysteryCastPage({
       .from('orders')
       .select('id')
       .eq('user_id', user.id)
-      .eq('mystery_id', mystery.id)
+      .in('mystery_id', Array.from(new Set([mystery.id, templateMysteryId])))
       .eq('status', 'succeeded')
       .limit(1)
       .maybeSingle();
