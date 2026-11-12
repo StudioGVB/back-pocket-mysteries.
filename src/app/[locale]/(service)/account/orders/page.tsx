@@ -6,7 +6,7 @@ import { getMysteryById } from '@/services/mysteries';
 import { getRelationshipsByMysteryId } from '@/services/relationships';
 import { generatePinFromMysteryId } from '@/app/actions/customer-mystery';
 import {
-  getAllPaidMysteryIdsInStore,
+  getPaidMysteryIdsForUserInStore,
   getCachedMysterySnapshot,
 } from '@/lib/live-session-store';
 import { checkAndFinalizeGenerationIfDue } from '@/lib/background-mystery-generator';
@@ -29,21 +29,19 @@ export default async function OrdersPage({
     redirect(`/${locale}/login?next=${encodeURIComponent(`/${locale}/account/orders`)}`);
   }
 
-  // 1. Collect unlocked mystery IDs from local live-session store
-  const unlockedMysteryIds = new Set<string>(getAllPaidMysteryIdsInStore());
+  // 1. Collect unlocked mystery IDs strictly belonging to this user from local live-session store
+  const unlockedMysteryIds = new Set<string>(
+    getPaidMysteryIdsForUserInStore(user.id, user.email)
+  );
 
-  // 2. Collect unlocked mystery IDs from Supabase `orders` table (status = 'succeeded')
+  // 2. Collect unlocked mystery IDs strictly belonging to this user from Supabase `orders` table (status = 'succeeded')
   try {
-    let ordersQuery = supabase
+    const { data: ordersData } = await supabase
       .from('orders')
       .select('mystery_id, status, user_id')
-      .eq('status', 'succeeded');
+      .eq('status', 'succeeded')
+      .eq('user_id', user.id);
 
-    if (user?.id) {
-      ordersQuery = ordersQuery.or(`user_id.eq.${user.id},user_id.is.null`);
-    }
-
-    const { data: ordersData } = await ordersQuery;
     for (const order of ordersData || []) {
       if (order.mystery_id) {
         unlockedMysteryIds.add(order.mystery_id);
@@ -53,7 +51,7 @@ export default async function OrdersPage({
     // non-fatal if orders table or RLS blocks read
   }
 
-  // 3. Fetch mysteries from DB (both published and draft so any purchased mystery appears) and check carrier character `__game_session.isPaid`
+  // 3. Fetch mysteries from DB and check carrier character `__game_session.isPaid` ONLY when owned by this user
   const { data: mysteriesData } = await supabase
     .from('mysteries')
     .select('id, title, theme, status, min_players, max_players, current_round, created_at')
@@ -66,10 +64,19 @@ export default async function OrdersPage({
       .select('mystery_id, profile_data')
       .in('mystery_id', allMysteryIds);
 
+    const cleanUserEmail = (user.email || '').trim().toLowerCase();
     for (const row of charRows || []) {
       const profileData = row.profile_data as Record<string, any> | null;
-      if (profileData?.__game_session?.isPaid === true) {
-        unlockedMysteryIds.add(row.mystery_id);
+      const session = profileData?.__game_session;
+      if (session?.isPaid === true) {
+        const matchesUserId = session.paidByUserId && session.paidByUserId === user.id;
+        const matchesEmail =
+          cleanUserEmail &&
+          typeof session.customerEmail === 'string' &&
+          session.customerEmail.trim().toLowerCase() === cleanUserEmail;
+        if (matchesUserId || matchesEmail) {
+          unlockedMysteryIds.add(row.mystery_id);
+        }
       }
     }
   }

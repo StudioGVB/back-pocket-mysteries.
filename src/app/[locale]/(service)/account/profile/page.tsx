@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { acceptInvitation } from '@/app/actions/guest-invitations';
+import { getAllCachedMysteries } from '@/lib/live-session-store';
 import ProfileAndGuestsClient from './ProfileAndGuestsClient';
 
 export const metadata = { title: 'My Roster - Back Pocket Mysteries' };
@@ -81,11 +82,39 @@ async function ProfileContent({
     .maybeSingle();
 
   // Fetch manually-created guests
-  const { data: manualGuests } = await supabase
+  const { data: rawManualGuests } = await supabase
     .from('guests')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  const cachedMysteries = getAllCachedMysteries();
+  const cachedAvatarByGuestId = new Map<string, string>();
+  for (const m of Object.values(cachedMysteries || {})) {
+    for (const c of (m as any)?.characters || []) {
+      const pd = c.profile_data || {};
+      if (pd.guest_id && String(pd.avatar_url || '').includes('aiPhotoUrl=')) {
+        cachedAvatarByGuestId.set(pd.guest_id, pd.avatar_url);
+      }
+    }
+  }
+
+  const manualGuests = await Promise.all(
+    (rawManualGuests || []).map(async (mg: any) => {
+      if (!String(mg.avatar_url || '').includes('aiPhotoUrl=')) {
+        const cachedUrl = cachedAvatarByGuestId.get(mg.id);
+        if (cachedUrl) {
+          await supabase
+            .from('guests')
+            .update({ avatar_url: cachedUrl })
+            .eq('id', mg.id)
+            .eq('user_id', user.id);
+          return { ...mg, avatar_url: cachedUrl };
+        }
+      }
+      return mg;
+    })
+  );
 
   // Fetch linked guests (via accepted invitations)
   const { data: connections } = await (supabase as any)

@@ -104,7 +104,7 @@ export async function updateSession(request: NextRequest) {
   const isCastPage = /^\/mysteries\/[^/]+\/cast(\/|$)/.test(pathWithoutLocale)
   const isProtectedPage =
     ['/builder', '/account', '/admin'].some(p => pathWithoutLocale.startsWith(p)) || isCastPage
-  const isAdminOnlyPage = pathWithoutLocale.startsWith('/admin')
+  const isAdminOnlyPage = ['/admin', '/builder'].some(p => pathWithoutLocale.startsWith(p))
 
   if (!user && !isAuthPage && isProtectedPage) {
     const url = request.nextUrl.clone()
@@ -113,7 +113,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Strictly block non-admin authenticated users from /admin (customers can still access /builder and /account)
+  // Strictly block non-admin authenticated users from /admin and /builder (customers only access /account and public/service flows)
   if (user && isAdminOnlyPage) {
     const isAdmin = await isUserAdmin(supabase, user)
     if (!isAdmin) {

@@ -330,6 +330,9 @@ export async function toggleDiscountActiveAction(
   id: string,
   isActive: boolean
 ): Promise<{ success: boolean; discount?: DiscountRecord; error?: string }> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
   const local = readLocalStore();
   const all = await getDiscountsAction();
   const target = all.find((d) => d.id === id);
@@ -361,6 +364,9 @@ export async function toggleDiscountActiveAction(
 }
 
 export async function deleteDiscountAction(id: string): Promise<{ success: boolean }> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
   const local = readLocalStore();
   delete local.discounts[id];
   if (!local.deletedIds.includes(id)) {

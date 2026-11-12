@@ -161,7 +161,7 @@ function buildOfficialTicketEmailHtml(params: {
   const ctaUrl =
     audience === 'admin'
       ? `${SITE_BASE_URL}/en/admin/tickets`
-      : `${SITE_BASE_URL}/en/builder/support`;
+      : `${SITE_BASE_URL}/en/account/support`;
   const ctaLabel =
     audience === 'admin' ? 'View & Reply in Admin Dashboard' : 'View Ticket in Support Portal';
   const faqUrl = `${SITE_BASE_URL}/en/faq`;
@@ -607,6 +607,18 @@ export async function getCustomerTicketsAction(): Promise<{
  * Fetches all tickets for the Admin dashboard.
  */
 export async function getAllAdminTicketsAction(): Promise<SupportTicketRecord[]> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await isUserAdmin(supabase, user))) {
+      return [];
+    }
+  } catch {
+    return [];
+  }
+
   const allTickets = await loadAllMergedTickets();
 
   try {
@@ -876,18 +888,38 @@ export async function addTicketReplyAction(formData: FormData): Promise<{
 
   let supabase: any = null;
   let user: any = null;
+  let verifiedAdmin = false;
   try {
     supabase = await createClient();
     const { data } = await supabase.auth.getUser();
     user = data?.user || null;
+    if (user) {
+      verifiedAdmin = await isUserAdmin(supabase, user);
+    }
   } catch {}
 
-  const senderRole: TicketSenderRole = requestedRole === 'admin' ? 'admin' : 'customer';
+  if (!user) {
+    return { success: false, error: 'Not authenticated.' };
+  }
+
+  const senderRole: TicketSenderRole =
+    requestedRole === 'admin' && verifiedAdmin ? 'admin' : 'customer';
 
   const allTickets = await loadAllMergedTickets();
   const target = allTickets.find((t) => t.id === ticketId);
   if (!target) {
     return { success: false, error: 'Ticket not found.' };
+  }
+
+  // Strictly verify ticket ownership when replying as a customer
+  if (!verifiedAdmin) {
+    const cleanEmail = (user.email || '').trim().toLowerCase();
+    const ownsTicket =
+      target.user_id === user.id ||
+      (cleanEmail && (target.user_email || '').trim().toLowerCase() === cleanEmail);
+    if (!ownsTicket) {
+      return { success: false, error: 'Forbidden: You do not have access to this ticket.' };
+    }
   }
 
   // Upload any attached images on the reply
@@ -1061,7 +1093,7 @@ export async function updateTicketStatusAction(params: {
     formData.set('new_severity', params.severity);
   }
 
-  let isAdmin = true;
+  let isAdmin = false;
   try {
     const supabase = await createClient();
     const {
@@ -1089,6 +1121,18 @@ export async function deleteTicketAction(ticketId: string): Promise<{
   success: boolean;
   error?: string;
 }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await isUserAdmin(supabase, user))) {
+      return { success: false, error: 'Forbidden: Admin access required.' };
+    }
+  } catch {
+    return { success: false, error: 'Forbidden: Admin access required.' };
+  }
+
   const local = readLocalStore();
   delete local.tickets[ticketId];
   if (!local.deletedIds.includes(ticketId)) {

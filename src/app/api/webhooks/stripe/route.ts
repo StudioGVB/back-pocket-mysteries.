@@ -61,9 +61,13 @@ export async function POST(req: Request) {
       const tier = metadata.tier || (obj.mode === 'subscription' || event.type === 'customer.subscription.created' ? 'subscribe' : 'basic');
 
       if (mysteryId && mysteryId !== 'subscription' && mysteryId !== 'new') {
-        markMysteryPaidInStore(mysteryId, orderId);
+        markMysteryPaidInStore(mysteryId, orderId, {
+          paidByUserId: userId,
+        });
         if (slug && slug !== mysteryId) {
-          markMysteryPaidInStore(slug, orderId);
+          markMysteryPaidInStore(slug, orderId, {
+            paidByUserId: userId,
+          });
         }
 
         const { data: chars } = await supabase
@@ -86,6 +90,7 @@ export async function POST(req: Request) {
                   ...existingSession,
                   isPaid: true,
                   paidAt: new Date().toISOString(),
+                  paidByUserId: userId || existingSession.paidByUserId || null,
                   orderId: orderId || existingSession.orderId,
                 },
               },

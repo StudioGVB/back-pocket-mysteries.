@@ -38,6 +38,9 @@ export async function saveGoogleSearchConsoleConfigAction(input: {
   privateKey?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
+    const { requireAdmin } = await import('@/utils/admin-auth');
+    await requireAdmin();
+
     let siteUrl = (input.siteUrl || 'sc-domain:backpocketmysteries.com').trim();
     if (!siteUrl) siteUrl = 'sc-domain:backpocketmysteries.com';
 

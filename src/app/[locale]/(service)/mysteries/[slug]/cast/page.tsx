@@ -8,14 +8,18 @@ import {
   replacePlaceholderNamesWithRoles,
 } from '@/services/mysteries';
 import { getRelationshipsByMysteryId } from '@/services/relationships';
-import { getStaticMockGuests } from '@/utils/mock-guests';
 import { extractAccentFromAvatarUrl } from '@/utils/avatar';
 import { generatePinFromMysteryId } from '@/app/actions/customer-mystery';
 import { confirmMysteryOrderAction } from '@/app/actions/stripe';
-import { isMysteryPaidInStore } from '@/lib/live-session-store';
+import {
+  getPaidMysteryIdsForUserInStore,
+  getAllCachedMysteries,
+} from '@/lib/live-session-store';
 import { checkAndFinalizeGenerationIfDue } from '@/lib/background-mystery-generator';
 import { getTierForPlayerCount } from '@/utils/localization';
 import { getCleanCharacterPresentation } from '@/utils/character-display';
+import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
+import { isUserAdmin } from '@/utils/admin-auth';
 import CustomerCastClient from './CustomerCastClient';
 
 function inferRoleGender(char: any, rawBio: string): 'male' | 'female' | 'adaptable' {
@@ -157,122 +161,123 @@ export default async function CustomerMysteryCastPage({
     ]);
 
     const hostProfile = hostProfileRaw as any;
-    const hasActiveRoster =
-      (manualGuests && manualGuests.length > 0) || (connections && connections.length > 0);
+    const linkedGuestIds = (connections ?? []).map((c: any) => c.guest_user_id);
+    const linkedGuestNames: Record<string, string> = {};
+    if (linkedGuestIds.length > 0) {
+      const { data: linkedProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', linkedGuestIds);
+      (linkedProfiles ?? []).forEach((p: any) => {
+        linkedGuestNames[p.id] = p.full_name || 'Guest';
+      });
+    }
 
-    if (hasActiveRoster) {
-      const linkedGuestIds = (connections ?? []).map((c: any) => c.guest_user_id);
-      const linkedGuestNames: Record<string, string> = {};
-      if (linkedGuestIds.length > 0) {
-        const { data: linkedProfiles } = await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', linkedGuestIds);
-        (linkedProfiles ?? []).forEach((p: any) => {
-          linkedGuestNames[p.id] = p.full_name || 'Guest';
-        });
-      }
-
-      const fetchedGuests = [
-        ...(manualGuests || []).map((mg: any) => ({
-          id: mg.id,
-          name: mg.name,
-          gender: mg.gender || 'adaptable',
-          accent: mg.accent || extractAccentFromAvatarUrl(mg.avatar_url) || 'Australian',
-          eye_color: mg.eye_color || '',
-          height: mg.height || '',
-          avatar_url: mg.avatar_url || '',
-          traits: mg.traits || [],
-          bio: mg.bio || '',
-          isLinked: false,
-        })),
-        ...(connections || []).map((c: any) => ({
-          id: c.guest_user_id,
-          name: linkedGuestNames[c.guest_user_id] || 'Linked Guest',
-          gender:
-            c.profiles?.pronouns === 'he/him'
-              ? 'male'
-              : c.profiles?.pronouns === 'she/her'
-              ? 'female'
-              : 'adaptable',
-          accent: c.profiles?.avatar_config?.accent || 'Australian',
-          eye_color: '',
-          height: '',
-          avatar_url: avatarUrlHelper(c.profiles?.avatar_config) || '',
-          traits: c.profiles?.character_preferences || [],
-          bio: c.profiles?.bio || '',
-          isLinked: true,
-        })),
-      ];
-
-      if (hostProfile) {
-        fetchedGuests.push({
-          id: hostProfile.id,
-          name: hostProfile.full_name || user.user_metadata?.full_name || 'Host (You)',
-          gender: hostProfile.pronouns?.toLowerCase().includes('she')
-            ? 'female'
-            : hostProfile.pronouns?.toLowerCase().includes('he')
-            ? 'male'
-            : 'adaptable',
-          accent: hostProfile.avatar_config?.accent || 'Australian',
-          eye_color: hostProfile.avatar_config?.eyeColor || '',
-          height: hostProfile.avatar_config?.height || '',
-          avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
-          traits: hostProfile.character_preferences || [],
-          bio: hostProfile.bio || '',
-          isLinked: false,
-        });
-      }
-
-      guests = fetchedGuests;
-    } else {
-      // Fallback to RPC mock roster + host profile
-      const { data: rpcGuests } = await (supabase as any).rpc('get_mock_guests');
-      if (rpcGuests && (rpcGuests as any[]).length > 0) {
-        guests = (rpcGuests as any[]).map((rg: any) => ({
-          id: rg.id,
-          name: rg.name,
-          gender: rg.gender || 'adaptable',
-          accent: rg.accent || extractAccentFromAvatarUrl(rg.avatar_url) || 'Australian',
-          eye_color: rg.eye_color || '',
-          height: rg.height || '',
-          avatar_url: rg.avatar_url || '',
-          traits: rg.traits || [],
-          bio: rg.bio || '',
-          isLinked: false,
-        }));
-        if (hostProfile) {
-          guests.push({
-            id: hostProfile.id,
-            name: hostProfile.full_name || 'Gabriella Blyth',
-            gender: hostProfile.pronouns?.toLowerCase().includes('she') ? 'female' : 'male',
-            accent: hostProfile.avatar_config?.accent || 'Australian',
-            eye_color: hostProfile.avatar_config?.eyeColor || 'Hazel',
-            height: hostProfile.avatar_config?.height || 'Average',
-            avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
-            traits: hostProfile.character_preferences || [],
-            bio: hostProfile.bio || '',
-            isLinked: false,
-          });
+    const cachedMysteries = getAllCachedMysteries();
+    const cachedAvatarByGuestId = new Map<string, string>();
+    for (const m of Object.values(cachedMysteries || {})) {
+      for (const c of (m as any)?.characters || []) {
+        const pd = c.profile_data || {};
+        if (pd.guest_id && String(pd.avatar_url || '').includes('aiPhotoUrl=')) {
+          cachedAvatarByGuestId.set(pd.guest_id, pd.avatar_url);
         }
       }
     }
+
+    const hydratedManualGuests = await Promise.all(
+      (manualGuests || []).map(async (mg: any) => {
+        let avatarUrl = mg.avatar_url || '';
+        if (!avatarUrl.includes('aiPhotoUrl=')) {
+          const cachedUrl = cachedAvatarByGuestId.get(mg.id);
+          if (cachedUrl) {
+            avatarUrl = cachedUrl;
+            await supabase
+              .from('guests')
+              .update({ avatar_url: cachedUrl })
+              .eq('id', mg.id)
+              .eq('user_id', user.id);
+          } else {
+            try {
+              const aiRes = await generateGuestAvatarAction(mg.id, mg);
+              if (aiRes?.publicUrl) avatarUrl = aiRes.publicUrl;
+            } catch {
+              // ignore
+            }
+          }
+        }
+        return {
+          id: mg.id,
+          name: mg.name,
+          gender: mg.gender || 'adaptable',
+          accent: mg.accent || extractAccentFromAvatarUrl(avatarUrl) || 'Australian',
+          eye_color: mg.eye_color || '',
+          height: mg.height || '',
+          avatar_url: avatarUrl,
+          traits: mg.traits || [],
+          bio: mg.bio || '',
+          isLinked: false,
+        };
+      })
+    );
+
+    const fetchedGuests = [
+      ...hydratedManualGuests,
+      ...(connections || []).map((c: any) => ({
+        id: c.guest_user_id,
+        name: linkedGuestNames[c.guest_user_id] || 'Linked Guest',
+        gender:
+          c.profiles?.pronouns === 'he/him'
+            ? 'male'
+            : c.profiles?.pronouns === 'she/her'
+            ? 'female'
+            : 'adaptable',
+        accent: c.profiles?.avatar_config?.accent || 'Australian',
+        eye_color: '',
+        height: '',
+        avatar_url: avatarUrlHelper(c.profiles?.avatar_config) || '',
+        traits: c.profiles?.character_preferences || [],
+        bio: c.profiles?.bio || '',
+        isLinked: true,
+      })),
+    ];
+
+    if (hostProfile) {
+      fetchedGuests.push({
+        id: hostProfile.id,
+        name: hostProfile.full_name || user.user_metadata?.full_name || 'Host (You)',
+        gender: hostProfile.pronouns?.toLowerCase().includes('she')
+          ? 'female'
+          : hostProfile.pronouns?.toLowerCase().includes('he')
+          ? 'male'
+          : 'adaptable',
+        accent: hostProfile.avatar_config?.accent || 'Australian',
+        eye_color: hostProfile.avatar_config?.eyeColor || '',
+        height: hostProfile.avatar_config?.height || '',
+        avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
+        traits: hostProfile.character_preferences || [],
+        bio: hostProfile.bio || '',
+        isLinked: false,
+      });
+    } else {
+      // Even if profiles row hasn't been customized yet, include the logged-in user as Host (You)
+      fetchedGuests.push({
+        id: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Host (You)',
+        gender: 'adaptable',
+        accent: 'Australian',
+        eye_color: '',
+        height: '',
+        avatar_url: '',
+        traits: [],
+        bio: '',
+        isLinked: false,
+      });
+    }
+
+    guests = fetchedGuests;
   }
 
-  if (guests.length === 0) {
-    guests = getStaticMockGuests().map((sg: any) => ({
-      id: sg.id,
-      name: sg.name,
-      gender: sg.gender || 'adaptable',
-      accent: sg.accent || extractAccentFromAvatarUrl(sg.avatar_url) || 'Australian',
-      eye_color: sg.eye_color || '',
-      height: sg.height || '',
-      avatar_url: sg.avatar_url || '',
-      traits: sg.traits || [],
-      bio: sg.bio || '',
-      isLinked: false,
-    }));
-  }
+  const ownedGuestIds = new Set(guests.map((g: any) => g.id));
 
   // 3. Format characters without leaking Killer / Mandatory / Optional metadata in UI labels
   const rawCharacters: any[] = mystery.characters || [];
@@ -280,6 +285,10 @@ export default async function CustomerMysteryCastPage({
     const profile = (char.profile_data || {}) as any;
     const pres = getCleanCharacterPresentation(char, rawCharacters, { mode: 'generic' });
     const effectiveGender = inferRoleGender(char, pres.shortBlurb);
+
+    // Only pre-assign initialGuestId if that guest belongs to this customer's own roster
+    const safeInitialGuestId =
+      profile.guest_id && ownedGuestIds.has(profile.guest_id) ? profile.guest_id : null;
 
     return {
       id: char.id,
@@ -294,7 +303,8 @@ export default async function CustomerMysteryCastPage({
       outfitMasculine: pres.outfitVariants?.masculine || null,
       actBullets: pres.actBullets.slice(0, 2),
       characterPhotoUrl: pres.characterPhotoUrl,
-      initialGuestId: profile.guest_id || null,
+      outfitReferenceImages: pres.outfitReferenceImages,
+      initialGuestId: safeInitialGuestId,
     };
   });
 
@@ -315,10 +325,28 @@ export default async function CustomerMysteryCastPage({
     verifiedFromRedirect = Boolean(confirmRes.verified);
   }
 
+  const isAdmin = await isUserAdmin(supabase, user);
+  const userPaidStoreIds = new Set(getPaidMysteryIdsForUserInStore(user.id, user.email));
+  const cleanUserEmail = (user.email || '').trim().toLowerCase();
+
   let initialIsPaid =
+    isAdmin ||
     verifiedFromRedirect ||
-    isMysteryPaidInStore(mystery.id) ||
-    rawCharacters.some((c: any) => Boolean(c.profile_data?.__game_session?.isPaid));
+    userPaidStoreIds.has(mystery.id) ||
+    userPaidStoreIds.has(slug) ||
+    rawCharacters.some((c: any) => {
+      const sess = c.profile_data?.__game_session;
+      if (!sess?.isPaid) return false;
+      if (sess.paidByUserId && sess.paidByUserId === user.id) return true;
+      if (
+        cleanUserEmail &&
+        typeof sess.customerEmail === 'string' &&
+        sess.customerEmail.trim().toLowerCase() === cleanUserEmail
+      ) {
+        return true;
+      }
+      return false;
+    });
 
   if (!initialIsPaid && user) {
     const { data: paidOrder } = await supabase

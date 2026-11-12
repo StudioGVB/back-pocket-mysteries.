@@ -34,6 +34,7 @@ export interface StoredGameSession {
   reviews: StoredGuestReview[];
   isPaid?: boolean;
   paidAt?: string;
+  paidByUserId?: string;
   orderId?: string;
   generationStatus?: 'generating' | 'ready';
   generationStartedAt?: string;
@@ -134,10 +135,46 @@ export function cacheMysterySnapshot(mysteryId: string, mysteryData: any): void 
   if (!mysteryId || !mysteryData) return;
   const cache = readMysteryCache();
   const prev = cache.mysteries[mysteryId];
+
+  let mergedCharacters = mysteryData.characters || prev?.characters || [];
+  if (Array.isArray(mysteryData.characters) && Array.isArray(prev?.characters)) {
+    const prevById = new Map<string, any>(
+      prev.characters.filter((c: any) => c?.id).map((c: any) => [c.id, c])
+    );
+    mergedCharacters = mysteryData.characters.map((c: any) => {
+      const prevChar = prevById.get(c.id);
+      if (!prevChar?.profile_data) return c;
+      const curPd = (c.profile_data || {}) as Record<string, any>;
+      const prevPd = (prevChar.profile_data || {}) as Record<string, any>;
+      const sameGuest =
+        !curPd.guest_id ||
+        !prevPd.guest_id ||
+        String(curPd.guest_id) === String(prevPd.guest_id);
+      if (
+        sameGuest &&
+        typeof prevPd.avatar_url === 'string' &&
+        prevPd.avatar_url.includes('aiPhotoUrl=') &&
+        (!curPd.avatar_url || !String(curPd.avatar_url).includes('aiPhotoUrl='))
+      ) {
+        return {
+          ...c,
+          profile_data: {
+            ...curPd,
+            avatar_url: prevPd.avatar_url,
+            standard_character_photo_url:
+              curPd.standard_character_photo_url || prevPd.standard_character_photo_url,
+          },
+        };
+      }
+      return c;
+    });
+  }
+
   // Preserve existing clues/plot_beats/motives if a partial mystery object is passed
   cache.mysteries[mysteryId] = {
     ...(prev || {}),
     ...mysteryData,
+    characters: mergedCharacters,
     clues:
       Array.isArray(mysteryData.clues) && mysteryData.clues.length > 0
         ? mysteryData.clues
@@ -201,6 +238,7 @@ export function saveStoredGameSession(
     ...session,
     isPaid: session.isPaid ?? existing?.isPaid ?? false,
     paidAt: session.paidAt ?? existing?.paidAt,
+    paidByUserId: session.paidByUserId ?? existing?.paidByUserId,
     orderId: session.orderId ?? existing?.orderId,
     generationStatus: session.generationStatus ?? existing?.generationStatus,
     generationStartedAt: session.generationStartedAt ?? existing?.generationStartedAt,
@@ -221,6 +259,7 @@ export function markMysteryPaidInStore(
   mysteryId: string,
   orderId?: string,
   options?: {
+    paidByUserId?: string | null;
     customerEmail?: string | null;
     customerName?: string | null;
     durationMinutes?: number;
@@ -251,6 +290,7 @@ export function markMysteryPaidInStore(
     reviews: existing?.reviews || [],
     isPaid: true,
     paidAt: nowIso,
+    paidByUserId: options?.paidByUserId || existing?.paidByUserId,
     orderId: orderId || existing?.orderId,
     generationStatus: 'generating',
     generationStartedAt: isCurrentlyGenerating
@@ -313,6 +353,25 @@ export function getAllPaidMysteryIdsInStore(): string[] {
   const store = readSessionsFile();
   return Object.values(store.sessions)
     .filter(s => s && s.isPaid)
+    .map(s => s.mysteryId);
+}
+
+export function getPaidMysteryIdsForUserInStore(
+  userId: string,
+  userEmail?: string | null
+): string[] {
+  if (!userId && !userEmail) return [];
+  const cleanEmail = (userEmail || '').trim().toLowerCase();
+  const store = readSessionsFile();
+  return Object.values(store.sessions)
+    .filter(s => {
+      if (!s || !s.isPaid) return false;
+      if (userId && s.paidByUserId && s.paidByUserId === userId) return true;
+      if (cleanEmail && s.customerEmail && s.customerEmail.trim().toLowerCase() === cleanEmail) {
+        return true;
+      }
+      return false;
+    })
     .map(s => s.mysteryId);
 }
 

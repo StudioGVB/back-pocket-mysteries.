@@ -617,6 +617,7 @@ export async function confirmMysteryOrderAction({
       mysteryId,
       orderId || paymentIntentId || sessionId,
       {
+        paidByUserId: user?.id || null,
         customerEmail: user?.email || null,
         customerName,
         durationMinutes: 20,
@@ -624,6 +625,7 @@ export async function confirmMysteryOrderAction({
     );
     if (slug && slug !== mysteryId) {
       markMysteryPaidInStore(slug, orderId || paymentIntentId || sessionId, {
+        paidByUserId: user?.id || null,
         customerEmail: user?.email || null,
         customerName,
         durationMinutes: 20,
@@ -688,6 +690,7 @@ export async function confirmMysteryOrderAction({
               ...existingSession,
               isPaid: true,
               paidAt: storedSession.paidAt,
+              paidByUserId: user?.id || existingSession.paidByUserId || null,
               orderId: resolvedOrderId || paymentIntentId || sessionId || existingSession.orderId,
               generationStatus: storedSession.generationStatus || 'generating',
               generationStartedAt: storedSession.generationStartedAt,

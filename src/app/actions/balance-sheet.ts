@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/utils/admin-auth';
 import { getAiCosts, getLiveAiProviderStatus } from '@/app/[locale]/(admin)/admin/admin-data';
 
 export interface FinancialSettings {
@@ -182,6 +183,7 @@ function inferTierFromAmount(amount: number, currency: string): string {
 }
 
 export async function getBalanceSheetReportAction(): Promise<BalanceSheetReport> {
+  await requireAdmin();
   const store = await readStore();
   const { settings, customEntries } = store;
   const targetCurr = settings.displayCurrency;
@@ -434,6 +436,7 @@ export async function getBalanceSheetReportAction(): Promise<BalanceSheetReport>
 export async function updateFinancialSettingsAction(
   partial: Partial<FinancialSettings>
 ): Promise<{ success: boolean; settings: FinancialSettings }> {
+  await requireAdmin();
   const store = await readStore();
   const updated: FinancialSettings = {
     ...store.settings,
@@ -451,6 +454,7 @@ export async function updateFinancialSettingsAction(
 export async function addLedgerEntryAction(
   entry: Omit<LedgerEntry, 'id'>
 ): Promise<{ success: boolean; entry: LedgerEntry }> {
+  await requireAdmin();
   const store = await readStore();
   const newEntry: LedgerEntry = {
     ...entry,
@@ -468,6 +472,7 @@ export async function addLedgerEntryAction(
 export async function deleteLedgerEntryAction(
   id: string
 ): Promise<{ success: boolean }> {
+  await requireAdmin();
   const store = await readStore();
   const updatedEntries = store.customEntries.filter((e) => e.id !== id);
   await writeStore({

@@ -475,25 +475,28 @@ function computeCharacterIdentityHash(char: any, mystery?: any): string {
 
 async function hydrateCharactersWithGuests(characters: any[], hostId: string | null | undefined, supabase: any): Promise<any[]> {
   const guestMap = new Map<string, any>();
+  const isOwnerAdmin = hostId === '4903bd39-e54f-42e4-b679-2af5d128bb8f';
 
-  // 1. Static mock guests
-  for (const mg of getStaticMockGuests()) {
-    guestMap.set(mg.id, mg);
-  }
-
-  // 2. Database mock guests
-  try {
-    const { data: rpcMocks } = await (supabase as any).rpc('get_mock_guests');
-    if (Array.isArray(rpcMocks)) {
-      for (const mg of rpcMocks) {
-        guestMap.set(mg.id, mg);
-      }
+  if (isOwnerAdmin) {
+    // 1. Static mock guests (admin builder only)
+    for (const mg of getStaticMockGuests()) {
+      guestMap.set(mg.id, mg);
     }
-  } catch {
-    // ignore if RPC unavailable
+
+    // 2. Database mock guests (admin builder only)
+    try {
+      const { data: rpcMocks } = await (supabase as any).rpc('get_mock_guests');
+      if (Array.isArray(rpcMocks)) {
+        for (const mg of rpcMocks) {
+          guestMap.set(mg.id, mg);
+        }
+      }
+    } catch {
+      // ignore if RPC unavailable
+    }
   }
 
-  // 3. Host's custom guests
+  // 3. Host's custom guests (strictly scoped to hostId)
   if (hostId) {
     const { data: guests } = await supabase
       .from('guests')
