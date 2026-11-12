@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { hydrateTextWithCharacters } from '@/utils/hydration';
-import { stripCustomerFacingTitle } from '@/utils/clue-format';
+import { stripCustomerFacingTitle, shuffleRoundCluesDeterministically } from '@/utils/clue-format';
 
 // Helper function to format clue descriptions for printed cards
 function formatClueDescriptionForPrint(hydratedText: string) {
@@ -160,7 +160,7 @@ interface PrintCluesClientProps {
 export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCluesClientProps) {
   const [selectedClue, setSelectedClue] = useState<any | null>(null);
 
-  // Sort clues by round
+  // Sort clues by round and interleave real & fake clues
   const cluesByRound: { [key: number]: any[] } = { 1: [], 2: [], 3: [], 4: [] };
   clues.forEach(clue => {
     const round = clue.round_number || 1;
@@ -168,6 +168,10 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
       cluesByRound[round] = [];
     }
     cluesByRound[round].push(clue);
+  });
+  Object.keys(cluesByRound).forEach(r => {
+    const roundNum = Number(r);
+    cluesByRound[roundNum] = shuffleRoundCluesDeterministically(cluesByRound[roundNum], roundNum);
   });
 
   const handlePrint = () => {

@@ -6,11 +6,14 @@ import {
   extractVoiceRegionFromNotes,
   stripFormatTagFromNotes,
   embedFormatTagInNotes,
+  shuffleCluesAcrossRounds,
 } from '@/utils/clue-format';
 import { getCharacterRoleTitle, hydrateTextWithCharacters, stripEmDashes } from '@/utils/hydration';
 import {
   LOTR_GOSSIP_MOODBOARD,
   LOTR_MAIN_COVER_URL,
+  CHRISTMAS_CABIN_MOODBOARD,
+  CHRISTMAS_MAIN_COVER_URL,
   isRealityReunionMystery,
   serializeMysteryImageField,
 } from '@/utils/moodboard';
@@ -24,10 +27,439 @@ import {
   LOVE_ON_THE_ROCKS_MYSTERY,
   getCanonicalActiveMysteryBySlugOrId,
 } from '@/data/active-mysteries';
+import {
+  CHRISTMAS_NIGHTMARE_BEATS,
+  CHRISTMAS_NIGHTMARE_CHARACTERS,
+  CHRISTMAS_NIGHTMARE_CLUES,
+  CHRISTMAS_NIGHTMARE_DESCRIPTION,
+  CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
+  CHRISTMAS_NIGHTMARE_RELATIONSHIPS,
+  CHRISTMAS_NIGHTMARE_SUBPLOT,
+  CHRISTMAS_NIGHTMARE_SUBPLOTS,
+  CHRISTMAS_NIGHTMARE_THEME,
+  CHRISTMAS_NIGHTMARE_TITLE,
+  CHRISTMAS_WIFE_MOTIVE,
+  isChristmasNightmareMystery,
+  mapChristmasCharacterIds,
+} from '@/data/christmas-nightmare';
+import { cacheRelationshipsSnapshot } from '@/lib/live-session-store';
 import { cache } from 'react';
+import crypto from 'crypto';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
+
+export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any {
+  if (!mystery || !isChristmasNightmareMystery(mystery.title, mystery.theme)) {
+    return mystery;
+  }
+
+  const mysteryId = mystery.id;
+  const existingChars = Array.isArray(mystery.characters) ? mystery.characters : [];
+  const charIdMap = mapChristmasCharacterIds(existingChars);
+  const husbandId = charIdMap.husband;
+
+  // Check if already migrated to canonical Christmas Nightmare roles
+  const hasCanonicalNames =
+    existingChars.length === 6 &&
+    existingChars.some((c: any) => String(c.name || '').trim() === 'The Husband') &&
+    existingChars.some((c: any) => String(c.name || '').trim() === 'The Sister-in-Law') &&
+    existingChars.some((c: any) => String(c.name || '').trim() === 'The Mistress') &&
+    existingChars.some((c: any) => String(c.name || '').trim() === 'The Bestie');
+
+  const canonicalChristmasImageUrl = serializeMysteryImageField(
+    CHRISTMAS_MAIN_COVER_URL,
+    CHRISTMAS_CABIN_MOODBOARD
+  );
+  const needsImageUpgrade =
+    !mystery.image_url ||
+    String(mystery.image_url).startsWith('data:image/') ||
+    !String(mystery.image_url).includes('#moodboard=');
+
+  if (
+    supabase &&
+    mysteryId &&
+    (mystery.title !== CHRISTMAS_NIGHTMARE_TITLE ||
+      mystery.description !== CHRISTMAS_NIGHTMARE_DESCRIPTION ||
+      mystery.spice_level !== 'spicy' ||
+      needsImageUpgrade ||
+      !hasCanonicalNames)
+  ) {
+    supabase
+      .from('mysteries')
+      .update({
+        title: CHRISTMAS_NIGHTMARE_TITLE,
+        theme: CHRISTMAS_NIGHTMARE_THEME,
+        description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
+        inside_jokes: CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
+        min_players: 6,
+        max_players: 6,
+        complexity: 'medium',
+        spice_level: 'spicy',
+        ...(needsImageUpgrade ? { image_url: canonicalChristmasImageUrl } : {}),
+      })
+      .eq('id', mysteryId)
+      .then(() => {}, () => {});
+  }
+
+  mystery.title = CHRISTMAS_NIGHTMARE_TITLE;
+  mystery.theme = CHRISTMAS_NIGHTMARE_THEME;
+  mystery.description = CHRISTMAS_NIGHTMARE_DESCRIPTION;
+  mystery.inside_jokes = CHRISTMAS_NIGHTMARE_INSIDE_JOKES;
+  mystery.min_players = 6;
+  mystery.max_players = 6;
+  mystery.complexity = 'medium';
+  mystery.spice_level = 'spicy';
+  if (needsImageUpgrade) {
+    mystery.image_url = canonicalChristmasImageUrl;
+  }
+
+  // Sync characters + motives
+  const canonicalChars = CHRISTMAS_NIGHTMARE_CHARACTERS.map((spec) => {
+    const id = charIdMap[spec.key];
+    const existing = existingChars.find((c: any) => c?.id === id) || {};
+    const existingProfile = existing.profile_data || {};
+
+    // Preserve any linked guest info while replacing bio/act/outfit with canonical Christmas Nightmare profile
+    const mergedProfile: Record<string, any> = {
+      ...existingProfile,
+      ...spec.profile_data,
+    };
+    if (spec.gender !== 'adaptable') {
+      delete mergedProfile.presentation_male;
+      delete mergedProfile.presentation_female;
+    }
+
+    const motiveSpec = spec.key === 'wife' ? CHRISTMAS_WIFE_MOTIVE : spec.motive;
+    const existingMotive = Array.isArray(existing.motives) ? existing.motives[0] : null;
+    const motives = motiveSpec
+      ? [
+          {
+            id: existingMotive?.id || motiveSpec.legacyId || crypto.randomUUID(),
+            mystery_id: mysteryId,
+            character_id: id,
+            linked_character_id: husbandId,
+            motive_type: motiveSpec.motive_type,
+            strength: motiveSpec.strength,
+            notes: motiveSpec.notes,
+          },
+        ]
+      : [];
+
+    if (supabase && mysteryId && !hasCanonicalNames) {
+      if (existing?.id) {
+        supabase
+          .from('characters')
+          .update({
+            name: spec.name,
+            gender: spec.gender,
+            is_victim: spec.is_victim,
+            plot_role: spec.plot_role,
+            archetype: spec.archetype,
+            is_mandatory: spec.is_mandatory,
+            min_player_count: spec.min_player_count,
+            profile_data: mergedProfile,
+          })
+          .eq('id', id)
+          .then(() => {}, () => {});
+      } else {
+        supabase
+          .from('characters')
+          .insert({
+            id,
+            mystery_id: mysteryId,
+            name: spec.name,
+            gender: spec.gender,
+            is_victim: spec.is_victim,
+            plot_role: spec.plot_role,
+            archetype: spec.archetype,
+            is_mandatory: spec.is_mandatory,
+            min_player_count: spec.min_player_count,
+            profile_data: mergedProfile,
+          })
+          .then(() => {}, () => {});
+      }
+
+      if (motives.length > 0) {
+        const m = motives[0];
+        if (existingMotive?.id) {
+          supabase
+            .from('motives')
+            .update({
+              linked_character_id: husbandId,
+              motive_type: m.motive_type,
+              strength: m.strength,
+              notes: m.notes,
+            })
+            .eq('id', existingMotive.id)
+            .then(() => {}, () => {});
+        } else {
+          supabase
+            .from('motives')
+            .insert(m)
+            .then(() => {}, () => {});
+        }
+      }
+    }
+
+    return {
+      ...existing,
+      id,
+      mystery_id: mysteryId,
+      name: spec.name,
+      gender: spec.gender,
+      is_victim: spec.is_victim,
+      plot_role: spec.plot_role,
+      archetype: spec.archetype,
+      is_mandatory: spec.is_mandatory,
+      min_player_count: spec.min_player_count,
+      profile_data: mergedProfile,
+      motives,
+    };
+  });
+
+  mystery.characters = canonicalChars;
+
+  // Sync plot_beats if present on mystery object
+  if (Array.isArray(mystery.plot_beats)) {
+    const existingBeats = mystery.plot_beats;
+    const beatIdByNumber: Record<number, string> = {};
+
+    const canonicalBeats = CHRISTMAS_NIGHTMARE_BEATS.map((bSpec) => {
+      const existingBeat =
+        existingBeats.find((eb: any) => eb.beat_number === bSpec.beat_number || eb.sort_order === bSpec.sort_order) ||
+        null;
+      const beatId = existingBeat?.id || bSpec.legacyId || crypto.randomUUID();
+      beatIdByNumber[bSpec.beat_number] = beatId;
+      const involvedIds = bSpec.involvedKeys.map((k) => charIdMap[k]).filter(Boolean);
+
+      if (
+        supabase &&
+        mysteryId &&
+        (!existingBeat ||
+          existingBeat.event_title !== bSpec.event_title ||
+          existingBeat.description !== bSpec.description)
+      ) {
+        if (existingBeat?.id) {
+          supabase
+            .from('plot_beats')
+            .update({
+              beat_number: bSpec.beat_number,
+              sort_order: bSpec.sort_order,
+              event_title: bSpec.event_title,
+              description: bSpec.description,
+              beat_type: bSpec.beat_type,
+              timeline_phase: bSpec.timeline_phase,
+              characters_involved: involvedIds,
+              is_required: true,
+            })
+            .eq('id', existingBeat.id)
+            .then(() => {}, () => {});
+        } else {
+          supabase
+            .from('plot_beats')
+            .insert({
+              id: beatId,
+              mystery_id: mysteryId,
+              beat_number: bSpec.beat_number,
+              sort_order: bSpec.sort_order,
+              event_title: bSpec.event_title,
+              description: bSpec.description,
+              beat_type: bSpec.beat_type,
+              timeline_phase: bSpec.timeline_phase,
+              characters_involved: involvedIds,
+              is_required: true,
+            })
+            .then(() => {}, () => {});
+        }
+      }
+
+      return {
+        ...(existingBeat || {}),
+        id: beatId,
+        mystery_id: mysteryId,
+        beat_number: bSpec.beat_number,
+        sort_order: bSpec.sort_order,
+        event_title: bSpec.event_title,
+        description: bSpec.description,
+        beat_type: bSpec.beat_type,
+        timeline_phase: bSpec.timeline_phase,
+        characters_involved: involvedIds,
+        is_required: true,
+      };
+    });
+
+    mystery.plot_beats = canonicalBeats;
+
+    // Sync clues if present
+    if (Array.isArray(mystery.clues)) {
+      const existingClues = mystery.clues;
+      mystery.clues = CHRISTMAS_NIGHTMARE_CLUES.map((cSpec, idx) => {
+        const existingClue = existingClues.find((ec: any) => ec.id === cSpec.legacyId) || existingClues[idx] || null;
+        const clueId = existingClue?.id || cSpec.legacyId || crypto.randomUUID();
+        const linkedBeatId = cSpec.beatNumber ? beatIdByNumber[cSpec.beatNumber] || null : null;
+
+        if (
+          supabase &&
+          mysteryId &&
+          (!existingClue ||
+            existingClue.title !== cSpec.title ||
+            existingClue.description !== cSpec.description ||
+            existingClue.internal_notes !== cSpec.internal_notes)
+        ) {
+          if (existingClue?.id) {
+            supabase
+              .from('clues')
+              .update({
+                title: cSpec.title,
+                description: cSpec.description,
+                clue_type: cSpec.clue_type,
+                implication_type: cSpec.implication_type,
+                evidence_status: cSpec.evidence_status,
+                round_number: cSpec.round_number,
+                is_essential: cSpec.is_essential,
+                linked_plot_beat_id: linkedBeatId,
+                static_image_url: cSpec.static_image_url ?? null,
+                internal_notes: cSpec.internal_notes,
+                generation_prompt: cSpec.generation_prompt,
+              })
+              .eq('id', existingClue.id)
+              .then(() => {}, () => {});
+          } else {
+            supabase
+              .from('clues')
+              .insert({
+                id: clueId,
+                mystery_id: mysteryId,
+                title: cSpec.title,
+                description: cSpec.description,
+                clue_type: cSpec.clue_type,
+                implication_type: cSpec.implication_type,
+                evidence_status: cSpec.evidence_status,
+                round_number: cSpec.round_number,
+                is_essential: cSpec.is_essential,
+                linked_plot_beat_id: linkedBeatId,
+                static_image_url: cSpec.static_image_url ?? null,
+                internal_notes: cSpec.internal_notes,
+                generation_prompt: cSpec.generation_prompt,
+              })
+              .then(() => {}, () => {});
+          }
+        }
+
+        return {
+          ...(existingClue || {}),
+          id: clueId,
+          mystery_id: mysteryId,
+          title: cSpec.title,
+          description: cSpec.description,
+          clue_type: cSpec.clue_type,
+          implication_type: cSpec.implication_type,
+          evidence_status: cSpec.evidence_status,
+          round_number: cSpec.round_number,
+          is_essential: cSpec.is_essential,
+          linked_plot_beat_id: linkedBeatId,
+          static_image_url: cSpec.static_image_url ?? null,
+          format: cSpec.format,
+          internal_notes: stripFormatTagFromNotes(cSpec.internal_notes),
+          generation_prompt: cSpec.generation_prompt,
+        };
+      });
+    }
+  }
+
+  // Sync subplots if present
+  if (Array.isArray(mystery.subplots)) {
+    const existingSubs = mystery.subplots;
+    mystery.subplots = CHRISTMAS_NIGHTMARE_SUBPLOTS.map((sSpec, idx) => {
+      const existingSub = existingSubs.find((es: any) => es.id === sSpec.id) || existingSubs[idx] || null;
+      const subId = existingSub?.id || sSpec.id;
+      const primaryId = charIdMap[sSpec.primaryKey];
+      const secondaryId = charIdMap[sSpec.secondaryKey];
+
+      if (
+        supabase &&
+        mysteryId &&
+        (!existingSub || existingSub.title !== sSpec.title || existingSub.description !== sSpec.description)
+      ) {
+        if (existingSub?.id) {
+          supabase
+            .from('subplots')
+            .update({
+              title: sSpec.title,
+              theme: sSpec.theme,
+              description: sSpec.description,
+              primary_character_id: primaryId,
+              secondary_character_id: secondaryId,
+            })
+            .eq('id', existingSub.id)
+            .then(() => {}, () => {});
+        } else {
+          supabase
+            .from('subplots')
+            .insert({
+              id: subId,
+              mystery_id: mysteryId,
+              title: sSpec.title,
+              theme: sSpec.theme,
+              description: sSpec.description,
+              primary_character_id: primaryId,
+              secondary_character_id: secondaryId,
+            })
+            .then(() => {}, () => {});
+        }
+      }
+
+      return {
+        ...(existingSub || {}),
+        id: subId,
+        mystery_id: mysteryId,
+        title: sSpec.title,
+        theme: sSpec.theme,
+        description: sSpec.description,
+        primary_character_id: primaryId,
+        secondary_character_id: secondaryId,
+      };
+    });
+  }
+
+  // Build and cache the 12 canonical relationships for this mystery
+  if (mysteryId) {
+    const canonicalRels = CHRISTMAS_NIGHTMARE_RELATIONSHIPS.map((rel) => {
+      const [a, b] = [charIdMap[rel.charAKey], charIdMap[rel.charBKey]].sort();
+      return {
+        id: crypto.createHash('md5').update(`${mysteryId}:${a}:${b}`).digest('hex').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5'),
+        mystery_id: mysteryId,
+        character_a_id: a,
+        character_b_id: b,
+        know_each_other: true,
+        dynamics: rel.dynamics,
+        notes: rel.notes,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
+    cacheRelationshipsSnapshot(mysteryId, canonicalRels);
+
+    if (supabase && !hasCanonicalNames) {
+      supabase
+        .from('relationships')
+        .delete()
+        .eq('mystery_id', mysteryId)
+        .then(() => {
+          supabase
+            .from('relationships')
+            .upsert(
+              canonicalRels.map(({ id: _id, created_at: _c, updated_at: _u, ...rest }) => rest),
+              { onConflict: 'mystery_id,character_a_id,character_b_id' }
+            )
+            .then(() => {}, () => {});
+        }, () => {});
+    }
+  }
+
+  return mystery;
+}
 
 function ensureRealityPromoCover(mystery: any, supabase?: any): any {
   if (!mystery || !isRealityReunionMystery(mystery.theme, mystery.title)) {
@@ -54,19 +486,44 @@ function ensureRealityPromoCover(mystery: any, supabase?: any): any {
   return mystery;
 }
 
-export async function getMysteries() {
+export async function getMysteries(): Promise<Mystery[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data, error } = (await supabase
     .from('mysteries')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*, characters(id, name, gender, is_victim, plot_role, archetype, is_mandatory, profile_data)')
+    .order('created_at', { ascending: false })) as any;
 
   if (error) {
     console.error('Error fetching mysteries:', error);
     return [];
   }
 
-  return (data || []).map((m: any) => ensureRealityPromoCover(m, supabase));
+  return (data || []).map((m: any) => {
+    const upgraded = ensureChristmasNightmareCanon(ensureRealityPromoCover(m, supabase), supabase);
+    const rawChars = Array.isArray(upgraded.characters) ? upgraded.characters : [];
+    const chars = normalizeCharacterList(rawChars, supabase);
+    const cleanDesc = upgraded.description
+      ? hydrateTextWithCharacters(
+          replaceLegacyNamesWithRoleTokens(
+            replacePlaceholderNamesWithRoles(upgraded.description, rawChars)
+          ),
+          chars,
+          'role'
+        )
+      : upgraded.description;
+    if (cleanDesc && cleanDesc !== upgraded.description && upgraded.id) {
+      supabase
+        .from('mysteries')
+        .update({ description: cleanDesc })
+        .eq('id', upgraded.id)
+        .then(() => {}, () => {});
+    }
+    return {
+      ...upgraded,
+      characters: chars,
+      description: cleanDesc,
+    };
+  });
 }
 
 export function replacePlaceholderNamesWithRoles(
@@ -74,7 +531,7 @@ export function replacePlaceholderNamesWithRoles(
   characters: any[]
 ): string {
   if (!text) return '';
-  let result = text;
+  let result = replaceLegacyNamesWithRoleTokens(text);
 
   const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -102,7 +559,7 @@ export function replacePlaceholderNamesWithRoles(
 
   // Unwrap any remaining {{Token}}
   result = result.replace(/\{\{([A-Za-z0-9\s'._&-]+)\}\}/g, '$1');
-  return result;
+  return stripEmDashes(result);
 }
 
 export async function getPublishedMysteries() {
@@ -294,19 +751,110 @@ const LEGACY_TOKEN_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bAva\b/g, 'The Runner-Up'],
   [/\bZayn\b/g, 'The Fan-Favourite Flameout'],
   [/\bRikki\b/g, 'The Hair & Makeup Artist'],
+  // Christmas Nightmare legacy placeholder names
+  [/\bThe\s+notorious\s+(?:tycoon\s+)?(?:Elias\s+Thorne|\{\{The\s+Tycoon\}\}|The\s+Tycoon)\b/gi, '{{The Tycoon}}'],
+  [/\b(?:notorious\s+)?tycoon\s+Elias\s+Thorne\b/gi, '{{The Tycoon}}'],
+  [/\bElias\s+Thorne\b/gi, '{{The Tycoon}}'],
+  [/\bDr\.?\s+Aris\s+Thorne\b/gi, '{{The Doctor}}'],
+  [/\bAris\s+Thorne\b/gi, '{{The Doctor}}'],
+  [/\bVivienne\s+Thorne\b/gi, '{{The Artist}}'],
+  [/\bSergeant\s+Vance\b/gi, '{{The Sergeant}}'],
+  [/\bSgt\.?\s+Vance\b/gi, '{{The Sergeant}}'],
+  [/\bMallory\s+Vance\b/gi, '{{The Sergeant}}'],
+  [/\bClara\s+Bellwether\b/gi, '{{The Entrepreneur}}'],
+  [/\bthe\s+Thorne\s+name\b/gi, 'the family name'],
+  [/\bElias\b/g, '{{The Tycoon}}'],
+  [/\bVivienne\b/g, '{{The Artist}}'],
+  [/\bAris\b/g, '{{The Doctor}}'],
+  [/\bMallory\b/g, '{{The Sergeant}}'],
+  [/\bClara\b/g, '{{The Entrepreneur}}'],
+  [/\bRobin\b/g, '{{The Caretaker}}'],
 ];
 
-export function replaceLegacyNamesWithRoleTokens(text: string | null | undefined): string {
+const IGNORED_DYNAMIC_NAME_WORDS = new Set([
+  'the', 'mr', 'mrs', 'ms', 'miss', 'dr', 'doctor', 'sgt', 'sergeant', 'prof', 'professor',
+  'capt', 'captain', 'lady', 'lord', 'sir', 'madame', 'detective', 'inspector', 'general',
+  'colonel', 'father', 'sister', 'brother', 'coach', 'judge', 'mayor', 'senator', 'prince',
+  'princess', 'king', 'queen', 'chef', 'victim', 'suspect', 'innocent', 'killer', 'assistant',
+]);
+
+export function buildDynamicPlaceholderReplacements(characters: any[] | null | undefined): Array<[RegExp, string]> {
+  if (!Array.isArray(characters) || characters.length === 0) return [];
+  const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rules: Array<[RegExp, string]> = [];
+
+  for (const char of characters) {
+    if (!char?.name) continue;
+    const parts = String(char.name).split('|').map((s: string) => s.trim());
+    const rawBase = parts[0] || '';
+    const roleTitle = getCharacterRoleTitle(char);
+    const bareRole = roleTitle.replace(/^the\s+/i, '').trim();
+
+    if (
+      rawBase &&
+      rawBase.toLowerCase() !== roleTitle.toLowerCase() &&
+      rawBase.toLowerCase() !== bareRole.toLowerCase()
+    ) {
+      // Full base name (e.g. "Elias Thorne") -> {{The Tycoon}}
+      rules.push([new RegExp(`\\b${escapeRegExp(rawBase)}\\b`, 'gi'), `{{${roleTitle}}}`]);
+      // Individual tokens (first name / surname)
+      const tokens = rawBase
+        .replace(/['".,]/g, ' ')
+        .split(/\s+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length >= 3 && !IGNORED_DYNAMIC_NAME_WORDS.has(t.toLowerCase()) && t.toLowerCase() !== bareRole.toLowerCase());
+      for (const tok of tokens) {
+        rules.push([new RegExp(`\\b${escapeRegExp(tok)}\\b`, 'g'), `{{${roleTitle}}}`]);
+      }
+    }
+  }
+  return rules;
+}
+
+export function replaceLegacyNamesWithRoleTokens(
+  text: string | null | undefined,
+  extraRules?: Array<[RegExp, string]>
+): string {
   if (!text) return '';
   let updated = text;
+  if (Array.isArray(extraRules)) {
+    for (const [re, rep] of extraRules) {
+      updated = updated.replace(re, rep);
+    }
+  }
   for (const [re, rep] of LEGACY_TOKEN_REPLACEMENTS) {
     updated = updated.replace(re, rep);
   }
-  return updated;
+  return stripEmDashes(updated);
 }
 
-function normalizeCharacterList(characters: any[] | null | undefined, supabase?: any): any[] {
+function normalizeCharacterList(
+  characters: any[] | null | undefined,
+  supabase?: any,
+  dynamicRules?: Array<[RegExp, string]>
+): any[] {
   if (!Array.isArray(characters)) return [];
+  const activeDynamicRules = dynamicRules ?? buildDynamicPlaceholderReplacements(characters);
+
+  let localGeneratedFiles: string[] = [];
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const dir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'generated-avatars');
+    if (fs.existsSync(dir)) {
+      localGeneratedFiles = fs.readdirSync(dir);
+    }
+  } catch {
+    // Ignore fs errors
+  }
+
+  let cachedMysteriesList: any[] = [];
+  try {
+    cachedMysteriesList = getAllCachedMysteries();
+  } catch {
+    // Ignore cache read errors
+  }
+
   return characters.map((char: any) => {
     if (!char) return char;
     const roleTitle = getCharacterRoleTitle(char);
@@ -322,9 +870,13 @@ function normalizeCharacterList(characters: any[] | null | undefined, supabase?:
 
     let profileStr = JSON.stringify(char.profile_data || {});
     const origProfileStr = profileStr;
+    for (const [re, rep] of activeDynamicRules) {
+      profileStr = profileStr.replace(re, rep);
+    }
     for (const [re, rep] of LEGACY_TOKEN_REPLACEMENTS) {
       profileStr = profileStr.replace(re, rep);
     }
+    profileStr = stripEmDashes(profileStr);
     const cleanedProfile = JSON.parse(profileStr);
 
     // Preserve real guest names so a guest named "Gabby" isn't overwritten with "The Star"
@@ -348,6 +900,52 @@ function normalizeCharacterList(characters: any[] | null | undefined, supabase?:
       (c) => c.roleTitle.toLowerCase() === roleTitle.toLowerCase()
     );
     let profileRestored = false;
+
+    // Recover AI guest portrait if character has a guest_id and lacks aiPhotoUrl=
+    const curAvatarUrl = String(cleanedProfile.avatar_url || '');
+    if (cleanedProfile.guest_id && !curAvatarUrl.includes('aiPhotoUrl=')) {
+      const guestIdStr = String(cleanedProfile.guest_id);
+      let recoveredAiPhotoUrl: string | null = null;
+
+      // 1. Check cached mysteries for an upgraded avatar_url for this character or guest_id
+      for (const cm of cachedMysteriesList) {
+        if (!Array.isArray(cm?.characters)) continue;
+        for (const cc of cm.characters) {
+          const ccPd = cc?.profile_data;
+          if (
+            ccPd &&
+            (cc.id === char.id || String(ccPd.guest_id || '') === guestIdStr) &&
+            typeof ccPd.avatar_url === 'string' &&
+            ccPd.avatar_url.includes('aiPhotoUrl=')
+          ) {
+            cleanedProfile.avatar_url = ccPd.avatar_url;
+            if (ccPd.standard_character_photo_url) {
+              cleanedProfile.standard_character_photo_url = ccPd.standard_character_photo_url;
+            }
+            profileRestored = true;
+            recoveredAiPhotoUrl = ccPd.standard_character_photo_url || ccPd.avatar_url;
+            break;
+          }
+        }
+        if (recoveredAiPhotoUrl) break;
+      }
+
+      // 2. Check public/generated-avatars/${guestId}-*.jpg
+      if (!recoveredAiPhotoUrl && localGeneratedFiles.length > 0) {
+        const matchedFile = localGeneratedFiles.find(
+          (f) => f.startsWith(`${guestIdStr}-`) && (f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.webp'))
+        );
+        if (matchedFile) {
+          const localUrl = `/generated-avatars/${matchedFile}`;
+          const baseAvatar = curAvatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanedProfile.guest_name || cleanedProfile.name || guestIdStr)}`;
+          const separator = baseAvatar.includes('?') ? '&' : '?';
+          cleanedProfile.avatar_url = `${baseAvatar}${separator}aiPhotoUrl=${encodeURIComponent(localUrl)}`;
+          cleanedProfile.standard_character_photo_url = localUrl;
+          profileRestored = true;
+        }
+      }
+    }
+
     if (canonicalMatch) {
       if (!cleanedProfile.bio || !String(cleanedProfile.bio).trim()) {
         cleanedProfile.bio = canonicalMatch.profile_data.bio;
@@ -368,6 +966,44 @@ function normalizeCharacterList(characters: any[] | null | undefined, supabase?:
         cleanedProfile.act_bullets = canonicalMatch.profile_data.act_bullets;
         profileRestored = true;
       }
+      if (
+        (!Array.isArray(cleanedProfile.outfit_reference_images) ||
+          cleanedProfile.outfit_reference_images.filter(Boolean).length < 3) &&
+        canonicalMatch.profile_data.outfit_reference_images
+      ) {
+        cleanedProfile.outfit_reference_images = canonicalMatch.profile_data.outfit_reference_images;
+        profileRestored = true;
+      }
+      if (canonicalMatch.profile_data.presentation_female) {
+        cleanedProfile.presentation_female = {
+          ...(canonicalMatch.profile_data.presentation_female || {}),
+          ...(cleanedProfile.presentation_female || {}),
+        };
+        if (
+          (!Array.isArray(cleanedProfile.presentation_female.outfit_reference_images) ||
+            cleanedProfile.presentation_female.outfit_reference_images.filter(Boolean).length < 3) &&
+          canonicalMatch.profile_data.presentation_female.outfit_reference_images
+        ) {
+          cleanedProfile.presentation_female.outfit_reference_images =
+            canonicalMatch.profile_data.presentation_female.outfit_reference_images;
+          profileRestored = true;
+        }
+      }
+      if (canonicalMatch.profile_data.presentation_male) {
+        cleanedProfile.presentation_male = {
+          ...(canonicalMatch.profile_data.presentation_male || {}),
+          ...(cleanedProfile.presentation_male || {}),
+        };
+        if (
+          (!Array.isArray(cleanedProfile.presentation_male.outfit_reference_images) ||
+            cleanedProfile.presentation_male.outfit_reference_images.filter(Boolean).length < 3) &&
+          canonicalMatch.profile_data.presentation_male.outfit_reference_images
+        ) {
+          cleanedProfile.presentation_male.outfit_reference_images =
+            canonicalMatch.profile_data.presentation_male.outfit_reference_images;
+          profileRestored = true;
+        }
+      }
     }
 
     // Also normalize legacy names in character motives
@@ -375,7 +1011,7 @@ function normalizeCharacterList(characters: any[] | null | undefined, supabase?:
     if (Array.isArray(char.motives)) {
       normalizedMotives = char.motives.map((m: any) => {
         if (!m || !m.notes) return m;
-        const cleanNotes = replaceLegacyNamesWithRoleTokens(m.notes);
+        const cleanNotes = replaceLegacyNamesWithRoleTokens(m.notes, activeDynamicRules);
         if (cleanNotes !== m.notes) {
           if (supabase && m.id) {
             supabase
@@ -391,24 +1027,27 @@ function normalizeCharacterList(characters: any[] | null | undefined, supabase?:
       });
     }
 
+    const cleanArchetype = char.archetype ? replaceLegacyNamesWithRoleTokens(char.archetype, activeDynamicRules) : char.archetype;
     const finalProfileStr = JSON.stringify(cleanedProfile);
-    if (rawName !== cleanName || origProfileStr !== finalProfileStr || profileRestored) {
+    if (rawName !== cleanName || origProfileStr !== finalProfileStr || profileRestored || cleanArchetype !== char.archetype) {
       if (supabase && char.id) {
         supabase
           .from('characters')
-          .update({ name: cleanName, profile_data: cleanedProfile })
+          .update({ name: cleanName, archetype: cleanArchetype, profile_data: cleanedProfile })
           .eq('id', char.id)
           .then(() => {});
       }
       return {
         ...char,
         name: cleanName,
+        archetype: cleanArchetype,
         profile_data: cleanedProfile,
         motives: normalizedMotives,
       };
     }
     return {
       ...char,
+      archetype: cleanArchetype,
       motives: normalizedMotives,
     };
   });
@@ -434,7 +1073,7 @@ export const getMysteryById = cache(async (id: string) => {
   if (error || !data) {
     const cached = getCachedMysterySnapshot(id);
     if (cached) {
-      return cached;
+      return ensureChristmasNightmareCanon(cached, supabase);
     }
     if (error?.code === '42703') {
       console.error('CRITICAL: Database column missing in mystery fetch. Please run character SQL migration.', error);
@@ -444,31 +1083,54 @@ export const getMysteryById = cache(async (id: string) => {
     return null;
   }
 
-  const upgradedData = ensureRealityPromoCover(data, supabase);
+  const upgradedData = ensureChristmasNightmareCanon(ensureRealityPromoCover(data, supabase), supabase);
   data.image_url = upgradedData.image_url;
 
+  const rawChars = Array.isArray(data?.characters) ? data.characters : [];
+  const dynamicRules = buildDynamicPlaceholderReplacements(rawChars);
+
   if (Array.isArray(data?.characters)) {
-    data.characters = normalizeCharacterList(data.characters, supabase);
+    data.characters = normalizeCharacterList(data.characters, supabase, dynamicRules);
   }
 
   if (Array.isArray(data?.plot_beats)) {
-    data.plot_beats = normalizePlotBeats(data.plot_beats, id, supabase);
+    data.plot_beats = normalizePlotBeats(data.plot_beats, id, supabase, dynamicRules);
   }
 
   if (Array.isArray(data?.subplots)) {
-    data.subplots = data.subplots.map((s: any) => ({
-      ...s,
-      title: replaceLegacyNamesWithRoleTokens(s.title),
-      description: s.description ? replaceLegacyNamesWithRoleTokens(s.description) : s.description,
-    }));
+    data.subplots = data.subplots.map((s: any) => {
+      const cleanTitle = replaceLegacyNamesWithRoleTokens(s.title, dynamicRules);
+      const cleanDesc = s.description ? replaceLegacyNamesWithRoleTokens(s.description, dynamicRules) : s.description;
+      if (supabase && s.id && (cleanTitle !== s.title || cleanDesc !== s.description)) {
+        supabase
+          .from('subplots')
+          .update({ title: cleanTitle, description: cleanDesc })
+          .eq('id', s.id)
+          .then(() => {}, () => {});
+      }
+      return {
+        ...s,
+        title: cleanTitle,
+        description: cleanDesc,
+      };
+    });
   }
 
   if (data?.description && Array.isArray(data?.characters)) {
-    data.description = hydrateTextWithCharacters(data.description, data.characters, 'role');
+    const preCleanedDesc = replaceLegacyNamesWithRoleTokens(data.description, dynamicRules);
+    const cleanDesc = hydrateTextWithCharacters(preCleanedDesc, data.characters, 'role');
+    if (supabase && data.id && cleanDesc !== data.description) {
+      supabase
+        .from('mysteries')
+        .update({ description: cleanDesc })
+        .eq('id', data.id)
+        .then(() => {}, () => {});
+    }
+    data.description = cleanDesc;
   }
 
   if (Array.isArray(data?.clues)) {
-    data.clues = normalizeClueList(data.clues, supabase);
+    data.clues = normalizeClueList(data.clues, supabase, dynamicRules);
   }
 
   cacheMysterySnapshot(id, data);
@@ -481,6 +1143,12 @@ export const getMysteryById = cache(async (id: string) => {
 });
 
 export const getCharactersByMysteryId = cache(async (mysteryId: string) => {
+  const cached = getCachedMysterySnapshot(mysteryId);
+  if (cached && isChristmasNightmareMystery(cached.title, cached.theme)) {
+    const upgraded = ensureChristmasNightmareCanon(cached);
+    return normalizeCharacterList(upgraded.characters || []);
+  }
+
   const supabase = await createClient();
   
   const { data, error } = (await supabase
@@ -605,13 +1273,33 @@ export const LOTR_CANONICAL_BEATS: Record<number, { event_title: string; descrip
   },
 };
 
-export function normalizePlotBeats(beats: any[], mysteryId: string, supabase?: any): any[] {
+export function normalizePlotBeats(
+  beats: any[],
+  mysteryId: string,
+  supabase?: any,
+  dynamicRules?: Array<[RegExp, string]>
+): any[] {
   if (!Array.isArray(beats) || mysteryId !== '69b65a91-1cc2-4267-94a4-59297428af28') {
-    return (beats || []).map((b: any) => ({
-      ...b,
-      event_title: replaceLegacyNamesWithRoleTokens(b.event_title),
-      description: replaceLegacyNamesWithRoleTokens(b.description),
-    }));
+    return (beats || []).map((b: any) => {
+      const cleanTitle = replaceLegacyNamesWithRoleTokens(b.event_title, dynamicRules);
+      const cleanDesc = replaceLegacyNamesWithRoleTokens(b.description, dynamicRules);
+      if (supabase && b.id && (cleanTitle !== b.event_title || cleanDesc !== b.description)) {
+        supabase
+          .from('plot_beats')
+          .update({
+            event_title: cleanTitle,
+            description: cleanDesc,
+          })
+          .eq('id', b.id)
+          .then(() => {})
+          .catch(() => {});
+      }
+      return {
+        ...b,
+        event_title: cleanTitle,
+        description: cleanDesc,
+      };
+    });
   }
 
   return beats.map((beat: any) => {
@@ -619,8 +1307,8 @@ export function normalizePlotBeats(beats: any[], mysteryId: string, supabase?: a
     if (!canonical) {
       return {
         ...beat,
-        event_title: replaceLegacyNamesWithRoleTokens(beat.event_title),
-        description: replaceLegacyNamesWithRoleTokens(beat.description),
+        event_title: replaceLegacyNamesWithRoleTokens(beat.event_title, dynamicRules),
+        description: replaceLegacyNamesWithRoleTokens(beat.description, dynamicRules),
       };
     }
 
@@ -648,6 +1336,12 @@ export function normalizePlotBeats(beats: any[], mysteryId: string, supabase?: a
 }
 
 export const getPlotBeatsByMysteryId = cache(async (mysteryId: string) => {
+  const cached = getCachedMysterySnapshot(mysteryId);
+  if (cached && isChristmasNightmareMystery(cached.title, cached.theme)) {
+    const upgraded = ensureChristmasNightmareCanon(cached);
+    return normalizePlotBeats(upgraded.plot_beats || [], mysteryId);
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('plot_beats')
@@ -718,13 +1412,17 @@ export async function reorderPlotBeats(id: string, newSortOrder: number) {
   }
 }
 
-function normalizeClueList(clues: any[], supabase?: any): any[] {
+function normalizeClueList(
+  clues: any[],
+  supabase?: any,
+  dynamicRules?: Array<[RegExp, string]>
+): any[] {
   if (!Array.isArray(clues)) return [];
-  return clues.map((c: any) => {
-    const cleanTitle = replaceLegacyNamesWithRoleTokens(c.title);
-    const cleanDesc = replaceLegacyNamesWithRoleTokens(c.description);
-    const cleanRawNotes = c.internal_notes ? replaceLegacyNamesWithRoleTokens(c.internal_notes) : c.internal_notes;
-    const cleanPrompt = c.prompt_template ? replaceLegacyNamesWithRoleTokens(c.prompt_template) : c.prompt_template;
+  const normalized = clues.map((c: any) => {
+    const cleanTitle = replaceLegacyNamesWithRoleTokens(c.title, dynamicRules);
+    const cleanDesc = replaceLegacyNamesWithRoleTokens(c.description, dynamicRules);
+    const cleanRawNotes = c.internal_notes ? replaceLegacyNamesWithRoleTokens(c.internal_notes, dynamicRules) : c.internal_notes;
+    const cleanPrompt = c.prompt_template ? replaceLegacyNamesWithRoleTokens(c.prompt_template, dynamicRules) : c.prompt_template;
 
     if (
       supabase &&
@@ -757,9 +1455,17 @@ function normalizeClueList(clues: any[], supabase?: any): any[] {
       internal_notes: stripFormatTagFromNotes(cleanRawNotes),
     };
   });
+
+  return shuffleCluesAcrossRounds(normalized);
 }
 
 export const getCluesByMysteryId = cache(async (mysteryId: string) => {
+  const cached = getCachedMysterySnapshot(mysteryId);
+  if (cached && isChristmasNightmareMystery(cached.title, cached.theme)) {
+    const upgraded = ensureChristmasNightmareCanon(cached);
+    return normalizeClueList(upgraded.clues || []);
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('clues')

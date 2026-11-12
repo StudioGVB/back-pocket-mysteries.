@@ -56,7 +56,7 @@ async function CluesStats({
   cluesPromise: ReturnType<typeof getCluesByMysteryId>;
   beatsPromise: ReturnType<typeof getPlotBeatsByMysteryId>;
 }) {
-  const [mystery, clues, beats] = await Promise.all([
+  const [mystery, rawClues, rawBeats] = await Promise.all([
     mysteryPromise,
     cluesPromise,
     beatsPromise
@@ -64,12 +64,15 @@ async function CluesStats({
 
   if (!mystery) return null;
 
+  const clues = Array.isArray((mystery as any).clues) && (mystery as any).clues.length > 0 ? (mystery as any).clues : rawClues;
+  const beats = Array.isArray((mystery as any).plot_beats) && (mystery as any).plot_beats.length > 0 ? (mystery as any).plot_beats : rawBeats;
+
   const subplots = mystery.subplots || [];
   const subplotBeatsCount = subplots.reduce((acc: number, sub: any) => acc + (sub.subplot_beats?.length || 0), 0);
   const targetTotal = Math.max(clues.length, (beats.length * 2) + (subplotBeatsCount * 1));
   
-  const realClues = clues.filter(c => c.evidence_status !== 'fake' && Boolean(c.linked_plot_beat_id) && c.implication_type !== 'red_herring');
-  const fakeClues = clues.filter(c => c.evidence_status === 'fake' || !c.linked_plot_beat_id || c.implication_type === 'red_herring');
+  const realClues = clues.filter((c: any) => c.evidence_status !== 'fake' && Boolean(c.linked_plot_beat_id) && c.implication_type !== 'red_herring');
+  const fakeClues = clues.filter((c: any) => c.evidence_status === 'fake' || !c.linked_plot_beat_id || c.implication_type === 'red_herring');
 
   return (
     <div className="bg-white border border-slate-100 px-6 py-3 rounded-2xl flex items-center gap-6 shadow-sm">
@@ -80,7 +83,7 @@ async function CluesStats({
       <div className="w-px h-6 bg-slate-100"></div>
       <div className="text-center">
          <div className="text-lg font-black text-slate-900 leading-none mb-1">
-           {clues.filter(c => c.is_essential).length}
+           {clues.filter((c: any) => c.is_essential).length}
          </div>
          <div className="text-[8px] font-black uppercase tracking-widest text-slate-400 text-brand-blue">Essential</div>
       </div>
@@ -115,7 +118,7 @@ async function CluesContent({
   beatsPromise: ReturnType<typeof getPlotBeatsByMysteryId>;
   charactersPromise: ReturnType<typeof getCharactersByMysteryId>;
 }) {
-  const [mystery, clues, beats, characters] = await Promise.all([
+  const [mystery, rawClues, rawBeats, rawCharacters] = await Promise.all([
     mysteryPromise,
     cluesPromise,
     beatsPromise,
@@ -123,6 +126,10 @@ async function CluesContent({
   ]);
 
   if (!mystery) return null;
+
+  const clues = Array.isArray((mystery as any).clues) && (mystery as any).clues.length > 0 ? (mystery as any).clues : rawClues;
+  const beats = Array.isArray((mystery as any).plot_beats) && (mystery as any).plot_beats.length > 0 ? (mystery as any).plot_beats : rawBeats;
+  const characters = Array.isArray((mystery as any).characters) && (mystery as any).characters.length > 0 ? (mystery as any).characters : rawCharacters;
 
   return (
     <ClueGrid 

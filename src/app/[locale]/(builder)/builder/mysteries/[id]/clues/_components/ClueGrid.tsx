@@ -8,7 +8,12 @@ import { ClueCard } from './ClueCard';
 import { generateClueImageAction, generateClueDescriptionAction } from '@/app/actions/generator';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
 import { hydrateTextWithCharacters, tokenizeTextWithCharacterRoles } from '@/utils/hydration';
-import { CLUE_FORMAT_OPTIONS, inferClueFormat, stripCustomerFacingTitle } from '@/utils/clue-format';
+import {
+  CLUE_FORMAT_OPTIONS,
+  inferClueFormat,
+  stripCustomerFacingTitle,
+  shuffleRoundCluesDeterministically,
+} from '@/utils/clue-format';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type Clue = Database['public']['Tables']['clues']['Row'];
@@ -249,12 +254,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
     clue.implication_type === 'red_herring' ||
     (!clue.linked_plot_beat_id && !clue.linked_subplot_beat_id);
 
-  const extractClueOrderCode = (clue: Clue): number => {
-    const match = (clue.internal_notes || '').match(/\[CODE:R\d+-C(\d+)\]/i);
-    return match ? parseInt(match[1], 10) : 999;
-  };
-
-  // Group clues by round number (1, 2, 3, 4, etc.) and sort by C1, C2...
+  // Group clues by round number (1, 2, 3, 4, etc.) and deterministically interleave real and fake clues
   const cluesByRound = useMemo(() => {
     const grouped: Record<number, Clue[]> = { 1: [], 2: [], 3: [], 4: [] };
     currentClues.forEach((clue) => {
@@ -263,7 +263,12 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
       grouped[round].push(clue);
     });
     Object.keys(grouped).forEach((r) => {
-      grouped[Number(r)].sort((a, b) => extractClueOrderCode(a) - extractClueOrderCode(b));
+      const roundNum = Number(r);
+      grouped[roundNum] = shuffleRoundCluesDeterministically(
+        grouped[roundNum],
+        roundNum,
+        isClueFake
+      );
     });
     return grouped;
   }, [currentClues]);

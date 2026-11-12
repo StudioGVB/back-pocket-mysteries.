@@ -415,6 +415,7 @@ export interface ChatBubble {
 }
 
 export interface ParsedChatClue {
+  headerTitle: string;
   threadTitle: string;
   participants: string[];
   contextNote?: string;
@@ -427,12 +428,68 @@ function getInitials(name: string): string {
   const senderNumMatch = trimmed.match(/^sender\s*(\d+)$/i);
   if (senderNumMatch) return `S${senderNumMatch[1]}`;
   const cleaned = trimmed.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-  if (!cleaned) return '?';
+  if (!cleaned) {
+    const emojiMatch = trimmed.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u);
+    return emojiMatch ? emojiMatch[0] : '?';
+  }
   const parts = cleaned.split(/\s+/);
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   }
   return cleaned.slice(0, 2).toUpperCase();
+}
+
+export function normalizeChatHeaderTitle(
+  rawTitle: string,
+  namedParticipants: string[],
+  explicitContactHeader?: string
+): string {
+  const base = stripCustomerFacingTitle(rawTitle || '')
+    .replace(/\s*\(\d{1,2}:\d{2}\s*(?:AM|PM)?(?:\s*[-–]\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)?\)\s*$/i, '')
+    .trim();
+
+  if (explicitContactHeader && explicitContactHeader.trim()) {
+    const cleanContact = explicitContactHeader.trim();
+    if (!/^(unknown|sender|anonymous)$/i.test(cleanContact)) {
+      return cleanContact;
+    }
+  }
+
+  // Detect unrealistic meta-descriptions in chat titles (e.g., "Intercepted Lock-Screen Texts...", "Pantry Texts: ...", "Anonymous Text Thread", "Direct Messages")
+  const isMetaChatTitle =
+    /^(?:intercepted|leaked|recovered|deleted|anonymous|private|secret|burner|lock-screen|pantry|kitchen|hallway|backstage|overheard|screenshot|screengrab|text|texts|sms|dm|dms|direct\s+messages?|chat|thread|messages?|chain)\b/i.test(
+      base
+    ) ||
+    /\b(?:text\s*chain|text\s*thread|lock-screen\s*texts?|burner\s*thread|pantry\s*texts?|text\s*messages?|sms\s*log|chat\s*log|direct\s*messages?|anonymous\s*text)\b/i.test(
+      base
+    );
+
+  if (!isMetaChatTitle && base) {
+    return base;
+  }
+
+  // If the meta title had a parenthetical codename like ("Wifey 🎄❤️"), extract it
+  const parenQuotedMatch = base.match(/\(\s*["“']([^"”']+)["”']\s*\)/);
+  if (parenQuotedMatch && parenQuotedMatch[1].trim()) {
+    return parenQuotedMatch[1].trim();
+  }
+
+  // Otherwise derive a realistic contact name, emoji/codename, or group chat name from the participants
+  if (namedParticipants.length === 1) {
+    return namedParticipants[0];
+  }
+  if (namedParticipants.length === 2) {
+    const codenameParticipant = namedParticipants.find(p =>
+      /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(p)
+    );
+    if (codenameParticipant) return codenameParticipant;
+    return `${namedParticipants[0]} & ${namedParticipants[1]}`;
+  }
+  if (namedParticipants.length > 2) {
+    return `${namedParticipants[0]}, ${namedParticipants[1]} +${namedParticipants.length - 2}`;
+  }
+
+  return '🔒 Unknown Number';
 }
 
 export function parseChatClue(title: string, rawText: string): ParsedChatClue {
@@ -447,6 +504,7 @@ export function parseChatClue(title: string, rawText: string): ParsedChatClue {
   const contextLines: string[] = [];
   const senderOrder: string[] = [];
   let explicitStatusFooter = '';
+  let explicitContactHeader = '';
 
   const registerSender = (sender: string) => {
     const norm = sender.trim();
@@ -454,6 +512,8 @@ export function parseChatClue(title: string, rawText: string): ParsedChatClue {
       senderOrder.push(norm);
     }
     if (/^(me|you|self|outgoing)$/i.test(norm)) return true;
+    const hasExplicitSelf = senderOrder.some(s => /^(me|you|self|outgoing)$/i.test(s));
+    if (hasExplicitSelf) return false;
     return senderOrder.indexOf(norm) === 1;
   };
 
@@ -463,11 +523,18 @@ export function parseChatClue(title: string, rawText: string): ParsedChatClue {
   const bracketTimeSenderRegex = /^[\[\(]([^\]\)]+)[\]\)]\s*([^:]{1,35}):\s*(.+)$/;
   // Pattern 2: Sender [timestamp]: Message  OR  Sender (timestamp): Message
   const senderBracketTimeRegex = /^([^:\[\(]{1,35})\s*[\[\(]([^\]\)]+)[\]\)]\s*:\s*(.+)$/;
-  // Pattern 3: Sender: Message (excluding metadata headers like Sender:, Recipient:, Status:, etc.)
-  const simpleSenderRegex = /^([A-Za-z0-9\s'._-]{1,30}):\s*(.+)$/;
+  // Pattern 3: Sender: Message (supports emojis, curly braces, and symbols in contact names, while excluding metadata headers)
+  const simpleSenderRegex = /^([^:\r\n]{1,35}):\s*(.+)$/;
   const hasRecipientHeader = lines.some(l => /^(Recipient|To)\s*:/i.test(l));
   const reservedHeaders = new Set([
     ...(hasRecipientHeader ? ['sender'] : []),
+    'contact',
+    'chat',
+    'thread',
+    'group',
+    'group chat',
+    'channel',
+    'conversation',
     'recipient',
     'from',
     'to',
@@ -496,8 +563,20 @@ export function parseChatClue(title: string, rawText: string): ParsedChatClue {
       return;
     }
 
+    // Ignore standalone section header lines ending with a colon and no message (e.g. "Private Work Chat (7:35 PM):")
+    if (/^[^:]{1,50}:\s*$/.test(line)) {
+      return;
+    }
+
     // Ignore backend Context: or Context / Participants: lines so they never appear on customer-facing clues
     if (/^context(?:\s*\/\s*participants)?\s*:/i.test(line)) {
+      return;
+    }
+
+    // Handle Contact: / Group Chat: / Thread: metadata lines so they set the header instead of becoming a fake bubble
+    const contactHeaderMatch = line.match(/^(?:Contact|Group\s*Chat|Thread|Chat)\s*:\s*(.+)$/i);
+    if (contactHeaderMatch) {
+      explicitContactHeader = contactHeaderMatch[1].trim();
       return;
     }
 
@@ -574,7 +653,12 @@ export function parseChatClue(title: string, rawText: string): ParsedChatClue {
     }
 
     match = line.match(simpleSenderRegex);
-    if (match && !reservedHeaders.has(match[1].trim().toLowerCase())) {
+    if (
+      match &&
+      !reservedHeaders.has(match[1].trim().toLowerCase()) &&
+      !/^https?$/i.test(match[1].trim()) &&
+      !/^\d{1,2}$/.test(match[1].trim())
+    ) {
       const sender = match[1].trim();
       const message = match[2].trim().replace(/^["“]|["”]$/g, '');
       const isPrimary = registerSender(sender);
@@ -641,19 +725,28 @@ export function parseChatClue(title: string, rawText: string): ParsedChatClue {
     }
   }
 
-  // Filter out generic "Sender" labels from top bar participants
+  // Filter out generic "Sender" or "Me" labels from top bar participants
   const namedParticipants = senderOrder.filter(
-    s => !/^(sender|sender\s*\d+|cast member|unknown|redacted)$/i.test(s.trim())
+    s => !/^(sender|sender\s*\d+|cast member|unknown|redacted|contact|me|you|self|outgoing)$/i.test(s.trim())
+  );
+
+  const headerTitle = normalizeChatHeaderTitle(cleanTitle, namedParticipants, explicitContactHeader);
+
+  const distinctParticipants = namedParticipants.filter(
+    p => p.trim().toLowerCase() !== headerTitle.trim().toLowerCase()
   );
 
   const threadSubtitle =
-    namedParticipants.length > 0
+    distinctParticipants.length > 0
+      ? distinctParticipants.join(' • ')
+      : namedParticipants.length > 1
       ? namedParticipants.join(' • ')
       : senderOrder.length > 2
       ? `${senderOrder.length} Participants`
-      : 'Encrypted Message';
+      : 'Private Message';
 
   return {
+    headerTitle,
     threadTitle: threadSubtitle,
     participants: namedParticipants.length > 0 ? namedParticipants : ['?'],
     contextNote: contextLines.length > 0 ? contextLines.join(' ') : undefined,
@@ -1393,5 +1486,161 @@ export function parseCallSheetClue(title: string, rawText: string): ParsedCallSh
     stickyAuthor,
   };
 }
+
+/**
+ * Extracts explicit [CODE:R1-C2] or title prefix order index for a clue if present.
+ */
+export function extractClueOrderCode(clue: {
+  internal_notes?: string | null;
+  title?: string | null;
+}): number | null {
+  const notes = clue?.internal_notes || '';
+  const codeMatch = notes.match(/\[CODE:R\d+-C(\d+)\]/i);
+  if (codeMatch) return parseInt(codeMatch[1], 10);
+  const title = clue?.title || '';
+  const titleMatch = title.match(/^R\d+\s*[-•:]?\s*C(\d+)\b/i);
+  if (titleMatch) return parseInt(titleMatch[1], 10);
+  return null;
+}
+
+/**
+ * Determines whether a clue is a fake / red-herring / subplot clue.
+ */
+export function isClueFakeOrRedHerring(clue: {
+  evidence_status?: string | null;
+  implication_type?: string | null;
+  linked_plot_beat_id?: string | null;
+  internal_notes?: string | null;
+}): boolean {
+  if (clue?.evidence_status === 'fake') return true;
+  if (clue?.implication_type === 'red_herring') return true;
+  if (clue?.internal_notes && /\bFAKE\b|Fake Arc/i.test(clue.internal_notes)) return true;
+  return false;
+}
+
+/**
+ * Deterministically shuffles/interleaves real and fake clues within a single round
+ * so that real storyline clues and fake/red-herring clues are never clumped into
+ * contiguous blocks (e.g. all REAL first and all FAKE last).
+ */
+export function shuffleRoundCluesDeterministically<
+  T extends {
+    id?: string | null;
+    title?: string | null;
+    internal_notes?: string | null;
+    evidence_status?: string | null;
+    implication_type?: string | null;
+    linked_plot_beat_id?: string | null;
+  }
+>(roundClues: T[], roundNumber: number, customIsFakeFn?: (clue: T) => boolean): T[] {
+  if (!Array.isArray(roundClues) || roundClues.length <= 1) {
+    return roundClues || [];
+  }
+
+  // First sort by explicit [CODE:R*-C*] if present, preserving relative order otherwise
+  const baseSorted = [...roundClues].sort((a, b) => {
+    const codeA = extractClueOrderCode(a);
+    const codeB = extractClueOrderCode(b);
+    if (codeA !== null && codeB !== null) return codeA - codeB;
+    if (codeA !== null) return -1;
+    if (codeB !== null) return 1;
+    return 0;
+  });
+
+  const isFake = customIsFakeFn || ((c: T) => isClueFakeOrRedHerring(c));
+  const realClues = baseSorted.filter((c) => !isFake(c));
+  const fakeClues = baseSorted.filter((c) => isFake(c));
+
+  // If the round only has one type of clue, return baseSorted
+  if (realClues.length === 0 || fakeClues.length === 0) {
+    return baseSorted;
+  }
+
+  // Count transitions between real and fake in baseSorted
+  let transitions = 0;
+  for (let i = 1; i < baseSorted.length; i++) {
+    if (isFake(baseSorted[i]) !== isFake(baseSorted[i - 1])) {
+      transitions++;
+    }
+  }
+
+  // If already well-mixed (more than 1 transition between real and fake), keep baseSorted
+  if (transitions > 1) {
+    return baseSorted;
+  }
+
+  // Otherwise, real and fake clues are clumped into two contiguous blocks!
+  // Interleave them deterministically with a round-dependent offset so each round has a distinct mix.
+  const total = baseSorted.length;
+  const minorityIsFake = fakeClues.length <= realClues.length;
+  const minority = minorityIsFake ? [...fakeClues] : [...realClues];
+  const majority = minorityIsFake ? [...realClues] : [...fakeClues];
+
+  const minorityPositions = new Set<number>();
+  const mCount = minority.length;
+
+  for (let k = 0; k < mCount; k++) {
+    const bucketStart = Math.floor((k * total) / mCount);
+    const bucketEnd = Math.floor(((k + 1) * total) / mCount) - 1;
+    const bucketSize = Math.max(1, bucketEnd - bucketStart + 1);
+    // Vary slot within bucket by roundNumber so Round 1, Round 2, Round 3 don't share the same pattern
+    const offset = (roundNumber + k) % bucketSize;
+    let pos = Math.min(total - 1, Math.max(0, bucketStart + offset));
+    while (minorityPositions.has(pos) && pos < total - 1) {
+      pos++;
+    }
+    while (minorityPositions.has(pos) && pos > 0) {
+      pos--;
+    }
+    minorityPositions.add(pos);
+  }
+
+  const result: T[] = [];
+  let minIdx = 0;
+  let majIdx = 0;
+  for (let i = 0; i < total; i++) {
+    if (minorityPositions.has(i) && minIdx < minority.length) {
+      result.push(minority[minIdx++]);
+    } else if (majIdx < majority.length) {
+      result.push(majority[majIdx++]);
+    } else if (minIdx < minority.length) {
+      result.push(minority[minIdx++]);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Groups an array of clues by round_number, shuffles real and fake clues within each round,
+ * and returns a flattened array ordered by round and shuffled position.
+ */
+export function shuffleCluesAcrossRounds<
+  T extends {
+    id?: string | null;
+    round_number?: number | null;
+    title?: string | null;
+    internal_notes?: string | null;
+    evidence_status?: string | null;
+    implication_type?: string | null;
+    linked_plot_beat_id?: string | null;
+  }
+>(clues: T[], customIsFakeFn?: (clue: T) => boolean): T[] {
+  if (!Array.isArray(clues) || clues.length <= 1) return clues || [];
+  const roundsMap = new Map<number, T[]>();
+  for (const clue of clues) {
+    const r = clue.round_number || 1;
+    if (!roundsMap.has(r)) roundsMap.set(r, []);
+    roundsMap.get(r)!.push(clue);
+  }
+  const sortedRounds = Array.from(roundsMap.keys()).sort((a, b) => a - b);
+  const flattened: T[] = [];
+  for (const r of sortedRounds) {
+    const roundList = roundsMap.get(r) || [];
+    flattened.push(...shuffleRoundCluesDeterministically(roundList, r, customIsFakeFn));
+  }
+  return flattened;
+}
+
 
 
