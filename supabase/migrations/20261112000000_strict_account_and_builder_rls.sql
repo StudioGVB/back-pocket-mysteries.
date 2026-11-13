@@ -69,7 +69,18 @@ BEGIN
         'orders',
         'discounts',
         'user_roles',
-        'clues'
+        'clues',
+        'support_tickets',
+        'support_ticket_messages',
+        'inquiries',
+        'reviews',
+        'leads',
+        'ai_usage_logs',
+        'plot_beats',
+        'subplots',
+        'subplot_beats',
+        'motives',
+        'relationships'
       )
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', pol.policyname, pol.schemaname, pol.tablename);
@@ -179,9 +190,9 @@ CREATE POLICY "Hosts and invited guests can view their invitations"
   FOR SELECT
   TO authenticated
   USING (
-    auth.uid() = host_user_id
-    OR auth.uid() = accepted_by_user_id
-    OR lower(coalesce(invited_email, '')) = lower(coalesce(auth.jwt() ->> 'email', ''))
+    auth.uid() = inviter_user_id
+    OR auth.uid() = invited_user_id
+    OR lower(coalesce(invite_email, '')) = lower(coalesce(auth.jwt() ->> 'email', ''))
     OR public.is_admin()
   );
 
@@ -189,16 +200,16 @@ CREATE POLICY "Hosts can insert their own invitations"
   ON public.guest_invitations
   FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = host_user_id OR public.is_admin());
+  WITH CHECK (auth.uid() = inviter_user_id OR public.is_admin());
 
 CREATE POLICY "Hosts and invited users can update their invitations"
   ON public.guest_invitations
   FOR UPDATE
   TO authenticated
   USING (
-    auth.uid() = host_user_id
-    OR auth.uid() = accepted_by_user_id
-    OR lower(coalesce(invited_email, '')) = lower(coalesce(auth.jwt() ->> 'email', ''))
+    auth.uid() = inviter_user_id
+    OR auth.uid() = invited_user_id
+    OR lower(coalesce(invite_email, '')) = lower(coalesce(auth.jwt() ->> 'email', ''))
     OR public.is_admin()
   );
 
@@ -255,11 +266,11 @@ CREATE POLICY "Only admins can manage user roles"
 -- 9. Strict RLS on `public.discounts`
 ALTER TABLE IF EXISTS public.discounts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Authenticated users can read active discounts"
+CREATE POLICY "Authenticated users can read active auto-apply discounts"
   ON public.discounts
   FOR SELECT
   TO authenticated
-  USING (active = true OR public.is_admin());
+  USING ((active = true AND auto_apply = true) OR public.is_admin());
 
 CREATE POLICY "Only admins can manage discounts"
   ON public.discounts
@@ -281,7 +292,7 @@ CREATE POLICY "Authenticated users can view clues for accessible mysteries"
       SELECT 1
       FROM public.mysteries m
       WHERE m.id = clues.mystery_id
-        AND (m.created_by = auth.uid() OR m.is_published = true)
+        AND (m.created_by = auth.uid() OR m.status = 'published')
     )
   );
 
@@ -383,3 +394,233 @@ CREATE POLICY "Only owner or admin can delete characters"
       WHERE m.id = characters.mystery_id AND m.created_by = auth.uid()
     )
   );
+
+-- 12. Strict RLS on `public.support_tickets` & `public.support_ticket_messages`
+ALTER TABLE IF EXISTS public.support_tickets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own support tickets or admin views all"
+  ON public.support_tickets
+  FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "Users can insert own support tickets"
+  ON public.support_tickets
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "Users can update own support tickets or admin updates all"
+  ON public.support_tickets
+  FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id OR public.is_admin())
+  WITH CHECK (auth.uid() = user_id OR public.is_admin());
+
+ALTER TABLE IF EXISTS public.support_ticket_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view messages for their own tickets or admin views all"
+  ON public.support_ticket_messages
+  FOR SELECT
+  TO authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.support_tickets st
+      WHERE st.id = support_ticket_messages.ticket_id
+        AND st.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can insert messages only on their own tickets"
+  ON public.support_ticket_messages
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    public.is_admin()
+    OR (
+      auth.uid() = sender_id
+      AND is_admin = false
+      AND EXISTS (
+        SELECT 1 FROM public.support_tickets st
+        WHERE st.id = support_ticket_messages.ticket_id
+          AND st.user_id = auth.uid()
+      )
+    )
+  );
+
+-- 13. Strict RLS on `public.inquiries`, `public.reviews`, `public.leads`, and `public.ai_usage_logs`
+ALTER TABLE IF EXISTS public.inquiries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can submit contact inquiry"
+  ON public.inquiries
+  FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Only admins can read or manage inquiries"
+  ON public.inquiries
+  FOR ALL
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+ALTER TABLE IF EXISTS public.reviews ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read approved reviews or admin reads all"
+  ON public.reviews
+  FOR SELECT
+  TO anon, authenticated
+  USING (status = 'approved' OR public.is_admin());
+
+CREATE POLICY "Anyone can submit pending review"
+  ON public.reviews
+  FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (status = 'pending' OR public.is_admin());
+
+CREATE POLICY "Only admins can update or delete reviews"
+  ON public.reviews
+  FOR UPDATE
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "Only admins can delete reviews"
+  ON public.reviews
+  FOR DELETE
+  TO authenticated
+  USING (public.is_admin());
+
+ALTER TABLE IF EXISTS public.leads ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can submit lead"
+  ON public.leads
+  FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Only admins can read or manage leads"
+  ON public.leads
+  FOR ALL
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+ALTER TABLE IF EXISTS public.ai_usage_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Only admins can view ai_usage_logs"
+  ON public.ai_usage_logs
+  FOR SELECT
+  TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "Authenticated users can insert own ai_usage_logs"
+  ON public.ai_usage_logs
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id IS NULL OR user_id = auth.uid() OR public.is_admin());
+
+-- 14. Strict RLS on Builder Tables (`plot_beats`, `subplots`, `subplot_beats`, `motives`, `relationships`)
+ALTER TABLE IF EXISTS public.plot_beats ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can view plot_beats for accessible mysteries"
+  ON public.plot_beats
+  FOR SELECT
+  TO authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.mysteries m
+      WHERE m.id = plot_beats.mystery_id
+        AND (m.created_by = auth.uid() OR m.status = 'published')
+    )
+  );
+
+CREATE POLICY "Only admins can mutate plot_beats"
+  ON public.plot_beats
+  FOR ALL
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+ALTER TABLE IF EXISTS public.subplots ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can view subplots for accessible mysteries"
+  ON public.subplots
+  FOR SELECT
+  TO authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.mysteries m
+      WHERE m.id = subplots.mystery_id
+        AND (m.created_by = auth.uid() OR m.status = 'published')
+    )
+  );
+
+CREATE POLICY "Only admins can mutate subplots"
+  ON public.subplots
+  FOR ALL
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+ALTER TABLE IF EXISTS public.subplot_beats ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can view subplot_beats for accessible mysteries"
+  ON public.subplot_beats
+  FOR SELECT
+  TO authenticated
+  USING (public.is_admin() OR auth.role() = 'authenticated');
+
+CREATE POLICY "Only admins can mutate subplot_beats"
+  ON public.subplot_beats
+  FOR ALL
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+ALTER TABLE IF EXISTS public.motives ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can view motives for accessible mysteries"
+  ON public.motives
+  FOR SELECT
+  TO authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.mysteries m
+      WHERE m.id = motives.mystery_id
+        AND (m.created_by = auth.uid() OR m.status = 'published')
+    )
+  );
+
+CREATE POLICY "Only admins can mutate motives"
+  ON public.motives
+  FOR ALL
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+ALTER TABLE IF EXISTS public.relationships ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view relationships for published mysteries or admin views all"
+  ON public.relationships
+  FOR SELECT
+  TO anon, authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.mysteries m
+      WHERE m.id = relationships.mystery_id
+        AND (m.created_by = auth.uid() OR m.status = 'published')
+    )
+  );
+
+CREATE POLICY "Only admins can mutate relationships"
+  ON public.relationships
+  FOR ALL
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());

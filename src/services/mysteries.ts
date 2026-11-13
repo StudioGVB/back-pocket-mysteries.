@@ -306,11 +306,16 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         const linkedBeatId = cSpec.beatNumber ? beatIdByNumber[cSpec.beatNumber] || null : null;
 
         const preservedAudioUrl =
-          existingClue?.audio_url || extractAudioUrlFromNotes(existingClue?.internal_notes) || null;
+          existingClue?.audio_url || extractAudioUrlFromNotes(existingClue?.internal_notes) || cSpec.audio_url || null;
         const preservedVoiceRegion =
-          existingClue?.voice_region || extractVoiceRegionFromNotes(existingClue?.internal_notes) || null;
+          existingClue?.voice_region || extractVoiceRegionFromNotes(existingClue?.internal_notes) || cSpec.voice_region || null;
         const preservedStaticImage =
-          existingClue?.static_image_url ?? cSpec.static_image_url ?? null;
+          (existingClue?.static_image_url &&
+          existingClue.static_image_url !== '/clues/doa/cctv-r2-hooded-table.jpg'
+            ? existingClue.static_image_url
+            : null) ??
+          cSpec.static_image_url ??
+          null;
 
         const desiredRawNotes = embedFormatTagInNotes(
           stripFormatTagFromNotes(cSpec.internal_notes),
@@ -327,6 +332,9 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
           (!existingClue ||
             existingClue.title !== cSpec.title ||
             existingClue.description !== cSpec.description ||
+            existingClue.generation_prompt !== cSpec.generation_prompt ||
+            existingClue.static_image_url !== preservedStaticImage ||
+            existingClue.format !== cSpec.format ||
             stripFormatTagFromNotes(existingClue.internal_notes) !== stripFormatTagFromNotes(cSpec.internal_notes))
         ) {
           if (existingClue?.id) {
@@ -934,7 +942,13 @@ function normalizeCharacterList(
             typeof ccPd.avatar_url === 'string' &&
             ccPd.avatar_url.includes('aiPhotoUrl=')
           ) {
-            cleanedProfile.avatar_url = ccPd.avatar_url;
+            const aiMatch = ccPd.avatar_url.match(/[?&]aiPhotoUrl=([^&]+)/);
+            if (curAvatarUrl && aiMatch) {
+              const sep = curAvatarUrl.includes('?') ? '&' : '?';
+              cleanedProfile.avatar_url = `${curAvatarUrl}${sep}aiPhotoUrl=${aiMatch[1]}`;
+            } else {
+              cleanedProfile.avatar_url = ccPd.avatar_url;
+            }
             if (ccPd.standard_character_photo_url) {
               cleanedProfile.standard_character_photo_url = ccPd.standard_character_photo_url;
             }
@@ -957,6 +971,27 @@ function normalizeCharacterList(
           const separator = baseAvatar.includes('?') ? '&' : '?';
           cleanedProfile.avatar_url = `${baseAvatar}${separator}aiPhotoUrl=${encodeURIComponent(localUrl)}`;
           cleanedProfile.standard_character_photo_url = localUrl;
+          profileRestored = true;
+        }
+      }
+    }
+
+    // Keep cleanedProfile.accent and cleanedProfile.age synced with live avatar_url query parameters
+    const finalAvatarUrl = String(cleanedProfile.avatar_url || '');
+    if (finalAvatarUrl && !finalAvatarUrl.startsWith('data:')) {
+      const accMatch = finalAvatarUrl.match(/[?&]accent=([^&]+)/);
+      if (accMatch) {
+        const urlAccent = decodeURIComponent(accMatch[1]).trim();
+        if (urlAccent && cleanedProfile.accent !== urlAccent) {
+          cleanedProfile.accent = urlAccent;
+          profileRestored = true;
+        }
+      }
+      const ageMatch = finalAvatarUrl.match(/[?&]age=([^&]+)/);
+      if (ageMatch) {
+        const urlAge = decodeURIComponent(ageMatch[1]).trim();
+        if (urlAge && cleanedProfile.age !== urlAge) {
+          cleanedProfile.age = urlAge;
           profileRestored = true;
         }
       }
@@ -1474,14 +1509,16 @@ function normalizeClueList(
         .then(() => {}, () => {});
     }
 
+    const canonicalChristmasSpec = CHRISTMAS_NIGHTMARE_CLUES.find((cc) => cc.legacyId === c.id);
+
     return {
       ...c,
       title: cleanTitle,
       description: cleanDesc,
       prompt_template: cleanPrompt,
-      format: c.format || extractFormatTagFromNotes(cleanRawNotes) || null,
-      audio_url: c.audio_url || extractAudioUrlFromNotes(cleanRawNotes) || null,
-      voice_region: c.voice_region || extractVoiceRegionFromNotes(cleanRawNotes) || null,
+      format: c.format || extractFormatTagFromNotes(cleanRawNotes) || canonicalChristmasSpec?.format || null,
+      audio_url: c.audio_url || extractAudioUrlFromNotes(cleanRawNotes) || canonicalChristmasSpec?.audio_url || null,
+      voice_region: c.voice_region || extractVoiceRegionFromNotes(cleanRawNotes) || canonicalChristmasSpec?.voice_region || null,
       internal_notes: stripFormatTagFromNotes(cleanRawNotes),
     };
   });

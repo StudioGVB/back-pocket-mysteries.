@@ -24,6 +24,8 @@ import {
   extractVoiceRegionFromNotes,
 } from '@/utils/clue-format';
 import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
+import { isUserAdmin, requireAdmin } from '@/utils/admin-auth';
+import { getCachedMysterySnapshot, getAllCachedMysteries } from '@/lib/live-session-store';
 
 export interface GenerateAudioClueInput {
   clueId: string;
@@ -75,17 +77,26 @@ export async function generateAudioClueAction({
       { data: clueRow },
       { data: authData },
     ] = await Promise.all([
-      supabase.from('mysteries').select('*').eq('id', mysteryId).single(),
+      supabase.from('mysteries').select('*').eq('id', mysteryId).maybeSingle(),
       supabase
         .from('characters')
         .select('id, name, gender, profile_data')
         .eq('mystery_id', mysteryId)
         .order('created_at', { ascending: true }),
-      supabase.from('clues').select('id, title, internal_notes').eq('id', clueId).single(),
+      supabase.from('clues').select('id, title, internal_notes').eq('id', clueId).maybeSingle(),
       supabase.auth.getUser(),
     ]);
 
-    const hostUserId = mystery?.created_by || authData?.user?.id;
+    const authUser = authData?.user || null;
+    const isAdmin = await isUserAdmin(supabase, authUser);
+    const cachedMystery = getCachedMysterySnapshot(mysteryId);
+    const effectiveOwnerId = cachedMystery?.created_by || mystery?.created_by;
+
+    if (authUser && !isAdmin && effectiveOwnerId && effectiveOwnerId !== authUser.id) {
+      return { success: false, error: 'Forbidden: You do not have permission to generate audio for this mystery.' };
+    }
+
+    const hostUserId = effectiveOwnerId || authUser?.id;
     let guestRoster: any[] = [];
     if (hostUserId) {
       const [{ data: guestsRows }, { data: hostProfile }] = await Promise.all([
@@ -110,6 +121,28 @@ export async function generateAudioClueAction({
       }
     }
 
+    // Also harvest known guests from cached mysteries if guestRoster is empty (e.g. when RLS hides guests outside user session)
+    if (guestRoster.length === 0) {
+      const seenGuestIds = new Set<string>();
+      for (const cm of getAllCachedMysteries()) {
+        if (effectiveOwnerId && cm?.created_by && cm.created_by !== effectiveOwnerId) continue;
+        for (const cc of cm?.characters || []) {
+          const pd = cc?.profile_data || {};
+          if (pd.guest_id && !seenGuestIds.has(String(pd.guest_id))) {
+            seenGuestIds.add(String(pd.guest_id));
+            guestRoster.push({
+              id: pd.guest_id,
+              name: pd.guest_name || pd.name,
+              gender: pd.gender || cc.gender,
+              accent: extractAccentFromAvatarUrl(pd.avatar_url) || pd.accent,
+              age: extractAgeFromAvatarUrl(pd.avatar_url) || pd.age,
+              avatar_url: pd.avatar_url || '',
+            });
+          }
+        }
+      }
+    }
+
     const guestById = new Map<string, any>();
     const guestByName = new Map<string, any>();
     for (const g of guestRoster) {
@@ -117,8 +150,12 @@ export async function generateAudioClueAction({
       if (g?.name) guestByName.set(String(g.name).trim().toLowerCase(), g);
     }
 
+    const rawCharacters =
+      charactersData && charactersData.length > 0
+        ? charactersData
+        : cachedMystery?.characters || [];
+
     const usedGuestIds = new Set<string>();
-    const rawCharacters = charactersData || [];
     for (const ch of rawCharacters) {
       const pd = (ch.profile_data as any) || {};
       if (pd.guest_id && guestById.has(pd.guest_id)) {
@@ -128,24 +165,56 @@ export async function generateAudioClueAction({
       }
     }
 
-    // Hydrate characters with their assigned friend's live accent/age/gender from the guest roster
-    // (or deterministically match unassigned draft characters against the user's guest roster by gender)
+    // Hydrate characters with their assigned friend's live accent/age/gender from the guest roster.
+    // For unassigned draft characters, inherit only accent & age from the host's guest roster (preserving Role Titles).
     const characters = rawCharacters.map((char: any) => {
       const charProfile = (char.profile_data as any) || {};
       const guestNameKey = String(charProfile.guest_name || charProfile.name || '')
         .trim()
         .toLowerCase();
-      let matchedGuest =
+      const explicitlyAssignedGuest =
         (charProfile.guest_id && guestById.get(charProfile.guest_id)) ||
         (guestNameKey && guestByName.get(guestNameKey)) ||
         null;
 
-      if (!matchedGuest && guestRoster.length > 0) {
-        const charGenderRaw = String(charProfile.gender || char.gender || '').toLowerCase();
-        const wantsFemale = charGenderRaw === 'female' || charGenderRaw === 'f' || charGenderRaw.includes('fem');
-        const wantsMale = charGenderRaw === 'male' || charGenderRaw === 'm' || charGenderRaw.includes('masc');
+      if (explicitlyAssignedGuest) {
+        const guestAvatarUrl = explicitlyAssignedGuest.avatar_url || charProfile.avatar_url || '';
+        const liveAccent =
+          extractAccentFromAvatarUrl(guestAvatarUrl) ||
+          explicitlyAssignedGuest.accent ||
+          extractAccentFromAvatarUrl(charProfile.avatar_url) ||
+          charProfile.accent;
+        const liveAge =
+          extractAgeFromAvatarUrl(guestAvatarUrl) ||
+          explicitlyAssignedGuest.age ||
+          extractAgeFromAvatarUrl(charProfile.avatar_url) ||
+          charProfile.age;
 
-        matchedGuest =
+        return {
+          ...char,
+          gender: explicitlyAssignedGuest.gender || char.gender,
+          profile_data: {
+            ...charProfile,
+            guest_id: explicitlyAssignedGuest.id,
+            guest_name: charProfile.guest_name || explicitlyAssignedGuest.name,
+            gender: explicitlyAssignedGuest.gender || charProfile.gender || char.gender,
+            avatar_url: guestAvatarUrl,
+            ...(liveAccent ? { accent: liveAccent } : {}),
+            ...(liveAge ? { age: liveAge } : {}),
+          },
+        };
+      }
+
+      // If character has no assigned guest yet, match an unused guest from the user's roster by gender
+      // to inherit their accent & age while keeping the character's Role Title intact.
+      if (!charProfile.guest_id && guestRoster.length > 0) {
+        const charGenderRaw = String(charProfile.gender || char.gender || '').toLowerCase();
+        const wantsFemale =
+          charGenderRaw === 'female' || charGenderRaw === 'f' || charGenderRaw.includes('fem');
+        const wantsMale =
+          charGenderRaw === 'male' || charGenderRaw === 'm' || charGenderRaw.includes('masc');
+
+        const rosterMatch =
           guestRoster.find((g: any) => {
             if (usedGuestIds.has(g.id)) return false;
             const gGen = String(g.gender || '').toLowerCase();
@@ -154,51 +223,40 @@ export async function generateAudioClueAction({
             return true;
           }) || null;
 
-        if (matchedGuest) {
-          usedGuestIds.add(matchedGuest.id);
+        if (rosterMatch) {
+          usedGuestIds.add(rosterMatch.id);
+          const rosterAvatarUrl = rosterMatch.avatar_url || '';
+          const rosterAccent =
+            extractAccentFromAvatarUrl(rosterAvatarUrl) || rosterMatch.accent || charProfile.accent;
+          const rosterAge =
+            extractAgeFromAvatarUrl(rosterAvatarUrl) || rosterMatch.age || charProfile.age;
+
+          return {
+            ...char,
+            profile_data: {
+              ...charProfile,
+              ...(rosterAccent ? { accent: rosterAccent } : {}),
+              ...(rosterAge ? { age: rosterAge } : {}),
+            },
+          };
         }
-      }
-
-      if (matchedGuest) {
-        const guestAvatarUrl = matchedGuest.avatar_url || charProfile.avatar_url || '';
-        const liveAccent =
-          extractAccentFromAvatarUrl(guestAvatarUrl) ||
-          matchedGuest.accent ||
-          extractAccentFromAvatarUrl(charProfile.avatar_url) ||
-          charProfile.accent;
-        const liveAge =
-          extractAgeFromAvatarUrl(guestAvatarUrl) ||
-          matchedGuest.age ||
-          extractAgeFromAvatarUrl(charProfile.avatar_url) ||
-          charProfile.age;
-
-        return {
-          ...char,
-          gender: matchedGuest.gender || char.gender,
-          profile_data: {
-            ...charProfile,
-            guest_id: matchedGuest.id,
-            guest_name: charProfile.guest_name || matchedGuest.name,
-            gender: matchedGuest.gender || charProfile.gender || char.gender,
-            avatar_url: guestAvatarUrl,
-            ...(liveAccent ? { accent: liveAccent } : {}),
-            ...(liveAge ? { age: liveAge } : {}),
-          },
-        };
       }
 
       return char;
     });
 
+    const cachedClue = cachedMystery?.clues?.find((c: any) => c.id === clueId);
     const resolvedRegion: VoiceRegion =
-      voiceRegion || inferDefaultVoiceRegion(mystery as any);
-    const resolvedTitle = title || clueRow?.title || '';
+      voiceRegion || inferDefaultVoiceRegion((mystery || cachedMystery) as any);
+    const resolvedTitle = title || clueRow?.title || cachedClue?.title || '';
+    const resolvedInternalNotes =
+      clueRow?.internal_notes || cachedClue?.internal_notes || null;
 
     // 1. Parse transcript into ordered speaker lines & resolve distinct voice IDs per speaker
     const parsedLines = parseAudioTranscript(transcript, {
       voiceRegion: resolvedRegion,
       title: resolvedTitle,
-      internalNotes: clueRow?.internal_notes,
+      internalNotes: resolvedInternalNotes,
       characters,
     });
 
@@ -417,7 +475,7 @@ export async function deleteAudioClueAction({
   mysteryId: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
     const storagePath = `${mysteryId}/${clueId}.mp3`;
 
     await Promise.allSettled([

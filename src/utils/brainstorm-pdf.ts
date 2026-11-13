@@ -1,13 +1,41 @@
 export type BrainstormPackageTier = 'basic' | 'premium' | 'grand';
+export type BrainstormSpiceLevel = '' | 'clean' | 'mild' | 'spicy' | 'filthy';
+export type BrainstormComplexity = '' | 'easy' | 'medium' | 'hard';
 
 export interface BrainstormWorksheetOptions {
   tier: BrainstormPackageTier;
   workingTitle?: string;
   theme?: string;
+  spiceLevel?: BrainstormSpiceLevel;
+  complexity?: BrainstormComplexity;
+  settingVibe?: string;
   victimRole?: string;
   killerRole?: string;
   murderMethod?: string;
 }
+
+export const BRAINSTORM_SPICE_OPTIONS: {
+  value: BrainstormSpiceLevel;
+  label: string;
+  shortPdf: string;
+  sub: string;
+}[] = [
+  { value: '', label: 'Circle on Sheet', shortPdf: '', sub: 'Leave unchecked to circle by hand' },
+  { value: 'clean', label: 'Clean (PG)', shortPdf: 'Clean (PG)', sub: 'Wholesome, family-friendly' },
+  { value: 'mild', label: 'Mild (MA15+)', shortPdf: 'Mild (MA15+)', sub: 'Cheeky, light drama & secrets' },
+  { value: 'spicy', label: 'Spicy (R18+)', shortPdf: 'Spicy (R18+)', sub: 'Affairs, blackmail, adult themes' },
+  { value: 'filthy', label: 'Filthy (NC-17)', shortPdf: 'Filthy (NC-17)', sub: 'Unhinged, wild, OTT chaos' },
+];
+
+export const BRAINSTORM_COMPLEXITY_OPTIONS: {
+  value: BrainstormComplexity;
+  label: string;
+}[] = [
+  { value: '', label: 'Circle on Sheet' },
+  { value: 'easy', label: 'Easy' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'hard', label: 'Hard' },
+];
 
 export const BRAINSTORM_TIER_CONFIG: Record<
   BrainstormPackageTier,
@@ -53,6 +81,9 @@ export const BRAINSTORM_TIER_CONFIG: Record<
 // Helper to escape PDF literal strings
 function pdfEscape(text: string): string {
   return String(text || '')
+    .replace(/•/g, '|')
+    .replace(/[–—]/g, '-')
+    .replace(/►/g, '>')
     .replace(/[^\x20-\x7E]/g, ' ')
     .replace(/\\/g, '\\\\')
     .replace(/\(/g, '\\(')
@@ -133,9 +164,27 @@ class PdfPageCanvas {
     const [r, g, b] = options?.color || [15, 23, 42];
     const clean = pdfEscape(str);
 
-    // Approximate width for center/right alignment using average Helvetica char width (0.52 * size)
+    // Accurate character-by-character Helvetica / Helvetica-Bold width estimation
+    let estWidth = 0;
+    const isBold = font === 'F2';
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      if (' Iilj|.,:;!\''.includes(ch)) {
+        estWidth += size * (isBold ? 0.30 : 0.27);
+      } else if ('()[]-/frt'.includes(ch)) {
+        estWidth += size * (isBold ? 0.37 : 0.34);
+      } else if ('MW%@'.includes(ch)) {
+        estWidth += size * (isBold ? 0.90 : 0.85);
+      } else if (ch >= 'A' && ch <= 'Z') {
+        estWidth += size * (isBold ? 0.70 : 0.66);
+      } else if ('&+=<>mw•–—►'.includes(ch)) {
+        estWidth += size * (isBold ? 0.72 : 0.68);
+      } else {
+        estWidth += size * (isBold ? 0.58 : 0.54);
+      }
+    }
+
     let drawX = x;
-    const estWidth = str.length * size * 0.52;
     if (options?.align === 'center') {
       drawX = x - estWidth / 2;
     } else if (options?.align === 'right') {
@@ -163,71 +212,127 @@ function drawWorksheetHeader(
 ) {
   const cfg = BRAINSTORM_TIER_CONFIG[opts.tier];
 
-  // Top dark header strip
+  // Top dark header strip (y: 16..52, height: 36)
   page.setFillColor(15, 23, 42);
-  page.rect(24, 20, 794, 48, 'f');
+  page.rect(24, 16, 794, 36, 'f');
 
   // Brand pink accent bar on left of header
   page.setFillColor(254, 4, 198);
-  page.rect(24, 20, 6, 48, 'f');
+  page.rect(24, 16, 6, 36, 'f');
 
-  page.text(`BACK POCKET MYSTERIES  |  ${pageTitle.toUpperCase()}`, 40, 39, {
+  page.text(`BACK POCKET MYSTERIES  |  ${pageTitle.toUpperCase()}`, 38, 31, {
     font: 'F2',
-    size: 12,
+    size: 10.5,
     color: [255, 255, 255],
   });
 
-  page.text(pageSubtitle, 40, 55, {
+  page.text(pageSubtitle, 38, 44, {
     font: 'F1',
-    size: 8.5,
+    size: 7.5,
     color: [203, 213, 225],
   });
 
   // Right badge: Tier + Rounds + Page Number
-  const badgeText = `${cfg.label.toUpperCase()}  •  ${cfg.rounds} ROUNDS  •  PAGE ${pageNum}/${totalPages}`;
-  page.text(badgeText, 804, 43, {
+  const badgeText = `${cfg.label.toUpperCase()}  |  ${cfg.rounds} ROUNDS  |  PAGE ${pageNum}/${totalPages}`;
+  page.text(badgeText, 806, 36, {
     font: 'F2',
-    size: 9,
+    size: 8.5,
     color: [254, 4, 198],
     align: 'right',
   });
 
-  // Metadata write-in bar below header
+  // 2-Row Metadata & Mystery Specs Box below header (y: 56..102, height: 46)
   page.setFillColor(248, 250, 252);
   page.setStrokeColor(203, 213, 225);
   page.setLineWidth(0.75);
-  page.rect(24, 74, 794, 26, 'B');
+  page.rect(24, 56, 794, 46, 'B');
 
-  page.text('WORKING TITLE:', 34, 90, { font: 'F2', size: 8, color: [100, 116, 139] });
+  // Horizontal divider separating Row 1 (Title/Theme/Killer/Weapon) & Row 2 (Spice/Complexity/Vibe)
+  page.setStrokeColor(226, 232, 240);
+  page.setLineWidth(0.6);
+  page.line(24, 79, 818, 79);
+
+  // --- ROW 1 (y: 71): WORKING TITLE | THEME / SETTING | KILLER ROLE | WEAPON ---
+  page.text('WORKING TITLE:', 32, 71, { font: 'F2', size: 7.5, color: [100, 116, 139] });
   if (opts.workingTitle) {
-    page.text(opts.workingTitle, 108, 90, { font: 'F2', size: 9.5, color: [15, 23, 42] });
+    page.text(opts.workingTitle, 102, 71, { font: 'F2', size: 9, color: [15, 23, 42] });
   } else {
     page.setStrokeColor(180, 190, 205);
-    page.line(108, 92, 275, 92);
+    page.line(102, 73, 268, 73);
   }
 
-  page.text('THEME / SETTING:', 288, 90, { font: 'F2', size: 8, color: [100, 116, 139] });
+  page.text('THEME / SETTING:', 278, 71, { font: 'F2', size: 7.5, color: [100, 116, 139] });
   if (opts.theme) {
-    page.text(opts.theme, 370, 90, { font: 'F2', size: 9.5, color: [15, 23, 42] });
+    page.text(opts.theme, 356, 71, { font: 'F2', size: 9, color: [15, 23, 42] });
   } else {
     page.setStrokeColor(180, 190, 205);
-    page.line(370, 92, 515, 92);
+    page.line(356, 73, 526, 73);
   }
 
-  page.text('KILLER ROLE:', 528, 90, { font: 'F2', size: 8, color: [100, 116, 139] });
+  page.text('KILLER (#__):', 536, 71, { font: 'F2', size: 7.5, color: [100, 116, 139] });
   if (opts.killerRole) {
-    page.text(opts.killerRole, 590, 90, { font: 'F2', size: 9.5, color: [15, 23, 42] });
+    page.text(opts.killerRole, 594, 71, { font: 'F2', size: 9, color: [15, 23, 42] });
   } else {
     page.setStrokeColor(180, 190, 205);
-    page.line(590, 92, 675, 92);
+    page.line(594, 73, 676, 73);
   }
 
-  page.text('WEAPON:', 686, 90, { font: 'F2', size: 8, color: [100, 116, 139] });
+  page.text('WEAPON:', 686, 71, { font: 'F2', size: 7.5, color: [100, 116, 139] });
   if (opts.murderMethod) {
-    page.text(opts.murderMethod, 730, 90, { font: 'F2', size: 9.5, color: [15, 23, 42] });
+    page.text(opts.murderMethod, 728, 71, { font: 'F2', size: 9, color: [15, 23, 42] });
   } else {
     page.setStrokeColor(180, 190, 205);
-    page.line(730, 92, 808, 92);
+    page.line(728, 73, 810, 73);
+  }
+
+  // --- ROW 2 (y: 94): SPICE LEVEL | COMPLEXITY | VIBE / DRESS CODE ---
+  page.text('SPICE LEVEL:', 32, 94, { font: 'F2', size: 7.5, color: [100, 116, 139] });
+  const spiceItems: { key: BrainstormSpiceLevel; text: string; x: number }[] = [
+    { key: 'clean', text: 'Clean (PG)', x: 92 },
+    { key: 'mild', text: 'Mild (MA15+)', x: 158 },
+    { key: 'spicy', text: 'Spicy (R18+)', x: 234 },
+    { key: 'filthy', text: 'Filthy (NC-17)', x: 308 },
+  ];
+  for (const sp of spiceItems) {
+    const checked = opts.spiceLevel === sp.key;
+    const mark = checked ? '[X]' : '[ ]';
+    page.text(`${mark} ${sp.text}`, sp.x, 94, {
+      font: checked ? 'F2' : 'F1',
+      size: 7.5,
+      color: checked ? [254, 4, 198] : [51, 65, 85],
+    });
+  }
+
+  // Vertical separator
+  page.setStrokeColor(203, 213, 225);
+  page.line(388, 82, 388, 99);
+
+  page.text('COMPLEXITY:', 396, 94, { font: 'F2', size: 7.5, color: [100, 116, 139] });
+  const compItems: { key: BrainstormComplexity; text: string; x: number }[] = [
+    { key: 'easy', text: 'Easy', x: 456 },
+    { key: 'medium', text: 'Medium', x: 498 },
+    { key: 'hard', text: 'Hard', x: 552 },
+  ];
+  for (const cp of compItems) {
+    const checked = opts.complexity === cp.key;
+    const mark = checked ? '[X]' : '[ ]';
+    page.text(`${mark} ${cp.text}`, cp.x, 94, {
+      font: checked ? 'F2' : 'F1',
+      size: 7.5,
+      color: checked ? [15, 23, 42] : [51, 65, 85],
+    });
+  }
+
+  // Vertical separator
+  page.setStrokeColor(203, 213, 225);
+  page.line(596, 82, 596, 99);
+
+  page.text('VIBE / ERA:', 604, 94, { font: 'F2', size: 7.5, color: [100, 116, 139] });
+  if (opts.settingVibe) {
+    page.text(opts.settingVibe, 654, 94, { font: 'F2', size: 8.5, color: [15, 23, 42] });
+  } else {
+    page.setStrokeColor(180, 190, 205);
+    page.line(654, 96, 810, 96);
   }
 }
 
@@ -361,62 +466,55 @@ function buildPage1CoreWebAndBeats(
   page.rect(396.5, 108.5, 421, 22, 'f');
   page.text('2. CORE 6 CHARACTER & RELATIONSHIP WEB', 406, 123, {
     font: 'F2',
-    size: 9,
+    size: 8.5,
     color: [15, 23, 42],
   });
-  page.text('1 VICTIM (CENTER) + 5 CORE SUSPECTS', 808, 123, {
+  page.text('1 VICTIM (CENTER) + 5 SUSPECTS', 810, 123, {
     font: 'F2',
     size: 7.5,
     color: [100, 116, 139],
     align: 'right',
   });
 
-  // Faint outer guide ring so drawing curved outer lines is super clean
-  const webCx = 607;
-  const webCy = 278;
-  page.setStrokeColor(235, 240, 246);
-  page.setLineWidth(0.75);
-  page.setDash([4, 4]);
-  page.ellipse(webCx, webCy, 148, 116, 'S');
-  page.setDash([]);
-
   // Center Oval: #1 VICTIM (Large double-ring oval in the middle, just like "Husband")
+  const webCx = 607;
+  const webCy = 264;
   page.setFillColor(255, 255, 255);
   page.setStrokeColor(15, 23, 42);
   page.setLineWidth(1.8);
-  page.ellipse(webCx, webCy, 56, 30, 'B');
+  page.ellipse(webCx, webCy, 54, 28, 'B');
   page.setLineWidth(0.6);
-  page.ellipse(webCx, webCy, 52, 26, 'S');
-  page.text('#1 VICTIM', webCx, webCy - 14, {
+  page.ellipse(webCx, webCy, 50, 24, 'S');
+  page.text('#1 VICTIM', webCx, webCy - 11, {
     font: 'F2',
     size: 7,
     color: [254, 4, 198],
     align: 'center',
   });
   if (opts.victimRole) {
-    page.text(opts.victimRole, webCx, webCy + 4, {
+    page.text(opts.victimRole, webCx, webCy + 5, {
       font: 'F2',
-      size: 10,
+      size: 9.5,
       color: [15, 23, 42],
       align: 'center',
     });
   }
 
-  // 5 Surrounding Suspect Ovals arranged around the Victim with wide open space for lines
+  // 5 Surrounding Suspect Ovals arranged around the Victim with generous margin all around for outer lines
   const suspectNodes = [
-    { num: '#2 SUSPECT', cx: 472, cy: 178 }, // Top-Left (like "Wifey")
-    { num: '#3 SUSPECT', cx: 742, cy: 178 }, // Top-Right (like "Wife")
-    { num: '#4 SUSPECT', cx: 760, cy: 318 }, // Bottom-Right (like "Sister")
-    { num: '#5 SUSPECT', cx: 607, cy: 392 }, // Bottom-Center (like "FAM F A")
-    { num: '#6 SUSPECT', cx: 454, cy: 318 }, // Bottom-Left (like "FAM F B")
+    { num: '#2 SUSPECT', cx: 480, cy: 172 }, // Top-Left
+    { num: '#3 SUSPECT', cx: 734, cy: 172 }, // Top-Right
+    { num: '#4 SUSPECT', cx: 750, cy: 298 }, // Bottom-Right
+    { num: '#5 SUSPECT', cx: 607, cy: 374 }, // Bottom-Center (leaves 36pt below for outer lines!)
+    { num: '#6 SUSPECT', cx: 464, cy: 298 }, // Bottom-Left
   ];
 
   for (const node of suspectNodes) {
     page.setFillColor(255, 255, 255);
     page.setStrokeColor(15, 23, 42);
     page.setLineWidth(1.4);
-    page.ellipse(node.cx, node.cy, 46, 24, 'B');
-    page.text(node.num, node.cx, node.cy - 11, {
+    page.ellipse(node.cx, node.cy, 45, 22, 'B');
+    page.text(node.num, node.cx, node.cy - 9, {
       font: 'F2',
       size: 6.5,
       color: [100, 116, 139],
@@ -1021,13 +1119,427 @@ function buildPage4GrandExtensionGroup(
 }
 
 /**
+ * LAST PAGE (Full-Page Master Character & Group Web taking the entire page space!):
+ * - For Basic (6p): Full-page oversized Core 6 Web with maximum space to link & annotate all 6 characters.
+ * - For Premium (7–10p): Full-page Master Web with Core 6 (#1–#6) in the center + clustered sub-webs for
+ *   Pair (#7 & #8), Trio A (#9, #10 & #11), and Solo A (#12) arranged around the Core 6 so you can easily link
+ *   within each group AND draw lines connecting them to the Core 6!
+ * - For Grand (11–16p): Full-page Master Web with ALL 16 Characters (#1–#16) arranged by their groups:
+ *   Center Core 6 (#1–#6) + Top-Left Pair (#7–#8) + Top-Right Trio A (#9–#11) + Bottom-Left Solos (#12 & #13) +
+ *   Bottom-Right Trio B (#14–#16)!
+ */
+function buildLastPageFullMasterWeb(
+  opts: BrainstormWorksheetOptions,
+  pageNum: number,
+  totalPages: number
+): PdfPageCanvas {
+  const page = new PdfPageCanvas();
+  const cfg = BRAINSTORM_TIER_CONFIG[opts.tier];
+
+  drawWorksheetHeader(
+    page,
+    opts,
+    `Full-Page Master Character Web (${cfg.label})`,
+    `All characters in this package arranged by group across the whole page. Link within each mini-group and draw lines into the Core 6.`,
+    pageNum,
+    totalPages
+  );
+
+  // Full-page outer frame (x: 24..818, y: 108..572 — 794pt x 464pt)
+  page.setStrokeColor(203, 213, 225);
+  page.setLineWidth(0.9);
+  page.rect(24, 108, 794, 464, 'S');
+
+  // Top strip inside canvas with inline Relationship Key reminder (y: 108..130)
+  page.setFillColor(241, 245, 249);
+  page.rect(24.5, 108.5, 793, 21, 'f');
+  page.text(
+    opts.tier === 'basic'
+      ? 'FULL-PAGE MASTER WEB: ALL 6 CORE CHARACTERS'
+      : opts.tier === 'premium'
+      ? 'FULL-PAGE MASTER WEB: CORE 6 (CENTER) + PAIR (#7-8) + TRIO A (#9-11) + SOLO (#12)'
+      : 'FULL-PAGE MASTER WEB: ALL 16 CHARACTERS GROUPED BY CLUSTER (CORE 6 + PAIR + TRIO A + SOLOS + TRIO B)',
+    34,
+    122,
+    {
+      font: 'F2',
+      size: 7.5,
+      color: [15, 23, 42],
+    }
+  );
+  page.text(
+    'KEY: o-o Siblings | o*o Married | z-z Work | +|+ Ex Bestie | ||-|| Exes | N-N Affair | O-O Friends | <-> Family | []-[] Besties | --> 1-Way Solo',
+    810,
+    122,
+    {
+      font: 'F1',
+      size: 6.2,
+      color: [71, 85, 105],
+      align: 'right',
+    }
+  );
+
+  if (opts.tier === 'basic') {
+    // =======================================================================
+    // BASIC PACKAGE: FULL-PAGE OVERSIZED 6-CHARACTER WEB
+    // =======================================================================
+    const cx = 421;
+    const cy = 350;
+
+    // Center #1 VICTIM (Oversized double oval)
+    page.setFillColor(255, 255, 255);
+    page.setStrokeColor(15, 23, 42);
+    page.setLineWidth(2.0);
+    page.ellipse(cx, cy, 76, 38, 'B');
+    page.setLineWidth(0.7);
+    page.ellipse(cx, cy, 71, 33, 'S');
+    page.text('#1 VICTIM (CENTER)', cx, cy - 16, {
+      font: 'F2',
+      size: 8,
+      color: [254, 4, 198],
+      align: 'center',
+    });
+    if (opts.victimRole) {
+      page.text(opts.victimRole, cx, cy + 4, {
+        font: 'F2',
+        size: 11,
+        color: [15, 23, 42],
+        align: 'center',
+      });
+    }
+
+    const fullBasicNodes = [
+      { label: '#2 SUSPECT (F / M)', cx: 215, cy: 205 },
+      { label: '#3 SUSPECT (F / M)', cx: 627, cy: 205 },
+      { label: '#4 SUSPECT (F / M)', cx: 680, cy: 385 },
+      { label: '#5 SUSPECT (F / M)', cx: 421, cy: 500 },
+      { label: '#6 SUSPECT (F / M)', cx: 162, cy: 385 },
+    ];
+
+    for (const n of fullBasicNodes) {
+      page.setFillColor(255, 255, 255);
+      page.setStrokeColor(15, 23, 42);
+      page.setLineWidth(1.6);
+      page.ellipse(n.cx, n.cy, 68, 32, 'B');
+      page.text(n.label, n.cx, n.cy - 14, {
+        font: 'F2',
+        size: 7.5,
+        color: [100, 116, 139],
+        align: 'center',
+      });
+    }
+
+    return page;
+  }
+
+  // =========================================================================
+  // PREMIUM & GRAND PACKAGES:
+  // Center Core 6 Cluster + Surrounding Extension Group Clusters on One Full Page!
+  // =========================================================================
+
+  // 1. CENTER CLUSTER: CORE 6 MAIN CAST (x: 264..578, y: 144..554)
+  page.setStrokeColor(203, 213, 225);
+  page.setLineWidth(0.9);
+  page.setDash([5, 4]);
+  page.rect(264, 144, 314, 410, 'S');
+  page.setDash([]);
+
+  page.setFillColor(15, 23, 42);
+  page.rect(336, 136, 170, 16, 'f');
+  page.text('CORE 6 MAIN CAST (#1 - #6)', 421, 147, {
+    font: 'F2',
+    size: 7.5,
+    color: [255, 255, 255],
+    align: 'center',
+  });
+
+  // Center #1 VICTIM inside Core 6
+  const coreCx = 421;
+  const coreCy = 348;
+  page.setFillColor(255, 255, 255);
+  page.setStrokeColor(15, 23, 42);
+  page.setLineWidth(1.8);
+  page.ellipse(coreCx, coreCy, 52, 26, 'B');
+  page.setLineWidth(0.6);
+  page.ellipse(coreCx, coreCy, 48, 22, 'S');
+  page.text('#1 VICTIM', coreCx, coreCy - 10, {
+    font: 'F2',
+    size: 7,
+    color: [254, 4, 198],
+    align: 'center',
+  });
+  if (opts.victimRole) {
+    page.text(opts.victimRole, coreCx, coreCy + 5, {
+      font: 'F2',
+      size: 8.5,
+      color: [15, 23, 42],
+      align: 'center',
+    });
+  }
+
+  const coreSuspects = [
+    { label: '#2 CORE', cx: 332, cy: 218 },
+    { label: '#3 CORE', cx: 510, cy: 218 },
+    { label: '#4 CORE', cx: 518, cy: 378 },
+    { label: '#5 CORE', cx: 421, cy: 492 },
+    { label: '#6 CORE', cx: 324, cy: 378 },
+  ];
+
+  for (const cs of coreSuspects) {
+    page.setFillColor(255, 255, 255);
+    page.setStrokeColor(15, 23, 42);
+    page.setLineWidth(1.4);
+    page.ellipse(cs.cx, cs.cy, 44, 22, 'B');
+    page.text(cs.label, cs.cx, cs.cy - 9, {
+      font: 'F2',
+      size: 6.5,
+      color: [100, 116, 139],
+      align: 'center',
+    });
+  }
+
+  // 2. TOP-LEFT CLUSTER: GROUP A — THE PAIR (#7 & #8) (x: 34..242, y: 144..332)
+  page.setStrokeColor(148, 163, 184);
+  page.setLineWidth(0.8);
+  page.setDash([4, 3]);
+  page.rect(34, 144, 208, 188, 'S');
+  page.setDash([]);
+
+  page.setFillColor(254, 4, 198);
+  page.rect(46, 136, 184, 16, 'f');
+  page.text('GROUP A: THE PAIR (#7 & #8)', 138, 147, {
+    font: 'F2',
+    size: 7.2,
+    color: [255, 255, 255],
+    align: 'center',
+  });
+
+  // Pair ovals (#7 Top-Left, #8 Bottom-Right inside the Pair cluster so both are easy to link to each other AND Core 6)
+  const p7 = { cx: 90, cy: 206 };
+  const p8 = { cx: 184, cy: 274 };
+  page.setStrokeColor(148, 163, 184);
+  page.setDash([3, 3]);
+  page.line(p7.cx + 25, p7.cy + 16, p8.cx - 25, p8.cy - 16);
+  page.setDash([]);
+
+  for (const [lbl, node] of [
+    ['#7 PAIR', p7],
+    ['#8 PAIR', p8],
+  ] as const) {
+    page.setFillColor(255, 255, 255);
+    page.setStrokeColor(15, 23, 42);
+    page.setLineWidth(1.4);
+    page.ellipse(node.cx, node.cy, 44, 22, 'B');
+    page.text(lbl, node.cx, node.cy - 9, {
+      font: 'F2',
+      size: 6.5,
+      color: [254, 4, 198],
+      align: 'center',
+    });
+  }
+
+  // 3. TOP-RIGHT CLUSTER: GROUP B — TRIO A (#9, #10 & #11) (x: 600..808, y: 144..338)
+  page.setStrokeColor(148, 163, 184);
+  page.setLineWidth(0.8);
+  page.setDash([4, 3]);
+  page.rect(600, 144, 208, 194, 'S');
+  page.setDash([]);
+
+  page.setFillColor(254, 4, 198);
+  page.rect(612, 136, 184, 16, 'f');
+  page.text('GROUP B: TRIO A (#9, #10 & #11)', 704, 147, {
+    font: 'F2',
+    size: 7.2,
+    color: [255, 255, 255],
+    align: 'center',
+  });
+
+  const t9 = { label: '#9 TRIO A', cx: 704, cy: 192 };
+  const t10 = { label: '#10 TRIO A', cx: 652, cy: 286 };
+  const t11 = { label: '#11 TRIO A', cx: 756, cy: 286 };
+  page.setStrokeColor(148, 163, 184);
+  page.setDash([3, 3]);
+  page.line(t9.cx - 20, t9.cy + 18, t10.cx + 12, t10.cy - 18);
+  page.line(t9.cx + 20, t9.cy + 18, t11.cx - 12, t11.cy - 18);
+  page.line(t10.cx + 42, t10.cy, t11.cx - 42, t11.cy);
+  page.setDash([]);
+
+  for (const tn of [t9, t10, t11]) {
+    page.setFillColor(255, 255, 255);
+    page.setStrokeColor(15, 23, 42);
+    page.setLineWidth(1.4);
+    page.ellipse(tn.cx, tn.cy, 42, 20, 'B');
+    page.text(tn.label, tn.cx, tn.cy - 8, {
+      font: 'F2',
+      size: 6.2,
+      color: [254, 4, 198],
+      align: 'center',
+    });
+  }
+
+  // 4. BOTTOM-LEFT CLUSTER: GROUP C — SOLO WILDCARDS (#12 & #13) (x: 34..242, y: 356..554)
+  page.setStrokeColor(148, 163, 184);
+  page.setLineWidth(0.8);
+  page.setDash([4, 3]);
+  page.rect(34, 356, 208, 198, 'S');
+  page.setDash([]);
+
+  page.setFillColor(15, 23, 42);
+  page.rect(46, 348, 184, 16, 'f');
+  page.text(
+    opts.tier === 'premium'
+      ? 'GROUP C: SOLO A (#12 | 1-WAY)'
+      : 'GROUP C: SOLOS (#12 & #13 | 1-WAY)',
+    138,
+    359,
+    {
+      font: 'F2',
+      size: 7,
+      color: [255, 255, 255],
+      align: 'center',
+    }
+  );
+
+  // #12 Solo A Oval
+  const s12Cy = opts.tier === 'premium' ? 435 : 412;
+  page.setFillColor(255, 255, 255);
+  page.setStrokeColor(15, 23, 42);
+  page.setLineWidth(1.4);
+  page.ellipse(116, s12Cy, 46, 22, 'B');
+  page.text('#12 SOLO A', 116, s12Cy - 9, {
+    font: 'F2',
+    size: 6.5,
+    color: [254, 4, 198],
+    align: 'center',
+  });
+  page.text('1-Way -->', 202, s12Cy + 3, {
+    font: 'F2',
+    size: 7,
+    color: [100, 116, 139],
+    align: 'center',
+  });
+
+  if (opts.tier === 'grand') {
+    // #13 Solo B Oval
+    const s13Cy = 498;
+    page.setFillColor(255, 255, 255);
+    page.setStrokeColor(15, 23, 42);
+    page.setLineWidth(1.4);
+    page.ellipse(116, s13Cy, 46, 22, 'B');
+    page.text('#13 SOLO B', 116, s13Cy - 9, {
+      font: 'F2',
+      size: 6.5,
+      color: [254, 4, 198],
+      align: 'center',
+    });
+    page.text('1-Way -->', 202, s13Cy + 3, {
+      font: 'F2',
+      size: 7,
+      color: [100, 116, 139],
+      align: 'center',
+    });
+  } else {
+    page.text('Draw a one-way arrow from #12', 138, 492, {
+      font: 'F1',
+      size: 7,
+      color: [100, 116, 139],
+      align: 'center',
+    });
+    page.text('into any Core 6 character ---->', 138, 505, {
+      font: 'F1',
+      size: 7,
+      color: [100, 116, 139],
+      align: 'center',
+    });
+  }
+
+  // 5. BOTTOM-RIGHT CLUSTER:
+  // For Grand: GROUP D — TRIO B (#14, #15 & #16)
+  // For Premium: Quick Auto-Combination Key + Extra Sketch Space
+  page.setStrokeColor(148, 163, 184);
+  page.setLineWidth(0.8);
+  page.setDash([4, 3]);
+  page.rect(600, 356, 208, 198, 'S');
+  page.setDash([]);
+
+  if (opts.tier === 'grand') {
+    page.setFillColor(254, 4, 198);
+    page.rect(612, 348, 184, 16, 'f');
+    page.text('GROUP D: TRIO B (#14, #15 & #16)', 704, 359, {
+      font: 'F2',
+      size: 7.2,
+      color: [255, 255, 255],
+      align: 'center',
+    });
+
+    const t14 = { label: '#14 TRIO B', cx: 704, cy: 406 };
+    const t15 = { label: '#15 TRIO B', cx: 652, cy: 500 };
+    const t16 = { label: '#16 TRIO B', cx: 756, cy: 500 };
+    page.setStrokeColor(148, 163, 184);
+    page.setDash([3, 3]);
+    page.line(t14.cx - 20, t14.cy + 18, t15.cx + 12, t15.cy - 18);
+    page.line(t14.cx + 20, t14.cy + 18, t16.cx - 12, t16.cy - 18);
+    page.line(t15.cx + 42, t15.cy, t16.cx - 42, t16.cy);
+    page.setDash([]);
+
+    for (const tn of [t14, t15, t16]) {
+      page.setFillColor(255, 255, 255);
+      page.setStrokeColor(15, 23, 42);
+      page.setLineWidth(1.4);
+      page.ellipse(tn.cx, tn.cy, 42, 20, 'B');
+      page.text(tn.label, tn.cx, tn.cy - 8, {
+        font: 'F2',
+        size: 6.2,
+        color: [254, 4, 198],
+        align: 'center',
+      });
+    }
+  } else {
+    page.setFillColor(15, 23, 42);
+    page.rect(612, 348, 184, 16, 'f');
+    page.text('PREMIUM GROUP COMBINATIONS', 704, 359, {
+      font: 'F2',
+      size: 7,
+      color: [255, 255, 255],
+      align: 'center',
+    });
+
+    const premCombos = [
+      '6 Players: Core 6 (#1-#6)',
+      '7 Players: Core 6 + Solo A (#12)',
+      '8 Players: Core 6 + Pair (#7 & #8)',
+      '9 Players: Core 6 + Trio A (#9-#11)',
+      '10 Players: Core 6 + Trio A + Solo A',
+    ];
+    let cy = 384;
+    for (const line of premCombos) {
+      page.text(line, 612, cy, { font: 'F2', size: 7.2, color: [51, 65, 85] });
+      cy += 18;
+    }
+    page.text('WEB NOTES / CROSS-LINKS:', 612, 482, {
+      font: 'F2',
+      size: 7,
+      color: [100, 116, 139],
+    });
+    page.setStrokeColor(203, 213, 225);
+    page.setDash([2, 2]);
+    page.line(612, 500, 796, 500);
+    page.line(612, 520, 796, 520);
+    page.line(612, 540, 796, 540);
+    page.setDash([]);
+  }
+
+  return page;
+}
+
+/**
  * Compiles all pages into a valid binary PDF 1.4 Uint8Array.
  */
 export function generateBrainstormWorksheetPdfBytes(
   options: BrainstormWorksheetOptions
 ): Uint8Array {
   const pages: PdfPageCanvas[] = [];
-  const totalPages = options.tier === 'basic' ? 2 : options.tier === 'premium' ? 3 : 4;
+  const totalPages = options.tier === 'basic' ? 3 : options.tier === 'premium' ? 4 : 5;
 
   pages.push(buildPage1CoreWebAndBeats(options, totalPages));
   pages.push(buildPage2CoreCharacterCards(options, totalPages));
@@ -1037,6 +1549,7 @@ export function generateBrainstormWorksheetPdfBytes(
   if (options.tier === 'grand') {
     pages.push(buildPage4GrandExtensionGroup(options, totalPages));
   }
+  pages.push(buildLastPageFullMasterWeb(options, totalPages, totalPages));
 
   // Object ID allocation:
   // 1: Catalog

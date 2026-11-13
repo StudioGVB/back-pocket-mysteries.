@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { BrainstormWorksheetButton } from './BrainstormWorksheetModal';
 
 interface BuilderSidebarProps {
   children?: React.ReactNode;
@@ -280,6 +281,9 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
                 </Link>
               </li>
             ))}
+            <li>
+              <BrainstormWorksheetButton variant="sidebar-item" />
+            </li>
           </ul>
         </div>
       </nav>

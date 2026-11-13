@@ -1311,6 +1311,7 @@ export interface ParsedNoteClue {
   variant: 'checklist' | 'phone_note' | 'paper_note';
   headerTitle: string;
   date?: string;
+  recoveredFrom?: string;
   items: NoteChecklistItem[];
   paragraphs: string[];
   signature?: string;
@@ -1324,6 +1325,7 @@ export function parseNoteClue(title: string, rawText: string): ParsedNoteClue {
     .filter(Boolean);
 
   let date: string | undefined;
+  let recoveredFrom: string | undefined;
   const items: NoteChecklistItem[] = [];
   const paragraphs: string[] = [];
   let signature: string | undefined;
@@ -1336,6 +1338,12 @@ export function parseNoteClue(title: string, rawText: string): ParsedNoteClue {
     const dateMatch = line.match(/^Date\s*:\s*(.+)$/i);
     if (dateMatch) {
       date = dateMatch[1].trim();
+      return;
+    }
+
+    const recoveredMatch = line.match(/^(?:Recovered|Location|Found)\s*:\s*(.+)$/i);
+    if (recoveredMatch) {
+      recoveredFrom = recoveredMatch[1].trim();
       return;
     }
 
@@ -1366,6 +1374,7 @@ export function parseNoteClue(title: string, rawText: string): ParsedNoteClue {
     variant,
     headerTitle: cleanTitle || 'Personal Note',
     date,
+    recoveredFrom,
     items,
     paragraphs,
     signature,

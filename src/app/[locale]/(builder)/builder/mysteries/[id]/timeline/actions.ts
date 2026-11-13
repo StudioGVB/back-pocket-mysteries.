@@ -1,14 +1,15 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { createPlotBeat, updatePlotBeat, deletePlotBeat, getMysteryById, getCharactersByMysteryId } from '@/services/mysteries';
 import { TimelinePhase, BeatType } from '@/types/database';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { getCharacterRoleTitle, stripEmDashes } from '@/utils/hydration';
 import { logAiUsage } from '@/utils/ai-logger';
+import { requireAdmin } from '@/utils/admin-auth';
 
 export async function addBeatAction(mysteryId: string, currentCount: number) {
+  await requireAdmin();
   await createPlotBeat({
     mystery_id: mysteryId,
     event_title: 'New Story Beat',
@@ -23,7 +24,7 @@ export async function addBeatAction(mysteryId: string, currentCount: number) {
 }
 
 export async function insertBeatAtPositionAction(mysteryId: string, afterSortOrder: number, allBeats: { id: string, sort_order: number }[]) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
   // Shift all beats that come after this position down by 1
   const beatsToShift = allBeats.filter(b => b.sort_order > afterSortOrder);
@@ -46,17 +47,19 @@ export async function insertBeatAtPositionAction(mysteryId: string, afterSortOrd
 }
 
 export async function updateBeatAction(mysteryId: string, id: string, updates: any) {
+  await requireAdmin();
   await updatePlotBeat(id, updates);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function removeBeatAction(mysteryId: string, id: string) {
+  await requireAdmin();
   await deletePlotBeat(id);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function deleteAllBeatsAction(mysteryId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from('plot_beats').delete().eq('mystery_id', mysteryId);
   if (error) {
     throw new Error(`Failed to delete all beats: ${error.message}`);
@@ -65,9 +68,8 @@ export async function deleteAllBeatsAction(mysteryId: string) {
 }
 
 export async function reorderBeatsAction(mysteryId: string, beats: { id: string, sort_order: number }[]) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
-  // Perform multiple updates (could be optimized with a single RPC if needed frequently)
   for (const beat of beats) {
     await supabase
       .from('plot_beats')
@@ -80,7 +82,7 @@ export async function reorderBeatsAction(mysteryId: string, beats: { id: string,
 
 export async function generateNarrativePlotAction(mysteryId: string, userIdeas: string = "") {
   try {
-    const supabase = await createClient();
+    await requireAdmin();
     const [mystery, characters] = await Promise.all([
       getMysteryById(mysteryId),
       getCharactersByMysteryId(mysteryId)
@@ -177,7 +179,7 @@ export async function generateNarrativePlotAction(mysteryId: string, userIdeas: 
 
 export async function generateBeatsFromNarrativeAction(mysteryId: string, currentCount: number, narrative: string) {
   try {
-    const supabase = await createClient();
+    await requireAdmin();
     const mystery = await getMysteryById(mysteryId);
     if (!mystery) throw new Error('Mystery not found');
 
@@ -268,7 +270,7 @@ export async function generateBeatsFromNarrativeAction(mysteryId: string, curren
 
 export async function savePlotBeatsBulkAction(mysteryId: string, beats: any[]) {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
     
     // Clear any existing beats for this mystery to allow clean regeneration
     const { error: delError } = await supabase.from('plot_beats').delete().eq('mystery_id', mysteryId);

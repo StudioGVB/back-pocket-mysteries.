@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/database';
 import { MysteryComplexity } from '@/types/database';
+import { requireAdmin } from '@/utils/admin-auth';
 
 export async function saveWizardAction({
   title,
@@ -23,23 +24,7 @@ export async function saveWizardAction({
   insideJokes: string;
 }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll() {}
-        }
-      }
-    );
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { error: 'Not authenticated' };
-    }
+    const { supabase, user } = await requireAdmin();
 
     // Map tier to complexity
     const complexityMap: Record<string, MysteryComplexity> = {

@@ -57,25 +57,91 @@ export const VOICE_REGION_OPTIONS: VoiceRegionOption[] = [
 ];
 
 export const VOICE_PROFILES: Record<string, VoiceProfile> = {
-  // Australian Voices
-  '7AT99iuMA9sXzwoSxG9H': {
-    id: '7AT99iuMA9sXzwoSxG9H',
-    name: 'Australian Female (Young)',
+  // Australian Female Voices (en-AU)
+  VyyyOgRmsqOzaZXnKWnI: {
+    id: 'VyyyOgRmsqOzaZXnKWnI',
+    name: 'Australian Female (Sunny - Young)',
     gender: 'female',
     age: 'young',
     accent: 'en-AU',
-    tone: 'soft, young Australian, composed',
+    tone: 'warm, friendly, natural Australian',
   },
+  XuvMi7mpVgif9dcUzS0s: {
+    id: 'XuvMi7mpVgif9dcUzS0s',
+    name: 'Australian Female (Keira - Young)',
+    gender: 'female',
+    age: 'young',
+    accent: 'en-AU',
+    tone: 'bright, energetic, expressive Australian',
+  },
+  HMsHSO9iPieho74ZXn8A: {
+    id: 'HMsHSO9iPieho74ZXn8A',
+    name: 'Australian Female (Emma - Young Dramatic)',
+    gender: 'female',
+    age: 'young',
+    accent: 'en-AU',
+    tone: 'confident, vibrant, dramatic Australian',
+  },
+  zMK1eWY5DTw3Jjb8efU8: {
+    id: 'zMK1eWY5DTw3Jjb8efU8',
+    name: 'Australian Female (Emily - Adult)',
+    gender: 'female',
+    age: 'middle_aged',
+    accent: 'en-AU',
+    tone: 'poised, sharp, articulate Australian',
+  },
+  ZLVTWgFXtnxrL1YnHAWI: {
+    id: 'ZLVTWgFXtnxrL1YnHAWI',
+    name: 'Australian Female (Kez - Adult)',
+    gender: 'female',
+    age: 'middle_aged',
+    accent: 'en-AU',
+    tone: 'calm, composed, perceptive Australian',
+  },
+
+  // Australian Male Voices (en-AU)
   IKne3meq5aSn9XLyUdCD: {
     id: 'IKne3meq5aSn9XLyUdCD',
-    name: 'Australian Male (Young)',
+    name: 'Australian Male (Charlie - Young)',
     gender: 'male',
     age: 'young',
     accent: 'en-AU',
     tone: 'deep, confident, energetic Australian',
   },
+  wtwH9W069irH5kpBmdwx: {
+    id: 'wtwH9W069irH5kpBmdwx',
+    name: 'Australian Male (Trevor - Young)',
+    gender: 'male',
+    age: 'young',
+    accent: 'en-AU',
+    tone: 'relaxed, conversational, earnest Australian',
+  },
+  '9TTaZrP6m0Cc554HW1PP': {
+    id: '9TTaZrP6m0Cc554HW1PP',
+    name: 'Australian Male (Michael - Adult)',
+    gender: 'male',
+    age: 'middle_aged',
+    accent: 'en-AU',
+    tone: 'commanding, intense, authoritative Australian',
+  },
+  pDoe9k94N27tidKG2ssb: {
+    id: 'pDoe9k94N27tidKG2ssb',
+    name: 'Australian Male (David - Adult)',
+    gender: 'male',
+    age: 'middle_aged',
+    accent: 'en-AU',
+    tone: 'smooth, persuasive, charismatic Australian',
+  },
+  UVXT2nskVOynYCONC3Iy: {
+    id: 'UVXT2nskVOynYCONC3Iy',
+    name: 'Australian Male (Ryan - Adult)',
+    gender: 'male',
+    age: 'middle_aged',
+    accent: 'en-AU',
+    tone: 'grounded, dry, calculating Australian',
+  },
 
-  // British Voices
+  // British Voices (en-GB)
   JBFqnCBsd6RMkjVDRZzb: {
     id: 'JBFqnCBsd6RMkjVDRZzb',
     name: 'British Male (Adult)',
@@ -109,7 +175,7 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     tone: 'velvety, dramatic British actress',
   },
 
-  // American & International Character Voices
+  // American & International Character Voices (en-US)
   pNInz6obpgDQGcFmaJgB: {
     id: 'pNInz6obpgDQGcFmaJgB',
     name: 'American Male (Intense)',
@@ -260,6 +326,14 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
     'the flameout': 'nPczCjzI2devNBz1zQrb',
     'the sister': 'XrExE9yKIg1WjnnlVkGX',
 
+    // Christmas Nightmare cast by Role Title
+    'the husband': 'pNInz6obpgDQGcFmaJgB',
+    'the wife': 'XrExE9yKIg1WjnnlVkGX',
+    'the sister-in-law': 'EXAVITQu4vr4xnSDxMaL',
+    'the mistress': 'cgSgspJ2msm6clMCkdW9',
+    'the co-worker': 'cjVigY5qzO86Huf0OWal',
+    'the bestie': 'iP95p4xoKVk53GoZ742B',
+
     // Legacy aliases
     dane: 'pNInz6obpgDQGcFmaJgB',       // Adam - dominant / intense ex
     gabby: 'cgSgspJ2msm6clMCkdW9',      // Jessica - glamorous winner
@@ -304,54 +378,62 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
   },
   'en-GB': {
     // Love On The Rocks cast by Role Title (all distinct voices)
-    'the ex': 'SOYHLrjzK2X1ezoPC6cr',
+    'the ex': 'JBFqnCBsd6RMkjVDRZzb',
     'the reality tv queen': 'pFZP5JQG7iQjIQuC4Bku',
     'the star': 'pFZP5JQG7iQjIQuC4Bku',
     'the bombshell': 'JBFqnCBsd6RMkjVDRZzb',
     'the host': 'JBFqnCBsd6RMkjVDRZzb',
-    'the superfan': 'N2lVS1w4EtoT3dr4eOWO',
+    'the superfan': 'onwK4e9ZLuTAKqWW03F9',
     'the hair & makeup artist': 'Xb7hH8MSUJpSbSDYk0k2',
     'the hair and makeup artist': 'Xb7hH8MSUJpSbSDYk0k2',
     'the producer': 'onwK4e9ZLuTAKqWW03F9',
     'the producer plant': 'onwK4e9ZLuTAKqWW03F9',
-    'the runner-up': 'EXAVITQu4vr4xnSDxMaL',
-    'the runner up': 'EXAVITQu4vr4xnSDxMaL',
-    'the fan-favourite flameout': 'nPczCjzI2devNBz1zQrb',
-    'the fan-favorite flameout': 'nPczCjzI2devNBz1zQrb',
-    'the flameout': 'nPczCjzI2devNBz1zQrb',
-    'the sister': 'FGY2WhTYpPnrIDTdsKH5',
+    'the runner-up': 'Xb7hH8MSUJpSbSDYk0k2',
+    'the runner up': 'Xb7hH8MSUJpSbSDYk0k2',
+    'the fan-favourite flameout': 'JBFqnCBsd6RMkjVDRZzb',
+    'the fan-favorite flameout': 'JBFqnCBsd6RMkjVDRZzb',
+    'the flameout': 'JBFqnCBsd6RMkjVDRZzb',
+    'the sister': 'pFZP5JQG7iQjIQuC4Bku',
+
+    // Christmas Nightmare cast by Role Title
+    'the husband': 'JBFqnCBsd6RMkjVDRZzb',
+    'the wife': 'Xb7hH8MSUJpSbSDYk0k2',
+    'the sister-in-law': 'pFZP5JQG7iQjIQuC4Bku',
+    'the mistress': 'pFZP5JQG7iQjIQuC4Bku',
+    'the co-worker': 'onwK4e9ZLuTAKqWW03F9',
+    'the bestie': 'JBFqnCBsd6RMkjVDRZzb',
 
     // Legacy aliases
-    dane: 'SOYHLrjzK2X1ezoPC6cr',       // Harry - tense, volatile ex
+    dane: 'JBFqnCBsd6RMkjVDRZzb',       // George - British male
     gabby: 'pFZP5JQG7iQjIQuC4Bku',      // Lily - velvety British actress
     colt: 'JBFqnCBsd6RMkjVDRZzb',       // George - warm charismatic British host
-    milo: 'N2lVS1w4EtoT3dr4eOWO',       // Callum - husky / intense superfan
+    milo: 'onwK4e9ZLuTAKqWW03F9',       // Daniel - British superfan
     rikki: 'Xb7hH8MSUJpSbSDYk0k2',      // Alice - sharp, perceptive British
     jeremy: 'onwK4e9ZLuTAKqWW03F9',     // Daniel - formal, calculating British producer
-    ava: 'EXAVITQu4vr4xnSDxMaL',        // Sarah - posh, dramatic runner-up
-    zayn: 'nPczCjzI2devNBz1zQrb',       // Brian - deep, smooth
-    sienna: 'FGY2WhTYpPnrIDTdsKH5',     // Laura - bold, sassy sister
+    ava: 'Xb7hH8MSUJpSbSDYk0k2',        // Alice - poised British runner-up
+    zayn: 'JBFqnCBsd6RMkjVDRZzb',       // George - British male
+    sienna: 'pFZP5JQG7iQjIQuC4Bku',     // Lily - British female
 
     // Dead On Arrival aliases
-    blaze: 'SOYHLrjzK2X1ezoPC6cr',
+    blaze: 'JBFqnCBsd6RMkjVDRZzb',
     skye: 'pFZP5JQG7iQjIQuC4Bku',
     cole: 'JBFqnCBsd6RMkjVDRZzb',
-    rex: 'N2lVS1w4EtoT3dr4eOWO',
+    rex: 'onwK4e9ZLuTAKqWW03F9',
     mara: 'Xb7hH8MSUJpSbSDYk0k2',
     jordan: 'onwK4e9ZLuTAKqWW03F9',
-    brooke: 'EXAVITQu4vr4xnSDxMaL',
-    zane: 'nPczCjzI2devNBz1zQrb',
-    nova: 'FGY2WhTYpPnrIDTdsKH5',
+    brooke: 'Xb7hH8MSUJpSbSDYk0k2',
+    zane: 'JBFqnCBsd6RMkjVDRZzb',
+    nova: 'pFZP5JQG7iQjIQuC4Bku',
 
     // Circus Noir cast
     barnaby: 'JBFqnCBsd6RMkjVDRZzb',
     zara: 'pFZP5JQG7iQjIQuC4Bku',
-    silas: 'N2lVS1w4EtoT3dr4eOWO',
+    silas: 'onwK4e9ZLuTAKqWW03F9',
     zephyr: 'Xb7hH8MSUJpSbSDYk0k2',
-    jax: 'SOYHLrjzK2X1ezoPC6cr',
-    gigi: 'EXAVITQu4vr4xnSDxMaL',
+    jax: 'JBFqnCBsd6RMkjVDRZzb',
+    gigi: 'pFZP5JQG7iQjIQuC4Bku',
     lucius: 'onwK4e9ZLuTAKqWW03F9',
-    seraphina: 'hpp4J3VqNfWAUOO0d1Us',
+    seraphina: 'Xb7hH8MSUJpSbSDYk0k2',
 
     // Generic speaker slots (all distinct)
     'speaker 1': 'pFZP5JQG7iQjIQuC4Bku',
@@ -364,111 +446,123 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
     default_neutral: 'JBFqnCBsd6RMkjVDRZzb',
   },
   'en-AU': {
-    // Love On The Rocks cast by Role Title (all distinct voices)
+    // Love On The Rocks cast by Role Title (100% genuine Australian voices)
     'the ex': 'IKne3meq5aSn9XLyUdCD',
-    'the reality tv queen': 'pFZP5JQG7iQjIQuC4Bku',
-    'the star': 'pFZP5JQG7iQjIQuC4Bku',
-    'the bombshell': 'TX3LPaxmHKxFdv7VOQHJ',
-    'the host': 'TX3LPaxmHKxFdv7VOQHJ',
-    'the superfan': 'bIHbv24MWmeRgasZH58o',
-    'the hair & makeup artist': 'FGY2WhTYpPnrIDTdsKH5',
-    'the hair and makeup artist': 'FGY2WhTYpPnrIDTdsKH5',
-    'the producer': 'CwhRBWXzGAHq8TQ4Fs17',
-    'the producer plant': 'CwhRBWXzGAHq8TQ4Fs17',
-    'the runner-up': 'EXAVITQu4vr4xnSDxMaL',
-    'the runner up': 'EXAVITQu4vr4xnSDxMaL',
-    'the fan-favourite flameout': 'nPczCjzI2devNBz1zQrb',
-    'the fan-favorite flameout': 'nPczCjzI2devNBz1zQrb',
-    'the flameout': 'nPczCjzI2devNBz1zQrb',
-    'the sister': 'cgSgspJ2msm6clMCkdW9',
+    'the reality tv queen': 'VyyyOgRmsqOzaZXnKWnI',
+    'the star': 'VyyyOgRmsqOzaZXnKWnI',
+    'the bombshell': 'pDoe9k94N27tidKG2ssb',
+    'the host': 'pDoe9k94N27tidKG2ssb',
+    'the superfan': 'wtwH9W069irH5kpBmdwx',
+    'the hair & makeup artist': 'XuvMi7mpVgif9dcUzS0s',
+    'the hair and makeup artist': 'XuvMi7mpVgif9dcUzS0s',
+    'the producer': 'UVXT2nskVOynYCONC3Iy',
+    'the producer plant': 'UVXT2nskVOynYCONC3Iy',
+    'the runner-up': 'HMsHSO9iPieho74ZXn8A',
+    'the runner up': 'HMsHSO9iPieho74ZXn8A',
+    'the fan-favourite flameout': '9TTaZrP6m0Cc554HW1PP',
+    'the fan-favorite flameout': '9TTaZrP6m0Cc554HW1PP',
+    'the flameout': '9TTaZrP6m0Cc554HW1PP',
+    'the sister': 'zMK1eWY5DTw3Jjb8efU8',
 
-    // Legacy aliases
+    // Christmas Nightmare cast by Role Title (100% genuine Australian voices)
+    'the husband': '9TTaZrP6m0Cc554HW1PP',
+    'the wife': 'zMK1eWY5DTw3Jjb8efU8',
+    'the sister-in-law': 'ZLVTWgFXtnxrL1YnHAWI',
+    'the mistress': 'VyyyOgRmsqOzaZXnKWnI',
+    'the co-worker': 'UVXT2nskVOynYCONC3Iy',
+    'the bestie': 'pDoe9k94N27tidKG2ssb',
+
+    // Legacy aliases (100% genuine Australian voices)
     dane: 'IKne3meq5aSn9XLyUdCD',       // Charlie (AU) - deep, confident Australian
-    gabby: 'pFZP5JQG7iQjIQuC4Bku',      // Lily - dramatic lead star
-    colt: 'TX3LPaxmHKxFdv7VOQHJ',       // Liam - charismatic host
-    milo: 'bIHbv24MWmeRgasZH58o',       // Will - earnest / obsessive superfan
-    rikki: 'FGY2WhTYpPnrIDTdsKH5',      // Laura - sassy / quick glam artist
-    jeremy: 'CwhRBWXzGAHq8TQ4Fs17',     // Roger - dry, calculating producer
-    ava: 'EXAVITQu4vr4xnSDxMaL',        // Sarah - polished / dramatic runner-up
-    zayn: 'nPczCjzI2devNBz1zQrb',       // Brian - deep / smooth
-    sienna: 'cgSgspJ2msm6clMCkdW9',     // Jessica - bright, bold sister
+    gabby: 'VyyyOgRmsqOzaZXnKWnI',      // Sunny (AU) - warm Australian lead star
+    colt: 'pDoe9k94N27tidKG2ssb',       // David (AU) - charismatic Australian host
+    milo: 'wtwH9W069irH5kpBmdwx',       // Trevor (AU) - earnest Australian superfan
+    rikki: 'XuvMi7mpVgif9dcUzS0s',      // Keira (AU) - expressive Australian glam artist
+    jeremy: 'UVXT2nskVOynYCONC3Iy',     // Ryan (AU) - dry, calculating Australian producer
+    ava: 'HMsHSO9iPieho74ZXn8A',        // Emma (AU) - confident, dramatic Australian runner-up
+    zayn: '9TTaZrP6m0Cc554HW1PP',       // Michael (AU) - deep, resonant Australian
+    sienna: 'zMK1eWY5DTw3Jjb8efU8',     // Emily (AU) - sharp, articulate Australian sister
 
-    // Dead On Arrival aliases
+    // Dead On Arrival aliases (100% genuine Australian voices)
     blaze: 'IKne3meq5aSn9XLyUdCD',
-    skye: 'pFZP5JQG7iQjIQuC4Bku',
-    cole: 'TX3LPaxmHKxFdv7VOQHJ',
-    rex: 'bIHbv24MWmeRgasZH58o',
-    mara: 'FGY2WhTYpPnrIDTdsKH5',
-    jordan: 'CwhRBWXzGAHq8TQ4Fs17',
-    brooke: 'EXAVITQu4vr4xnSDxMaL',
-    zane: 'nPczCjzI2devNBz1zQrb',
-    nova: 'cgSgspJ2msm6clMCkdW9',
+    skye: 'VyyyOgRmsqOzaZXnKWnI',
+    cole: 'pDoe9k94N27tidKG2ssb',
+    rex: 'wtwH9W069irH5kpBmdwx',
+    mara: 'XuvMi7mpVgif9dcUzS0s',
+    jordan: 'UVXT2nskVOynYCONC3Iy',
+    brooke: 'HMsHSO9iPieho74ZXn8A',
+    zane: '9TTaZrP6m0Cc554HW1PP',
+    nova: 'zMK1eWY5DTw3Jjb8efU8',
 
     // Circus Noir cast
-    barnaby: 'IKne3meq5aSn9XLyUdCD',
-    zara: 'pFZP5JQG7iQjIQuC4Bku',
-    silas: 'N2lVS1w4EtoT3dr4eOWO',
-    zephyr: 'hpp4J3VqNfWAUOO0d1Us',
-    jax: 'SOYHLrjzK2X1ezoPC6cr',
-    gigi: 'EXAVITQu4vr4xnSDxMaL',
-    lucius: 'CwhRBWXzGAHq8TQ4Fs17',
-    seraphina: 'cgSgspJ2msm6clMCkdW9',
+    barnaby: '9TTaZrP6m0Cc554HW1PP',
+    zara: 'HMsHSO9iPieho74ZXn8A',
+    silas: 'wtwH9W069irH5kpBmdwx',
+    zephyr: 'ZLVTWgFXtnxrL1YnHAWI',
+    jax: 'IKne3meq5aSn9XLyUdCD',
+    gigi: 'VyyyOgRmsqOzaZXnKWnI',
+    lucius: 'UVXT2nskVOynYCONC3Iy',
+    seraphina: 'zMK1eWY5DTw3Jjb8efU8',
 
-    // Generic speaker slots (all distinct)
-    'speaker 1': 'pFZP5JQG7iQjIQuC4Bku',
-    'speaker 2': 'IKne3meq5aSn9XLyUdCD',
-    'speaker 3': 'CwhRBWXzGAHq8TQ4Fs17',
-    'speaker 4': 'FGY2WhTYpPnrIDTdsKH5',
-    narrator: 'IKne3meq5aSn9XLyUdCD',
-    default_female: 'pFZP5JQG7iQjIQuC4Bku',
+    // Generic speaker slots (all distinct genuine Australian voices)
+    'speaker 1': 'VyyyOgRmsqOzaZXnKWnI',
+    'speaker 2': 'HMsHSO9iPieho74ZXn8A',
+    'speaker 3': 'UVXT2nskVOynYCONC3Iy',
+    'speaker 4': 'XuvMi7mpVgif9dcUzS0s',
+    narrator: 'pDoe9k94N27tidKG2ssb',
+    default_female: 'VyyyOgRmsqOzaZXnKWnI',
     default_male: 'IKne3meq5aSn9XLyUdCD',
-    default_neutral: 'SAz9YHcvj6GT2YYXdXww',
+    default_neutral: 'ZLVTWgFXtnxrL1YnHAWI',
   },
 };
 
 const DISTINCT_FEMALE_VOICE_POOL = [
-  'pFZP5JQG7iQjIQuC4Bku', // Lily
-  'FGY2WhTYpPnrIDTdsKH5', // Laura
-  'EXAVITQu4vr4xnSDxMaL', // Sarah
-  'cgSgspJ2msm6clMCkdW9', // Jessica
+  'VyyyOgRmsqOzaZXnKWnI', // Sunny (AU)
+  'XuvMi7mpVgif9dcUzS0s', // Keira (AU)
+  'HMsHSO9iPieho74ZXn8A', // Emma (AU)
+  'zMK1eWY5DTw3Jjb8efU8', // Emily (AU)
+  'ZLVTWgFXtnxrL1YnHAWI', // Kez (AU)
+  'pFZP5JQG7iQjIQuC4Bku', // Lily (UK)
   'Xb7hH8MSUJpSbSDYk0k2', // Alice (UK)
-  'XrExE9yKIg1WjnnlVkGX', // Matilda
-  'hpp4J3VqNfWAUOO0d1Us', // Bella
+  'FGY2WhTYpPnrIDTdsKH5', // Laura (US)
+  'EXAVITQu4vr4xnSDxMaL', // Sarah (US)
+  'cgSgspJ2msm6clMCkdW9', // Jessica (US)
+  'XrExE9yKIg1WjnnlVkGX', // Matilda (US)
+  'hpp4J3VqNfWAUOO0d1Us', // Bella (US)
 ];
 
 const DISTINCT_MALE_VOICE_POOL = [
   'IKne3meq5aSn9XLyUdCD', // Charlie (AU)
-  'CwhRBWXzGAHq8TQ4Fs17', // Roger
-  'nPczCjzI2devNBz1zQrb', // Brian
-  'cjVigY5qzO86Huf0OWal', // Eric
-  'N2lVS1w4EtoT3dr4eOWO', // Callum
-  'pNInz6obpgDQGcFmaJgB', // Adam
-  'iP95p4xoKVk53GoZ742B', // Chris
-  'TX3LPaxmHKxFdv7VOQHJ', // Liam
-  'bIHbv24MWmeRgasZH58o', // Will
+  'wtwH9W069irH5kpBmdwx', // Trevor (AU)
+  '9TTaZrP6m0Cc554HW1PP', // Michael (AU)
+  'pDoe9k94N27tidKG2ssb', // David (AU)
+  'UVXT2nskVOynYCONC3Iy', // Ryan (AU)
   'JBFqnCBsd6RMkjVDRZzb', // George (UK)
   'onwK4e9ZLuTAKqWW03F9', // Daniel (UK)
-  'SOYHLrjzK2X1ezoPC6cr', // Harry
+  'CwhRBWXzGAHq8TQ4Fs17', // Roger (US)
+  'nPczCjzI2devNBz1zQrb', // Brian (US)
+  'cjVigY5qzO86Huf0OWal', // Eric (US)
+  'N2lVS1w4EtoT3dr4eOWO', // Callum (US)
+  'pNInz6obpgDQGcFmaJgB', // Adam (US)
+  'iP95p4xoKVk53GoZ742B', // Chris (US)
+  'TX3LPaxmHKxFdv7VOQHJ', // Liam (US)
+  'bIHbv24MWmeRgasZH58o', // Will (US)
+  'SOYHLrjzK2X1ezoPC6cr', // Harry (US)
 ];
 
 const REGIONAL_FEMALE_VOICE_POOLS: Record<VoiceRegion, string[]> = {
   'en-AU': [
-    'pFZP5JQG7iQjIQuC4Bku', // Lily
-    'FGY2WhTYpPnrIDTdsKH5', // Laura
-    'EXAVITQu4vr4xnSDxMaL', // Sarah
-    'cgSgspJ2msm6clMCkdW9', // Jessica
-    'Xb7hH8MSUJpSbSDYk0k2', // Alice (UK)
-    'XrExE9yKIg1WjnnlVkGX', // Matilda
-    'hpp4J3VqNfWAUOO0d1Us', // Bella
+    'VyyyOgRmsqOzaZXnKWnI', // Sunny (AU)
+    'XuvMi7mpVgif9dcUzS0s', // Keira (AU)
+    'HMsHSO9iPieho74ZXn8A', // Emma (AU)
+    'zMK1eWY5DTw3Jjb8efU8', // Emily (AU)
+    'ZLVTWgFXtnxrL1YnHAWI', // Kez (AU)
   ],
   'en-GB': [
     'pFZP5JQG7iQjIQuC4Bku', // Lily (UK)
     'Xb7hH8MSUJpSbSDYk0k2', // Alice (UK)
-    'hpp4J3VqNfWAUOO0d1Us', // Bella
-    'EXAVITQu4vr4xnSDxMaL', // Sarah
-    'FGY2WhTYpPnrIDTdsKH5', // Laura
-    'XrExE9yKIg1WjnnlVkGX', // Matilda
-    'cgSgspJ2msm6clMCkdW9', // Jessica
+    'ZLVTWgFXtnxrL1YnHAWI', // Kez (Commonwealth fallback)
+    'zMK1eWY5DTw3Jjb8efU8', // Emily (Commonwealth fallback)
   ],
   'en-US': [
     'cgSgspJ2msm6clMCkdW9', // Jessica (US)
@@ -476,39 +570,22 @@ const REGIONAL_FEMALE_VOICE_POOLS: Record<VoiceRegion, string[]> = {
     'FGY2WhTYpPnrIDTdsKH5', // Laura (US)
     'XrExE9yKIg1WjnnlVkGX', // Matilda (US)
     'hpp4J3VqNfWAUOO0d1Us', // Bella (US)
-    'pFZP5JQG7iQjIQuC4Bku', // Lily (UK)
-    'Xb7hH8MSUJpSbSDYk0k2', // Alice (UK)
   ],
 };
 
 const REGIONAL_MALE_VOICE_POOLS: Record<VoiceRegion, string[]> = {
   'en-AU': [
     'IKne3meq5aSn9XLyUdCD', // Charlie (AU)
-    'TX3LPaxmHKxFdv7VOQHJ', // Liam
-    'CwhRBWXzGAHq8TQ4Fs17', // Roger
-    'bIHbv24MWmeRgasZH58o', // Will
-    'nPczCjzI2devNBz1zQrb', // Brian
-    'cjVigY5qzO86Huf0OWal', // Eric
-    'N2lVS1w4EtoT3dr4eOWO', // Callum
-    'pNInz6obpgDQGcFmaJgB', // Adam
-    'iP95p4xoKVk53GoZ742B', // Chris
-    'JBFqnCBsd6RMkjVDRZzb', // George (UK)
-    'onwK4e9ZLuTAKqWW03F9', // Daniel (UK)
-    'SOYHLrjzK2X1ezoPC6cr', // Harry
+    'wtwH9W069irH5kpBmdwx', // Trevor (AU)
+    '9TTaZrP6m0Cc554HW1PP', // Michael (AU)
+    'pDoe9k94N27tidKG2ssb', // David (AU)
+    'UVXT2nskVOynYCONC3Iy', // Ryan (AU)
   ],
   'en-GB': [
     'JBFqnCBsd6RMkjVDRZzb', // George (UK)
     'onwK4e9ZLuTAKqWW03F9', // Daniel (UK)
-    'N2lVS1w4EtoT3dr4eOWO', // Callum (UK)
-    'SOYHLrjzK2X1ezoPC6cr', // Harry
-    'nPczCjzI2devNBz1zQrb', // Brian
-    'CwhRBWXzGAHq8TQ4Fs17', // Roger
-    'cjVigY5qzO86Huf0OWal', // Eric
-    'IKne3meq5aSn9XLyUdCD', // Charlie (AU)
-    'TX3LPaxmHKxFdv7VOQHJ', // Liam
-    'pNInz6obpgDQGcFmaJgB', // Adam
-    'iP95p4xoKVk53GoZ742B', // Chris
-    'bIHbv24MWmeRgasZH58o', // Will
+    'pDoe9k94N27tidKG2ssb', // David (Commonwealth fallback)
+    'UVXT2nskVOynYCONC3Iy', // Ryan (Commonwealth fallback)
   ],
   'en-US': [
     'iP95p4xoKVk53GoZ742B', // Chris (US)
@@ -519,10 +596,7 @@ const REGIONAL_MALE_VOICE_POOLS: Record<VoiceRegion, string[]> = {
     'TX3LPaxmHKxFdv7VOQHJ', // Liam (US)
     'bIHbv24MWmeRgasZH58o', // Will (US)
     'SOYHLrjzK2X1ezoPC6cr', // Harry (US)
-    'N2lVS1w4EtoT3dr4eOWO', // Callum
-    'IKne3meq5aSn9XLyUdCD', // Charlie (AU)
-    'JBFqnCBsd6RMkjVDRZzb', // George (UK)
-    'onwK4e9ZLuTAKqWW03F9', // Daniel (UK)
+    'N2lVS1w4EtoT3dr4eOWO', // Callum (US)
   ],
 };
 
@@ -681,11 +755,14 @@ export function normalizeSpeakerLabel(
         (guestLower && (lowerKey === guestLower || lowerKey.includes(guestLower))) ||
         (charLower && (lowerKey === charLower || lowerKey.includes(charLower)))
       ) {
-        const effectiveGenderSource =
-          profile.gender && profile.gender.toLowerCase() !== 'adaptable'
-            ? profile.gender
-            : char.gender || profile.gender || '';
-        const genderRaw = effectiveGenderSource.toLowerCase();
+        const isGenericGender = (g?: string | null) =>
+          !g || ['adaptable', 'unspecified', 'unknown', 'any'].includes(g.trim().toLowerCase());
+        const effectiveGenderSource = !isGenericGender(profile.gender)
+          ? profile.gender
+          : !isGenericGender(char.gender)
+          ? char.gender
+          : profile.gender || char.gender || '';
+        const genderRaw = String(effectiveGenderSource).toLowerCase();
         const genderHint: 'male' | 'female' | 'neutral' =
           genderRaw === 'female' || genderRaw === 'f' || genderRaw.includes('fem')
             ? 'female'
@@ -694,20 +771,22 @@ export function normalizeSpeakerLabel(
             : 'neutral';
 
         const rawGuestAccent =
-          profile.accent ||
-          profile.avatar_config?.accent ||
           extractAccentFromAvatarUrl(profile.avatar_url) ||
-          extractAccentParamFromUrl(profile.avatar_url);
+          extractAccentParamFromUrl(profile.avatar_url) ||
+          profile.accent ||
+          profile.avatar_config?.accent;
         const { region: speakerRegion, accentLabel: speakerAccent } =
           mapGuestAccentToVoiceRegion(rawGuestAccent);
 
         const rawGuestAge =
+          extractAgeFromAvatarUrl(profile.avatar_url) ||
           profile.age ||
-          profile.avatar_config?.age ||
-          extractAgeFromAvatarUrl(profile.avatar_url);
+          profile.avatar_config?.age;
         const ageHint = normalizeGuestAge(rawGuestAge);
 
-        const hasAssignedGuest = Boolean(profile.guest_id || guestName);
+        const hasAssignedGuest = Boolean(
+          profile.guest_id || guestName || rawGuestAccent || speakerRegion
+        );
         const displaySpeaker = getCharacterDisplayName(char) || extractedName;
 
         return {
@@ -723,6 +802,13 @@ export function normalizeSpeakerLabel(
     }
   }
 
+  const fallbackGenderHint: 'male' | 'female' | 'neutral' | undefined =
+    /\b(?:female|woman|girl|wife|sister|mistress|mother|mom|queen|actress|bride)\b/i.test(lowerKey)
+      ? 'female'
+      : /\b(?:male|man|guy|boy|husband|brother|father|dad|king|actor|groom)\b/i.test(lowerKey)
+      ? 'male'
+      : undefined;
+
   const hydratedFallback = Array.isArray(characters) && characters.length > 0
     ? hydrateTextWithCharacters(extractedName, characters, 'print')
     : extractedName;
@@ -730,6 +816,7 @@ export function normalizeSpeakerLabel(
   return {
     speakerKey: lowerKey,
     displaySpeaker: hydratedFallback || 'Narrator',
+    genderHint: fallbackGenderHint,
   };
 }
 
@@ -787,7 +874,7 @@ export function resolveSpeakerVoice(
 
   // 2. If the character has an assigned guest (or explicit gender/age/accent attributes),
   // score all voices in VOICE_PROFILES by (gender + accent + age + archetype affinity)
-  if (hasAssignedGuest || ageHint || speakerRegion) {
+  if (hasAssignedGuest || ageHint || speakerRegion || genderHint) {
     const targetGender =
       genderHint ||
       (archetypeVoiceId ? VOICE_PROFILES[archetypeVoiceId]?.gender : undefined) ||
@@ -824,9 +911,11 @@ export function resolveSpeakerVoice(
         score -= 100;
       }
 
-      // B. Accent match (+50 for matching guest's accent/effectiveRegion)
+      // B. Accent match (strict requirement: +150 for matching guest's accent/effectiveRegion, -80 for mismatch)
       if (candidate.accent === effectiveRegion) {
-        score += 50;
+        score += 150;
+      } else {
+        score -= 80;
       }
 
       // C. Age match (+35 for exact age bracket match, +10 for adjacent age bracket)
@@ -839,9 +928,9 @@ export function resolveSpeakerVoice(
         score += 10;
       }
 
-      // D. Character archetype tie-breaker bonus (+15 if it's the character's signature voice)
+      // D. Character archetype tie-breaker bonus (+30 if it's the character's signature voice)
       if (archetypeVoiceId && candidate.id === archetypeVoiceId) {
-        score += 15;
+        score += 30;
       }
 
       if (score > bestScore) {
@@ -869,7 +958,7 @@ export function resolveSpeakerVoice(
   }
 
   // 4. Fallback Model: If speaker couldn't be matched (or has no character mapping),
-  // use the dedicated Fallback Voice Model (`FALLBACK_VOICE_BY_GENDER` / `FALLBACK_VOICE_ID`)
+  // use the regional pool or dedicated Fallback Voice Model
   if (!voiceId) {
     if (genderHint === 'female' || genderHint === 'male') {
       const pool = genderHint === 'female' ? regionalFemalePool : regionalMalePool;
@@ -884,6 +973,7 @@ export function resolveSpeakerVoice(
     } else {
       voiceId =
         regionMap[speakerKey] ||
+        regionMap.default_neutral ||
         FALLBACK_VOICE_BY_GENDER.neutral ||
         FALLBACK_VOICE_ID;
     }
@@ -901,9 +991,9 @@ export function resolveSpeakerVoice(
         : preferredGender === 'male'
         ? [...regionalMalePool, ...regionalFemalePool, FALLBACK_VOICE_ID]
         : [
-            FALLBACK_VOICE_ID,
             ...regionalFemalePool,
             ...regionalMalePool,
+            FALLBACK_VOICE_ID,
           ];
 
     const unusedVoice = genderPool.find((candidate) => !excludeVoiceIds.has(candidate));
@@ -1138,6 +1228,94 @@ export function cleanSpokenDialogue(text: string, characters?: any[]): string {
   return cleaned.replace(/\s+/g, ' ').trim();
 }
 
+function extractInvolvedCharactersFromInternalNotes(
+  internalNotes?: string | null,
+  characters?: any[]
+): any[] {
+  if (!internalNotes || !Array.isArray(characters) || characters.length === 0) {
+    return [];
+  }
+
+  const matched: any[] = [];
+  const seenIds = new Set<string>();
+
+  const matchCharsInSnippet = (snippet: string) => {
+    const lowerSnippet = snippet.toLowerCase();
+    for (const char of characters) {
+      const charId = String(char.id || char.name || '');
+      if (seenIds.has(charId)) continue;
+      const roleTitle = getCharacterRoleTitle(char).toLowerCase();
+      const profile = (char.profile_data as any) || {};
+      const guestName = String(profile.guest_name || profile.name || '')
+        .trim()
+        .toLowerCase();
+
+      if (
+        (roleTitle && lowerSnippet.includes(roleTitle)) ||
+        (guestName && guestName.length >= 2 && lowerSnippet.includes(guestName))
+      ) {
+        seenIds.add(charId);
+        matched.push(char);
+      }
+    }
+  };
+
+  // 1. Prioritize explicit speaker pairs in parentheses e.g. `({{The Wife}} + {{The Co-Worker}})`
+  const parenRegex = /\(([^)]+(?:\+|\band\b|&)[^)]+)\)/gi;
+  let parenMatch: RegExpExecArray | null;
+  while ((parenMatch = parenRegex.exec(internalNotes)) !== null) {
+    matchCharsInSnippet(parenMatch[1]);
+  }
+
+  // 2. Then check the rest of internalNotes (preferring non-victims before victims)
+  const nonVictims = characters.filter((c) => !c?.is_victim);
+  const victims = characters.filter((c) => c?.is_victim);
+  for (const group of [nonVictims, victims]) {
+    for (const char of group) {
+      const charId = String(char.id || char.name || '');
+      if (seenIds.has(charId)) continue;
+      const roleTitle = getCharacterRoleTitle(char).toLowerCase();
+      const profile = (char.profile_data as any) || {};
+      const guestName = String(profile.guest_name || profile.name || '')
+        .trim()
+        .toLowerCase();
+      const lowerNotes = internalNotes.toLowerCase();
+      if (
+        (roleTitle && lowerNotes.includes(roleTitle)) ||
+        (guestName && guestName.length >= 2 && lowerNotes.includes(guestName))
+      ) {
+        seenIds.add(charId);
+        matched.push(char);
+      }
+    }
+  }
+
+  return matched;
+}
+
+function inferDominantCastRegion(characters?: any[], fallback: VoiceRegion = 'en-AU'): VoiceRegion {
+  if (!Array.isArray(characters) || characters.length === 0) return fallback;
+  const counts: Record<VoiceRegion, number> = { 'en-AU': 0, 'en-GB': 0, 'en-US': 0 };
+  let total = 0;
+  for (const char of characters) {
+    const pd = (char?.profile_data as any) || {};
+    const rawAccent =
+      extractAccentFromAvatarUrl(pd.avatar_url) ||
+      extractAccentParamFromUrl(pd.avatar_url) ||
+      pd.accent ||
+      pd.avatar_config?.accent;
+    const { region } = mapGuestAccentToVoiceRegion(rawAccent);
+    if (region) {
+      counts[region] = (counts[region] || 0) + 1;
+      total++;
+    }
+  }
+  if (total === 0) return fallback;
+  if (counts['en-AU'] >= counts['en-GB'] && counts['en-AU'] >= counts['en-US']) return 'en-AU';
+  if (counts['en-GB'] >= counts['en-US']) return 'en-GB';
+  return 'en-US';
+}
+
 /**
  * Parses an audio clue transcript into ordered speaker lines with resolved, distinct ElevenLabs voices.
  */
@@ -1150,8 +1328,12 @@ export function parseAudioTranscript(
     characters?: any[];
   }
 ): ParsedDialogueLine[] {
-  const region = options?.voiceRegion || 'en-AU';
   const characters = options?.characters;
+  const region = options?.voiceRegion || inferDominantCastRegion(characters, 'en-AU');
+  const involvedChars = extractInvolvedCharactersFromInternalNotes(
+    options?.internalNotes,
+    characters
+  );
   const rawLines = (transcript || '')
     .split('\n')
     .map((l) => l.trim())
@@ -1180,6 +1362,9 @@ export function parseAudioTranscript(
     const tokenInNotes = options.internalNotes.match(/\{\{([^}]+)\}\}/);
     if (tokenInNotes) {
       inferredMonoSpeaker = `{{${tokenInNotes[1].trim()}}}`;
+      inferredFromInternalOnly = true;
+    } else if (involvedChars.length > 0) {
+      inferredMonoSpeaker = `{{${getCharacterRoleTitle(involvedChars[0])}}}`;
       inferredFromInternalOnly = true;
     } else {
       for (const known of Object.keys(REGIONAL_VOICE_MAP[region])) {
@@ -1210,9 +1395,62 @@ export function parseAudioTranscript(
       continue;
     }
 
+    // Check for bracketed spoken lines like:
+    // `[Sound of footsteps retreating from the door and a hushed voice in the hallway: "He's never going to let her be happy..."]`
+    const bracketedSpeechMatch = line.match(
+      /^\[([^\]:]*?(?:voice|whisper|murmur)[^\]:]*):\s*["“]([^"”]+)["”]\]$/i
+    );
+    if (bracketedSpeechMatch) {
+      const rawDialogue = bracketedSpeechMatch[2].trim();
+      const cleanedDialogue = cleanSpokenDialogue(rawDialogue, characters);
+      if (cleanedDialogue) {
+        const sisterChar = Array.isArray(characters)
+          ? characters.find((c) =>
+              getCharacterRoleTitle(c).toLowerCase().includes('sister')
+            )
+          : null;
+        const voiceLookupTarget = sisterChar
+          ? `{{${getCharacterRoleTitle(sisterChar)}}}`
+          : 'Female Voice';
+        const speakerKey = 'hushed voice';
+        let assigned = speakerVoiceAssignment.get(speakerKey);
+        if (!assigned) {
+          const resolved = resolveSpeakerVoice(
+            voiceLookupTarget,
+            region,
+            characters,
+            speakerVoiceAssignment.size,
+            usedVoiceIds
+          );
+          assigned = {
+            voiceId: resolved.voiceId,
+            profile: resolved.profile,
+            displaySpeaker: 'Hushed Voice',
+          };
+          speakerVoiceAssignment.set(speakerKey, assigned);
+          usedVoiceIds.add(resolved.voiceId);
+        }
+
+        const deliveryTag = '[whispers] [hushed, secretive]';
+        parsedLines.push({
+          index: parsedLines.length,
+          speaker: assigned.displaySpeaker,
+          rawSpeaker: 'Hushed Voice',
+          speakerKey,
+          displaySpeaker: assigned.displaySpeaker,
+          dialogue: cleanedDialogue,
+          spokenDialogue: `${deliveryTag} ${cleanedDialogue}`,
+          deliveryTag,
+          voiceId: assigned.voiceId,
+          voiceProfile: assigned.profile,
+        });
+        continue;
+      }
+    }
+
     // Match optional [00:08] or [6:01 PM] timestamp, followed by Speaker, colon, and dialogue
     const dialogueMatch = line.match(
-      /^(?:\[([^\]]+)\]\s*)?([A-Za-z0-9_.\s\{\}\[\]\-'*]{1,42}?):\s*(.+)$/
+      /^(?:\[([^\]]+)\]\s*)?([A-Za-z0-9_.\s\{\}\[\]\-'’*&/(),]{1,50}?):\s*(.+)$/
     );
 
     if (dialogueMatch) {
@@ -1228,12 +1466,44 @@ export function parseAudioTranscript(
       const cleanedDialogue = cleanSpokenDialogue(rawDialogue, characters);
       if (!cleanedDialogue) continue;
 
-      const { speakerKey } = normalizeSpeakerLabel(candidateSpeaker, characters);
+      // Map generic "Male Voice" / "Female Voice" labels to the clue's involved characters from internalNotes
+      // so the assigned friends' accents, ages, and genders are used while preserving the anonymous display label.
+      let effectiveLookupSpeaker = candidateSpeaker;
+      let preserveAnonymousLabel = false;
+      const genericVoiceGenderMatch = candidateSpeaker
+        .replace(/[*_]/g, '')
+        .trim()
+        .match(/^(male|female|man|woman)(?:\s+voice|\s+speaker)?$/i);
+
+      if (genericVoiceGenderMatch && involvedChars.length > 0) {
+        const isFemaleLabel = /female|woman/i.test(genericVoiceGenderMatch[1]);
+        const matchedInvolvedChar =
+          involvedChars.find((c) => {
+            const roleGen = String(c.gender || '').toLowerCase();
+            if (isFemaleLabel) return roleGen === 'female' || roleGen.includes('fem');
+            return roleGen === 'male' || roleGen.includes('masc');
+          }) ||
+          involvedChars.find((c) => {
+            const pdGen = String(c.profile_data?.gender || '').toLowerCase();
+            if (isFemaleLabel) return pdGen === 'female' || pdGen.includes('fem');
+            return pdGen === 'male' || pdGen.includes('masc');
+          });
+
+        if (matchedInvolvedChar) {
+          effectiveLookupSpeaker = `{{${getCharacterRoleTitle(matchedInvolvedChar)}}}`;
+          preserveAnonymousLabel = true;
+        }
+      }
+
+      const { speakerKey: rawSpeakerKey } = normalizeSpeakerLabel(candidateSpeaker, characters);
+      const speakerKey = preserveAnonymousLabel
+        ? candidateSpeaker.toLowerCase().trim()
+        : rawSpeakerKey;
       let assigned = speakerVoiceAssignment.get(speakerKey);
 
       if (!assigned) {
         const resolved = resolveSpeakerVoice(
-          candidateSpeaker,
+          effectiveLookupSpeaker,
           region,
           characters,
           speakerVoiceAssignment.size,
@@ -1242,7 +1512,9 @@ export function parseAudioTranscript(
         assigned = {
           voiceId: resolved.voiceId,
           profile: resolved.profile,
-          displaySpeaker: resolved.displaySpeaker,
+          displaySpeaker: preserveAnonymousLabel
+            ? candidateSpeaker
+            : resolved.displaySpeaker,
         };
         speakerVoiceAssignment.set(speakerKey, assigned);
         usedVoiceIds.add(resolved.voiceId);

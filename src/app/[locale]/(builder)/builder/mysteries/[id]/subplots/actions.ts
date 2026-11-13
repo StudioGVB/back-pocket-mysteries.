@@ -2,8 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { createSubplot, updateSubplot, deleteSubplot, updateSubplotBeat, createSubplotBeat } from '@/services/subplots';
+import { getMysteryById } from '@/services/mysteries';
+import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import { getCharacterRoleTitle } from '@/utils/hydration';
+import { logAiUsage } from '@/utils/ai-logger';
+import { requireAdmin } from '@/utils/admin-auth';
 
 export async function addSubplotAction(mysteryId: string, formData: FormData) {
+  await requireAdmin();
   const title = formData.get('title') as string;
   const primaryCharacterId = formData.get('primary_character_id') as string;
   const secondaryCharacterId = formData.get('secondary_character_id') as string;
@@ -14,34 +20,32 @@ export async function addSubplotAction(mysteryId: string, formData: FormData) {
 }
 
 export async function updateSubplotAction(mysteryId: string, id: string, updates: any) {
+  await requireAdmin();
   await updateSubplot(id, updates);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function removeSubplotAction(mysteryId: string, id: string) {
+  await requireAdmin();
   await deleteSubplot(id);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function updateBeatAction(mysteryId: string, beatId: string, updates: any) {
+  await requireAdmin();
   await updateSubplotBeat(beatId, updates);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function addSubplotBeatAction(mysteryId: string, subplotId: string, beatNumber: number) {
+  await requireAdmin();
   await createSubplotBeat(subplotId, beatNumber);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
-import { getMysteryById } from '@/services/mysteries';
-import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
-import { createClient } from '@/utils/supabase/server';
-import { getCharacterRoleTitle } from '@/utils/hydration';
-import { logAiUsage } from '@/utils/ai-logger';
-
 export async function generateSubplotAction(mysteryId: string, characterId: string) {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
     const mystery = await getMysteryById(mysteryId);
     if (!mystery) throw new Error('Mystery not found');
 

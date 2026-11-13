@@ -608,6 +608,8 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
       name: newGuest.name,
       email: newGuest.email,
       gender: newGuest.gender,
+      accent: newGuest.accent,
+      age: newGuest.age,
       eye_color: newGuest.eyeColor,
       height: newGuest.height,
       ethnicity: newGuest.ethnicity,

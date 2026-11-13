@@ -6,9 +6,11 @@ import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { getCharacterRoleTitle } from '@/utils/hydration';
 import { logAiUsage } from '@/utils/ai-logger';
+import { requireAdmin } from '@/utils/admin-auth';
 
 export async function upsertRelationshipAction(mysteryId: string, relationship: any) {
   try {
+    await requireAdmin();
     await upsertRelationship({
       ...relationship,
       mystery_id: mysteryId
@@ -22,6 +24,7 @@ export async function upsertRelationshipAction(mysteryId: string, relationship: 
 
 export async function removeRelationshipAction(mysteryId: string, relationshipId: string) {
   try {
+    await requireAdmin();
     await deleteRelationship(relationshipId);
     revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
   } catch (error) {
@@ -32,6 +35,7 @@ export async function removeRelationshipAction(mysteryId: string, relationshipId
 
 export async function generateRelationshipsAction(mysteryId: string, overwrite: boolean) {
   try {
+    const { supabase } = await requireAdmin();
     // Fetch characters & mystery context
     const [mystery, characters] = await Promise.all([
       getMysteryById(mysteryId),
@@ -51,9 +55,6 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
       is_mandatory: c.is_mandatory,
       is_victim: c.is_victim
     }));
-
-    const { createClient } = await import('@/utils/supabase/server');
-    const supabase = await createClient();
 
     let existingRelationships: any[] = [];
     if (!overwrite) {
@@ -222,6 +223,7 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
 
 export async function generateMotivesAction(mysteryId: string, overwrite: boolean) {
   try {
+    const { supabase } = await requireAdmin();
     const [mystery, characters, relationships] = await Promise.all([
       getMysteryById(mysteryId),
       getCharactersByMysteryId(mysteryId),
@@ -243,9 +245,6 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
       is_mandatory: c.is_mandatory,
       is_victim: c.is_victim
     }));
-
-    const { createClient } = await import('@/utils/supabase/server');
-    const supabase = await createClient();
 
     let existingMotives: any[] = [];
     if (!overwrite) {

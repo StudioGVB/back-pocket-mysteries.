@@ -14,15 +14,25 @@ export async function createClient(
   isPermanentParam?: boolean,
   clientOptions?: { allowCookieClear?: boolean }
 ) {
-  const cookieStore = await cookies()
+  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null
+  try {
+    cookieStore = await cookies()
+  } catch {
+    cookieStore = null
+  }
+
+  const safeGetAllCookies = () => (cookieStore ? cookieStore.getAll() : [])
+
   // Default to permanent (30-day) session unless user explicitly set sb-keep-logged-in to 'false'
   const isPermanent =
     isPermanentParam !== undefined
       ? isPermanentParam
-      : cookieStore.get('sb-keep-logged-in')?.value !== 'false'
+      : cookieStore?.get('sb-keep-logged-in')?.value !== 'false'
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseKey =
+    (!cookieStore && process.env.SUPABASE_SERVICE_ROLE_KEY) ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
@@ -33,9 +43,10 @@ export async function createClient(
   const client = createServerClient<Database>(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
-        return getEffectiveAuthCookies(cookieStore.getAll())
+        return getEffectiveAuthCookies(safeGetAllCookies())
       },
       setAll(cookiesToSet) {
+        if (!cookieStore) return
         try {
           const isWipingAllCookies =
             cookiesToSet.length > 0 &&
@@ -49,12 +60,12 @@ export async function createClient(
           if (isWipingAllCookies && clientOptions?.allowCookieClear) {
             clearRefreshedAuthCookieCache()
           } else {
-            recordRefreshedAuthCookies(cookieStore.getAll(), cookiesToSet)
+            recordRefreshedAuthCookies(safeGetAllCookies(), cookiesToSet)
           }
 
           cookiesToSet.forEach(({ name, value, options }) => {
             const cookieOptions = buildSafeCookieOptions(value, options, isPermanent)
-            cookieStore.set(name, value, cookieOptions)
+            cookieStore?.set(name, value, cookieOptions)
           })
         } catch {
           // Server Components cannot set cookies directly; middleware handles refreshing
@@ -85,7 +96,7 @@ export async function createClient(
     }
 
     if (isPermanent && !clientOptions?.allowCookieClear) {
-      const persistedUser = readPersistedUserFromCookies(cookieStore.getAll())
+      const persistedUser = readPersistedUserFromCookies(safeGetAllCookies())
       if (persistedUser) {
         return {
           data: { user: persistedUser },
@@ -94,8 +105,7 @@ export async function createClient(
       }
     }
 
-    const hasAnyAuthCookie = cookieStore
-      .getAll()
+    const hasAnyAuthCookie = safeGetAllCookies()
       .some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token') && Boolean(c.value))
     if (!hasAnyAuthCookie) {
       return { data: { user: null }, error: null } as any

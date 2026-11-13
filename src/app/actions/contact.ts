@@ -2,14 +2,23 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/utils/admin-auth';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash');
 
+function escapeHtml(str: string): string {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export async function submitContactForm(formData: FormData) {
-  const name = formData.get('name') as string;
-  const email = formData.get('email') as string;
-  const message = formData.get('message') as string;
+  const name = ((formData.get('name') as string) || '').trim();
+  const email = ((formData.get('email') as string) || '').trim();
+  const message = ((formData.get('message') as string) || '').trim();
 
   if (!email || !message || !name) {
     return { error: 'Name, email, and message are required.' };
@@ -24,7 +33,7 @@ export async function submitContactForm(formData: FormData) {
     for (const file of files) {
       if (file.size === 0) continue;
       try {
-        const fileExt = file.name.split('.').pop();
+        const fileExt = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `inquiries/${fileName}`;
 
@@ -34,7 +43,6 @@ export async function submitContactForm(formData: FormData) {
 
         if (uploadError) {
           console.warn('Failed to upload file to Supabase (bucket might be missing):', uploadError);
-          // Fake URL for local testing
           attachment_urls.push(`https://mock-storage.com/${filePath}`);
         } else if (uploadData) {
           const { data: { publicUrl } } = supabase.storage
@@ -60,15 +68,11 @@ export async function submitContactForm(formData: FormData) {
   if (error) {
     console.error('Contact form error:', error);
     
-    // Fallback if inquiries table doesn't exist yet: store in leads as a backup
     if (error.code === 'PGRST205') {
       const res = await supabase.from('leads').insert({ 
         email, 
         full_name: name 
       });
-      // We will pretend it succeeded so the user sees a success state,
-      // but warn in console.
-      console.warn('Inquiries table missing. Attempted to save to leads.');
       if (res.error && res.error.code === 'PGRST205') {
         console.warn('Leads table missing too. Faking success.');
       }
@@ -79,8 +83,11 @@ export async function submitContactForm(formData: FormData) {
 
   try {
     if (process.env.RESEND_API_KEY) {
+      const safeName = escapeHtml(name);
+      const safeEmail = escapeHtml(email);
+      const safeMessageHtml = escapeHtml(message).replace(/\n/g, '<br/>');
       const attachmentsHtml = attachment_urls.length > 0 
-        ? `<p><strong>Attachments:</strong><br/>${attachment_urls.map(url => `<a href="${url}">${url}</a>`).join('<br/>')}</p>`
+        ? `<p><strong>Attachments:</strong><br/>${attachment_urls.map(url => `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`).join('<br/>')}</p>`
         : '';
         
       await resend.emails.send({
@@ -95,12 +102,12 @@ export async function submitContactForm(formData: FormData) {
             </div>
             
             <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              <p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Name</strong><br/><span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${name}</span></p>
+              <p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Name</strong><br/><span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${safeName}</span></p>
               
-              <p style="margin: 0 0 15px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Email</strong><br/><a href="mailto:${email}" style="color: #F02882; text-decoration: none; font-size: 14px;">${email}</a></p>
+              <p style="margin: 0 0 15px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Email</strong><br/><a href="mailto:${safeEmail}" style="color: #F02882; text-decoration: none; font-size: 14px;">${safeEmail}</a></p>
               
               <div style="background-color: #f5f5f5; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #1a1a1a;">
-                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">${message.replace(/\n/g, '<br/>')}</p>
+                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">${safeMessageHtml}</p>
               </div>
               
               ${attachmentsHtml ? `<div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">${attachmentsHtml}</div>` : ''}
@@ -112,7 +119,6 @@ export async function submitContactForm(formData: FormData) {
           </div>
         `
       });
-      console.log(`[EMAIL NOTIFICATION] Sent inquiry email from ${name} (${email})`);
 
       // Send Customer Confirmation Email
       const { render } = await import('@react-email/components');
@@ -125,10 +131,6 @@ export async function submitContactForm(formData: FormData) {
         subject: 'We have received your enquiry',
         html: customerHtml,
       });
-      console.log(`[EMAIL NOTIFICATION] Sent customer confirmation to ${email}`);
-    } else {
-      console.warn('RESEND_API_KEY is not set. Email notification was not sent.');
-      console.log(`[EMAIL NOTIFICATION] New Inquiry from ${name} (${email}): ${message}`);
     }
   } catch (err) {
     console.error('Failed to send email notification:', err);
@@ -138,7 +140,7 @@ export async function submitContactForm(formData: FormData) {
 }
 
 export async function updateEnquiryStatus(id: string, status: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from('inquiries')
     .update({ status })
@@ -146,7 +148,6 @@ export async function updateEnquiryStatus(id: string, status: string) {
 
   if (error) {
     if (error.code === 'PGRST205') {
-      console.warn('Inquiries table missing. Faking status update.');
       return { success: true };
     }
     console.error('Error updating enquiry status:', error);
@@ -157,7 +158,7 @@ export async function updateEnquiryStatus(id: string, status: string) {
 }
 
 export async function bulkUpdateEnquiries(ids: string[], action: 'resolve' | 'delete') {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   if (action === 'delete') {
     const { error } = await supabase
@@ -167,7 +168,6 @@ export async function bulkUpdateEnquiries(ids: string[], action: 'resolve' | 'de
     
     if (error) {
       if (error.code === 'PGRST205') {
-        console.warn('Inquiries table missing. Faking bulk delete.');
         return { success: true };
       }
       console.error('Error deleting enquiries:', error);
@@ -181,7 +181,6 @@ export async function bulkUpdateEnquiries(ids: string[], action: 'resolve' | 'de
 
     if (error) {
       if (error.code === 'PGRST205') {
-        console.warn('Inquiries table missing. Faking bulk resolve.');
         return { success: true };
       }
       console.error('Error resolving enquiries:', error);

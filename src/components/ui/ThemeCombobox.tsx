@@ -52,7 +52,7 @@ interface ThemeComboboxProps {
   onChange?: (val: string) => void;
   required?: boolean;
   placeholder?: string;
-  variant?: 'underline' | 'boxed';
+  variant?: 'underline' | 'boxed' | 'compact';
 }
 
 export function ThemeCombobox({
@@ -214,6 +214,8 @@ export function ThemeCombobox({
           className={
             variant === 'underline'
               ? 'w-full pl-0 pr-9 py-2 bg-transparent border-b-2 border-slate-200 focus:border-brand-pink outline-none font-black text-2xl transition-all text-slate-900 placeholder:text-slate-300'
+              : variant === 'compact'
+              ? 'w-full pl-3.5 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-pink transition-all text-xs font-bold text-slate-900 placeholder:text-slate-400'
               : 'w-full pl-6 pr-11 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink transition-all font-bold text-slate-900 placeholder:text-slate-300'
           }
         />
@@ -227,7 +229,7 @@ export function ThemeCombobox({
             setIsOpen((prev) => !prev);
           }}
           className={`absolute ${
-            variant === 'underline' ? 'right-0' : 'right-3.5'
+            variant === 'underline' ? 'right-0' : variant === 'compact' ? 'right-2' : 'right-3.5'
           } p-1.5 rounded-lg text-slate-400 hover:text-brand-pink transition-colors cursor-pointer`}
         >
           <svg

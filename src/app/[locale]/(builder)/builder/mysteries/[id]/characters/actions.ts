@@ -2,14 +2,18 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { createCharacter, updateCharacter, deleteCharacter } from '@/services/mysteries';
+import { createCharacter, updateCharacter, deleteCharacter, getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
 import { getStaticMockGuests } from '@/utils/mock-guests';
 import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
 import { getCharacterRoleTitle, getCharacterDisplayName, hydrateTextWithCharacters, stripEmDashes } from '@/utils/hydration';
 import { generateStandardCharacterPhotoAction } from '@/app/actions/generator';
+import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import { logAiUsage } from '@/utils/ai-logger';
+import { requireAdmin } from '@/utils/admin-auth';
 import crypto from 'crypto';
 
 export async function addCharacterAction(mysteryId: string, formData: FormData) {
+  await requireAdmin();
   const title = ((formData.get('title') as string) || '').trim();
   const base_name = ((formData.get('base_name') as string) || '').trim() || title;
   const prefix = ((formData.get('prefix') as string) || '').trim();
@@ -35,27 +39,30 @@ export async function addCharacterAction(mysteryId: string, formData: FormData) 
     is_victim
   });
 
-    // Clear cache for the entire mystery studio
-    revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
+  // Clear cache for the entire mystery studio
+  revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function updateCharacterAction(mysteryId: string, id: string, updates: any) {
+  await requireAdmin();
   await updateCharacter(id, updates);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function removeCharacterAction(mysteryId: string, id: string) {
+  await requireAdmin();
   await deleteCharacter(id);
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function toggleVictimAction(mysteryId: string, id: string, isVictim: boolean) {
+  await requireAdmin();
   await updateCharacter(id, { is_victim: isVictim });
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
 export async function addMotiveAction(mysteryId: string, characterId: string, formData: FormData) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const motive_type = formData.get('motive_type') as any;
   const linked_character_id = formData.get('linked_character_id') as string;
   const strength = formData.get('strength') as any;
@@ -77,7 +84,7 @@ export async function addMotiveAction(mysteryId: string, characterId: string, fo
 }
 
 export async function removeMotiveAction(mysteryId: string, motiveId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from('motives')
     .delete()
@@ -87,12 +94,9 @@ export async function removeMotiveAction(mysteryId: string, motiveId: string) {
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 }
 
-import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
-import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
-import { logAiUsage } from '@/utils/ai-logger';
-
 export async function generateAICharacterAction(mysteryId: string) {
   try {
+    await requireAdmin();
     const [mystery, characters] = await Promise.all([
       getMysteryById(mysteryId),
       getCharactersByMysteryId(mysteryId)
@@ -178,6 +182,7 @@ export async function generateAICharacterAction(mysteryId: string) {
 
 export async function generateRoleSuggestionsAction(mysteryId: string): Promise<string[]> {
   try {
+    await requireAdmin();
     const [mystery, characters] = await Promise.all([
       getMysteryById(mysteryId),
       getCharactersByMysteryId(mysteryId)
@@ -239,6 +244,7 @@ export async function generateRoleSuggestionsAction(mysteryId: string): Promise<
 
 export async function generateCharacterProfileAIAction(mysteryId: string, character: any, mystery: any) {
   try {
+    await requireAdmin();
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
     
     const isAdaptable = character.gender === 'adaptable';
@@ -343,7 +349,7 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
 }
 
 export async function updateCharacterProfileAction(mysteryId: string, characterId: string, profileData: any) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data: existingChar } = await supabase
     .from('characters')
     .select('profile_data')
@@ -365,7 +371,7 @@ export async function updateCharacterProfileAction(mysteryId: string, characterI
 
 export async function generateCharacterOutfitPhotoAction(mysteryId: string, characterId: string, outfitAdvice: string, characterTitle: string, theme: string) {
   try {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
 
     // Ensure the latest outfit_advice from the editor is persisted on the character before generating the Standard Character Photo
     if (outfitAdvice && outfitAdvice.trim()) {
@@ -407,12 +413,12 @@ export async function generateCharacterOutfitOptionsAction(
   genderOption: 'male' | 'female' = 'female',
   singleOptionIndex?: number
 ): Promise<string[]> {
+  const { supabase } = await requireAdmin();
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey) {
     throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
   }
 
-  const supabase = await createClient();
   const { data: existingChar } = await supabase
     .from('characters')
     .select('gender, profile_data')
@@ -528,8 +534,7 @@ Return ONLY ${promptCount} lines separated by newlines, with no numbering, no bu
 }
 
 export async function assignGuestToCharacterAction(mysteryId: string, characterId: string, guestId: string | null) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await requireAdmin();
   
   // 1. Get the current character
   const { data: character, error: charErr } = await supabase
@@ -783,9 +788,7 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
 }
 
 export async function autoAssignGuestsAction(mysteryId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const { supabase, user } = await requireAdmin();
 
   // Fetch host profile
   const { data: hostProfileRaw } = await supabase
@@ -1024,7 +1027,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
 }
 
 export async function clearAllCastingAction(mysteryId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data: characters } = await supabase
     .from('characters')
     .select('id, profile_data')
@@ -1056,6 +1059,7 @@ export async function clearAllCastingAction(mysteryId: string) {
 
 export async function expandCharacterBioAction(mysteryId: string, character: any, currentBio: string, mysteryTitle: string) {
   try {
+    await requireAdmin();
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });

@@ -8,7 +8,7 @@ import { readLocalAiLogs, StoredAiUsageLog } from '@/utils/ai-logger';
 import { requireAdmin } from '@/utils/admin-auth';
 
 export async function getAdminStats(lastViewStr?: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   // Get succeeded orders
   const { data: orders } = await supabase
@@ -44,7 +44,7 @@ export async function getAdminStats(lastViewStr?: string) {
 }
 
 export async function getRecentTransactions() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { data: orders, error } = await supabase
     .from('orders')
@@ -88,7 +88,7 @@ export async function getRecentTransactions() {
 }
 
 export async function getTopMysteries() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   // Get sales counts per mystery
   const { data: sales } = await supabase
@@ -114,7 +114,7 @@ export async function getTopMysteries() {
 }
 
 export async function getLeads() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { data, error } = await supabase
     .from('leads')
@@ -130,7 +130,7 @@ export async function getLeads() {
 }
 
 export async function getCustomers() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   // Fetch all profiles without joining user_roles to avoid RLS/schema errors
   const { data, error } = (await supabase
@@ -146,7 +146,7 @@ export async function getCustomers() {
 }
 
 export async function getAdmins() {
-  const supabase = await createClient();
+  const { supabase, user } = await requireAdmin();
 
   const { data: rolesData, error: rolesError } = await supabase
     .from('user_roles')
@@ -179,12 +179,9 @@ export async function getAdmins() {
 
   const admins = data || [];
 
-  // Ensure current user (the owner) is always listed, even if RLS blocks DB insertion or if there's an error
-  const { data: { user } } = await supabase.auth.getUser();
   if (user) {
     const isAlreadyListed = admins.some((a: any) => a.id === user.id);
     if (!isAlreadyListed) {
-      // Fetch their profile manually
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -197,7 +194,6 @@ export async function getAdmins() {
           user_roles: [{ role: 'superadmin' }]
         });
       } else {
-        // Fallback if profile doesn't exist in DB yet
         admins.unshift({
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email || 'Gabriella Blyth',
@@ -206,14 +202,6 @@ export async function getAdmins() {
         });
       }
     }
-  } else {
-    // Ultimate fallback if completely unauthenticated on this server route somehow
-    admins.unshift({
-      id: '4903bd39-e54f-42e4-b679-2af5d128bb8f',
-      full_name: 'Gabriella Blyth (Owner)',
-      created_at: new Date().toISOString(),
-      user_roles: [{ role: 'superadmin' }]
-    });
   }
 
   return admins;
@@ -340,7 +328,7 @@ export async function getLiveAiProviderStatus() {
 }
 
 export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const mergedMap = new Map<string, StoredAiUsageLog>();
 
   const addLog = (key: string, entry: StoredAiUsageLog) => {
@@ -570,7 +558,7 @@ export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
 // --- Customer Profile View Data ---
 
 export async function getCustomerProfile(userId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -578,12 +566,11 @@ export async function getCustomerProfile(userId: string) {
     .maybeSingle();
 
   if (error) console.error('Error fetching customer profile:', error);
-  console.log('DEBUG profile:', data);
   return data as any;
 }
 
 export async function getCustomerOrders(userId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data: orders, error } = await supabase
     .from('orders')
     .select('id, amount, status, created_at, mystery_id')
@@ -632,7 +619,7 @@ export async function getCustomerOrders(userId: string) {
 }
 
 export async function getCustomerMysteries(userId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { getCustomerCrmData } = await import('@/app/actions/admin-users');
   const [{ data, error }, crm] = await Promise.all([
     supabase
@@ -673,7 +660,7 @@ export async function getCustomerMysteries(userId: string) {
 }
 
 export async function getGiftableCatalogMysteries() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { CORE_MYSTERY_PACKAGES } = await import('@/utils/discounts');
   const { data, error } = await supabase
     .from('mysteries')
@@ -713,7 +700,7 @@ export async function getGiftableCatalogMysteries() {
 }
 
 export async function getCustomerGuests(userId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   
   // Get manual guests
   const { data: manualGuests } = await supabase
@@ -739,7 +726,7 @@ export async function getCustomerGuests(userId: string) {
 }
 
 export async function getCustomerAiUsage(userId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const [allLogs, customerMysteries] = await Promise.all([
     getAiCosts(),
     supabase.from('mysteries').select('id').eq('created_by', userId),

@@ -1,16 +1,17 @@
-import { createClient } from '@/utils/supabase/server';
 import { Database } from '@/types/database';
 import { getMysteries as getNormalizedMysteries } from '@/services/mysteries';
+import { requireAdmin } from '@/utils/admin-auth';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
 
 export async function getMysteries() {
+  await requireAdmin();
   return getNormalizedMysteries();
 }
 
 export async function createMystery(mystery: MysteryInsert) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data, error } = await supabase
     .from('mysteries')
     .insert(mystery)
@@ -25,7 +26,7 @@ export async function createMystery(mystery: MysteryInsert) {
 }
 
 export async function updateMystery(id: string, updates: Partial<Mystery>) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data, error } = await supabase
     .from('mysteries')
     .update(updates)
@@ -41,7 +42,7 @@ export async function updateMystery(id: string, updates: Partial<Mystery>) {
 }
 
 export async function getTransactions() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data, error } = (await supabase
     .from('orders')
     .select(`
@@ -60,7 +61,7 @@ export async function getTransactions() {
 }
 
 export async function processRefund(id: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from('orders')
     .update({ status: 'refunded' })

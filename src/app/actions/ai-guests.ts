@@ -174,6 +174,11 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       }
     );
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Unauthorized: You must be signed in to generate guest avatars.');
+    }
+
     // 1. Check cache first
     const { data: cached } = await supabase
       .from('image_generation_cache')
@@ -272,16 +277,12 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       }
     }
       
-    // Update the guest record
-    // We want to KEEP the existing DiceBear URL but append the AI Photo Url
-    // so that the frontend can still render the 2D avatar, but the admin can fetch the 3D photo.
+    // Update the guest record (strictly scoped to current user's guest roster)
     let newAvatarUrl = guestData.avatar_url || '';
     if (newAvatarUrl.includes('aiPhotoUrl=')) {
-      // Remove any existing aiPhotoUrl (whether preceded by ? or &)
       newAvatarUrl = newAvatarUrl.replace(/[?&]aiPhotoUrl=[^&]*/g, '');
     }
     
-    // We also need to remove aiPhotoHash if it exists from previous attempts
     if (newAvatarUrl.includes('aiPhotoHash=')) {
       newAvatarUrl = newAvatarUrl.replace(/[?&]aiPhotoHash=[^&]*/g, '');
     }
@@ -291,16 +292,16 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
     } else if (newAvatarUrl) {
       newAvatarUrl += `?aiPhotoUrl=${encodeURIComponent(dataUri)}`;
     } else {
-      // If no avatar_url exists, just use the data URI (fallback)
       newAvatarUrl = dataUri;
     }
 
     await supabase
       .from('guests')
       .update({ avatar_url: newAvatarUrl })
-      .eq('id', guestId);
+      .eq('id', guestId)
+      .eq('user_id', user.id);
 
-    // Propagate the new AI avatar URL, accent, age, and gender to any character assigned to this guest in the live session cache & DB
+    // Propagate the new AI avatar URL, accent, age, and gender strictly to mysteries owned by this user
     try {
       let extractedAccent: string | undefined;
       let extractedAge: string | undefined;
@@ -316,17 +317,15 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
       }
 
       const allCached = getAllCachedMysteries();
-      for (const [mId, cachedMystery] of Object.entries(allCached || {})) {
+      for (const cachedMystery of allCached || []) {
+        const mId = cachedMystery?.id;
+        if (!mId) continue;
+        if (cachedMystery?.created_by && cachedMystery.created_by !== user.id) continue;
         const chars = cachedMystery?.characters || [];
         let changed = false;
         const nextChars = chars.map((c: any) => {
           const pd = c.profile_data || {};
-          if (
-            pd.guest_id === guestId ||
-            (guestData?.name &&
-              pd.guest_name &&
-              String(pd.guest_name).toLowerCase() === String(guestData.name).toLowerCase())
-          ) {
+          if (pd.guest_id === guestId) {
             changed = true;
             const nextPd = {
               ...pd,

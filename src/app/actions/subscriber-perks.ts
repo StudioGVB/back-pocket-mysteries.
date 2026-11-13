@@ -121,8 +121,41 @@ function registerGiftPassInDiscountsStore(code: string, senderEmail: string, rec
   }
 }
 
+function escapeHtml(str: string): string {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export async function getSubscriberGiftPassStateForUser(userId: string): Promise<SubscriberGiftPassState> {
   const currentMonthKey = getCurrentMonthKey();
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { isUserAdmin } = await import('@/utils/admin-auth');
+    const isAdmin = user ? await isUserAdmin(supabase, user) : false;
+    if (!user || (user.id !== userId && !isAdmin)) {
+      return {
+        isSubscribed: false,
+        currentMonthKey,
+        currentMonthPass: null,
+        history: [],
+      };
+    }
+  } catch {
+    return {
+      isSubscribed: false,
+      currentMonthKey,
+      currentMonthPass: null,
+      history: [],
+    };
+  }
+
   const store = readCrmStore();
   const rec = store[userId] || {};
 
@@ -135,12 +168,19 @@ export async function getSubscriberGiftPassStateForUser(userId: string): Promise
       const thirtyTwoDaysAgo = new Date(Date.now() - 32 * 24 * 60 * 60 * 1000).toISOString();
       const { data: subOrders } = await supabase
         .from('orders')
-        .select('id, amount, created_at')
+        .select('id, amount, mystery_id, created_at')
         .eq('user_id', userId)
         .eq('status', 'succeeded')
         .gte('created_at', thirtyTwoDaysAgo);
 
-      if (subOrders && subOrders.some((o: any) => Number(o.amount) >= 3800)) {
+      if (
+        subOrders &&
+        subOrders.some(
+          (o: any) =>
+            String(o.mystery_id || '').toLowerCase() === 'subscription' ||
+            Number(o.amount) >= 3800
+        )
+      ) {
         isSubscribed = true;
       }
     } catch {
@@ -239,6 +279,10 @@ export async function claimSubscriberMonthlyGiftPassAction(params: {
           process.env.NEXT_PUBLIC_APP_URL ||
           'https://mysteries.backpocketgames.com';
 
+        const safeRecipientName = escapeHtml(recipientName || 'there');
+        const safeSenderDisplay = escapeHtml(senderDisplay);
+        const safePersonalMessage = personalMessage ? escapeHtml(personalMessage) : '';
+
         const subject = `🎁 ${senderDisplay} gifted you a Free Murder Mystery Party!`;
         const html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 24px; border-radius: 12px; border-top: 5px solid #F02882;">
@@ -251,16 +295,16 @@ export async function claimSubscriberMonthlyGiftPassAction(params: {
 
             <div style="background-color: #ffffff; padding: 24px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
               <p style="color: #1a1a1a; font-size: 16px; line-height: 1.6; margin-top: 0;">
-                Hi ${recipientName || 'there'},
+                Hi ${safeRecipientName},
               </p>
               <p style="color: #444; font-size: 15px; line-height: 1.6;">
-                <strong>${senderDisplay}</strong> used their monthly VIP Gift Pass to send you a <strong>100% Free Murder Mystery Party Package</strong> (good for any mystery up to 16 players)!
+                <strong>${safeSenderDisplay}</strong> used their monthly VIP Gift Pass to send you a <strong>100% Free Murder Mystery Party Package</strong> (good for any mystery up to 16 players)!
               </p>
 
               ${
-                personalMessage
+                safePersonalMessage
                   ? `<div style="background-color: #fdf2f8; border-left: 4px solid #F02882; padding: 14px 16px; border-radius: 6px; margin: 20px 0; font-style: italic; color: #333;">
-                      "${personalMessage}"
+                      "${safePersonalMessage}"
                     </div>`
                   : ''
               }

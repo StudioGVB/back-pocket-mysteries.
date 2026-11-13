@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/utils/admin-auth';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import crypto from 'crypto';
@@ -47,10 +48,7 @@ function dedupeRelationships(rels: any[]): any[] {
 }
 
 export async function createMysteryAction(formData: FormData) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) throw new Error('Unauthorized');
+  const { supabase, user } = await requireAdmin();
 
   const title = formData.get('title') as string;
   const theme = formData.get('theme') as string;
@@ -1708,10 +1706,7 @@ export async function createMysteryAction(formData: FormData) {
 
 
 export async function updateMysteryAction(id: string, prevState: any, formData: FormData) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return { error: 'Unauthorized' };
+  const { supabase } = await requireAdmin();
 
   const title = formData.get('title') as string;
   const theme = formData.get('theme') as string;
@@ -1776,6 +1771,7 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
 
 export async function generateDescriptionAction(mysteryId: string) {
   try {
+    const { supabase } = await requireAdmin();
     const [mystery, characters, plotBeats] = await Promise.all([
       getMysteryById(mysteryId),
       getCharactersByMysteryId(mysteryId),
@@ -1836,7 +1832,6 @@ export async function generateDescriptionAction(mysteryId: string) {
       usageMetadata: result.response.usageMetadata as any,
     });
 
-    const supabase = await createClient();
     const { error } = await supabase
       .from('mysteries')
       .update({ description: synopsis, updated_at: new Date().toISOString() })
@@ -1853,6 +1848,7 @@ export async function generateDescriptionAction(mysteryId: string) {
 
 export async function generateMysteryCoverAction(mysteryId: string) {
   try {
+    const { supabase } = await requireAdmin();
     const [mystery, characters] = await Promise.all([
       getMysteryById(mysteryId),
       getCharactersByMysteryId(mysteryId)
@@ -1871,7 +1867,6 @@ export async function generateMysteryCoverAction(mysteryId: string) {
     const prompt = `A high-end, atmospheric editorial party photograph of 5 to 6 close young adult friends (ages 24 to 36, diverse mix of ethnicities, natural best-friend chemistry, gathered closely together laughing, clinking glasses, and exchanging dramatic knowing glances) at the exact venue and setting of "${mystery.title}". Theme & Setting: ${theme}. Story Context & Venue: ${description}. Character roles present: ${characterNames}. Wide-angle medium-full shot with plenty of headroom so no heads are cropped. Rich, vibrant, authentic lighting and decor that strictly matches "${theme}" (for example, if Christmas/Holiday/Cabin: warm golden fairy lights, a decorated Christmas tree, roaring stone fireplace, festive holiday velvet and knit outfits, mulled wine, snow outside the cabin window; never place on a boat unless the theme explicitly says boat/yacht). Warm 35mm film aesthetic with a subtle hint of murder mystery intrigue, sharp focus, 8k resolution, photorealistic, no text.`;
 
     const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
-    const supabase = await createClient();
 
     // Check cache first safely
     let dataUri = '';

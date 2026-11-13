@@ -206,7 +206,9 @@ export async function updateGuestAction(id: string, guestData: {
       }
 
       const allCached = getAllCachedMysteries();
-      for (const [mId, cachedMystery] of Object.entries(allCached || {})) {
+      for (const cachedMystery of allCached || []) {
+        const mId = cachedMystery?.id;
+        if (!mId) continue;
         if (cachedMystery?.created_by && cachedMystery.created_by !== user.id) {
           continue;
         }
@@ -214,7 +216,12 @@ export async function updateGuestAction(id: string, guestData: {
         let changed = false;
         const nextChars = chars.map((c: any) => {
           const pd = c.profile_data || {};
-          if (pd.guest_id === id) {
+          if (
+            pd.guest_id === id ||
+            (finalGuest?.name &&
+              pd.guest_name &&
+              String(pd.guest_name).toLowerCase() === String(finalGuest.name).toLowerCase())
+          ) {
             changed = true;
             return {
               ...c,

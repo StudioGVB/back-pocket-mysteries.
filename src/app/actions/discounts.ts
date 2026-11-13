@@ -117,9 +117,9 @@ function normalizeDbRow(row: any): DiscountRecord {
 }
 
 /**
- * Fetches all discounts from Supabase (if table exists) merged with the local JSON store.
+ * Internal helper to load all discounts from Supabase (if table exists) merged with the local JSON store.
  */
-export async function getDiscountsAction(): Promise<DiscountRecord[]> {
+async function loadAllDiscountsInternal(): Promise<DiscountRecord[]> {
   const local = readLocalStore();
   const deletedSet = new Set(local.deletedIds);
   const map = new Map<string, DiscountRecord>();
@@ -157,12 +157,27 @@ export async function getDiscountsAction(): Promise<DiscountRecord[]> {
 }
 
 /**
- * Returns only discounts that are currently within their active schedule window and enabled.
+ * Admin-only: Fetches all discounts from Supabase merged with the local JSON store.
+ */
+export async function getDiscountsAction(): Promise<DiscountRecord[]> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+  return loadAllDiscountsInternal();
+}
+
+/**
+ * Public-safe: Returns ONLY auto-apply promotions that are currently within their active schedule window,
+ * with any secret promo `code` stripped so manual promo codes and 100%-off gift passes are never exposed.
  */
 export async function getActiveDiscountsAction(): Promise<DiscountRecord[]> {
-  const all = await getDiscountsAction();
+  const all = await loadAllDiscountsInternal();
   const now = new Date();
-  return all.filter((d) => getDiscountComputedStatus(d, now) === 'active');
+  return all
+    .filter((d) => getDiscountComputedStatus(d, now) === 'active' && d.auto_apply === true)
+    .map((d) => ({
+      ...d,
+      code: null,
+    }));
 }
 
 export interface SaveDiscountPayload {
@@ -187,6 +202,9 @@ export async function saveDiscountAction(payload: SaveDiscountPayload): Promise<
   discount?: DiscountRecord;
   error?: string;
 }> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
   const cleanName = (payload.name || '').trim();
   const cleanCode = payload.code ? payload.code.trim().toUpperCase().replace(/\s+/g, '-') : null;
 
@@ -334,7 +352,7 @@ export async function toggleDiscountActiveAction(
   await requireAdmin();
 
   const local = readLocalStore();
-  const all = await getDiscountsAction();
+  const all = await loadAllDiscountsInternal();
   const target = all.find((d) => d.id === id);
   if (!target) {
     return { success: false, error: 'Discount not found.' };
@@ -461,7 +479,7 @@ export async function validatePromoCodeAction(params: {
   }
 
   // 2. Otherwise check standard Discounts Store
-  const all = await getDiscountsAction();
+  const all = await loadAllDiscountsInternal();
   const match = all.find((d) => d.code && d.code.toUpperCase() === cleanCode);
 
   if (!match) {

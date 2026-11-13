@@ -8,7 +8,7 @@ import {
   sendCustomerGenerationStartedEmail,
   sendCustomerMysteryReadyEmail,
 } from '@/utils/purchase-notifications';
-import { ensureStandardCharacterPhoto } from '@/app/actions/generator';
+import { ensureStandardCharacterPhoto, generateClueImageAction } from '@/app/actions/generator';
 import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
 
 export interface BackgroundGenerationParams {
@@ -280,9 +280,38 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
             // Non-fatal if image API key is not configured in local dev
           }
           completedCount += 1;
-          const pct = Math.min(68, 28 + Math.round((completedCount / activeChars.length) * 40));
+          const pct = Math.min(52, 28 + Math.round((completedCount / activeChars.length) * 24));
           updateMysteryGenerationInStore(params.mysteryId, {
-            generationStep: `Generated character reference portrait (${completedCount}/${activeChars.length}) & weaving into visual clues...`,
+            generationStep: `Generated character reference portrait (${completedCount}/${activeChars.length})...`,
+            generationProgress: pct,
+          });
+        }
+      }
+
+      // 2.25 Pre-generate visual clue scene photos featuring the cast's Standard Character Reference Photos
+      const allClues: any[] = cachedMystery?.clues || [];
+      const visualClues = allClues.filter(
+        c =>
+          c?.id &&
+          c?.generation_prompt &&
+          (/\{\{[^}]+\}\}/.test(c.generation_prompt) ||
+            c.format === 'cctv' ||
+            c.format === 'physical_prop' ||
+            c.format === 'social_post')
+      );
+
+      if (visualClues.length > 0) {
+        let clueCount = 0;
+        for (const vClue of visualClues) {
+          try {
+            await generateClueImageAction(vClue.id, params.mysteryId, vClue.generation_prompt);
+          } catch {
+            // Non-fatal in background worker
+          }
+          clueCount += 1;
+          const pct = Math.min(72, 52 + Math.round((clueCount / visualClues.length) * 20));
+          updateMysteryGenerationInStore(params.mysteryId, {
+            generationStep: `Placing cast into visual clue & CCTV photos (${clueCount}/${visualClues.length})...`,
             generationProgress: pct,
           });
         }

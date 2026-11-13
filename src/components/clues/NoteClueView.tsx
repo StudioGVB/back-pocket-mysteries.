@@ -125,6 +125,12 @@ export function NoteClueView({
               )}
             </div>
 
+            {parsed.recoveredFrom && (
+              <div className="px-2.5 py-1 rounded bg-stone-900/5 border border-stone-400/40 text-[10px] font-mono font-bold text-stone-600 not-italic leading-snug">
+                📍 RECOVERED: {parsed.recoveredFrom}
+              </div>
+            )}
+
             <div className="space-y-2 text-xs font-serif italic text-stone-900 leading-[26px] break-words">
               {parsed.paragraphs.map((p, idx) => (
                 <p key={idx}>{p}</p>

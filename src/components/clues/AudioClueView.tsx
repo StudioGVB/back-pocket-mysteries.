@@ -55,6 +55,7 @@ export function AudioClueView({
     const lines = parseAudioTranscript(rawTranscript, {
       voiceRegion: region,
       title: rawTitle,
+      internalNotes: clue.internal_notes,
       characters,
     });
     const unique = new Map<string, { speaker: string }>();
@@ -79,7 +80,7 @@ export function AudioClueView({
       }
     }
     return Array.from(unique.values());
-  }, [rawTranscript, rawTitle, clue.voice_region, characters]);
+  }, [rawTranscript, rawTitle, clue.voice_region, clue.internal_notes, characters]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);

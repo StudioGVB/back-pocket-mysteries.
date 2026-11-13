@@ -15,9 +15,9 @@ export function CreateMysteryBaseButton() {
   const locale = (params?.locale as string) || 'en';
 
   const packageOptions = [
-    { max: 6, label: 'Basic Package', range: '4–6 Players', sub: '$19 Base • Requires 6 Characters' },
-    { max: 10, label: 'Premium Package', range: '4–10 Players', sub: '$25 Base • Requires 10 Characters' },
-    { max: 16, label: 'Grand Package', range: '4–16 Players', sub: '$33 Base • Requires 16 Characters' },
+    { max: 6, label: 'Basic Package', range: '6 Players • 3 Rounds', sub: '$19 Base • Core 6 Characters (1 Victim + 5 Suspects)' },
+    { max: 10, label: 'Premium Package', range: '7–10 Players • 4 Rounds', sub: '$25 Base • Core 6 + Pair (#7–8) / Trio (#9–11) / Solo (#12)' },
+    { max: 16, label: 'Grand Package', range: '11–16 Players • 5 Rounds', sub: '$33 Base • Full 16-Character Extension Group Kit' },
   ];
 
   const handleClose = () => {

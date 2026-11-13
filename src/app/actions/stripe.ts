@@ -15,7 +15,10 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies, headers } from 'next/headers';
 import { Database } from '@/types/database';
 import { revalidatePath } from 'next/cache';
-import { markMysteryPaidInStore } from '@/lib/live-session-store';
+import {
+  markMysteryPaidInStore,
+  deriveUserMysteryInstanceId,
+} from '@/lib/live-session-store';
 import { getActiveDiscountsAction, validatePromoCodeAction } from '@/app/actions/discounts';
 import {
   findBestAutoDiscountForTarget,
@@ -498,6 +501,24 @@ export async function confirmMysteryOrderAction({
     const cleanCurrency = sanitizeCurrency(currency);
     const authoritativeTier = await resolveAuthoritativeTier(tier || 'basic', mysteryId, slug);
 
+    const cookieStore = await cookies();
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {},
+        },
+      }
+    );
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     // When live Stripe keys are configured, strictly verify payment on the server
     // before unlocking the mystery (prevents URL spoofing via ?checkout=success).
     if (isStripeLiveConfigured()) {
@@ -509,13 +530,20 @@ export async function confirmMysteryOrderAction({
           const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
           const metaMysteryId = pi.metadata?.mysteryId;
           const metaSlug = pi.metadata?.slug;
+          const metaUserId = pi.metadata?.userId;
           const matchesMystery =
             !metaMysteryId ||
             metaMysteryId === mysteryId ||
             metaMysteryId === slug ||
             (Boolean(slug) && metaSlug === slug);
+          const matchesUser =
+            !metaUserId ||
+            metaUserId === 'guest' ||
+            metaUserId === 'anonymous' ||
+            !user?.id ||
+            metaUserId === user.id;
 
-          if (pi.status === 'succeeded' && matchesMystery) {
+          if (pi.status === 'succeeded' && matchesMystery && matchesUser) {
             verifiedWithStripe = true;
           }
         } catch (err) {
@@ -528,13 +556,20 @@ export async function confirmMysteryOrderAction({
           const session = await stripe.checkout.sessions.retrieve(sessionId);
           const metaMysteryId = session.metadata?.mysteryId;
           const metaSlug = session.metadata?.slug;
+          const metaUserId = session.metadata?.userId;
           const matchesMystery =
             !metaMysteryId ||
             metaMysteryId === mysteryId ||
             metaMysteryId === slug ||
             (Boolean(slug) && metaSlug === slug);
+          const matchesUser =
+            !metaUserId ||
+            metaUserId === 'guest' ||
+            metaUserId === 'anonymous' ||
+            !user?.id ||
+            metaUserId === user.id;
 
-          if (session.payment_status === 'paid' && matchesMystery) {
+          if (session.payment_status === 'paid' && matchesMystery && matchesUser) {
             verifiedWithStripe = true;
           }
         } catch (err) {
@@ -566,23 +601,6 @@ export async function confirmMysteryOrderAction({
       }
     }
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      }
-    );
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     const finalAmount = amount ?? getRegionalPrice(authoritativeTier, cleanCurrency);
 
     // Resolve mystery title & customer name
@@ -613,8 +631,12 @@ export async function confirmMysteryOrderAction({
       }
     }
 
+    const isolatedInstanceId = user?.id
+      ? deriveUserMysteryInstanceId(mysteryId, user.id)
+      : mysteryId;
+
     const storedSession = markMysteryPaidInStore(
-      mysteryId,
+      isolatedInstanceId,
       orderId || paymentIntentId || sessionId,
       {
         paidByUserId: user?.id || null,
@@ -623,7 +645,19 @@ export async function confirmMysteryOrderAction({
         durationMinutes: 20,
       }
     );
-    if (slug && slug !== mysteryId) {
+    if (isolatedInstanceId !== mysteryId) {
+      markMysteryPaidInStore(
+        mysteryId,
+        orderId || paymentIntentId || sessionId,
+        {
+          paidByUserId: user?.id || null,
+          customerEmail: user?.email || null,
+          customerName,
+          durationMinutes: 20,
+        }
+      );
+    }
+    if (slug && slug !== mysteryId && slug !== isolatedInstanceId) {
       markMysteryPaidInStore(slug, orderId || paymentIntentId || sessionId, {
         paidByUserId: user?.id || null,
         customerEmail: user?.email || null,
@@ -633,11 +667,12 @@ export async function confirmMysteryOrderAction({
     }
 
     let resolvedOrderId = orderId;
-    if (orderId) {
+    if (orderId && user) {
       await supabase
         .from('orders')
         .update({ status: 'succeeded' })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .eq('user_id', user.id);
     } else if (user) {
       const { data: existing } = await supabase
         .from('orders')
@@ -651,7 +686,8 @@ export async function confirmMysteryOrderAction({
         await supabase
           .from('orders')
           .update({ status: 'succeeded' })
-          .eq('id', existing.id);
+          .eq('id', existing.id)
+          .eq('user_id', user.id);
       } else {
         const { data: insertedOrder } = await supabase
           .from('orders')
@@ -669,47 +705,59 @@ export async function confirmMysteryOrderAction({
       }
     }
 
-    // Also mark the carrier character's __game_session as paid & generating in Supabase
-    const { data: chars } = await supabase
-      .from('characters')
-      .select('id, profile_data')
-      .eq('mystery_id', mysteryId)
-      .order('order_index', { ascending: true })
-      .limit(1);
+    // Only write __game_session onto the Supabase carrier character if this mystery row
+    // in Supabase is actually owned by the current customer (never overwrite a shared published template mystery!)
+    if (user?.id) {
+      const { data: ownedMysteryRow } = await supabase
+        .from('mysteries')
+        .select('id, created_by')
+        .eq('id', mysteryId)
+        .eq('created_by', user.id)
+        .maybeSingle();
 
-    if (chars && chars.length > 0) {
-      const carrier = chars[0];
-      const existingProfile = (carrier.profile_data as Record<string, any>) || {};
-      const existingSession = existingProfile.__game_session || {};
-      await supabase
-        .from('characters')
-        .update({
-          profile_data: {
-            ...existingProfile,
-            __game_session: {
-              ...existingSession,
-              isPaid: true,
-              paidAt: storedSession.paidAt,
-              paidByUserId: user?.id || existingSession.paidByUserId || null,
-              orderId: resolvedOrderId || paymentIntentId || sessionId || existingSession.orderId,
-              generationStatus: storedSession.generationStatus || 'generating',
-              generationStartedAt: storedSession.generationStartedAt,
-              generationReadyAt: storedSession.generationReadyAt,
-              generationStep: storedSession.generationStep,
-              generationProgress: storedSession.generationProgress,
-              customerEmail: user?.email || existingSession.customerEmail || null,
-              customerName: customerName || existingSession.customerName || null,
-            },
-          },
-        })
-        .eq('id', carrier.id);
+      if (ownedMysteryRow) {
+        const { data: chars } = await supabase
+          .from('characters')
+          .select('id, profile_data')
+          .eq('mystery_id', mysteryId)
+          .order('order_index', { ascending: true })
+          .limit(1);
+
+        if (chars && chars.length > 0) {
+          const carrier = chars[0];
+          const existingProfile = (carrier.profile_data as Record<string, any>) || {};
+          const existingSession = existingProfile.__game_session || {};
+          await supabase
+            .from('characters')
+            .update({
+              profile_data: {
+                ...existingProfile,
+                __game_session: {
+                  ...existingSession,
+                  isPaid: true,
+                  paidAt: storedSession.paidAt,
+                  paidByUserId: user.id,
+                  orderId: resolvedOrderId || paymentIntentId || sessionId || existingSession.orderId,
+                  generationStatus: storedSession.generationStatus || 'generating',
+                  generationStartedAt: storedSession.generationStartedAt,
+                  generationReadyAt: storedSession.generationReadyAt,
+                  generationStep: storedSession.generationStep,
+                  generationProgress: storedSession.generationProgress,
+                  customerEmail: user.email || existingSession.customerEmail || null,
+                  customerName: customerName || existingSession.customerName || null,
+                },
+              },
+            })
+            .eq('id', carrier.id);
+        }
+      }
     }
 
     // Launch detached server-side 20-minute generation & email notification job
-    // (runs on the server even if the user closes their browser window!)
+    // using the customer's isolated mystery instance ID & unique PIN
     triggerDetachedMysteryGeneration({
-      mysteryId,
-      slug: slug || mysteryId,
+      mysteryId: isolatedInstanceId,
+      slug: isolatedInstanceId,
       mysteryTitle: resolvedMysteryTitle,
       customerEmail: user?.email || null,
       customerName,

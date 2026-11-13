@@ -8,6 +8,8 @@ import { generatePinFromMysteryId } from '@/app/actions/customer-mystery';
 import {
   getPaidMysteryIdsForUserInStore,
   getCachedMysterySnapshot,
+  ensureIsolatedCustomerMysteryInstance,
+  cacheRelationshipsSnapshot,
 } from '@/lib/live-session-store';
 import { checkAndFinalizeGenerationIfDue } from '@/lib/background-mystery-generator';
 import FinishGenerationButton from '@/components/account/FinishGenerationButton';
@@ -54,15 +56,18 @@ export default async function OrdersPage({
   // 3. Fetch mysteries from DB and check carrier character `__game_session.isPaid` ONLY when owned by this user
   const { data: mysteriesData } = await supabase
     .from('mysteries')
-    .select('id, title, theme, status, min_players, max_players, current_round, created_at')
+    .select('id, title, theme, status, min_players, max_players, current_round, created_at, created_by')
     .order('created_at', { ascending: false });
 
-  const allMysteryIds = (mysteriesData || []).map((m: any) => m.id);
-  if (allMysteryIds.length > 0) {
+  const ownedDbMysteryIds = (mysteriesData || [])
+    .filter((m: any) => m.created_by === user.id)
+    .map((m: any) => m.id);
+
+  if (ownedDbMysteryIds.length > 0) {
     const { data: charRows } = await supabase
       .from('characters')
       .select('mystery_id, profile_data')
-      .in('mystery_id', allMysteryIds);
+      .in('mystery_id', ownedDbMysteryIds);
 
     const cleanUserEmail = (user.email || '').trim().toLowerCase();
     for (const row of charRows || []) {
@@ -99,12 +104,30 @@ export default async function OrdersPage({
 
   const unlockedMysteries = Array.from(mysteryByIdMap.values());
 
+  // Resolve each unlocked mystery to the customer's own isolated instance
+  // so no two customers share the same mystery instance ID, cast state, or Game PIN
+  const isolatedMap = new Map<string, any>();
+  for (const m of unlockedMysteries) {
+    const [fullMystery, baseRels] = await Promise.all([
+      getMysteryById(m.id),
+      getRelationshipsByMysteryId(m.id),
+    ]);
+    const sourceMystery = fullMystery || m;
+
+    if (sourceMystery.created_by && sourceMystery.created_by === user.id) {
+      isolatedMap.set(sourceMystery.id, sourceMystery);
+    } else {
+      const instance = ensureIsolatedCustomerMysteryInstance(
+        sourceMystery,
+        baseRels || [],
+        user.id
+      );
+      isolatedMap.set(instance.instanceId, instance.mystery);
+    }
+  }
+
   const stories = await Promise.all(
-    unlockedMysteries.map(async (m: any) => {
-      await Promise.all([
-        getMysteryById(m.id),
-        getRelationshipsByMysteryId(m.id),
-      ]);
+    Array.from(isolatedMap.values()).map(async (m: any) => {
       const pin = await generatePinFromMysteryId(m.id);
       const generationState = await checkAndFinalizeGenerationIfDue({
         mysteryId: m.id,

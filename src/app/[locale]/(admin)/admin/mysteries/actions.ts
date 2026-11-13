@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/utils/admin-auth';
 import { createMysteryAction } from '../../../(builder)/builder/mysteries/actions';
 
 // Re-export the builder action so admin components can call it directly
@@ -8,8 +9,7 @@ export { createMysteryAction };
 
 export async function archiveMysteryAction(id: string) {
   try {
-    const { createClient } = await import('@/utils/supabase/server');
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
     const { error } = await supabase
       .from('mysteries')
       .update({ status: 'archived' })
@@ -25,8 +25,7 @@ export async function archiveMysteryAction(id: string) {
 
 export async function unarchiveMysteryAction(id: string) {
   try {
-    const { createClient } = await import('@/utils/supabase/server');
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
     const { error } = await supabase
       .from('mysteries')
       .update({ status: 'draft' })
@@ -42,8 +41,7 @@ export async function unarchiveMysteryAction(id: string) {
 
 export async function deleteMysteryAction(id: string) {
   try {
-    const { createClient } = await import('@/utils/supabase/server');
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin();
     
     // Cascade delete manually to respect RLS and foreign key constraints
     await supabase.from('relationships').delete().eq('mystery_id', id);

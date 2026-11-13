@@ -3,7 +3,10 @@ import { getStripe } from '@/lib/stripe';
 import { createServerClient } from '@supabase/ssr';
 import { Database } from '@/types/database';
 import { headers } from 'next/headers';
-import { markMysteryPaidInStore } from '@/lib/live-session-store';
+import {
+  markMysteryPaidInStore,
+  deriveUserMysteryInstanceId,
+} from '@/lib/live-session-store';
 import { sendAdminPurchaseNotificationEmail } from '@/utils/purchase-notifications';
 
 export async function POST(req: Request) {
@@ -61,6 +64,12 @@ export async function POST(req: Request) {
       const tier = metadata.tier || (obj.mode === 'subscription' || event.type === 'customer.subscription.created' ? 'subscribe' : 'basic');
 
       if (mysteryId && mysteryId !== 'subscription' && mysteryId !== 'new') {
+        if (userId) {
+          const isolatedId = deriveUserMysteryInstanceId(mysteryId, userId);
+          markMysteryPaidInStore(isolatedId, orderId, {
+            paidByUserId: userId,
+          });
+        }
         markMysteryPaidInStore(mysteryId, orderId, {
           paidByUserId: userId,
         });
@@ -70,32 +79,43 @@ export async function POST(req: Request) {
           });
         }
 
-        const { data: chars } = await supabase
-          .from('characters')
-          .select('id, profile_data')
-          .eq('mystery_id', mysteryId)
-          .order('order_index', { ascending: true })
-          .limit(1);
+        if (userId) {
+          const { data: ownedMysteryRow } = await supabase
+            .from('mysteries')
+            .select('id, created_by')
+            .eq('id', mysteryId)
+            .eq('created_by', userId)
+            .maybeSingle();
 
-        if (chars && chars.length > 0) {
-          const carrier = chars[0];
-          const existingProfile = (carrier.profile_data as Record<string, any>) || {};
-          const existingSession = existingProfile.__game_session || {};
-          await supabase
-            .from('characters')
-            .update({
-              profile_data: {
-                ...existingProfile,
-                __game_session: {
-                  ...existingSession,
-                  isPaid: true,
-                  paidAt: new Date().toISOString(),
-                  paidByUserId: userId || existingSession.paidByUserId || null,
-                  orderId: orderId || existingSession.orderId,
-                },
-              },
-            })
-            .eq('id', carrier.id);
+          if (ownedMysteryRow) {
+            const { data: chars } = await supabase
+              .from('characters')
+              .select('id, profile_data')
+              .eq('mystery_id', mysteryId)
+              .order('order_index', { ascending: true })
+              .limit(1);
+
+            if (chars && chars.length > 0) {
+              const carrier = chars[0];
+              const existingProfile = (carrier.profile_data as Record<string, any>) || {};
+              const existingSession = existingProfile.__game_session || {};
+              await supabase
+                .from('characters')
+                .update({
+                  profile_data: {
+                    ...existingProfile,
+                    __game_session: {
+                      ...existingSession,
+                      isPaid: true,
+                      paidAt: new Date().toISOString(),
+                      paidByUserId: userId,
+                      orderId: orderId || existingSession.orderId,
+                    },
+                  },
+                })
+                .eq('id', carrier.id);
+            }
+          }
         }
       }
 

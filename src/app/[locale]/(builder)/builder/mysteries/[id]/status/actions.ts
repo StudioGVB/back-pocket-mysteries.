@@ -1,17 +1,15 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { getPackageInfoForMaxPlayers } from '@/utils/localization';
+import { requireAdmin } from '@/utils/admin-auth';
 
 export async function updatePublishingAction(
   mysteryId: string,
   prevState: any,
   formData: FormData
 ) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthorized' };
+  const { supabase } = await requireAdmin();
 
   const status = formData.get('status') as string;
 
@@ -59,9 +57,7 @@ export async function updateMysteryRoundAction(
   mysteryId: string,
   round: number
 ) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthorized' };
+  const { supabase } = await requireAdmin();
 
   const { error } = await supabase
     .from('mysteries')

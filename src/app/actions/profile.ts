@@ -16,14 +16,22 @@ export async function saveProfileAction(data: {
 
   if (!user) return { error: 'Not authenticated' };
 
+  const safePayload: Record<string, unknown> = {
+    id: user.id,
+    email: user.email,
+    full_name: user.user_metadata?.full_name || '',
+  };
+  if (data.bio !== undefined) safePayload.bio = data.bio;
+  if (data.location !== undefined) safePayload.location = data.location;
+  if (data.pronouns !== undefined) safePayload.pronouns = data.pronouns;
+  if (data.avatar_config !== undefined) safePayload.avatar_config = data.avatar_config;
+  if (data.dietary_needs !== undefined) safePayload.dietary_needs = data.dietary_needs;
+  if (data.character_preferences !== undefined) safePayload.character_preferences = data.character_preferences;
+  if (data.fun_facts !== undefined) safePayload.fun_facts = data.fun_facts;
+
   const { error } = await (supabase as any)
     .from('profiles')
-    .upsert({ 
-      id: user.id, 
-      email: user.email,
-      full_name: user.user_metadata?.full_name || '',
-      ...data 
-    }, { onConflict: 'id' });
+    .upsert(safePayload, { onConflict: 'id' });
 
   if (error) return { error: error.message };
   return { success: true };

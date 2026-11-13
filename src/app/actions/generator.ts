@@ -14,8 +14,11 @@ import {
 } from '@/utils/hydration';
 import { getStaticMockGuests } from '@/utils/mock-guests';
 import { inferClueFormat } from '@/utils/clue-format';
+import { getCachedMysterySnapshot, cacheMysterySnapshot } from '@/lib/live-session-store';
 import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 const CURATED_GUEST_QUIRKS = [
   'Obsessed with bananas',
@@ -391,7 +394,13 @@ function extractAiPhotoUrl(url: string | null | undefined): string | null {
         return decodeURIComponent(match[1]);
       }
     }
-    if (url.startsWith('data:image/') || url.includes('/storage/v1/object/public/')) {
+    if (
+      url.startsWith('data:image/') ||
+      url.includes('/storage/v1/object/public/') ||
+      url.startsWith('/generated-avatars/') ||
+      url.startsWith('/generated-clues/') ||
+      url.startsWith('/clues/')
+    ) {
       return url;
     }
   } catch (e) {
@@ -404,6 +413,13 @@ async function getBase64FromUrl(url: string): Promise<string> {
   if (url.startsWith('data:image/')) {
     const commaIndex = url.indexOf(',');
     return url.substring(commaIndex + 1);
+  }
+  if (url.startsWith('/')) {
+    const cleanRel = url.split('?')[0].replace(/^\/+/, '');
+    const localPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', cleanRel);
+    if (fs.existsSync(localPath)) {
+      return fs.readFileSync(localPath).toString('base64');
+    }
   }
   const response = await fetch(url);
   if (!response.ok) {
@@ -697,12 +713,15 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
     usageMetadata,
   });
 
+  const activeSupabase = supabase || (await createClient());
+
   // Upload to Supabase Storage (`character-images` bucket)
   const fileBuffer = Buffer.from(base64Image, 'base64');
-  const fileName = `standard-characters/${mystery?.id || 'global'}/${char.id}-${identityHash.slice(0, 12)}-${Date.now()}.jpg`;
+  const shortFileName = `${char.id}-${identityHash.slice(0, 12)}.jpg`;
+  const fileName = `standard-characters/${mystery?.id || 'global'}/${shortFileName}`;
   let finalPhotoUrl = `data:image/jpeg;base64,${base64Image}`;
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await activeSupabase.storage
     .from('character-images')
     .upload(fileName, fileBuffer, {
       contentType: 'image/jpeg',
@@ -710,14 +729,21 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
     });
 
   if (!uploadError) {
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = activeSupabase.storage
       .from('character-images')
       .getPublicUrl(fileName);
     if (publicUrlData?.publicUrl) {
       finalPhotoUrl = publicUrlData.publicUrl;
     }
   } else {
-    console.warn('[STAGE 1: STANDARD CHAR PHOTO] Storage upload failed, falling back to data URI:', uploadError.message);
+    try {
+      const outDir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'generated-avatars');
+      fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(path.join(outDir, shortFileName), fileBuffer);
+      finalPhotoUrl = `/generated-avatars/${shortFileName}`;
+    } catch {
+      console.warn('[STAGE 1: STANDARD CHAR PHOTO] Storage upload failed, falling back to data URI:', uploadError.message);
+    }
   }
 
   // Persist standard_character_photo_url and hash on the character record
@@ -728,10 +754,9 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
     outfit_image_url: finalPhotoUrl,
   };
 
-  await supabase
+  await activeSupabase
     .from('characters')
     .update({
-      image_url: finalPhotoUrl,
       profile_data: updatedRawProfile,
     })
     .eq('id', char.id);
@@ -782,7 +807,7 @@ export async function generateStandardCharacterPhotoAction(
 
     const { data: charData, error: charError } = await supabase
       .from('characters')
-      .select('id, name, gender, image_url, profile_data, is_victim, plot_role')
+      .select('id, name, gender, profile_data, is_victim, plot_role')
       .eq('id', characterId)
       .eq('mystery_id', mysteryId)
       .single();
@@ -849,9 +874,10 @@ function getInvolvedCharacters(clue: any, characters: any[], livePromptText?: st
     }
   }
 
-  // 3. Also scan the description text for any mentioned characters if none were found yet or if it's a visual scene clue
-  const descMatches = findInvolvedCharactersInText(desc, characters);
-  if (involved.size === 0 || (clue.format !== 'chat' && clue.format !== 'audio')) {
+  // 3. Only scan the description text if no explicit generation_prompt was provided
+  const hasExplicitPrompt = Boolean((livePromptText || clue.generation_prompt || '').trim());
+  if (involved.size === 0 && !hasExplicitPrompt) {
+    const descMatches = findInvolvedCharactersInText(desc, characters);
     for (const char of descMatches) {
       involved.add(char);
     }
@@ -896,15 +922,18 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
 
   try {
     const supabase = await createClient();
+    const cachedMystery = getCachedMysterySnapshot(mysteryId);
 
     // Fetch the mystery first to get the creator's user_id
-    const { data: mystery, error: mysteryError } = await supabase
+    const { data: dbMystery, error: mysteryError } = await supabase
       .from('mysteries')
       .select('id, created_by, title, theme, description')
       .eq('id', mysteryId)
       .single();
 
-    if (mysteryError || !mystery) {
+    const mystery = dbMystery || cachedMystery;
+
+    if (!mystery) {
       throw new Error(mysteryError?.message || 'Mystery not found');
     }
 
@@ -915,26 +944,33 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
     // Direct select of characters
     const { data: charactersData, error: charError } = await supabase
       .from('characters')
-      .select('id, name, gender, image_url, profile_data, is_victim, plot_role')
+      .select('id, name, gender, profile_data, is_victim, plot_role')
       .eq('mystery_id', mysteryId);
     
     if (charError) {
       console.error('Error fetching characters directly in generator:', charError);
     }
-    const characters = charactersData || [];
+    const characters =
+      charactersData && charactersData.length > 0
+        ? charactersData
+        : cachedMystery?.characters || [];
 
     // Hydrate characters with their assigned guest's physical traits & avatar
     const hydratedCharacters = await hydrateCharactersWithGuests(characters, mystery.created_by, supabase);
     
     // Fetch the full clue record to check its format
-    const { data: clue, error: clueError } = await supabase
+    const { data: dbClue } = await supabase
       .from('clues')
       .select('*')
       .eq('id', clueId)
       .single();
 
-    if (clueError || !clue) {
-      throw new Error(clueError?.message || 'Clue not found');
+    const clue =
+      dbClue ||
+      (cachedMystery?.clues || []).find((c: any) => c.id === clueId);
+
+    if (!clue) {
+      throw new Error('Clue not found');
     }
 
     const clueFormat = (clue as any).format || inferClueFormat(clue);
@@ -1202,9 +1238,10 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
       }
 
       if (base64Image) {
-        // Upload scene photo to Supabase Storage for fast loading, with dataUri fallback
+        // Upload scene photo to Supabase Storage for fast loading, with local public/generated-clues fallback
         const fileBuffer = Buffer.from(base64Image, 'base64');
-        const fileName = `clue-images/${mysteryId}/${clueId}-${Date.now()}.jpg`;
+        const shortFileName = `${clueId}-${promptHash.slice(0, 12)}.jpg`;
+        const fileName = `clue-images/${mysteryId}/${shortFileName}`;
         finalImageUrl = `data:image/jpeg;base64,${base64Image}`;
 
         const { error: uploadError } = await supabase.storage
@@ -1220,6 +1257,15 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
             .getPublicUrl(fileName);
           if (publicUrlData?.publicUrl) {
             finalImageUrl = publicUrlData.publicUrl;
+          }
+        } else {
+          try {
+            const outDir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'generated-clues');
+            fs.mkdirSync(outDir, { recursive: true });
+            fs.writeFileSync(path.join(outDir, shortFileName), fileBuffer);
+            finalImageUrl = `/generated-clues/${shortFileName}`;
+          } catch {
+            // Keep data URI fallback
           }
         }
 
@@ -1239,7 +1285,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
       } else {
         console.warn('Image generation failed or quota exceeded. Preserving existing image or setting to null for premium placeholder.');
         const currentUrl = clue.static_image_url || '';
-        if (currentUrl.startsWith('data:image/') || currentUrl.includes('/storage/v1/object/public/')) {
+        if (currentUrl.startsWith('data:image/') || currentUrl.includes('/storage/v1/object/public/') || currentUrl.startsWith('/')) {
           finalImageUrl = currentUrl;
         } else {
           finalImageUrl = null;
@@ -1255,14 +1301,27 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
     }
 
     // Update static_image_url in clues table
-    const { error } = await supabase
+    await supabase
       .from('clues')
       .update({ static_image_url: finalImageUrl, updated_at: new Date().toISOString() })
       .eq('id', clueId);
 
-    if (error) throw new Error(error.message);
+    // Also update server-side live mystery cache snapshot so UI updates immediately
+    if (cachedMystery && Array.isArray(cachedMystery.clues)) {
+      const updatedClues = cachedMystery.clues.map((c: any) =>
+        c.id === clueId ? { ...c, static_image_url: finalImageUrl } : c
+      );
+      cacheMysterySnapshot(mysteryId, {
+        ...cachedMystery,
+        clues: updatedClues,
+      });
+    }
 
-    revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+    try {
+      revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+    } catch {
+      // Safe outside Next.js request context
+    }
     return {
       success: true,
       imageUrl: finalImageUrl,

@@ -88,12 +88,18 @@ async function ProfileContent({
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
+  const ownGuestIdSet = new Set((rawManualGuests || []).map((g: any) => String(g.id)));
   const cachedMysteries = getAllCachedMysteries();
   const cachedAvatarByGuestId = new Map<string, string>();
   for (const m of Object.values(cachedMysteries || {})) {
+    if ((m as any)?.created_by && (m as any).created_by !== user.id) continue;
     for (const c of (m as any)?.characters || []) {
       const pd = c.profile_data || {};
-      if (pd.guest_id && String(pd.avatar_url || '').includes('aiPhotoUrl=')) {
+      if (
+        pd.guest_id &&
+        ownGuestIdSet.has(String(pd.guest_id)) &&
+        String(pd.avatar_url || '').includes('aiPhotoUrl=')
+      ) {
         cachedAvatarByGuestId.set(pd.guest_id, pd.avatar_url);
       }
     }

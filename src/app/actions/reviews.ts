@@ -2,11 +2,20 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/utils/admin-auth';
+
+function escapeHtml(str: string): string {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 export async function submitReview(formData: FormData) {
-  const name = formData.get('name') as string;
+  const name = ((formData.get('name') as string) || '').trim();
   const rating = parseInt(formData.get('rating') as string, 10);
-  const review_text = formData.get('review_text') as string;
+  const review_text = ((formData.get('review_text') as string) || '').trim();
 
   if (!name || !review_text || isNaN(rating) || rating < 1 || rating > 5) {
     return { error: 'Please provide a valid name, rating (1-5), and review text.' };
@@ -21,7 +30,7 @@ export async function submitReview(formData: FormData) {
     for (const file of files) {
       if (file.size === 0) continue;
       try {
-        const fileExt = file.name.split('.').pop();
+        const fileExt = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `reviews/${fileName}`;
 
@@ -31,7 +40,6 @@ export async function submitReview(formData: FormData) {
 
         if (uploadError) {
           console.warn('Failed to upload file to Supabase (bucket might be missing):', uploadError);
-          // Fake URL for local testing
           attachment_urls.push(`https://mock-storage.com/${filePath}`);
         } else if (uploadData) {
           const { data: { publicUrl } } = supabase.storage
@@ -68,9 +76,11 @@ export async function submitReview(formData: FormData) {
     if (process.env.RESEND_API_KEY) {
       const { Resend } = await import('resend');
       const resend = new Resend(process.env.RESEND_API_KEY);
+      const safeName = escapeHtml(name);
+      const safeReviewHtml = escapeHtml(review_text).replace(/\n/g, '<br/>');
       
       const attachmentsHtml = attachment_urls.length > 0 
-        ? `<p><strong>Attached Photos:</strong><br/>${attachment_urls.map(url => `<a href="${url}">${url}</a>`).join('<br/>')}</p>`
+        ? `<p><strong>Attached Photos:</strong><br/>${attachment_urls.map(url => `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`).join('<br/>')}</p>`
         : '';
         
       const result = await resend.emails.send({
@@ -88,7 +98,7 @@ export async function submitReview(formData: FormData) {
               <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
                 <div>
                   <strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Name</strong><br/>
-                  <span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${name}</span>
+                  <span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${safeName}</span>
                 </div>
                 <div style="text-align: right;">
                   <strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Rating</strong><br/>
@@ -98,7 +108,7 @@ export async function submitReview(formData: FormData) {
               
               <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; position: relative;">
                 <span style="color: #e0e0e0; font-size: 40px; font-family: serif; position: absolute; top: 10px; left: 10px; line-height: 1;">"</span>
-                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6; font-style: italic; position: relative; z-index: 10; padding-top: 10px;">${review_text.replace(/\n/g, '<br/>')}</p>
+                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6; font-style: italic; position: relative; z-index: 10; padding-top: 10px;">${safeReviewHtml}</p>
               </div>
               
               ${attachmentsHtml ? `<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">${attachmentsHtml}</div>` : ''}
@@ -113,8 +123,6 @@ export async function submitReview(formData: FormData) {
       
       if (result.error) {
         console.error('[EMAIL NOTIFICATION] Resend API Error:', result.error);
-      } else {
-        console.log(`[EMAIL NOTIFICATION] Sent review email from ${name}`);
       }
 
       // Send Customer Confirmation Email
@@ -130,10 +138,7 @@ export async function submitReview(formData: FormData) {
           subject: 'Thank you for your review!',
           html: customerHtml,
         });
-        console.log(`[EMAIL NOTIFICATION] Sent review confirmation to ${email}`);
       }
-    } else {
-      console.warn('RESEND_API_KEY is not set. Email notification was not sent.');
     }
   } catch (err) {
     console.error('Failed to send email notification:', err);
@@ -143,7 +148,7 @@ export async function submitReview(formData: FormData) {
 }
 
 export async function toggleReviewStatus(reviewId: string, currentStatus: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const newStatus = currentStatus === 'published' ? 'pending' : 'published';
 
   const { error } = await supabase
@@ -160,7 +165,7 @@ export async function toggleReviewStatus(reviewId: string, currentStatus: string
 }
 
 export async function bulkUpdateReviews(ids: string[], action: 'publish' | 'unpublish' | 'delete') {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   if (action === 'delete') {
     const { error } = await supabase
@@ -170,7 +175,6 @@ export async function bulkUpdateReviews(ids: string[], action: 'publish' | 'unpu
     
     if (error) {
       if (error.code === 'PGRST205') {
-        console.warn('Reviews table missing. Faking bulk delete.');
         return { success: true };
       }
       console.error('Error deleting reviews:', error);
@@ -185,7 +189,6 @@ export async function bulkUpdateReviews(ids: string[], action: 'publish' | 'unpu
 
     if (error) {
       if (error.code === 'PGRST205') {
-        console.warn('Reviews table missing. Faking bulk update.');
         return { success: true };
       }
       console.error('Error updating reviews:', error);

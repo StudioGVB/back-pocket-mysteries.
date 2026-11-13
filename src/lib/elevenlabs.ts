@@ -122,18 +122,36 @@ export async function synthesizeSpeechLine({
       }
     }
 
-    if (response.status === 403 && voiceId !== 'pFZP5JQG7iQjIQuC4Bku') {
-      console.warn(
-        `[ElevenLabs] Voice ${voiceId} returned 403 (requires Creator tier); retrying with premade voice pFZP5JQG7iQjIQuC4Bku`
-      );
-      return synthesizeSpeechLine({
-        voiceId: 'pFZP5JQG7iQjIQuC4Bku',
-        text,
-        modelId,
-        voiceSettings,
-        previousText,
-        nextText,
-      });
+    if (response.status === 403 || response.status === 404) {
+      const { VOICE_PROFILES } = await import('@/lib/voices');
+      const requestedProfile = VOICE_PROFILES[voiceId];
+      const fallbackByRegionAndGender: Record<string, string> = {
+        'en-AU:female': 'VyyyOgRmsqOzaZXnKWnI',
+        'en-AU:male': 'IKne3meq5aSn9XLyUdCD',
+        'en-GB:female': 'pFZP5JQG7iQjIQuC4Bku',
+        'en-GB:male': 'JBFqnCBsd6RMkjVDRZzb',
+        'en-US:female': 'EXAVITQu4vr4xnSDxMaL',
+        'en-US:male': 'iP95p4xoKVk53GoZ742B',
+      };
+      const fallbackKey = `${requestedProfile?.accent || 'en-AU'}:${
+        requestedProfile?.gender === 'male' ? 'male' : 'female'
+      }`;
+      const fallbackVoiceId =
+        fallbackByRegionAndGender[fallbackKey] || 'VyyyOgRmsqOzaZXnKWnI';
+
+      if (voiceId !== fallbackVoiceId) {
+        console.warn(
+          `[ElevenLabs] Voice ${voiceId} returned ${response.status}; retrying with accent-matched voice ${fallbackVoiceId}`
+        );
+        return synthesizeSpeechLine({
+          voiceId: fallbackVoiceId,
+          text,
+          modelId,
+          voiceSettings,
+          previousText,
+          nextText,
+        });
+      }
     }
 
     lastError = new Error(`ElevenLabs TTS failed (${response.status}): ${detail}`);

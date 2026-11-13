@@ -9,6 +9,7 @@ import {
   serializeMysteryImageField,
 } from '@/utils/moodboard';
 import { logAiUsage } from '@/utils/ai-logger';
+import { requireAdmin } from '@/utils/admin-auth';
 
 async function uploadBufferToStorage(
   supabase: any,
@@ -68,11 +69,7 @@ export async function uploadMysteryMoodboardPhotosAction(
   serializedImageUrl?: string | null;
 }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return { error: 'Not authenticated' };
+    const { supabase } = await requireAdmin();
 
     const { data: mystery, error: fetchError } = await supabase
       .from('mysteries')
@@ -173,11 +170,7 @@ export async function updateMysteryMoodboardAction(
   serializedImageUrl?: string | null;
 }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return { error: 'Not authenticated' };
+    const { supabase } = await requireAdmin();
 
     const { data: mystery, error: fetchError } = await supabase
       .from('mysteries')
@@ -239,11 +232,7 @@ export async function generateAIMoodboardPhotoAction(
   serializedImageUrl?: string | null;
 }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return { error: 'Not authenticated' };
+    const { supabase } = await requireAdmin();
 
     const { data: mystery, error: fetchError } = await supabase
       .from('mysteries')
