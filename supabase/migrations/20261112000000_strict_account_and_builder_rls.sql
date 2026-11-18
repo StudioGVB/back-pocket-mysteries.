@@ -320,12 +320,19 @@ CREATE POLICY "Only mystery owner or admin can mutate clues"
   );
 
 -- 11. Strict RLS on `public.mysteries` & `public.characters`
--- Customers can NEVER overwrite or delete the canonical admin mystery templates in Postgres.
+-- Customers can read published catalog mysteries, or their own mysteries, but NEVER overwrite or delete canonical admin templates.
 ALTER TABLE IF EXISTS public.mysteries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can view published mysteries or owner/admin views all" ON public.mysteries;
 DROP POLICY IF EXISTS "Only admins can insert mysteries" ON public.mysteries;
 DROP POLICY IF EXISTS "Only admins can delete mysteries" ON public.mysteries;
 DROP POLICY IF EXISTS "Only owner or admin can update mysteries" ON public.mysteries;
+
+CREATE POLICY "Anyone can view published mysteries or owner/admin views all"
+  ON public.mysteries
+  FOR SELECT
+  TO anon, authenticated
+  USING (status = 'published' OR created_by = auth.uid() OR public.is_admin());
 
 CREATE POLICY "Only admins can insert mysteries"
   ON public.mysteries
@@ -348,9 +355,23 @@ CREATE POLICY "Only admins can delete mysteries"
 
 ALTER TABLE IF EXISTS public.characters ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can view characters for published mysteries or owner/admin views all" ON public.characters;
 DROP POLICY IF EXISTS "Only owner or admin can update characters" ON public.characters;
 DROP POLICY IF EXISTS "Only owner or admin can insert characters" ON public.characters;
 DROP POLICY IF EXISTS "Only owner or admin can delete characters" ON public.characters;
+
+CREATE POLICY "Anyone can view characters for published mysteries or owner/admin views all"
+  ON public.characters
+  FOR SELECT
+  TO anon, authenticated
+  USING (
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.mysteries m
+      WHERE m.id = characters.mystery_id
+        AND (m.status = 'published' OR m.created_by = auth.uid())
+    )
+  );
 
 CREATE POLICY "Only owner or admin can insert characters"
   ON public.characters

@@ -118,17 +118,17 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
   },
   '9TTaZrP6m0Cc554HW1PP': {
     id: '9TTaZrP6m0Cc554HW1PP',
-    name: 'Australian Male (Michael - Adult)',
+    name: 'Australian Male (Michael - Young)',
     gender: 'male',
-    age: 'middle_aged',
+    age: 'young',
     accent: 'en-AU',
     tone: 'commanding, intense, authoritative Australian',
   },
   pDoe9k94N27tidKG2ssb: {
     id: 'pDoe9k94N27tidKG2ssb',
-    name: 'Australian Male (David - Adult)',
+    name: 'Australian Male (David - Young)',
     gender: 'male',
-    age: 'middle_aged',
+    age: 'young',
     accent: 'en-AU',
     tone: 'smooth, persuasive, charismatic Australian',
   },
@@ -465,12 +465,12 @@ export const REGIONAL_VOICE_MAP: Record<VoiceRegion, Record<string, string>> = {
     'the sister': 'zMK1eWY5DTw3Jjb8efU8',
 
     // Christmas Nightmare cast by Role Title (100% genuine Australian voices)
-    'the husband': '9TTaZrP6m0Cc554HW1PP',
-    'the wife': 'zMK1eWY5DTw3Jjb8efU8',
-    'the sister-in-law': 'ZLVTWgFXtnxrL1YnHAWI',
-    'the mistress': 'VyyyOgRmsqOzaZXnKWnI',
-    'the co-worker': 'UVXT2nskVOynYCONC3Iy',
-    'the bestie': 'pDoe9k94N27tidKG2ssb',
+    'the husband': 'IKne3meq5aSn9XLyUdCD',
+    'the wife': 'VyyyOgRmsqOzaZXnKWnI',
+    'the sister-in-law': 'XuvMi7mpVgif9dcUzS0s',
+    'the mistress': 'HMsHSO9iPieho74ZXn8A',
+    'the co-worker': 'pDoe9k94N27tidKG2ssb',
+    'the bestie': '9TTaZrP6m0Cc554HW1PP',
 
     // Legacy aliases (100% genuine Australian voices)
     dane: 'IKne3meq5aSn9XLyUdCD',       // Charlie (AU) - deep, confident Australian
@@ -918,9 +918,9 @@ export function resolveSpeakerVoice(
         score -= 80;
       }
 
-      // C. Age match (+35 for exact age bracket match, +10 for adjacent age bracket)
+      // C. Age match (+45 for exact age bracket match, +10 for adjacent age bracket)
       if (candidate.age === targetAge) {
-        score += 35;
+        score += 45;
       } else if (
         (targetAge === 'young' && candidate.age === 'middle_aged') ||
         (targetAge === 'middle_aged' && candidate.age === 'young')
@@ -928,9 +928,9 @@ export function resolveSpeakerVoice(
         score += 10;
       }
 
-      // D. Character archetype tie-breaker bonus (+30 if it's the character's signature voice)
+      // D. Character archetype tie-breaker bonus (+20 if it's the character's signature voice)
       if (archetypeVoiceId && candidate.id === archetypeVoiceId) {
-        score += 30;
+        score += 20;
       }
 
       if (score > bestScore) {

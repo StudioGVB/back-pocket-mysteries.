@@ -123,18 +123,20 @@ export async function generateAudioClueAction({
 
     // Also harvest known guests from cached mysteries if guestRoster is empty (e.g. when RLS hides guests outside user session)
     if (guestRoster.length === 0) {
-      const seenGuestIds = new Set<string>();
+      const seenGuestKeys = new Set<string>();
       for (const cm of getAllCachedMysteries()) {
         if (effectiveOwnerId && cm?.created_by && cm.created_by !== effectiveOwnerId) continue;
         for (const cc of cm?.characters || []) {
           const pd = cc?.profile_data || {};
-          if (pd.guest_id && !seenGuestIds.has(String(pd.guest_id))) {
-            seenGuestIds.add(String(pd.guest_id));
+          const guestKey = String(pd.guest_id || pd.guest_name || '').trim();
+          const detectedAccent = extractAccentFromAvatarUrl(pd.avatar_url) || pd.accent;
+          if ((guestKey || detectedAccent) && !seenGuestKeys.has(guestKey || String(cc.id))) {
+            seenGuestKeys.add(guestKey || String(cc.id));
             guestRoster.push({
-              id: pd.guest_id,
+              id: pd.guest_id || cc.id,
               name: pd.guest_name || pd.name,
-              gender: pd.gender || cc.gender,
-              accent: extractAccentFromAvatarUrl(pd.avatar_url) || pd.accent,
+              gender: pd.selected_gender || pd.gender || (cc.gender !== 'adaptable' ? cc.gender : 'male'),
+              accent: detectedAccent,
               age: extractAgeFromAvatarUrl(pd.avatar_url) || pd.age,
               avatar_url: pd.avatar_url || '',
             });
@@ -313,9 +315,20 @@ export async function generateAudioClueAction({
       };
     }
 
-    // 4. Upload to Supabase Storage (`mystery-audio/{mysteryId}/{clueId}.mp3`)
+    // 4. Save to local static file (`public/mystery-audio/{mysteryId}/{clueId}.mp3`) AND upload to Supabase Storage
     const storagePath = `${mysteryId}/${clueId}.mp3`;
     let publicUrl = '';
+    const versionTs = Date.now();
+
+    try {
+      const publicAudioDir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'mystery-audio', mysteryId);
+      await fs.mkdir(publicAudioDir, { recursive: true });
+      const localFilePath = path.join(/*turbopackIgnore: true*/ publicAudioDir, `${clueId}.mp3`);
+      await fs.writeFile(localFilePath, mergedMp3Buffer);
+      publicUrl = `/mystery-audio/${mysteryId}/${clueId}.mp3?v=${versionTs}`;
+    } catch (fsErr) {
+      console.warn('[AUDIO UPLOAD] Local filesystem write skipped:', fsErr);
+    }
 
     const { error: primaryUploadErr } = await supabase.storage
       .from('mystery-audio')
@@ -328,11 +341,10 @@ export async function generateAudioClueAction({
       const { data: urlData } = supabase.storage
         .from('mystery-audio')
         .getPublicUrl(storagePath);
-      publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+      if (!publicUrl) {
+        publicUrl = `${urlData.publicUrl}?v=${versionTs}`;
+      }
     } else {
-      console.warn(
-        `[AUDIO UPLOAD] Primary bucket 'mystery-audio' unavailable (${primaryUploadErr.message}), falling back to 'character-images/mystery-audio/${storagePath}'`
-      );
       const fallbackPath = `mystery-audio/${storagePath}`;
       const { error: fallbackUploadErr } = await supabase.storage
         .from('character-images')
@@ -345,19 +357,11 @@ export async function generateAudioClueAction({
         const { data: urlData } = supabase.storage
           .from('character-images')
           .getPublicUrl(fallbackPath);
-        publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
-      } else {
-        // Fallback to local static file in public/mystery-audio/{mysteryId}/{clueId}.mp3
-        try {
-          const publicAudioDir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'mystery-audio', mysteryId);
-          await fs.mkdir(publicAudioDir, { recursive: true });
-          const localFilePath = path.join(/*turbopackIgnore: true*/ publicAudioDir, `${clueId}.mp3`);
-          await fs.writeFile(localFilePath, mergedMp3Buffer);
-          publicUrl = `/mystery-audio/${mysteryId}/${clueId}.mp3?v=${Date.now()}`;
-        } catch (fsErr) {
-          console.warn('[AUDIO UPLOAD] Local filesystem fallback unavailable, using inline data URI:', fsErr);
-          publicUrl = `data:audio/mpeg;base64,${mergedMp3Buffer.toString('base64')}`;
+        if (!publicUrl) {
+          publicUrl = `${urlData.publicUrl}?v=${versionTs}`;
         }
+      } else if (!publicUrl) {
+        publicUrl = `data:audio/mpeg;base64,${mergedMp3Buffer.toString('base64')}`;
       }
     }
 

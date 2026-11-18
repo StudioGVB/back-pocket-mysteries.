@@ -499,7 +499,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
   },
   {
     legacyId: '5ff23ebe-96f7-49d5-8222-84ca13a932f4',
-    title: 'Hallway Coat Closet Snapshot & Snowflake Pin (7:40 PM)',
+    title: 'Coat Closet Runner Exhibit (7:40 PM)',
     clue_type: 'physical',
     implication_type: 'direct',
     evidence_status: 'real',
@@ -508,14 +508,14 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 1,
     format: 'physical_prop',
     static_image_url: '/generated-clues/5ff23ebe-96f7-49d5-8222-84ca13a932f4-99bd7698900d.jpg',
-    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} inside the coat closet while {{The Sister-in-Law}} watches through the slats and drops her family snowflake pin.',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} by the coat closet while a broken "Forever Sisters" snowflake pin lies outside the slatted door.',
     description:
-      'Captured by the automatic hallway motion camera outside the slatted coat closet at 7:40 PM: two guests caught standing closely together inside the coat closet while a third guest stood frozen outside in the hallway shadows watching through the slats. Found on the carpet right where the onlooker stood: a vintage silver snowflake hairpin with a broken clasp, one of a matching pair passed down to the two sisters from their mother.',
+      'Exhibit #1A: Motion-triggered hallway camera frame outside the coat closet at 7:40 PM.\nExhibit #1B: Found stepped into the hallway runner just outside the slatted closet door: one antique silver snowflake hairpin with a snapped clasp, engraved on the reverse with "Forever Sisters".',
     generation_prompt: 'A candid low-light hallway photograph showing {{The Husband}} and {{The Mistress}} standing closely together talking by an open wooden coat closet doorway while a vintage silver snowflake hairpin lies on the dark hallway runner carpet in the foreground. (No text).',
   },
   {
     legacyId: '17ed93b2-803b-4fa4-964c-3a5800c6bad8',
-    title: 'Disturbed Hallway Storage Closet (7:55 PM)',
+    title: 'Hallway Utility Closet Inventory Tag (7:55 PM)',
     clue_type: 'physical',
     implication_type: 'direct',
     evidence_status: 'real',
@@ -524,9 +524,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 2,
     format: 'physical_prop',
     static_image_url: '/generated-clues/17ed93b2-803b-4fa4-964c-3a5800c6bad8-6aed0c43dde6.jpg',
-    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C4] REAL / CANON (Beat 2) - Establishes both the 25-foot heavy-duty Christmas lights and the heavy-duty work gloves went missing from the hallway storage closet.',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C4] REAL / CANON (Beat 2) - Establishes both the 25-foot heavy-duty Christmas lights (Shelf B) and the heavy-duty work gloves (Shelf A) went missing after 7:00 PM.',
     description:
-      'Physical inspection of the hallway storage closet at 7:55 PM reveals two items missing that were confirmed present when guests arrived at 7:00 PM: a 25-foot strand of heavy-duty braided vintage Christmas tree lights (its empty cardboard storage box was found kicked behind the door) and a pair of heavy-duty leather work gloves from the top utility shelf.',
+      'Hallway Utility Closet Check (Verified Full at 7:00 PM Arrival • Inspected 7:55 PM):\n• Shelf A (Top Utility Rack): 1x Pair Insulated Leather Work Gloves [STATUS: MISSING]\n• Shelf B (Holiday Storage): 25-Ft Heavy-Duty Braided Vintage Tree Lights [STATUS: EMPTY BOX ON FLOOR]\n• Shelf C (Lower Bin): Spare fuses & extension cords [STATUS: INTACT]',
     generation_prompt: 'An open hallway utility closet showing an empty vintage holiday light box on the middle shelf and an empty work-glove rack on the top shelf. (No text).',
   },
   {
@@ -557,14 +557,14 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-646107074d71.jpg',
     internal_notes: '[FORMAT:cctv] [CODE:R1-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV composite showing {{The Sister-in-Law}} and {{The Co-Worker}} visiting the hallway storage closet and fuse box between 7:52 PM and 8:03 PM.',
     description:
-      'Header: CAM 01 • HALLWAY STORAGE & FUSE PANEL\nTimestamp: 7:52 PM - 8:03 PM\n• 7:52 PM: Motion clip #1 captures a guest slipping out of the hallway storage closet carrying a coiled bundle under their arm.\n• 7:58 PM: Motion clip #2 captures a second guest opening the same storage closet door to reach for the top utility shelf.\n• 8:03 PM: Motion clip #3 captures the hallway fuse-box panel beside the closet being opened to flip off Upstairs Study Sub-Breaker #4.',
+      'Header: CAM 01 • HALLWAY STORAGE & BREAKER PANEL\nTimestamp: 7:52 PM - 8:03 PM\n• 7:52 PM: Clip #1 - Closet door opened (Shelf B level); subject exits carrying a coiled bundle under arm.\n• 7:58 PM: Clip #2 - Closet door opened (Shelf A level); second subject reaches for top utility rack.\n• 8:03 PM: Clip #3 - Wall Breaker Panel beside closet opened; Switch #4 ("2F-STUDY") toggled to OFF.',
     generation_prompt: 'An overhead security camera still in a dimly lit holiday hallway showing {{The Sister-in-Law}} near the open storage closet door and {{The Co-Worker}} reaching toward the wall fuse box panel. (No text).',
   },
 
   // ── ROUND 2 (6 Clues: 4 Main Beat 3-4 Clues + 2 Double-Duty Step-2 Fake Clues, Shuffled) ──
   {
     legacyId: 'a1111111-1111-4111-8111-111111111105',
-    title: 'Pried-Open Upstairs Study Safe & Work Glove (8:06 PM)',
+    title: 'Upstairs Study Safe Exhibit (8:06 PM)',
     clue_type: 'physical',
     implication_type: 'red_herring',
     evidence_status: 'fake',
@@ -575,7 +575,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111105-4a9a8dbdb0fe.jpg',
     internal_notes: '[FORMAT:physical_prop] [CODE:R2-C1] Fake Arc Step 2 ({{The Wife}} + {{The Co-Worker}}) - Visual photo showing {{The Wife}} and {{The Co-Worker}} beside the open upstairs study safe with the work glove.',
     description:
-      'After the upstairs study sub-breaker was flipped off at 8:03 PM to disable the safe alarm, the hidden wall safe was pried open with a brass letter opener at 8:06 PM. Left behind on the study rug beside the open safe: one heavy-duty leather work glove from the hallway closet and a fresh scratch mark on the brass frame.',
+      'Exhibit #2A: Wall safe behind upstairs study portrait forced open with a bent brass letter opener at 8:06 PM (alarm failed to trigger due to Switch #4 "2F-STUDY" power loss 3 minutes prior).\nExhibit #2B: Single right-hand insulated leather work glove recovered on the rug below the safe.',
     generation_prompt: 'A dramatic low-light photograph inside a dark wood-paneled upstairs study showing {{The Co-Worker}} holding a leather work glove beside an open wall safe while {{The Wife}} stands beside the mahogany desk looking toward the doorway. (No text).',
   },
   {
@@ -607,7 +607,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'handwritten_note',
     internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C3] REAL / CANON (Beat 3) - Written right after overhearing the marital fight; ambiguous enough to sound like a childhood neighbour or sibling.',
     description:
-      'Recovered: Torn inside the upstairs bathroom bin (8:14 PM), written on the back of a dinner place card\n"We all grew up on this street together, and I watched him trap her year after year. Tonight I find out he\'s cheating behind her back while making her cry on Christmas. Someone has to set her free."',
+      'Recovered: Torn in half inside the upstairs bathroom bin (8:14 PM)\n"...heard him through the bedroom door just now. First the coat closet, and now he swears she\'ll never leave this marriage free. Twenty years on this street and he still thinks he owns us. Not after tonight."',
     generation_prompt: 'A torn cream-colored holiday place card with gold trim resting beside a sink in a candlelit bathroom. (No text).',
   },
   {
@@ -623,7 +623,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111106-e4163f78f0e5.jpg',
     internal_notes: '[FORMAT:medical_rx] [CODE:R2-C4] Fake Arc Step 2 ({{The Mistress}} + {{The Bestie}}) - Visual bar photo + Rx label showing the two co-workers spiking the eggnog cup with fast-acting sleeping drops.',
     description:
-      'Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)\nPrescribed to: [Corner Torn] • Emp. Health Plan #04\nIssue date: 2 Weeks Ago\nRef: RX-409-12\nWARNING: Causes rapid 20-minute sleep onset when mixed with spiced alcohol. Non-lethal at standard dropper dose.\nRecovered empty from the kitchen bar trash at 8:08 PM beside the nutmeg grater and the crystal eggnog cup carried into the living room for {{The Husband}}.',
+      'Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)\nPrescribed to: [Torn] ... Co. Group Plan #B-04\nIssue date: 2 Weeks Ago\nRef: RX-409-12\nWARNING: 5 drops in warm/spiced alcohol induces 20-minute sleep onset. Sub-lethal dose.\nEmpty 10mL dropper vial recovered from kitchen bar bin at 8:08 PM beside freshly grated nutmeg.',
     generation_prompt: 'A candid kitchen bar photograph showing {{The Mistress}} and {{The Bestie}} leaning closely over a marble bar counter holding a small amber glass dropper bottle above a crystal cup of spiced eggnog. (No text).',
   },
   {
@@ -651,9 +651,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 4,
     format: 'search_log',
-    internal_notes: '[FORMAT:search_log] [CODE:R2-C6] REAL / CANON (Beat 4) - Pinpoints the exact time of the Christmas lights attack in the living room to 8:19 PM.',
+    internal_notes: '[FORMAT:search_log] [CODE:R2-C6] REAL / CANON (Beat 4) - Pinpoints the exact time of the Christmas lights attack in the living room to 8:19:12 PM.',
     description:
-      'SMART HOME POWER LOG • GROUND FLOOR LIVING ROOM:\n• 8:18 PM - Living room overhead dimmer switched OFF.\n• 8:19 PM - Wall Outlet #2 (beside Christmas tree) registers a heavy load spike & short-circuit fault.\n• 8:22 PM - Living room side hallway door opened.',
+      'SMART HOME POWER LOG • GROUND FLOOR LIVING ROOM:\n• 8:18:04 PM - Zone 1 Overhead Dimmer: Manual switch -> 0% (DARK)\n• 8:19:12 PM - Wall Outlet #1 (Tree Corner): Load spike 0W -> 1,840W (OVERLOAD FAULT / SHORT CIRCUIT)\n• 8:21:55 PM - Side Hallway Door Sensor (Pantry Corridor): OPEN -> CLOSED',
     generation_prompt: 'A glowing Christmas tree corner in a dark living room with shadows cast across the hardwood floor. (No text).',
   },
 
@@ -669,14 +669,14 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 5,
     format: 'document',
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111109-6c6f2b97ac73.jpg',
-    internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19 PM (not the sedative drops or work gloves), and matches the matching sister snowflake pin.',
+    internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19:12 PM (not the sedative drops or work gloves), and matches the broken "...ever Sisters" clasp.',
     description:
-      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: 8:30 PM • LIVING ROOM\n• Cause of Death: {{The Husband}} was found beside the Christmas tree, tightly wrapped in the missing 25-foot strand of heavy-duty vintage Christmas lights plugged into Wall Outlet #2 at 8:19 PM.\n• Toxicology: The Zolpidem sedative in his spiced eggnog only made him groggy and was completely non-lethal.\n• Trace Evidence: Zero fireplace soot or work-glove fibers on the light cord. Snagged inside the knotted wire is the broken half of the sisters\' silver snowflake hairpin clasp.',
+      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: 8:30 PM • LIVING ROOM\n• Primary Finding: {{The Husband}} found beside tree wrapped in 25-ft braided vintage light cord plugged into Wall Outlet #1 (fatal electrical/ligature trauma at 8:19:12 PM).\n• Blood Toxicology: Zolpidem level 0.04 mg/L (mild sedation only; ruled out as cause of death).\n• Cord Trace Analysis: Negative for leather glove fibers or chimney ash. Snagged inside the third knot of the wire: a 6mm broken silver clasp stamped "...ever Sisters".',
     generation_prompt: 'A close-up photograph beside a decorated Christmas tree showing a tangled strand of glowing red and green vintage Christmas tree lights coiled across a dark hardwood floor next to a spilled crystal cup. (No text).',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111107',
-    title: 'Scorched Prenup & Audit Pages in Study Fireplace (8:19 PM)',
+    title: '2F Study Fireplace & Smart-Lock Exhibit (8:18 PM - 8:21 PM)',
     clue_type: 'physical',
     implication_type: 'red_herring',
     evidence_status: 'fake',
@@ -685,9 +685,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: null,
     format: 'physical_prop',
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111107-5a3adbbd85bd.jpg',
-    internal_notes: '[FORMAT:physical_prop] [CODE:R3-C2] Fake Arc Step 3 & Fatal Hole ({{The Wife}} + {{The Co-Worker}}) - Visual photo + physical evidence proving {{The Wife}} and {{The Co-Worker}} were locked upstairs burning documents at 8:19 PM when the living room murder happened downstairs.',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R3-C2] Fake Arc Step 3 & Fatal Hole ({{The Wife}} + {{The Co-Worker}}) - Visual photo + raw lock/heat timestamps proving {{The Wife}} and {{The Co-Worker}} were locked on the 2nd floor from 8:17:50 to 8:21:30 PM.',
     description:
-      'Recovered from the upstairs study fireplace grate: half-burnt pages of the company audit folder and marriage prenup clause. The upstairs study door lock and chimney heat sensor confirm the two culprits were locked inside the upstairs study burning these pages from 8:18 PM to 8:21 PM, the exact same minute the fatal 8:19 PM power surge happened downstairs in the living room.',
+      'Exhibit #3A (2F Study Hearth): Charred corners of "COMPANY AUDIT - MONDAY SUBMISSION" and "POST-NUPTIAL WAIVER OF ASSETS" recovered from upstairs grate.\nExhibit #3B (2F Study Door & Flue Telemetry): Second-floor study deadbolt engaged from the inside 8:17:50 PM to 8:21:30 PM; chimney flue peaked at 480°F at 8:19:15 PM.',
     generation_prompt: 'A dramatic low-light photograph inside the upstairs wood-paneled study showing {{The Wife}} and {{The Co-Worker}} kneeling together beside a glowing brick fireplace burning a folder of papers in the flames. (No text).',
   },
   {
@@ -701,14 +701,14 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 4,
     format: 'handwritten_note',
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111110-fcce01c9c8c3.jpg',
-    internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Visual Polaroid photo of {{The Sister-in-Law}} and {{The Wife}} + handwritten confession on the back revealing {{The Sister-in-Law}} chose for her sister to finally be happy and free.',
+    internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Visual Polaroid photo of {{The Sister-in-Law}} and {{The Wife}} + cryptic handwritten message on the back.',
     description:
-      'Recovered: Tucked inside a velvet clutch near the pantry beside a one-way holiday flight receipt (8:15 PM)\n"Let everyone think I was just hiding my fling in the pantry. After seeing what he did with my best friend and hearing him tell you that you\'d never escape him, I made my choice. This Christmas, you are finally going to be happy and free, sis."',
+      'Recovered: Inside coat pocket near the pantry beside a 10:45 PM one-way boarding pass\n"You spent our whole childhood protecting me on this street. After what I saw in the closet and what I heard him say to you upstairs, I couldn\'t let him steal another year of your life. This Christmas, you\'re finally going to be happy and free."',
     generation_prompt: 'A warm candid instant Polaroid photograph of {{The Sister-in-Law}} and {{The Wife}} hugging closely in front of a glowing Christmas tree at the holiday party. (No text).',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111108',
-    title: 'Hallway & Dining Arch Cam: The Phone Theft (8:16 PM)',
+    title: 'Hallway & Dining Arch Cam (8:16 PM - 8:22 PM)',
     clue_type: 'physical',
     implication_type: 'red_herring',
     evidence_status: 'fake',
@@ -717,9 +717,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: null,
     format: 'cctv',
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111108-71519e9e2573.jpg',
-    internal_notes: '[FORMAT:cctv] [CODE:R3-C4] Fake Arc Step 3 & Fatal Hole ({{The Mistress}} + {{The Bestie}}) - Visual CCTV still proving {{The Husband}} was still alive at 8:16 PM when {{The Mistress}} took his phone, and she was on camera at the dining table by 8:17 PM.',
+    internal_notes: '[FORMAT:cctv] [CODE:R3-C4] Fake Arc Step 3 & Fatal Hole ({{The Mistress}} + {{The Bestie}}) - Visual CCTV still proving {{The Husband}} was still moving on the sofa at 8:16:10 PM and {{The Mistress}} was continuously seated in the dining room from 8:17:05 to 8:22:00 PM.',
     description:
-      'Header: CAM 02 • HALLWAY & DINING ARCH\nTimestamp: 8:16 PM - 8:20 PM\n• 8:16 PM: Subject slips out of the living room doorway holding {{The Husband}}\'s unlocked phone while {{The Husband}} is still visibly moving and alive on the sofa behind them.\n• 8:17 PM - 8:20 PM: The same subject walks directly through the dining room arch and remains on camera pouring wine at the dinner table when the living room lights short out at 8:19 PM.',
+      'Header: CAM 02 • LIVING ROOM DOOR & DINING ARCH\nTimestamp: 8:16:10 PM - 8:22:00 PM\n• 8:16:10 PM: Subject exits living room doorway holding an unlocked phone; victim\'s arm is seen shifting on the sofa cushion behind the doorway.\n• 8:17:05 PM - 8:22:00 PM: Same subject enters dining room arch and remains continuously seated at the dinner table pouring wine.',
     generation_prompt: 'An overhead security camera still showing {{The Mistress}} slipping out of a living room doorway holding a glowing smartphone while {{The Husband}} is visible in the background slouched but alive on the sofa. (No text).',
   },
 ];

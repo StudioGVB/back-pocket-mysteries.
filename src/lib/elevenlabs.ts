@@ -5,7 +5,7 @@ export type ElevenLabsModelId =
   | 'eleven_multilingual_v2'
   | 'eleven_turbo_v2_5';
 
-export const DEFAULT_ELEVENLABS_MODEL: ElevenLabsModelId = 'eleven_v3';
+export const DEFAULT_ELEVENLABS_MODEL: ElevenLabsModelId = 'eleven_multilingual_v2';
 
 export interface ElevenLabsVoiceSettings {
   stability?: number;
@@ -38,8 +38,8 @@ export function getElevenLabsApiKey(): string {
 
 /**
  * Calls the ElevenLabs Text-to-Speech API for a single dialogue line and returns the MP3 ArrayBuffer.
- * Uses `eleven_v3` by default so inline emotional acting tags (e.g. `[angry, disbelief]`, `[whispers]`, `[laughs]`)
- * guide vocal inflection, pacing, and emotion instead of sounding monotone.
+ * Uses `eleven_multilingual_v2` with high `similarity_boost` (0.90) by default so regional accents
+ * (Australian, British, American) and speaker gender/age characteristics are strictly preserved.
  */
 export async function synthesizeSpeechLine({
   voiceId,
@@ -69,10 +69,10 @@ export async function synthesizeSpeechLine({
     text: cleanText,
     model_id: modelId,
     voice_settings: {
-      // Lower stability (0.30) + higher style (0.72) unlocks natural emotional pitch & urgency
-      stability: voiceSettings?.stability ?? 0.30,
-      similarity_boost: voiceSettings?.similarity_boost ?? 0.80,
-      style: voiceSettings?.style ?? 0.72,
+      // High similarity_boost (0.90) + balanced stability (0.50) locks in the voice's true Australian/British accent
+      stability: voiceSettings?.stability ?? 0.50,
+      similarity_boost: voiceSettings?.similarity_boost ?? 0.90,
+      style: voiceSettings?.style ?? 0.20,
       use_speaker_boost: voiceSettings?.use_speaker_boost ?? true,
     },
   };

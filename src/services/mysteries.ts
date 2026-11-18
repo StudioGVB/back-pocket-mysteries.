@@ -45,9 +45,39 @@ import {
 import { cacheRelationshipsSnapshot } from '@/lib/live-session-store';
 import { cache } from 'react';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
+
+function resolveLocalMysteryAudioUrl(
+  mysteryId?: string | null,
+  clueId?: string | null,
+  existingAudioUrl?: string | null
+): string | null {
+  if (!mysteryId || !clueId) return existingAudioUrl || null;
+  try {
+    const localMp3Path = path.join(
+      /*turbopackIgnore: true*/ process.cwd(),
+      'public',
+      'mystery-audio',
+      String(mysteryId),
+      `${String(clueId)}.mp3`
+    );
+    if (fs.existsSync(localMp3Path)) {
+      const mtimeMs = Math.floor(fs.statSync(localMp3Path).mtimeMs);
+      const vMatch = String(existingAudioUrl || '').match(/[?&]v=(\d+)/);
+      const existingVersion = vMatch ? Number(vMatch[1]) : 0;
+      if (!existingAudioUrl || existingVersion < mtimeMs) {
+        return `/mystery-audio/${mysteryId}/${clueId}.mp3?v=${mtimeMs}`;
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+  return existingAudioUrl || null;
+}
 
 export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any {
   if (!mystery || !isChristmasNightmareMystery(mystery.title, mystery.theme)) {
@@ -305,8 +335,9 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         const clueId = existingClue?.id || cSpec.legacyId || crypto.randomUUID();
         const linkedBeatId = cSpec.beatNumber ? beatIdByNumber[cSpec.beatNumber] || null : null;
 
-        const preservedAudioUrl =
+        const rawPreservedAudioUrl =
           existingClue?.audio_url || extractAudioUrlFromNotes(existingClue?.internal_notes) || cSpec.audio_url || null;
+        const preservedAudioUrl = resolveLocalMysteryAudioUrl(mysteryId, clueId, rawPreservedAudioUrl);
         const preservedVoiceRegion =
           existingClue?.voice_region || extractVoiceRegionFromNotes(existingClue?.internal_notes) || cSpec.voice_region || null;
         const preservedStaticImage =
@@ -650,11 +681,27 @@ export async function getPublishedMysteryByIdOrSlug(idOrSlug: string) {
       ? getCachedMysterySnapshot(idOrSlug)
       : getAllCachedMysteries().find((m: any) => slugify(m.title || '') === idOrSlug.toLowerCase()) || null;
     if (cached) {
-      const upgradedCached = ensureRealityPromoCover(cached);
+      const upgradedCached = ensureChristmasNightmareCanon(ensureRealityPromoCover(cached));
       const cleanChars = normalizeCharacterList(upgradedCached.characters || []);
       return {
         ...upgradedCached,
         description: replacePlaceholderNamesWithRoles(upgradedCached.description, cleanChars),
+        characters: cleanChars,
+      };
+    }
+
+    const canonical = getCanonicalActiveMysteryBySlugOrId(idOrSlug);
+    if (canonical) {
+      const upgradedCanonical = ensureChristmasNightmareCanon(
+        ensureRealityPromoCover({
+          ...canonical,
+          status: 'published',
+        })
+      );
+      const cleanChars = normalizeCharacterList(upgradedCanonical.characters || []);
+      return {
+        ...upgradedCanonical,
+        description: replacePlaceholderNamesWithRoles(upgradedCanonical.description, cleanChars),
         characters: cleanChars,
       };
     }
@@ -1126,6 +1173,31 @@ export const getMysteryById = cache(async (id: string) => {
     if (cached) {
       return ensureChristmasNightmareCanon(cached, supabase);
     }
+    const canonical = getCanonicalActiveMysteryBySlugOrId(id);
+    if (canonical) {
+      const upgradedCanonical = ensureChristmasNightmareCanon(
+        ensureRealityPromoCover({
+          ...canonical,
+          status: 'published',
+          plot_beats:
+            canonical.id === '69b65a91-1cc2-4267-94a4-59297428af28'
+              ? Object.entries(LOTR_CANONICAL_BEATS).map(([num, b]) => ({
+                  id: `lotr-beat-${num}`,
+                  mystery_id: canonical.id,
+                  beat_number: Number(num),
+                  sort_order: Number(num),
+                  event_title: b.event_title,
+                  description: b.description,
+                  is_required: true,
+                  beat_type: 'discovery',
+                  timeline_phase: 'investigation',
+                }))
+              : [],
+        })
+      );
+      upgradedCanonical.characters = normalizeCharacterList(upgradedCanonical.characters || []);
+      return upgradedCanonical;
+    }
     if (error?.code === '42703') {
       console.error('CRITICAL: Database column missing in mystery fetch. Please run character SQL migration.', error);
     } else if (error) {
@@ -1510,6 +1582,9 @@ function normalizeClueList(
     }
 
     const canonicalChristmasSpec = CHRISTMAS_NIGHTMARE_CLUES.find((cc) => cc.legacyId === c.id);
+    const rawAudioUrl =
+      c.audio_url || extractAudioUrlFromNotes(cleanRawNotes) || canonicalChristmasSpec?.audio_url || null;
+    const resolvedAudioUrl = resolveLocalMysteryAudioUrl(c.mystery_id, c.id, rawAudioUrl);
 
     return {
       ...c,
@@ -1517,8 +1592,8 @@ function normalizeClueList(
       description: cleanDesc,
       prompt_template: cleanPrompt,
       format: c.format || extractFormatTagFromNotes(cleanRawNotes) || canonicalChristmasSpec?.format || null,
-      audio_url: c.audio_url || extractAudioUrlFromNotes(cleanRawNotes) || canonicalChristmasSpec?.audio_url || null,
-      voice_region: c.voice_region || extractVoiceRegionFromNotes(cleanRawNotes) || canonicalChristmasSpec?.voice_region || null,
+      audio_url: resolvedAudioUrl,
+      voice_region: c.voice_region || extractVoiceRegionFromNotes(cleanRawNotes) || canonicalChristmasSpec?.voice_region || (resolvedAudioUrl ? 'en-AU' : null),
       internal_notes: stripFormatTagFromNotes(cleanRawNotes),
     };
   });
