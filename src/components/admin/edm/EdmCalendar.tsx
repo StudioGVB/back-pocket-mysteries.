@@ -77,18 +77,19 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
   };
 
   const [colors, setColors] = useState({
-    scheduledEdm: "#eab308", // Yellow
-    automatedOnboarding: "#a855f7", // Purple
-    initialOnboarding: "#3b82f6", // Blue
-    blogDraft: "#f97316", // Orange
-    sentPosted: "#22c55e", // Green
-    demoBooked: "#ef4444", // Red
-    socialPost: "#0a66c2", // LinkedIn Blue
-    igFbPost: "#fe04c6", // Brand Pink (IG/FB)
+    draftItem: "#ca8a04", // Yellow / Amber for Drafts
+    scheduledEdm: "#8b5cf6", // Purple for Scheduled EDMs
+    automatedOnboarding: "#a855f7",
+    initialOnboarding: "#3b82f6", // Blue for VIP Sign-Ups
+    blogDraft: "#f97316", // Orange for Scheduled Blogs
+    sentPosted: "#22c55e", // Green for Sent / Posted
+    demoBooked: "#ef4444",
+    socialPost: "#0a66c2", // LinkedIn Blue for Scheduled LinkedIn
+    igFbPost: "#fe04c6", // Brand Pink for Scheduled IG/FB
   });
 
   useEffect(() => {
-    const savedColors = localStorage.getItem("edm_calendar_custom_colors");
+    const savedColors = localStorage.getItem("edm_calendar_custom_colors_v2");
     if (savedColors) {
       try {
         setColors((prev) => ({ ...prev, ...JSON.parse(savedColors) }));
@@ -101,7 +102,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
   const handleColorChange = (key: keyof typeof colors, value: string) => {
     const updated = { ...colors, [key]: value };
     setColors(updated);
-    localStorage.setItem("edm_calendar_custom_colors", JSON.stringify(updated));
+    localStorage.setItem("edm_calendar_custom_colors_v2", JSON.stringify(updated));
   };
 
   const [blogPosts, setBlogPosts] = useState<any[]>([]);
@@ -496,6 +497,24 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
               <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
                 <input
                   type="color"
+                  value={colors.draftItem}
+                  onChange={(e) => handleColorChange("draftItem", e.target.value)}
+                  className="w-5 h-5 rounded cursor-pointer border border-gray-300 bg-transparent p-0 overflow-hidden"
+                />
+                <span>Drafts (Needs Review)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
+                <input
+                  type="color"
+                  value={colors.blogDraft}
+                  onChange={(e) => handleColorChange("blogDraft", e.target.value)}
+                  className="w-5 h-5 rounded cursor-pointer border border-gray-300 bg-transparent p-0 overflow-hidden"
+                />
+                <span>Scheduled Blogs</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
+                <input
+                  type="color"
                   value={colors.scheduledEdm}
                   onChange={(e) => handleColorChange("scheduledEdm", e.target.value)}
                   className="w-5 h-5 rounded cursor-pointer border border-gray-300 bg-transparent p-0 overflow-hidden"
@@ -505,11 +524,20 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
               <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
                 <input
                   type="color"
-                  value={colors.blogDraft}
-                  onChange={(e) => handleColorChange("blogDraft", e.target.value)}
+                  value={colors.socialPost}
+                  onChange={(e) => handleColorChange("socialPost", e.target.value)}
                   className="w-5 h-5 rounded cursor-pointer border border-gray-300 bg-transparent p-0 overflow-hidden"
                 />
-                <span>Blogs / Drafts</span>
+                <span>Scheduled LinkedIn</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
+                <input
+                  type="color"
+                  value={colors.igFbPost}
+                  onChange={(e) => handleColorChange("igFbPost", e.target.value)}
+                  className="w-5 h-5 rounded cursor-pointer border border-gray-300 bg-transparent p-0 overflow-hidden"
+                />
+                <span>Scheduled IG / FB</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
                 <input
@@ -519,24 +547,6 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                   className="w-5 h-5 rounded cursor-pointer border border-gray-300 bg-transparent p-0 overflow-hidden"
                 />
                 <span>Sent / Posted</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
-                <input
-                  type="color"
-                  value={colors.socialPost}
-                  onChange={(e) => handleColorChange("socialPost", e.target.value)}
-                  className="w-5 h-5 rounded cursor-pointer border border-gray-300 bg-transparent p-0 overflow-hidden"
-                />
-                <span>LinkedIn Posts</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
-                <input
-                  type="color"
-                  value={colors.igFbPost}
-                  onChange={(e) => handleColorChange("igFbPost", e.target.value)}
-                  className="w-5 h-5 rounded cursor-pointer border border-gray-300 bg-transparent p-0 overflow-hidden"
-                />
-                <span>IG / FB Posts</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer font-semibold hover:opacity-80 transition-opacity">
                 <input
@@ -617,22 +627,30 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
 
                         let activeColor = "";
                         if (isEdm) {
-                          if (event.status === "sent") {
+                          if (event.status === "draft") {
+                            activeColor = colors.draftItem;
+                          } else if (event.status === "sent") {
                             activeColor = colors.sentPosted;
-                          } else if (event.status === "scheduled" || event.status === "sending") {
+                          } else {
                             activeColor = colors.scheduledEdm;
-                          } else if (event.status === "draft") {
-                            activeColor = colors.blogDraft;
                           }
                         } else if (isBlog) {
                           const isFuture = event.date > new Date();
-                          if (event.is_draft || isFuture) {
+                          if (event.is_draft) {
+                            activeColor = colors.draftItem;
+                          } else if (isFuture) {
                             activeColor = colors.blogDraft;
                           } else {
                             activeColor = colors.sentPosted;
                           }
                         } else if (isSocial) {
-                          activeColor = isIgFb ? colors.igFbPost : colors.socialPost;
+                          if (event.status === "draft") {
+                            activeColor = colors.draftItem;
+                          } else if (event.status === "posted" || event.status === "published") {
+                            activeColor = colors.sentPosted;
+                          } else {
+                            activeColor = isIgFb ? colors.igFbPost : colors.socialPost;
+                          }
                         } else if (isOnboarding) {
                           activeColor = colors.initialOnboarding;
                         }
@@ -640,7 +658,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                         const dynamicStyle = activeColor
                           ? {
                               borderLeftColor: activeColor,
-                              backgroundColor: `${activeColor}15`,
+                              backgroundColor: `${activeColor}18`,
                               color: activeColor,
                             }
                           : undefined;
@@ -749,11 +767,51 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
               <div
                 className="w-2.5 h-2.5 rounded border-l-2"
                 style={{
+                  borderLeftColor: colors.draftItem,
+                  backgroundColor: `${colors.draftItem}25`,
+                }}
+              />
+              <span>Drafts (Needs Review)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-2.5 h-2.5 rounded border-l-2"
+                style={{
+                  borderLeftColor: colors.blogDraft,
+                  backgroundColor: `${colors.blogDraft}20`,
+                }}
+              />
+              <span>Scheduled Blogs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-2.5 h-2.5 rounded border-l-2"
+                style={{
                   borderLeftColor: colors.scheduledEdm,
                   backgroundColor: `${colors.scheduledEdm}20`,
                 }}
               />
               <span>Scheduled EDMs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-2.5 h-2.5 rounded border-l-2"
+                style={{
+                  borderLeftColor: colors.socialPost,
+                  backgroundColor: `${colors.socialPost}20`,
+                }}
+              />
+              <span>Scheduled LinkedIn</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-2.5 h-2.5 rounded border-l-2"
+                style={{
+                  borderLeftColor: colors.igFbPost,
+                  backgroundColor: `${colors.igFbPost}20`,
+                }}
+              />
+              <span>Scheduled IG / FB</span>
             </div>
             <div className="flex items-center gap-2">
               <div
@@ -769,41 +827,11 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
               <div
                 className="w-2.5 h-2.5 rounded border-l-2"
                 style={{
-                  borderLeftColor: colors.socialPost,
-                  backgroundColor: `${colors.socialPost}20`,
-                }}
-              />
-              <span>LinkedIn Posts</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div
-                className="w-2.5 h-2.5 rounded border-l-2"
-                style={{
-                  borderLeftColor: colors.igFbPost,
-                  backgroundColor: `${colors.igFbPost}20`,
-                }}
-              />
-              <span>IG / FB Posts</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div
-                className="w-2.5 h-2.5 rounded border-l-2"
-                style={{
-                  borderLeftColor: colors.blogDraft,
-                  backgroundColor: `${colors.blogDraft}20`,
-                }}
-              />
-              <span>Blogs (Draft / Scheduled)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div
-                className="w-2.5 h-2.5 rounded border-l-2"
-                style={{
                   borderLeftColor: colors.initialOnboarding,
                   backgroundColor: `${colors.initialOnboarding}20`,
                 }}
               />
-              <span>VIP Lead Sign-Ups</span>
+              <span>VIP Sign-Ups</span>
             </div>
           </div>
         </div>
