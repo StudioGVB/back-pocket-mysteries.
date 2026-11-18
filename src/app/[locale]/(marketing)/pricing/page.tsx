@@ -144,48 +144,6 @@ export default async function PricingPage(props: {
           locale={locale as Locale}
         />
 
-        {/* Unlimited Subscription Tier */}
-        <div className="relative p-8 lg:p-16 mt-16 max-w-[90rem] mx-auto rounded-[3rem] border-4 bg-brand-pink border-brand-pink shadow-2xl flex flex-col lg:flex-row gap-12 items-center group transition-all duration-500">
-          <div className="absolute top-0 right-12 transform -translate-y-1/2 px-8 py-3 bg-brand-dark text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">
-            UNLIMITED + 1 FREE MONTHLY GIFT PASS
-          </div>
-          
-          <div className="flex-1 w-full lg:w-auto">
-            <h3 className="text-4xl lg:text-6xl font-black mb-2 uppercase tracking-tighter text-white">{tiers[3].name}</h3>
-            <p className="text-sm font-black uppercase tracking-widest mb-6 text-white/80">{tiers[3].tagline}</p>
-            <div className="flex items-baseline gap-2 mb-6">
-              <PriceDisplay 
-                tier={tiers[3].id} 
-                locale={locale as Locale}
-                className="text-6xl lg:text-8xl font-black tracking-tighter text-brand-dark" 
-              />
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-white/80">
-                / {tiers[3].billingPeriod === 'month' ? 'MONTH' : 'EVENT'}
-              </span>
-            </div>
-            <p className="font-bold text-lg leading-snug text-white/90 max-w-xl">{tiers[3].desc}</p>
-          </div>
-
-          <div className="flex-1 w-full">
-            <ul className="space-y-4 mb-10 bg-white/10 p-8 rounded-[2rem] border border-white/20">
-              {tiers[3].features.map((feature, j) => (
-                <li key={j} className="flex items-start gap-4">
-                  <div className="mt-0.5 w-6 h-6 rounded-full bg-brand-dark flex items-center justify-center text-white text-xs shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-bold leading-snug text-white">{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Link href={`/${locale}/mysteries`} className="btn-pill block w-full px-8 py-6 text-center text-sm bg-brand-dark text-white hover:bg-white hover:text-brand-dark shadow-2xl">
-              {tiers[3].cta}
-            </Link>
-          </div>
-        </div>
-
         {/* Value anchoring note */}
         <div className="mt-20 text-center">
           <p className="text-gray-400 font-bold text-sm max-w-2xl mx-auto leading-relaxed">

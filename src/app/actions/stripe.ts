@@ -535,7 +535,10 @@ export async function confirmMysteryOrderAction({
             !metaMysteryId ||
             metaMysteryId === mysteryId ||
             metaMysteryId === slug ||
-            (Boolean(slug) && metaSlug === slug);
+            (Boolean(slug) && metaSlug === slug) ||
+            (Boolean(user?.id && metaMysteryId) &&
+              (deriveUserMysteryInstanceId(metaMysteryId, user!.id) === mysteryId ||
+                deriveUserMysteryInstanceId(mysteryId, user!.id) === metaMysteryId));
           const matchesUser =
             !metaUserId ||
             metaUserId === 'guest' ||
@@ -561,7 +564,10 @@ export async function confirmMysteryOrderAction({
             !metaMysteryId ||
             metaMysteryId === mysteryId ||
             metaMysteryId === slug ||
-            (Boolean(slug) && metaSlug === slug);
+            (Boolean(slug) && metaSlug === slug) ||
+            (Boolean(user?.id && metaMysteryId) &&
+              (deriveUserMysteryInstanceId(metaMysteryId, user!.id) === mysteryId ||
+                deriveUserMysteryInstanceId(mysteryId, user!.id) === metaMysteryId));
           const matchesUser =
             !metaUserId ||
             metaUserId === 'guest' ||

@@ -4,6 +4,10 @@ import CurrencySwitcher from '@/components/marketing/CurrencySwitcher'
 import { resolveCurrency, getTierForPlayerCount } from '@/utils/localization'
 import { Locale } from '@/lib/i18n-config'
 import { getMysteryById, getPublishedMysteryByIdOrSlug } from '@/services/mysteries'
+import { getRelationshipsByMysteryId } from '@/services/relationships'
+import { ensureIsolatedCustomerMysteryInstance } from '@/lib/live-session-store'
+import { createClient } from '@/utils/supabase/server'
+import { getCharacterRoleTitle } from '@/utils/hydration'
 
 export const unstable_instant = false;
 
@@ -34,16 +38,38 @@ export default async function CheckoutPage(props: {
     )
   }
 
+  // If the customer is signed in, resolve their isolated customer mystery instance
+  // so their custom cast lineup and isolated mystery ID are used on checkout
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (user && mystery.created_by !== user.id) {
+      const templateId = String(mystery.template_mystery_id || mystery.id)
+      const rels = await getRelationshipsByMysteryId(templateId)
+      const isolated = ensureIsolatedCustomerMysteryInstance(mystery, rels || [], user.id)
+      mystery = isolated.mystery
+    }
+  } catch {
+    // Non-fatal if unauthenticated
+  }
+
   const rawCharacters: any[] = mystery.characters || []
   const activeCharacters = rawCharacters.filter(
     (c: any) => (c.profile_data as any)?.is_active_in_session !== false
   )
 
   const castMembers: CastMemberPreview[] = activeCharacters.map((c: any) => {
-    const parts = (c.name || '').split('|')
-    const roleTitle = (parts[1] || parts[0] || 'Suspect').trim()
+    const roleTitle = getCharacterRoleTitle(c)
     const profile = (c.profile_data || {}) as any
-    const guestName = profile.guest_name || profile.name || parts[0] || 'Guest'
+    const assignedGuestName = profile.guest_id
+      ? String(profile.guest_name || profile.name || '').trim()
+      : ''
+    const guestName =
+      assignedGuestName && assignedGuestName.toLowerCase() !== roleTitle.toLowerCase()
+        ? assignedGuestName
+        : roleTitle
     return {
       characterId: c.id,
       roleTitle,

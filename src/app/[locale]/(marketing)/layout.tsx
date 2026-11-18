@@ -10,6 +10,7 @@ import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
 import MobileNav from '@/components/marketing/MobileNav';
 import GlobalSpotlight from '@/components/marketing/GlobalSpotlight';
 import FooterMarketingForm from '@/components/marketing/FooterMarketingForm';
+import First50WaitlistBanner from '@/components/marketing/First50WaitlistBanner';
 import CopyrightYear from '@/components/marketing/CopyrightYear';
 
 export const metadata: Metadata = {
@@ -37,6 +38,9 @@ export default async function MarketingLayout(props: {
     <div className="flex flex-col min-h-screen bg-white">
       <Suspense fallback={null}>
         <GlobalSpotlight />
+      </Suspense>
+      <Suspense fallback={null}>
+        <First50WaitlistBanner />
       </Suspense>
       <header className="border-b border-gray-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 py-2">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">

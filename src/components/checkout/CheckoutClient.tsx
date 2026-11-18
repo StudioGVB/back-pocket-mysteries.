@@ -139,7 +139,6 @@ export default function CheckoutClient({
   const router = useRouter()
   const targetSlug = slug || mysteryId
 
-  const [selectedPlan, setSelectedPlan] = useState<'single' | 'subscribe'>('single')
   const [activeCurrency, setActiveCurrency] = useState(initialCurrency || 'USD')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | undefined>(undefined)
@@ -149,7 +148,8 @@ export default function CheckoutClient({
   const [isRedirectingHosted, setIsRedirectingHosted] = useState(false)
   const [paymentMethodTab, setPaymentMethodTab] = useState<'card' | 'apple_google'>('card')
 
-  // Promo code & discount state
+  // Promo code & discount state (collapsible unless a promo code is pre-applied)
+  const [showPromoBox, setShowPromoBox] = useState(Boolean(initialPromoCode))
   const [promoInput, setPromoInput] = useState(initialPromoCode || '')
   const [appliedPromoCode, setAppliedPromoCode] = useState<string | undefined>(
     initialPromoCode ? initialPromoCode.trim().toUpperCase() : undefined
@@ -163,10 +163,8 @@ export default function CheckoutClient({
     setActiveCurrency(detectBrowserCurrency(locale))
   }, [locale])
 
-  const activeTier: PriceTierKey = selectedPlan === 'subscribe' ? 'subscribe' : initialTier
-  const singlePackPrice = getRegionalPrice(initialTier, activeCurrency)
-  const subscribePrice = getRegionalPrice('subscribe', activeCurrency)
-  const subtotalCost = selectedPlan === 'subscribe' ? subscribePrice : singlePackPrice
+  const activeTier: PriceTierKey = initialTier
+  const subtotalCost = getRegionalPrice(initialTier, activeCurrency)
   const totalCost = Math.max(0, subtotalCost - discountAmount)
   const formattedSubtotal = formatCurrency(subtotalCost, activeCurrency, locale)
   const formattedTotal = formatCurrency(totalCost, activeCurrency, locale)
@@ -266,15 +264,15 @@ export default function CheckoutClient({
 
   const tierLabel =
     initialTier === 'basic'
-      ? 'Basic Package (4–6 Players)'
+      ? 'Basic Package • 5–6 Suspects (1–6 Players)'
       : initialTier === 'grand'
-      ? 'Grand Package (4–16 Players)'
-      : 'Premium Package (4–10 Players)'
+      ? 'Grand Package • 5–16 Suspects (1–16 Players)'
+      : 'Premium Package • 5–10 Suspects (1–10 Players)'
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       {/* Top Back Navigation & Stepper */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-7">
         <Link
           href={`/${locale}/mysteries/${targetSlug}/cast`}
           className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-brand-pink transition-colors"
@@ -284,105 +282,59 @@ export default function CheckoutClient({
 
         <div className="flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-widest">
           <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
-            1. Cast Locked ({guests} Guests) ✓
+            1. {guests} Suspects Selected ✓
           </span>
           <span className="text-slate-300">→</span>
           <span className="px-3 py-1 rounded-full bg-brand-pink text-white">
-            2. Pay &amp; Start Generation
+            2. Unlock Package ({formattedTotal})
           </span>
           <span className="text-slate-300">→</span>
           <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-400">
-            3. Ready in 20 Mins in My Mysteries
+            3. Ready in ~20 Mins in My Mysteries
           </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        {/* LEFT COLUMN: Plan Choice & Stripe Payment */}
-        <div className="lg:col-span-7 space-y-8 order-2 lg:order-1">
-          {/* 1. Choose Purchase Option (Single Pack vs Unlimited Monthly) */}
-          <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-sm border border-slate-100 space-y-5">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
-                Step 1 • Select Your Package
-              </span>
-              <h2 className="text-xl font-black text-slate-900">
-                Flat Price - All {guests} Cast Guests Included
-              </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* LEFT COLUMN: Compact Value Header + Live Stripe Payment Element */}
+        <div className="lg:col-span-7 space-y-6 order-2 lg:order-1">
+          {/* Compact Flat-Price Value Banner */}
+          <div className="bg-white p-5 sm:p-6 rounded-[1.75rem] shadow-sm border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink">
+                  One-Time Package
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                  ✓ Guests Pay $0
+                </span>
+              </div>
+              <h1 className="text-lg sm:text-xl font-black text-slate-900">
+                {mysteryTitle} — All {guests} Suspect Roles Included
+              </h1>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Includes {guests} personalized suspect booklets, audio wiretaps &amp; text clues, 6-digit Kahoot live lobby, and both Party Mode &amp; Solo/Duo Case File play.
+              </p>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Single Mystery Option */}
-              <button
-                type="button"
-                onClick={() => setSelectedPlan('single')}
-                className={`p-5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedPlan === 'single'
-                    ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-slate-900 text-white">
-                      Single Event
-                    </span>
-                    <span className="text-2xl font-black text-slate-900">
-                      {formatCurrency(singlePackPrice, activeCurrency, locale)}
-                    </span>
-                  </div>
-                  <h3 className="text-base font-black text-slate-900 mb-1">{mysteryTitle}</h3>
-                  <p className="text-xs text-slate-500 font-medium leading-snug">
-                    Lifetime access to this mystery, {guests} personalized guest roles, 6-digit Kahoot lobby &amp; printable kit.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-black text-emerald-600 uppercase tracking-wider">
-                  <span>✓ Full AI Personalization Included</span>
-                  <span>One-Time</span>
-                </div>
-              </button>
-
-              {/* Unlimited Monthly Pass Option */}
-              <button
-                type="button"
-                onClick={() => setSelectedPlan('subscribe')}
-                className={`p-5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedPlan === 'subscribe'
-                    ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-brand-pink text-white">
-                      Unlimited Pass
-                    </span>
-                    <div className="text-right">
-                      <span className="text-2xl font-black text-slate-900">
-                        {formatCurrency(subscribePrice, activeCurrency, locale)}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">/mo</span>
-                    </div>
-                  </div>
-                  <h3 className="text-base font-black text-slate-900 mb-1">All Mysteries + 1 Monthly Gift Pass</h3>
-                  <p className="text-xs text-slate-500 font-medium leading-snug">
-                    Unlocks <strong>{mysteryTitle}</strong> tonight, unlimited access to every mystery in our catalog, plus <strong>1 Free Monthly Gift Pass</strong> to send a mystery to a friend every month.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-black text-brand-pink uppercase tracking-wider">
-                  <span>✓ Up to 16 Players + 1 Gift Pass/Mo</span>
-                  <span>Cancel Anytime</span>
-                </div>
-              </button>
+            <div className="sm:text-right shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Flat Group Total
+              </span>
+              <span className="text-3xl font-black tracking-tight text-slate-900">
+                {formattedTotal}
+              </span>
+              <span className="block text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                Lifetime Access
+              </span>
             </div>
           </div>
 
-          {/* 2. Stripe Payment Box */}
+          {/* Stripe Payment Box */}
           <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-sm border border-slate-100 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
-                  Step 2 • Secure Payment
+                  Secure Instant Checkout
                 </span>
                 <h2 className="text-xl font-black text-slate-900">Complete Your Order</h2>
               </div>
@@ -433,16 +385,19 @@ export default function CheckoutClient({
                   />
                 </Elements>
 
-                <div className="pt-2 text-center">
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400 font-bold border-t border-slate-100">
+                  <span>
+                    🔒 Instant unlock • Swap or edit your cast anytime before party night
+                  </span>
                   <button
                     type="button"
                     disabled={isRedirectingHosted}
                     onClick={handleHostedStripeCheckout}
-                    className="text-xs font-bold text-slate-400 hover:text-brand-pink underline transition-colors cursor-pointer"
+                    className="text-slate-400 hover:text-brand-pink underline transition-colors cursor-pointer shrink-0"
                   >
                     {isRedirectingHosted
-                      ? 'Redirecting to Stripe Checkout...'
-                      : 'Prefer Stripe Hosted Checkout page? Click here ↗'}
+                      ? 'Opening Stripe Checkout...'
+                      : 'Or pay on Stripe Hosted Checkout ↗'}
                   </button>
                 </div>
               </div>
@@ -550,9 +505,9 @@ export default function CheckoutClient({
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Order Summary, Promo Code & Cast Preview */}
+        {/* RIGHT COLUMN: Order Summary, Collapsible Promo Code & Cast Preview */}
         <div className="lg:col-span-5 order-1 lg:order-2">
-          <div className="sticky top-8 bg-[#070b13] text-white p-8 rounded-[2.25rem] border border-white/10 shadow-2xl space-y-6">
+          <div className="sticky top-8 bg-[#070b13] text-white p-7 sm:p-8 rounded-[2.25rem] border border-white/10 shadow-2xl space-y-6">
             <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
@@ -562,7 +517,7 @@ export default function CheckoutClient({
                 <p className="text-xs text-slate-400 font-bold mt-1">{tierLabel}</p>
               </div>
               <span className="px-3 py-1 rounded-full bg-white/10 text-[10px] font-black uppercase tracking-widest text-white shrink-0">
-                {guests} Guests
+                {guests} Suspects
               </span>
             </div>
 
@@ -571,7 +526,7 @@ export default function CheckoutClient({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Tonight&apos;s Cast Lineup ({castMembers.length})
+                    Active Suspect Lineup ({castMembers.length})
                   </span>
                   <Link
                     href={`/${locale}/mysteries/${targetSlug}/cast`}
@@ -581,54 +536,75 @@ export default function CheckoutClient({
                   </Link>
                 </div>
                 <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
-                  {castMembers.map((cm) => (
-                    <div
-                      key={cm.characterId}
-                      className="px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-2 text-xs"
-                    >
-                      <span className="font-black text-white truncate">{cm.guestName}</span>
-                      <span
-                        className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
-                          cm.isVictim
-                            ? 'bg-brand-pink text-white'
-                            : 'bg-white/10 text-slate-300'
-                        }`}
+                  {castMembers.map((cm) => {
+                    const hasCustomName =
+                      cm.guestName &&
+                      cm.guestName.trim().toLowerCase() !== cm.roleTitle.trim().toLowerCase()
+                    return (
+                      <div
+                        key={cm.characterId}
+                        className="px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-2 text-xs"
                       >
-                        {cm.isVictim ? `💀 ${cm.roleTitle}` : cm.roleTitle}
-                      </span>
-                    </div>
-                  ))}
+                        <span className="font-black text-white truncate">
+                          {hasCustomName ? cm.guestName : cm.roleTitle}
+                        </span>
+                        <span
+                          className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                            cm.isVictim
+                              ? 'bg-brand-pink text-white'
+                              : 'bg-white/10 text-slate-300'
+                          }`}
+                        >
+                          {cm.isVictim
+                            ? `💀 ${hasCustomName ? cm.roleTitle : 'The Victim'}`
+                            : hasCustomName
+                            ? cm.roleTitle
+                            : 'Suspect Role'}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Promo Code Input */}
-            <div className="border-t border-white/10 pt-5 space-y-2">
-              <form onSubmit={handleApplyPromo} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={promoInput}
-                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                  placeholder="Promo code"
-                  className="flex-1 bg-white/5 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-pink"
-                />
-                {appliedPromoCode ? (
-                  <button
-                    type="button"
-                    onClick={handleClearPromo}
-                    className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-black uppercase tracking-wider text-slate-300 transition-colors cursor-pointer"
-                  >
-                    Clear
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-brand-pink hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
-                  >
-                    Apply
-                  </button>
-                )}
-              </form>
+            {/* Collapsible Promo Code Input */}
+            <div className="border-t border-white/10 pt-4 space-y-2">
+              {!showPromoBox && !appliedPromoCode && discountAmount === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPromoBox(true)}
+                  className="text-[11px] font-bold text-slate-400 hover:text-brand-pink transition-colors cursor-pointer"
+                >
+                  + Have a promo or gift code?
+                </button>
+              ) : (
+                <form onSubmit={handleApplyPromo} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={promoInput}
+                    onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                    placeholder="Promo or gift code"
+                    className="flex-1 bg-white/5 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-pink"
+                  />
+                  {appliedPromoCode ? (
+                    <button
+                      type="button"
+                      onClick={handleClearPromo}
+                      className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-black uppercase tracking-wider text-slate-300 transition-colors cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      className="px-4 py-2.5 rounded-xl bg-brand-pink hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                    >
+                      Apply
+                    </button>
+                  )}
+                </form>
+              )}
               {promoError && (
                 <p className="text-[11px] font-bold text-red-400">{promoError}</p>
               )}
@@ -643,18 +619,20 @@ export default function CheckoutClient({
             <div className="space-y-3 border-t border-white/10 pt-5 text-sm">
               <div className="flex justify-between items-center font-bold text-slate-200">
                 <span>
-                  {selectedPlan === 'subscribe'
-                    ? 'Unlimited Monthly Pass'
-                    : `${initialTier.charAt(0).toUpperCase() + initialTier.slice(1)} Mystery Pack`}
+                  {initialTier.charAt(0).toUpperCase() + initialTier.slice(1)} Mystery Package
                 </span>
                 <span>{formattedSubtotal}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold text-emerald-400">
-                <span>Personalized Cast ({guests} Players)</span>
+                <span>Personalized Cast ({guests} Suspects)</span>
                 <span>Included ($0)</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold text-emerald-400">
                 <span>6-Digit Kahoot Game PIN &amp; Live Lobby</span>
+                <span>Included</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-bold text-emerald-400">
+                <span>Party Mode + Solo/Duo Case File Mode</span>
                 <span>Included</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold text-emerald-400">
@@ -673,7 +651,7 @@ export default function CheckoutClient({
             <div className="border-t border-white/15 pt-5 flex justify-between items-end">
               <div>
                 <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  {selectedPlan === 'subscribe' ? 'Total Due Today (Monthly)' : 'Flat One-Time Total'}
+                  Flat One-Time Total
                 </span>
                 <span className="text-xs text-slate-400 font-medium">
                   Ready in ~20 mins • We&apos;ll email you when ready
