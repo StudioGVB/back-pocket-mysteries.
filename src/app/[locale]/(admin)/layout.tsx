@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { requireAdminOrRedirect } from '@/utils/admin-auth';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
   robots: {
@@ -38,6 +39,7 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
+      <Toaster richColors position="top-right" />
 
       {/* Main Content */}
       <main className="flex-grow ml-64 p-8">

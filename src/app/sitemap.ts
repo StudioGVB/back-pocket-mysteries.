@@ -1,20 +1,20 @@
 import { MetadataRoute } from 'next'
 import { i18n } from '@/lib/i18n-config'
-import { blogPosts } from '@/data/blog-posts'
+import { getPublishedBlogPosts } from '@/lib/blog-repository'
 import { competitors } from '@/data/competitors'
 
 import { ACTIVE_MYSTERIES } from '@/data/active-mysteries'
+import { OCCASION_SEO_PAGES } from '@/data/occasion-seo-pages'
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://backpocketmysteries.com'
 
-export const dynamic = 'force-static'
-
 const themeSlugs = ACTIVE_MYSTERIES.map((m) => m.slug)
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const locales = i18n.locales
   const lastModified = new Date()
   const changeFrequency = 'weekly' as const
+  const publishedBlogs = await getPublishedBlogPosts()
 
   // Base static paths
   const staticPaths = [
@@ -40,7 +40,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
         url: `${baseUrl}/${locale}${path}`,
         lastModified,
         changeFrequency,
-        priority: path === '' ? 1.0 : 0.8
+        priority: path === '' ? 1.0 : 0.85
+      })
+    })
+  })
+
+  // Add occasion SEO landing pages
+  OCCASION_SEO_PAGES.forEach((occ) => {
+    locales.forEach((locale) => {
+      sitemapEntries.push({
+        url: `${baseUrl}/${locale}/occasions/${occ.slug}`,
+        lastModified,
+        changeFrequency,
+        priority: 0.85
       })
     })
   })
@@ -52,17 +64,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
         url: `${baseUrl}/${locale}/themes/${slug}`,
         lastModified,
         changeFrequency,
-        priority: 0.8
+        priority: 0.85
       })
     })
   })
 
-  // Add blog posts paths
-  blogPosts.forEach((post) => {
+  // Add blog posts paths (excludes drafts and future-dated scheduled posts until publish_date <= now())
+  publishedBlogs.forEach((post) => {
     locales.forEach((locale) => {
       sitemapEntries.push({
         url: `${baseUrl}/${locale}/blog/${post.slug}`,
-        lastModified: new Date(post.date),
+        lastModified: new Date(post.publishDateIso || post.date),
         changeFrequency,
         priority: 0.7
       })

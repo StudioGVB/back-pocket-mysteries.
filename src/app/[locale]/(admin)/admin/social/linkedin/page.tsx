@@ -1,0 +1,549 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
+import { LinkedinIcon as Linkedin } from "@/components/icons/SocialIcons";
+import {
+  Search,
+  Calendar,
+  ExternalLink,
+  Copy,
+  Clock,
+  Loader2,
+  Check,
+  FileText,
+  Building2,
+  CheckCircle2,
+  Square,
+  ArrowLeft,
+} from "lucide-react";
+import { format } from "date-fns";
+import Link from "next/link";
+
+interface SocialPostItem {
+  id: string;
+  brief: string;
+  status: string;
+  scheduled_at: string | null;
+  posted_at: string | null;
+  created_at: string;
+  slide_content: {
+    postCopy?: string;
+    linkUrl?: string;
+    slidesCopy?: string;
+  } | null;
+  caption_data?: {
+    caption?: string;
+    hashtags?: string[];
+    media_urls?: string[];
+    post_url?: string;
+    engagement_data?: any;
+  } | null;
+}
+
+export default function LinkedInManagementPage() {
+  const supabase = useMemo(() => createClient() as any, []);
+  const [posts, setPosts] = useState<SocialPostItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "to_schedule" | "scheduled">("all");
+
+  const fetchLinkedInPosts = async () => {
+    try {
+      setLoading(true);
+      const { data: postsData, error: postsError } = await supabase
+        .from("social_posts")
+        .select("*")
+        .order("scheduled_at", { ascending: true, nullsFirst: false });
+
+      if (postsError) throw postsError;
+
+      const { data: captionsData } = await supabase
+        .from("social_post_captions")
+        .select("*")
+        .eq("platform", "linkedin");
+
+      const captionMap = new Map<string, any>();
+      (captionsData || []).forEach((c: any) => captionMap.set(c.post_id, c));
+
+      const merged = (postsData || []).map((p: any) => ({
+        ...p,
+        caption_data: captionMap.get(p.id) || null,
+      }));
+
+      setPosts(merged);
+    } catch (err) {
+      console.error("Error loading LinkedIn posts:", err);
+      toast.error("Failed to load LinkedIn posts");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLinkedInPosts();
+  }, []);
+
+  const handleCopyText = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.success("Post copy copied to clipboard!");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleToggleScheduled = async (
+    postId: string,
+    isCurrentlyScheduled: boolean,
+    cleanCopy: string = "",
+    linkUrl: string = ""
+  ) => {
+    try {
+      if (isCurrentlyScheduled) {
+        const newStatus = "draft";
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, status: newStatus } : p))
+        );
+        const { error } = await supabase
+          .from("social_posts")
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq("id", postId);
+        if (error) throw error;
+        toast.info("Moved back to To Schedule list.");
+      } else {
+        const post = posts.find((p) => p.id === postId);
+        if (!post) return;
+
+        const loadingToast = toast.loading("Sending to Buffer...");
+
+        const response = await fetch("/api/admin/buffer/schedule", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            postId,
+            platform: "linkedin",
+            text: cleanCopy,
+            linkUrl: linkUrl,
+            scheduledAt: post.scheduled_at,
+          }),
+        });
+
+        const result = await response.json();
+        toast.dismiss(loadingToast);
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to schedule with Buffer");
+        }
+
+        await supabase
+          .from("social_posts")
+          .update({ status: "scheduled", updated_at: new Date().toISOString() })
+          .eq("id", postId);
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, status: "scheduled" } : p))
+        );
+        toast.success(result.message || "Sent to Buffer successfully! Marked as scheduled.");
+      }
+    } catch (err: any) {
+      console.error("Failed to update status:", err);
+      toast.error(err.message || "Failed to send to Buffer");
+      fetchLinkedInPosts();
+    }
+  };
+
+  const toSchedulePosts = useMemo(() => {
+    return posts.filter((p) => p.status === "draft");
+  }, [posts]);
+
+  const scheduledDonePosts = useMemo(() => {
+    return posts.filter(
+      (p) => p.status === "scheduled" || p.status === "posted" || p.status === "published"
+    );
+  }, [posts]);
+
+  const filterBySearch = (list: SocialPostItem[]) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return list;
+    return list.filter(
+      (p) =>
+        p.brief.toLowerCase().includes(q) ||
+        (p.slide_content?.postCopy && p.slide_content.postCopy.toLowerCase().includes(q)) ||
+        (p.caption_data?.caption && p.caption_data.caption.toLowerCase().includes(q))
+    );
+  };
+
+  const filteredToSchedule = filterBySearch(toSchedulePosts);
+  const filteredScheduledDone = filterBySearch(scheduledDonePosts);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <Link
+            href="/admin/social"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-brand-dark mb-2"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to Campaign Calendar
+          </Link>
+          <h1 className="text-3xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-2">
+            LinkedIn Posts &amp; <span className="text-[#0A66C2] italic">Performance</span>
+          </h1>
+          <p className="text-gray-500 text-xs font-bold">
+            Review long-form LinkedIn updates, copy text, and push to Buffer when ready
+          </p>
+        </div>
+      </div>
+
+      {/* Metrics Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-amber-500/30 p-4 flex items-center gap-3 shadow-xs">
+          <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-600">
+            <Clock className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-semibold">To Schedule</p>
+            <p className="text-2xl font-black text-amber-600">{toSchedulePosts.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-emerald-500/30 p-4 flex items-center gap-3 shadow-xs">
+          <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-600">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-semibold">Scheduled in Buffer</p>
+            <p className="text-2xl font-black text-emerald-600">{scheduledDonePosts.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-3 shadow-xs">
+          <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-600">
+            <Building2 className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-semibold">Target Channel</p>
+            <p className="text-base font-black text-brand-dark">LinkedIn Company</p>
+            <p className="text-[11px] text-gray-500">Back Pocket Mysteries</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-3 shadow-xs">
+          <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-600">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-semibold">Format</p>
+            <p className="text-base font-black text-brand-dark">600–700 Words</p>
+            <p className="text-[11px] text-gray-500">Link Preview Card (No Photo)</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Tabs & Search */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("all")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+              activeTab === "all"
+                ? "bg-brand-dark text-white"
+                : "text-gray-600 hover:text-brand-dark"
+            }`}
+          >
+            All ({posts.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("to_schedule")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "to_schedule"
+                ? "bg-brand-dark text-white"
+                : "text-gray-600 hover:text-brand-dark"
+            }`}
+          >
+            <Clock className="h-3.5 w-3.5 text-amber-500" />
+            To Schedule ({toSchedulePosts.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("scheduled")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "scheduled"
+                ? "bg-brand-dark text-white"
+                : "text-gray-600 hover:text-brand-dark"
+            }`}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            Scheduled / Posted ({scheduledDonePosts.length})
+          </button>
+        </div>
+
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search LinkedIn post copy..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-brand-pink"
+          />
+        </div>
+      </div>
+
+      {/* Posts Section */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12 border border-gray-200 rounded-2xl bg-white">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-pink mr-2" />
+          <span className="text-sm text-gray-500 font-semibold">Loading LinkedIn posts...</span>
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-200 text-center py-12 p-6">
+          <Linkedin className="h-10 w-10 text-[#0A66C2] mx-auto mb-3 opacity-60" />
+          <h3 className="text-lg font-bold mb-1">No LinkedIn posts found</h3>
+          <p className="text-sm text-gray-500 max-w-sm mx-auto">
+            No LinkedIn posts have been queued yet. Run the batch content script to populate drafts.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {/* SECTION 1: TO SCHEDULE */}
+          {(activeTab === "all" || activeTab === "to_schedule") && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-amber-500" />
+                  <h2 className="font-bold text-base text-brand-dark flex items-center gap-2">
+                    To Schedule
+                    <span className="px-2 py-0.5 rounded-full text-xs border border-amber-500/50 text-amber-700 bg-amber-50">
+                      {filteredToSchedule.length}
+                    </span>
+                  </h2>
+                </div>
+                <span className="text-xs text-gray-500 font-medium">
+                  Click Mark Scheduled to push to Buffer and move down
+                </span>
+              </div>
+
+              {filteredToSchedule.length === 0 ? (
+                <div className="p-6 border border-gray-200 rounded-2xl border-dashed bg-amber-50/20 text-center">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2 opacity-80" />
+                  <p className="text-sm font-bold text-brand-dark">
+                    All caught up! No posts waiting to be scheduled.
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    All posts are currently marked as scheduled in Buffer.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredToSchedule.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      copiedId={copiedId}
+                      onCopy={handleCopyText}
+                      onToggleScheduled={handleToggleScheduled}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SECTION 2: SCHEDULED / POSTED */}
+          {(activeTab === "all" || activeTab === "scheduled") && (
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-emerald-500" />
+                  <h2 className="font-bold text-base text-brand-dark flex items-center gap-2">
+                    Scheduled in Buffer / Posted
+                    <span className="px-2 py-0.5 rounded-full text-xs border border-emerald-500/50 text-emerald-700 bg-emerald-50">
+                      {filteredScheduledDone.length}
+                    </span>
+                  </h2>
+                </div>
+                <span className="text-xs text-gray-500 font-medium">
+                  Scheduled posts ready for automatic publishing
+                </span>
+              </div>
+
+              {filteredScheduledDone.length === 0 ? (
+                <div className="p-6 border border-gray-200 rounded-2xl border-dashed text-center bg-white">
+                  <Clock className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm font-bold text-brand-dark">No scheduled posts yet.</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tick a post above once you have reviewed it to push it to Buffer.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredScheduledDone.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      copiedId={copiedId}
+                      onCopy={handleCopyText}
+                      onToggleScheduled={handleToggleScheduled}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface PostCardProps {
+  post: SocialPostItem;
+  copiedId: string | null;
+  onCopy: (text: string, id: string) => void;
+  onToggleScheduled: (
+    postId: string,
+    isScheduled: boolean,
+    cleanCopy?: string,
+    linkUrl?: string
+  ) => void;
+}
+
+function PostCard({ post, copiedId, onCopy, onToggleScheduled }: PostCardProps) {
+  const isScheduledOrPosted =
+    post.status === "scheduled" || post.status === "posted" || post.status === "published";
+  const isDraft = post.status === "draft";
+  const rawCopy = post.caption_data?.caption || post.slide_content?.postCopy || post.brief;
+  const linkUrl = post.slide_content?.linkUrl || post.caption_data?.post_url || "";
+  const hashtags = post.caption_data?.hashtags || [];
+
+  let fullFormattedCopy = rawCopy.replaceAll("—", ", ").trim();
+  const hashtagString = hashtags.map((h: string) => (h.startsWith("#") ? h : `#${h}`)).join(" ");
+  if (hashtagString && !fullFormattedCopy.includes(hashtagString)) {
+    if (linkUrl && !fullFormattedCopy.includes(linkUrl)) {
+      fullFormattedCopy += `\n\nRead the full article:\n${linkUrl}`;
+    }
+    fullFormattedCopy += `\n\n${hashtagString}`;
+  }
+
+  return (
+    <div
+      className={`rounded-2xl overflow-hidden transition-all border p-5 ${
+        isScheduledOrPosted
+          ? "bg-white/80 border-emerald-500/25"
+          : "bg-white border-amber-500/35 shadow-xs"
+      }`}
+    >
+      <div className="flex-1 space-y-3 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  isDraft
+                    ? "border border-amber-500 text-amber-800 bg-amber-50"
+                    : post.status === "scheduled"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-blue-600 text-white"
+                }`}
+              >
+                {isDraft
+                  ? "To Schedule"
+                  : post.status === "scheduled"
+                  ? "Scheduled in Buffer"
+                  : "Published"}
+              </span>
+
+              {post.scheduled_at && !isDraft && (
+                <span className="text-xs text-gray-500 flex items-center gap-1 font-semibold">
+                  <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                  Scheduled: {format(new Date(post.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}
+                </span>
+              )}
+            </div>
+
+            {post.scheduled_at && isDraft && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-400/50 text-amber-950 font-bold text-sm mb-2">
+                <Calendar className="h-4 w-4 text-amber-600 shrink-0" />
+                <span>
+                  Target Date:{" "}
+                  <span className="text-amber-900 font-extrabold">
+                    {format(new Date(post.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}
+                  </span>
+                </span>
+              </div>
+            )}
+
+            <h3 className="font-bold text-base sm:text-lg leading-snug text-brand-dark">
+              {post.brief}
+            </h3>
+          </div>
+
+          {/* Checkbox Tick Button & Copy Button */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <button
+              type="button"
+              onClick={() =>
+                onToggleScheduled(post.id, isScheduledOrPosted, fullFormattedCopy, linkUrl)
+              }
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all shadow-xs ${
+                isScheduledOrPosted
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                  : "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100"
+              }`}
+            >
+              {isScheduledOrPosted ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>Scheduled</span>
+                </>
+              ) : (
+                <>
+                  <Square className="h-4 w-4 text-amber-600" />
+                  <span>Mark Scheduled</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onCopy(fullFormattedCopy, post.id)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 shadow-xs cursor-pointer"
+            >
+              {copiedId === post.id ? (
+                <Check className="h-3.5 w-3.5 text-green-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+              {copiedId === post.id ? "Copied!" : "Copy Copy"}
+            </button>
+          </div>
+        </div>
+
+        {/* Copy preview */}
+        <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs font-mono whitespace-pre-line text-gray-800 max-h-48 overflow-y-auto leading-relaxed select-all">
+          {fullFormattedCopy}
+        </div>
+
+        {/* External Link */}
+        {linkUrl && (
+          <div className="flex justify-end pt-1">
+            <a
+              href={linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold text-brand-pink hover:underline flex items-center gap-1"
+            >
+              <ExternalLink className="h-3 w-3" />
+              {linkUrl}
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -122,9 +122,13 @@ export default async function MarketingLayout(props: {
             </div>
 
             <div>
-              <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">Compare</h4>
-              <ul className="space-y-4 text-sm font-bold text-gray-400">
-                <li><Link href={`/${locale}/compare`} className="hover:text-brand-pink transition-colors">All Alternatives</Link></li>
+              <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">Occasions &amp; Compare</h4>
+              <ul className="space-y-3.5 text-sm font-bold text-gray-400">
+                <li><Link href={`/${locale}/occasions/hen-party-bachelorette-murder-mystery-games`} className="hover:text-brand-pink transition-colors">Hen Do &amp; Bachelorette</Link></li>
+                <li><Link href={`/${locale}/occasions/birthday-murder-mystery-party-games`} className="hover:text-brand-pink transition-colors">Birthday Murder Mystery</Link></li>
+                <li><Link href={`/${locale}/occasions/dinner-party-murder-mystery-games-for-adults`} className="hover:text-brand-pink transition-colors">Adult Dinner Party Games</Link></li>
+                <li><Link href={`/${locale}/occasions/small-group-murder-mystery-games-4-6-8-players`} className="hover:text-brand-pink transition-colors">Small Groups (4–8 Players)</Link></li>
+                <li><Link href={`/${locale}/compare`} className="hover:text-brand-pink transition-colors">All Brand Comparisons</Link></li>
                 <li><Link href={`/${locale}/compare/hunt-a-killer`} className="hover:text-brand-pink transition-colors">Hunt a Killer Alternative</Link></li>
                 <li><Link href={`/${locale}/compare/my-mystery-party`} className="hover:text-brand-pink transition-colors">My Mystery Party Alternative</Link></li>
                 <li><Link href={`/${locale}/compare/night-of-mystery`} className="hover:text-brand-pink transition-colors">Night of Mystery Alternative</Link></li>

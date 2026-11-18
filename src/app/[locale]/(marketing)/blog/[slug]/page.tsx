@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import { blogPosts } from '@/data/blog-posts';
+import { getBlogPostBySlug, getPublishedBlogPosts } from '@/lib/blog-repository';
 import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 
 export async function generateStaticParams() {
@@ -16,7 +17,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata(props: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const params = await props.params;
-  const post = blogPosts.find((p) => p.slug === params.slug);
+  const post = await getBlogPostBySlug(params.slug);
   
   if (!post) return {};
   
@@ -24,12 +25,18 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `${post.seo.title} | Back Pocket Mysteries`,
     description: post.seo.description,
     keywords: post.seo.keywords,
+    robots: post.noIndex
+      ? {
+          index: false,
+          follow: !post.noFollow,
+        }
+      : undefined,
     alternates: {
-      canonical: `https://backpocketmysteries.com/en/blog/${params.slug}`,
+      canonical: post.canonicalUrl || `https://backpocketmysteries.com/en/blog/${params.slug}`,
     },
     openGraph: {
-      title: post.seo.title,
-      description: post.seo.description,
+      title: post.ogTitle || post.seo.title,
+      description: post.ogDescription || post.seo.description,
       images: [post.image],
       type: 'article',
     }
@@ -41,14 +48,17 @@ export default async function BlogPostPage(props: {
 }) {
   const params = await props.params;
   const locale = params.locale;
-  const post = blogPosts.find((p) => p.slug === params.slug);
-  const dict = await getDictionary(locale as Locale);
+  const [post, publishedPosts, dict] = await Promise.all([
+    getBlogPostBySlug(params.slug),
+    getPublishedBlogPosts(),
+    getDictionary(locale as Locale),
+  ]);
 
   if (!post) {
     notFound();
   }
 
-  const relatedPosts = blogPosts
+  const relatedPosts = publishedPosts
     .filter((p) => p.slug !== post.slug)
     .slice(0, 2);
 

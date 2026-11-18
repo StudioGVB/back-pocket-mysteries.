@@ -15,11 +15,31 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   const dict = await getDictionary(locale as Locale);
   
   return {
-    title: dict.home.hero.title,
-    description: dict.home.hero.subtitle,
+    title: 'Custom Murder Mystery Party Games for Adults (Printable & Digital) | Back Pocket Mysteries',
+    description:
+      'Host a custom murder mystery party built around your actual friends. Personalised character booklets, inside jokes, printable evidence, and voice-acted audio clues ready in ~30 minutes for 4–20+ players.',
+    keywords: [
+      'murder mystery party game',
+      'custom murder mystery game',
+      'murder mystery dinner party games for adults',
+      'printable murder mystery game',
+      'hen party murder mystery game',
+      'bachelorette murder mystery party',
+      'birthday murder mystery party',
+      'small group murder mystery game 4 to 8 players',
+      'personalized murder mystery kit',
+    ],
     alternates: {
       canonical: `https://backpocketmysteries.com/en`,
-    }
+    },
+    openGraph: {
+      title: 'Custom Murder Mystery Party Games for Adults | Back Pocket Mysteries',
+      description: dict.home.hero.subtitle,
+      url: 'https://backpocketmysteries.com/en',
+      siteName: 'Back Pocket Mysteries',
+      type: 'website',
+      images: [{ url: '/og-image.png' }],
+    },
   }
 }
 
@@ -31,10 +51,69 @@ export default async function HomePage(props: {
   const dict = await getDictionary(locale as Locale);
   const featuredMystery = ACTIVE_MYSTERIES[0];
 
-  // Currency is now handled client-side in PriceDisplay to allow static rendering
+  const homeStructuredData = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: 'Back Pocket Custom Murder Mystery Party Game Pack',
+      description:
+        'Personalised murder mystery dinner party kit for 4 to 20+ players, tailored to your real friends with printable character booklets, crime scene evidence, and interactive audio briefings.',
+      brand: {
+        '@type': 'Brand',
+        name: 'Back Pocket Mysteries',
+      },
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'GBP',
+        lowPrice: '20.00',
+        highPrice: '45.00',
+        offerCount: '3',
+        availability: 'https://schema.org/InStock',
+      },
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: '4.9',
+        reviewCount: '48',
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'How does a custom murder mystery party game work?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'You pick a theme (like Love On The Rocks or Cirque du Crime), enter your guests’ names, traits, and inside jokes, and our AI story engine generates custom character booklets, alibis, crime scene clues, and an interactive Playroom in ~30 minutes.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Can the host play without knowing who the killer is?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes! Every Back Pocket Mystery includes Spoiler-Free Host Mode so the host can play as a full suspect and guess the murderer right alongside their guests.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'How many players can play a Back Pocket Murder Mystery?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Our mysteries dynamically scale for small groups of 4–6 players, dinner parties of 8–12 players, and large parties of up to 20+ players.',
+          },
+        },
+      ],
+    },
+  ];
 
   return (
     <div className="relative overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }}
+      />
       <main className="flex-grow">
       <LightsOut />
       {/* Hero Section */}
@@ -288,7 +367,7 @@ export default async function HomePage(props: {
         </div>
       </section>
 
-      {/* Occasions Section */}
+      {/* Occasions Section (Linked to Dedicated Occasion SEO Landing Pages) */}
       <section className="py-16 lg:py-24 bg-brand-gray">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16 lg:mb-20">
@@ -298,20 +377,59 @@ export default async function HomePage(props: {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: dict.home.occasions.items.birthdays.title, emoji: '🎂', desc: dict.home.occasions.items.birthdays.desc },
-              { title: dict.home.occasions.items.hens.title, emoji: '💍', desc: dict.home.occasions.items.hens.desc },
-              { title: dict.home.occasions.items.dinner.title, emoji: '🍷', desc: dict.home.occasions.items.dinner.desc },
-              { title: dict.home.occasions.items.corporate.title, emoji: '💼', desc: dict.home.occasions.items.corporate.desc },
-              { title: dict.home.occasions.items.friends.title, emoji: '🎲', desc: dict.home.occasions.items.friends.desc },
-              { title: dict.home.occasions.items.engagement.title, emoji: '🥂', desc: dict.home.occasions.items.engagement.desc },
+              {
+                title: dict.home.occasions.items.birthdays.title,
+                emoji: '🎂',
+                desc: dict.home.occasions.items.birthdays.desc,
+                href: `/${locale}/occasions/birthday-murder-mystery-party-games`,
+              },
+              {
+                title: dict.home.occasions.items.hens.title,
+                emoji: '💍',
+                desc: dict.home.occasions.items.hens.desc,
+                href: `/${locale}/occasions/hen-party-bachelorette-murder-mystery-games`,
+              },
+              {
+                title: dict.home.occasions.items.dinner.title,
+                emoji: '🍷',
+                desc: dict.home.occasions.items.dinner.desc,
+                href: `/${locale}/occasions/dinner-party-murder-mystery-games-for-adults`,
+              },
+              {
+                title: dict.home.occasions.items.corporate.title,
+                emoji: '💼',
+                desc: dict.home.occasions.items.corporate.desc,
+                href: `/${locale}/custom-murder-mystery`,
+              },
+              {
+                title: dict.home.occasions.items.friends.title,
+                emoji: '🎲',
+                desc: dict.home.occasions.items.friends.desc,
+                href: `/${locale}/occasions/small-group-murder-mystery-games-4-6-8-players`,
+              },
+              {
+                title: dict.home.occasions.items.engagement.title,
+                emoji: '🥂',
+                desc: dict.home.occasions.items.engagement.desc,
+                href: `/${locale}/occasions/dinner-party-murder-mystery-games-for-adults`,
+              },
             ].map((occ, i) => (
-              <div key={i} className="card-branded p-8 lg:p-10 group hover:border-brand-pink">
+              <Link
+                key={i}
+                href={occ.href}
+                className="card-branded p-8 lg:p-10 group hover:border-brand-pink block"
+              >
                 <div className="text-4xl mb-6">{occ.emoji}</div>
-                <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight mb-3 group-hover:text-brand-pink transition-colors">{occ.title}</h3>
-                <p className="text-gray-500 font-semibold leading-relaxed">
+                <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight mb-3 group-hover:text-brand-pink transition-colors">
+                  {occ.title}
+                </h3>
+                <p className="text-gray-500 font-semibold leading-relaxed mb-4">
                   {occ.desc}
                 </p>
-              </div>
+                <span className="text-xs font-black uppercase tracking-widest text-brand-pink group-hover:underline">
+                  Explore Guide →
+                </span>
+              </Link>
             ))}
           </div>
         </div>
@@ -356,6 +474,72 @@ export default async function HomePage(props: {
               </tbody>
             </table>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Latest Murder Mystery Hosting Guides (Internal SEO Link Equity to Blog) */}
+      <section className="py-16 lg:py-24 bg-slate-50 border-t border-gray-100">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-brand-pink mb-2">
+                Hosting Tips &amp; Ideas
+              </p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight">
+                Murder Mystery Party <span className="text-brand-pink italic">Guides</span>
+              </h2>
+            </div>
+            <Link
+              href={`/${locale}/blog`}
+              className="text-xs font-black uppercase tracking-widest text-brand-pink hover:underline"
+            >
+              Read All Hosting Guides →
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                slug: 'diy-murder-mystery-party-guide',
+                tag: 'Step-by-Step Guide',
+                title: 'How to Host an Unforgettable DIY Murder Mystery Party at Home',
+                desc: 'From choosing your theme and assigning roles to food, lighting, and spoiler-free hosting tips.',
+              },
+              {
+                slug: 'viral-murder-mystery-themes-2026',
+                tag: 'Trending Themes',
+                title: '7 Viral Murder Mystery Party Themes for Your Next Dinner Party',
+                desc: 'Move beyond Colonel Mustard with modern Reality TV, dark circus, and high-society drama.',
+              },
+              {
+                slug: 'bachelorette-hen-party-murder-mystery-guide',
+                tag: 'Hen Do & Bachelorette',
+                title: 'The Ultimate Bachelorette & Hen Party Murder Mystery Guide',
+                desc: 'How to cast the Bride-to-Be and your whole group into a hilarious, customized mystery night.',
+              },
+            ].map((guide) => (
+              <Link
+                key={guide.slug}
+                href={`/${locale}/blog/${guide.slug}`}
+                className="bg-white rounded-[2rem] p-8 border border-gray-100 hover:border-brand-pink shadow-sm transition-all flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  <span className="inline-block px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                    {guide.tag}
+                  </span>
+                  <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight group-hover:text-brand-pink transition-colors">
+                    {guide.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                    {guide.desc}
+                  </p>
+                </div>
+                <span className="mt-6 text-xs font-black uppercase tracking-widest text-brand-pink group-hover:underline">
+                  Read Guide →
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>

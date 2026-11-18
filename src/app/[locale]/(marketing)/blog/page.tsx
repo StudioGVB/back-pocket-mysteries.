@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
-import { blogPosts } from '@/data/blog-posts';
+import { getPublishedBlogPosts } from '@/lib/blog-repository';
 import { NewsletterForm } from '@/components/marketing/NewsletterForm';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -25,9 +25,10 @@ export default async function BlogPage(props: { params: Promise<{ locale: string
   const params = await props.params;
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
+  const allPosts = await getPublishedBlogPosts();
 
-  const featuredPost = blogPosts[0]; // First post as featured
-  const otherPosts = blogPosts.slice(1);
+  const featuredPost = allPosts[0]; // First post as featured
+  const otherPosts = allPosts.slice(1);
 
   return (
     <div className="bg-white">
