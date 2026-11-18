@@ -14,6 +14,8 @@ import {
 } from '@/utils/hydration';
 import { resolveDisplayAvatarUrl } from '@/utils/avatar';
 import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
+import { GuestModal } from '@/components/account/GuestModal';
+import { saveGuestAction } from '@/app/actions/guests';
 
 export interface FriendRosterItem {
   id: string;
@@ -123,6 +125,7 @@ export function PackScreenerClient({
   const [xRayMode, setXRayMode] = useState<boolean>(false);
   const [showCastPanel, setShowCastPanel] = useState<boolean>(true);
   const [shuffleSeed, setShuffleSeed] = useState<number>(0);
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState<boolean>(false);
 
   const [friendAssignments, setFriendAssignments] = useState<Record<string, string>>(() =>
     buildDefaultFriendAssignments(rawCharacters, friendRoster, 0)
@@ -132,9 +135,12 @@ export function PackScreenerClient({
     rawCharacters.find((c) => !c.is_victim)?.id || rawCharacters[0]?.id || ''
   );
 
-  // Solo player notebook state: tag clues & record round guesses (persisted to localStorage per mystery)
+  // Solo player notebook state: tag clues, pin suspects, & record round guesses (persisted to localStorage per mystery)
   const [clueTags, setClueTags] = useState<Record<string, 'key' | 'red_herring' | 'alibi' | undefined>>({});
   const [clueNotes, setClueNotes] = useState<Record<string, string>>({});
+  const [clueSuspects, setClueSuspects] = useState<Record<string, string[]>>({});
+  const [tagFilter, setTagFilter] = useState<'all' | 'key' | 'alibi' | 'red_herring' | 'untagged'>('all');
+  const [notebookSortMode, setNotebookSortMode] = useState<'round' | 'timeline'>('round');
   const [guesses, setGuesses] = useState<Record<number, RoundGuess>>({
     1: { suspectId: '', motiveGuess: '' },
     2: { suspectId: '', motiveGuess: '' },
@@ -154,6 +160,11 @@ export function PackScreenerClient({
       if (savedNotes) {
         const parsed = JSON.parse(savedNotes);
         if (parsed && typeof parsed === 'object') setClueNotes(parsed);
+      }
+      const savedSuspects = window.localStorage.getItem(`bpm_clue_suspects_${mystery.id}`);
+      if (savedSuspects) {
+        const parsed = JSON.parse(savedSuspects);
+        if (parsed && typeof parsed === 'object') setClueSuspects(parsed);
       }
       const savedGuesses = window.localStorage.getItem(`bpm_round_guesses_${mystery.id}`);
       if (savedGuesses) {
@@ -190,6 +201,15 @@ export function PackScreenerClient({
   useEffect(() => {
     if (!notebookLoaded || typeof window === 'undefined' || !mystery?.id) return;
     try {
+      window.localStorage.setItem(`bpm_clue_suspects_${mystery.id}`, JSON.stringify(clueSuspects));
+    } catch {
+      // Non-fatal
+    }
+  }, [clueSuspects, notebookLoaded, mystery?.id]);
+
+  useEffect(() => {
+    if (!notebookLoaded || typeof window === 'undefined' || !mystery?.id) return;
+    try {
       window.localStorage.setItem(`bpm_round_guesses_${mystery.id}`, JSON.stringify(guesses));
     } catch {
       // Non-fatal
@@ -199,6 +219,7 @@ export function PackScreenerClient({
   const handleClearNotebook = useCallback(() => {
     setClueTags({});
     setClueNotes({});
+    setClueSuspects({});
     setGuesses({
       1: { suspectId: '', motiveGuess: '' },
       2: { suspectId: '', motiveGuess: '' },
@@ -207,9 +228,34 @@ export function PackScreenerClient({
     if (typeof window !== 'undefined' && mystery?.id) {
       window.localStorage.removeItem(`bpm_clue_tags_${mystery.id}`);
       window.localStorage.removeItem(`bpm_clue_notes_${mystery.id}`);
+      window.localStorage.removeItem(`bpm_clue_suspects_${mystery.id}`);
       window.localStorage.removeItem(`bpm_round_guesses_${mystery.id}`);
     }
   }, [mystery?.id]);
+
+  const toggleClueSuspect = useCallback((clueId: string, charId: string) => {
+    setClueSuspects((prev) => {
+      const current = prev[clueId] || [];
+      const exists = current.includes(charId);
+      const nextList = exists ? current.filter((id) => id !== charId) : [...current, charId];
+      return { ...prev, [clueId]: nextList };
+    });
+  }, []);
+
+  const extractClueTimestampInfo = useCallback((clue: any): { label: string | null; minutes: number } => {
+    const combined = `${clue?.title || ''} ${clue?.description || ''}`;
+    const match = combined.match(/\b(\d{1,2}):(\d{2})\s*([AP]M)\b/i);
+    if (!match) return { label: null, minutes: 99999 };
+    let hours = parseInt(match[1], 10);
+    const mins = parseInt(match[2], 10);
+    const mer = match[3].toUpperCase();
+    if (mer === 'PM' && hours < 12) hours += 12;
+    if (mer === 'AM' && hours === 12) hours = 0;
+    return {
+      label: `${match[1]}:${match[2]} ${mer}`,
+      minutes: hours * 60 + mins,
+    };
+  }, []);
 
   // Custom dropdown menu state ('suspect-1' | 'suspect-2' | 'suspect-3' | 'pov' | 'friend-<charId>' | null)
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -549,7 +595,7 @@ export function PackScreenerClient({
           />
         </div>
 
-        {/* Footer: Solo Player Scratchpad OR Admin X-Ray Notes */}
+        {/* Footer: Solo Player Scratchpad, Quick Deduction Chips, Suspect Pinning & Admin X-Ray Notes */}
         <div className="px-4 py-2.5 bg-slate-950/80 border-t border-slate-800/80 space-y-2">
           {xRayMode && cleanInternalNotes && (
             <div className="text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2 leading-relaxed">
@@ -568,6 +614,83 @@ export function PackScreenerClient({
             placeholder="Your detective note on this clue (e.g. 'Matches Shelf B lights at 7:52 PM')..."
             className="w-full bg-slate-900/90 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-brand-pink"
           />
+
+          {/* 1-Tap Quick Deduction Chips */}
+          <div className="flex flex-wrap items-center gap-1">
+            {[
+              '⏱️ Timeline Gap',
+              '💔 Affair Motive',
+              '💰 Money / Blackmail',
+              '🔪 Murder Weapon',
+              '🤥 Fake Alibi',
+            ].map((chip) => {
+              const curNote = clueNotes[clue.id] || '';
+              const isChipActive = curNote.includes(chip);
+              return (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() =>
+                    setClueNotes((prev) => {
+                      const existing = (prev[clue.id] || '').trim();
+                      if (existing.includes(chip)) {
+                        const cleaned = existing
+                          .replace(chip, '')
+                          .replace(/^\s*•\s*|\s*•\s*$/g, '')
+                          .replace(/\s*•\s*•\s*/g, ' • ')
+                          .trim();
+                        return { ...prev, [clue.id]: cleaned };
+                      }
+                      return {
+                        ...prev,
+                        [clue.id]: existing ? `${existing} • ${chip}` : chip,
+                      };
+                    })
+                  }
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                    isChipActive
+                      ? 'bg-brand-pink/25 text-brand-pink border border-brand-pink/50'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  {chip}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Pin Suspects to Clue */}
+          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-slate-900">
+            <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 mr-1">
+              📌 Pin Suspect:
+            </span>
+            {activeCharacters
+              .filter((c) => !c.is_victim)
+              .map((s) => {
+                const pinnedList = clueSuspects[clue.id] || [];
+                const isPinned = pinnedList.includes(s.id);
+                const shortLabel = s.assignedFriend?.name || s.displayRoleTitle || s.displayName;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => toggleClueSuspect(clue.id, s.id)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                      isPinned
+                        ? tag === 'alibi'
+                          ? 'bg-sky-400 text-slate-950 font-black'
+                          : tag === 'red_herring'
+                          ? 'bg-rose-500 text-white font-black'
+                          : 'bg-amber-400 text-slate-950 font-black'
+                        : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    {isPinned ? '✓ ' : ''}
+                    {shortLabel}
+                  </button>
+                );
+              })}
+          </div>
         </div>
       </div>
     );
@@ -580,13 +703,24 @@ export function PackScreenerClient({
     const isOpen = openDropdownId === dropdownKey;
     const selectedSuspect = suspectList.find((s) => s.id === currentGuess.suspectId);
 
-    // Collect all clues up through roundNum that the player tagged or wrote a note on
+    // Compute per-suspect linked Key clues & Alibi clues from the player's pinned clues up through roundNum
+    const suspectClueTallies: Record<
+      string,
+      { keyCount: number; alibiCount: number; decoyCount: number }
+    > = {};
+    for (const s of suspectList) {
+      suspectClueTallies[s.id] = { keyCount: 0, alibiCount: 0, decoyCount: 0 };
+    }
+
+    // Collect all clues up through roundNum that the player tagged, pinned a suspect to, or wrote a note on
     const annotatedEntries: Array<{
       clue: any;
       round: number;
       indexInRound: number;
       tag?: 'key' | 'red_herring' | 'alibi';
       note: string;
+      pinnedSuspectIds: string[];
+      timeInfo: { label: string | null; minutes: number };
     }> = [];
 
     for (let r = 1; r <= roundNum; r++) {
@@ -594,17 +728,32 @@ export function PackScreenerClient({
       rClues.forEach((c: any, idx: number) => {
         const t = clueTags[c.id];
         const n = (clueNotes[c.id] || '').trim();
-        if (t || n) {
+        const pinned = clueSuspects[c.id] || [];
+        for (const sId of pinned) {
+          if (suspectClueTallies[sId]) {
+            if (t === 'alibi') suspectClueTallies[sId].alibiCount++;
+            else if (t === 'red_herring') suspectClueTallies[sId].decoyCount++;
+            else suspectClueTallies[sId].keyCount++;
+          }
+        }
+        if (t || n || pinned.length > 0) {
           annotatedEntries.push({
             clue: c,
             round: r,
             indexInRound: idx + 1,
             tag: t,
             note: n,
+            pinnedSuspectIds: pinned,
+            timeInfo: extractClueTimestampInfo(c),
           });
         }
       });
     }
+
+    const sortedAnnotatedEntries =
+      notebookSortMode === 'timeline'
+        ? [...annotatedEntries].sort((a, b) => a.timeInfo.minutes - b.timeInfo.minutes)
+        : annotatedEntries;
 
     return (
       <div className="mt-8 rounded-2xl bg-slate-900 border border-brand-pink/30 p-6 text-white shadow-xl space-y-5">
@@ -638,35 +787,63 @@ export function PackScreenerClient({
           )}
         </div>
 
-        {/* Detective Notebook Summary Strip (Shows Tagged Clues & Notes to help formulate theory) */}
+        {/* Detective Notebook Summary Strip (Shows Tagged Clues, Timestamps & Notes to help formulate theory) */}
         <div className="rounded-xl bg-slate-950/90 border border-slate-800 p-4 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-amber-400">
-                📓 Your Detective Notebook ({annotatedEntries.length} Tagged / Noted)
+                📓 Your Detective Notebook ({annotatedEntries.length} Pinned)
               </span>
               <span className="text-[11px] text-slate-400">
-                Saved automatically • Use your tagged clues &amp; notes below to pick your suspect
+                Saved automatically • Sort by round or chronological crime timeline
               </span>
             </div>
-            {annotatedEntries.length > 0 && (
-              <button
-                type="button"
-                onClick={handleClearNotebook}
-                className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
-              >
-                Clear Notebook
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {annotatedEntries.length > 1 && (
+                <div className="flex items-center rounded-lg bg-slate-900 border border-slate-800 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setNotebookSortMode('round')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      notebookSortMode === 'round'
+                        ? 'bg-brand-pink text-white'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🔢 By Round
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNotebookSortMode('timeline')}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      notebookSortMode === 'timeline'
+                        ? 'bg-amber-400 text-slate-950'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    ⏱️ Crime Timeline
+                  </button>
+                </div>
+              )}
+              {annotatedEntries.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearNotebook}
+                  className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                >
+                  Clear Notebook
+                </button>
+              )}
+            </div>
           </div>
 
-          {annotatedEntries.length === 0 ? (
+          {sortedAnnotatedEntries.length === 0 ? (
             <p className="text-xs text-slate-500 italic">
-              Tip: Tag any clue card above as <strong className="text-amber-300">🔑 Key</strong>, <strong className="text-rose-300">🐟 Decoy</strong>, or <strong className="text-sky-300">🛡️ Alibi</strong>, or type a note on a clue card—your pinned deductions will collect right here for voting and final scoring!
+              Tip: Tag any clue card above as <strong className="text-amber-300">🔑 Key</strong>, <strong className="text-rose-300">🐟 Decoy</strong>, or <strong className="text-sky-300">🛡️ Alibi</strong>, pin a suspect, or tap a quick deduction chip—your pinned deductions will collect right here for voting and final scoring!
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
-              {annotatedEntries.map(({ clue: c, round, indexInRound, tag, note }) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
+              {sortedAnnotatedEntries.map(({ clue: c, round, indexInRound, tag, note, pinnedSuspectIds, timeInfo }) => {
                 const cTitle = hydrate(stripCustomerFacingTitle(c.title) || c.title);
                 return (
                   <div
@@ -683,6 +860,11 @@ export function PackScreenerClient({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
+                        {timeInfo.label && (
+                          <span className="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-black uppercase shrink-0">
+                            🕒 {timeInfo.label}
+                          </span>
+                        )}
                         <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
                           R{round} • #{indexInRound}
                         </span>
@@ -702,6 +884,23 @@ export function PackScreenerClient({
                         </span>
                       )}
                     </div>
+
+                    {pinnedSuspectIds.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1">
+                        {pinnedSuspectIds.map((sId) => {
+                          const sChar = getCharById(sId);
+                          if (!sChar) return null;
+                          return (
+                            <span
+                              key={sId}
+                              className="px-1.5 py-0.5 rounded bg-white/10 text-slate-200 text-[9px] font-bold"
+                            >
+                              👤 {sChar.assignedFriend?.name || sChar.displayName}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {note && (
                       <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10">
@@ -820,6 +1019,7 @@ export function PackScreenerClient({
                   const avatar = getPortraitUrl(s);
                   const guestLabel = s.assignedFriend?.name || s.displayName;
                   const roleLabel = s.assignedFriend ? s.displayRoleTitle : null;
+                  const tally = suspectClueTallies[s.id] || { keyCount: 0, alibiCount: 0, decoyCount: 0 };
 
                   return (
                     <button
@@ -850,7 +1050,7 @@ export function PackScreenerClient({
                             {(guestLabel || '?').charAt(0).toUpperCase()}
                           </span>
                         )}
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                           <span className="text-xs font-black text-white truncate">
                             {guestLabel}
                           </span>
@@ -863,6 +1063,16 @@ export function PackScreenerClient({
                               }`}
                             >
                               {roleLabel}
+                            </span>
+                          )}
+                          {tally.keyCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black uppercase shrink-0">
+                              🔑 {tally.keyCount} Key
+                            </span>
+                          )}
+                          {tally.alibiCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-sky-400/20 text-sky-300 border border-sky-400/40 text-[9px] font-black uppercase shrink-0">
+                              🛡️ {tally.alibiCount} Alibi
                             </span>
                           )}
                         </div>
@@ -941,6 +1151,14 @@ export function PackScreenerClient({
                 🔀 Shuffle Friends
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => setIsAddFriendOpen(true)}
+              className="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-brand-pink/20 border-brand-pink/50 text-brand-pink hover:bg-brand-pink hover:text-white transition-all cursor-pointer"
+            >
+              + Add Friend
+            </button>
 
             <button
               type="button"
@@ -1355,11 +1573,73 @@ export function PackScreenerClient({
           {(() => {
             const rNum = step === 'round1' ? 1 : step === 'round2' ? 2 : 3;
             const roundClues = cluesByRound[rNum as 1 | 2 | 3] || [];
+            const matchesTagFilter = (c: any) => {
+              const t = clueTags[c.id];
+              if (tagFilter === 'all') return true;
+              if (tagFilter === 'untagged') return !t;
+              return t === tagFilter;
+            };
+            const filteredClues = roundClues.filter(matchesTagFilter);
+            const countForTag = (filter: 'all' | 'key' | 'alibi' | 'red_herring' | 'untagged') =>
+              roundClues.filter((c: any) => {
+                const t = clueTags[c.id];
+                if (filter === 'all') return true;
+                if (filter === 'untagged') return !t;
+                return t === filter;
+              }).length;
+
             return (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {roundClues.map((clue, idx) => renderClueCard(clue, idx, rNum))}
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-900 text-white px-4 py-2.5 border border-slate-800">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    🔍 Filter Round {rNum} Evidence by Tag:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        { id: 'all', label: 'All Clues' },
+                        { id: 'key', label: '🔑 Key' },
+                        { id: 'alibi', label: '🛡️ Alibi' },
+                        { id: 'red_herring', label: '🐟 Decoy' },
+                        { id: 'untagged', label: '❓ Untagged' },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setTagFilter(opt.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          tagFilter === opt.id
+                            ? 'bg-brand-pink text-white shadow'
+                            : 'bg-slate-800 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        {opt.label} ({countForTag(opt.id)})
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {filteredClues.length === 0 ? (
+                  <div className="rounded-2xl bg-slate-900/60 border border-slate-800 p-8 text-center text-white space-y-2">
+                    <div className="text-sm font-black uppercase">
+                      No Round {rNum} clues match this tag filter
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTagFilter('all')}
+                      className="px-3 py-1.5 rounded-lg bg-brand-pink text-white text-[11px] font-black uppercase tracking-wider cursor-pointer"
+                    >
+                      Show All Round {rNum} Clues
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {roundClues.map((clue, idx) =>
+                      matchesTagFilter(clue) ? renderClueCard(clue, idx, rNum) : null
+                    )}
+                  </div>
+                )}
                 {renderRoundGuessBox(rNum)}
               </>
             );
@@ -1369,21 +1649,60 @@ export function PackScreenerClient({
 
       {/* ALL CLUES SIDE-BY-SIDE VIEW */}
       {step === 'all_clues' && (
-        <div className="space-y-8">
-          {[1, 2, 3].map((rNum) => (
-            <div key={rNum} className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
-                  Round {rNum} Evidence ({cluesByRound[rNum as 1 | 2 | 3].length} Clues)
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {cluesByRound[rNum as 1 | 2 | 3].map((clue, idx) =>
-                  renderClueCard(clue, idx, rNum)
-                )}
-              </div>
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-900 text-white px-4 py-2.5 border border-slate-800">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              🔍 Filter All Clues by Tag:
+            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(
+                [
+                  { id: 'all', label: 'All Clues' },
+                  { id: 'key', label: '🔑 Key' },
+                  { id: 'alibi', label: '🛡️ Alibi' },
+                  { id: 'red_herring', label: '🐟 Decoy' },
+                  { id: 'untagged', label: '❓ Untagged' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setTagFilter(opt.id)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    tagFilter === opt.id
+                      ? 'bg-brand-pink text-white shadow'
+                      : 'bg-slate-800 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {[1, 2, 3].map((rNum) => {
+            const roundList = cluesByRound[rNum as 1 | 2 | 3] || [];
+            const matchesTagFilter = (c: any) => {
+              const t = clueTags[c.id];
+              if (tagFilter === 'all') return true;
+              if (tagFilter === 'untagged') return !t;
+              return t === tagFilter;
+            };
+            return (
+              <div key={rNum} className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
+                    Round {rNum} Evidence ({roundList.filter(matchesTagFilter).length} / {roundList.length} Clues)
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {roundList.map((clue, idx) =>
+                    matchesTagFilter(clue) ? renderClueCard(clue, idx, rNum) : null
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -1458,12 +1777,16 @@ export function PackScreenerClient({
             }
 
             const taggedOrNoted = allOrderedClues.filter(
-              ({ clue: c }) => Boolean(clueTags[c.id]) || Boolean((clueNotes[c.id] || '').trim())
+              ({ clue: c }) =>
+                Boolean(clueTags[c.id]) ||
+                Boolean((clueNotes[c.id] || '').trim()) ||
+                (clueSuspects[c.id] || []).length > 0
             );
             const taggedItems = allOrderedClues.filter(({ clue: c }) => Boolean(clueTags[c.id]));
 
             let correctKeyCount = 0;
             let totalKeyTagged = 0;
+            let trickedByDecoyCount = 0;
             let correctDecoyOrAlibiCount = 0;
             let totalDecoyOrAlibiTagged = 0;
 
@@ -1473,6 +1796,7 @@ export function PackScreenerClient({
               if (t === 'key') {
                 totalKeyTagged++;
                 if (!isFake) correctKeyCount++;
+                else trickedByDecoyCount++;
               } else if (t === 'red_herring' || t === 'alibi') {
                 totalDecoyOrAlibiTagged++;
                 if (isFake) correctDecoyOrAlibiCount++;
@@ -1481,6 +1805,7 @@ export function PackScreenerClient({
 
             const totalTagged = totalKeyTagged + totalDecoyOrAlibiTagged;
             const totalCorrectTags = correctKeyCount + correctDecoyOrAlibiCount;
+            const bonusPoints = correctKeyCount * 10 + correctDecoyOrAlibiCount * 15;
             const accuracyPct =
               totalTagged > 0 ? Math.round((totalCorrectTags / totalTagged) * 100) : null;
             const notesWrittenCount = allOrderedClues.filter(({ clue: c }) =>
@@ -1499,22 +1824,52 @@ export function PackScreenerClient({
                     </h3>
                   </div>
 
-                  {accuracyPct !== null && (
-                    <div className="px-4 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
-                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                        Tag Accuracy
+                  <div className="flex flex-wrap items-center gap-2">
+                    {bonusPoints > 0 && (
+                      <div className="px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-right">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-emerald-300">
+                          Clue Tag Bonus
+                        </div>
+                        <div className="text-base font-black text-emerald-300">
+                          +{bonusPoints} Detective Pts
+                        </div>
                       </div>
-                      <div className="text-base font-black text-amber-300">
-                        {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
+                    )}
+                    {accuracyPct !== null && (
+                      <div className="px-4 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          Tag Accuracy
+                        </div>
+                        <div className="text-base font-black text-amber-300">
+                          {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+
+                {/* Party Awards Preview */}
+                {(correctDecoyOrAlibiCount > 0 || trickedByDecoyCount > 0) && (
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    {correctDecoyOrAlibiCount > 0 && (
+                      <div className="px-3 py-1.5 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-200 text-xs font-black">
+                        🦅 Earned Party Award: &ldquo;The BS Detector&rdquo; ({correctDecoyOrAlibiCount}{' '}
+                        {correctDecoyOrAlibiCount === 1 ? 'Red Herring' : 'Red Herrings'} Spotted)
+                      </div>
+                    )}
+                    {trickedByDecoyCount > 0 && (
+                      <div className="px-3 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-black">
+                        🎣 Party Award Risk: &ldquo;Hook, Line &amp; Sinker&rdquo; (Baited by {trickedByDecoyCount}{' '}
+                        {trickedByDecoyCount === 1 ? 'Decoy' : 'Decoys'})
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="rounded-xl bg-slate-950 border border-slate-800 p-3.5">
                     <div className="text-[10px] font-black uppercase tracking-wider text-amber-400">
-                      🔑 Key Evidence Tagged
+                      🔑 Key Evidence Tagged (+10 pts each)
                     </div>
                     <div className="text-sm font-black text-white mt-1">
                       {totalKeyTagged > 0
@@ -1524,7 +1879,7 @@ export function PackScreenerClient({
                   </div>
                   <div className="rounded-xl bg-slate-950 border border-slate-800 p-3.5">
                     <div className="text-[10px] font-black uppercase tracking-wider text-rose-400">
-                      🐟 Decoys &amp; 🛡️ Alibis Spotted
+                      🐟 Decoys &amp; 🛡️ Alibis Spotted (+15 pts each)
                     </div>
                     <div className="text-sm font-black text-white mt-1">
                       {totalDecoyOrAlibiTagged > 0
@@ -1551,6 +1906,9 @@ export function PackScreenerClient({
                     {taggedOrNoted.map(({ clue: c, round, indexInRound }) => {
                       const t = clueTags[c.id];
                       const note = (clueNotes[c.id] || '').trim();
+                      const pinnedCharNames = (clueSuspects[c.id] || [])
+                        .map((sId) => getCharById(sId)?.displayName)
+                        .filter(Boolean);
                       const isFake =
                         c.evidence_status === 'fake' || c.implication_type === 'red_herring';
                       const tagWasCorrect =
@@ -1611,9 +1969,22 @@ export function PackScreenerClient({
                                   : '❌ Dismissed real evidence!'}
                               </span>
                             ) : (
-                              <span className="text-slate-500">Untagged (Note only)</span>
+                              <span className="text-slate-500">Untagged (Note / Suspect Pin only)</span>
                             )}
                           </div>
+
+                          {pinnedCharNames.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                              {pinnedCharNames.map((sName, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-1.5 py-0.5 rounded bg-brand-pink/20 text-brand-pink text-[9px] font-black uppercase"
+                                >
+                                  📌 {sName}
+                                </span>
+                              ))}
+                            </div>
+                          )}
 
                           {note && (
                             <p className="text-xs text-slate-300 italic pt-1 border-t border-white/10">
@@ -1671,6 +2042,35 @@ export function PackScreenerClient({
           </div>
         </div>
       )}
+
+      <GuestModal
+        isOpen={isAddFriendOpen}
+        onClose={() => setIsAddFriendOpen(false)}
+        onSave={async (guestData: any) => {
+          const res = await saveGuestAction(guestData);
+          const created = res?.guest || {
+            id: guestData.id || `temp-${Date.now()}`,
+            name: guestData.name,
+            gender: guestData.gender,
+            avatar_url: guestData.avatarUrl || guestData.avatar_url || '',
+            eye_color: guestData.eyeColor,
+            height: guestData.height,
+            ethnicity: guestData.ethnicity,
+          };
+          const newItem: FriendRosterItem = {
+            id: created.id,
+            name: created.name,
+            gender: String(created.gender || 'adaptable').toLowerCase(),
+            avatar_url: created.avatar_url || '',
+            photoUrl: resolveDisplayAvatarUrl(created.avatar_url) || null,
+            hasAiPhoto: String(created.avatar_url || '').includes('aiPhotoUrl='),
+            eye_color: created.eye_color,
+            height: created.height,
+            ethnicity: created.ethnicity,
+          };
+          setLiveFriends((prev) => [newItem, ...prev]);
+        }}
+      />
     </div>
   );
 }

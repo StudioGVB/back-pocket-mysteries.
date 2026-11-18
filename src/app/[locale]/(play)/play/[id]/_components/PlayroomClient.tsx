@@ -138,7 +138,60 @@ export function PlayroomClient({
     Record<string, 'key' | 'red_herring' | 'alibi' | undefined>
   >({});
   const [clueNotes, setClueNotes] = useState<Record<string, string>>({});
+  const [clueSuspects, setClueSuspects] = useState<Record<string, string[]>>({});
+  const [clueTagFilter, setClueTagFilter] = useState<
+    'all' | 'key' | 'alibi' | 'red_herring' | 'untagged'
+  >('all');
+  const [notebookSortMode, setNotebookSortMode] = useState<'round' | 'timeline'>('round');
   const [notebookLoaded, setNotebookLoaded] = useState<boolean>(false);
+
+  const toggleClueSuspect = useCallback((clueId: string, suspectId: string) => {
+    setClueSuspects(prev => {
+      const current = prev[clueId] || [];
+      const next = current.includes(suspectId)
+        ? current.filter(id => id !== suspectId)
+        : [...current, suspectId];
+      return { ...prev, [clueId]: next };
+    });
+  }, []);
+
+  const toggleQuickNoteChip = useCallback((clueId: string, chip: string) => {
+    setClueNotes(prev => {
+      const current = prev[clueId] || '';
+      const hasChip = current.includes(chip);
+      const next = hasChip
+        ? current
+            .replace(chip, '')
+            .replace(/;\s*;/g, ';')
+            .replace(/^;\s*|\s*;\s*$/g, '')
+            .trim()
+        : current.trim()
+        ? `${current.trim()}; ${chip}`
+        : chip;
+      return { ...prev, [clueId]: next };
+    });
+  }, []);
+
+  const extractClueTimestampInfo = useCallback(
+    (c: any): { label: string | null; sortMinutes: number } => {
+      const raw = `${c?.title || ''} ${c?.description || ''}`;
+      const match = raw.match(/\b(1[0-2]|0?[1-9]):([0-5]\d)\s*(AM|PM|am|pm)?\b/);
+      if (!match) {
+        return { label: null, sortMinutes: 99999 };
+      }
+      let hours = parseInt(match[1], 10);
+      const mins = parseInt(match[2], 10);
+      const meridiem = (match[3] || 'PM').toUpperCase();
+      if (meridiem === 'PM' && hours < 12) hours += 12;
+      if (meridiem === 'AM' && hours === 12) hours = 0;
+      const sortMinutes = hours < 6 ? (hours + 24) * 60 + mins : hours * 60 + mins;
+      return {
+        label: `${match[1]}:${match[2]} ${meridiem}`,
+        sortMinutes,
+      };
+    },
+    []
+  );
 
   const [lightboxPhoto, setLightboxPhoto] = useState<{
     url: string;
@@ -183,6 +236,11 @@ export function PlayroomClient({
         const parsed = JSON.parse(savedNotes);
         if (parsed && typeof parsed === 'object') setClueNotes(parsed);
       }
+      const savedSuspects = window.localStorage.getItem(`bpm_clue_suspects_${mystery.id}`);
+      if (savedSuspects) {
+        const parsed = JSON.parse(savedSuspects);
+        if (parsed && typeof parsed === 'object') setClueSuspects(parsed);
+      }
     } catch {
       // Ignore
     } finally {
@@ -221,6 +279,15 @@ export function PlayroomClient({
       // Non-fatal
     }
   }, [clueNotes, notebookLoaded, mystery.id]);
+
+  useEffect(() => {
+    if (!notebookLoaded || typeof window === 'undefined' || !mystery.id) return;
+    try {
+      window.localStorage.setItem(`bpm_clue_suspects_${mystery.id}`, JSON.stringify(clueSuspects));
+    } catch {
+      // Non-fatal
+    }
+  }, [clueSuspects, notebookLoaded, mystery.id]);
 
   const handleToggleHostMode = () => {
     if (!initialIsHost) return;
@@ -564,13 +631,22 @@ export function PlayroomClient({
   }, [selectedChar, customSleuthName, parseCharacter, reviewName]);
 
   // Clues for the selected round filter
-  const unlockedCluesForSelectedRound = useMemo(() => {
+  const allUnlockedCluesForSelectedRound = useMemo(() => {
     if (unlockedClueRound <= 0) return [];
     const roundClues = clues.filter(c => (c.round_number || 1) === selectedClueRoundFilter);
     return roundClues.length > 0
       ? roundClues
       : clues.filter(c => (c.round_number || 1) <= unlockedClueRound);
   }, [clues, unlockedClueRound, selectedClueRoundFilter]);
+
+  const unlockedCluesForSelectedRound = useMemo(() => {
+    if (clueTagFilter === 'all') return allUnlockedCluesForSelectedRound;
+    return allUnlockedCluesForSelectedRound.filter(c => {
+      const t = clueTags[c.id];
+      if (clueTagFilter === 'untagged') return !t;
+      return t === clueTagFilter;
+    });
+  }, [allUnlockedCluesForSelectedRound, clueTagFilter, clueTags]);
 
   const safeSlideIndex = Math.min(
     clueSlideIndex,
@@ -647,6 +723,13 @@ export function PlayroomClient({
     if (!suspectObj) return;
     const { name: sName, archetype: sRole } = parseCharacter(suspectObj);
 
+    const sanitizedClueTags: Record<string, 'key' | 'red_herring' | 'alibi'> = {};
+    for (const [k, v] of Object.entries(clueTags)) {
+      if (v === 'key' || v === 'red_herring' || v === 'alibi') {
+        sanitizedClueTags[k] = v;
+      }
+    }
+
     setIsSubmittingTheory(true);
     setTheorySavedNotice(false);
     try {
@@ -657,6 +740,7 @@ export function PlayroomClient({
         suspectCharId: accusedCharId,
         suspectName: `${sName} (${sRole})`,
         reason: accusationReason || 'Acting suspicious!',
+        clueTags: sanitizedClueTags,
       });
       if (res.submissions) {
         setSubmissions(res.submissions);
@@ -2252,56 +2336,102 @@ export function PlayroomClient({
         {/* TAB 3: SWIPEABLE CLUES + BETWEEN-ROUND "WHO & WHY" VOTING */}
         {activeTab === 'clues' && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Compact Round Selector Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/40 border border-white/10 rounded-2xl px-3.5 py-2.5">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xs font-black uppercase tracking-wider text-white">
-                  Evidence Deck
-                </h2>
-                {unlockedCluesForSelectedRound.length > 0 && unlockedClueRound > 0 && (
-                  <span className="text-[10px] font-bold text-slate-400">
-                    • Swipe or use arrows
-                  </span>
-                )}
+            {/* Compact Round Selector & Tag Filter Bar */}
+            <div className="bg-slate-900/40 border border-white/10 rounded-2xl px-3.5 py-2.5 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xs font-black uppercase tracking-wider text-white">
+                    Evidence Deck
+                  </h2>
+                  {unlockedCluesForSelectedRound.length > 0 && unlockedClueRound > 0 && (
+                    <span className="text-[10px] font-bold text-slate-400">
+                      • Swipe or use arrows
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4].map(rNum => {
+                    const isUnlocked = unlockedClueRound >= rNum;
+                    const isSelected = selectedClueRoundFilter === rNum;
+                    const unreadInRound = isUnlocked ? getUnreadCountForRound(rNum) : 0;
+
+                    return (
+                      <button
+                        key={rNum}
+                        type="button"
+                        disabled={!isUnlocked}
+                        onClick={() => {
+                          setSelectedClueRoundFilter(rNum);
+                          setClueSlideIndex(0);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+                          !isUnlocked
+                            ? 'bg-slate-950/50 text-slate-600 border border-white/5 cursor-not-allowed'
+                            : isSelected
+                            ? 'bg-brand-pink text-white shadow'
+                            : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+                        }`}
+                      >
+                        <span>{isUnlocked ? `R${rNum}` : `🔒 R${rNum}`}</span>
+                        {unreadInRound > 0 && (
+                          <span
+                            className={`px-1.5 py-0.2 rounded-full text-[8px] font-black ${
+                              isSelected ? 'bg-white text-brand-pink' : 'bg-brand-pink text-white'
+                            }`}
+                          >
+                            {unreadInRound}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4].map(rNum => {
-                  const isUnlocked = unlockedClueRound >= rNum;
-                  const isSelected = selectedClueRoundFilter === rNum;
-                  const unreadInRound = isUnlocked ? getUnreadCountForRound(rNum) : 0;
-
-                  return (
-                    <button
-                      key={rNum}
-                      type="button"
-                      disabled={!isUnlocked}
-                      onClick={() => {
-                        setSelectedClueRoundFilter(rNum);
-                        setClueSlideIndex(0);
-                      }}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
-                        !isUnlocked
-                          ? 'bg-slate-950/50 text-slate-600 border border-white/5 cursor-not-allowed'
-                          : isSelected
-                          ? 'bg-brand-pink text-white shadow'
-                          : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
-                      }`}
-                    >
-                      <span>{isUnlocked ? `R${rNum}` : `🔒 R${rNum}`}</span>
-                      {unreadInRound > 0 && (
-                        <span
-                          className={`px-1.5 py-0.2 rounded-full text-[8px] font-black ${
-                            isSelected ? 'bg-white text-brand-pink' : 'bg-brand-pink text-white'
+              {/* Tag Filter Pills */}
+              {unlockedClueRound >= 1 && allUnlockedCluesForSelectedRound.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                    🔍 Filter R{selectedClueRoundFilter} Clues:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1">
+                    {(
+                      [
+                        { id: 'all', label: 'All' },
+                        { id: 'key', label: '🔑 Key' },
+                        { id: 'alibi', label: '🛡️ Alibi' },
+                        { id: 'red_herring', label: '🐟 Decoy' },
+                        { id: 'untagged', label: '❓ Untagged' },
+                      ] as const
+                    ).map(opt => {
+                      const count = allUnlockedCluesForSelectedRound.filter(c => {
+                        const t = clueTags[c.id];
+                        if (opt.id === 'all') return true;
+                        if (opt.id === 'untagged') return !t;
+                        return t === opt.id;
+                      }).length;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            setClueTagFilter(opt.id);
+                            setClueSlideIndex(0);
+                          }}
+                          className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                            clueTagFilter === opt.id
+                              ? 'bg-brand-pink text-white shadow'
+                              : 'bg-white/5 text-slate-300 hover:text-white border border-white/10'
                           }`}
                         >
-                          {unreadInRound}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                          {opt.label} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* SWIPEABLE CLUE CAROUSEL */}
@@ -2316,8 +2446,21 @@ export function PlayroomClient({
                 </p>
               </div>
             ) : unlockedCluesForSelectedRound.length === 0 ? (
-              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-8 text-center text-slate-400 text-xs font-medium">
-                No clues found for Round {selectedClueRoundFilter}.
+              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-8 text-center space-y-2">
+                <div className="text-xs font-bold text-slate-300">
+                  {clueTagFilter === 'all'
+                    ? `No clues found for Round ${selectedClueRoundFilter}.`
+                    : `No Round ${selectedClueRoundFilter} clues match this tag filter.`}
+                </div>
+                {clueTagFilter !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setClueTagFilter('all')}
+                    className="px-3 py-1.5 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                  >
+                    Show All Round {selectedClueRoundFilter} Clues
+                  </button>
+                )}
               </div>
             ) : (
               currentSlideClue && (
@@ -2416,8 +2559,8 @@ export function PlayroomClient({
                     {renderClueFormatView(currentSlideClue, false)}
                   </div>
 
-                  {/* Personal Detective Note Input */}
-                  <div className="pt-1">
+                  {/* Personal Detective Note Input + 1-Tap Quick Chips + Pin Suspect Pills */}
+                  <div className="pt-1 space-y-2">
                     <input
                       type="text"
                       value={clueNotes[currentSlideClue.id] || ''}
@@ -2430,6 +2573,67 @@ export function PlayroomClient({
                       placeholder="✍️ Your detective note on this clue (e.g. 'Matches Shelf B lights at 7:52 PM')..."
                       className="w-full min-h-[38px] bg-slate-950/90 border border-white/15 focus:border-brand-pink rounded-xl px-3 py-1.5 text-base sm:text-xs text-slate-200 placeholder:text-slate-500 outline-none"
                     />
+
+                    {/* 1-Tap Quick Deduction Chips */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 mr-0.5">
+                        ⚡ 1-Tap Note:
+                      </span>
+                      {[
+                        '⏱️ Timeline Gap',
+                        '💔 Affair Motive',
+                        '💰 Money / Blackmail',
+                        '🔪 Murder Weapon',
+                        '🤥 Fake Alibi',
+                      ].map(chip => {
+                        const currentNote = clueNotes[currentSlideClue.id] || '';
+                        const hasChip = currentNote.includes(chip);
+                        return (
+                          <button
+                            key={chip}
+                            type="button"
+                            onClick={() => toggleQuickNoteChip(currentSlideClue.id, chip)}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                              hasChip
+                                ? 'bg-amber-400/20 text-amber-300 border border-amber-400/50'
+                                : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                            }`}
+                          >
+                            {chip}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Pin Suspect Pills */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 mr-0.5">
+                        📌 Pin Suspect:
+                      </span>
+                      {activeCharacters
+                        .filter(ch => !ch.is_victim)
+                        .map(ch => {
+                          const { name: sName } = parseCharacter(ch);
+                          const isPinned = (clueSuspects[currentSlideClue.id] || []).includes(
+                            ch.id
+                          );
+                          return (
+                            <button
+                              key={ch.id}
+                              type="button"
+                              onClick={() => toggleClueSuspect(currentSlideClue.id, ch.id)}
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                isPinned
+                                  ? 'bg-brand-pink text-white shadow'
+                                  : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                              }`}
+                            >
+                              {isPinned ? '📌 ' : ''}
+                              {sName}
+                            </button>
+                          );
+                        })}
+                    </div>
                   </div>
 
                   {/* Prev / Next Swipe Navigation Footer */}
@@ -2497,40 +2701,84 @@ export function PlayroomClient({
               )
             )}
 
-            {/* MY DETECTIVE NOTEBOOK SUMMARY (TAGGED CLUES & NOTES FOR VOTING) */}
+            {/* MY DETECTIVE NOTEBOOK SUMMARY (TAGGED CLUES, PINNED SUSPECTS & TIMELINE) */}
             {unlockedClueRound >= 1 && (() => {
               const allUnlockedAnnotated = clues
                 .filter(c => (c.round_number || 1) <= unlockedClueRound)
-                .filter(c => Boolean(clueTags[c.id]) || Boolean((clueNotes[c.id] || '').trim()));
+                .filter(
+                  c =>
+                    Boolean(clueTags[c.id]) ||
+                    Boolean((clueNotes[c.id] || '').trim()) ||
+                    (clueSuspects[c.id] || []).length > 0
+                );
 
               if (allUnlockedAnnotated.length === 0) return null;
 
+              const sortedAnnotated =
+                notebookSortMode === 'timeline'
+                  ? [...allUnlockedAnnotated].sort((a, b) => {
+                      const ta = extractClueTimestampInfo(a).sortMinutes;
+                      const tb = extractClueTimestampInfo(b).sortMinutes;
+                      return ta - tb;
+                    })
+                  : allUnlockedAnnotated;
+
               return (
                 <div className="rounded-2xl bg-slate-950/85 border border-amber-400/30 p-3.5 sm:p-4 space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[11px] font-black uppercase tracking-wider text-amber-400">
                       📓 My Detective Notebook ({allUnlockedAnnotated.length} Pinned)
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setClueTags({});
-                        setClueNotes({});
-                        if (typeof window !== 'undefined' && mystery.id) {
-                          window.localStorage.removeItem(`bpm_clue_tags_${mystery.id}`);
-                          window.localStorage.removeItem(`bpm_clue_notes_${mystery.id}`);
-                        }
-                      }}
-                      className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
-                    >
-                      Clear
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex rounded-lg bg-slate-900 border border-white/10 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setNotebookSortMode('round')}
+                          className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                            notebookSortMode === 'round'
+                              ? 'bg-amber-400 text-slate-950'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          🔢 By Round
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNotebookSortMode('timeline')}
+                          className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                            notebookSortMode === 'timeline'
+                              ? 'bg-amber-400 text-slate-950'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          ⏱️ Crime Timeline
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClueTags({});
+                          setClueNotes({});
+                          setClueSuspects({});
+                          if (typeof window !== 'undefined' && mystery.id) {
+                            window.localStorage.removeItem(`bpm_clue_tags_${mystery.id}`);
+                            window.localStorage.removeItem(`bpm_clue_notes_${mystery.id}`);
+                            window.localStorage.removeItem(`bpm_clue_suspects_${mystery.id}`);
+                          }
+                        }}
+                        className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                    {allUnlockedAnnotated.map(c => {
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                    {sortedAnnotated.map(c => {
                       const cTag = clueTags[c.id];
                       const cNote = (clueNotes[c.id] || '').trim();
+                      const cSuspectIds = clueSuspects[c.id] || [];
+                      const tsInfo = extractClueTimestampInfo(c);
                       const cRound = c.round_number || 1;
                       const roundCluesList = clues.filter(rc => (rc.round_number || 1) === cRound);
                       const idxInRound = roundCluesList.findIndex(rc => rc.id === c.id);
@@ -2544,10 +2792,11 @@ export function PlayroomClient({
                         <div
                           key={c.id}
                           onClick={() => {
+                            setClueTagFilter('all');
                             setSelectedClueRoundFilter(cRound);
                             if (idxInRound >= 0) setClueSlideIndex(idxInRound);
                           }}
-                          className={`rounded-xl border px-3 py-2 text-xs space-y-1 cursor-pointer transition-all ${
+                          className={`rounded-xl border px-3 py-2 text-xs space-y-1.5 cursor-pointer transition-all ${
                             cTag === 'key'
                               ? 'bg-amber-500/10 border-amber-400/40 hover:border-amber-400'
                               : cTag === 'red_herring'
@@ -2562,6 +2811,11 @@ export function PlayroomClient({
                               <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
                                 R{cRound} • #{idxInRound >= 0 ? idxInRound + 1 : '?'}
                               </span>
+                              {tsInfo.label && (
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black uppercase shrink-0">
+                                  🕒 {tsInfo.label}
+                                </span>
+                              )}
                               <span className="font-bold text-white truncate">{cleanTitle}</span>
                             </div>
                             {cTag && (
@@ -2582,6 +2836,30 @@ export function PlayroomClient({
                               </span>
                             )}
                           </div>
+
+                          {cSuspectIds.length > 0 && (
+                            <div
+                              onClick={e => e.stopPropagation()}
+                              className="flex flex-wrap items-center gap-1"
+                            >
+                              {cSuspectIds.map(sId => {
+                                const sChar = activeCharacters.find(ac => ac.id === sId);
+                                if (!sChar) return null;
+                                const { name: sName } = parseCharacter(sChar);
+                                return (
+                                  <button
+                                    key={sId}
+                                    type="button"
+                                    onClick={() => setAccusedCharId(sId)}
+                                    title="Tap to select this suspect in your vote"
+                                    className="px-1.5 py-0.5 rounded bg-brand-pink/20 hover:bg-brand-pink text-brand-pink hover:text-white text-[9px] font-black uppercase transition-colors cursor-pointer"
+                                  >
+                                    📌 {sName}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
 
                           {cNote && (
                             <div
@@ -2673,22 +2951,55 @@ export function PlayroomClient({
                           .map(char => {
                             const { name, archetype } = parseCharacter(char);
                             const isChosen = accusedCharId === char.id;
+                            let keyCount = 0;
+                            let alibiCount = 0;
+                            let pinCount = 0;
+                            for (const c of clues.filter(
+                              rc => (rc.round_number || 1) <= unlockedClueRound
+                            )) {
+                              if ((clueSuspects[c.id] || []).includes(char.id)) {
+                                pinCount++;
+                                const t = clueTags[c.id];
+                                if (t === 'key') keyCount++;
+                                else if (t === 'alibi' || t === 'red_herring') alibiCount++;
+                              }
+                            }
+
                             return (
                               <button
                                 key={char.id}
                                 type="button"
                                 onClick={() => setAccusedCharId(char.id)}
-                                className={`min-h-[48px] p-2.5 sm:p-3 rounded-xl border text-left transition-all flex items-center justify-between gap-1.5 active:scale-95 cursor-pointer ${
+                                className={`min-h-[52px] p-2.5 sm:p-3 rounded-xl border text-left transition-all flex items-center justify-between gap-1.5 active:scale-95 cursor-pointer ${
                                   isChosen
                                     ? 'border-brand-pink bg-brand-pink/20 text-white shadow'
                                     : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/25'
                                 }`}
                               >
-                                <div className="min-w-0">
+                                <div className="min-w-0 space-y-0.5">
                                   <p className="text-xs font-black truncate">{name}</p>
                                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
                                     {archetype}
                                   </p>
+                                  {(keyCount > 0 || alibiCount > 0 || pinCount > 0) && (
+                                    <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                                      {keyCount > 0 && (
+                                        <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[8px] font-black uppercase">
+                                          🔑 {keyCount} Key
+                                        </span>
+                                      )}
+                                      {alibiCount > 0 && (
+                                        <span className="px-1.5 py-0.2 rounded bg-sky-400/20 text-sky-300 text-[8px] font-black uppercase">
+                                          🛡️ {alibiCount} Alibi
+                                        </span>
+                                      )}
+                                      {keyCount === 0 && alibiCount === 0 && pinCount > 0 && (
+                                        <span className="px-1.5 py-0.2 rounded bg-white/10 text-slate-300 text-[8px] font-black uppercase">
+                                          📌 {pinCount} Clues
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                                 {isChosen && (
                                   <span className="w-4 h-4 rounded-full bg-brand-pink text-white text-[10px] font-black flex items-center justify-center shrink-0">
@@ -2850,6 +3161,44 @@ export function PlayroomClient({
                         </div>
                       );
                     })()}
+
+                    {(() => {
+                      const bsDetector = [...detectiveLeaderboard]
+                        .filter(r => (r.decoysSpotted || 0) > 0)
+                        .sort((a, b) => (b.decoysSpotted || 0) - (a.decoysSpotted || 0))[0];
+                      if (!bsDetector) return null;
+                      return (
+                        <div className="p-3.5 rounded-xl bg-gradient-to-br from-emerald-500/20 to-slate-900 border border-emerald-400/30 space-y-1">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">
+                            🦅 The BS Detector
+                          </span>
+                          <h3 className="text-sm font-black text-white">{bsDetector.voterName}</h3>
+                          <p className="text-[11px] text-slate-300">
+                            Spotted {bsDetector.decoysSpotted}{' '}
+                            {bsDetector.decoysSpotted === 1 ? 'red herring' : 'red herrings'}
+                          </p>
+                        </div>
+                      );
+                    })()}
+
+                    {(() => {
+                      const hookLine = [...detectiveLeaderboard]
+                        .filter(r => (r.trickedByDecoys || 0) > 0)
+                        .sort((a, b) => (b.trickedByDecoys || 0) - (a.trickedByDecoys || 0))[0];
+                      if (!hookLine) return null;
+                      return (
+                        <div className="p-3.5 rounded-xl bg-gradient-to-br from-rose-500/20 to-slate-900 border border-rose-400/30 space-y-1">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-rose-300">
+                            🎣 Hook, Line &amp; Sinker
+                          </span>
+                          <h3 className="text-sm font-black text-white">{hookLine.voterName}</h3>
+                          <p className="text-[11px] text-slate-300">
+                            Baited into tagging {hookLine.trickedByDecoys}{' '}
+                            {hookLine.trickedByDecoys === 1 ? 'decoy' : 'decoys'} as 🔑 Key
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="divide-y divide-white/5 rounded-xl border border-white/10 bg-slate-950/60 overflow-hidden">
@@ -2858,7 +3207,7 @@ export function PlayroomClient({
                         key={row.voterCharId}
                         className="px-3.5 py-2.5 flex items-center justify-between gap-3 text-xs"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 flex-wrap">
                           <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center font-black text-[10px] text-white">
                             {idx + 1}
                           </span>
@@ -2866,6 +3215,11 @@ export function PlayroomClient({
                           {row.earliestCorrectRound && (
                             <span className="text-[10px] font-bold text-emerald-400">
                               • R{row.earliestCorrectRound}
+                            </span>
+                          )}
+                          {(row.clueTagBonusPoints || 0) > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 text-[9px] font-black uppercase">
+                              +{row.clueTagBonusPoints} clue pts
                             </span>
                           )}
                         </div>
@@ -3006,7 +3360,10 @@ export function PlayroomClient({
             {/* 2A. PERSONAL DETECTIVE NOTEBOOK & CLUE TAGGING SCORECARD (UNLOCKED WITH SOLUTION) */}
             {solutionData && (() => {
               const taggedOrNoted = clues.filter(
-                c => Boolean(clueTags[c.id]) || Boolean((clueNotes[c.id] || '').trim())
+                c =>
+                  Boolean(clueTags[c.id]) ||
+                  Boolean((clueNotes[c.id] || '').trim()) ||
+                  (clueSuspects[c.id] || []).length > 0
               );
               const taggedItems = clues.filter(c => Boolean(clueTags[c.id]));
 
@@ -3030,6 +3387,7 @@ export function PlayroomClient({
 
               const totalTagged = totalKeyTagged + totalDecoyOrAlibiTagged;
               const totalCorrectTags = correctKeyCount + correctDecoyOrAlibiCount;
+              const bonusPoints = correctKeyCount * 10 + correctDecoyOrAlibiCount * 15;
               const accuracyPct =
                 totalTagged > 0 ? Math.round((totalCorrectTags / totalTagged) * 100) : null;
               const notesWrittenCount = clues.filter(c =>
@@ -3048,22 +3406,34 @@ export function PlayroomClient({
                       </h2>
                     </div>
 
-                    {accuracyPct !== null && (
-                      <div className="px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
-                        <div className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                          Evidence Accuracy
+                    <div className="flex flex-wrap items-center gap-2">
+                      {bonusPoints > 0 && (
+                        <div className="px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-right">
+                          <div className="text-[9px] font-black uppercase tracking-wider text-emerald-300">
+                            Clue Tag Bonus
+                          </div>
+                          <div className="text-sm sm:text-base font-black text-emerald-300">
+                            +{bonusPoints} Detective Pts
+                          </div>
                         </div>
-                        <div className="text-sm sm:text-base font-black text-amber-300">
-                          {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
+                      )}
+                      {accuracyPct !== null && (
+                        <div className="px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
+                          <div className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                            Evidence Accuracy
+                          </div>
+                          <div className="text-sm sm:text-base font-black text-amber-300">
+                            {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
                       <div className="text-[9px] font-black uppercase tracking-wider text-amber-400">
-                        🔑 Key Evidence Tagged
+                        🔑 Key Evidence Tagged (+10 pts each)
                       </div>
                       <div className="text-xs sm:text-sm font-black text-white mt-1">
                         {totalKeyTagged > 0
@@ -3073,7 +3443,7 @@ export function PlayroomClient({
                     </div>
                     <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
                       <div className="text-[9px] font-black uppercase tracking-wider text-rose-400">
-                        🐟 Decoys &amp; 🛡️ Alibis Spotted
+                        🐟 Decoys &amp; 🛡️ Alibis Spotted (+15 pts each)
                       </div>
                       <div className="text-xs sm:text-sm font-black text-white mt-1">
                         {totalDecoyOrAlibiTagged > 0
@@ -3096,6 +3466,12 @@ export function PlayroomClient({
                       {taggedOrNoted.map(c => {
                         const t = clueTags[c.id];
                         const note = (clueNotes[c.id] || '').trim();
+                        const pinnedNames = (clueSuspects[c.id] || [])
+                          .map(sId => {
+                            const ch = activeCharacters.find(ac => ac.id === sId);
+                            return ch ? parseCharacter(ch).name : null;
+                          })
+                          .filter(Boolean);
                         const isFake =
                           c.evidence_status === 'fake' || c.implication_type === 'red_herring';
                         const tagWasCorrect =
@@ -3156,6 +3532,19 @@ export function PlayroomClient({
                                   : isFake
                                   ? '❌ Tricked by a decoy!'
                                   : '❌ Dismissed real evidence!'}
+                              </div>
+                            )}
+
+                            {pinnedNames.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                                {pinnedNames.map((sName, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-1.5 py-0.5 rounded bg-brand-pink/20 text-brand-pink text-[9px] font-black uppercase"
+                                  >
+                                    📌 {sName}
+                                  </span>
+                                ))}
                               </div>
                             )}
 
@@ -3418,7 +3807,7 @@ export function PlayroomClient({
                 </div>
               </div>
 
-              <div className="p-4 sm:p-5 overflow-y-auto flex-grow space-y-3">
+              <div className="p-4 sm:p-5 overflow-y-auto flex-grow space-y-2.5">
                 {renderClueFormatView(modalClue, false)}
                 <input
                   type="text"
@@ -3432,6 +3821,61 @@ export function PlayroomClient({
                   placeholder="✍️ Your detective note on this clue (e.g. 'Matches Shelf B lights at 7:52 PM')..."
                   className="w-full min-h-[38px] bg-slate-950/90 border border-white/15 focus:border-brand-pink rounded-xl px-3 py-1.5 text-base sm:text-xs text-slate-200 placeholder:text-slate-500 outline-none"
                 />
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 mr-0.5">
+                    ⚡ 1-Tap Note:
+                  </span>
+                  {[
+                    '⏱️ Timeline Gap',
+                    '💔 Affair Motive',
+                    '💰 Money / Blackmail',
+                    '🔪 Murder Weapon',
+                    '🤥 Fake Alibi',
+                  ].map(chip => {
+                    const currentNote = clueNotes[modalClue.id] || '';
+                    const hasChip = currentNote.includes(chip);
+                    return (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => toggleQuickNoteChip(modalClue.id, chip)}
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                          hasChip
+                            ? 'bg-amber-400/20 text-amber-300 border border-amber-400/50'
+                            : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                        }`}
+                      >
+                        {chip}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 mr-0.5">
+                    📌 Pin Suspect:
+                  </span>
+                  {activeCharacters
+                    .filter(ch => !ch.is_victim)
+                    .map(ch => {
+                      const { name: sName } = parseCharacter(ch);
+                      const isPinned = (clueSuspects[modalClue.id] || []).includes(ch.id);
+                      return (
+                        <button
+                          key={ch.id}
+                          type="button"
+                          onClick={() => toggleClueSuspect(modalClue.id, ch.id)}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                            isPinned
+                              ? 'bg-brand-pink text-white shadow'
+                              : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                          }`}
+                        >
+                          {isPinned ? '📌 ' : ''}
+                          {sName}
+                        </button>
+                      );
+                    })}
+                </div>
               </div>
 
               <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 bg-slate-950/60">

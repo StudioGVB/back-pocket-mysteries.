@@ -30,6 +30,7 @@ export interface RoundSubmission {
   suspectName: string;
   reason: string;
   submittedAt: string;
+  clueTags?: Record<string, 'key' | 'red_herring' | 'alibi'>;
 }
 
 export type GuestReviewItem = StoredGuestReview;
@@ -464,20 +465,32 @@ export async function getGameSessionAction(mysteryId: string) {
         *,
         motives!motives_character_id_fkey (*)
       ),
+      clues (
+        id,
+        evidence_status,
+        implication_type
+      ),
       plot_beats (*)
     `)
     .eq('id', mysteryId)
     .single()) as any;
 
+  const cachedSnapshot = getCachedMysterySnapshot(mysteryId);
   if (!mystery) {
-    mystery = getCachedMysterySnapshot(mysteryId);
+    mystery = cachedSnapshot;
   }
 
   if (!mystery) {
     return { error: 'Mystery not found' };
   }
 
-  const characters = mystery.characters || [];
+  const characters = mystery.characters || cachedSnapshot?.characters || [];
+  const mysteryClues: any[] =
+    Array.isArray(mystery.clues) && mystery.clues.length > 0
+      ? mystery.clues
+      : cachedSnapshot?.clues || [];
+  const clueById = new Map<string, any>(mysteryClues.map((c: any) => [c.id, c]));
+
   const { session, carrierCharacter } = await readSessionFromCharacters(
     characters,
     mysteryId,
@@ -519,7 +532,7 @@ export async function getGameSessionAction(mysteryId: string) {
     killerChar?.motives?.[0] ||
     null;
 
-  // Compute detective accuracy stats across rounds
+  // Compute detective accuracy stats across rounds (including Clue Tagging bonus points & awards)
   const playerStatsMap = new Map<
     string,
     {
@@ -533,6 +546,7 @@ export async function getGameSessionAction(mysteryId: string) {
       uniqueSuspectsCount: number;
       suspectsChosen: Set<string>;
       accuracyScore: number;
+      mergedClueTags: Record<string, 'key' | 'red_herring' | 'alibi'>;
     }
   >();
 
@@ -558,11 +572,19 @@ export async function getGameSessionAction(mysteryId: string) {
       uniqueSuspectsCount: 0,
       suspectsChosen: new Set<string>(),
       accuracyScore: 0,
+      mergedClueTags: {},
     };
 
     existing.totalVotes += 1;
     existing.suspectsChosen.add(sub.suspectCharId);
     existing.uniqueSuspectsCount = existing.suspectsChosen.size;
+
+    if (sub.clueTags && typeof sub.clueTags === 'object') {
+      existing.mergedClueTags = {
+        ...existing.mergedClueTags,
+        ...sub.clueTags,
+      };
+    }
 
     const isCorrect = Boolean(killerChar && sub.suspectCharId === killerChar.id);
     if (isCorrect) {
@@ -583,10 +605,37 @@ export async function getGameSessionAction(mysteryId: string) {
   }
 
   const detectiveLeaderboard = Array.from(playerStatsMap.values())
-    .map(({ suspectsChosen, ...rest }) => ({
-      ...rest,
-      accuracyPercent: rest.totalVotes > 0 ? Math.round((rest.correctVotes / rest.totalVotes) * 100) : 0,
-    }))
+    .map(({ suspectsChosen, mergedClueTags, ...rest }) => {
+      let correctKeyClues = 0;
+      let decoysSpotted = 0;
+      let trickedByDecoys = 0;
+
+      for (const [cId, tag] of Object.entries(mergedClueTags || {})) {
+        const clueObj = clueById.get(cId);
+        if (!clueObj || !tag) continue;
+        const isFake =
+          clueObj.evidence_status === 'fake' || clueObj.implication_type === 'red_herring';
+        if (tag === 'key') {
+          if (!isFake) correctKeyClues++;
+          else trickedByDecoys++;
+        } else if (tag === 'red_herring' || tag === 'alibi') {
+          if (isFake) decoysSpotted++;
+        }
+      }
+
+      const clueTagBonusPoints = correctKeyClues * 10 + decoysSpotted * 15;
+
+      return {
+        ...rest,
+        correctKeyClues,
+        decoysSpotted,
+        trickedByDecoys,
+        clueTagBonusPoints,
+        accuracyScore: rest.accuracyScore + clueTagBonusPoints,
+        accuracyPercent:
+          rest.totalVotes > 0 ? Math.round((rest.correctVotes / rest.totalVotes) * 100) : 0,
+      };
+    })
     .sort((a, b) => {
       if (b.accuracyScore !== a.accuracyScore) return b.accuracyScore - a.accuracyScore;
       if (b.correctVotes !== a.correctVotes) return b.correctVotes - a.correctVotes;
@@ -722,6 +771,7 @@ export async function submitRoundTheoryAction(
     suspectCharId: string;
     suspectName: string;
     reason: string;
+    clueTags?: Record<string, 'key' | 'red_herring' | 'alibi'>;
   }
 ) {
   const supabase = await createClient();
@@ -742,6 +792,15 @@ export async function submitRoundTheoryAction(
     s => !(s.round === payload.round && s.voterCharId === payload.voterCharId)
   );
 
+  const cleanTags: Record<string, 'key' | 'red_herring' | 'alibi'> = {};
+  if (payload.clueTags && typeof payload.clueTags === 'object') {
+    for (const [k, v] of Object.entries(payload.clueTags)) {
+      if (v === 'key' || v === 'red_herring' || v === 'alibi') {
+        cleanTags[k] = v;
+      }
+    }
+  }
+
   const newEntry: RoundSubmission = {
     id: `${payload.round}-${payload.voterCharId}-${Date.now()}`,
     round: payload.round,
@@ -751,6 +810,7 @@ export async function submitRoundTheoryAction(
     suspectName: payload.suspectName,
     reason: payload.reason.trim() || 'Acting suspicious!',
     submittedAt: new Date().toISOString(),
+    ...(Object.keys(cleanTags).length > 0 ? { clueTags: cleanTags } : {}),
   };
 
   session.submissions = [...filtered, newEntry];
