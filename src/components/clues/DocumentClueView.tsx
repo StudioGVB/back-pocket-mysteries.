@@ -33,7 +33,7 @@ export function DocumentClueView({
     <div className="w-full space-y-3">
       {/* Optional Atmospheric Crime Scene Photo */}
       {showImage && clue.static_image_url && (
-        <div className={`relative w-full ${compact ? 'h-32' : 'h-44'} rounded-2xl overflow-hidden border border-white/10 bg-slate-950`}>
+        <div className={`relative w-full ${compact ? 'h-36' : 'aspect-square'} rounded-2xl overflow-hidden border border-white/10 bg-slate-950`}>
           <img
             src={clue.static_image_url}
             alt={title}

@@ -21,7 +21,7 @@ export function MedicalClueView({
       {showImage && clue.static_image_url && (
         <div
           className={`relative w-full ${
-            compact ? 'h-32' : 'h-44'
+            compact ? 'h-36' : 'aspect-square'
           } rounded-2xl overflow-hidden border border-amber-500/20 bg-slate-950`}
         >
           <img

@@ -23,13 +23,13 @@ export function NoteClueView({
       {showImage && clue.static_image_url && (
         <div
           className={`relative w-full ${
-            compact ? 'h-32' : 'h-44'
+            compact ? 'h-36' : 'aspect-square'
           } rounded-2xl overflow-hidden border border-amber-500/20 bg-slate-950`}
         >
           <img
             src={clue.static_image_url}
             alt={title}
-            className="w-full h-full object-cover opacity-85"
+            className="w-full h-full object-cover"
           />
           <div className="absolute top-2.5 left-3 px-2.5 py-0.5 rounded-full bg-black/75 border border-amber-400/30 text-[9px] font-black uppercase tracking-widest text-amber-300 backdrop-blur-md">
             📝 {isDigitalNote ? 'Phone Notes App' : 'Recovered Personal Note'}

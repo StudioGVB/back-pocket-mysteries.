@@ -39,12 +39,12 @@ export function CctvClueView({
     <div className="w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl text-slate-100">
       {/* Security Camera Monitor Frame */}
       {showImage && (
-        <div className={`relative w-full ${compact ? 'aspect-[16/10]' : 'aspect-[4/3]'} bg-black overflow-hidden select-none`}>
+        <div className={`relative w-full ${compact ? 'aspect-[4/3]' : 'aspect-square'} bg-black overflow-hidden select-none`}>
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={title}
-              className="w-full h-full object-cover filter contrast-115 saturate-75"
+              className="w-full h-full object-cover filter contrast-110 saturate-85"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-black flex flex-col items-center justify-center gap-2">
@@ -57,7 +57,7 @@ export function CctvClueView({
 
           {/* CSS Scanline Overlay Pattern */}
           <div
-            className="pointer-events-none absolute inset-0 opacity-30"
+            className="pointer-events-none absolute inset-0 opacity-20"
             style={{
               backgroundImage:
                 'repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0px, rgba(0, 0, 0, 0.35) 1px, transparent 1px, transparent 3px)',
@@ -65,7 +65,7 @@ export function CctvClueView({
           />
 
           {/* CRT Vignette */}
-          <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.75)]" />
+          <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_28px_rgba(0,0,0,0.55)]" />
 
           {/* HUD Overlay */}
           <div className="pointer-events-none absolute inset-0 p-3.5 flex flex-col justify-between font-mono text-[10px]">
@@ -95,16 +95,18 @@ export function CctvClueView({
         </div>
       )}
 
-      {/* Surveillance Log Description */}
-      <div className="p-4 bg-slate-950 border-t border-slate-800/90 space-y-1.5">
-        <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-emerald-400/90">
-          <span>📹 SECURITY LOG ANALYSIS</span>
-          <span>{cctv.camera}</span>
+      {/* Surveillance Log Description (only shown when text notes exist) */}
+      {cctv.cleanDescription && (
+        <div className="px-4 py-3 bg-slate-950 border-t border-slate-800/90 space-y-1">
+          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-emerald-400/90">
+            <span>📹 SECURITY FEED</span>
+            <span>{cctv.camera}</span>
+          </div>
+          <p className="text-xs font-medium text-slate-200 leading-relaxed whitespace-pre-line">
+            {cctv.cleanDescription}
+          </p>
         </div>
-        <p className="text-xs font-medium text-slate-200 leading-relaxed whitespace-pre-line">
-          {cctv.cleanDescription || 'No surveillance notes recorded.'}
-        </p>
-      </div>
+      )}
     </div>
   );
 }
