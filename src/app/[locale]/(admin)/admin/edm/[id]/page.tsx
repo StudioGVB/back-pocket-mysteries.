@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { ACTIVE_MYSTERIES } from "@/data/active-mysteries";
 import { duplicateCampaign } from "../duplicateCampaign";
 import { toast } from "sonner";
 import {
@@ -13,8 +14,10 @@ import {
   Copy,
   Loader2,
   Mail,
+  Plus,
   Save,
   Send,
+  Sparkles,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -88,6 +91,12 @@ export default function EdmCampaignDetailPage() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [sendingLive, setSendingLive] = useState(false);
+  const [testEmail, setTestEmail] = useState("gabby@batchbase.com.au");
+  const [selectedMysterySlug, setSelectedMysterySlug] = useState(
+    ACTIVE_MYSTERIES[0]?.slug || "love-on-the-rocks"
+  );
   const [status, setStatus] = useState<CampaignStatus>("draft");
   const [subject, setSubject] = useState("");
   const [preheader, setPreheader] = useState("");
@@ -255,6 +264,154 @@ export default function EdmCampaignDetailPage() {
     }
   };
 
+  const handleSendTest = async () => {
+    if (isNew) {
+      toast.error("Please save the campaign first before sending a test email.");
+      return;
+    }
+    try {
+      setSendingTest(true);
+      await handleSave();
+      const res = await fetch("/api/admin/edm/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId: id, mode: "test", testEmail }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to send test email");
+      toast.success(json.message || `Test email sent to ${testEmail}!`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send test email");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const handleSendLive = async () => {
+    if (isNew) {
+      toast.error("Please save the campaign first.");
+      return;
+    }
+    if (!confirm("Send this EDM campaign immediately to all subscribed leads via Resend?")) {
+      return;
+    }
+    try {
+      setSendingLive(true);
+      await handleSave();
+      const res = await fetch("/api/admin/edm/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId: id, mode: "production" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to send campaign");
+      setStatus("sent");
+      toast.success(json.message || "Campaign sent via Resend!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send campaign");
+    } finally {
+      setSendingLive(false);
+    }
+  };
+
+  const handleInsertMysteryPack = () => {
+    const pack = ACTIVE_MYSTERIES.find((m) => m.slug === selectedMysterySlug) || ACTIVE_MYSTERIES[0];
+    if (!pack) return;
+
+    const baseUrl = "https://backpocketmysteries.com";
+    const themeUrl = `${baseUrl}/en/themes/${pack.slug}?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_spotlight`;
+    const coverImg = pack.coverUrl.startsWith("http")
+      ? pack.coverUrl
+      : `${baseUrl}${pack.coverUrl}`;
+
+    const packBlocks = [
+      {
+        id: `div-pack-${pack.slug}`,
+        type: "divider",
+        data: {
+          color: "#e8e8eb",
+          style: "solid",
+          margin: 24,
+          thickness: 1,
+          sectionStyles: {
+            backgroundColor: "transparent",
+            paddingTop: 4,
+            paddingBottom: 4,
+            paddingLeft: 16,
+            paddingRight: 16,
+          },
+        },
+      },
+      {
+        id: `pack-img-${pack.slug}`,
+        type: "image",
+        data: {
+          src: coverImg,
+          alt: pack.title,
+          width: "100%",
+          align: "center",
+          linkUrl: themeUrl,
+          borderRadius: 8,
+          sectionStyles: {
+            backgroundColor: "transparent",
+            paddingTop: 8,
+            paddingBottom: 8,
+            paddingLeft: 16,
+            paddingRight: 16,
+          },
+        },
+      },
+      {
+        id: `pack-text-${pack.slug}`,
+        type: "text",
+        data: {
+          content: `<span style='background-color:#1e191c;color:#fe04c6;font-size:11px;font-weight:800;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px;'>🔥 NEW MYSTERY BASE PACK • ${pack.theme.toUpperCase()}</span><h2 style='font-size:20px;font-weight:800;color:#1e191c;margin:4px 0 10px 0;line-height:1.3;'>${pack.title} (${pack.min_players}–${pack.max_players} Players)</h2><p style='margin:0 0 12px 0;color:#4b5563;font-size:15px;line-height:1.6;'>${pack.shortDesc}</p><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'>${(pack.whatIsIncluded || []).slice(0, 3).map((item) => `<li style='margin-bottom:6px;'><strong>Included:</strong> ${item}</li>`).join("")}</ul>`,
+          fontSize: 15,
+          textAlign: "left",
+          textColor: "#1e191c",
+          lineHeight: 1.6,
+          sectionStyles: {
+            backgroundColor: "transparent",
+            paddingTop: 12,
+            paddingBottom: 8,
+            paddingLeft: 16,
+            paddingRight: 16,
+          },
+        },
+      },
+      {
+        id: `pack-cta-${pack.slug}`,
+        type: "button",
+        data: {
+          text: `Explore New Mystery Pack: ${pack.title} →`,
+          url: themeUrl,
+          backgroundColor: "#1e191c",
+          textColor: "#ffffff",
+          borderRadius: 6,
+          align: "left",
+          padding: { x: 24, y: 12 },
+          sectionStyles: {
+            backgroundColor: "transparent",
+            paddingTop: 8,
+            paddingBottom: 20,
+            paddingLeft: 16,
+            paddingRight: 16,
+          },
+        },
+      },
+    ];
+
+    const footerIdx = blocks.findIndex((b) => b.id === "footer-text");
+    const nextBlocks =
+      footerIdx >= 0
+        ? [...blocks.slice(0, footerIdx), ...packBlocks, ...blocks.slice(footerIdx)]
+        : [...blocks, ...packBlocks];
+
+    setBlocks(nextBlocks);
+    setHtmlContent(compileBlocksToHtml(nextBlocks));
+    toast.success(`Inserted "${pack.title}" Mystery Base Pack spotlight into EDM!`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 bg-white rounded-2xl border border-gray-200">
@@ -336,6 +493,77 @@ export default function EdmCampaignDetailPage() {
               Mark Scheduled
             </button>
           )}
+
+          {!isNew && status !== "sent" && (
+            <button
+              type="button"
+              disabled={sendingLive}
+              onClick={handleSendLive}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs font-bold cursor-pointer shadow-xs"
+            >
+              {sendingLive ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+              Send Now (Resend)
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Resend Test Email & Mystery Pack Spotlight Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2">
+            <Send className="h-4 w-4 text-brand-pink shrink-0" />
+            <span className="text-xs font-black uppercase tracking-wider text-brand-dark">
+              Send Test Email (Resend)
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-1 sm:max-w-xs">
+            <input
+              type="email"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              placeholder="your@email.com"
+              className="flex-1 rounded-xl border border-gray-200 px-3 py-1.5 text-xs"
+            />
+            <button
+              type="button"
+              disabled={sendingTest || isNew}
+              onClick={handleSendTest}
+              className="px-3 py-1.5 rounded-xl bg-brand-dark hover:bg-brand-pink text-white text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
+            >
+              {sendingTest ? "Sending…" : "Send Test"}
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-brand-pink shrink-0" />
+            <span className="text-xs font-black uppercase tracking-wider text-brand-dark">
+              Mystery Base Spotlight
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-1 sm:max-w-xs">
+            <select
+              value={selectedMysterySlug}
+              onChange={(e) => setSelectedMysterySlug(e.target.value)}
+              className="flex-1 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-bold"
+            >
+              {ACTIVE_MYSTERIES.map((m) => (
+                <option key={m.slug} value={m.slug}>
+                  {m.title} ({m.theme})
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleInsertMysteryPack}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-pink text-white text-xs font-bold shrink-0 cursor-pointer hover:opacity-95"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Insert Pack
+            </button>
+          </div>
         </div>
       </div>
 

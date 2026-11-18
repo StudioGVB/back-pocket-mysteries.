@@ -484,6 +484,45 @@ const posts = [
   },
 ];
 
+async function ensureGeneratedBlogImage(slug, title, fallbackImage) {
+  const dir = "public/blog-images";
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const targetPath = `${dir}/${slug}.png`;
+  if (fs.existsSync(targetPath) && fs.statSync(targetPath).size > 10000) {
+    return `/blog-images/${slug}.png`;
+  }
+
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (apiKey) {
+    try {
+      console.log(`🎨 generating new AI cover image for ${slug}...`);
+      const prompt = `Cinematic editorial photography for a murder mystery party guide titled "${title}", moody noir lighting with warm candlelight and subtle neon accents, well-dressed guests at an atmospheric dinner party examining clues, 8k photorealistic, zero text or letters.`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ["IMAGE"] },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const imgPart = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+        const b64 = imgPart?.inlineData?.data;
+        if (b64) {
+          fs.writeFileSync(targetPath, Buffer.from(b64, "base64"));
+          console.log(`✓ saved new AI blog image: /blog-images/${slug}.png`);
+          return `/blog-images/${slug}.png`;
+        }
+      }
+    } catch {
+      // Fallback below
+    }
+  }
+  return fallbackImage;
+}
+
 for (const p of posts) {
   const { md, ...rest } = p;
   const words = md.split(/\s+/).filter(Boolean).length;
@@ -499,9 +538,20 @@ const store = fs.existsSync(storePath)
 
 for (const p of posts) {
   const { md, ...rest } = p;
+  const generatedImage = await ensureGeneratedBlogImage(
+    rest.slug,
+    rest.title,
+    rest.featured_image_url
+  );
   const html = await marked(md);
   const nowIso = new Date().toISOString();
-  const row = { ...rest, content: html, content_markdown: html, updated_at: nowIso };
+  const row = {
+    ...rest,
+    featured_image_url: generatedImage,
+    content: html,
+    content_markdown: html,
+    updated_at: nowIso,
+  };
 
   // 1. Try Supabase Postgres table
   const { data: existing, error: selErr } = await supabase

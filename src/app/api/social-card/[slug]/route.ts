@@ -7,8 +7,6 @@ import { loadMarketingStore } from "@/lib/marketing-store";
 import fs from "fs";
 import path from "path";
 
-export const runtime = "nodejs";
-
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

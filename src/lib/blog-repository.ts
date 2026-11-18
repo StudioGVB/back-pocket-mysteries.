@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { cacheLife } from "next/cache";
 import { blogPosts as staticBlogPosts, BlogPost } from "@/data/blog-posts";
 import { loadMarketingStore } from "@/lib/marketing-store";
 import { format } from "date-fns";
@@ -24,10 +25,11 @@ function getAnonSupabase() {
   return createClient(url, key);
 }
 
-function mapDbRowToBlogPost(row: any): HydratedBlogPost {
-  const publishDate = row.publish_date ? new Date(row.publish_date) : new Date(row.created_at || Date.now());
-  const now = new Date();
-  const isScheduled = Boolean(row.publish_date && publishDate > now);
+function mapDbRowToBlogPost(row: any, nowTimestamp: number): HydratedBlogPost {
+  const publishDate = row.publish_date
+    ? new Date(row.publish_date)
+    : new Date(row.created_at || nowTimestamp);
+  const isScheduled = Boolean(row.publish_date && publishDate.getTime() > nowTimestamp);
 
   return {
     id: row.id,
@@ -71,9 +73,13 @@ function mapDbRowToBlogPost(row: any): HydratedBlogPost {
  * Scheduled future-dated posts are excluded from the public listing and sitemap.
  */
 export async function getPublishedBlogPosts(): Promise<HydratedBlogPost[]> {
+  "use cache";
+  cacheLife("minutes");
+
   const sb = getAnonSupabase();
   const store = await loadMarketingStore();
-  const nowIso = new Date().toISOString();
+  const nowTimestamp = Date.now();
+  const nowIso = new Date(nowTimestamp).toISOString();
   const dbPosts: HydratedBlogPost[] = [];
   const hiddenSlugs = new Set<string>();
   let rows: any[] = [];
@@ -104,7 +110,7 @@ export async function getPublishedBlogPosts(): Promise<HydratedBlogPost[]> {
     if (row.is_draft || (row.publish_date && row.publish_date > nowIso)) {
       hiddenSlugs.add(row.slug);
     } else {
-      dbPosts.push(mapDbRowToBlogPost(row));
+      dbPosts.push(mapDbRowToBlogPost(row, nowTimestamp));
     }
   }
 
@@ -128,6 +134,10 @@ export async function getPublishedBlogPosts(): Promise<HydratedBlogPost[]> {
  * with `noIndex: true` until `publish_date <= now()`.
  */
 export async function getBlogPostBySlug(slug: string): Promise<HydratedBlogPost | null> {
+  "use cache";
+  cacheLife("minutes");
+
+  const nowTimestamp = Date.now();
   const sb = getAnonSupabase();
   if (sb) {
     try {
@@ -139,7 +149,7 @@ export async function getBlogPostBySlug(slug: string): Promise<HydratedBlogPost 
         .maybeSingle();
 
       if (!error && data) {
-        return mapDbRowToBlogPost(data);
+        return mapDbRowToBlogPost(data, nowTimestamp);
       }
     } catch {
       // Fallback
@@ -149,7 +159,7 @@ export async function getBlogPostBySlug(slug: string): Promise<HydratedBlogPost 
   const store = await loadMarketingStore();
   const storeMatch = store.blog_posts.find((p) => p.slug === slug && !p.is_draft);
   if (storeMatch) {
-    return mapDbRowToBlogPost(storeMatch);
+    return mapDbRowToBlogPost(storeMatch, nowTimestamp);
   }
 
   const staticMatch = staticBlogPosts.find((p) => p.slug === slug);
