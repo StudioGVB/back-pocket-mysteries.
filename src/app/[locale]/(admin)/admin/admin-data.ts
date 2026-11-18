@@ -114,19 +114,9 @@ export async function getTopMysteries() {
 }
 
 export async function getLeads() {
-  const { supabase } = await requireAdmin();
-
-  const { data, error } = await supabase
-    .from('leads')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching leads:', error);
-    return [];
-  }
-
-  return data || [];
+  await requireAdmin();
+  const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
+  return getAllMarketingLeadsAction();
 }
 
 export async function getCustomers() {

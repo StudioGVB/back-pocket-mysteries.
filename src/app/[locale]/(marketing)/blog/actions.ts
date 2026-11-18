@@ -1,43 +1,38 @@
 // @ts-nocheck
-'use server'
+'use server';
 
-import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { submitEmailLead } from '@/app/actions/marketing';
 
 export type SubscribeState = {
   success?: boolean;
+  vipRank?: number;
+  qualifiesForFreeMystery?: boolean;
+  spotsRemaining?: number;
   error?: string;
 };
 
-export async function subscribeToNewsletter(prevState: SubscribeState | null, formData: FormData): Promise<SubscribeState> {
-  const email = formData.get('email') as string;
-  const fullName = formData.get('full_name') as string;
-  const consent = formData.get('marketing_consent') === 'on';
+export async function subscribeToNewsletter(
+  prevState: SubscribeState | null,
+  formData: FormData
+): Promise<SubscribeState> {
+  const email = (formData.get('email') as string || '').trim();
+  const fullName = (formData.get('full_name') as string || '').trim();
 
   if (!email || !email.includes('@')) {
     return { error: 'Please enter a valid email address.' };
   }
 
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from('leads')
-    .insert([
-      { 
-        email, 
-        full_name: fullName || null, 
-        marketing_consent: consent 
-      }
-    ]);
-
-  if (error) {
-    if (error.code === '23505') {
-      return { error: 'This email is already subscribed!' };
-    }
-    console.error('Newsletter subscription error:', error);
-    return { error: 'Something went wrong. Please try again later.' };
+  const res = await submitEmailLead(email, fullName || undefined, 'blog_newsletter');
+  if (!res.success) {
+    return { error: res.error || 'Something went wrong. Please try again later.' };
   }
 
   revalidatePath('/', 'layout');
-  return { success: true };
+  return {
+    success: true,
+    vipRank: res.vipRank,
+    qualifiesForFreeMystery: res.qualifiesForFreeMystery,
+    spotsRemaining: res.spotsRemaining,
+  };
 }

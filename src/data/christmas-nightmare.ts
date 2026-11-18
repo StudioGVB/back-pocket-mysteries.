@@ -508,9 +508,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 1,
     format: 'physical_prop',
     static_image_url: '/generated-clues/5ff23ebe-96f7-49d5-8222-84ca13a932f4-99bd7698900d.jpg',
-    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} by the coat closet while a broken "Forever Sisters" snowflake pin lies outside the slatted door.',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} by the coat closet while a broken sterling silver "Forever Sisters" snowflake pin and dark berry lipstick glass sit outside the slatted door.',
     description:
-      'Exhibit #1A: Motion-triggered hallway camera frame outside the coat closet at 7:40 PM.\nExhibit #1B: Found stepped into the hallway runner just outside the slatted closet door: one antique silver snowflake hairpin with a snapped clasp, engraved on the reverse with "Forever Sisters".',
+      'Exhibit #1A: Motion-triggered hallway camera frame outside the coat closet at 7:40 PM.\nExhibit #1B: Found just outside the slatted closet door: one sterling silver snowflake hairpin with a snapped clasp engraved "Forever Sisters" (the silver half of the sisters\' matching gold-and-silver heirloom set), beside a wine glass rimmed with dark berry lipstick.',
     generation_prompt: 'A candid low-light hallway photograph showing {{The Husband}} and {{The Mistress}} standing closely together talking by an open wooden coat closet doorway while a vintage silver snowflake hairpin lies on the dark hallway runner carpet in the foreground. (No text).',
   },
   {
@@ -557,7 +557,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-646107074d71.jpg',
     internal_notes: '[FORMAT:cctv] [CODE:R1-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV composite showing {{The Sister-in-Law}} and {{The Co-Worker}} visiting the hallway storage closet and fuse box between 7:52 PM and 8:03 PM.',
     description:
-      'Header: CAM 01 • HALLWAY STORAGE & BREAKER PANEL\nTimestamp: 7:52 PM - 8:03 PM\n• 7:52 PM: Clip #1 - Closet door opened (Shelf B level); subject exits carrying a coiled bundle under arm.\n• 7:58 PM: Clip #2 - Closet door opened (Shelf A level); second subject reaches for top utility rack.\n• 8:03 PM: Clip #3 - Wall Breaker Panel beside closet opened; Switch #4 ("2F-STUDY") toggled to OFF.',
+      'Header: CAM 01 • HALLWAY STORAGE & BREAKER PANEL\nTimestamp: 7:52 PM - 8:03 PM\n• 7:52 PM (Closet Door): Female subject opens middle shelf (Shelf B) and exits carrying a coiled bundle under her arm.\n• 7:58 PM (Top Rack): Male subject opens closet door and removes item from top utility rack (Shelf A).\n• 8:03 PM (Wall Panel): Same male subject opens breaker panel beside closet and toggles Switch #4 ("2F-STUDY") to OFF.',
     generation_prompt: 'An overhead security camera still in a dimly lit holiday hallway showing {{The Sister-in-Law}} near the open storage closet door and {{The Co-Worker}} reaching toward the wall fuse box panel. (No text).',
   },
 
@@ -671,7 +671,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111109-6c6f2b97ac73.jpg',
     internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19:12 PM (not the sedative drops or work gloves), and matches the broken "...ever Sisters" clasp.',
     description:
-      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: 8:30 PM • LIVING ROOM\n• Primary Finding: {{The Husband}} found beside tree wrapped in 25-ft braided vintage light cord plugged into Wall Outlet #1 (fatal electrical/ligature trauma at 8:19:12 PM).\n• Blood Toxicology: Zolpidem level 0.04 mg/L (mild sedation only; ruled out as cause of death).\n• Cord Trace Analysis: Negative for leather glove fibers or chimney ash. Snagged inside the third knot of the wire: a 6mm broken silver clasp stamped "...ever Sisters".',
+      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: DEATH AT 8:19 PM • 1ST FLOOR LIVING ROOM\n• Primary Finding: {{The Husband}} found beside tree wrapped in 25-ft braided vintage light cord plugged into Wall Outlet #1 (fatal electrical/ligature trauma at 8:19:12 PM).\n• Blood Toxicology: Zolpidem level 0.04 mg/L (mild sedation only; ruled out as cause of death).\n• Cord Trace Analysis: Negative for leather glove fibers or chimney ash. Snagged inside the third knot of the wire: a 6mm broken sterling silver clasp stamped "...ever Sisters".',
     generation_prompt: 'A close-up photograph beside a decorated Christmas tree showing a tangled strand of glowing red and green vintage Christmas tree lights coiled across a dark hardwood floor next to a spilled crystal cup. (No text).',
   },
   {
