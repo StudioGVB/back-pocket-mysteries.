@@ -11,7 +11,7 @@ import { requireAdmin } from '@/utils/admin-auth';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash');
 
-export const FIRST_50_VIP_CAP = 50;
+const FIRST_50_VIP_CAP = 50;
 
 export interface MarketingLeadRecord {
   id: string;

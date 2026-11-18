@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import {
   MarketingLeadRecord,
   adminSendFreeMysteryCodeToLeadAction,
-  FIRST_50_VIP_CAP,
 } from '@/app/actions/marketing';
+
+const FIRST_50_VIP_CAP = 50;
 
 export default function AdminLeadsClient({
   initialLeads,
