@@ -1225,6 +1225,11 @@ export function cleanSpokenDialogue(text: string, characters?: any[]): string {
     cleaned = cleaned.replace(/\{\{([^}]+)\}\}/g, (_, rawName: string) => rawName.trim());
   }
 
+  // Normalize bare top-of-hour times like "at 8:00" or "8:00 PM" to "8PM" so TTS never reads "8:00" as "eighty"
+  cleaned = cleaned
+    .replace(/\b(\d{1,2}):00\s*([AP]M)\b/gi, (_, h: string, mer: string) => `${h}${mer.toUpperCase()}`)
+    .replace(/\b(at|by|around|until|before|after)\s+(\d{1,2}):00\b(?!\s*[AP]M)/gi, '$1 $2PM');
+
   return cleaned.replace(/\s+/g, ' ').trim();
 }
 

@@ -494,7 +494,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     voice_region: 'en-AU',
     internal_notes: '[FORMAT:audio] [CODE:R1-C2] Fake Arc Step 1 ({{The Wife}} + {{The Co-Worker}}) - Exposes that exes {{The Wife}} and {{The Co-Worker}} conspired to break into {{The Husband}}\'s study safe at 8:00 PM.',
     description:
-      'Recording Duration: 22.4 Seconds (7:25 PM • Kitchen Patio):\nMale Voice: "He brought the company audit folder to the house tonight. If he hands that over on Monday, my career is finished."\nFemale Voice: "And if I try to leave him, his new prenup clause leaves me with nothing. We grew up on this street together, you promised you\'d protect me."\nMale Voice: "I will. Meet me by the hallway closet at 8:00. We get into his study safe tonight."',
+      'Recording Duration: 22.4 Seconds (7:25 PM • Kitchen Patio):\nMale Voice: "He brought the company audit folder to the house tonight. If he hands that over on Monday, my career is finished."\nFemale Voice: "And if I try to leave him, his new prenup clause leaves me with nothing. We grew up on this street together, you promised you\'d protect me."\nMale Voice: "I will. Meet me by the hallway closet at 8PM. We get into his study safe tonight."',
     generation_prompt: 'A cinematic photograph of {{The Wife}} and {{The Co-Worker}} whispering together outside a frost-covered glass patio door under warm holiday string lights. (No text).',
   },
   {
