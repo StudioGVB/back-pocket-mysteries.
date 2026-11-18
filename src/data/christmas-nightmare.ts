@@ -60,7 +60,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Red',
-      bio: '{{The Husband}} grew up with the whole group and sits right at the center of tonight\'s tangled holiday web. He is married to {{The Wife}}, siblings-in-law and former childhood classmates with {{The Sister-in-Law}}, lifelong besties with {{The Bestie}} (Neighbour B), and works together with {{The Co-Worker}} (Neighbour A). Behind closed doors, his marriage to {{The Wife}} is falling apart, and he has been having a secret affair with {{The Mistress}}, who is married to {{The Co-Worker}} and used to be {{The Wife}}\'s old bestie. Tonight, {{The Husband}} was found dead, tightly wrapped in Christmas lights.',
+      bio: '{{The Husband}} grew up on the same street as the rest of the group and went to high school with everyone at tonight\'s Christmas dinner. He has been married to {{The Wife}} for five years, is siblings-in-law with {{The Sister-in-Law}}, has been best friends with {{The Bestie}} since high school, and works at the same company as {{The Co-Worker}}.',
       outfit_advice: 'Sharp holiday host attire: a tailored velvet blazer or cashmere turtleneck in deep crimson or forest green, dark tailored trousers, and a luxury dress watch.',
       outfit_reference_images: [
         '/outfits/lotr/the-host-m-1.jpg',
@@ -68,14 +68,14 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         '/outfits/lotr/the-host-m-3.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheHusband&eyebrows=default&eyes=default&mouth=smile&clothesColor=991b1b&backgroundColor=transparent&top=shortWaved&hairColor=282828&skinColor=ffe0bd',
-      act_summary: 'Act like the charming, controlling king of the Christmas party while hiding your explosive marital issues with {{The Wife}} and your secret affair with {{The Mistress}}.',
+      act_summary: 'Act like the charming, larger-than-life host of the annual Christmas dinner who loves holding court with old high school friends and childhood neighbours.',
       act_bullets: [
-        'Toast loudly to childhood friendships and growing up together while avoiding real questions about your marriage.',
-        'Trade secretive, lingering glances with {{The Mistress}} whenever {{The Co-Worker}} and {{The Wife}} look away.',
-        'Treat {{The Bestie}} like your ride-or-die brother and confidant.',
-        'Talk shop with {{The Co-Worker}} as if you aren\'t secretly sleeping with his wife.',
+        'Toast loudly to growing up on the same street and keeping the old high school crew together.',
+        'Keep up a polished holiday host front alongside your wife of five years, {{The Wife}}.',
+        'Treat your childhood neighbour, {{The Bestie}}, like your lifelong right-hand man.',
+        'Talk work and office politics with {{The Co-Worker}}, who works at the same firm as you.',
       ],
-      traits: ['Controlling', 'Charming', 'Deceitful', 'Two-Faced'],
+      traits: ['Charismatic', 'Commanding', 'Ambitious', 'Smooth'],
     },
   },
   {
@@ -91,7 +91,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Emerald Green',
-      bio: '{{The Wife}} grew up next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}) alongside her sister, {{The Sister-in-Law}}. She is married to {{The Husband}}, though their marriage has been imploding behind closed doors. Tonight\'s guest list is a minefield of childhood history: {{The Co-Worker}} (Neighbour A) is her ex, and {{The Co-Worker}}\'s wife ({{The Mistress}}) used to be {{The Wife}}\'s old bestie before a falling out, while now being current besties with {{The Sister-in-Law}}. Tonight, {{The Wife}} secretly teamed up with her ex ({{The Co-Worker}}) to break into {{The Husband}}\'s study safe and burn his ruthless prenup clause.',
+      bio: '{{The Wife}} grew up next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}) alongside her younger sister, {{The Sister-in-Law}}. She has been married to {{The Husband}} for five years after dating since high school. She also dated {{The Co-Worker}} back in high school and used to be best friends with {{The Mistress}} when they were teenagers.',
       outfit_advice: 'Effortlessly glamorous holiday hostess: an emerald green silk midi dress or velvet jumpsuit, gold statement earrings, and heels.',
       outfit_reference_images: [
         '/outfits/lotr/the-star-1.jpg',
@@ -99,14 +99,14 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         '/outfits/lotr/the-star-3.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheWife&eyebrows=default&eyes=default&mouth=smile&clothesColor=065f46&backgroundColor=transparent&top=straight01&hairColor=4a3123&skinColor=ffe0bd',
-      act_summary: 'Maintain a brittle, picture-perfect Christmas hostess smile that cracks into raw heartbreak whenever your marriage to {{The Husband}} or your history with {{The Mistress}} and {{The Co-Worker}} comes up.',
+      act_summary: 'Play the poised, gracious Christmas party hostess welcoming your sister and childhood neighbours back to the house for the holidays.',
       act_bullets: [
-        'Lean heavily on your sister, {{The Sister-in-Law}}, as your fiercest supporter.',
-        'Keep a polite but icy distance from your old bestie, {{The Mistress}}.',
-        'Exchange nervous, conspiratorial glances with your childhood neighbour and ex, {{The Co-Worker}}, about the upstairs study safe.',
-        'Try to downplay the bitter marital fight you had with {{The Husband}} earlier tonight.',
+        'Stay close with your younger sister, {{The Sister-in-Law}}, who you grew up sharing everything with.',
+        'Keep things polite and composed around your old high school best friend, {{The Mistress}}.',
+        'Reminisce about growing up next door to the two neighbour brothers, {{The Co-Worker}} and {{The Bestie}}.',
+        'Keep the holiday dinner moving smoothly alongside your husband of five years, {{The Husband}}.',
       ],
-      traits: ['Heartbroken', 'Poised', 'Guarded', 'Emotional'],
+      traits: ['Poised', 'Guarded', 'Graceful', 'Observant'],
     },
   },
   {
@@ -122,7 +122,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Silver',
-      bio: '{{The Sister-in-Law}} grew up with the entire group as {{The Wife}}\'s sister and the childhood neighbour to {{The Co-Worker}} and {{The Bestie}}. She is siblings-in-law and former childhood classmates with {{The Husband}}, current besties with {{The Mistress}}, good friends with {{The Co-Worker}}, and is having a secret fling with {{The Bestie}}. Tonight, after discovering her current bestie ({{The Mistress}}) was having an affair with {{The Husband}} and overhearing {{The Husband}} tell {{The Wife}} she would never be free of him, {{The Sister-in-Law}} slipped away from her pantry tryst with {{The Bestie}} and used the missing Christmas lights to end {{The Husband}} so her sister could finally be happy and free.',
+      bio: '{{The Sister-in-Law}} is {{The Wife}}\'s younger sister and grew up next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}). She went to high school with {{The Husband}} and {{The Mistress}}, and over the last few years she and {{The Mistress}} have become close best friends.',
       outfit_advice: 'Sleek winter chic: a shimmering silver sweater dress or satin blouse with tailored trousers, layered silver jewelry, and dark berry lipstick.',
       outfit_reference_images: [
         '/outfits/lotr/the-sister-1.jpg',
@@ -130,14 +130,14 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         '/outfits/lotr/the-sister-3.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheSisterInLaw&eyebrows=default&eyes=default&mouth=smile&clothesColor=64748b&backgroundColor=transparent&top=curvy&hairColor=a55728&skinColor=ffe0bd',
-      act_summary: 'Play the fiercely protective sister comforting {{The Wife}}, while hiding your shock over {{The Mistress}}\'s betrayal and letting others think your only secret tonight was your fling with {{The Bestie}}.',
+      act_summary: 'Play the sharp-witted, loyal younger sister who grew up on the street with everyone at the table and knows all the old neighbourhood history.',
       act_bullets: [
-        'Fiercely protect your sister, {{The Wife}}, whenever anyone brings up her marital problems with {{The Husband}}.',
-        'Struggle to hide your anger toward your current bestie, {{The Mistress}}, after uncovering her affair with {{The Husband}}.',
-        'Lean on {{The Bestie}} to vouch for your pantry alibi between 8:15 and 8:25 PM.',
-        'Stay warm and friendly with your childhood neighbour {{The Co-Worker}}, who has no idea his wife was cheating with {{The Husband}}.',
+        'Always have your older sister {{The Wife}}\'s back during family holiday dinners.',
+        'Chat and catch up with your current best friend, {{The Mistress}}.',
+        'Banter with the two brothers you grew up next door to, {{The Co-Worker}} and {{The Bestie}}.',
+        'Trade dry high school memories with your brother-in-law, {{The Husband}}.',
       ],
-      traits: ['Fiercely Protective', 'Loyal', 'Calculating', 'Unforgiving'],
+      traits: ['Loyal', 'Sharp-Witted', 'Protective', 'Observant'],
     },
     motive: {
       legacyId: '74df0c99-4a91-495c-b60a-98da5de9e10e',
@@ -159,7 +159,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Gold',
-      bio: 'Part of the tight-knit childhood group, {{The Mistress}} is married to {{The Co-Worker}} (Neighbour A) and works alongside his brother, {{The Bestie}} (Neighbour B). She used to be old besties with {{The Wife}}, and is now current besties with {{The Sister-in-Law}}. Behind everyone\'s back, she has been carrying on a secret affair with {{The Husband}}. When {{The Husband}} refused to leave {{The Wife}} tonight and threatened to expose both the affair and missing workplace funds, {{The Mistress}} and her co-worker {{The Bestie}} spiked {{The Husband}}\'s holiday drink with sleeping drops to unlock and wipe his phone at 8:16 PM.',
+      bio: '{{The Mistress}} went to high school with the whole group and has been married to {{The Co-Worker}} for three years. She works at the same company as her brother-in-law, {{The Bestie}}. Back in high school she was best friends with {{The Wife}}, and today she is close best friends with {{The Sister-in-Law}}.',
       outfit_advice: 'Show-stopping holiday glamour: a gold sequin or scarlet cocktail dress, statement heels, and bold holiday makeup.',
       outfit_reference_images: [
         '/outfits/lotr/the-runner-up-1.jpg',
@@ -167,14 +167,14 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         '/outfits/lotr/the-runner-up-3.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheMistress&eyebrows=default&eyes=default&mouth=smile&clothesColor=b45309&backgroundColor=transparent&top=straight02&hairColor=d6b370&skinColor=ffe0bd',
-      act_summary: 'Act like the affectionate wife to {{The Co-Worker}} and devoted bestie to {{The Sister-in-Law}}, while panicking that you and {{The Bestie}} drugged {{The Husband}}\'s drink to steal his phone just minutes before he died.',
+      act_summary: 'Act like the glamorous, outgoing socialite of the friend group who loves holiday parties and knows everyone from high school and the office.',
       act_bullets: [
-        'Overcompensate with affection toward your husband, {{The Co-Worker}}, so he doesn\'t suspect your affair with {{The Husband}}.',
-        'Lean on your current bestie, {{The Sister-in-Law}}, without realizing she already discovered your secret.',
-        'Navigate the awkward history with your old bestie, {{The Wife}}, who also happens to be your husband\'s ex.',
-        'Whisper urgently with your brother-in-law and co-worker, {{The Bestie}}, about what you two did with {{The Husband}}\'s phone.',
+        'Be affectionate with your husband of three years, {{The Co-Worker}}.',
+        'Gossip and laugh with your current best friend, {{The Sister-in-Law}}.',
+        'Reminisce about high school days with your old best friend, {{The Wife}}, and her husband, {{The Husband}}.',
+        'Talk work life with your brother-in-law and office colleague, {{The Bestie}}.',
       ],
-      traits: ['Seductive', 'Secretive', 'Charming', 'Defensive'],
+      traits: ['Glamorous', 'Outgoing', 'Charming', 'Social'],
     },
     motive: {
       legacyId: '1206a2e2-169b-489b-a99d-ffe72f2f07b0',
@@ -196,7 +196,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Charcoal',
-      bio: '{{The Co-Worker}} (Neighbour A) grew up right next door to the two sisters ({{The Wife}} and {{The Sister-in-Law}}) alongside his brother, {{The Bestie}} (Neighbour B). He works together with {{The Husband}}, is married to {{The Mistress}}, is close childhood friends with {{The Sister-in-Law}}, and is exes with {{The Wife}}. Discovering {{The Husband}} brought company audit files tonight to ruin his career on Monday, {{The Co-Worker}} grabbed heavy work gloves from the hallway closet and teamed up with his ex ({{The Wife}}) to pry open {{The Husband}}\'s upstairs study safe and burn the files at 8:20 PM.',
+      bio: '{{The Co-Worker}} grew up right next door to the two sisters ({{The Wife}} and {{The Sister-in-Law}}) alongside his brother, {{The Bestie}}. He has been married to {{The Mistress}} for three years, works at the same company as {{The Husband}}, and briefly dated {{The Wife}} back when they were in high school.',
       outfit_advice: 'Sleek smart-casual holiday attire: a charcoal blazer over a dark merino knit sweater, tailored trousers, and a whiskey glass in hand.',
       outfit_reference_images: [
         '/outfits/lotr/the-flameout-m-1.jpg',
@@ -204,14 +204,14 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         '/outfits/lotr/the-flameout-m-3.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheCoWorker&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e293b&backgroundColor=transparent&top=shortCurly&hairColor=282828&skinColor=ffe0bd',
-      act_summary: 'Be the observant, brooding neighbour brother who balances marriage to {{The Mistress}}, protective loyalty to your ex ({{The Wife}}), and hiding the fact that you broke into the upstairs study safe.',
+      act_summary: 'Be the observant, level-headed older neighbour brother who grew up next door to the sisters and works at the same company as {{The Husband}}.',
       act_bullets: [
-        'Bring up workplace tensions from working together with {{The Husband}}.',
-        'Share nostalgic childhood neighbour memories with {{The Sister-in-Law}} and your ex, {{The Wife}}.',
-        'Hide why you took the work gloves from the hallway storage closet at 7:58 PM.',
-        'Stick close to your brother, {{The Bestie}}, whenever accusations start flying.',
+        'Chat about work with {{The Husband}}, since the two of you work in the same department.',
+        'Share childhood street memories with the sisters you grew up next door to, {{The Wife}} and {{The Sister-in-Law}}.',
+        'Enjoy the Christmas party alongside your wife of three years, {{The Mistress}}.',
+        'Joke around with your younger brother, {{The Bestie}}.',
       ],
-      traits: ['Observant', 'Loyal', 'Brooding', 'Protective'],
+      traits: ['Observant', 'Loyal', 'Composed', 'Grounded'],
     },
     motive: {
       legacyId: '2c10d4fa-76ef-47cd-b051-2aa157f2b9c4',
@@ -233,7 +233,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Navy Blue',
-      bio: '{{The Bestie}} (Neighbour B) grew up next door to {{The Wife}} and {{The Sister-in-Law}} alongside his brother, {{The Co-Worker}} (Neighbour A). He is {{The Husband}}\'s bestie, works as a co-worker with his sister-in-law {{The Mistress}}, and is having a secret fling with {{The Sister-in-Law}}. Tonight, after {{The Husband}} threatened to expose both his secret fling with {{The Sister-in-Law}} and workplace irregularities with {{The Mistress}}, {{The Bestie}} helped {{The Mistress}} spike {{The Husband}}\'s eggnog to wipe his phone at 8:16 PM, and then agreed to be {{The Sister-in-Law}}\'s pantry alibi without realizing she slipped away for 10 minutes.',
+      bio: '{{The Bestie}} grew up next door to {{The Wife}} and {{The Sister-in-Law}} alongside his older brother, {{The Co-Worker}}. He has been {{The Husband}}\'s best friend since high school and works in the same office as his sister-in-law, {{The Mistress}}.',
       outfit_advice: 'Classic, disarming holiday style: a navy cable-knit sweater layered over a crisp Oxford shirt, dark chinos, and an easygoing smile.',
       outfit_reference_images: [
         '/outfits/lotr/the-producer-plant-m-1.jpg',
@@ -241,14 +241,14 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         '/outfits/lotr/the-producer-plant-m-3.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheBestie&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e3a8a&backgroundColor=transparent&top=shortFlat&hairColor=4a3123&skinColor=ffe0bd',
-      act_summary: 'Act like {{The Husband}}\'s loyal best friend and the easygoing neighbour brother, while sweating over both the spiked eggnog with {{The Mistress}} and the pantry alibi you gave {{The Sister-in-Law}}.',
+      act_summary: 'Act like {{The Husband}}\'s easygoing lifelong best friend and the fun-loving younger neighbour brother who grew up on the street with everyone.',
       act_bullets: [
-        'Talk up how you and {{The Husband}} have been besties since you all grew up together.',
-        'Back up your brother, {{The Co-Worker}}, and exchange nervous looks with your co-worker and sister-in-law, {{The Mistress}}.',
-        'Hide your secret fling with {{The Sister-in-Law}} so nobody asks why you two were sneaking into the pantry.',
-        'Slowly question where {{The Sister-in-Law}} actually went during the 10 minutes she left you alone in the pantry.',
+        'Talk up how you and {{The Husband}} have been inseparable best friends since high school.',
+        'Trade stories with your older brother, {{The Co-Worker}}, and your sister-in-law and co-worker, {{The Mistress}}.',
+        'Catch up with {{The Wife}} and {{The Sister-in-Law}}, who grew up in the house right next door to yours.',
+        'Keep the holiday drinks flowing and the mood light around the Christmas tree.',
       ],
-      traits: ['Charming', 'Easygoing', 'Secretive', 'Loyal'],
+      traits: ['Charming', 'Easygoing', 'Friendly', 'Loyal'],
     },
     motive: {
       legacyId: '78c3a198-4be8-4ae6-ab3c-7dcf9a68c182',
@@ -279,106 +279,106 @@ export const CHRISTMAS_NIGHTMARE_RELATIONSHIPS: CanonicalChristmasRelationship[]
   {
     charAKey: 'husband',
     charBKey: 'wife',
-    dynamics: ['Married', 'Romantic', 'Marital Issues'],
-    notes: '{{The Husband}} and {{The Wife}} are married and grew up together, though their marriage is imploding behind closed doors.',
+    dynamics: ['Married (5 Years)', 'High School Sweethearts'],
+    notes: 'Married for 5 years after dating since high school.',
   },
-  // 2. HUSBAND <-> Sister (Siblings in Law & Childhood Classmates)
+  // 2. HUSBAND <-> Sister (Siblings in Law & High School Classmates)
   {
     charAKey: 'husband',
     charBKey: 'sister',
-    dynamics: ['Siblings in Law', 'Childhood Classmates', 'Family'],
-    notes: '{{The Husband}} and {{The Sister-in-Law}} grew up together as childhood classmates and are now siblings-in-law through his marriage to {{The Wife}}.',
+    dynamics: ['Siblings-in-Law', 'High School Classmates'],
+    notes: 'Went to high school together and have been siblings-in-law for 5 years through his marriage to {{The Wife}}.',
   },
-  // 3. HUSBAND <-> Wife/Mistress (Affair)
+  // 3. HUSBAND <-> Mistress (High School Friends)
   {
     charAKey: 'husband',
     charBKey: 'mistress',
-    dynamics: ['Affair', 'Romantic'],
-    notes: '{{The Husband}} is having a secret affair with {{The Mistress}}, who is married to {{The Co-Worker}} (Neighbour A) and used to be {{The Wife}}\'s old bestie.',
+    dynamics: ['High School Friends', 'Neighbour Couples'],
+    notes: 'Went to high school in the same friend group and live on the same street.',
   },
   // 4. HUSBAND <-> Neighbour A / Co-Worker (Work together)
   {
     charAKey: 'husband',
     charBKey: 'coworker',
-    dynamics: ['Work together', 'Co-workers', 'Childhood Neighbours'],
-    notes: '{{The Husband}} and {{The Co-Worker}} (Neighbour A) grew up together and work together, while {{The Husband}} secretly sleeps with {{The Co-Worker}}\'s wife ({{The Mistress}}).',
+    dynamics: ['Work Together', 'Childhood Neighbours'],
+    notes: 'Grew up on the same street, went to high school together, and work at the same company.',
   },
   // 5. HUSBAND <-> Neighbour B / Bestie (Besties)
   {
     charAKey: 'husband',
     charBKey: 'bestie',
-    dynamics: ['Besties', 'Friends', 'Childhood Neighbours'],
-    notes: '{{The Husband}} and {{The Bestie}} (Neighbour B) grew up together and are lifelong besties.',
+    dynamics: ['Lifelong Besties', 'High School Friends'],
+    notes: 'Best friends since high school who grew up on the same street.',
   },
-  // 6. WIFE <-> Sister (Sisters, Childhood Neighbours with the Brothers)
+  // 6. WIFE <-> Sister (Sisters)
   {
     charAKey: 'wife',
     charBKey: 'sister',
-    dynamics: ['Sisters', 'Family', 'Besties'],
-    notes: '{{The Wife}} and {{The Sister-in-Law}} are sisters who grew up next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}). {{The Sister-in-Law}} is fiercely devoted to making sure {{The Wife}} is happy and free.',
+    dynamics: ['Sisters', 'Grew Up Together'],
+    notes: 'Sisters who grew up together right next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}).',
   },
-  // 7. WIFE <-> Wife/Mistress (Old Besties)
+  // 7. WIFE <-> Mistress (Old High School Besties)
   {
     charAKey: 'wife',
     charBKey: 'mistress',
-    dynamics: ['Old Besties', 'Rivals'],
-    notes: '{{The Wife}} and {{The Mistress}} grew up together and used to be old besties before drifting apart when {{The Mistress}} married {{The Wife}}\'s ex ({{The Co-Worker}}).',
+    dynamics: ['Old High School Besties'],
+    notes: 'Were best friends back in high school before drifting apart after graduation.',
   },
-  // 8. Sister <-> Wife/Mistress (Current Besties)
+  // 8. Sister <-> Mistress (Current Besties)
   {
     charAKey: 'sister',
     charBKey: 'mistress',
-    dynamics: ['Current Besties', 'Friends'],
-    notes: '{{The Sister-in-Law}} and {{The Mistress}} are current besties, making it a massive betrayal when {{The Sister-in-Law}} discovers {{The Mistress}} is having an affair with {{The Husband}}.',
+    dynamics: ['Current Besties', 'High School Friends'],
+    notes: 'Went to high school together and have been close best friends for the past few years.',
   },
-  // 9. WIFE <-> Neighbour A / Co-Worker (Exes & Childhood Neighbours)
+  // 9. WIFE <-> Neighbour A / Co-Worker (High School Exes & Childhood Neighbours)
   {
     charAKey: 'wife',
     charBKey: 'coworker',
-    dynamics: ['Exes', 'Childhood Neighbours'],
-    notes: '{{The Wife}} and {{The Co-Worker}} (Neighbour A) grew up next door to each other and are exes from before she married {{The Husband}} and he married {{The Mistress}}.',
+    dynamics: ['Childhood Neighbours', 'High School Exes'],
+    notes: 'Grew up next door to each other and dated back in high school before she married {{The Husband}} and he married {{The Mistress}}.',
   },
-  // 10. Wife/Mistress <-> Neighbour A / Co-Worker (Married)
+  // 10. Mistress <-> Neighbour A / Co-Worker (Married)
   {
     charAKey: 'mistress',
     charBKey: 'coworker',
-    dynamics: ['Married', 'Romantic'],
-    notes: '{{The Mistress}} and {{The Co-Worker}} (Neighbour A) are married, though she has been secretly cheating on him with {{The Husband}}.',
+    dynamics: ['Married (3 Years)', 'High School Friends'],
+    notes: 'Married for 3 years after knowing each other since high school.',
   },
   // 11. Neighbour A / Co-Worker <-> Neighbour B / Bestie (Brothers)
   {
     charAKey: 'coworker',
     charBKey: 'bestie',
-    dynamics: ['Brothers', 'Family'],
-    notes: '{{The Co-Worker}} (Neighbour A) and {{The Bestie}} (Neighbour B) are brothers who grew up next door to the two sisters ({{The Wife}} and {{The Sister-in-Law}}).',
+    dynamics: ['Brothers', 'Grew Up Together'],
+    notes: 'Brothers who grew up together in the house next door to {{The Wife}} and {{The Sister-in-Law}}.',
   },
-  // 12. Sister <-> Neighbour B / Bestie (Secret Fling & Childhood Neighbours)
+  // 12. Sister <-> Neighbour B / Bestie (Childhood Neighbours)
   {
     charAKey: 'sister',
     charBKey: 'bestie',
-    dynamics: ['Secret Fling', 'Romantic', 'Childhood Neighbours'],
-    notes: '{{The Sister-in-Law}} and {{The Bestie}} (Neighbour B) grew up next door to each other and are currently having a secret fling.',
+    dynamics: ['Childhood Neighbours', 'High School Friends'],
+    notes: 'Grew up in the houses right next door to each other and went to high school together.',
   },
-  // 13. Sister <-> Neighbour A / Co-Worker (Friends & Childhood Neighbours)
+  // 13. Sister <-> Neighbour A / Co-Worker (Childhood Neighbours)
   {
     charAKey: 'sister',
     charBKey: 'coworker',
-    dynamics: ['Friends', 'Childhood Neighbours'],
-    notes: '{{The Sister-in-Law}} and {{The Co-Worker}} (Neighbour A) grew up next door to each other and remain close friends.',
+    dynamics: ['Childhood Neighbours', 'Family Friends'],
+    notes: 'Grew up next door to each other and have been close family friends since childhood.',
   },
-  // 14. Wife/Mistress <-> Neighbour B / Bestie (Co-workers & In-Laws)
+  // 14. Mistress <-> Neighbour B / Bestie (Co-workers & In-Laws)
   {
     charAKey: 'mistress',
     charBKey: 'bestie',
-    dynamics: ['Co-workers', 'Family (In-Laws)'],
-    notes: '{{The Mistress}} and {{The Bestie}} (Neighbour B) are co-workers who work together, in addition to {{The Mistress}} being married to {{The Bestie}}\'s brother ({{The Co-Worker}}).',
+    dynamics: ['Work Together', 'In-Laws'],
+    notes: 'Work in the same office and have been siblings-in-law for 3 years through her marriage to his brother ({{The Co-Worker}}).',
   },
-  // 15. WIFE <-> Neighbour B / Bestie (Childhood Neighbours & Husband's Bestie)
+  // 15. WIFE <-> Neighbour B / Bestie (Childhood Neighbours)
   {
     charAKey: 'wife',
     charBKey: 'bestie',
-    dynamics: ['Childhood Neighbours', 'Friends'],
-    notes: '{{The Wife}} and {{The Bestie}} (Neighbour B) grew up next door to each other alongside her sister ({{The Sister-in-Law}}) and his brother ({{The Co-Worker}}), and {{The Bestie}} is also {{The Husband}}\'s lifelong bestie.',
+    dynamics: ['Childhood Neighbours', 'Family Friends'],
+    notes: 'Grew up next door to each other alongside her sister ({{The Sister-in-Law}}) and his brother ({{The Co-Worker}}).',
   },
 ];
 
