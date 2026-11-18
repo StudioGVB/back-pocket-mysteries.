@@ -18,16 +18,6 @@ const NOINDEX_PREFIXES = [
   '/coming-soon',
 ]
 
-function getLocale(request: NextRequest): string {
-  // Only use locale from an explicit cookie set by the user via the language switcher.
-  // Never auto-detect from accept-language - that causes redirect loops.
-  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value
-  if (cookieLocale && i18n.locales.includes(cookieLocale as any)) {
-    return cookieLocale
-  }
-  return i18n.defaultLocale
-}
-
 function stripLocalePrefix(pathname: string): string {
   for (const locale of i18n.locales) {
     if (pathname === `/${locale}`) return '/'
@@ -48,31 +38,31 @@ function isNoIndexPath(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  if (
-    pathname === '/sitemap.xml' ||
-    pathname === '/robots.txt' ||
-    pathname.startsWith('/sitemap')
-  ) {
-    return NextResponse.next()
+  // 1. Permanently redirect legacy /fr URLs to /en so Google consolidates all duplicate URLs immediately (308 Permanent Redirect)
+  if (pathname === '/fr' || pathname.startsWith('/fr/')) {
+    const redirectUrl = request.nextUrl.clone()
+    const suffix = pathname === '/fr' ? '' : pathname.slice(3)
+    redirectUrl.pathname = `/en${suffix}`
+    return NextResponse.redirect(redirectUrl, 308)
   }
 
-  // Check if the pathname is missing a locale
+  // 2. Check if the pathname is missing the /en locale prefix
   const pathnameIsMissingLocale = i18n.locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
   )
 
-  // Redirect if there is no locale (308 Permanent Redirect so search engines index the localized canonical URL)
+  // Permanently redirect (308) root or unprefixed URLs to /en so Google passes 100% of link equity
   if (pathnameIsMissingLocale) {
-    const locale = getLocale(request)
     const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`
+    const cleanSuffix = pathname === '/' ? '' : pathname.startsWith('/') ? pathname : `/${pathname}`
+    redirectUrl.pathname = `/${i18n.defaultLocale}${cleanSuffix}`
     return NextResponse.redirect(redirectUrl, 308)
   }
 
-  // Proceed with Supabase session update
+  // 3. Proceed with Supabase session update
   const response = await updateSession(request)
 
-  // Apply explicit X-Robots-Tag header: block login/portal/admin/builder routes, index public domain pages
+  // 4. Apply explicit X-Robots-Tag header: block login/portal/admin/builder routes, index public domain pages
   if (isNoIndexPath(pathname)) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
   } else {

@@ -10,7 +10,7 @@ export default function LanguageSwitcher({ currentLocale }: { currentLocale: Loc
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const languages: Record<Locale, { name: string; flag: string; code: string }> = {
+  const languages: Record<string, { name: string; flag: string; code: string }> = {
     en: { name: 'English', flag: '🇬🇧', code: 'EN' },
     fr: { name: 'Français', flag: '🇫🇷', code: 'FR' },
   }

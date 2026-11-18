@@ -52,12 +52,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
       images: ['https://backpocketmysteries.com/moodboard/lotr/main-promo-murder.jpg'],
     },
     alternates: {
-      canonical: `https://backpocketmysteries.com/${locale}/themes`,
-      languages: {
-        en: 'https://backpocketmysteries.com/en/themes',
-        fr: 'https://backpocketmysteries.com/fr/themes',
-        'x-default': 'https://backpocketmysteries.com/en/themes',
-      },
+      canonical: `https://backpocketmysteries.com/en/themes`,
     },
   };
 }

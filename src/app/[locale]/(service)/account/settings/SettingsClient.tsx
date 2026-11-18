@@ -88,7 +88,6 @@ const CURRENCY_OPTIONS = [
 
 const LANGUAGE_OPTIONS = [
   { code: 'en', flag: '🇬🇧', label: 'English' },
-  { code: 'fr', flag: '🇫🇷', label: 'Français' },
 ];
 
 const COUNTRY_OPTIONS = [

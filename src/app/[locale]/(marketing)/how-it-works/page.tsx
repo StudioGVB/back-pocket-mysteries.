@@ -15,12 +15,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `${dict.common.howItWorks} | ${dict.common.siteTitle}`,
     description: dict.howItWorks.subtitle,
     alternates: {
-      canonical: `https://backpocketmysteries.com/${locale}/how-it-works`,
-      languages: {
-        en: 'https://backpocketmysteries.com/en/how-it-works',
-        fr: 'https://backpocketmysteries.com/fr/how-it-works',
-        'x-default': 'https://backpocketmysteries.com/en/how-it-works',
-      }
+      canonical: `https://backpocketmysteries.com/en/how-it-works`,
     }
   };
 }

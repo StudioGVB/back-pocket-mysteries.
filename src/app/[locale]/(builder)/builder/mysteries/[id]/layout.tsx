@@ -129,6 +129,12 @@ async function MysteryHeader({
 
         <div className="flex items-center gap-2">
           <Link
+            href={`/${locale}/builder/mysteries/${id}/screen`}
+            className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 text-[11px] font-black uppercase tracking-wider transition-all shadow-xs"
+          >
+            🕵️ Screen Pack
+          </Link>
+          <Link
             href={`/${locale}/mysteries/${id}/cast`}
             className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-black uppercase tracking-wider transition-all"
           >

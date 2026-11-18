@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticPaths = [
     '',
     '/custom-murder-mystery',
+    '/free-murder-mystery-game',
     '/themes',
     '/pricing',
     '/how-it-works',

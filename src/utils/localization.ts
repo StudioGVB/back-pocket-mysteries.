@@ -183,8 +183,8 @@ export function resolveCurrency(
   return getCurrencyForCountry(countryCode, locale)
 }
 
-export function getCurrencyForLocale(locale: Locale): string {
-  if (locale === 'fr') return 'EUR'
+export function getCurrencyForLocale(locale: Locale | string): string {
+  if (String(locale) === 'fr') return 'EUR'
   return 'USD'
 }
 

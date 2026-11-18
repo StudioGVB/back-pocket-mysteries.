@@ -23,12 +23,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string; 
     description: `Looking for a ${competitor.name} alternative? See our comprehensive review and compare features, pricing, and personalisation against Back Pocket Mysteries.`,
     keywords: competitor.searchKeywords.join(', '),
     alternates: {
-      canonical: `https://backpocketmysteries.com/${params.locale}/compare/${params.slug}`,
-      languages: {
-        en: `https://backpocketmysteries.com/en/compare/${params.slug}`,
-        fr: `https://backpocketmysteries.com/fr/compare/${params.slug}`,
-        'x-default': `https://backpocketmysteries.com/en/compare/${params.slug}`,
-      }
+      canonical: `https://backpocketmysteries.com/en/compare/${params.slug}`,
     }
   };
 }

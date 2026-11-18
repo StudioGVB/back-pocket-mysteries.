@@ -20,6 +20,7 @@ interface DiscountStoreData {
 }
 
 const STORE_FILENAME = '.discounts-store.json';
+const STORAGE_DISCOUNTS_PATH = 'system/discounts-store.json';
 
 function getStorePath(): string {
   const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), STORE_FILENAME);
@@ -31,39 +32,61 @@ function getStorePath(): string {
   }
 }
 
-function getDefaultSeedDiscount(): DiscountRecord {
+function getDefaultSeedDiscounts(): Record<string, DiscountRecord> {
   const now = new Date();
   const start = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
   return {
-    id: 'early20-default-seed',
-    name: 'Early Bird Newsletter Welcome',
-    code: 'EARLY20-MOCK',
-    auto_apply: false,
-    discount_type: 'percentage',
-    discount_value: 20,
-    applies_to: 'all',
-    target_packages: [],
-    target_mysteries: [],
-    starts_at: start,
-    ends_at: null,
-    usage_limit: 'one_per_customer',
-    max_uses: null,
-    times_used: 0,
-    is_active: true,
-    created_at: start,
-    updated_at: start,
+    'early20-default-seed': {
+      id: 'early20-default-seed',
+      name: 'Early Bird Newsletter Welcome',
+      code: 'EARLY20-MOCK',
+      auto_apply: false,
+      discount_type: 'percentage',
+      discount_value: 20,
+      applies_to: 'all',
+      target_packages: [],
+      target_mysteries: [],
+      starts_at: start,
+      ends_at: null,
+      usage_limit: 'one_per_customer',
+      max_uses: null,
+      times_used: 0,
+      is_active: true,
+      created_at: start,
+      updated_at: start,
+    },
+    'early20-clean-seed': {
+      id: 'early20-clean-seed',
+      name: 'Early Bird 20% Off',
+      code: 'EARLY20',
+      auto_apply: false,
+      discount_type: 'percentage',
+      discount_value: 20,
+      applies_to: 'all',
+      target_packages: [],
+      target_mysteries: [],
+      starts_at: start,
+      ends_at: null,
+      usage_limit: 'one_per_customer',
+      max_uses: null,
+      times_used: 0,
+      is_active: true,
+      created_at: start,
+      updated_at: start,
+    },
   };
 }
 
 function readLocalStore(): DiscountStoreData {
   const filePath = getStorePath();
+  const seeds = getDefaultSeedDiscounts();
   try {
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(raw);
       return {
         initialized: Boolean(parsed.initialized),
-        discounts: parsed.discounts || {},
+        discounts: { ...seeds, ...(parsed.discounts || {}) },
         deletedIds: Array.isArray(parsed.deletedIds) ? parsed.deletedIds : [],
       };
     }
@@ -71,10 +94,9 @@ function readLocalStore(): DiscountStoreData {
     // Ignore corrupted file
   }
 
-  const seed = getDefaultSeedDiscount();
   const initial: DiscountStoreData = {
     initialized: true,
-    discounts: { [seed.id]: seed },
+    discounts: seeds,
     deletedIds: [],
   };
   writeLocalStore(initial);
@@ -87,6 +109,20 @@ function writeLocalStore(data: DiscountStoreData): void {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
   } catch {
     // Non-fatal in read-only environments
+  }
+}
+
+async function syncDiscountsStoreToStorage(data: DiscountStoreData): Promise<void> {
+  try {
+    const supabase = await createClient();
+    await supabase.storage
+      .from('character-images')
+      .upload(STORAGE_DISCOUNTS_PATH, Buffer.from(JSON.stringify(data, null, 2), 'utf-8'), {
+        contentType: 'application/json',
+        upsert: true,
+      });
+  } catch {
+    // Non-fatal
   }
 }
 
@@ -117,7 +153,7 @@ function normalizeDbRow(row: any): DiscountRecord {
 }
 
 /**
- * Internal helper to load all discounts from Supabase (if table exists) merged with the local JSON store.
+ * Internal helper to load all discounts from local JSON store, Supabase Storage sync, and Supabase DB table.
  */
 async function loadAllDiscountsInternal(): Promise<DiscountRecord[]> {
   const local = readLocalStore();
@@ -132,6 +168,31 @@ async function loadAllDiscountsInternal(): Promise<DiscountRecord[]> {
 
   try {
     const supabase = await createClient();
+
+    // 1. Merge from Supabase Storage (`character-images/system/discounts-store.json`) across Vercel instances
+    try {
+      const { data: blob } = await supabase.storage
+        .from('character-images')
+        .download(STORAGE_DISCOUNTS_PATH);
+      if (blob) {
+        const parsed = JSON.parse(await blob.text());
+        for (const dId of parsed.deletedIds || []) {
+          deletedSet.add(dId);
+          map.delete(dId);
+        }
+        for (const [id, item] of Object.entries((parsed.discounts || {}) as Record<string, DiscountRecord>)) {
+          if (deletedSet.has(id)) continue;
+          const existing = map.get(id);
+          if (!existing || (item.updated_at || '') >= (existing.updated_at || '')) {
+            map.set(id, item);
+          }
+        }
+      }
+    } catch {
+      // Non-fatal
+    }
+
+    // 2. Merge from Supabase `discounts` table if migrated
     const { data, error } = await (supabase as any)
       .from('discounts')
       .select('*')
@@ -148,7 +209,7 @@ async function loadAllDiscountsInternal(): Promise<DiscountRecord[]> {
       }
     }
   } catch {
-    // Table may not exist yet; local store handles everything seamlessly
+    // Table may not exist yet; local + storage store handles everything seamlessly
   }
 
   return Array.from(map.values()).sort((a, b) =>
@@ -301,10 +362,11 @@ export async function saveDiscountAction(payload: SaveDiscountPayload): Promise<
     updated_at: nowIso,
   };
 
-  // Save to local store
+  // Save to local store & sync to Supabase Storage across serverless instances
   local.discounts[id] = record;
   local.deletedIds = local.deletedIds.filter((dId) => dId !== id);
   writeLocalStore(local);
+  await syncDiscountsStoreToStorage(local);
 
   // Best-effort save to Supabase if table is migrated
   try {
@@ -366,6 +428,7 @@ export async function toggleDiscountActiveAction(
 
   local.discounts[id] = updated;
   writeLocalStore(local);
+  await syncDiscountsStoreToStorage(local);
 
   try {
     const supabase = await createClient();
@@ -391,6 +454,7 @@ export async function deleteDiscountAction(id: string): Promise<{ success: boole
     local.deletedIds.push(id);
   }
   writeLocalStore(local);
+  await syncDiscountsStoreToStorage(local);
 
   try {
     const supabase = await createClient();

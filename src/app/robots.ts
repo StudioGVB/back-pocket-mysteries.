@@ -38,6 +38,7 @@ export default function robots(): MetadataRoute.Robots {
           ...locales.flatMap((locale) => [
             `/${locale}`,
             `/${locale}/custom-murder-mystery`,
+            `/${locale}/free-murder-mystery-game`,
             `/${locale}/themes`,
             `/${locale}/pricing`,
             `/${locale}/how-it-works`,

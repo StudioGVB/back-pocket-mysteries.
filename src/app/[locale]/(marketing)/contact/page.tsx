@@ -13,12 +13,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `Contact Us | Back Pocket Mysteries`,
     description: "Get in touch with the Back Pocket Mysteries team.",
     alternates: {
-      canonical: `https://backpocketmysteries.com/${locale}/contact`,
-      languages: {
-        en: 'https://backpocketmysteries.com/en/contact',
-        fr: 'https://backpocketmysteries.com/fr/contact',
-        'x-default': 'https://backpocketmysteries.com/en/contact',
-      }
+      canonical: `https://backpocketmysteries.com/en/contact`,
     }
   };
 }

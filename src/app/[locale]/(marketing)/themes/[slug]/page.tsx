@@ -13,7 +13,7 @@ import {
 import { getCleanCharacterPresentation } from '@/utils/character-display';
 
 export async function generateStaticParams() {
-  const locales = ['en', 'fr'];
+  const locales = ['en'];
   const paramsList: { locale: string; slug: string }[] = [];
   for (const locale of locales) {
     for (const mystery of ACTIVE_MYSTERIES) {
@@ -56,7 +56,7 @@ export async function generateMetadata(props: {
     openGraph: {
       title,
       description,
-      url: `https://backpocketmysteries.com/${locale}/themes/${mystery.slug}`,
+      url: `https://backpocketmysteries.com/en/themes/${mystery.slug}`,
       siteName: 'Back Pocket Mysteries',
       type: 'website',
       images: [
@@ -75,12 +75,7 @@ export async function generateMetadata(props: {
       images: [ogImageUrl],
     },
     alternates: {
-      canonical: `https://backpocketmysteries.com/${locale}/themes/${mystery.slug}`,
-      languages: {
-        en: `https://backpocketmysteries.com/en/themes/${mystery.slug}`,
-        fr: `https://backpocketmysteries.com/fr/themes/${mystery.slug}`,
-        'x-default': `https://backpocketmysteries.com/en/themes/${mystery.slug}`,
-      },
+      canonical: `https://backpocketmysteries.com/en/themes/${mystery.slug}`,
     },
   };
 }

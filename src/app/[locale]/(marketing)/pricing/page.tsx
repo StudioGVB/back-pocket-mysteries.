@@ -18,12 +18,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `${dict.common.pricing} | Back Pocket Mysteries`,
     description: dict.pricing.subtitle,
     alternates: {
-      canonical: `https://backpocketmysteries.com/${locale}/pricing`,
-      languages: {
-        en: 'https://backpocketmysteries.com/en/pricing',
-        fr: 'https://backpocketmysteries.com/fr/pricing',
-        'x-default': 'https://backpocketmysteries.com/en/pricing',
-      }
+      canonical: `https://backpocketmysteries.com/en/pricing`,
     }
   }
 }

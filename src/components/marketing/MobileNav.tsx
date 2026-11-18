@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Locale } from '@/lib/i18n-config';
-import LanguageSwitcher from '@/components/marketing/LanguageSwitcher';
 import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
 
 interface MobileNavProps {
@@ -76,7 +75,6 @@ export default function MobileNav({ locale, dict }: MobileNavProps) {
 
             <div className="mt-16 border-t border-white/10 pt-10 flex flex-col gap-8">
               <div className="flex gap-4 items-center">
-                <LanguageSwitcher currentLocale={locale as Locale} />
                 <CurrencySwitcher />
               </div>
 

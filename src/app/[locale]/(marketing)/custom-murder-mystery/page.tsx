@@ -14,12 +14,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `Custom Murder Mystery | ${dict.common.siteTitle}`,
     description: dict.seoLanding.seoDescription,
     alternates: {
-      canonical: `https://backpocketmysteries.com/${locale}/custom-murder-mystery`,
-      languages: {
-        en: 'https://backpocketmysteries.com/en/custom-murder-mystery',
-        fr: 'https://backpocketmysteries.com/fr/custom-murder-mystery',
-        'x-default': 'https://backpocketmysteries.com/en/custom-murder-mystery',
-      }
+      canonical: `https://backpocketmysteries.com/en/custom-murder-mystery`,
     }
   }
 }

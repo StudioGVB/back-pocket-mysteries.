@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
-import LanguageSwitcher from '@/components/marketing/LanguageSwitcher';
 import CurrencySwitcher from '@/components/marketing/CurrencySwitcher';
 import MobileNav from '@/components/marketing/MobileNav';
 import GlobalSpotlight from '@/components/marketing/GlobalSpotlight';
@@ -66,7 +65,6 @@ export default async function MarketingLayout(props: {
           <Suspense fallback={<div className="h-12 w-48 bg-slate-100 rounded-full animate-pulse"></div>}>
             <div className="hidden lg:flex gap-4 items-center">
               <div className="flex gap-2 items-center">
-                <LanguageSwitcher currentLocale={locale as Locale} />
                 <CurrencySwitcher />
               </div>
 
@@ -107,6 +105,7 @@ export default async function MarketingLayout(props: {
               <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">{dict.common.product}</h4>
               <ul className="space-y-4 text-sm font-bold text-gray-400">
                 <li><Link href={`/${locale}/custom-murder-mystery`} className="text-brand-pink hover:text-white transition-colors">Custom Murder Mystery</Link></li>
+                <li><Link href={`/${locale}/free-murder-mystery-game`} className="text-white hover:text-brand-pink transition-colors">🎁 Free Murder Mystery Game</Link></li>
                 <li><Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-colors">{dict.common.themes}</Link></li>
                 <li><Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-colors">{dict.common.howItWorks}</Link></li>
                 <li><Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-colors">{dict.common.pricing}</Link></li>

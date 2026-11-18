@@ -16,12 +16,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     title: `${dict.common.faq} | Back Pocket Mysteries`,
     description: dict.faqPage?.seoDescription || "Frequently Asked Questions about our custom murder mystery parties.",
     alternates: {
-      canonical: `https://backpocketmysteries.com/${locale}/faq`,
-      languages: {
-        en: 'https://backpocketmysteries.com/en/faq',
-        fr: 'https://backpocketmysteries.com/fr/faq',
-        'x-default': 'https://backpocketmysteries.com/en/faq',
-      }
+      canonical: `https://backpocketmysteries.com/en/faq`,
     }
   }
 }

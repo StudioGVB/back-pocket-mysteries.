@@ -25,12 +25,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     description: post.seo.description,
     keywords: post.seo.keywords,
     alternates: {
-      canonical: `https://backpocketmysteries.com/${params.locale}/blog/${params.slug}`,
-      languages: {
-        en: `https://backpocketmysteries.com/en/blog/${params.slug}`,
-        fr: `https://backpocketmysteries.com/fr/blog/${params.slug}`,
-        'x-default': `https://backpocketmysteries.com/en/blog/${params.slug}`,
-      }
+      canonical: `https://backpocketmysteries.com/en/blog/${params.slug}`,
     },
     openGraph: {
       title: post.seo.title,
