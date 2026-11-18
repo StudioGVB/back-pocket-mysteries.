@@ -9,9 +9,11 @@ export interface MarketingStoreData {
   social_post_captions: any[];
   edm_campaigns: any[];
   edm_events: any[];
+  leads: any[];
 }
 
 const STORE_FILENAME = ".marketing-suite-store.json";
+const LEADS_FILENAME = ".leads-store.json";
 const STORAGE_BUCKET = "character-images";
 const STORAGE_PATH = "system/marketing-suite-store.json";
 
@@ -29,6 +31,35 @@ function getStorePath(): string {
   }
 }
 
+function getLeadsPath(): string {
+  const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", LEADS_FILENAME);
+  try {
+    const dir = path.dirname(cwdPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.accessSync(dir, fs.constants.W_OK);
+    return cwdPath;
+  } catch {
+    return path.join("/tmp", LEADS_FILENAME);
+  }
+}
+
+function readLeadsList(): any[] {
+  try {
+    const lp = getLeadsPath();
+    if (fs.existsSync(lp)) {
+      const parsed = JSON.parse(fs.readFileSync(lp, "utf8"));
+      if (parsed && parsed.leads && typeof parsed.leads === "object") {
+        return Object.values(parsed.leads);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
 function emptyStore(): MarketingStoreData {
   return {
     blog_posts: [],
@@ -36,11 +67,13 @@ function emptyStore(): MarketingStoreData {
     social_post_captions: [],
     edm_campaigns: [],
     edm_events: [],
+    leads: [],
   };
 }
 
 export function readLocalMarketingStore(): MarketingStoreData {
   const filePath = getStorePath();
+  const leadsList = readLeadsList();
   try {
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, "utf8");
@@ -53,12 +86,13 @@ export function readLocalMarketingStore(): MarketingStoreData {
           : [],
         edm_campaigns: Array.isArray(parsed.edm_campaigns) ? parsed.edm_campaigns : [],
         edm_events: Array.isArray(parsed.edm_events) ? parsed.edm_events : [],
+        leads: leadsList.length > 0 ? leadsList : Array.isArray(parsed.leads) ? parsed.leads : [],
       };
     }
   } catch {
     // ignore
   }
-  return emptyStore();
+  return { ...emptyStore(), leads: leadsList };
 }
 
 export function writeLocalMarketingStore(data: MarketingStoreData): void {
@@ -102,6 +136,7 @@ export async function loadMarketingStore(): Promise<MarketingStoreData> {
             : [],
           edm_campaigns: Array.isArray(parsed.edm_campaigns) ? parsed.edm_campaigns : [],
           edm_events: Array.isArray(parsed.edm_events) ? parsed.edm_events : [],
+          leads: Array.isArray(parsed.leads) ? parsed.leads : [],
         };
         writeLocalMarketingStore(hydrated);
         return hydrated;

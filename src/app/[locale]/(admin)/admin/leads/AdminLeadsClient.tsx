@@ -1,12 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   MarketingLeadRecord,
   adminSendFreeMysteryCodeToLeadAction,
+  adminSendTestVipWelcomeEmailAction,
 } from '@/app/actions/marketing';
+import { buildVipWelcomeEmailHtml } from '@/lib/vip-welcome-email';
 
 const FIRST_50_VIP_CAP = 50;
+export const VIP_WELCOME_EDM_ID = '00000000-0000-4000-8000-000000000050';
 
 export default function AdminLeadsClient({
   initialLeads,
@@ -19,6 +23,13 @@ export default function AdminLeadsClient({
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
 
+  // "You're In!" Welcome Email Preview state
+  const [showWelcomePreview, setShowWelcomePreview] = useState<boolean>(true);
+  const [previewName, setPreviewName] = useState<string>('Gabby');
+  const [previewRank, setPreviewRank] = useState<number>(Math.max(1, initialLeads.length || 1));
+  const [testRecipient, setTestRecipient] = useState<string>('Hello@backpocketgames.com');
+  const [sendingTestWelcome, setSendingTestWelcome] = useState<boolean>(false);
+
   const vipLeads = leads.filter((l) => l.qualifies_for_free_mystery || l.vip_rank <= FIRST_50_VIP_CAP);
   const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - vipLeads.length);
   const codesSentCount = vipLeads.filter((l) => Boolean(l.free_mystery_code)).length;
@@ -30,6 +41,27 @@ export default function AdminLeadsClient({
     }
     return true;
   });
+
+  const handleSendTestWelcomeEmail = async () => {
+    setSendingTestWelcome(true);
+    setStatusBanner(null);
+    try {
+      const res = await adminSendTestVipWelcomeEmailAction(
+        testRecipient,
+        previewName || 'Gabby',
+        previewRank || 1
+      );
+      if (res.success) {
+        setStatusBanner(`✓ Sent test "You're In!" VIP welcome email to ${testRecipient}!`);
+      } else {
+        setStatusBanner(res.error || 'Could not send test welcome email.');
+      }
+    } catch {
+      setStatusBanner('Failed to send test welcome email.');
+    } finally {
+      setSendingTestWelcome(false);
+    }
+  };
 
   const handleSendFreeMysteryCode = async (email: string) => {
     setSendingEmail(email);
@@ -86,6 +118,14 @@ export default function AdminLeadsClient({
     URL.revokeObjectURL(url);
   };
 
+  const welcomePreviewHtml = buildVipWelcomeEmailHtml({
+    firstName: previewName || 'there',
+    vipRank: previewRank,
+    vipCap: FIRST_50_VIP_CAP,
+    qualifiesForFreeMystery: previewRank <= FIRST_50_VIP_CAP,
+    spotsRemaining: Math.max(0, FIRST_50_VIP_CAP - previewRank),
+  });
+
   return (
     <div className="space-y-6">
       {/* KPI Summary Cards */}
@@ -110,7 +150,7 @@ export default function AdminLeadsClient({
           </p>
           <h3 className="text-3xl font-black text-brand-dark">{leads.length}</h3>
           <p className="text-xs font-bold text-gray-400 mt-1">
-            All website & footer leads
+            All website &amp; footer leads
           </p>
         </div>
 
@@ -151,7 +191,7 @@ export default function AdminLeadsClient({
         </div>
       )}
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs & "You're In!" Welcome Email Preview Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="inline-flex p-1.5 rounded-full bg-white border border-gray-100 shadow-sm">
           <button
@@ -188,7 +228,100 @@ export default function AdminLeadsClient({
             Awaiting Launch Code ({vipLeads.length - codesSentCount})
           </button>
         </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowWelcomePreview((prev) => !prev)}
+            className={`px-4 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer border ${
+              showWelcomePreview
+                ? 'bg-brand-dark text-white border-brand-dark'
+                : 'bg-white text-brand-dark border-gray-200 hover:border-brand-pink'
+            }`}
+          >
+            {showWelcomePreview ? 'Hide "You\'re In!" Email Preview ▲' : '✉️ Preview "You\'re In!" Welcome Email ▼'}
+          </button>
+          <Link
+            href={`/admin/edm/${VIP_WELCOME_EDM_ID}`}
+            className="px-4 py-2.5 rounded-full bg-brand-pink hover:bg-brand-dark text-white text-xs font-black uppercase tracking-wider transition-colors shadow-xs"
+          >
+            Edit in EDM Builder →
+          </Link>
+        </div>
       </div>
+
+      {/* Collapsible "You're In!" Welcome Email Visual Preview */}
+      {showWelcomePreview && (
+        <div className="bg-white rounded-[32px] border border-brand-pink/30 shadow-sm overflow-hidden">
+          <div className="p-6 bg-gray-50/80 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-black uppercase tracking-widest">
+                  Automated Welcome Email + Draft EDM
+                </span>
+                <span className="text-xs font-bold text-gray-500">
+                  Subject: 🎉 You&apos;re In! VIP Spot #{previewRank}/50 Locked In (Your Free Mystery Awaits)
+                </span>
+              </div>
+              <p className="text-xs font-medium text-gray-500 mt-1">
+                Sent automatically when a visitor signs up on the website, and also saved as a Draft in{' '}
+                <Link href={`/admin/edm/${VIP_WELCOME_EDM_ID}`} className="text-brand-pink font-bold underline">
+                  EDM Campaigns
+                </Link>
+                .
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-1.5">
+                <span className="text-[10px] font-black uppercase text-gray-400">Preview Name:</span>
+                <input
+                  type="text"
+                  value={previewName}
+                  onChange={(e) => setPreviewName(e.target.value)}
+                  className="w-20 text-xs font-bold text-brand-dark focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-1.5">
+                <span className="text-[10px] font-black uppercase text-gray-400">VIP Spot #:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={previewRank}
+                  onChange={(e) => setPreviewRank(Number(e.target.value) || 1)}
+                  className="w-12 text-xs font-bold text-brand-dark focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-1.5">
+                <input
+                  type="email"
+                  value={testRecipient}
+                  onChange={(e) => setTestRecipient(e.target.value)}
+                  placeholder="test@email.com"
+                  className="w-44 text-xs font-bold text-brand-dark focus:outline-none"
+                />
+                <button
+                  type="button"
+                  disabled={sendingTestWelcome}
+                  onClick={handleSendTestWelcomeEmail}
+                  className="px-3 py-1 rounded-lg bg-brand-pink hover:bg-brand-dark text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {sendingTestWelcome ? 'Sending...' : 'Send Test ✉️'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 bg-[#f4f4f5] flex justify-center">
+            <iframe
+              title="You're In VIP Welcome Email Preview"
+              srcDoc={welcomePreviewHtml}
+              className="w-full max-w-[640px] h-[760px] rounded-2xl border border-gray-200 bg-white shadow-md"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Leads Table */}
       <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">

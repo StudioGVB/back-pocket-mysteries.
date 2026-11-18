@@ -7,6 +7,7 @@ const MARKETING_TABLES = new Set([
   'social_post_captions',
   'edm_campaigns',
   'edm_events',
+  'leads',
 ])
 
 function createMarketingFallbackQuery(rawClient: any, table: string) {

@@ -5,13 +5,17 @@ import path from 'path';
 import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { saveDiscountAction } from '@/app/actions/discounts';
 import { requireAdmin } from '@/utils/admin-auth';
+import { buildVipWelcomeEmailHtml } from '@/lib/vip-welcome-email';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash');
 
 const FIRST_50_VIP_CAP = 50;
+const LEADS_STORAGE_BUCKET = 'character-images';
+const LEADS_STORAGE_PATH = 'system/leads-store.json';
 
 export interface MarketingLeadRecord {
   id: string;
@@ -46,6 +50,13 @@ function getLeadsStorePath(): string {
   }
 }
 
+function getStorageSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createSupabaseJsClient(url, key);
+}
+
 function readLocalLeadsStore(): LeadsStoreData {
   const filePath = getLeadsStorePath();
   try {
@@ -69,14 +80,49 @@ function writeLocalLeadsStore(data: LeadsStoreData): void {
   } catch {
     // ignore in read-only env
   }
+  const sb = getStorageSupabase();
+  if (sb) {
+    sb.storage
+      .from(LEADS_STORAGE_BUCKET)
+      .upload(LEADS_STORAGE_PATH, Buffer.from(JSON.stringify(data, null, 2), 'utf8'), {
+        contentType: 'application/json',
+        upsert: true,
+      })
+      .catch(() => {});
+  }
 }
 
 /**
- * Retrieves all marketing leads merged from the local store and Supabase `leads` table,
+ * Retrieves all marketing leads merged from the local store, Supabase Storage backup, and Supabase `leads` table,
  * ordered chronologically by created_at so VIP rank #1 -> #50 is deterministic.
  */
 export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[]> {
-  const store = readLocalLeadsStore();
+  let store = readLocalLeadsStore();
+  if (Object.keys(store.leads).length === 0) {
+    const sb = getStorageSupabase();
+    if (sb) {
+      try {
+        const { data: blob } = await sb.storage
+          .from(LEADS_STORAGE_BUCKET)
+          .download(LEADS_STORAGE_PATH);
+        if (blob) {
+          const parsed = JSON.parse(await blob.text());
+          if (parsed?.leads && typeof parsed.leads === 'object') {
+            store = { leads: parsed.leads };
+            const filePath = getLeadsStorePath();
+            try {
+              fs.writeFileSync(filePath, JSON.stringify(store, null, 2), 'utf8');
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   const byEmail = new Map<string, MarketingLeadRecord>();
 
   for (const lead of Object.values(store.leads)) {
@@ -237,9 +283,28 @@ export async function submitEmailLead(
     // Non-fatal if `leads` table is not migrated yet
   }
 
-  // 3. Send Admin Notification & Lead Confirmation Email via Resend
+  // 3. Send Subscriber "You're In!" Welcome Email + Admin Notification via Resend
   try {
     if (process.env.RESEND_API_KEY) {
+      const firstName = cleanName ? cleanName.split(' ')[0] : 'there';
+
+      // 3A. Send "You're In!" Confirmation Email directly to the subscriber
+      await resend.emails.send({
+        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+        to: cleanEmail,
+        subject: qualifiesForFreeMystery
+          ? `🎉 You're In! VIP Spot #${vipRank}/50 Locked In (Your Free Mystery Awaits)`
+          : `🎉 You're In! Welcome to the Back Pocket Mysteries VIP Launch List`,
+        html: buildVipWelcomeEmailHtml({
+          firstName,
+          vipRank,
+          vipCap: FIRST_50_VIP_CAP,
+          qualifiesForFreeMystery,
+          spotsRemaining,
+        }),
+      });
+
+      // 3B. Send Admin Notification
       await resend.emails.send({
         from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
         to: 'Hello@backpocketgames.com',
@@ -284,6 +349,41 @@ export async function submitEmailLead(
     qualifiesForFreeMystery,
     spotsRemaining,
   };
+}
+
+/**
+ * Admin Action: Sends a test preview of the "You're In!" VIP Welcome Email to any email address.
+ */
+export async function adminSendTestVipWelcomeEmailAction(
+  toEmail: string,
+  sampleName = 'Gabby',
+  sampleRank = 1
+): Promise<{ success: boolean; error?: string }> {
+  await requireAdmin();
+  const cleanEmail = (toEmail || '').trim();
+  if (!cleanEmail || !cleanEmail.includes('@')) {
+    return { success: false, error: 'Please enter a valid recipient email.' };
+  }
+  try {
+    if (!process.env.RESEND_API_KEY) {
+      return { success: false, error: 'RESEND_API_KEY is not configured in .env.local.' };
+    }
+    await resend.emails.send({
+      from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+      to: cleanEmail,
+      subject: `🎉 You're In! VIP Spot #${sampleRank}/50 Locked In (Your Free Mystery Awaits)`,
+      html: buildVipWelcomeEmailHtml({
+        firstName: sampleName,
+        vipRank: sampleRank,
+        vipCap: FIRST_50_VIP_CAP,
+        qualifiesForFreeMystery: true,
+        spotsRemaining: Math.max(0, FIRST_50_VIP_CAP - sampleRank),
+      }),
+    });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to send test welcome email.' };
+  }
 }
 
 /**
