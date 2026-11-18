@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ClueRenderer } from '@/components/clues/ClueRenderer';
 import {
   inferClueFormat,
@@ -12,6 +12,8 @@ import {
   hydrateTextWithCharacters,
   getCharacterRoleTitle,
 } from '@/utils/hydration';
+import { resolveDisplayAvatarUrl } from '@/utils/avatar';
+import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
 
 export interface FriendRosterItem {
   id: string;
@@ -19,6 +21,10 @@ export interface FriendRosterItem {
   gender: string;
   avatar_url: string;
   photoUrl: string | null;
+  hasAiPhoto?: boolean;
+  eye_color?: string;
+  height?: string;
+  ethnicity?: string;
   bio?: string;
 }
 
@@ -108,6 +114,9 @@ export function PackScreenerClient({
   const rawClues: any[] = mystery?.clues || [];
   const plotBeats: any[] = mystery?.plot_beats || [];
 
+  const [liveFriends, setLiveFriends] = useState<FriendRosterItem[]>(friendRoster);
+  const [generatingFriendIds, setGeneratingFriendIds] = useState<Set<string>>(new Set());
+
   const [step, setStep] = useState<ScreenerStep>('round1');
   // Default to ON so test mode automatically uses the user's friends!
   const [useFriendNames, setUseFriendNames] = useState<boolean>(true);
@@ -123,7 +132,7 @@ export function PackScreenerClient({
     rawCharacters.find((c) => !c.is_victim)?.id || rawCharacters[0]?.id || ''
   );
 
-  // Solo player notebook state: tag clues & record round guesses
+  // Solo player notebook state: tag clues & record round guesses (persisted to localStorage per mystery)
   const [clueTags, setClueTags] = useState<Record<string, 'key' | 'red_herring' | 'alibi' | undefined>>({});
   const [clueNotes, setClueNotes] = useState<Record<string, string>>({});
   const [guesses, setGuesses] = useState<Record<number, RoundGuess>>({
@@ -131,11 +140,155 @@ export function PackScreenerClient({
     2: { suspectId: '', motiveGuess: '' },
     3: { suspectId: '', motiveGuess: '' },
   });
+  const [notebookLoaded, setNotebookLoaded] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !mystery?.id) return;
+    try {
+      const savedTags = window.localStorage.getItem(`bpm_clue_tags_${mystery.id}`);
+      if (savedTags) {
+        const parsed = JSON.parse(savedTags);
+        if (parsed && typeof parsed === 'object') setClueTags(parsed);
+      }
+      const savedNotes = window.localStorage.getItem(`bpm_clue_notes_${mystery.id}`);
+      if (savedNotes) {
+        const parsed = JSON.parse(savedNotes);
+        if (parsed && typeof parsed === 'object') setClueNotes(parsed);
+      }
+      const savedGuesses = window.localStorage.getItem(`bpm_round_guesses_${mystery.id}`);
+      if (savedGuesses) {
+        const parsed = JSON.parse(savedGuesses);
+        if (parsed && typeof parsed === 'object') {
+          setGuesses((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch {
+      // Non-fatal
+    } finally {
+      setNotebookLoaded(true);
+    }
+  }, [mystery?.id]);
+
+  useEffect(() => {
+    if (!notebookLoaded || typeof window === 'undefined' || !mystery?.id) return;
+    try {
+      window.localStorage.setItem(`bpm_clue_tags_${mystery.id}`, JSON.stringify(clueTags));
+    } catch {
+      // Non-fatal
+    }
+  }, [clueTags, notebookLoaded, mystery?.id]);
+
+  useEffect(() => {
+    if (!notebookLoaded || typeof window === 'undefined' || !mystery?.id) return;
+    try {
+      window.localStorage.setItem(`bpm_clue_notes_${mystery.id}`, JSON.stringify(clueNotes));
+    } catch {
+      // Non-fatal
+    }
+  }, [clueNotes, notebookLoaded, mystery?.id]);
+
+  useEffect(() => {
+    if (!notebookLoaded || typeof window === 'undefined' || !mystery?.id) return;
+    try {
+      window.localStorage.setItem(`bpm_round_guesses_${mystery.id}`, JSON.stringify(guesses));
+    } catch {
+      // Non-fatal
+    }
+  }, [guesses, notebookLoaded, mystery?.id]);
+
+  const handleClearNotebook = useCallback(() => {
+    setClueTags({});
+    setClueNotes({});
+    setGuesses({
+      1: { suspectId: '', motiveGuess: '' },
+      2: { suspectId: '', motiveGuess: '' },
+      3: { suspectId: '', motiveGuess: '' },
+    });
+    if (typeof window !== 'undefined' && mystery?.id) {
+      window.localStorage.removeItem(`bpm_clue_tags_${mystery.id}`);
+      window.localStorage.removeItem(`bpm_clue_notes_${mystery.id}`);
+      window.localStorage.removeItem(`bpm_round_guesses_${mystery.id}`);
+    }
+  }, [mystery?.id]);
+
+  // Custom dropdown menu state ('suspect-1' | 'suspect-2' | 'suspect-3' | 'pov' | 'friend-<charId>' | null)
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!openDropdownId) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && !target.closest('[data-custom-dropdown]')) {
+        setOpenDropdownId(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenDropdownId(null);
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openDropdownId]);
+
+  const triggerFriendAiPhoto = useCallback(async (friend: FriendRosterItem) => {
+    if (!friend?.id || generatingFriendIds.has(friend.id)) return;
+    setGeneratingFriendIds((prev) => new Set(prev).add(friend.id));
+    try {
+      const res = await generateGuestAvatarAction(friend.id, {
+        id: friend.id,
+        name: friend.name,
+        gender: friend.gender,
+        eye_color: friend.eye_color,
+        height: friend.height,
+        ethnicity: friend.ethnicity,
+        avatar_url: friend.avatar_url,
+      });
+      if (res?.publicUrl) {
+        const extractedPhoto = resolveDisplayAvatarUrl(res.publicUrl);
+        setLiveFriends((prev) =>
+          prev.map((f) =>
+            f.id === friend.id
+              ? {
+                  ...f,
+                  avatar_url: res.publicUrl,
+                  photoUrl: extractedPhoto,
+                  hasAiPhoto: true,
+                }
+              : f
+          )
+        );
+      }
+    } catch (err) {
+      console.error(`Failed to generate AI headshot for ${friend.name}:`, err);
+    } finally {
+      setGeneratingFriendIds((prev) => {
+        const next = new Set(prev);
+        next.delete(friend.id);
+        return next;
+      });
+    }
+  }, [generatingFriendIds]);
+
+  // Automatically generate AI headshot for any friend in the roster missing one (e.g. Charley)
+  useEffect(() => {
+    const missing = liveFriends.filter(
+      (f) =>
+        f.id &&
+        (!f.hasAiPhoto || !f.photoUrl || f.photoUrl.includes('api.dicebear.com'))
+    );
+    for (const f of missing) {
+      void triggerFriendAiPhoto(f);
+    }
+  }, [liveFriends, triggerFriendAiPhoto]);
 
   const handleShuffleFriends = () => {
     const nextSeed = shuffleSeed + 1;
     setShuffleSeed(nextSeed);
-    setFriendAssignments(buildDefaultFriendAssignments(rawCharacters, friendRoster, nextSeed));
+    setFriendAssignments(buildDefaultFriendAssignments(rawCharacters, liveFriends, nextSeed));
   };
 
   // Build hydrated characters using the user's real friends from My Roster (or Role Titles when toggled off)
@@ -143,7 +296,7 @@ export function PackScreenerClient({
     return rawCharacters.map((c) => {
       const roleTitle = getCharacterRoleTitle(c) || c.name;
       const assignedFriendId = friendAssignments[c.id];
-      const friend = friendRoster.find((f) => f.id === assignedFriendId);
+      const friend = liveFriends.find((f) => f.id === assignedFriendId);
 
       if (!useFriendNames || !friend) {
         return {
@@ -169,11 +322,11 @@ export function PackScreenerClient({
           guest_id: friend.id,
           guest_name: friend.name,
           avatar_url: friend.avatar_url || c.profile_data?.avatar_url,
-          friend_photo_url: friend.photoUrl,
+          friend_photo_url: friend.photoUrl ? resolveDisplayAvatarUrl(friend.photoUrl) : null,
         },
       };
     });
-  }, [rawCharacters, friendRoster, friendAssignments, useFriendNames]);
+  }, [rawCharacters, liveFriends, friendAssignments, useFriendNames]);
 
   const hydrate = (text?: string | null) => {
     if (!text) return '';
@@ -423,10 +576,39 @@ export function PackScreenerClient({
   const renderRoundGuessBox = (roundNum: number) => {
     const currentGuess = guesses[roundNum] || { suspectId: '', motiveGuess: '' };
     const suspectList = activeCharacters.filter((c) => !c.is_victim);
+    const dropdownKey = `suspect-${roundNum}`;
+    const isOpen = openDropdownId === dropdownKey;
+    const selectedSuspect = suspectList.find((s) => s.id === currentGuess.suspectId);
+
+    // Collect all clues up through roundNum that the player tagged or wrote a note on
+    const annotatedEntries: Array<{
+      clue: any;
+      round: number;
+      indexInRound: number;
+      tag?: 'key' | 'red_herring' | 'alibi';
+      note: string;
+    }> = [];
+
+    for (let r = 1; r <= roundNum; r++) {
+      const rClues = cluesByRound[r as 1 | 2 | 3] || [];
+      rClues.forEach((c: any, idx: number) => {
+        const t = clueTags[c.id];
+        const n = (clueNotes[c.id] || '').trim();
+        if (t || n) {
+          annotatedEntries.push({
+            clue: c,
+            round: r,
+            indexInRound: idx + 1,
+            tag: t,
+            note: n,
+          });
+        }
+      });
+    }
 
     return (
-      <div className="mt-8 rounded-2xl bg-slate-900 border border-brand-pink/30 p-6 text-white shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+      <div className="mt-8 rounded-2xl bg-slate-900 border border-brand-pink/30 p-6 text-white shadow-xl space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-pink">
               End of Round {roundNum} Check-In
@@ -456,28 +638,246 @@ export function PackScreenerClient({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+        {/* Detective Notebook Summary Strip (Shows Tagged Clues & Notes to help formulate theory) */}
+        <div className="rounded-xl bg-slate-950/90 border border-slate-800 p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+                📓 Your Detective Notebook ({annotatedEntries.length} Tagged / Noted)
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Saved automatically • Use your tagged clues &amp; notes below to pick your suspect
+              </span>
+            </div>
+            {annotatedEntries.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearNotebook}
+                className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+              >
+                Clear Notebook
+              </button>
+            )}
+          </div>
+
+          {annotatedEntries.length === 0 ? (
+            <p className="text-xs text-slate-500 italic">
+              Tip: Tag any clue card above as <strong className="text-amber-300">🔑 Key</strong>, <strong className="text-rose-300">🐟 Decoy</strong>, or <strong className="text-sky-300">🛡️ Alibi</strong>, or type a note on a clue card—your pinned deductions will collect right here for voting and final scoring!
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
+              {annotatedEntries.map(({ clue: c, round, indexInRound, tag, note }) => {
+                const cTitle = hydrate(stripCustomerFacingTitle(c.title) || c.title);
+                return (
+                  <div
+                    key={c.id}
+                    className={`rounded-lg border px-3 py-2 text-xs flex flex-col justify-between gap-1.5 ${
+                      tag === 'key'
+                        ? 'bg-amber-500/10 border-amber-400/40'
+                        : tag === 'red_herring'
+                        ? 'bg-rose-500/10 border-rose-400/40'
+                        : tag === 'alibi'
+                        ? 'bg-sky-500/10 border-sky-400/40'
+                        : 'bg-slate-900 border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
+                          R{round} • #{indexInRound}
+                        </span>
+                        <span className="font-bold text-white truncate">{cTitle}</span>
+                      </div>
+                      {tag && (
+                        <span
+                          className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${
+                            tag === 'key'
+                              ? 'bg-amber-400 text-slate-950'
+                              : tag === 'red_herring'
+                              ? 'bg-rose-500 text-white'
+                              : 'bg-sky-400 text-slate-950'
+                          }`}
+                        >
+                          {tag === 'key' ? '🔑 Key' : tag === 'red_herring' ? '🐟 Decoy' : '🛡️ Alibi'}
+                        </span>
+                      )}
+                    </div>
+
+                    {note && (
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10">
+                        <p className="text-[11px] text-slate-300 italic truncate">&ldquo;{note}&rdquo;</p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setGuesses((prev) => ({
+                              ...prev,
+                              [roundNum]: {
+                                ...currentGuess,
+                                motiveGuess: currentGuess.motiveGuess
+                                  ? `${currentGuess.motiveGuess}; ${note}`
+                                  : note,
+                              },
+                            }))
+                          }
+                          className="px-2 py-0.5 rounded bg-brand-pink/20 hover:bg-brand-pink text-brand-pink hover:text-white text-[9px] font-black uppercase tracking-wider shrink-0 transition-colors cursor-pointer"
+                        >
+                          + Use in Theory
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div className="relative" data-custom-dropdown>
             <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
               Who is your #1 Suspect after Round {roundNum}?
             </label>
-            <select
-              value={currentGuess.suspectId}
-              onChange={(e) =>
-                setGuesses((prev) => ({
-                  ...prev,
-                  [roundNum]: { ...currentGuess, suspectId: e.target.value },
-                }))
-              }
-              className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-brand-pink"
+            <button
+              type="button"
+              onClick={() => setOpenDropdownId(isOpen ? null : dropdownKey)}
+              className={`w-full rounded-xl bg-slate-950 border px-3.5 py-2.5 text-xs font-bold text-white flex items-center justify-between gap-2.5 transition-all cursor-pointer ${
+                isOpen
+                  ? 'border-brand-pink ring-2 ring-brand-pink/25'
+                  : selectedSuspect
+                  ? 'border-brand-pink/50 hover:border-brand-pink'
+                  : 'border-slate-700/90 hover:border-slate-500'
+              }`}
             >
-              <option value="">-- Select Suspect --</option>
-              {suspectList.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.displayName}
-                </option>
-              ))}
-            </select>
+              {selectedSuspect ? (
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {getPortraitUrl(selectedSuspect) ? (
+                    <img
+                      src={getPortraitUrl(selectedSuspect)}
+                      alt={selectedSuspect.displayName}
+                      className="w-6 h-6 rounded-full object-cover border border-slate-700 shrink-0"
+                    />
+                  ) : (
+                    <span className="w-6 h-6 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink flex items-center justify-center text-[10px] font-black shrink-0">
+                      {(selectedSuspect.assignedFriend?.name || selectedSuspect.displayName || '?')
+                        .charAt(0)
+                        .toUpperCase()}
+                    </span>
+                  )}
+                  <span className="text-white font-black truncate">
+                    {selectedSuspect.assignedFriend?.name || selectedSuspect.displayName}
+                  </span>
+                  {selectedSuspect.assignedFriend && selectedSuspect.displayRoleTitle && (
+                    <span className="px-2 py-0.5 rounded-md bg-brand-pink/15 border border-brand-pink/30 text-brand-pink text-[10px] font-bold shrink-0">
+                      {selectedSuspect.displayRoleTitle}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-slate-400">
+                  <span className="text-sm leading-none">🕵️</span>
+                  <span className="font-semibold">Select your #1 suspect...</span>
+                </div>
+              )}
+
+              <svg
+                className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                  isOpen ? 'rotate-180 text-brand-pink' : ''
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {isOpen && (
+              <div className="absolute left-0 right-0 bottom-full mb-2 z-50 rounded-2xl bg-slate-950/98 backdrop-blur-xl border border-slate-700/90 shadow-2xl shadow-black/80 p-1.5 space-y-1 max-h-72 overflow-y-auto">
+                <div className="px-2.5 py-1.5 flex items-center justify-between border-b border-slate-800/80 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Suspect Lineup ({suspectList.length})
+                  </span>
+                  {selectedSuspect && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGuesses((prev) => ({
+                          ...prev,
+                          [roundNum]: { ...currentGuess, suspectId: '' },
+                        }));
+                        setOpenDropdownId(null);
+                      }}
+                      className="text-[10px] font-bold text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {suspectList.map((s) => {
+                  const isSelected = s.id === currentGuess.suspectId;
+                  const avatar = getPortraitUrl(s);
+                  const guestLabel = s.assignedFriend?.name || s.displayName;
+                  const roleLabel = s.assignedFriend ? s.displayRoleTitle : null;
+
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setGuesses((prev) => ({
+                          ...prev,
+                          [roundNum]: { ...currentGuess, suspectId: s.id },
+                        }));
+                        setOpenDropdownId(null);
+                      }}
+                      className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-brand-pink/15 border border-brand-pink/40 text-white'
+                          : 'hover:bg-slate-800/90 text-slate-200 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {avatar ? (
+                          <img
+                            src={avatar}
+                            alt={ s.displayName }
+                            className="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
+                          />
+                        ) : (
+                          <span className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center text-[11px] font-black shrink-0">
+                            {(guestLabel || '?').charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-black text-white truncate">
+                            {guestLabel}
+                          </span>
+                          {roleLabel && (
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
+                                isSelected
+                                  ? 'bg-brand-pink/25 text-brand-pink'
+                                  : 'bg-slate-800 text-slate-300'
+                              }`}
+                            >
+                              {roleLabel}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {isSelected && (
+                        <span className="px-2 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider shrink-0">
+                          ✓ Suspect
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>
@@ -494,7 +894,7 @@ export function PackScreenerClient({
                 }))
               }
               placeholder="e.g. Caught the affair in the closet and used the 25-ft Christmas lights..."
-              className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-pink"
+              className="w-full rounded-xl bg-slate-950 border border-slate-700/90 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-pink"
             />
           </div>
         </div>
@@ -655,19 +1055,61 @@ export function PackScreenerClient({
                 📸 Cast Visual Reference Strip (Your Friends Cast in Each Role)
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 text-xs relative" data-custom-dropdown>
               <span className="font-bold text-slate-500">Playing POV As:</span>
-              <select
-                value={selectedPovCharId}
-                onChange={(e) => setSelectedPovCharId(e.target.value)}
-                className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-900"
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenDropdownId(openDropdownId === 'pov' ? null : 'pov')
+                }
+                className="rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-900 flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
               >
-                {activeCharacters.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.displayName} {c.is_victim ? '(Victim)' : ''}
-                  </option>
-                ))}
-              </select>
+                <span>
+                  {povChar?.displayName || 'Select Role'}{' '}
+                  {povChar?.is_victim ? '(Victim)' : ''}
+                </span>
+                <svg
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                    openDropdownId === 'pov' ? 'rotate-180 text-brand-pink' : ''
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {openDropdownId === 'pov' && (
+                <div className="absolute right-0 top-full mt-1.5 w-64 z-50 rounded-2xl bg-slate-950 text-white border border-slate-800 shadow-2xl p-1.5 space-y-1">
+                  {activeCharacters.map((c) => {
+                    const isSelected = c.id === selectedPovCharId;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPovCharId(c.id);
+                          setOpenDropdownId(null);
+                        }}
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-brand-pink/20 border border-brand-pink/40 text-white'
+                            : 'hover:bg-slate-800 text-slate-200 border border-transparent'
+                        }`}
+                      >
+                        <span className="truncate">
+                          {c.displayName} {c.is_victim ? '💀' : ''}
+                        </span>
+                        {isSelected && (
+                          <span className="text-[10px] font-black text-brand-pink">✓</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -675,6 +1117,12 @@ export function PackScreenerClient({
             {activeCharacters.map((char) => {
               const photo = getPortraitUrl(char);
               const isSelectedPov = char.id === selectedPovCharId;
+              const isGeneratingPhoto =
+                Boolean(char.assignedFriend?.id) &&
+                generatingFriendIds.has(char.assignedFriend.id);
+              const friendDropKey = `friend-${char.id}`;
+              const isFriendDropOpen = openDropdownId === friendDropKey;
+
               return (
                 <div
                   key={char.id}
@@ -691,11 +1139,24 @@ export function PackScreenerClient({
                         <img
                           src={photo}
                           alt={char.displayName}
+                          onError={() => {
+                            if (char.assignedFriend) {
+                              void triggerFriendAiPhoto(char.assignedFriend);
+                            }
+                          }}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
                           No Photo
+                        </div>
+                      )}
+                      {isGeneratingPhoto && (
+                        <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 z-10">
+                          <span className="w-5 h-5 border-2 border-brand-pink border-t-transparent rounded-full animate-spin" />
+                          <span className="text-[9px] font-black uppercase tracking-wider text-white">
+                            Rendering AI Photo...
+                          </span>
                         </div>
                       )}
                       {char.is_victim && (
@@ -726,27 +1187,63 @@ export function PackScreenerClient({
                   </div>
 
                   {/* Friend Picker Dropdown per Role */}
-                  {useFriendNames && friendRoster.length > 0 && (
+                  {useFriendNames && liveFriends.length > 0 && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="pt-1.5 border-t border-slate-200/80"
+                      className="pt-1.5 border-t border-slate-200/80 relative"
+                      data-custom-dropdown
                     >
-                      <select
-                        value={friendAssignments[char.id] || ''}
-                        onChange={(e) =>
-                          setFriendAssignments((prev) => ({
-                            ...prev,
-                            [char.id]: e.target.value,
-                          }))
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenDropdownId(isFriendDropOpen ? null : friendDropKey)
                         }
-                        className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] font-bold text-slate-700"
+                        className="w-full rounded-lg border border-slate-200 hover:border-slate-300 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 flex items-center justify-between gap-1 transition-all cursor-pointer"
                       >
-                        {friendRoster.map((f) => (
-                          <option key={f.id} value={f.id}>
-                            👤 {f.name}
-                          </option>
-                        ))}
-                      </select>
+                        <span className="truncate">
+                          👤 {char.assignedFriend?.name || 'Select Friend'}
+                        </span>
+                        <svg
+                          className={`w-3 h-3 text-slate-400 shrink-0 transition-transform ${
+                            isFriendDropOpen ? 'rotate-180 text-brand-pink' : ''
+                          }`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {isFriendDropOpen && (
+                        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl bg-slate-950 text-white border border-slate-800 shadow-xl p-1 max-h-48 overflow-y-auto space-y-0.5">
+                          {liveFriends.map((f) => {
+                            const isSelected = friendAssignments[char.id] === f.id;
+                            return (
+                              <button
+                                key={f.id}
+                                type="button"
+                                onClick={() => {
+                                  setFriendAssignments((prev) => ({
+                                    ...prev,
+                                    [char.id]: f.id,
+                                  }));
+                                  setOpenDropdownId(null);
+                                }}
+                                className={`w-full flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-lg text-left text-[10px] font-bold transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-brand-pink/20 text-brand-pink'
+                                    : 'hover:bg-slate-800 text-slate-200'
+                                }`}
+                              >
+                                <span className="truncate">👤 {f.name}</span>
+                                {isSelected && <span>✓</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -810,22 +1307,38 @@ export function PackScreenerClient({
                     ? rel.character_b_id
                     : rel.character_a_id;
                 const otherChar = getCharById(otherId);
+                const dynamicsList: string[] = Array.isArray(rel.dynamics) && rel.dynamics.length > 0
+                  ? rel.dynamics
+                  : rel.relationship_type
+                  ? [rel.relationship_type]
+                  : ['Connected'];
+                const breakdownText = rel.notes || rel.backstory || '';
+
                 return (
                   <div
                     key={rel.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-1.5"
+                    onClick={() => otherChar && setSelectedPovCharId(otherChar.id)}
+                    title="Click to switch POV to this character"
+                    className="cursor-pointer rounded-xl border border-slate-200 hover:border-brand-pink/50 bg-slate-50 hover:bg-brand-pink/[0.03] p-4 space-y-2 transition-all group"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black text-slate-900">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-black text-slate-900 group-hover:text-brand-pink transition-colors">
                         {otherChar?.displayName || 'Guest'}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-900 text-amber-300 text-[10px] font-bold">
-                        {hydrate(rel.relationship_type)}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1">
+                        {dynamicsList.map((dyn, dIdx) => (
+                          <span
+                            key={dIdx}
+                            className="px-2 py-0.5 rounded-md bg-slate-900 text-amber-300 text-[10px] font-bold"
+                          >
+                            {hydrate(dyn)}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    {rel.backstory && (
+                    {breakdownText && (
                       <p className="text-xs text-slate-600 leading-relaxed">
-                        {hydrate(rel.backstory)}
+                        {hydrate(breakdownText)}
                       </p>
                     )}
                   </div>
@@ -935,6 +1448,187 @@ export function PackScreenerClient({
             </div>
           </div>
 
+          {/* Clue Tagging & Detective Notes Accuracy Scorecard */}
+          {(() => {
+            const allOrderedClues: Array<{ clue: any; round: number; indexInRound: number }> = [];
+            for (const r of [1, 2, 3] as const) {
+              (cluesByRound[r] || []).forEach((c: any, idx: number) => {
+                allOrderedClues.push({ clue: c, round: r, indexInRound: idx + 1 });
+              });
+            }
+
+            const taggedOrNoted = allOrderedClues.filter(
+              ({ clue: c }) => Boolean(clueTags[c.id]) || Boolean((clueNotes[c.id] || '').trim())
+            );
+            const taggedItems = allOrderedClues.filter(({ clue: c }) => Boolean(clueTags[c.id]));
+
+            let correctKeyCount = 0;
+            let totalKeyTagged = 0;
+            let correctDecoyOrAlibiCount = 0;
+            let totalDecoyOrAlibiTagged = 0;
+
+            for (const { clue: c } of taggedItems) {
+              const t = clueTags[c.id];
+              const isFake = c.evidence_status === 'fake' || c.implication_type === 'red_herring';
+              if (t === 'key') {
+                totalKeyTagged++;
+                if (!isFake) correctKeyCount++;
+              } else if (t === 'red_herring' || t === 'alibi') {
+                totalDecoyOrAlibiTagged++;
+                if (isFake) correctDecoyOrAlibiCount++;
+              }
+            }
+
+            const totalTagged = totalKeyTagged + totalDecoyOrAlibiTagged;
+            const totalCorrectTags = correctKeyCount + correctDecoyOrAlibiCount;
+            const accuracyPct =
+              totalTagged > 0 ? Math.round((totalCorrectTags / totalTagged) * 100) : null;
+            const notesWrittenCount = allOrderedClues.filter(({ clue: c }) =>
+              Boolean((clueNotes[c.id] || '').trim())
+            ).length;
+
+            return (
+              <div className="rounded-2xl bg-slate-900 text-white p-6 border border-amber-400/40 shadow-xl space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+                      📓 Detective Notebook Scorecard
+                    </span>
+                    <h3 className="text-lg font-black uppercase mt-1">
+                      How Your Clue Tags &amp; Notes Stacked Up Against the Truth
+                    </h3>
+                  </div>
+
+                  {accuracyPct !== null && (
+                    <div className="px-4 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Tag Accuracy
+                      </div>
+                      <div className="text-base font-black text-amber-300">
+                        {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="rounded-xl bg-slate-950 border border-slate-800 p-3.5">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-amber-400">
+                      🔑 Key Evidence Tagged
+                    </div>
+                    <div className="text-sm font-black text-white mt-1">
+                      {totalKeyTagged > 0
+                        ? `${correctKeyCount}/${totalKeyTagged} were Real Murder Clues`
+                        : 'No clues tagged 🔑 Key'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-slate-950 border border-slate-800 p-3.5">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-rose-400">
+                      🐟 Decoys &amp; 🛡️ Alibis Spotted
+                    </div>
+                    <div className="text-sm font-black text-white mt-1">
+                      {totalDecoyOrAlibiTagged > 0
+                        ? `${correctDecoyOrAlibiCount}/${totalDecoyOrAlibiTagged} were Red Herrings`
+                        : 'No clues tagged Decoy/Alibi'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-slate-950 border border-slate-800 p-3.5">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-sky-400">
+                      ✍️ Detective Notes Written
+                    </div>
+                    <div className="text-sm font-black text-white mt-1">
+                      {notesWrittenCount} {notesWrittenCount === 1 ? 'Note' : 'Notes'} Recorded
+                    </div>
+                  </div>
+                </div>
+
+                {taggedOrNoted.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">
+                    You didn&apos;t tag any clues or write any notes during this run. In Rounds 1–3, use the <strong className="text-amber-300">🔑 Key</strong>, <strong className="text-rose-300">🐟 Decoy</strong>, and <strong className="text-sky-300">🛡️ Alibi</strong> buttons and the note field on any clue card to track your deductions!
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+                    {taggedOrNoted.map(({ clue: c, round, indexInRound }) => {
+                      const t = clueTags[c.id];
+                      const note = (clueNotes[c.id] || '').trim();
+                      const isFake =
+                        c.evidence_status === 'fake' || c.implication_type === 'red_herring';
+                      const tagWasCorrect =
+                        t === 'key'
+                          ? !isFake
+                          : t === 'red_herring' || t === 'alibi'
+                          ? isFake
+                          : null;
+                      const cTitle = hydrate(stripCustomerFacingTitle(c.title) || c.title);
+
+                      return (
+                        <div
+                          key={c.id}
+                          className={`rounded-xl p-3.5 border space-y-1.5 ${
+                            tagWasCorrect === true
+                              ? 'bg-emerald-950/30 border-emerald-500/40'
+                              : tagWasCorrect === false
+                              ? 'bg-rose-950/30 border-rose-500/40'
+                              : 'bg-slate-950 border-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
+                                R{round} • #{indexInRound}
+                              </span>
+                              <span className="text-xs font-black text-white truncate">
+                                {cTitle}
+                              </span>
+                            </div>
+
+                            <span
+                              className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${
+                                isFake
+                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              }`}
+                            >
+                              {isFake ? '🎭 Fake / Subplot' : '✓ Real Clue'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                            {t ? (
+                              <span className="font-bold text-slate-300">
+                                Your Tag:{' '}
+                                <strong className="text-white">
+                                  {t === 'key'
+                                    ? '🔑 Key'
+                                    : t === 'red_herring'
+                                    ? '🐟 Decoy'
+                                    : '🛡️ Alibi'}
+                                </strong>{' '}
+                                {tagWasCorrect
+                                  ? '✅ Spot-on!'
+                                  : isFake
+                                  ? '❌ Tricked by a decoy!'
+                                  : '❌ Dismissed real evidence!'}
+                              </span>
+                            ) : (
+                              <span className="text-slate-500">Untagged (Note only)</span>
+                            )}
+                          </div>
+
+                          {note && (
+                            <p className="text-xs text-slate-300 italic pt-1 border-t border-white/10">
+                              Your Note: &ldquo;{note}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Main Plot Beats & Fake Subplots Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-2xl bg-white border border-slate-200 p-6 space-y-3">
@@ -947,7 +1641,7 @@ export function PackScreenerClient({
                   className="rounded-xl bg-emerald-50/60 border border-emerald-200 p-3.5 space-y-1"
                 >
                   <div className="text-xs font-black text-emerald-950">
-                    Beat {b.beat_number}: {hydrate(b.title)}
+                    Beat {b.beat_number}: {hydrate(b.event_title || b.title)}
                   </div>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     {hydrate(b.description)}
