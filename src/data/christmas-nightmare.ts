@@ -489,7 +489,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'audio',
-    static_image_url: '/generated-clues/db9ad3d8-94fd-4b67-8de8-f2fcdc75b8ea-0f261e72ed79.jpg',
+    static_image_url: '/generated-clues/db9ad3d8-94fd-4b67-8de8-f2fcdc75b8ea-a2d1f7c12954.jpg',
     audio_url: '/mystery-audio/61196e53-09c3-427f-8862-30151f2ca75b/db9ad3d8-94fd-4b67-8de8-f2fcdc75b8ea.mp3',
     voice_region: 'en-AU',
     internal_notes: '[FORMAT:audio] [CODE:R1-C2] Fake Arc Step 1 ({{The Wife}} + {{The Co-Worker}}) - Exposes that exes {{The Wife}} and {{The Co-Worker}} conspired to break into {{The Husband}}\'s study safe at 8:00 PM.',
@@ -507,7 +507,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 1,
     format: 'physical_prop',
-    static_image_url: '/generated-clues/5ff23ebe-96f7-49d5-8222-84ca13a932f4-99bd7698900d.jpg',
+    static_image_url: '/generated-clues/5ff23ebe-96f7-49d5-8222-84ca13a932f4-840601e54d17.jpg',
     internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} by the coat closet while a broken sterling silver "Forever Sisters" snowflake pin and dark berry lipstick glass sit outside the slatted door.',
     description:
       'Exhibit #1A: Motion-triggered hallway camera frame outside the coat closet at 7:40 PM.\nExhibit #1B: Found just outside the slatted closet door: one sterling silver snowflake hairpin with a snapped clasp engraved "Forever Sisters" (the silver half of the sisters\' matching gold-and-silver heirloom set), beside a wine glass rimmed with dark berry lipstick.',
@@ -554,7 +554,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 2,
     format: 'cctv',
-    static_image_url: '/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-646107074d71.jpg',
+    static_image_url: '/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-0eefa60444a8.jpg',
     internal_notes: '[FORMAT:cctv] [CODE:R1-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV composite showing {{The Sister-in-Law}} and {{The Co-Worker}} visiting the hallway storage closet and fuse box between 7:52 PM and 8:03 PM.',
     description:
       'Header: CAM 01 • HALLWAY STORAGE & BREAKER PANEL\nTimestamp: 7:52 PM - 8:03 PM\n• 7:52 PM (Closet Door): Female subject opens middle shelf (Shelf B) and exits carrying a coiled bundle under her arm.\n• 7:58 PM (Top Rack): Male subject opens closet door and removes item from top utility rack (Shelf A).\n• 8:03 PM (Wall Panel): Same male subject opens breaker panel beside closet and toggles Switch #4 ("2F-STUDY") to OFF.',
@@ -572,7 +572,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'physical_prop',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111105-4a9a8dbdb0fe.jpg',
+    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111105-1bc1e4116176.jpg',
     internal_notes: '[FORMAT:physical_prop] [CODE:R2-C1] Fake Arc Step 2 ({{The Wife}} + {{The Co-Worker}}) - Visual photo showing {{The Wife}} and {{The Co-Worker}} beside the open upstairs study safe with the work glove.',
     description:
       'Exhibit #2A: Wall safe behind upstairs study portrait forced open with a bent brass letter opener at 8:06 PM (alarm failed to trigger due to Switch #4 "2F-STUDY" power loss 3 minutes prior).\nExhibit #2B: Single right-hand insulated leather work glove recovered on the rug below the safe.',
@@ -620,7 +620,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'medical_rx',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111106-e4163f78f0e5.jpg',
+    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111106-45fd5371bedd.jpg',
     internal_notes: '[FORMAT:medical_rx] [CODE:R2-C4] Fake Arc Step 2 ({{The Mistress}} + {{The Bestie}}) - Visual bar photo + Rx label showing the two co-workers spiking the eggnog cup with fast-acting sleeping drops.',
     description:
       'Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)\nPrescribed to: [Torn] ... Co. Group Plan #B-04\nIssue date: 2 Weeks Ago\nRef: RX-409-12\nWARNING: 5 drops in warm/spiced alcohol induces 20-minute sleep onset. Sub-lethal dose.\nEmpty 10mL dropper vial recovered from kitchen bar bin at 8:08 PM beside freshly grated nutmeg.',
@@ -684,7 +684,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'physical_prop',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111107-5a3adbbd85bd.jpg',
+    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111107-6c95b13d6d2e.jpg',
     internal_notes: '[FORMAT:physical_prop] [CODE:R3-C2] Fake Arc Step 3 & Fatal Hole ({{The Wife}} + {{The Co-Worker}}) - Visual photo + raw lock/heat timestamps proving {{The Wife}} and {{The Co-Worker}} were locked on the 2nd floor from 8:17:50 to 8:21:30 PM.',
     description:
       'Exhibit #3A (2F Study Hearth): Charred corners of "COMPANY AUDIT - MONDAY SUBMISSION" and "POST-NUPTIAL WAIVER OF ASSETS" recovered from upstairs grate.\nExhibit #3B (2F Study Door & Flue Telemetry): Second-floor study deadbolt engaged from the inside 8:17:50 PM to 8:21:30 PM; chimney flue peaked at 480°F at 8:19:15 PM.',
@@ -700,7 +700,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 4,
     format: 'handwritten_note',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111110-fcce01c9c8c3.jpg',
+    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111110-2de9619b65ec.jpg',
     internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Visual Polaroid photo of {{The Sister-in-Law}} and {{The Wife}} + cryptic handwritten message on the back.',
     description:
       'Recovered: Inside coat pocket near the pantry beside a 10:45 PM one-way boarding pass\n"You spent our whole childhood protecting me on this street. After what I saw in the closet and what I heard him say to you upstairs, I couldn\'t let him steal another year of your life. This Christmas, you\'re finally going to be happy and free."',
@@ -716,7 +716,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'cctv',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111108-71519e9e2573.jpg',
+    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111108-b5c9ed05ea0e.jpg',
     internal_notes: '[FORMAT:cctv] [CODE:R3-C4] Fake Arc Step 3 & Fatal Hole ({{The Mistress}} + {{The Bestie}}) - Visual CCTV still proving {{The Husband}} was still moving on the sofa at 8:16:10 PM and {{The Mistress}} was continuously seated in the dining room from 8:17:05 to 8:22:00 PM.',
     description:
       'Header: CAM 02 • LIVING ROOM DOOR & DINING ARCH\nTimestamp: 8:16:10 PM - 8:22:00 PM\n• 8:16:10 PM: Subject exits living room doorway holding an unlocked phone; victim\'s arm is seen shifting on the sofa cushion behind the doorway.\n• 8:17:05 PM - 8:22:00 PM: Same subject enters dining room arch and remains continuously seated at the dinner table pouring wine.',

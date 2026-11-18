@@ -253,8 +253,19 @@ export function PackScreenerClient({
   const getCharById = (id: string) => activeCharacters.find((c) => c.id === id);
 
   const getPortraitUrl = (c: any) => {
-    if (useFriendNames && c?.profile_data?.friend_photo_url) {
-      return c.profile_data.friend_photo_url;
+    const rawChar = rawCharacters.find((rc) => rc.id === c?.id);
+    const isSameGuestAsRendered =
+      rawChar?.profile_data?.guest_id &&
+      c?.profile_data?.guest_id &&
+      String(rawChar.profile_data.guest_id) === String(c.profile_data.guest_id);
+
+    if (useFriendNames) {
+      if (isSameGuestAsRendered && rawChar?.profile_data?.standard_character_photo_url) {
+        return rawChar.profile_data.standard_character_photo_url;
+      }
+      if (c?.profile_data?.friend_photo_url) {
+        return c.profile_data.friend_photo_url;
+      }
     }
     return (
       c?.profile_data?.standard_character_photo_url ||

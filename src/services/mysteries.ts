@@ -341,12 +341,7 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         const preservedVoiceRegion =
           existingClue?.voice_region || extractVoiceRegionFromNotes(existingClue?.internal_notes) || cSpec.voice_region || null;
         const preservedStaticImage =
-          (existingClue?.static_image_url &&
-          existingClue.static_image_url !== '/clues/doa/cctv-r2-hooded-table.jpg'
-            ? existingClue.static_image_url
-            : null) ??
-          cSpec.static_image_url ??
-          null;
+          cSpec.static_image_url ?? existingClue?.static_image_url ?? null;
 
         const desiredRawNotes = embedFormatTagInNotes(
           stripFormatTagFromNotes(cSpec.internal_notes),
