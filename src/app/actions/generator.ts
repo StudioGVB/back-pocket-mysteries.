@@ -512,14 +512,40 @@ async function hydrateCharactersWithGuests(characters: any[], hostId: string | n
     }
   }
 
-  // 3. Host's custom guests (strictly scoped to hostId)
-  if (hostId) {
+  // 3. Host's custom guests (scoped to hostId + current authenticated user + any explicitly assigned guest_ids)
+  const userIdsToQuery = new Set<string>();
+  if (hostId) userIdsToQuery.add(hostId);
+  try {
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    if (currentUser?.id) userIdsToQuery.add(currentUser.id);
+  } catch {
+    // ignore
+  }
+
+  for (const uid of userIdsToQuery) {
     const { data: guests } = await supabase
       .from('guests')
       .select('*')
-      .eq('user_id', hostId);
+      .eq('user_id', uid);
     if (Array.isArray(guests)) {
       for (const guest of guests) {
+        guestMap.set(guest.id, guest);
+      }
+    }
+  }
+
+  const assignedGuestIds = characters
+    .map((c: any) => c?.profile_data?.guest_id)
+    .filter((gid: any) => gid && !guestMap.has(gid));
+  if (assignedGuestIds.length > 0) {
+    const { data: extraGuests } = await supabase
+      .from('guests')
+      .select('*')
+      .in('id', assignedGuestIds);
+    if (Array.isArray(extraGuests)) {
+      for (const guest of extraGuests) {
         guestMap.set(guest.id, guest);
       }
     }
@@ -779,6 +805,112 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
   };
 }
 
+export interface ScreenerCastAssignmentInput {
+  characterId: string;
+  friend: {
+    id: string;
+    name: string;
+    gender?: string;
+    avatar_url?: string;
+    photoUrl?: string | null;
+    eye_color?: string;
+    height?: string;
+    ethnicity?: string;
+  };
+}
+
+/**
+ * Persists the user's selected friend-to-character assignments from the Pack Screener
+ * to both Supabase `characters` and the server-side live mystery cache snapshot so that
+ * subsequent character portrait and clue image generations use the newly recasted friends.
+ */
+export async function applyScreenerCastAssignmentAction(
+  mysteryId: string,
+  assignments: ScreenerCastAssignmentInput[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const cachedMystery = getCachedMysterySnapshot(mysteryId);
+
+    const assignmentMap = new Map<string, ScreenerCastAssignmentInput['friend']>();
+    for (const a of assignments) {
+      if (a.characterId && a.friend) {
+        assignmentMap.set(a.characterId, a.friend);
+      }
+    }
+
+    const { data: dbChars } = await supabase
+      .from('characters')
+      .select('id, name, gender, profile_data, is_victim, plot_role')
+      .eq('mystery_id', mysteryId);
+
+    const sourceChars =
+      dbChars && dbChars.length > 0 ? dbChars : cachedMystery?.characters || [];
+
+    const updatedCharacters: any[] = [];
+
+    for (const c of sourceChars) {
+      const assigned = assignmentMap.get(c.id);
+      const rawProfile = (c.profile_data as any) || {};
+      if (!assigned) {
+        updatedCharacters.push(c);
+        continue;
+      }
+
+      const prevGuestId = String(rawProfile.guest_id || '');
+      const isDifferentGuest = prevGuestId !== String(assigned.id || '');
+
+      const nextProfile: Record<string, any> = {
+        ...rawProfile,
+        guest_id: assigned.id,
+        guest_name: assigned.name,
+        avatar_url: assigned.avatar_url || assigned.photoUrl || rawProfile.avatar_url,
+        eye_color: assigned.eye_color || rawProfile.eye_color,
+        height: assigned.height || rawProfile.height,
+        ethnicity: assigned.ethnicity || rawProfile.ethnicity,
+      };
+
+      // If the user recasted this character to a different friend, clear the old friend's costume photo
+      // so Stage 1 generates a fresh costume portrait for the newly assigned friend.
+      if (isDifferentGuest) {
+        delete nextProfile.standard_character_photo_url;
+        delete nextProfile.standard_character_photo_hash;
+        delete nextProfile.outfit_image_url;
+      }
+
+      await supabase
+        .from('characters')
+        .update({ profile_data: nextProfile })
+        .eq('id', c.id);
+
+      updatedCharacters.push({
+        ...c,
+        profile_data: nextProfile,
+      });
+    }
+
+    if (cachedMystery) {
+      cacheMysterySnapshot(mysteryId, {
+        ...cachedMystery,
+        characters: updatedCharacters,
+      });
+    }
+
+    try {
+      revalidatePath(`/builder/mysteries/${mysteryId}/screen`);
+      revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
+      revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+    } catch {
+      // ignore outside request context
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('applyScreenerCastAssignmentAction error:', err);
+    return { success: false, error: err?.message || 'Failed to save cast assignment' };
+  }
+}
+
 /**
  * Server Action to explicitly generate or refresh a character's Standard Character Reference Photo
  * from their assigned guest's physical description + character outfit.
@@ -794,25 +926,32 @@ export async function generateStandardCharacterPhotoAction(
 
   try {
     const supabase = await createClient();
+    const cachedMystery = getCachedMysterySnapshot(mysteryId);
 
-    const { data: mystery, error: mysteryError } = await supabase
+    const { data: dbMystery, error: mysteryError } = await supabase
       .from('mysteries')
       .select('id, created_by, title, theme, description')
       .eq('id', mysteryId)
       .single();
 
-    if (mysteryError || !mystery) {
+    const mystery = dbMystery || cachedMystery;
+
+    if (!mystery) {
       return { error: mysteryError?.message || 'Mystery not found' };
     }
 
-    const { data: charData, error: charError } = await supabase
+    const { data: dbCharData, error: charError } = await supabase
       .from('characters')
       .select('id, name, gender, profile_data, is_victim, plot_role')
       .eq('id', characterId)
       .eq('mystery_id', mysteryId)
       .single();
 
-    if (charError || !charData) {
+    const charData =
+      dbCharData ||
+      (cachedMystery?.characters || []).find((c: any) => c.id === characterId);
+
+    if (!charData) {
       return { error: charError?.message || 'Character not found' };
     }
 
@@ -823,8 +962,33 @@ export async function generateStandardCharacterPhotoAction(
       return { error: 'Failed to generate standard character photo' };
     }
 
-    revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
-    revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+    if (cachedMystery && Array.isArray(cachedMystery.characters)) {
+      const updatedChars = cachedMystery.characters.map((c: any) =>
+        c.id === characterId
+          ? {
+              ...c,
+              profile_data: {
+                ...(c.profile_data || {}),
+                standard_character_photo_url: result.photoUrl,
+                standard_character_photo_hash: result.identityHash,
+                outfit_image_url: result.photoUrl,
+              },
+            }
+          : c
+      );
+      cacheMysterySnapshot(mysteryId, {
+        ...cachedMystery,
+        characters: updatedChars,
+      });
+    }
+
+    try {
+      revalidatePath(`/builder/mysteries/${mysteryId}/screen`);
+      revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
+      revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+    } catch {
+      // ignore
+    }
     return {
       success: true,
       imageUrl: result.photoUrl,
@@ -941,7 +1105,7 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
       ? `${mystery.theme} setting (${mystery.title || 'the mystery venue'})`
       : mystery.title || 'a moody luxury mystery setting';
 
-    // Direct select of characters
+    // Direct select of characters, merged with any freshly recasted profile_data in cachedMystery
     const { data: charactersData, error: charError } = await supabase
       .from('characters')
       .select('id, name, gender, profile_data, is_victim, plot_role')
@@ -950,10 +1114,27 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
     if (charError) {
       console.error('Error fetching characters directly in generator:', charError);
     }
-    const characters =
+    const baseCharacters =
       charactersData && charactersData.length > 0
         ? charactersData
         : cachedMystery?.characters || [];
+
+    const cachedCharsById = new Map<string, any>();
+    for (const cc of cachedMystery?.characters || []) {
+      if (cc?.id) cachedCharsById.set(cc.id, cc);
+    }
+
+    const characters = baseCharacters.map((c: any) => {
+      const cachedChar = cachedCharsById.get(c.id);
+      if (!cachedChar) return c;
+      return {
+        ...c,
+        profile_data: {
+          ...(c.profile_data || {}),
+          ...(cachedChar.profile_data || {}),
+        },
+      };
+    });
 
     // Hydrate characters with their assigned guest's physical traits & avatar
     const hydratedCharacters = await hydrateCharactersWithGuests(characters, mystery.created_by, supabase);

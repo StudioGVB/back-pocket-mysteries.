@@ -341,7 +341,7 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         const preservedVoiceRegion =
           existingClue?.voice_region || extractVoiceRegionFromNotes(existingClue?.internal_notes) || cSpec.voice_region || null;
         const preservedStaticImage =
-          cSpec.static_image_url ?? existingClue?.static_image_url ?? null;
+          existingClue?.static_image_url || cSpec.static_image_url || null;
 
         const desiredRawNotes = embedFormatTagInNotes(
           stripFormatTagFromNotes(cSpec.internal_notes),

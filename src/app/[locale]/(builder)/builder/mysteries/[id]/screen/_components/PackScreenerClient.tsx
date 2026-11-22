@@ -14,6 +14,11 @@ import {
 } from '@/utils/hydration';
 import { resolveDisplayAvatarUrl } from '@/utils/avatar';
 import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
+import {
+  applyScreenerCastAssignmentAction,
+  generateStandardCharacterPhotoAction,
+  generateClueImageAction,
+} from '@/app/actions/generator';
 import { GuestModal } from '@/components/account/GuestModal';
 import { saveGuestAction } from '@/app/actions/guests';
 
@@ -112,9 +117,12 @@ export function PackScreenerClient({
   subplots,
   friendRoster = [],
 }: PackScreenerClientProps) {
-  const rawCharacters: any[] = mystery?.characters || [];
-  const rawClues: any[] = mystery?.clues || [];
+  const initialCharacters: any[] = mystery?.characters || [];
+  const initialClues: any[] = mystery?.clues || [];
   const plotBeats: any[] = mystery?.plot_beats || [];
+
+  const [rawCharacters, setRawCharacters] = useState<any[]>(initialCharacters);
+  const [rawClues, setRawClues] = useState<any[]>(initialClues);
 
   const [liveFriends, setLiveFriends] = useState<FriendRosterItem[]>(friendRoster);
   const [generatingFriendIds, setGeneratingFriendIds] = useState<Set<string>>(new Set());
@@ -128,11 +136,19 @@ export function PackScreenerClient({
   const [isAddFriendOpen, setIsAddFriendOpen] = useState<boolean>(false);
 
   const [friendAssignments, setFriendAssignments] = useState<Record<string, string>>(() =>
-    buildDefaultFriendAssignments(rawCharacters, friendRoster, 0)
+    buildDefaultFriendAssignments(initialCharacters, friendRoster, 0)
   );
+  const [hasUnsavedRecast, setHasUnsavedRecast] = useState<boolean>(false);
+  const [isGeneratingCastMedia, setIsGeneratingCastMedia] = useState<boolean>(false);
+  const [generationProgress, setGenerationProgress] = useState<{
+    current: number;
+    total: number;
+    label: string;
+  } | null>(null);
+  const [regeneratingClueIds, setRegeneratingClueIds] = useState<Set<string>>(new Set());
 
   const [selectedPovCharId, setSelectedPovCharId] = useState<string>(
-    rawCharacters.find((c) => !c.is_victim)?.id || rawCharacters[0]?.id || ''
+    initialCharacters.find((c) => !c.is_victim)?.id || initialCharacters[0]?.id || ''
   );
 
   // Solo player notebook state: tag clues, pin suspects, & record round guesses (persisted to localStorage per mystery)
@@ -326,6 +342,34 @@ export function PackScreenerClient({
     }
   }, [generatingFriendIds]);
 
+  // Load & persist custom friendAssignments per mystery so your selected cast is remembered
+  useEffect(() => {
+    if (typeof window === 'undefined' || !mystery?.id) return;
+    try {
+      const savedCast = window.localStorage.getItem(`bpm_friend_assignments_${mystery.id}`);
+      if (savedCast) {
+        const parsed = JSON.parse(savedCast);
+        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          setFriendAssignments((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [mystery?.id]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !mystery?.id) return;
+    try {
+      window.localStorage.setItem(
+        `bpm_friend_assignments_${mystery.id}`,
+        JSON.stringify(friendAssignments)
+      );
+    } catch {
+      // ignore
+    }
+  }, [friendAssignments, mystery?.id]);
+
   // Automatically generate AI headshot for any friend in the roster missing one (e.g. Charley)
   useEffect(() => {
     const missing = liveFriends.filter(
@@ -342,7 +386,245 @@ export function PackScreenerClient({
     const nextSeed = shuffleSeed + 1;
     setShuffleSeed(nextSeed);
     setFriendAssignments(buildDefaultFriendAssignments(rawCharacters, liveFriends, nextSeed));
+    setHasUnsavedRecast(true);
   };
+
+  const handleRegenerateSingleCluePhoto = useCallback(
+    async (clue: any) => {
+      if (!clue?.id || !mystery?.id || regeneratingClueIds.has(clue.id)) return;
+      setRegeneratingClueIds((prev) => new Set(prev).add(clue.id));
+      try {
+        // First ensure current friendAssignments are synced to server cache
+        const assignmentsPayload = rawCharacters
+          .map((c) => {
+            const fId = friendAssignments[c.id];
+            const friend = liveFriends.find((f) => f.id === fId);
+            if (!friend) return null;
+            return {
+              characterId: c.id,
+              friend: {
+                id: friend.id,
+                name: friend.name,
+                gender: friend.gender,
+                avatar_url: friend.avatar_url,
+                photoUrl: friend.photoUrl,
+                eye_color: friend.eye_color,
+                height: friend.height,
+                ethnicity: friend.ethnicity,
+              },
+            };
+          })
+          .filter(Boolean) as any[];
+
+        if (assignmentsPayload.length > 0) {
+          await applyScreenerCastAssignmentAction(mystery.id, assignmentsPayload);
+        }
+
+        const res = await generateClueImageAction(
+          clue.id,
+          mystery.id,
+          clue.generation_prompt || clue.prompt_template || ''
+        );
+        if (res?.imageUrl) {
+          const freshUrl = res.imageUrl.startsWith('data:')
+            ? res.imageUrl
+            : `${res.imageUrl.split('?')[0]}?t=${Date.now()}`;
+          setRawClues((prev) =>
+            prev.map((item) =>
+              item.id === clue.id ? { ...item, static_image_url: freshUrl } : item
+            )
+          );
+        }
+      } catch (err) {
+        console.error('Failed to regenerate clue photo:', err);
+      } finally {
+        setRegeneratingClueIds((prev) => {
+          const next = new Set(prev);
+          next.delete(clue.id);
+          return next;
+        });
+      }
+    },
+    [mystery?.id, rawCharacters, friendAssignments, liveFriends, regeneratingClueIds]
+  );
+
+  const handleGenerateForSelectedCast = useCallback(async () => {
+    if (!mystery?.id || isGeneratingCastMedia) return;
+    setIsGeneratingCastMedia(true);
+
+    try {
+      // 1. Build payload of currently selected friends for each character
+      const assignmentsPayload = rawCharacters
+        .map((c) => {
+          const fId = friendAssignments[c.id];
+          const friend = liveFriends.find((f) => f.id === fId);
+          if (!friend) return null;
+          return {
+            characterId: c.id,
+            roleTitle: getCharacterRoleTitle(c) || c.name,
+            friend: {
+              id: friend.id,
+              name: friend.name,
+              gender: friend.gender,
+              avatar_url: friend.avatar_url,
+              photoUrl: friend.photoUrl,
+              eye_color: friend.eye_color,
+              height: friend.height,
+              ethnicity: friend.ethnicity,
+            },
+          };
+        })
+        .filter(Boolean) as Array<{
+        characterId: string;
+        roleTitle: string;
+        friend: {
+          id: string;
+          name: string;
+          gender?: string;
+          avatar_url?: string;
+          photoUrl?: string | null;
+          eye_color?: string;
+          height?: string;
+          ethnicity?: string;
+        };
+      }>;
+
+      // Identify visual clues that depict characters in their prompt or have visual photos
+      const visualCluesToRegen = rawClues.filter((c) => {
+        const prompt = String(c.generation_prompt || c.prompt_template || '');
+        const hasCharacterToken = /\{\{[^}]+\}\}/.test(prompt);
+        const fmt = c.format || inferClueFormat(c);
+        return (
+          hasCharacterToken ||
+          ((fmt === 'physical_prop' || fmt === 'cctv' || fmt === 'social_post') &&
+            Boolean(c.static_image_url || prompt))
+        );
+      });
+
+      const totalSteps = 1 + assignmentsPayload.length + visualCluesToRegen.length;
+      let currentStep = 1;
+
+      setGenerationProgress({
+        current: currentStep,
+        total: totalSteps,
+        label: 'Locking in selected friends & updating 15 relationships...',
+      });
+
+      await applyScreenerCastAssignmentAction(
+        mystery.id,
+        assignmentsPayload.map((a) => ({
+          characterId: a.characterId,
+          friend: a.friend,
+        }))
+      );
+
+      // Update local rawCharacters with the new guest_id and guest_name right away
+      setRawCharacters((prev) =>
+        prev.map((c) => {
+          const match = assignmentsPayload.find((a) => a.characterId === c.id);
+          if (!match) return c;
+          const prevGuestId = String(c?.profile_data?.guest_id || '');
+          const isDifferent = prevGuestId !== String(match.friend.id);
+          const nextProfile = {
+            ...(c.profile_data || {}),
+            guest_id: match.friend.id,
+            guest_name: match.friend.name,
+            avatar_url: match.friend.avatar_url || c.profile_data?.avatar_url,
+          };
+          if (isDifferent) {
+            delete nextProfile.standard_character_photo_url;
+            delete nextProfile.standard_character_photo_hash;
+            delete nextProfile.outfit_image_url;
+          }
+          return {
+            ...c,
+            profile_data: nextProfile,
+          };
+        })
+      );
+
+      // 2. Generate Stage 1 Standard Character Costume Portraits for the selected cast
+      for (const item of assignmentsPayload) {
+        currentStep++;
+        setGenerationProgress({
+          current: currentStep,
+          total: totalSteps,
+          label: `Generating character costume portrait: ${item.friend.name} (${item.roleTitle})...`,
+        });
+
+        const charRes = await generateStandardCharacterPhotoAction(
+          mystery.id,
+          item.characterId,
+          true
+        );
+        if (charRes?.imageUrl) {
+          const freshPortrait = charRes.imageUrl.startsWith('data:')
+            ? charRes.imageUrl
+            : `${charRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
+          setRawCharacters((prev) =>
+            prev.map((c) =>
+              c.id === item.characterId
+                ? {
+                    ...c,
+                    profile_data: {
+                      ...(c.profile_data || {}),
+                      guest_id: item.friend.id,
+                      guest_name: item.friend.name,
+                      standard_character_photo_url: freshPortrait,
+                      standard_character_photo_hash: charRes.identityHash,
+                      outfit_image_url: freshPortrait,
+                    },
+                  }
+                : c
+            )
+          );
+        }
+      }
+
+      // 3. Generate Stage 2 Visual Clue Photos featuring the selected cast
+      for (const clue of visualCluesToRegen) {
+        currentStep++;
+        const cleanTitle = stripCustomerFacingTitle(clue.title) || clue.title;
+        setGenerationProgress({
+          current: currentStep,
+          total: totalSteps,
+          label: `Generating visual clue photo (R${clue.round_number || 1}): ${cleanTitle}...`,
+        });
+        setRegeneratingClueIds((prev) => new Set(prev).add(clue.id));
+
+        try {
+          const clueRes = await generateClueImageAction(
+            clue.id,
+            mystery.id,
+            clue.generation_prompt || clue.prompt_template || ''
+          );
+          if (clueRes?.imageUrl) {
+            const freshClueUrl = clueRes.imageUrl.startsWith('data:')
+              ? clueRes.imageUrl
+              : `${clueRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
+            setRawClues((prev) =>
+              prev.map((item) =>
+                item.id === clue.id ? { ...item, static_image_url: freshClueUrl } : item
+              )
+            );
+          }
+        } finally {
+          setRegeneratingClueIds((prev) => {
+            const next = new Set(prev);
+            next.delete(clue.id);
+            return next;
+          });
+        }
+      }
+
+      setHasUnsavedRecast(false);
+    } catch (err) {
+      console.error('Error generating cast & clues for selected friends:', err);
+    } finally {
+      setIsGeneratingCastMedia(false);
+      setGenerationProgress(null);
+    }
+  }, [mystery?.id, isGeneratingCastMedia, rawCharacters, rawClues, friendAssignments, liveFriends]);
 
   // Build hydrated characters using the user's real friends from My Roster (or Role Titles when toggled off)
   const activeCharacters = useMemo(() => {
@@ -490,6 +772,10 @@ export function PackScreenerClient({
     const isFake = clue.evidence_status === 'fake' || clue.implication_type === 'red_herring';
     const linkedBeat = plotBeats.find((b: any) => b.id === clue.linked_plot_beat_id);
     const cleanInternalNotes = stripFormatTagFromNotes(clue.internal_notes);
+    const isRegeneratingThisClue = regeneratingClueIds.has(clue.id);
+    const hasVisualPhotoOrPrompt = Boolean(
+      clue.static_image_url || clue.generation_prompt || clue.prompt_template
+    );
 
     return (
       <div
@@ -519,89 +805,111 @@ export function PackScreenerClient({
             </span>
           </div>
 
-          {xRayMode ? (
-            <span
-              className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest shrink-0 ${
-                isFake
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-              }`}
-            >
-              {isFake
-                ? '🎭 Fake / Subplot'
-                : linkedBeat
-                ? `✓ Real • Beat ${linkedBeat.beat_number}`
-                : '✓ Real / Canon'}
-            </span>
-          ) : (
-            /* Solo Player Deduction Tag Buttons */
-            <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {hasVisualPhotoOrPrompt && (
               <button
                 type="button"
-                onClick={() => {
-                  if (tagFilter !== 'all') {
-                    setStickyClueIds((prev) => new Set(prev).add(clue.id));
-                  }
-                  setClueTags((prev) => ({
-                    ...prev,
-                    [clue.id]: prev[clue.id] === 'key' ? undefined : 'key',
-                  }));
-                }}
-                title="Mark as Key Evidence"
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                  tag === 'key'
-                    ? 'bg-amber-400 text-slate-950 font-black'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                disabled={isRegeneratingThisClue || isGeneratingCastMedia}
+                onClick={() => void handleRegenerateSingleCluePhoto(clue)}
+                title="Regenerate this clue photo with your currently selected friends"
+                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-brand-pink text-slate-300 hover:text-white text-[10px] font-bold transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isRegeneratingThisClue ? '⏳...' : '🔄 Photo'}
+              </button>
+            )}
+
+            {xRayMode ? (
+              <span
+                className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest shrink-0 ${
+                  isFake
+                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                 }`}
               >
-                🔑 Key
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (tagFilter !== 'all') {
-                    setStickyClueIds((prev) => new Set(prev).add(clue.id));
-                  }
-                  setClueTags((prev) => ({
-                    ...prev,
-                    [clue.id]: prev[clue.id] === 'red_herring' ? undefined : 'red_herring',
-                  }));
-                }}
-                title="Mark as Red Herring / Decoy"
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                  tag === 'red_herring'
-                    ? 'bg-rose-500 text-white font-black'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                🐟 Decoy
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (tagFilter !== 'all') {
-                    setStickyClueIds((prev) => new Set(prev).add(clue.id));
-                  }
-                  setClueTags((prev) => ({
-                    ...prev,
-                    [clue.id]: prev[clue.id] === 'alibi' ? undefined : 'alibi',
-                  }));
-                }}
-                title="Mark as Alibi / Clears Suspect"
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                  tag === 'alibi'
-                    ? 'bg-sky-400 text-slate-950 font-black'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                🛡️ Alibi
-              </button>
-            </div>
-          )}
+                {isFake
+                  ? '🎭 Fake / Subplot'
+                  : linkedBeat
+                  ? `✓ Real • Beat ${linkedBeat.beat_number}`
+                  : '✓ Real / Canon'}
+              </span>
+            ) : (
+              /* Solo Player Deduction Tag Buttons */
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (tagFilter !== 'all') {
+                      setStickyClueIds((prev) => new Set(prev).add(clue.id));
+                    }
+                    setClueTags((prev) => ({
+                      ...prev,
+                      [clue.id]: prev[clue.id] === 'key' ? undefined : 'key',
+                    }));
+                  }}
+                  title="Mark as Key Evidence"
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    tag === 'key'
+                      ? 'bg-amber-400 text-slate-950 font-black'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🔑 Key
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (tagFilter !== 'all') {
+                      setStickyClueIds((prev) => new Set(prev).add(clue.id));
+                    }
+                    setClueTags((prev) => ({
+                      ...prev,
+                      [clue.id]: prev[clue.id] === 'red_herring' ? undefined : 'red_herring',
+                    }));
+                  }}
+                  title="Mark as Red Herring / Decoy"
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    tag === 'red_herring'
+                      ? 'bg-rose-500 text-white font-black'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🐟 Decoy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (tagFilter !== 'all') {
+                      setStickyClueIds((prev) => new Set(prev).add(clue.id));
+                    }
+                    setClueTags((prev) => ({
+                      ...prev,
+                      [clue.id]: prev[clue.id] === 'alibi' ? undefined : 'alibi',
+                    }));
+                  }}
+                  title="Mark as Alibi / Clears Suspect"
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    tag === 'alibi'
+                      ? 'bg-sky-400 text-slate-950 font-black'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🛡️ Alibi
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Actual Customer-Facing Clue View */}
-        <div className="p-4 flex-grow flex flex-col justify-center">
+        <div className="p-4 flex-grow flex flex-col justify-center relative">
+          {isRegeneratingThisClue && (
+            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs z-20 flex flex-col items-center justify-center gap-2 p-4 text-center">
+              <span className="w-7 h-7 border-2 border-brand-pink border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-black uppercase tracking-wider text-white">
+                Rendering Clue Scene with Your Selected Cast...
+              </span>
+            </div>
+          )}
           <ClueRenderer
             clue={clue}
             hydratedTitle={hydratedTitle}
@@ -1189,9 +1497,39 @@ export function PackScreenerClient({
               <button
                 type="button"
                 onClick={handleShuffleFriends}
-                className="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 transition-all cursor-pointer"
+                disabled={isGeneratingCastMedia}
+                className="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 transition-all cursor-pointer disabled:opacity-50"
               >
                 🔀 Shuffle Friends
+              </button>
+            )}
+
+            {useFriendNames && (
+              <button
+                type="button"
+                disabled={isGeneratingCastMedia}
+                onClick={() => void handleGenerateForSelectedCast()}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5 ${
+                  hasUnsavedRecast
+                    ? 'bg-gradient-to-r from-brand-pink via-fuchsia-500 to-amber-500 text-white border-white/30 shadow-lg shadow-brand-pink/30 animate-pulse'
+                    : 'bg-brand-pink text-white border-brand-pink hover:opacity-90 shadow-md'
+                }`}
+              >
+                {isGeneratingCastMedia ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Generating Cast &amp; Clues...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span>
+                    <span>
+                      {hasUnsavedRecast
+                        ? 'Generate Clues & Cast for New Friends'
+                        : 'Generate Clues & Cast'}
+                    </span>
+                  </>
+                )}
               </button>
             )}
 
@@ -1228,6 +1566,32 @@ export function PackScreenerClient({
             </button>
           </div>
         </div>
+
+        {/* Live Cast & Clue Generation Progress Bar */}
+        {generationProgress && (
+          <div className="rounded-xl bg-slate-950 border border-brand-pink/50 p-3.5 space-y-2">
+            <div className="flex items-center justify-between text-xs font-black">
+              <span className="text-brand-pink flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-brand-pink border-t-transparent rounded-full animate-spin inline-block" />
+                <span>{generationProgress.label}</span>
+              </span>
+              <span className="text-slate-400 font-mono">
+                Step {generationProgress.current} / {generationProgress.total}
+              </span>
+            </div>
+            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-brand-pink to-amber-400 rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.round((generationProgress.current / generationProgress.total) * 100)
+                  )}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Automated Pack QA Health Bar (Visible when X-Ray Mode is ON or on Reveal tab) */}
         {(xRayMode || step === 'reveal') && (
@@ -1311,10 +1675,38 @@ export function PackScreenerClient({
       {showCastPanel && (
         <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <span className="text-xs font-black uppercase tracking-wider text-slate-900">
                 📸 Cast Visual Reference Strip (Your Friends Cast in Each Role)
               </span>
+              {useFriendNames && (
+                <button
+                  type="button"
+                  disabled={isGeneratingCastMedia}
+                  onClick={() => void handleGenerateForSelectedCast()}
+                  className={`px-3.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5 ${
+                    hasUnsavedRecast
+                      ? 'bg-gradient-to-r from-brand-pink to-amber-500 text-white shadow-md shadow-brand-pink/25 animate-pulse'
+                      : 'bg-slate-900 hover:bg-brand-pink text-white'
+                  }`}
+                >
+                  {isGeneratingCastMedia ? (
+                    <>
+                      <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Generating Clues &amp; Cast...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>✨</span>
+                      <span>
+                        {hasUnsavedRecast
+                          ? 'Cast Changed — Click to Generate Clues & Relationships'
+                          : 'Generate Clues & Relationships for Selected Cast'}
+                      </span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2 text-xs relative" data-custom-dropdown>
               <span className="font-bold text-slate-500">Playing POV As:</span>
@@ -1490,6 +1882,7 @@ export function PackScreenerClient({
                                     ...prev,
                                     [char.id]: f.id,
                                   }));
+                                  setHasUnsavedRecast(true);
                                   setOpenDropdownId(null);
                                 }}
                                 className={`w-full flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-lg text-left text-[10px] font-bold transition-all cursor-pointer ${
