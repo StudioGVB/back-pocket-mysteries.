@@ -1,31 +1,47 @@
 import React from 'react';
+import fs from 'fs';
+import path from 'path';
 import { getMysteryById } from '@/services/mysteries';
 import { getRelationshipsByMysteryId } from '@/services/relationships';
 import { getSubplotsByMysteryId } from '@/services/subplots';
 import { createClient } from '@/utils/supabase/server';
 import { getAllCachedMysteries } from '@/lib/live-session-store';
 import { getStaticMockGuests } from '@/utils/mock-guests';
+import { resolveDisplayAvatarUrl } from '@/utils/avatar';
+import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
 import { PackScreenerClient, FriendRosterItem } from './_components/PackScreenerClient';
+
+function hasValidAiHeadshot(avatarUrl?: string | null): boolean {
+  if (!avatarUrl) return false;
+  const resolved = resolveDisplayAvatarUrl(avatarUrl);
+  if (!resolved) return false;
+  if (resolved.includes('api.dicebear.com')) return false;
+  if (resolved.startsWith('/generated-avatars/')) {
+    const cleanRel = resolved.split('?')[0].replace(/^\/+/, '');
+    const localPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', cleanRel);
+    return fs.existsSync(localPath);
+  }
+  return (
+    resolved.includes('/storage/v1/object/public/') ||
+    resolved.startsWith('data:image/') ||
+    resolved.startsWith('http')
+  );
+}
 
 function extractAiHeadshot(avatarUrl?: string | null, fallbackUrl?: string | null): string | null {
   if (!avatarUrl && !fallbackUrl) return null;
-  const raw = String(avatarUrl || '');
-  const match = raw.match(/[?&]aiPhotoUrl=([^&]+)/);
-  if (match) {
-    try {
-      return decodeURIComponent(match[1]);
-    } catch {
-      // ignore
+  const resolved = resolveDisplayAvatarUrl(avatarUrl);
+  if (resolved) {
+    if (resolved.startsWith('/generated-avatars/')) {
+      const cleanRel = resolved.split('?')[0].replace(/^\/+/, '');
+      const localPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', cleanRel);
+      if (!fs.existsSync(localPath)) {
+        return fallbackUrl ? resolveDisplayAvatarUrl(fallbackUrl) : null;
+      }
     }
+    return resolved;
   }
-  if (
-    raw.startsWith('/generated-avatars/') ||
-    raw.includes('/storage/v1/object/public/') ||
-    raw.startsWith('data:image/')
-  ) {
-    return raw;
-  }
-  return fallbackUrl || raw || null;
+  return fallbackUrl ? resolveDisplayAvatarUrl(fallbackUrl) : null;
 }
 
 export default async function ScreenMysteryPackPage({
@@ -58,19 +74,45 @@ export default async function ScreenMysteryPackPage({
       .order('created_at', { ascending: false });
 
     for (const g of dbGuests || []) {
+      let currentAvatarUrl = g.avatar_url || '';
+
+      // If this friend (e.g. Charley) doesn't have an AI studio headshot yet, generate it now!
+      if (!hasValidAiHeadshot(currentAvatarUrl)) {
+        try {
+          const genRes = await generateGuestAvatarAction(g.id, g);
+          if (genRes?.publicUrl) {
+            currentAvatarUrl = genRes.publicUrl;
+          }
+        } catch (err) {
+          console.warn(`Could not auto-generate AI headshot for ${g.name}:`, err);
+        }
+      }
+
       const key = String(g.id || g.name).toLowerCase();
+      const rawGender = String(g.gender || 'adaptable').toLowerCase();
+      const normGender =
+        rawGender.startsWith('f')
+          ? 'female'
+          : rawGender.startsWith('m')
+          ? 'male'
+          : 'adaptable';
+
       friendMap.set(key, {
         id: g.id,
         name: g.name,
-        gender: String(g.gender || 'adaptable').toLowerCase(),
-        avatar_url: g.avatar_url || '',
-        photoUrl: extractAiHeadshot(g.avatar_url),
+        gender: normGender,
+        avatar_url: currentAvatarUrl,
+        photoUrl: extractAiHeadshot(currentAvatarUrl),
+        hasAiPhoto: hasValidAiHeadshot(currentAvatarUrl),
+        eye_color: g.eye_color || '',
+        height: g.height || '',
+        ethnicity: g.ethnicity || '',
         bio: g.bio || '',
       });
     }
   }
 
-  // Also harvest real friends & their AI headshots from cached mysteries (e.g. Gabby, Luke, Polly, Scarlett, Darren, Jason, Matt, Alex, Elia)
+  // Also harvest real friends & their AI headshots from cached mysteries
   for (const cm of getAllCachedMysteries()) {
     for (const cc of cm?.characters || []) {
       const pd = cc?.profile_data || {};
@@ -90,13 +132,14 @@ export default async function ScreenMysteryPackPage({
           ? 'male'
           : 'adaptable';
 
-      if (!existing || (!existing.photoUrl && photoUrl)) {
+      if (!existing || (!existing.hasAiPhoto && photoUrl)) {
         friendMap.set(key, {
           id: pd.guest_id || key,
           name: guestName,
           gender: normGender,
           avatar_url: pd.avatar_url || existing?.avatar_url || '',
           photoUrl: photoUrl || existing?.photoUrl || null,
+          hasAiPhoto: Boolean(photoUrl && !photoUrl.includes('api.dicebear.com')),
           bio: pd.bio || existing?.bio || '',
         });
       }
@@ -114,6 +157,7 @@ export default async function ScreenMysteryPackPage({
           gender: String(sg.gender || 'adaptable').toLowerCase(),
           avatar_url: sg.avatar_url,
           photoUrl: extractAiHeadshot(sg.avatar_url),
+          hasAiPhoto: hasValidAiHeadshot(sg.avatar_url),
           bio: sg.bio || '',
         });
       }
