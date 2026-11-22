@@ -140,6 +140,7 @@ export function PackScreenerClient({
   const [clueNotes, setClueNotes] = useState<Record<string, string>>({});
   const [clueSuspects, setClueSuspects] = useState<Record<string, string[]>>({});
   const [tagFilter, setTagFilter] = useState<'all' | 'key' | 'alibi' | 'red_herring' | 'untagged'>('all');
+  const [stickyClueIds, setStickyClueIds] = useState<Set<string>>(new Set());
   const [notebookSortMode, setNotebookSortMode] = useState<'round' | 'timeline'>('round');
   const [guesses, setGuesses] = useState<Record<number, RoundGuess>>({
     1: { suspectId: '', motiveGuess: '' },
@@ -147,6 +148,10 @@ export function PackScreenerClient({
     3: { suspectId: '', motiveGuess: '' },
   });
   const [notebookLoaded, setNotebookLoaded] = useState<boolean>(false);
+
+  useEffect(() => {
+    setStickyClueIds(new Set());
+  }, [tagFilter, step]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !mystery?.id) return;
@@ -244,16 +249,18 @@ export function PackScreenerClient({
 
   const extractClueTimestampInfo = useCallback((clue: any): { label: string | null; minutes: number } => {
     const combined = `${clue?.title || ''} ${clue?.description || ''}`;
-    const match = combined.match(/\b(\d{1,2}):(\d{2})\s*([AP]M)\b/i);
+    const match = combined.match(/\b(1[0-2]|0?[1-9])(?::([0-5]\d))?\s*([AP]M)\b/i);
     if (!match) return { label: null, minutes: 99999 };
     let hours = parseInt(match[1], 10);
-    const mins = parseInt(match[2], 10);
+    const minsStr = match[2] || '00';
+    const mins = parseInt(minsStr, 10);
     const mer = match[3].toUpperCase();
     if (mer === 'PM' && hours < 12) hours += 12;
     if (mer === 'AM' && hours === 12) hours = 0;
+    const sortMinutes = hours < 6 ? (hours + 24) * 60 + mins : hours * 60 + mins;
     return {
-      label: `${match[1]}:${match[2]} ${mer}`,
-      minutes: hours * 60 + mins,
+      label: `${match[1]}:${minsStr} ${mer}`,
+      minutes: sortMinutes,
     };
   }, []);
 
@@ -531,14 +538,17 @@ export function PackScreenerClient({
             <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  if (tagFilter !== 'all') {
+                    setStickyClueIds((prev) => new Set(prev).add(clue.id));
+                  }
                   setClueTags((prev) => ({
                     ...prev,
                     [clue.id]: prev[clue.id] === 'key' ? undefined : 'key',
-                  }))
-                }
+                  }));
+                }}
                 title="Mark as Key Evidence"
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                   tag === 'key'
                     ? 'bg-amber-400 text-slate-950 font-black'
                     : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -548,14 +558,17 @@ export function PackScreenerClient({
               </button>
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  if (tagFilter !== 'all') {
+                    setStickyClueIds((prev) => new Set(prev).add(clue.id));
+                  }
                   setClueTags((prev) => ({
                     ...prev,
                     [clue.id]: prev[clue.id] === 'red_herring' ? undefined : 'red_herring',
-                  }))
-                }
+                  }));
+                }}
                 title="Mark as Red Herring / Decoy"
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                   tag === 'red_herring'
                     ? 'bg-rose-500 text-white font-black'
                     : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -565,14 +578,17 @@ export function PackScreenerClient({
               </button>
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  if (tagFilter !== 'all') {
+                    setStickyClueIds((prev) => new Set(prev).add(clue.id));
+                  }
                   setClueTags((prev) => ({
                     ...prev,
                     [clue.id]: prev[clue.id] === 'alibi' ? undefined : 'alibi',
-                  }))
-                }
+                  }));
+                }}
                 title="Mark as Alibi / Clears Suspect"
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                   tag === 'alibi'
                     ? 'bg-sky-400 text-slate-950 font-black'
                     : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -703,13 +719,13 @@ export function PackScreenerClient({
     const isOpen = openDropdownId === dropdownKey;
     const selectedSuspect = suspectList.find((s) => s.id === currentGuess.suspectId);
 
-    // Compute per-suspect linked Key clues & Alibi clues from the player's pinned clues up through roundNum
+    // Compute per-suspect linked Key clues, Alibi clues, Decoy clues & total Pinned clues up through roundNum
     const suspectClueTallies: Record<
       string,
-      { keyCount: number; alibiCount: number; decoyCount: number }
+      { keyCount: number; alibiCount: number; decoyCount: number; pinCount: number }
     > = {};
     for (const s of suspectList) {
-      suspectClueTallies[s.id] = { keyCount: 0, alibiCount: 0, decoyCount: 0 };
+      suspectClueTallies[s.id] = { keyCount: 0, alibiCount: 0, decoyCount: 0, pinCount: 0 };
     }
 
     // Collect all clues up through roundNum that the player tagged, pinned a suspect to, or wrote a note on
@@ -731,9 +747,10 @@ export function PackScreenerClient({
         const pinned = clueSuspects[c.id] || [];
         for (const sId of pinned) {
           if (suspectClueTallies[sId]) {
-            if (t === 'alibi') suspectClueTallies[sId].alibiCount++;
+            suspectClueTallies[sId].pinCount++;
+            if (t === 'key') suspectClueTallies[sId].keyCount++;
+            else if (t === 'alibi') suspectClueTallies[sId].alibiCount++;
             else if (t === 'red_herring') suspectClueTallies[sId].decoyCount++;
-            else suspectClueTallies[sId].keyCount++;
           }
         }
         if (t || n || pinned.length > 0) {
@@ -799,7 +816,7 @@ export function PackScreenerClient({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {annotatedEntries.length > 1 && (
+              {annotatedEntries.length > 0 && (
                 <div className="flex items-center rounded-lg bg-slate-900 border border-slate-800 p-0.5">
                   <button
                     type="button"
@@ -891,12 +908,20 @@ export function PackScreenerClient({
                           const sChar = getCharById(sId);
                           if (!sChar) return null;
                           return (
-                            <span
+                            <button
                               key={sId}
-                              className="px-1.5 py-0.5 rounded bg-white/10 text-slate-200 text-[9px] font-bold"
+                              type="button"
+                              onClick={() =>
+                                setGuesses((prev) => ({
+                                  ...prev,
+                                  [roundNum]: { ...currentGuess, suspectId: sId },
+                                }))
+                              }
+                              title="Click to select this suspect as your accusation"
+                              className="px-1.5 py-0.5 rounded bg-brand-pink/20 hover:bg-brand-pink text-brand-pink hover:text-white text-[9px] font-black uppercase transition-colors cursor-pointer"
                             >
-                              👤 {sChar.assignedFriend?.name || sChar.displayName}
-                            </span>
+                              📌 {sChar.assignedFriend?.name || sChar.displayName}
+                            </button>
                           );
                         })}
                       </div>
@@ -1019,7 +1044,12 @@ export function PackScreenerClient({
                   const avatar = getPortraitUrl(s);
                   const guestLabel = s.assignedFriend?.name || s.displayName;
                   const roleLabel = s.assignedFriend ? s.displayRoleTitle : null;
-                  const tally = suspectClueTallies[s.id] || { keyCount: 0, alibiCount: 0, decoyCount: 0 };
+                  const tally = suspectClueTallies[s.id] || {
+                    keyCount: 0,
+                    alibiCount: 0,
+                    decoyCount: 0,
+                    pinCount: 0,
+                  };
 
                   return (
                     <button
@@ -1075,6 +1105,19 @@ export function PackScreenerClient({
                               🛡️ {tally.alibiCount} Alibi
                             </span>
                           )}
+                          {tally.decoyCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] font-black uppercase shrink-0">
+                              🐟 {tally.decoyCount} Decoy
+                            </span>
+                          )}
+                          {tally.keyCount === 0 &&
+                            tally.alibiCount === 0 &&
+                            tally.decoyCount === 0 &&
+                            tally.pinCount > 0 && (
+                              <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 text-[9px] font-black uppercase shrink-0">
+                                📌 {tally.pinCount} Pinned
+                              </span>
+                            )}
                         </div>
                       </div>
 
@@ -1574,8 +1617,9 @@ export function PackScreenerClient({
             const rNum = step === 'round1' ? 1 : step === 'round2' ? 2 : 3;
             const roundClues = cluesByRound[rNum as 1 | 2 | 3] || [];
             const matchesTagFilter = (c: any) => {
-              const t = clueTags[c.id];
               if (tagFilter === 'all') return true;
+              if (stickyClueIds.has(c.id)) return true;
+              const t = clueTags[c.id];
               if (tagFilter === 'untagged') return !t;
               return t === tagFilter;
             };
@@ -1607,7 +1651,10 @@ export function PackScreenerClient({
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => setTagFilter(opt.id)}
+                        onClick={() => {
+                          setStickyClueIds(new Set());
+                          setTagFilter(opt.id);
+                        }}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                           tagFilter === opt.id
                             ? 'bg-brand-pink text-white shadow'
@@ -1667,7 +1714,10 @@ export function PackScreenerClient({
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => setTagFilter(opt.id)}
+                  onClick={() => {
+                    setStickyClueIds(new Set());
+                    setTagFilter(opt.id);
+                  }}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                     tagFilter === opt.id
                       ? 'bg-brand-pink text-white shadow'
@@ -1683,8 +1733,9 @@ export function PackScreenerClient({
           {[1, 2, 3].map((rNum) => {
             const roundList = cluesByRound[rNum as 1 | 2 | 3] || [];
             const matchesTagFilter = (c: any) => {
-              const t = clueTags[c.id];
               if (tagFilter === 'all') return true;
+              if (stickyClueIds.has(c.id)) return true;
+              const t = clueTags[c.id];
               if (tagFilter === 'untagged') return !t;
               return t === tagFilter;
             };

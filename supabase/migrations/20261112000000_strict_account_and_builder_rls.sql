@@ -331,15 +331,15 @@ BEGIN
 END;
 $$;
 
--- 10. Strict RLS on `public.clues` (Block anonymous scraping & non-owner mutations)
+-- 10. Strict RLS on `public.clues` (Allow Playroom guests to view clues for published mysteries; block non-owner mutations)
 DO $$
 BEGIN
   IF to_regclass('public.clues') IS NOT NULL THEN
     EXECUTE $sql$
-      CREATE POLICY "Authenticated users can view clues for accessible mysteries"
+      CREATE POLICY "Anyone can view clues for published mysteries or owner/admin views all"
         ON public.clues
         FOR SELECT
-        TO authenticated
+        TO anon, authenticated
         USING (
           public.is_admin()
           OR EXISTS (
@@ -692,10 +692,10 @@ DO $$
 BEGIN
   IF to_regclass('public.plot_beats') IS NOT NULL THEN
     EXECUTE $sql$
-      CREATE POLICY "Authenticated users can view plot_beats for accessible mysteries"
+      CREATE POLICY "Anyone can view plot_beats for published mysteries or owner/admin views all"
         ON public.plot_beats
         FOR SELECT
-        TO authenticated
+        TO anon, authenticated
         USING (
           public.is_admin()
           OR EXISTS (
@@ -716,10 +716,10 @@ BEGIN
 
   IF to_regclass('public.subplots') IS NOT NULL THEN
     EXECUTE $sql$
-      CREATE POLICY "Authenticated users can view subplots for accessible mysteries"
+      CREATE POLICY "Anyone can view subplots for published mysteries or owner/admin views all"
         ON public.subplots
         FOR SELECT
-        TO authenticated
+        TO anon, authenticated
         USING (
           public.is_admin()
           OR EXISTS (
@@ -757,10 +757,10 @@ BEGIN
 
   IF to_regclass('public.motives') IS NOT NULL THEN
     EXECUTE $sql$
-      CREATE POLICY "Authenticated users can view motives for accessible mysteries"
+      CREATE POLICY "Anyone can view motives for published mysteries or owner/admin views all"
         ON public.motives
         FOR SELECT
-        TO authenticated
+        TO anon, authenticated
         USING (
           public.is_admin()
           OR EXISTS (

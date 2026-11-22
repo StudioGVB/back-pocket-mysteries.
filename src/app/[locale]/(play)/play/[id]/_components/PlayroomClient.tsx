@@ -142,6 +142,7 @@ export function PlayroomClient({
   const [clueTagFilter, setClueTagFilter] = useState<
     'all' | 'key' | 'alibi' | 'red_herring' | 'untagged'
   >('all');
+  const [stickyClueId, setStickyClueId] = useState<string | null>(null);
   const [notebookSortMode, setNotebookSortMode] = useState<'round' | 'timeline'>('round');
   const [notebookLoaded, setNotebookLoaded] = useState<boolean>(false);
 
@@ -175,18 +176,19 @@ export function PlayroomClient({
   const extractClueTimestampInfo = useCallback(
     (c: any): { label: string | null; sortMinutes: number } => {
       const raw = `${c?.title || ''} ${c?.description || ''}`;
-      const match = raw.match(/\b(1[0-2]|0?[1-9]):([0-5]\d)\s*(AM|PM|am|pm)?\b/);
+      const match = raw.match(/\b(1[0-2]|0?[1-9])(?::([0-5]\d))?\s*(AM|PM)\b/i);
       if (!match) {
         return { label: null, sortMinutes: 99999 };
       }
       let hours = parseInt(match[1], 10);
-      const mins = parseInt(match[2], 10);
+      const minsStr = match[2] || '00';
+      const mins = parseInt(minsStr, 10);
       const meridiem = (match[3] || 'PM').toUpperCase();
       if (meridiem === 'PM' && hours < 12) hours += 12;
       if (meridiem === 'AM' && hours === 12) hours = 0;
       const sortMinutes = hours < 6 ? (hours + 24) * 60 + mins : hours * 60 + mins;
       return {
-        label: `${match[1]}:${match[2]} ${meridiem}`,
+        label: `${match[1]}:${minsStr} ${meridiem}`,
         sortMinutes,
       };
     },
@@ -642,11 +644,12 @@ export function PlayroomClient({
   const unlockedCluesForSelectedRound = useMemo(() => {
     if (clueTagFilter === 'all') return allUnlockedCluesForSelectedRound;
     return allUnlockedCluesForSelectedRound.filter(c => {
+      if (stickyClueId && c.id === stickyClueId) return true;
       const t = clueTags[c.id];
       if (clueTagFilter === 'untagged') return !t;
       return t === clueTagFilter;
     });
-  }, [allUnlockedCluesForSelectedRound, clueTagFilter, clueTags]);
+  }, [allUnlockedCluesForSelectedRound, clueTagFilter, clueTags, stickyClueId]);
 
   const safeSlideIndex = Math.min(
     clueSlideIndex,
@@ -685,6 +688,7 @@ export function PlayroomClient({
   }, [clues, unlockedClueRound, viewedClueIds]);
 
   const handlePrevClue = () => {
+    setStickyClueId(null);
     if (unlockedCluesForSelectedRound.length <= 1) return;
     setClueSlideIndex(prev =>
       prev <= 0 ? unlockedCluesForSelectedRound.length - 1 : prev - 1
@@ -692,6 +696,7 @@ export function PlayroomClient({
   };
 
   const handleNextClue = () => {
+    setStickyClueId(null);
     if (unlockedCluesForSelectedRound.length <= 1) return;
     setClueSlideIndex(prev =>
       prev >= unlockedCluesForSelectedRound.length - 1 ? 0 : prev + 1
@@ -746,6 +751,7 @@ export function PlayroomClient({
         setSubmissions(res.submissions);
         setTheorySavedNotice(true);
         setTimeout(() => setTheorySavedNotice(false), 3500);
+        void refreshGameSession();
       }
     } finally {
       setIsSubmittingTheory(false);
@@ -2416,6 +2422,7 @@ export function PlayroomClient({
                           key={opt.id}
                           type="button"
                           onClick={() => {
+                            setStickyClueId(null);
                             setClueTagFilter(opt.id);
                             setClueSlideIndex(0);
                           }}
@@ -2455,7 +2462,10 @@ export function PlayroomClient({
                 {clueTagFilter !== 'all' && (
                   <button
                     type="button"
-                    onClick={() => setClueTagFilter('all')}
+                    onClick={() => {
+                      setStickyClueId(null);
+                      setClueTagFilter('all');
+                    }}
                     className="px-3 py-1.5 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider cursor-pointer"
                   >
                     Show All Round {selectedClueRoundFilter} Clues
@@ -2487,13 +2497,14 @@ export function PlayroomClient({
                     <div className="flex items-center gap-1 flex-wrap">
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          if (clueTagFilter !== 'all') setStickyClueId(currentSlideClue.id);
                           setClueTags(prev => ({
                             ...prev,
                             [currentSlideClue.id]:
                               prev[currentSlideClue.id] === 'key' ? undefined : 'key',
-                          }))
-                        }
+                          }));
+                        }}
                         title="Mark as Key Murder Evidence"
                         className={`min-h-[28px] px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                           clueTags[currentSlideClue.id] === 'key'
@@ -2505,15 +2516,16 @@ export function PlayroomClient({
                       </button>
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          if (clueTagFilter !== 'all') setStickyClueId(currentSlideClue.id);
                           setClueTags(prev => ({
                             ...prev,
                             [currentSlideClue.id]:
                               prev[currentSlideClue.id] === 'red_herring'
                                 ? undefined
                                 : 'red_herring',
-                          }))
-                        }
+                          }));
+                        }}
                         title="Mark as Decoy / Red Herring"
                         className={`min-h-[28px] px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                           clueTags[currentSlideClue.id] === 'red_herring'
@@ -2525,13 +2537,14 @@ export function PlayroomClient({
                       </button>
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          if (clueTagFilter !== 'all') setStickyClueId(currentSlideClue.id);
                           setClueTags(prev => ({
                             ...prev,
                             [currentSlideClue.id]:
                               prev[currentSlideClue.id] === 'alibi' ? undefined : 'alibi',
-                          }))
-                        }
+                          }));
+                        }}
                         title="Mark as Alibi / Clears Suspect"
                         className={`min-h-[28px] px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                           clueTags[currentSlideClue.id] === 'alibi'
@@ -2953,6 +2966,7 @@ export function PlayroomClient({
                             const isChosen = accusedCharId === char.id;
                             let keyCount = 0;
                             let alibiCount = 0;
+                            let decoyCount = 0;
                             let pinCount = 0;
                             for (const c of clues.filter(
                               rc => (rc.round_number || 1) <= unlockedClueRound
@@ -2961,7 +2975,8 @@ export function PlayroomClient({
                                 pinCount++;
                                 const t = clueTags[c.id];
                                 if (t === 'key') keyCount++;
-                                else if (t === 'alibi' || t === 'red_herring') alibiCount++;
+                                else if (t === 'alibi') alibiCount++;
+                                else if (t === 'red_herring') decoyCount++;
                               }
                             }
 
@@ -2981,7 +2996,7 @@ export function PlayroomClient({
                                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
                                     {archetype}
                                   </p>
-                                  {(keyCount > 0 || alibiCount > 0 || pinCount > 0) && (
+                                  {(keyCount > 0 || alibiCount > 0 || decoyCount > 0 || pinCount > 0) && (
                                     <div className="flex flex-wrap items-center gap-1 pt-0.5">
                                       {keyCount > 0 && (
                                         <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[8px] font-black uppercase">
@@ -2993,7 +3008,12 @@ export function PlayroomClient({
                                           🛡️ {alibiCount} Alibi
                                         </span>
                                       )}
-                                      {keyCount === 0 && alibiCount === 0 && pinCount > 0 && (
+                                      {decoyCount > 0 && (
+                                        <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 text-[8px] font-black uppercase">
+                                          🐟 {decoyCount} Decoy
+                                        </span>
+                                      )}
+                                      {keyCount === 0 && alibiCount === 0 && decoyCount === 0 && pinCount > 0 && (
                                         <span className="px-1.5 py-0.2 rounded bg-white/10 text-slate-300 text-[8px] font-black uppercase">
                                           📌 {pinCount} Clues
                                         </span>
@@ -3751,12 +3771,13 @@ export function PlayroomClient({
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      if (clueTagFilter !== 'all') setStickyClueId(modalClue.id);
                       setClueTags(prev => ({
                         ...prev,
                         [modalClue.id]: prev[modalClue.id] === 'key' ? undefined : 'key',
-                      }))
-                    }
+                      }));
+                    }}
                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                       clueTags[modalClue.id] === 'key'
                         ? 'bg-amber-400 text-slate-950 font-black'
@@ -3767,13 +3788,14 @@ export function PlayroomClient({
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      if (clueTagFilter !== 'all') setStickyClueId(modalClue.id);
                       setClueTags(prev => ({
                         ...prev,
                         [modalClue.id]:
                           prev[modalClue.id] === 'red_herring' ? undefined : 'red_herring',
-                      }))
-                    }
+                      }));
+                    }}
                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                       clueTags[modalClue.id] === 'red_herring'
                         ? 'bg-rose-500 text-white font-black'
@@ -3784,12 +3806,13 @@ export function PlayroomClient({
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      if (clueTagFilter !== 'all') setStickyClueId(modalClue.id);
                       setClueTags(prev => ({
                         ...prev,
                         [modalClue.id]: prev[modalClue.id] === 'alibi' ? undefined : 'alibi',
-                      }))
-                    }
+                      }));
+                    }}
                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                       clueTags[modalClue.id] === 'alibi'
                         ? 'bg-sky-400 text-slate-950 font-black'
@@ -3799,7 +3822,10 @@ export function PlayroomClient({
                     🛡️ Alibi
                   </button>
                   <button
-                    onClick={() => setSelectedClueModalIndex(null)}
+                    onClick={() => {
+                      setStickyClueId(null);
+                      setSelectedClueModalIndex(null);
+                    }}
                     className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center text-xs font-bold transition-all shrink-0 cursor-pointer ml-1"
                   >
                     ✕
@@ -3881,30 +3907,32 @@ export function PlayroomClient({
               <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 bg-slate-950/60">
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    setStickyClueId(null);
                     setSelectedClueModalIndex(prev =>
                       prev === null
                         ? null
                         : prev <= 0
                         ? unlockedCluesForSelectedRound.length - 1
                         : prev - 1
-                    )
-                  }
+                    );
+                  }}
                   className="text-xs font-black uppercase tracking-widest text-slate-300 hover:text-white cursor-pointer"
                 >
                   ← Prev Clue
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    setStickyClueId(null);
                     setSelectedClueModalIndex(prev =>
                       prev === null
                         ? null
                         : prev >= unlockedCluesForSelectedRound.length - 1
                         ? 0
                         : prev + 1
-                    )
-                  }
+                    );
+                  }}
                   className="text-xs font-black uppercase tracking-widest text-brand-pink hover:opacity-90 cursor-pointer"
                 >
                   Next Clue →

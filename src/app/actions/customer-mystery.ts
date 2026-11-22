@@ -552,7 +552,14 @@ export async function getGameSessionAction(mysteryId: string) {
 
   const suspectVotesOverall = new Map<string, { suspectCharId: string; suspectName: string; count: number }>();
 
-  for (const sub of session.submissions) {
+  const orderedSubmissions = [...session.submissions].sort((a, b) => {
+    const ta = a.submittedAt ? Date.parse(a.submittedAt) : 0;
+    const tb = b.submittedAt ? Date.parse(b.submittedAt) : 0;
+    if (ta !== tb) return ta - tb;
+    return (a.round || 0) - (b.round || 0);
+  });
+
+  for (const sub of orderedSubmissions) {
     const prevSus = suspectVotesOverall.get(sub.suspectCharId) || {
       suspectCharId: sub.suspectCharId,
       suspectName: sub.suspectName,
@@ -580,10 +587,7 @@ export async function getGameSessionAction(mysteryId: string) {
     existing.uniqueSuspectsCount = existing.suspectsChosen.size;
 
     if (sub.clueTags && typeof sub.clueTags === 'object') {
-      existing.mergedClueTags = {
-        ...existing.mergedClueTags,
-        ...sub.clueTags,
-      };
+      existing.mergedClueTags = { ...sub.clueTags };
     }
 
     const isCorrect = Boolean(killerChar && sub.suspectCharId === killerChar.id);
@@ -793,7 +797,8 @@ export async function submitRoundTheoryAction(
   );
 
   const cleanTags: Record<string, 'key' | 'red_herring' | 'alibi'> = {};
-  if (payload.clueTags && typeof payload.clueTags === 'object') {
+  const hasClueTagsPayload = Boolean(payload.clueTags && typeof payload.clueTags === 'object');
+  if (hasClueTagsPayload && payload.clueTags) {
     for (const [k, v] of Object.entries(payload.clueTags)) {
       if (v === 'key' || v === 'red_herring' || v === 'alibi') {
         cleanTags[k] = v;
@@ -810,7 +815,7 @@ export async function submitRoundTheoryAction(
     suspectName: payload.suspectName,
     reason: payload.reason.trim() || 'Acting suspicious!',
     submittedAt: new Date().toISOString(),
-    ...(Object.keys(cleanTags).length > 0 ? { clueTags: cleanTags } : {}),
+    ...(hasClueTagsPayload ? { clueTags: cleanTags } : {}),
   };
 
   session.submissions = [...filtered, newEntry];
