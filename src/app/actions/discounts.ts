@@ -542,9 +542,45 @@ export async function validatePromoCodeAction(params: {
     return { valid: true, discount: virtualDiscount };
   }
 
-  // 2. Otherwise check standard Discounts Store
+  // 2. Check standard Discounts Store
   const all = await loadAllDiscountsInternal();
-  const match = all.find((d) => d.code && d.code.toUpperCase() === cleanCode);
+  let match = all.find((d) => d.code && d.code.toUpperCase() === cleanCode);
+
+  // 2B. If not in local/storage discounts store yet (e.g. cold serverless instance on Vercel)
+  // and code starts with VIP50-, verify directly against the First 50 VIP Leads store / Resend Cloud Audience!
+  if (!match && cleanCode.startsWith('VIP50-')) {
+    try {
+      const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
+      const allLeads = await getAllMarketingLeadsAction();
+      const leadWithCode = allLeads.find(
+        (l) => l.free_mystery_code && l.free_mystery_code.toUpperCase() === cleanCode
+      );
+      if (leadWithCode) {
+        const nowIso = new Date().toISOString();
+        match = {
+          id: `vip50-${leadWithCode.vip_rank}`,
+          name: `First 50 VIP Free Mystery (#${leadWithCode.vip_rank} - ${leadWithCode.full_name || leadWithCode.email})`,
+          code: cleanCode,
+          auto_apply: false,
+          discount_type: 'percentage',
+          discount_value: 100,
+          applies_to: 'all',
+          target_packages: [],
+          target_mysteries: [],
+          starts_at: leadWithCode.created_at || nowIso,
+          ends_at: null,
+          usage_limit: 'max_uses',
+          max_uses: 1,
+          times_used: 0,
+          is_active: true,
+          created_at: leadWithCode.created_at || nowIso,
+          updated_at: nowIso,
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   if (!match) {
     return { valid: false, error: 'Invalid discount or referral code.' };

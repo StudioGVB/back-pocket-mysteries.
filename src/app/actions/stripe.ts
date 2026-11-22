@@ -188,14 +188,14 @@ export async function createCheckoutSessionAction({
       promoCode,
     });
 
-    const totalCost = Math.max(0.5, subtotal - discountInfo.discountAmount);
+    const totalCost = Math.max(0, subtotal - discountInfo.discountAmount);
     const amountInCents = Math.round(totalCost * 100);
 
     const headersList = await headers();
     const origin =
       headersList.get('origin') ||
       process.env.NEXT_PUBLIC_SITE_URL ||
-      'http://localhost:3000';
+      'https://backpocketmysteries.com';
 
     const cookieStore = await cookies();
     const supabase = createServerClient<Database>(
@@ -249,18 +249,25 @@ export async function createCheckoutSessionAction({
       ? `${origin}/${locale}/checkout/${mysteryId || targetSlug}?slug=${targetSlug}&guests=${guests}`
       : `${origin}/${locale}/pricing?checkout=cancelled`;
 
-    if (!isStripeLiveConfigured()) {
-      if (mysteryId) {
+    // If a 100%-Off VIP / Gift Pass promo code brings totalCost to $0, or Stripe isn't configured,
+    // confirm the order immediately without requiring a credit card!
+    if (totalCost <= 0 || !isStripeLiveConfigured()) {
+      const targetMysteryOrSlug = mysteryId || targetSlug;
+      if (targetMysteryOrSlug) {
         await confirmMysteryOrderAction({
-          mysteryId,
+          mysteryId: targetMysteryOrSlug,
           slug: targetSlug,
           orderId,
+          promoCode: discountInfo.discountCode || promoCode,
           tier,
           amount: totalCost,
           currency,
         });
       }
-      return { url: successUrl };
+      const zeroCostSuccessUrl = targetSlug
+        ? `${origin}/${locale}/mysteries/${targetSlug}/cast?checkout=success&promo=${encodeURIComponent(discountInfo.discountCode || promoCode || '')}&orderId=${orderId || ''}`
+        : `${origin}/${locale}/account/orders?checkout=success`;
+      return { url: zeroCostSuccessUrl };
     }
 
     const isSubscription = tier === 'subscribe';
