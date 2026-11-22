@@ -84,7 +84,7 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "what-to-expect",
       type: "text",
       data: {
-        content: `<h3 style='font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#1e191c;margin:0 0 14px 0;'>Inside Your Complimentary Mystery Pack:</h3><table role='presentation' width='100%' cellspacing='0' cellpadding='0' border='0'><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>01 · Your Friends Cast in the Story:</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.</td></tr><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>02 · Spoiler-Free Host Mode:</strong> Run the rounds from your phone via a 6-digit Game PIN lobby without ever seeing the killer—so you play as a full suspect.</td></tr><tr><td style='padding:10px 0;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>03 · Flexible for 4 to 20+ Guests:</strong> Three structured rounds that pace naturally with drinks, a seated 3-course dinner, or a weekend away.</td></tr></table>`,
+        content: `<h3 style='font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#1e191c;margin:0 0 14px 0;'>Inside Your Complimentary Mystery Pack:</h3><table role='presentation' width='100%' cellspacing='0' cellpadding='0' border='0'><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>01 · Your Friends Cast in the Story (4–16 Players):</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.</td></tr><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>02 · Spoiler-Free Host Mode:</strong> Run the rounds from your phone via a 6-digit Game PIN lobby without ever seeing the killer—so you play as a full suspect.</td></tr><tr><td style='padding:10px 0;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>03 · Ready in ~30 Mins (Mobile Lobby + Print-Ready PDFs):</strong> Play live on phones via your 6-digit Game PIN or print the formatted suspect booklets and evidence cards at home.</td></tr></table>`,
         fontSize: 14,
         textAlign: "left",
         textColor: "#1e191c",
@@ -184,7 +184,7 @@ export function buildVipWelcomeEmailHtml(params: VipWelcomeEmailParams = {}): st
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;">
-          <strong style="color:#1e191c;">01 · Your Friends Cast in the Story:</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.
+          <strong style="color:#1e191c;">01 · Your Friends Cast in the Story (4–16 Players):</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.
         </td>
       </tr>
       <tr>
@@ -194,7 +194,7 @@ export function buildVipWelcomeEmailHtml(params: VipWelcomeEmailParams = {}): st
       </tr>
       <tr>
         <td style="padding:12px 0;color:#374151;font-size:14px;line-height:1.65;">
-          <strong style="color:#1e191c;">03 · Flexible for 4 to 20+ Guests:</strong> Three structured rounds that pace naturally with drinks, a seated 3-course dinner, or a weekend away.
+          <strong style="color:#1e191c;">03 · Ready in ~30 Mins (Mobile Lobby + Print-Ready PDFs):</strong> Play live on phones via your 6-digit Game PIN or print the formatted suspect booklets and evidence cards at home.
         </td>
       </tr>
     </table>

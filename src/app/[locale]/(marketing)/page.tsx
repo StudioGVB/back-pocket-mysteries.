@@ -17,7 +17,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   return {
     title: 'Custom Murder Mystery Party Games for Adults (Printable & Digital) | Back Pocket Mysteries',
     description:
-      'Host a custom murder mystery party built around your actual friends. Personalised character booklets, inside jokes, printable evidence, and voice-acted audio clues ready in ~30 minutes for 4–20+ players.',
+      'Host a custom murder mystery party built around your actual friends. Personalised character booklets, inside jokes, printable evidence, and voice-acted audio clues ready in ~30 minutes for 4–16 players.',
     keywords: [
       'murder mystery party game',
       'custom murder mystery game',
@@ -57,7 +57,7 @@ export default async function HomePage(props: {
       '@type': 'Product',
       name: 'Back Pocket Custom Murder Mystery Party Game Pack',
       description:
-        'Personalised murder mystery dinner party kit for 4 to 20+ players, tailored to your real friends with printable character booklets, crime scene evidence, and interactive audio briefings.',
+        'Personalised murder mystery dinner party kit for 4 to 16 players, tailored to your real friends with printable character booklets, crime scene evidence, and interactive audio briefings.',
       brand: {
         '@type': 'Brand',
         name: 'Back Pocket Mysteries',
@@ -101,7 +101,7 @@ export default async function HomePage(props: {
           name: 'How many players can play a Back Pocket Murder Mystery?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Our mysteries dynamically scale for small groups of 4–6 players, dinner parties of 8–12 players, and large parties of up to 20+ players.',
+            text: 'Our mysteries dynamically scale for small groups of 4–6 players (Basic), medium parties of 4–10 players (Premium), and full-house celebrations of 4–16 players (Grand).',
           },
         },
       ],
@@ -380,7 +380,7 @@ export default async function HomePage(props: {
               </h2>
             </div>
             <p className="text-gray-500 font-medium text-sm sm:text-base max-w-sm leading-relaxed">
-              From intimate six-person dining tables to twenty-guest milestone weekends, every dossier is tailored to the room.
+              From intimate four-to-six-person dining tables to sixteen-guest milestone weekends, every dossier is tailored to the room.
             </p>
           </div>
 
@@ -388,28 +388,28 @@ export default async function HomePage(props: {
             {[
               {
                 num: 'I',
-                meta: '6–20 Guests · Milestone Nights',
+                meta: '4–16 Guests · Milestone Nights',
                 title: dict.home.occasions.items.birthdays.title,
                 desc: dict.home.occasions.items.birthdays.desc,
                 href: `/${locale}/occasions/birthday-murder-mystery-party-games`,
               },
               {
                 num: 'II',
-                meta: '8–18 Guests · Weekend Away',
+                meta: '4–16 Guests · Weekend Away',
                 title: dict.home.occasions.items.hens.title,
                 desc: dict.home.occasions.items.hens.desc,
                 href: `/${locale}/occasions/hen-party-bachelorette-murder-mystery-games`,
               },
               {
                 num: 'III',
-                meta: '6–12 Guests · 3-Course Pacing',
+                meta: '4–10 Guests · Hosted at Home',
                 title: dict.home.occasions.items.dinner.title,
                 desc: dict.home.occasions.items.dinner.desc,
                 href: `/${locale}/occasions/dinner-party-murder-mystery-games-for-adults`,
               },
               {
                 num: 'IV',
-                meta: '8–24 Guests · 90-Min Run Sheet',
+                meta: '4–16 Guests · 90-Min Run Sheet',
                 title: dict.home.occasions.items.corporate.title,
                 desc: dict.home.occasions.items.corporate.desc,
                 href: `/${locale}/custom-murder-mystery`,
@@ -423,7 +423,7 @@ export default async function HomePage(props: {
               },
               {
                 num: 'VI',
-                meta: '10–20+ Guests · Family & Friends',
+                meta: '4–16 Guests · Family & Friends',
                 title: dict.home.occasions.items.engagement.title,
                 desc: dict.home.occasions.items.engagement.desc,
                 href: `/${locale}/occasions/dinner-party-murder-mystery-games-for-adults`,

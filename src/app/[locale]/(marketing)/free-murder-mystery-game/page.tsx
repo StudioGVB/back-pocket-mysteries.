@@ -75,7 +75,7 @@ export default async function FreeMurderMysteryGamePage(props: {
         name: 'How many players can play the free murder mystery game?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Back Pocket Mysteries supports groups from 4 to 20+ players, dynamically scaling suspects, motives, and subplots to fit your exact guest list.',
+          text: 'Back Pocket Mysteries supports groups from 4 to 16 players (Basic 4–6, Premium 4–10, and Grand 4–16), dynamically scaling suspects, motives, and subplots to fit your exact guest list.',
         },
       },
       {
@@ -151,10 +151,10 @@ export default async function FreeMurderMysteryGamePage(props: {
                   </span>
                   <div>
                     <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
-                      Printable PDF + Interactive TV Mode
+                      Live Mobile Lobby + Printable PDFs
                     </h3>
                     <p className="text-xs text-gray-500 font-medium mt-1">
-                      Includes print-at-home character booklets, crime scene photos, voice-acted audio clues, and live voting.
+                      Join via a 6-digit Game PIN on guest phones or print the formatted suspect booklets and evidence cards at home.
                     </p>
                   </div>
                 </div>
@@ -165,10 +165,10 @@ export default async function FreeMurderMysteryGamePage(props: {
                   </span>
                   <div>
                     <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
-                      4 to 20+ Players
+                      4 to 16 Players (Ready in ~30 Mins)
                     </h3>
                     <p className="text-xs text-gray-500 font-medium mt-1">
-                      Flexible casting that adapts to last-minute guest changes in seconds.
+                      Scales across Basic (4–6), Premium (4–10), and Grand (4–16) groups with instant role adaptation.
                     </p>
                   </div>
                 </div>
