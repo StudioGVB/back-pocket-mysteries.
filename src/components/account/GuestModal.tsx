@@ -13,6 +13,7 @@ import {
 import Image from 'next/image';
 import { generateRandomQuirk } from '@/app/actions/generator';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { PhotoTraitScanner, ScannedGuestTraits } from './PhotoTraitScanner';
 
 interface GuestModalProps {
   isOpen: boolean;
@@ -207,6 +208,28 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
     }));
   };
 
+  const handlePhotoTraitsDetected = (traits: ScannedGuestTraits) => {
+    setGender(traits.gender);
+    setAge(traits.age);
+    if (traits.ethnicity) {
+      setEthnicity(traits.ethnicity);
+    }
+
+    setAvatarConfig((prev) => ({
+      ...prev,
+      skinColor: traits.skinColor,
+      hairColor: traits.hairColor,
+      hairLength: traits.hairLength,
+      hairTexture: traits.hairTexture,
+      top: deriveDiceBearTop(traits.hairLength, traits.hairTexture, traits.gender),
+      facialHair: traits.gender === 'Masculine' ? traits.facialHair : undefined,
+      eyeColor: traits.eyeColor,
+      build: traits.build,
+      distinctiveFeatures: traits.distinctiveFeatures,
+      age: traits.age,
+    }));
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -233,26 +256,55 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
       
       {/* Modal Content */}
-      <div className="relative bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh]">
+      <div className="relative bg-white w-full max-w-5xl rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden h-[92dvh] sm:h-auto sm:max-h-[90dvh]">
         
-        {/* Left Side: Avatar Preview */}
-        <div className="w-full md:w-2/5 bg-slate-50 p-8 flex flex-col items-center justify-center border-r border-slate-100 relative">
+        {/* Mobile (< md) Compact Top Avatar Preview Header */}
+        <div className="flex md:hidden items-center justify-between gap-3 px-4 py-3.5 bg-slate-50 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-13 h-13 rounded-full bg-white border-2 border-white shadow-md overflow-hidden flex items-center justify-center shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatarUrl}
+                alt="Avatar preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base font-black text-slate-900 truncate leading-tight">
+                {name || 'New Guest'}
+              </h2>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate mt-0.5">
+                {gender}{accent ? ` • 🎙️ ${accent}` : ''}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close modal"
+            className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 flex items-center justify-center shrink-0"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        {/* Desktop (md+) Left Side: Avatar Preview */}
+        <div className="hidden md:flex md:w-2/5 bg-slate-50 p-8 flex-col items-center justify-center border-r border-slate-100 relative">
           <div className="absolute top-6 left-6 flex gap-2">
              <div className="w-3 h-3 rounded-full bg-red-400"></div>
              <div className="w-3 h-3 rounded-full bg-amber-400"></div>
              <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
           </div>
           
-          <div className="w-48 h-48 sm:w-64 sm:h-64 relative mb-8 drop-shadow-xl bg-white rounded-full border-4 border-white shadow-brand-pink/10 shadow-2xl overflow-hidden flex items-center justify-center">
-            {/* The SVG from Dicebear */}
+          <div className="w-56 h-56 lg:w-64 lg:h-64 relative mb-8 drop-shadow-xl bg-white rounded-full border-4 border-white shadow-brand-pink/10 shadow-2xl overflow-hidden flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={avatarUrl} 
@@ -283,17 +335,17 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
         </div>
 
         {/* Right Side: Editor */}
-        <div className="w-full md:w-3/5 flex flex-col h-[60vh] md:h-[680px] max-h-[85vh]">
+        <div className="w-full md:w-3/5 flex flex-col flex-1 min-h-0 md:h-[680px] md:max-h-[85dvh]">
           {/* Header & Tabs */}
-          <div className="px-8 pt-8 border-b border-slate-100">
-            <div className="flex justify-between items-center mb-6">
+          <div className="px-4 sm:px-8 pt-3 md:pt-8 border-b border-slate-100 shrink-0">
+            <div className="hidden md:flex justify-between items-center mb-6">
               <h3 className="text-xl font-black text-slate-900">Create Profile</h3>
               <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             
-            <div className="flex gap-6">
+            <div className="grid grid-cols-3 sm:flex sm:gap-6">
               {[
                 { id: 'basics', label: 'Basics' },
                 { id: 'avatar', label: 'Avatar' },
@@ -301,8 +353,9 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
               ].map(tab => (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`pb-4 text-sm font-bold uppercase tracking-widest transition-colors relative ${
+                  className={`pb-3 md:pb-4 text-xs sm:text-sm font-bold uppercase tracking-widest transition-colors relative text-center sm:text-left ${
                     activeTab === tab.id ? 'text-brand-pink' : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
@@ -316,9 +369,9 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
           </div>
 
           {/* Scrollable Form Content */}
-          <div className="flex-grow overflow-y-auto p-8">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 md:p-8">
             {activeTab === 'basics' && (
-              <div className={`space-y-6 transition-all duration-200 ${isEthnicityDropdownOpen ? 'pb-52' : ''}`}>
+              <div className={`space-y-5 sm:space-y-6 transition-all duration-200 ${isEthnicityDropdownOpen ? 'pb-52' : ''}`}>
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Guest Name</label>
                   <input 
@@ -329,6 +382,14 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all"
                   />
                 </div>
+
+                {/* Ephemeral AI Photo-to-Trait Auto-Filler */}
+                <PhotoTraitScanner
+                  onTraitsDetected={handlePhotoTraitsDetected}
+                  onJumpToAvatarTab={() => setActiveTab('avatar')}
+                  showJumpToAvatarButton={true}
+                />
+
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Gender / Presentation</label>
                   <div className="grid grid-cols-3 gap-3">
@@ -435,7 +496,13 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
             )}
 
             {activeTab === 'avatar' && (
-              <AvatarBuilder config={avatarConfig} onChange={setAvatarConfig} gender={gender} />
+              <div className="space-y-6">
+                <PhotoTraitScanner
+                  onTraitsDetected={handlePhotoTraitsDetected}
+                  compact={true}
+                />
+                <AvatarBuilder config={avatarConfig} onChange={setAvatarConfig} gender={gender} />
+              </div>
             )}
 
             {activeTab === 'personality' && (
@@ -539,25 +606,31 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
             )}
           </div>
 
-          {/* Footer Actions */}
-          <div className="p-6 border-t border-slate-100 flex items-center justify-between bg-slate-50 mt-auto">
+          {/* Pinned Footer Actions */}
+          <div className="px-4 sm:px-6 py-3.5 sm:py-5 border-t border-slate-100 flex items-center justify-between gap-2 bg-slate-50 shrink-0">
             {onDelete && initialData?.id ? (
               <button 
+                type="button"
                 onClick={() => onDelete(initialData.id)}
-                className="px-4 py-2 rounded-xl font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-2 text-sm"
+                className="px-3 sm:px-4 py-2.5 rounded-xl font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-1.5 text-xs sm:text-sm shrink-0"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                Delete Guest
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                <span>Delete</span>
               </button>
             ) : <div />}
-            <div className="flex gap-3 w-full sm:w-auto mt-4 sm:mt-0">
-              <button onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors">
+            <div className="flex items-center justify-end gap-2.5 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl font-bold text-xs sm:text-sm text-slate-500 hover:bg-slate-200 transition-colors"
+              >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-full font-black text-sm text-white transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
+                className="flex-1 sm:flex-initial px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-black text-xs sm:text-sm text-white transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
                 style={{ background: '#fe04c6', boxShadow: '0 8px 20px -8px rgba(254,4,198,0.5)' }}
               >
                 {isSaving ? 'Saving...' : 'Save Guest'}

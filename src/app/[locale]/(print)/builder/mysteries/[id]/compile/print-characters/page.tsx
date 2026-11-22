@@ -50,7 +50,7 @@ export default async function PrintCharactersPage({
        if (guest) {
            // If a guest is assigned, only push their specific presentation merged with base profile
            const guestGender = guest.gender?.toLowerCase() || 'neutral';
-           if (guestGender.includes('female') || guestGender.includes('she')) {
+           if (guestGender.includes('female') || guestGender.includes('feminine') || guestGender.includes('she')) {
                characterPages.push({ character: char, guest, gender: 'Female', presentation: { ...profile, ...(profile.presentation_female || {}) } });
            } else {
                characterPages.push({ character: char, guest, gender: 'Male', presentation: { ...profile, ...(profile.presentation_male || {}) } });

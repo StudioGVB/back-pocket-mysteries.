@@ -1,8 +1,6 @@
 'use server';
 
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { Database } from '@/types/database';
+import { createClient } from '@/utils/supabase/server';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -161,18 +159,8 @@ export async function generateGuestAvatarAction(guestId: string, guestData: any)
     
     // Hash the prompt to use as cache key
     const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
-    
-    const cookieStore = await cookies();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll() {}
-        }
-      }
-    );
+
+    const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {

@@ -979,15 +979,22 @@ export async function autoAssignGuestsAction(mysteryId: string) {
     }
   }
 
+  const normalizeGender = (g?: string | null) => {
+    const raw = (g || '').toLowerCase().trim();
+    if (raw === 'male' || raw === 'masculine' || raw === 'm' || raw === 'he/him' || raw === 'man') return 'male';
+    if (raw === 'female' || raw === 'feminine' || raw === 'f' || raw === 'she/her' || raw === 'woman') return 'female';
+    return 'adaptable';
+  };
+
   // Iterate to match unassigned characters
   for (const char of characters) {
     if ((char.profile_data as any)?.guest_id) continue;
 
-    const charGender = char.gender || 'adaptable';
+    const charGender = normalizeGender(char.gender);
     let matchedIndex = -1;
 
     if (charGender !== 'adaptable') {
-      matchedIndex = availableGuests.findIndex(g => g.gender === charGender);
+      matchedIndex = availableGuests.findIndex(g => normalizeGender(g.gender) === charGender);
     }
 
     if (matchedIndex === -1 && availableGuests.length > 0) {

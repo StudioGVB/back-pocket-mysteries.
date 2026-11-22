@@ -574,7 +574,7 @@ export const CHRISTMAS_NIGHTMARE_MYSTERY: CanonicalActiveMystery = {
   playersLabel: '6 Suspects (6 Players)',
   gameTime: '2–3 Hours',
   shortDesc:
-    'Two sisters and two neighbour brothers grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when The Husband is found dead wrapped in Christmas tree lights.',
+    'Two sisters and two neighbour brothers grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when a sudden 8:19 PM power surge plunges the house into darkness and The Husband is found dead in the Christmas tree corner.',
   description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
   inside_jokes: CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
   bestFor: 'Christmas Parties, Friendsmas Dinners, Couples Nights & Tight-Knit Friend Groups',

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { AvatarBuilder, deriveDiceBearTop } from '@/components/account/AvatarBuilder';
+import { PhotoTraitScanner, ScannedGuestTraits } from '@/components/account/PhotoTraitScanner';
 import { buildAvatarUrl, AvatarConfig, GUEST_ACCENT_OPTIONS } from '@/utils/avatar';
 import { saveProfileAction } from '@/app/actions/profile';
 import { generateProfileBioAction, generateProfileFunFactAction } from '@/app/actions/generator';
@@ -131,38 +132,28 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
   const inputClass = "w-full px-5 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="bg-white rounded-[2.5rem] w-full max-w-5xl relative shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+      <div className="bg-white rounded-t-[2rem] sm:rounded-[2.5rem] w-full max-w-5xl relative shadow-2xl flex flex-col h-[92dvh] sm:h-auto sm:max-h-[90dvh] overflow-hidden">
         
         {/* Header */}
-        <div className="p-8 pb-6 border-b border-slate-100 flex items-center justify-between bg-white z-10 flex-shrink-0">
+        <div className="px-5 py-4 sm:p-8 sm:pb-6 border-b border-slate-100 flex items-center justify-between bg-white z-10 flex-shrink-0">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">Edit My Profile</h2>
-            <p className="text-sm font-bold text-slate-400">Update your avatar and personal preferences</p>
+            <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">Edit My Profile</h2>
+            <p className="text-xs sm:text-sm font-bold text-slate-400">Update your avatar and personal preferences</p>
           </div>
           {onClose && (
-            <button onClick={onClose} className="w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full flex items-center justify-center transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <button onClick={onClose} className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full flex items-center justify-center transition-colors shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           )}
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-8 overflow-y-auto flex-1 relative">
+        <div className="p-4 sm:p-8 overflow-y-auto flex-1 min-h-0 relative">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-pink/5 rounded-bl-full -z-10" />
 
-          {/* Good to know banner */}
-          <div className="mt-2 mb-8 flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-transparent max-w-2xl">
-            <span className="text-brand-pink mt-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </span>
-            <p className="text-sm font-medium text-slate-700 leading-relaxed">
-              <span className="font-bold text-slate-900">Good to know:</span> Your custom avatar and profile details are completely free to create and will always be saved to your account. However, these custom features will only appear in a host's mystery if they purchase a <span className="font-bold text-slate-900">Plus Plan</span>.
-            </p>
-          </div>
-          
           {/* Save Status Banner */}
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-4 sm:mb-6 flex items-center gap-3">
             {saving && <span className="text-xs font-bold text-slate-400 flex items-center gap-2"><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>Saving changes...</span>}
             {saved && <span className="text-xs font-bold text-brand-pink">Changes saved!</span>}
             {error && <span className="text-xs font-bold text-red-500">{error}</span>}
@@ -175,10 +166,10 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
       )}
 
       {/* Avatar Preview + Tab switch */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden mb-8">
-        <div className="p-8 flex items-center gap-6 border-b border-slate-50">
+      <div className="bg-white rounded-3xl sm:rounded-[2rem] border border-slate-100 overflow-hidden mb-6 sm:mb-8">
+        <div className="p-4 sm:p-8 flex items-center gap-4 sm:gap-6 border-b border-slate-50">
           <div className="relative flex-shrink-0">
-            <div className="w-24 h-24 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={buildAvatarUrl(avatarConfig, user.name)}
@@ -194,10 +185,10 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           </div>
-          <div>
-            <p className="font-black text-slate-900 text-lg">{user.name || 'Your Name'}</p>
-            <p className="text-sm text-slate-400 font-medium">{user.email}</p>
-            <p className="text-xs font-bold text-slate-400 mt-1">
+          <div className="min-w-0">
+            <p className="font-black text-slate-900 text-base sm:text-lg truncate">{user.name || 'Your Name'}</p>
+            <p className="text-xs sm:text-sm text-slate-400 font-medium truncate">{user.email}</p>
+            <p className="text-xs font-bold text-slate-400 mt-1 truncate">
               {[pronouns, avatarConfig.accent ? `🎙️ ${avatarConfig.accent}` : null].filter(Boolean).join(' · ')}
             </p>
           </div>
@@ -209,7 +200,7 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className="flex-1 py-4 text-sm font-black uppercase tracking-widest transition-colors"
+              className="flex-1 py-3.5 sm:py-4 text-xs sm:text-sm font-black uppercase tracking-widest transition-colors"
               style={{
                 color: activeTab === tab ? '#fe04c6' : '#94a3b8',
                 borderBottom: activeTab === tab ? '2px solid #fe04c6' : '2px solid transparent',
@@ -225,11 +216,11 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
           ))}
         </div>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {activeTab === 'info' ? (
-            <div className="space-y-6">
+            <div className="space-y-5 sm:space-y-6">
               {/* Basic */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Location</label>
                   <input className={inputClass} value={location} onChange={e => setLocation(e.target.value)} placeholder="London, UK" />
@@ -358,6 +349,27 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
             </div>
           ) : (
             <div className="space-y-6">
+              <PhotoTraitScanner
+                onTraitsDetected={(traits: ScannedGuestTraits) => {
+                  const mappedGender = traits.gender === 'Feminine' ? 'Feminine' : 'Masculine';
+                  setGender(mappedGender);
+                  setAvatarConfig((prev) => ({
+                    ...prev,
+                    skinColor: traits.skinColor,
+                    hairColor: traits.hairColor,
+                    hairLength: traits.hairLength,
+                    hairTexture: traits.hairTexture,
+                    top: deriveDiceBearTop(traits.hairLength, traits.hairTexture, mappedGender),
+                    facialHair: mappedGender === 'Masculine' ? traits.facialHair : undefined,
+                    eyeColor: traits.eyeColor,
+                    build: traits.build,
+                    distinctiveFeatures: traits.distinctiveFeatures,
+                    age: traits.age,
+                  }));
+                }}
+                compact={true}
+              />
+
               {/* Gender selector for avatar */}
               <div>
                 <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Avatar Style</label>

@@ -3,9 +3,9 @@ import crypto from 'crypto';
 export const CHRISTMAS_NIGHTMARE_TITLE = 'Christmas Nightmare';
 export const CHRISTMAS_NIGHTMARE_THEME = 'Christmas Party';
 export const CHRISTMAS_NIGHTMARE_DESCRIPTION =
-  'They all grew up together on the same street: two sisters and two neighbour brothers whose lives have been intertwined since childhood. Tonight, beneath the twinkling lights of their annual Christmas dinner party, years of tangled history, secret affairs, and broken marriages finally snap. When The Husband is discovered dead in the living room, tightly wrapped in a glowing strand of Christmas tree lights, the holiday reunion turns into a Christmas Nightmare. Everyone in the room is family, a childhood neighbour, a spouse, or a secret lover, and every single one of them is hiding a betrayal.';
+  'They all grew up together on the same street: two sisters and two neighbour brothers whose lives have been intertwined since childhood. Tonight, beneath the twinkling lights of their annual Christmas dinner party, years of tangled history, secret affairs, and broken marriages finally snap. When a sudden 8:19 PM power surge plunges the living room into darkness and The Husband is discovered dead in the Christmas tree corner—amid a spilled cup of spiced eggnog, a scorched wall outlet, and a tangled coil of vintage tree lights—the holiday reunion turns into a Christmas Nightmare. Everyone in the room is family, a childhood neighbour, a spouse, or a secret lover, and every single one of them is hiding a betrayal.';
 export const CHRISTMAS_NIGHTMARE_INSIDE_JOKES =
-  'Keep your neighbours close, your sisters closer, and never trust anyone near the Christmas tree lights.';
+  'Keep your neighbours close, your sisters closer, and never trust what happens when the Christmas lights go dark.';
 
 export function isChristmasNightmareMystery(title?: string | null, theme?: string | null): boolean {
   const t = String(title || '').toLowerCase();
@@ -63,9 +63,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       bio: '{{The Husband}} grew up on the same street as the rest of the group and went to high school with everyone at tonight\'s Christmas dinner. He has been married to {{The Wife}} for five years, is siblings-in-law with {{The Sister-in-Law}}, has been best friends with {{The Bestie}} since high school, and works at the same company as {{The Co-Worker}}.',
       outfit_advice: 'Sharp holiday host attire: a tailored velvet blazer or cashmere turtleneck in deep crimson or forest green, dark tailored trousers, and a luxury dress watch.',
       outfit_reference_images: [
-        '/outfits/lotr/the-host-m-1.jpg',
-        '/outfits/lotr/the-host-m-2.jpg',
-        '/outfits/lotr/the-host-m-3.jpg',
+        '/outfits/christmas/husband-1.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheHusband&eyebrows=default&eyes=default&mouth=smile&clothesColor=991b1b&backgroundColor=transparent&top=shortWaved&hairColor=282828&skinColor=ffe0bd',
       act_summary: 'Act like the charming, larger-than-life host of the annual Christmas dinner who loves holding court with old high school friends and childhood neighbours.',
@@ -92,16 +90,14 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       age: 'adult',
       color: 'Emerald Green',
       bio: '{{The Wife}} grew up next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}) alongside her younger sister, {{The Sister-in-Law}}. She has been married to {{The Husband}} for five years after dating since high school. She also dated {{The Co-Worker}} back in high school and used to be best friends with {{The Mistress}} when they were teenagers.',
-      outfit_advice: 'Effortlessly glamorous holiday hostess: an emerald green silk midi dress or velvet jumpsuit, gold statement earrings, and heels.',
+      outfit_advice: 'Effortlessly glamorous holiday hostess: an emerald green silk midi dress or velvet jumpsuit, a matching sterling silver snowflake hairpin (a childhood sisters\' set shared with {{The Sister-in-Law}}), gold statement earrings, and heels.',
       outfit_reference_images: [
-        '/outfits/lotr/the-star-1.jpg',
-        '/outfits/lotr/the-star-2.jpg',
-        '/outfits/lotr/the-star-3.jpg',
+        '/outfits/christmas/wife-1.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheWife&eyebrows=default&eyes=default&mouth=smile&clothesColor=065f46&backgroundColor=transparent&top=straight01&hairColor=4a3123&skinColor=ffe0bd',
       act_summary: 'Play the poised, gracious Christmas party hostess welcoming your sister and childhood neighbours back to the house for the holidays.',
       act_bullets: [
-        'Stay close with your younger sister, {{The Sister-in-Law}}, who you grew up sharing everything with.',
+        'Stay close with your younger sister, {{The Sister-in-Law}}, who you grew up sharing everything with (including your matching silver snowflake hairpins).',
         'Keep things polite and composed around your old high school best friend, {{The Mistress}}.',
         'Reminisce about growing up next door to the two neighbour brothers, {{The Co-Worker}} and {{The Bestie}}.',
         'Keep the holiday dinner moving smoothly alongside your husband of five years, {{The Husband}}.',
@@ -123,11 +119,9 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       age: 'adult',
       color: 'Silver',
       bio: '{{The Sister-in-Law}} is {{The Wife}}\'s younger sister and grew up next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}). She went to high school with {{The Husband}} and {{The Mistress}}, and over the last few years she and {{The Mistress}} have become close best friends.',
-      outfit_advice: 'Sleek winter chic: a shimmering silver sweater dress or satin blouse with tailored trousers, layered silver jewelry, and dark berry lipstick.',
+      outfit_advice: 'Sleek winter chic: a shimmering silver sweater dress or satin blouse with tailored trousers, a matching sterling silver snowflake hairpin (identical to your sister {{The Wife}}\'s), layered silver jewelry, and dark berry lipstick.',
       outfit_reference_images: [
-        '/outfits/lotr/the-sister-1.jpg',
-        '/outfits/lotr/the-sister-2.jpg',
-        '/outfits/lotr/the-sister-3.jpg',
+        '/outfits/christmas/sister-1.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheSisterInLaw&eyebrows=default&eyes=default&mouth=smile&clothesColor=64748b&backgroundColor=transparent&top=curvy&hairColor=a55728&skinColor=ffe0bd',
       act_summary: 'Play the sharp-witted, loyal younger sister who grew up on the street with everyone at the table and knows all the old neighbourhood history.',
@@ -135,7 +129,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         'Always have your older sister {{The Wife}}\'s back during family holiday dinners.',
         'Chat and catch up with your current best friend, {{The Mistress}}.',
         'Banter with the two brothers you grew up next door to, {{The Co-Worker}} and {{The Bestie}}.',
-        'Trade dry high school memories with your brother-in-law, {{The Husband}}.',
+        'If anyone asks where you were around 8:15–8:25 PM, insist you were in the kitchen pantry corridor the entire time fetching extra holiday drinks with {{The Bestie}}.',
       ],
       traits: ['Loyal', 'Sharp-Witted', 'Protective', 'Observant'],
     },
@@ -162,9 +156,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       bio: '{{The Mistress}} went to high school with the whole group and has been married to {{The Co-Worker}} for three years. She works at the same company as her brother-in-law, {{The Bestie}}. Back in high school she was best friends with {{The Wife}}, and today she is close best friends with {{The Sister-in-Law}}.',
       outfit_advice: 'Show-stopping holiday glamour: a gold sequin or scarlet cocktail dress, statement heels, and bold holiday makeup.',
       outfit_reference_images: [
-        '/outfits/lotr/the-runner-up-1.jpg',
-        '/outfits/lotr/the-runner-up-2.jpg',
-        '/outfits/lotr/the-runner-up-3.jpg',
+        '/outfits/christmas/mistress-1.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheMistress&eyebrows=default&eyes=default&mouth=smile&clothesColor=b45309&backgroundColor=transparent&top=straight02&hairColor=d6b370&skinColor=ffe0bd',
       act_summary: 'Act like the glamorous, outgoing socialite of the friend group who loves holiday parties and knows everyone from high school and the office.',
@@ -199,9 +191,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       bio: '{{The Co-Worker}} grew up right next door to the two sisters ({{The Wife}} and {{The Sister-in-Law}}) alongside his brother, {{The Bestie}}. He has been married to {{The Mistress}} for three years, works at the same company as {{The Husband}}, and briefly dated {{The Wife}} back when they were in high school.',
       outfit_advice: 'Sleek smart-casual holiday attire: a charcoal blazer over a dark merino knit sweater, tailored trousers, and a whiskey glass in hand.',
       outfit_reference_images: [
-        '/outfits/lotr/the-flameout-m-1.jpg',
-        '/outfits/lotr/the-flameout-m-2.jpg',
-        '/outfits/lotr/the-flameout-m-3.jpg',
+        '/outfits/christmas/coworker-1.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheCoWorker&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e293b&backgroundColor=transparent&top=shortCurly&hairColor=282828&skinColor=ffe0bd',
       act_summary: 'Be the observant, level-headed older neighbour brother who grew up next door to the sisters and works at the same company as {{The Husband}}.',
@@ -236,9 +226,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       bio: '{{The Bestie}} grew up next door to {{The Wife}} and {{The Sister-in-Law}} alongside his older brother, {{The Co-Worker}}. He has been {{The Husband}}\'s best friend since high school and works in the same office as his sister-in-law, {{The Mistress}}.',
       outfit_advice: 'Classic, disarming holiday style: a navy cable-knit sweater layered over a crisp Oxford shirt, dark chinos, and an easygoing smile.',
       outfit_reference_images: [
-        '/outfits/lotr/the-producer-plant-m-1.jpg',
-        '/outfits/lotr/the-producer-plant-m-2.jpg',
-        '/outfits/lotr/the-producer-plant-m-3.jpg',
+        '/outfits/christmas/bestie-1.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheBestie&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e3a8a&backgroundColor=transparent&top=shortFlat&hairColor=4a3123&skinColor=ffe0bd',
       act_summary: 'Act like {{The Husband}}\'s easygoing lifelong best friend and the fun-loving younger neighbour brother who grew up on the street with everyone.',
@@ -246,7 +234,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         'Talk up how you and {{The Husband}} have been inseparable best friends since high school.',
         'Trade stories with your older brother, {{The Co-Worker}}, and your sister-in-law and co-worker, {{The Mistress}}.',
         'Catch up with {{The Wife}} and {{The Sister-in-Law}}, who grew up in the house right next door to yours.',
-        'Keep the holiday drinks flowing and the mood light around the Christmas tree.',
+        'If anyone asks about 8:15–8:25 PM, back up {{The Sister-in-Law}} and say the two of you were in the kitchen pantry pouring holiday drinks together.',
       ],
       traits: ['Charming', 'Easygoing', 'Friendly', 'Loyal'],
     },
@@ -506,7 +494,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
   },
   {
     legacyId: '5ff23ebe-96f7-49d5-8222-84ca13a932f4',
-    title: 'Hallway Coat Closet (7:40 PM) • Hairpin Engraved: "Forever Sisters"',
+    title: 'Hallway Coat Closet (7:40 PM) • Dropped Silver Snowflake Hairpin',
     clue_type: 'physical',
     implication_type: 'direct',
     evidence_status: 'real',
@@ -515,7 +503,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 1,
     format: 'physical_prop',
     static_image_url: '/generated-clues/5ff23ebe-96f7-49d5-8222-84ca13a932f4-840601e54d17.jpg',
-    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} inside the coat closet with the broken sterling silver "Forever Sisters" snowflake hairpin on the carpet outside.',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} inside the coat closet with a dropped sterling silver snowflake hairpin (worn by both sisters) on the carpet outside.',
     description: '',
     generation_prompt: 'A candid low-light hallway photograph showing {{The Husband}} and {{The Mistress}} standing closely together talking by an open wooden coat closet doorway while a vintage silver snowflake hairpin lies on the dark hallway runner carpet in the foreground. (No text).',
   },
@@ -550,23 +538,22 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     generation_prompt: 'Two smartphones lying side by side on a marble bar counter next to cocktail napkins. (No text).',
   },
   {
-    legacyId: '3e8e61ad-32f1-4c0a-a75b-024969eef8f4',
-    title: 'Hallway Storage & Breaker Cam (7:52 PM - 8:03 PM)',
+    legacyId: 'a1111111-1111-4111-8111-111111111104',
+    title: 'Living Room Smart-Outlet Surge Log (8:18 PM - 8:22 PM)',
     clue_type: 'physical',
     implication_type: 'direct',
     evidence_status: 'real',
     round_number: 1,
     is_essential: true,
-    beatNumber: 2,
-    format: 'cctv',
-    static_image_url: '/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-0eefa60444a8.jpg',
-    internal_notes: '[FORMAT:cctv] [CODE:R1-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV showing {{The Sister-in-Law}} carrying the Christmas tree lights out of the storage closet and {{The Co-Worker}} wearing the leather work gloves at the 2F breaker panel.',
+    beatNumber: 4,
+    format: 'search_log',
+    internal_notes: '[FORMAT:search_log] [CODE:R1-C6] REAL / CANON (Beat 4) - Pinpoints the exact time of the living room blackout and 1,840W outlet overload fault to 8:19:12 PM without yet revealing who took the Christmas lights or gloves.',
     description:
-      'Header: CAM 01 • HALLWAY STORAGE & 2F STUDY BREAKER\nTimestamp: 7:52 PM - 8:03 PM',
-    generation_prompt: 'An overhead security camera still in a dimly lit holiday hallway showing {{The Sister-in-Law}} stepping out of the open storage closet holding a tangled coil of red and green Christmas tree lights while {{The Co-Worker}} wears tan leather work gloves at the open wall breaker panel. (No text).',
+      'SMART HOME POWER LOG • GROUND FLOOR LIVING ROOM:\n• 8:18:04 PM - Zone 1 Overhead Dimmer: Manual switch -> 0% (DARK)\n• 8:19:12 PM - Wall Outlet #1 (Tree Corner): Load spike 0W -> 1,840W (OVERLOAD FAULT / SHORT CIRCUIT)\n• 8:21:55 PM - Side Hallway Door Sensor (Pantry Corridor): OPEN -> CLOSED',
+    generation_prompt: 'A glowing Christmas tree corner in a dark living room with shadows cast across the hardwood floor. (No text).',
   },
 
-  // ── ROUND 2 (6 Clues: 4 Main Beat 3-4 Clues + 2 Double-Duty Step-2 Fake Clues, Shuffled) ──
+  // ── ROUND 2 (6 Clues: 4 Main Beat 2-4 Clues + 2 Double-Duty Step-2 Fake Clues, Shuffled) ──
   {
     legacyId: 'a1111111-1111-4111-8111-111111111105',
     title: '2F Upstairs Study Wall Safe (8:06 PM)',
@@ -627,7 +614,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111106-45fd5371bedd.jpg',
     internal_notes: '[FORMAT:medical_rx] [CODE:R2-C4] Fake Arc Step 2 ({{The Mistress}} + {{The Bestie}}) - Visual bar photo + Rx label showing the two co-workers spiking the eggnog cup with fast-acting sleeping drops.',
     description:
-      'Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)\nPrescribed to: [Torn] ... Co. Group Plan #B-04\nIssue date: 8:08 PM • Kitchen Bar\nRef: RX-409-12\nWARNING: 5 drops in warm/spiced alcohol induces 20-minute sleep onset (Sub-lethal dose).',
+      'Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)\nPrescribed to: [Torn] ... Co. Group Plan #B-04\nIssue date: Dec 18 (Found 8:08 PM • Kitchen Bar)\nRef: RX-409-12\nWARNING: 5 drops in warm/spiced alcohol induces 20-minute sleep onset (Sub-lethal dose).',
     generation_prompt: 'A candid kitchen bar photograph showing {{The Mistress}} and {{The Bestie}} leaning closely over a marble bar counter holding a small amber glass dropper bottle above a crystal cup of spiced eggnog. (No text).',
   },
   {
@@ -646,19 +633,20 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     generation_prompt: 'Two champagne flutes left behind on a marble pantry counter beside holiday ribbon and pine cones. (No text).',
   },
   {
-    legacyId: 'a1111111-1111-4111-8111-111111111104',
-    title: 'Living Room Smart-Outlet Surge Log (8:18 PM - 8:22 PM)',
+    legacyId: '3e8e61ad-32f1-4c0a-a75b-024969eef8f4',
+    title: 'Hallway Storage & Breaker Cam (7:52 PM - 8:03 PM)',
     clue_type: 'physical',
     implication_type: 'direct',
     evidence_status: 'real',
     round_number: 2,
     is_essential: true,
-    beatNumber: 4,
-    format: 'search_log',
-    internal_notes: '[FORMAT:search_log] [CODE:R2-C6] REAL / CANON (Beat 4) - Pinpoints the exact time of the Christmas lights attack in the living room to 8:19:12 PM.',
+    beatNumber: 2,
+    format: 'cctv',
+    static_image_url: '/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-0eefa60444a8.jpg',
+    internal_notes: '[FORMAT:cctv] [CODE:R2-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV showing {{The Sister-in-Law}} carrying the Christmas tree lights out of the storage closet and {{The Co-Worker}} wearing the leather work gloves at the 2F breaker panel.',
     description:
-      'SMART HOME POWER LOG • GROUND FLOOR LIVING ROOM:\n• 8:18:04 PM - Zone 1 Overhead Dimmer: Manual switch -> 0% (DARK)\n• 8:19:12 PM - Wall Outlet #1 (Tree Corner): Load spike 0W -> 1,840W (OVERLOAD FAULT / SHORT CIRCUIT)\n• 8:21:55 PM - Side Hallway Door Sensor (Pantry Corridor): OPEN -> CLOSED',
-    generation_prompt: 'A glowing Christmas tree corner in a dark living room with shadows cast across the hardwood floor. (No text).',
+      'Header: CAM 01 • HALLWAY STORAGE & 2F STUDY BREAKER\nTimestamp: 7:52 PM - 8:03 PM',
+    generation_prompt: 'An overhead security camera still in a dimly lit holiday hallway showing {{The Sister-in-Law}} stepping out of the open storage closet holding a tangled coil of red and green Christmas tree lights while {{The Co-Worker}} wears tan leather work gloves at the open wall breaker panel. (No text).',
   },
 
   // ── ROUND 3 (4 Clues: 2 Step-3 Alibi/Hole Clues + 2 Final Beat 4-5 Resolution Clues, Shuffled) ──
@@ -704,9 +692,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 4,
     format: 'handwritten_note',
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111110-2de9619b65ec.jpg',
-    internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Visual Polaroid photo of {{The Sister-in-Law}} and {{The Wife}} + cryptic handwritten message on the back.',
+    internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Visual Polaroid photo of {{The Sister-in-Law}} and {{The Wife}} + cryptic handwritten message on the back that requires cross-referencing the 8:19 PM study alibi and pantry chat.',
     description:
-      'Recovered: Written on back of Polaroid inside coat pocket near pantry\n"You spent our whole childhood protecting me on this street. After what I saw in the closet and what I heard him say to you upstairs, I couldn\'t let him steal another year of your life. This Christmas, you\'re finally going to be happy and free."',
+      'Recovered: Written on back of Polaroid inside coat pocket near pantry\n"We grew up on this street together, and I meant it when I promised you wouldn\'t be trapped in this marriage another year. After what I heard him say to you upstairs at 8:12 PM, I knew there was only one way you\'d ever be happy and free."',
     generation_prompt: 'A warm candid instant Polaroid photograph of {{The Sister-in-Law}} and {{The Wife}} hugging closely in front of a glowing Christmas tree at the holiday party. (No text).',
   },
   {

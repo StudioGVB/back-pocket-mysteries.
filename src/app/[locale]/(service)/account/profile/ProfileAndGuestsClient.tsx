@@ -37,11 +37,11 @@ export default function ProfileAndGuestsClient({
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto w-full px-6 py-12">
+    <div className="max-w-6xl mx-auto w-full px-0 sm:px-4 py-2 sm:py-8">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">My Roster</h1>
-        <p className="text-slate-500 font-medium">Manage your own profile or invite your friends to join your cast.</p>
+      <div className="mb-6 sm:mb-10">
+        <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mb-1.5 sm:mb-2">My Roster</h1>
+        <p className="text-sm sm:text-base text-slate-500 font-medium">Manage your own profile or invite your friends to join your cast.</p>
       </div>
 
       {/* User's Profile Card (Hero) */}

@@ -14,14 +14,41 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-// Load font statically so Vercel bundles it
+// Load fonts and brand logos statically (cached in module scope)
+let cachedFontBold: Buffer | null = null;
+let cachedFontBlack: Buffer | null = null;
+let cachedLogoColor: string | undefined;
+let cachedLogoWhite: string | undefined;
+
 function getMontserratBold() {
-  const fontPath = path.join(process.cwd(), "src", "assets", "Montserrat-Bold.woff");
-  return fs.readFileSync(fontPath);
+  if (!cachedFontBold) {
+    cachedFontBold = fs.readFileSync(path.join(process.cwd(), "src", "assets", "Montserrat-Bold.woff"));
+  }
+  return cachedFontBold;
 }
 function getMontserratBlack() {
-  const fontPath = path.join(process.cwd(), "src", "assets", "Montserrat-Black.woff");
-  return fs.readFileSync(fontPath);
+  if (!cachedFontBlack) {
+    cachedFontBlack = fs.readFileSync(path.join(process.cwd(), "src", "assets", "Montserrat-Black.woff"));
+  }
+  return cachedFontBlack;
+}
+function getLogoColorSrc() {
+  if (!cachedLogoColor) {
+    const p = path.join(process.cwd(), "public", "logo-horizontal.png");
+    if (fs.existsSync(p)) {
+      cachedLogoColor = `data:image/png;base64,${fs.readFileSync(p).toString("base64")}`;
+    }
+  }
+  return cachedLogoColor;
+}
+function getLogoWhiteSrc() {
+  if (!cachedLogoWhite) {
+    const p = path.join(process.cwd(), "public", "logo-horizontal-white.png");
+    if (fs.existsSync(p)) {
+      cachedLogoWhite = `data:image/png;base64,${fs.readFileSync(p).toString("base64")}`;
+    }
+  }
+  return cachedLogoWhite;
 }
 
 export async function GET(
@@ -94,17 +121,40 @@ export async function GET(
         ? ACTIVE_MYSTERIES.find((m) => m.slug === cleanSlug || m.id === cleanSlug) || null
         : null;
 
+    // Fallback to standalone social_posts row (e.g. Soft-Launch Intro Post or custom announcements)
+    const standaloneSocialPost =
+      !blog && !staticBlog && !mysteryPack
+        ? store.social_posts.find((p) => {
+            const sc = (p.slide_content || {}) as any;
+            if (sc.cardSlug === cleanSlug) return true;
+            const cap = store.social_post_captions.find(
+              (c) =>
+                c.post_id === p.id &&
+                Array.isArray(c.media_urls) &&
+                c.media_urls.some((u: string) => u.includes(`/${cleanSlug}.`))
+            );
+            return Boolean(cap);
+          }) || null
+        : null;
+
+    const standaloneSc = (standaloneSocialPost?.slide_content || {}) as any;
+
     const titleText =
       blog?.title ||
       staticBlog?.title ||
       (mysteryPack ? `${mysteryPack.title}: ${mysteryPack.theme} Murder Mystery` : null) ||
+      standaloneSc?.cardTitle ||
+      standaloneSocialPost?.brief ||
       cleanSlug.replace(/-/g, " ");
     const bgRelative =
       blog?.featured_image_url ||
       staticBlog?.image ||
       mysteryPack?.coverUrl ||
       mysteryPack?.image_url ||
-      `/blog/hosting-guide.png`;
+      standaloneSc?.imageUrl ||
+      (fs.existsSync(path.join(process.cwd(), "public", "blog-images", `${cleanSlug}.png`))
+        ? `/blog-images/${cleanSlug}.png`
+        : `/blog/hosting-guide.png`);
 
     // Resolve background image: prefer reading from public/ on disk as data URI for fast, reliable Satori rendering
     const origin = request.url.startsWith("http")
@@ -125,8 +175,13 @@ export async function GET(
       }
     }
 
-    // Optional headline stat stored on the social post (slide_content.stat = { value, label })
+    // Optional headline stat, saved templateIndex, and commercial CTA overrides
+    const searchParams = new URL(request.url).searchParams;
     let stat: { value: string; label: string } | null = null;
+    let savedTemplateIndex: number | null = null;
+    let ctaText: string | null = searchParams.get("cta");
+    let kickerText: string | null = searchParams.get("kicker");
+
     if (blog?.id) {
       let sp: any = null;
       if (supabase) {
@@ -141,21 +196,62 @@ export async function GET(
       if (!sp && store.social_posts.length > 0) {
         sp = store.social_posts.find((p) => p.source_blog_id === blog.id) || null;
       }
-      const s = (sp?.slide_content as any)?.stat;
-      if (s?.value && s?.label) stat = { value: String(s.value), label: String(s.label) };
+      const sc = sp?.slide_content as any;
+      if (sc?.stat?.value && sc?.stat?.label) {
+        stat = { value: String(sc.stat.value), label: String(sc.stat.label) };
+      }
+      if (!ctaText && sc?.ctaText) ctaText = String(sc.ctaText);
+      if (!kickerText && sc?.kickerText) kickerText = String(sc.kickerText);
+      if (typeof sc?.templateIndex === "number" && sc.templateIndex >= 0 && sc.templateIndex < TEMPLATE_COUNT) {
+        savedTemplateIndex = sc.templateIndex;
+      }
     } else if (mysteryPack) {
+      const sp = store.social_posts.find((p) =>
+        String((p.slide_content as any)?.linkUrl || "").includes(mysteryPack.slug)
+      );
+      const sc = sp?.slide_content as any;
+      if (typeof sc?.templateIndex === "number" && sc.templateIndex >= 0 && sc.templateIndex < TEMPLATE_COUNT) {
+        savedTemplateIndex = sc.templateIndex;
+      }
+      if (!ctaText) ctaText = sc?.ctaText ? String(sc.ctaText) : "BUILD YOUR PARTY";
+      if (!kickerText) kickerText = sc?.kickerText ? String(sc.kickerText) : "INSTANT PARTY KIT";
       stat = {
         value: `${mysteryPack.min_players}–${mysteryPack.max_players}`,
-        label: `Suspects • ${mysteryPack.theme} Mystery Pack`,
+        label: `Suspects • Ready to Play in 30 Mins`,
+      };
+    } else if (standaloneSocialPost) {
+      if (standaloneSc?.stat?.value && standaloneSc?.stat?.label) {
+        stat = {
+          value: String(standaloneSc.stat.value),
+          label: String(standaloneSc.stat.label),
+        };
+      }
+      if (!ctaText && standaloneSc?.ctaText) ctaText = String(standaloneSc.ctaText);
+      if (!kickerText && standaloneSc?.kickerText) kickerText = String(standaloneSc.kickerText);
+      if (
+        typeof standaloneSc?.templateIndex === "number" &&
+        standaloneSc.templateIndex >= 0 &&
+        standaloneSc.templateIndex < TEMPLATE_COUNT
+      ) {
+        savedTemplateIndex = standaloneSc.templateIndex;
+      }
+    }
+
+    if (searchParams.get("statValue") && searchParams.get("statLabel")) {
+      stat = {
+        value: String(searchParams.get("statValue")),
+        label: String(searchParams.get("statLabel")),
       };
     }
 
     // Template: ?t=0-7 override for previews (ignore cache-buster timestamps like ?t=Date.now()),
-    // otherwise rotate by publish order so consecutive posts always use a different template.
-    const tParam = new URL(request.url).searchParams.get("t");
+    // then savedTemplateIndex if manually chosen in Admin, otherwise rotate by publish order.
+    const tParam = searchParams.get("t");
     let templateIndex = 0;
     if (tParam !== null && !Number.isNaN(Number(tParam)) && Number(tParam) >= 0 && Number(tParam) < TEMPLATE_COUNT) {
       templateIndex = Number(tParam);
+    } else if (savedTemplateIndex !== null) {
+      templateIndex = savedTemplateIndex;
     } else if (blog?.publish_date) {
       let resolvedCount: number | null = null;
       if (supabase) {
@@ -185,17 +281,26 @@ export async function GET(
 
     const fontDataBold = getMontserratBold();
     const fontDataBlack = getMontserratBlack();
+    const logoColorSrc = getLogoColorSrc();
+    const logoWhiteSrc = getLogoWhiteSrc();
 
     return new ImageResponse(
       getCardElement(
         {
           bgSrc,
-          title: titleText,
+          title: searchParams.get("title") || titleText,
           category:
+            searchParams.get("category") ||
             blog?.category ||
             staticBlog?.tag ||
-            (mysteryPack ? `New Mystery Pack • ${mysteryPack.theme}` : null),
+            (mysteryPack ? `New Mystery Pack • ${mysteryPack.theme}` : null) ||
+            standaloneSc?.cardCategory ||
+            null,
           stat,
+          ctaText,
+          kickerText,
+          logoColorSrc,
+          logoWhiteSrc,
         },
         templateIndex
       ),

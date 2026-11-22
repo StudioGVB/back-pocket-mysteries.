@@ -77,6 +77,35 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
     });
   };
 
+  const [isQueuingMarketing, setIsQueuingMarketing] = useState(false);
+
+  const handleLaunchMarketing = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (
+      !confirm(
+        `Run launch marketing for "${mystery.title}"?\n\nThis will queue:\n• 1 Instagram & Facebook 8-template social card post (Draft)\n• 1 LinkedIn 600-word launch post (Draft)\n• Add the New Mystery Pack Spotlight into this week's Friday EDM`
+      )
+    ) {
+      return;
+    }
+    try {
+      setIsQueuingMarketing(true);
+      setError(null);
+      const res = await fetch('/api/admin/marketing-launch-pack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mysteryId: mystery.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to queue marketing');
+      router.push(`/${locale}/admin/social`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to queue launch marketing');
+    } finally {
+      setIsQueuingMarketing(false);
+    }
+  };
+
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'published':
@@ -194,13 +223,23 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-3 text-xs font-black uppercase tracking-widest w-full justify-between">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2.5 text-xs font-black uppercase tracking-widest w-full justify-between">
+                <div className="flex items-center space-x-2.5 flex-wrap">
                   <a 
                     href={`/${locale}/builder/mysteries/${mystery.id}`}
                     className="text-brand-pink hover:text-pink-500 transition-colors"
                   >
                     Edit
+                  </a>
+                  <span className="text-neutral-800">|</span>
+                  <a
+                    href={`/${locale}/builder/mysteries/${mystery.id}/compile/print-all`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                    title="Open or download the complete hydrated mystery pack (with your friends, all clues, and solution)"
+                  >
+                    📥 Full Pack
                   </a>
                   <span className="text-neutral-800">|</span>
                   <button
@@ -213,6 +252,19 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
                   >
                     Photos ({moodCount})
                   </button>
+                  {mystery.status === 'published' && (
+                    <>
+                      <span className="text-neutral-800">|</span>
+                      <button
+                        type="button"
+                        onClick={handleLaunchMarketing}
+                        disabled={isQueuingMarketing}
+                        className="text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      >
+                        {isQueuingMarketing ? 'Queuing…' : '📣 Marketing'}
+                      </button>
+                    </>
+                  )}
                   <span className="text-neutral-800">|</span>
                   {isArchived ? (
                     <button

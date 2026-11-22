@@ -127,6 +127,14 @@ export default async function CompilePage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
+          <a
+            href={`/${locale}/builder/mysteries/${id}/compile/print-all`}
+            target="_blank"
+            rel="noreferrer"
+            className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-900 text-xs font-black uppercase tracking-wider transition-all shadow-2xs"
+          >
+            📥 Full Master Pack (With Friends) ↗
+          </a>
           <Link
             href={customerCastUrl}
             className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider transition-all"
@@ -260,6 +268,16 @@ export default async function CompilePage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={`/${locale}/builder/mysteries/${id}/compile/print-all`}
+            target="_blank"
+            rel="noreferrer"
+            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-brand-pink text-white text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+          >
+            <span>📥</span>
+            <span>All-in-One Master Pack (Friends + Clues + Reveal)</span>
+            <span className="text-white/70 text-[10px]">↗</span>
+          </a>
           {backupPrintables.map((item) => (
             <a
               key={item.title}

@@ -209,16 +209,23 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
                 onChange={async (e) => {
                   const val = e.target.value;
                   if (val && isVictim) {
-                    const directGender = (character.gender || 'adaptable').toLowerCase();
-                    const currentCastGender = (profileData?.gender || 'adaptable').toLowerCase();
+                    const normalizeGender = (g?: string | null) => {
+                      const raw = (g || '').toLowerCase().trim();
+                      if (raw === 'male' || raw === 'masculine' || raw === 'm' || raw === 'he/him' || raw === 'man') return 'male';
+                      if (raw === 'female' || raw === 'feminine' || raw === 'f' || raw === 'she/her' || raw === 'woman') return 'female';
+                      return 'adaptable';
+                    };
+                    const directGender = normalizeGender(character.gender);
+                    const currentCastGender = normalizeGender(profileData?.gender);
                     const effectiveVictimGender =
                       directGender === 'male' || directGender === 'female'
                         ? directGender
                         : currentCastGender;
                     const pickedGuest = guests.find((g) => g.id === val);
-                    const guestGender = (pickedGuest?.gender || 'adaptable').toLowerCase();
+                    const guestGender = normalizeGender(pickedGuest?.gender);
                     if (
                       (effectiveVictimGender === 'male' || effectiveVictimGender === 'female') &&
+                      (guestGender === 'male' || guestGender === 'female') &&
                       guestGender !== effectiveVictimGender
                     ) {
                       setPendingVictimGuestId(val);

@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
+import { getMysteryById } from '@/services/mysteries';
 import { PublishingForm } from './PublishingForm';
 
 export const unstable_instant = false;
@@ -21,12 +22,13 @@ async function StatusPageContent({ params }: StatusPageProps) {
   const { id, locale } = await params;
   const supabase = await createClient();
 
-  const [mysteryRes, ordersRes, charsCountRes] = await Promise.all([
+  const [mysteryRes, fallbackMystery, ordersRes, charsCountRes] = await Promise.all([
     supabase
       .from('mysteries')
       .select('id, title, status, min_players, max_players')
       .eq('id', id)
       .single(),
+    getMysteryById(id),
     supabase
       .from('orders')
       .select('id, amount, created_at, status')
@@ -39,9 +41,13 @@ async function StatusPageContent({ params }: StatusPageProps) {
       .eq('mystery_id', id),
   ]);
 
-  const mystery = mysteryRes.data;
+  const mystery = mysteryRes.data || (fallbackMystery as any);
   const orders = ordersRes.data;
-  const characterCount = charsCountRes.count ?? 0;
+  const characterCount =
+    charsCountRes.count ||
+    (Array.isArray((fallbackMystery as any)?.characters)
+      ? (fallbackMystery as any).characters.length
+      : 0);
 
   if (!mystery) notFound();
 

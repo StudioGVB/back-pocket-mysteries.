@@ -418,15 +418,15 @@ function InviteModal({
   const targetName = sharingGuest?.name || ' your friend';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl max-h-[92vh] overflow-y-auto">
-        <div className="flex items-start justify-between mb-5">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-t-[2rem] sm:rounded-[2rem] p-5 sm:p-8 w-full max-w-md shadow-2xl max-h-[92dvh] overflow-y-auto">
+        <div className="flex items-start justify-between mb-4 sm:mb-5">
           <div>
-            <h3 className="text-xl font-bold text-slate-900 mb-1.5">
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">
               {sharingGuest ? `Invite ${sharingGuest.name}` : 'Invite a Friend'}
             </h3>
-            <p className="text-sm text-slate-500">
+            <p className="text-xs sm:text-sm text-slate-500">
               {sharingGuest
                 ? `Copy a personal invite link to text ${sharingGuest.name}, or send an email so they can claim their profile and customize their avatar!`
                 : 'Copy a link to text your friend directly, or send them an email invite.'}
@@ -438,7 +438,7 @@ function InviteModal({
         </div>
 
         {/* Optional Personal Note (applies to both Link & Email) */}
-        <div className="mb-5">
+        <div className="mb-4 sm:mb-5">
           <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
             Personal Note <span className="font-medium normal-case tracking-normal text-slate-300">(optional - shown on their invite card)</span>
           </label>
@@ -452,7 +452,7 @@ function InviteModal({
         </div>
 
         {/* Primary Option: Copy Shareable Link to Text */}
-        <div className="p-4 rounded-2xl border-2 mb-6" style={{ borderColor: copiedLink ? '#10b981' : 'rgba(254,4,198,0.22)', background: copiedLink ? 'rgba(16,185,129,0.05)' : 'rgba(254,4,198,0.03)' }}>
+        <div className="p-4 rounded-2xl border-2 mb-5 sm:mb-6" style={{ borderColor: copiedLink ? '#10b981' : 'rgba(254,4,198,0.22)', background: copiedLink ? 'rgba(16,185,129,0.05)' : 'rgba(254,4,198,0.03)' }}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-black uppercase tracking-widest" style={{ color: copiedLink ? '#059669' : '#fe04c6' }}>
               Fastest · Text or DM Link
@@ -465,7 +465,7 @@ function InviteModal({
               type="button"
               onClick={handleCopyLink}
               disabled={loadingLink}
-              className="flex-1 py-3.5 px-4 rounded-xl text-sm font-black text-white flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+              className="flex-1 py-3.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-black text-white flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
               style={{ background: copiedLink ? '#10b981' : '#fe04c6' }}
             >
               {loadingLink ? (
@@ -478,7 +478,7 @@ function InviteModal({
               ) : (
                 <>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  {sharingGuest ? `Copy Invite Link for ${sharingGuest.name}` : 'Copy Invite Link'}
+                  <span className="truncate">{sharingGuest ? `Copy Invite Link for ${sharingGuest.name}` : 'Copy Invite Link'}</span>
                 </>
               )}
             </button>
@@ -487,7 +487,7 @@ function InviteModal({
               type="button"
               onClick={handleNativeShare}
               disabled={loadingLink}
-              className="px-3.5 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-sm transition-all flex items-center justify-center"
+              className="px-3.5 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-sm transition-all flex items-center justify-center shrink-0"
               title="Share via Messages / WhatsApp"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
@@ -520,7 +520,7 @@ function InviteModal({
         </div>
 
         {/* Divider */}
-        <div className="relative flex items-center justify-center my-5">
+        <div className="relative flex items-center justify-center my-4 sm:my-5">
           <div className="border-t border-slate-100 w-full" />
           <span className="bg-white px-3 text-[10px] font-black uppercase tracking-widest text-slate-300 flex-shrink-0">
             Or send by email
@@ -531,8 +531,8 @@ function InviteModal({
         {/* Secondary Option: Email Invite */}
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Friend's Email</label>
-            <div className="flex gap-2">
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Friend&apos;s Email</label>
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="email"
                 className={inputClass}
@@ -545,7 +545,7 @@ function InviteModal({
                 type="button"
                 onClick={handleSendEmail}
                 disabled={loadingEmail}
-                className="px-5 py-3 rounded-xl text-sm font-black text-white bg-slate-900 hover:bg-slate-800 transition-all disabled:opacity-50 flex-shrink-0"
+                className="w-full sm:w-auto px-5 py-3 rounded-xl text-sm font-black text-white bg-slate-900 hover:bg-slate-800 transition-all disabled:opacity-50 flex-shrink-0"
               >
                 {loadingEmail ? 'Sending...' : 'Send Email'}
               </button>
@@ -690,22 +690,22 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-8 sm:mb-12">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 mb-2">My Guests</h1>
-          <p className="text-slate-500 font-medium text-lg">
+          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 mb-1.5 sm:mb-2">My Guests</h1>
+          <p className="text-slate-500 font-medium text-sm sm:text-lg">
             Save your crew for quick casting, or invite them to create their own profile.
           </p>
-          <div className="mt-3">
-            <Link href={`/${locale}/account/profile`} className="inline-flex items-center gap-1.5 text-sm font-bold transition-colors hover:opacity-80" style={{ color: '#fe04c6' }}>
+          <div className="mt-2.5 sm:mt-3">
+            <Link href={`/${locale}/account/profile`} className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold transition-colors hover:opacity-80" style={{ color: '#fe04c6' }}>
               Create your own profile/character <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={() => setIsInviteModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold border-2 transition-all"
+            className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all"
             style={{ borderColor: '#fe04c6', color: '#fe04c6' }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -713,7 +713,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
           </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 transition-all"
+            className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-slate-700 transition-all"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add Guest
@@ -723,25 +723,25 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
 
       {isEmpty ? (
         /* Empty state */
-        <div className="bg-white border-2 border-dashed border-slate-100 rounded-[3rem] p-16 md:p-24 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-8 text-slate-300" style={{ background: '#f9f9f9' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div className="bg-white border-2 border-dashed border-slate-100 rounded-3xl sm:rounded-[3rem] p-8 sm:p-16 md:p-24 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl flex items-center justify-center mb-6 sm:mb-8 text-slate-300" style={{ background: '#f9f9f9' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
-          <h3 className="text-2xl font-black text-slate-900 mb-3">No guests yet</h3>
-          <p className="text-slate-500 font-medium max-w-sm mb-10">
+          <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-2 sm:mb-3">No guests yet</h3>
+          <p className="text-sm sm:text-base text-slate-500 font-medium max-w-sm mb-8 sm:mb-10">
             Add guests manually or invite friends to create their own profile, their details will automatically appear here.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={() => setIsInviteModalOpen(true)}
-              className="px-8 py-4 rounded-full font-black text-sm border-2 transition-all"
+              className="w-full sm:w-auto px-8 py-4 rounded-full font-black text-sm border-2 transition-all"
               style={{ borderColor: '#fe04c6', color: '#fe04c6' }}
             >
               Invite a Friend
             </button>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-8 py-4 rounded-full font-black text-sm text-white transition-all"
+              className="w-full sm:w-auto px-8 py-4 rounded-full font-black text-sm text-white transition-all"
               style={{ background: '#fe04c6' }}
             >
               Add Guest Manually

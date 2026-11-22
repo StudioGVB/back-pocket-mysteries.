@@ -182,7 +182,13 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         ]
       : [];
 
-    if (supabase && mysteryId && !hasCanonicalNames) {
+    const needsCharProfileSync =
+      !hasCanonicalNames ||
+      existingProfile.outfit_advice !== spec.profile_data.outfit_advice ||
+      JSON.stringify(existingProfile.outfit_reference_images) !== JSON.stringify(spec.profile_data.outfit_reference_images) ||
+      JSON.stringify(existingProfile.act_bullets) !== JSON.stringify(spec.profile_data.act_bullets);
+
+    if (supabase && mysteryId && needsCharProfileSync) {
       if (existing?.id) {
         supabase
           .from('characters')
@@ -358,6 +364,7 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
           (!existingClue ||
             existingClue.title !== cSpec.title ||
             existingClue.description !== cSpec.description ||
+            existingClue.round_number !== cSpec.round_number ||
             existingClue.generation_prompt !== cSpec.generation_prompt ||
             existingClue.static_image_url !== preservedStaticImage ||
             existingClue.format !== cSpec.format ||
@@ -1199,6 +1206,45 @@ export const getMysteryById = cache(async (id: string) => {
       console.error('Error fetching mystery details:', error);
     }
     return null;
+  }
+
+  const cachedSnapshot = getCachedMysterySnapshot(id);
+  if (cachedSnapshot) {
+    if (Array.isArray(data.characters) && Array.isArray(cachedSnapshot.characters)) {
+      data.characters = data.characters.map((dbChar: any) => {
+        const cachedChar = cachedSnapshot.characters.find((cc: any) => cc?.id === dbChar?.id);
+        if (!cachedChar?.profile_data) return dbChar;
+        const dbPd = dbChar.profile_data || {};
+        const cachePd = cachedChar.profile_data || {};
+        return {
+          ...dbChar,
+          profile_data: {
+            ...dbPd,
+            ...(cachePd.guest_id ? { guest_id: cachePd.guest_id } : {}),
+            ...(cachePd.guest_name ? { guest_name: cachePd.guest_name } : {}),
+            ...(cachePd.standard_character_photo_url
+              ? {
+                  standard_character_photo_url: cachePd.standard_character_photo_url,
+                  standard_character_photo_hash: cachePd.standard_character_photo_hash,
+                  outfit_image_url: cachePd.standard_character_photo_url,
+                }
+              : {}),
+          },
+        };
+      });
+    }
+    if (Array.isArray(data.clues) && Array.isArray(cachedSnapshot.clues)) {
+      data.clues = data.clues.map((dbClue: any) => {
+        const cachedClue = cachedSnapshot.clues.find((cc: any) => cc?.id === dbClue?.id);
+        if (cachedClue?.static_image_url) {
+          return {
+            ...dbClue,
+            static_image_url: cachedClue.static_image_url,
+          };
+        }
+        return dbClue;
+      });
+    }
   }
 
   const upgradedData = ensureChristmasNightmareCanon(ensureRealityPromoCover(data, supabase), supabase);

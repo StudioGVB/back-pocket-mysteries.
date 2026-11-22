@@ -406,9 +406,15 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
 
                       {/* Clue Content */}
                       <div className="flex-grow my-4 overflow-hidden">
-                        <p className="text-xs font-medium text-slate-300 print:text-slate-800 leading-relaxed whitespace-pre-line">
-                          {formatted.content || hydratedDesc}
-                        </p>
+                        {(formatted.content || hydratedDesc).trim() ? (
+                          <p className="text-xs font-medium text-slate-300 print:text-slate-800 leading-relaxed whitespace-pre-line">
+                            {formatted.content || hydratedDesc}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] italic font-medium text-slate-400 print:text-slate-600 leading-relaxed">
+                            Visual Crime Scene Exhibit — Inspect the photographic evidence above for physical items, locations, and suspect details.
+                          </p>
+                        )}
                       </div>
 
                       {/* Card Footer */}
@@ -515,7 +521,13 @@ export function PrintCluesClient({ mystery, clues, characters, locale }: PrintCl
                 </h3>
                 
                 <div className="bg-slate-950/40 border border-white/5 rounded-2xl p-5 text-sm font-semibold text-slate-300 leading-relaxed font-sans whitespace-pre-line overflow-y-auto">
-                  {hydratedDesc}
+                  {hydratedDesc.trim() ? (
+                    hydratedDesc
+                  ) : (
+                    <span className="italic text-slate-400">
+                      Visual Crime Scene Exhibit — Inspect the photographic evidence above for physical items, locations, and suspect details.
+                    </span>
+                  )}
                 </div>
               </div>
               

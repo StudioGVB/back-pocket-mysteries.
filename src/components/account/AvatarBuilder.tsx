@@ -174,14 +174,15 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Skin Color */}
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Skin Tone</label>
-        <div className="flex flex-wrap gap-4">
+        <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-3 sm:gap-4 justify-items-center sm:justify-start">
           {skinColors.map(color => (
             <div key={color.hex} className="flex flex-col items-center gap-1.5 w-14">
               <button
+                type="button"
                 onClick={() => updateConfig('skinColor', color.hex)}
                 className={`w-10 h-10 rounded-full border-2 transition-all shrink-0 ${
                   config.skinColor === color.hex ? 'border-brand-pink scale-110 shadow-lg' : 'border-transparent hover:scale-105'
@@ -198,10 +199,11 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
       {/* Hair Color */}
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Hair Color</label>
-        <div className="flex flex-wrap gap-4">
+        <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-3 sm:gap-4 justify-items-center sm:justify-start">
           {hairColors.map(color => (
             <div key={color.hex} className="flex flex-col items-center gap-1.5 w-14">
               <button
+                type="button"
                 onClick={() => updateConfig('hairColor', color.hex)}
                 className={`w-10 h-10 rounded-full border-2 transition-all shrink-0 ${
                   config.hairColor === color.hex ? 'border-brand-pink scale-110 shadow-lg' : 'border-transparent hover:scale-105'
@@ -217,13 +219,14 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
 
       {/* Hair Length & Headwear */}
       <div>
-        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Hair Length & Headwear</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Hair Length &amp; Headwear</label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
           {hairLengths.map(style => (
             <button
               key={style.id}
+              type="button"
               onClick={() => updateHair(style.id, undefined)}
-              className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
+              className={`py-2.5 sm:py-3 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
                 currentLength === style.id 
                   ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
                   : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
@@ -239,12 +242,13 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
       {currentLength !== 'Bald' && !['Hijab', 'Turban', 'Beanie'].includes(currentLength) && (
         <div>
           <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Hair Texture</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
             {hairTextures.map(style => (
               <button
                 key={style.id}
+                type="button"
                 onClick={() => updateHair(undefined, style.id)}
-                className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                className={`py-2.5 sm:py-3 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
                   (config.hairTexture || 'Straight') === style.id 
                     ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
                     : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
@@ -257,18 +261,17 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
         </div>
       )}
 
-
-
       {/* Facial Hair (Only for Masculine) */}
       {gender === 'Masculine' && (
         <div>
           <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Facial Hair</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
             {facialHairOptions.map(style => (
               <button
                 key={style.id || 'none'}
+                type="button"
                 onClick={() => updateConfig('facialHair', style.id)}
-                className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                className={`py-2.5 sm:py-3 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
                   config.facialHair === style.id 
                     ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
                     : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
@@ -284,12 +287,13 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
       {/* Eye Color */}
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Eye Color (Metadata)</label>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
           {eyeColors.map(color => (
             <button
               key={color}
+              type="button"
               onClick={() => updateConfig('eyeColor', color)}
-              className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
+              className={`py-2.5 sm:py-3 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 truncate ${
                 config.eyeColor === color 
                   ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
                   : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
@@ -299,18 +303,19 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-slate-400 mt-2 italic">* Eye color will be used in the story, but isn't visible on this avatar style.</p>
+        <p className="text-[10px] text-slate-400 mt-2 italic">* Eye color will be used in the story, but isn&apos;t visible on this avatar style.</p>
       </div>
 
       {/* Height */}
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Height</label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           {heights.map(height => (
             <button
               key={height}
+              type="button"
               onClick={() => updateConfig('height', height)}
-              className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
+              className={`py-2.5 sm:py-3 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
                 config.height === height 
                   ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
                   : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
@@ -325,12 +330,13 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
       {/* Body Build */}
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Body Build (AI Rendering Only)</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
           {builds.map(build => (
             <button
               key={build}
+              type="button"
               onClick={() => updateConfig('build', build)}
-              className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
+              className={`py-2.5 sm:py-3 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 truncate ${
                 config.build === build 
                   ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
                   : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
@@ -345,14 +351,15 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
       {/* Distinctive Features */}
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Distinctive Features (AI Rendering Only)</label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {distinctiveFeaturesOptions.map(feature => {
             const isSelected = (config.distinctiveFeatures || []).includes(feature);
             return (
               <button
                 key={feature}
+                type="button"
                 onClick={() => toggleDistinctiveFeature(feature)}
-                className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                className={`py-2.5 sm:py-3 px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
                   isSelected 
                     ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
                     : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'

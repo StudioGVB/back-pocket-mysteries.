@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Christmas Nightmare — Complete Hydrated Pack</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --card-alt: #0f1626;
+      --border: #23304d;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --pink: #ff1493;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      padding-bottom: 80px;
+    }
+    body.hide-xray .xray-only { display: none !important; }
+    body:not(.hide-xray) .player-only { display: none !important; }
+    body.hide-xray .player-only { display: inline-flex !important; }
+
+    .sticky-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11, 15, 25, 0.94);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .nav-links a, .nav-btn {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 13px;
+      border-radius: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .nav-links a:hover, .nav-btn:hover {
+      border-color: var(--pink);
+    }
+    .nav-btn-primary {
+      background: var(--pink);
+      border-color: var(--pink);
+      color: #fff;
+    }
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+    .hero-card {
+      background: linear-gradient(135deg, #131b2e 0%, #0d1322 100%);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px;
+      margin-bottom: 36px;
+    }
+    .kicker {
+      color: var(--pink);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      display: block;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 42px;
+      font-weight: 900;
+      margin: 0 0 12px 0;
+      letter-spacing: -0.02em;
+    }
+    .hero-desc {
+      font-size: 16px;
+      color: #cbd5e1;
+      margin: 0 0 20px 0;
+      max-width: 900px;
+    }
+    .stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .stat-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pack-section {
+      margin-top: 44px;
+    }
+    .section-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .section-kicker {
+      color: var(--pink);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+    h2 {
+      font-size: 26px;
+      font-weight: 900;
+      margin: 4px 0 0 0;
+    }
+    table.cast-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    table.cast-table th, table.cast-table td {
+      padding: 13px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    table.cast-table th {
+      background: rgba(0,0,0,0.25);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .badge-victim { background: rgba(255, 20, 147, 0.18); color: #ff6ec7; border: 1px solid rgba(255, 20, 147, 0.4); }
+    .badge-killer { background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.45); }
+    .badge-suspect { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); }
+    .badge-outline { background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid var(--border); }
+    .badge-real { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-fake { background: rgba(244, 63, 94, 0.18); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.4); }
+
+    .dossiers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+      gap: 24px;
+    }
+    .dossier-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      break-inside: avoid;
+    }
+    .dossier-top {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .dossier-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 16px;
+      object-fit: cover;
+      border: 2px solid var(--pink);
+      flex-shrink: 0;
+      background: #000;
+    }
+    .dossier-avatar-placeholder {
+      width: 96px;
+      height: 96px;
+      border-radius: 16px;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      flex-shrink: 0;
+    }
+    .dossier-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .dossier-title-block h3 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 900;
+    }
+    .act-summary {
+      margin: 6px 0 0 0;
+      font-size: 13px;
+      color: #cbd5e1;
+      font-style: italic;
+    }
+    .dossier-section h4 {
+      margin: 0 0 6px 0;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--pink);
+    }
+    .dossier-section p {
+      margin: 0;
+      font-size: 13.5px;
+      color: #e2e8f0;
+    }
+    .motive-box {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      padding: 12px 14px;
+      border-radius: 12px;
+    }
+    .bullet-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13.5px;
+      color: #e2e8f0;
+    }
+    .bullet-list li { margin-bottom: 4px; }
+    .rel-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .rel-item {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 12.5px;
+    }
+    .rel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .rel-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: #38bdf8;
+      text-transform: uppercase;
+    }
+    .rel-notes {
+      color: var(--muted);
+      margin-top: 3px;
+      font-size: 12px;
+    }
+
+    .clues-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    .clue-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      break-inside: avoid;
+    }
+    .clue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .clue-round-pill {
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--pink);
+      letter-spacing: 0.08em;
+    }
+    .clue-format-pill {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+    .clue-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .clue-image-wrap {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid var(--border);
+    }
+    .clue-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .clue-body {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 13px;
+      white-space: pre-line;
+      color: #e2e8f0;
+      flex-grow: 1;
+    }
+    .clue-xray-notes {
+      font-size: 11.5px;
+      color: #93c5fd;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 10px;
+      padding: 9px 11px;
+    }
+    .beat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      break-inside: avoid;
+    }
+    .beat-header h3 {
+      margin: 8px 0 6px 0;
+      font-size: 18px;
+    }
+    .beat-clues {
+      margin-top: 10px;
+      font-size: 13px;
+      background: var(--card-alt);
+      padding: 10px 14px;
+      border-radius: 10px;
+    }
+    .beat-clues ul { margin: 4px 0 0 0; padding-left: 18px; }
+    .muted { color: var(--muted); }
+    .muted-italic { color: var(--muted); font-style: italic; }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #0f172a !important;
+        padding: 0;
+      }
+      .sticky-nav { display: none !important; }
+      .hero-card, .dossier-card, .clue-card, .beat-card, table.cast-table, .clue-body, .rel-item {
+        background: #fff !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+      }
+      .hero-desc, .dossier-section p, .bullet-list, .clue-body, .act-summary {
+        color: #1e293b !important;
+      }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body class="">
+  <div class="sticky-nav">
+    <div class="nav-links">
+      <a href="#overview">1. Cast Roster</a>
+      <a href="#characters">2. Character Dossiers (6)</a>
+      <a href="#round-1">3. Round 1 Clues (6)</a>
+      <a href="#round-2">4. Round 2 Clues (6)</a>
+      <a href="#round-3">5. Round 3 Clues (4)</a>
+      <a href="#solution" class="xray-only">6. Master Reveal &amp; Timeline</a>
+    </div>
+    <div class="nav-links">
+      <button type="button" class="nav-btn" onclick="document.body.classList.toggle('hide-xray')">
+        🔬 Toggle QA X-Ray Spoilers
+      </button>
+      <button type="button" class="nav-btn nav-btn-primary" onclick="window.print()">
+        🖨️ Print / Save as PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- HERO & CAST TABLE -->
+    <section id="overview">
+      <div class="hero-card">
+        <span class="kicker">Back Pocket Mysteries • Complete Hydrated Mystery Base Pack</span>
+        <h1>Christmas Nightmare</h1>
+        <p class="hero-desc">They all grew up together on the same street: two sisters and two neighbour brothers whose lives have been intertwined since childhood. Tonight, beneath the twinkling lights of their annual Christmas dinner party, years of tangled history, secret affairs, and broken marriages finally snap. When a sudden 8:19 PM power surge plunges the living room into darkness and Luke is discovered dead in the Christmas tree corner, amid a spilled cup of spiced eggnog, a scorched wall outlet, and a tangled coil of vintage tree lights, the holiday reunion turns into a Christmas Nightmare. Everyone in the room is family, a childhood neighbour, a spouse, or a secret lover, and every single one of them is hiding a betrayal.</p>
+        <div class="stats-row">
+          <div class="stat-pill">🎭 Theme: Christmas Party</div>
+          <div class="stat-pill">👥 Cast: 6 Suspects</div>
+          <div class="stat-pill">🔍 Evidence: 16 Clues (R1: 6 • R2: 6 • R3: 4)</div>
+          <div class="stat-pill">🌶️ Spice: SPICY</div>
+          <div class="stat-pill xray-only">🩸 Victim: Luke (The Husband)</div>
+          <div class="stat-pill xray-only">🔪 Killer: Polly (The Sister-in-Law)</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div>
+          <span class="section-kicker">Section 1 • Master Cast Roster</span>
+          <h2>Friend Cast &amp; Character Role Assignments</h2>
+        </div>
+      </div>
+
+      <table class="cast-table">
+        <thead>
+          <tr>
+            <th>Friend Name</th>
+            <th>Character Role</th>
+            <th>Plot Role</th>
+            <th>Gender</th>
+            <th>Color</th>
+            <th>Traits</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+        <tr>
+          <td><strong>Luke</strong></td>
+          <td><strong>The Husband</strong></td>
+          <td><span class="badge badge-victim">🩸 Victim</span></td>
+          <td>MALE</td>
+          <td>Red</td>
+          <td class="muted">Charismatic • Commanding • Ambitious • Smooth</td>
+        </tr>
+      
+        <tr>
+          <td><strong>Gabriella Blyth</strong></td>
+          <td><strong>The Wife</strong></td>
+          <td><span class="badge badge-suspect">🎭 Suspect</span></td>
+          <td>FEMALE</td>
+          <td>Emerald Green</td>
+          <td class="muted">Poised • Guarded • Graceful • Observant</td>
+        </tr>
+      
+        <tr>
+          <td><strong>Polly</strong></td>
+          <td><strong>The Sister-in-Law</strong></td>
+          <td><span class="badge badge-killer xray-only">🔪 Killer</span><span class="badge badge-suspect player-only">🎭 Suspect</span></td>
+          <td>FEMALE</td>
+          <td>Silver</td>
+          <td class="muted">Loyal • Sharp-Witted • Protective • Observant</td>
+        </tr>
+      
+        <tr>
+          <td><strong>Sarah</strong></td>
+          <td><strong>The Mistress</strong></td>
+          <td><span class="badge badge-suspect">🎭 Suspect</span></td>
+          <td>FEMALE</td>
+          <td>Gold</td>
+          <td class="muted">Glamorous • Outgoing • Charming • Social</td>
+        </tr>
+      
+        <tr>
+          <td><strong>Jason</strong></td>
+          <td><strong>The Co-Worker</strong></td>
+          <td><span class="badge badge-suspect">🎭 Suspect</span></td>
+          <td>MALE</td>
+          <td>Charcoal</td>
+          <td class="muted">Observant • Loyal • Composed • Grounded</td>
+        </tr>
+      
+        <tr>
+          <td><strong>Darren</strong></td>
+          <td><strong>The Bestie</strong></td>
+          <td><span class="badge badge-suspect">🎭 Suspect</span></td>
+          <td>MALE</td>
+          <td>Navy Blue</td>
+          <td class="muted">Charming • Easygoing • Friendly • Loyal</td>
+        </tr>
+      
+        </tbody>
+      </table>
+    </section>
+
+    <!-- CHARACTER DOSSIERS -->
+    <section id="characters" class="pack-section page-break">
+      <div class="section-header">
+        <div>
+          <span class="section-kicker">Section 2 • Personalized Character Sheets</span>
+          <h2>Complete Character Dossiers &amp; Relationship Web (6)</h2>
+        </div>
+      </div>
+      <div class="dossiers-grid">
+        
+        <div class="dossier-card">
+          <div class="dossier-top">
+            <img src="http://localhost:3033/outfits/christmas/husband-1.jpg" alt="Luke — The Husband" class="dossier-avatar" />
+            <div class="dossier-title-block">
+              <div class="dossier-badges">
+                <span class="badge badge-victim">🩸 The Victim</span>
+                <span class="badge badge-outline">Red</span>
+                <span class="badge badge-outline">MALE</span>
+              </div>
+              <h3>Luke — The Husband</h3>
+              <p class="act-summary">Act like the charming, larger-than-life host of the annual Christmas dinner who loves holding court with old high school friends and childhood neighbours.</p>
+            </div>
+          </div>
+
+          <div class="dossier-section">
+            <h4>📖 Character Backstory &amp; Bio</h4>
+            <p>Luke grew up on the same street as the rest of the group and went to high school with everyone at tonight&#39;s Christmas dinner. He has been married to Gabriella Blyth for five years, is siblings-in-law with Polly, has been best friends with Darren since high school, and works at the same company as Jason.</p>
+          </div>
+
+          
+            <div class="dossier-section">
+              <h4>🎭 How to Act &amp; Party Prompts</h4>
+              <ul class="bullet-list">
+                <li>Toast loudly to growing up on the same street and keeping the old high school crew together.</li><li>Keep up a polished holiday host front alongside your wife of five years, Gabriella Blyth.</li><li>Treat your childhood neighbour, Darren, like your lifelong right-hand man.</li><li>Talk work and office politics with Jason, who works at the same firm as you.</li>
+              </ul>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>👗 What to Wear (Costume &amp; Props)</h4>
+              <p>Sharp holiday host attire: a tailored velvet blazer or cashmere turtleneck in deep crimson or forest green, dark tailored trousers, and a luxury dress watch.</p>
+            </div>
+          
+
+          
+
+          
+            <div class="dossier-section">
+              <h4>🕸️ Connections &amp; Relationships (5)</h4>
+              <div class="rel-grid">
+                
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Gabriella Blyth (The Wife)</strong>
+                <span class="rel-tag">Married (5 Years), High School Sweethearts</span>
+              </div>
+              <div class="rel-notes">Married for 5 years after dating since high school.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Polly (The Sister-in-Law)</strong>
+                <span class="rel-tag">Siblings-in-Law, High School Classmates</span>
+              </div>
+              <div class="rel-notes">Went to high school together and have been siblings-in-law for 5 years through his marriage to Gabriella Blyth.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Sarah (The Mistress)</strong>
+                <span class="rel-tag">High School Friends, Neighbour Couples</span>
+              </div>
+              <div class="rel-notes">Went to high school in the same friend group and live on the same street.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Jason (The Co-Worker)</strong>
+                <span class="rel-tag">Work Together, Childhood Neighbours</span>
+              </div>
+              <div class="rel-notes">Grew up on the same street, went to high school together, and work at the same company.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Darren (The Bestie)</strong>
+                <span class="rel-tag">Lifelong Besties, High School Friends</span>
+              </div>
+              <div class="rel-notes">Best friends since high school who grew up on the same street.</div>
+            </div>
+          
+              </div>
+            </div>
+          
+        </div>
+      
+        <div class="dossier-card">
+          <div class="dossier-top">
+            <img src="http://localhost:3033/outfits/christmas/wife-1.jpg" alt="Gabriella Blyth — The Wife" class="dossier-avatar" />
+            <div class="dossier-title-block">
+              <div class="dossier-badges">
+                <span class="badge badge-suspect">🎭 Suspect</span>
+                <span class="badge badge-outline">Emerald Green</span>
+                <span class="badge badge-outline">FEMALE</span>
+              </div>
+              <h3>Gabriella Blyth — The Wife</h3>
+              <p class="act-summary">Play the poised, gracious Christmas party hostess welcoming your sister and childhood neighbours back to the house for the holidays.</p>
+            </div>
+          </div>
+
+          <div class="dossier-section">
+            <h4>📖 Character Backstory &amp; Bio</h4>
+            <p>Gabriella Blyth grew up next door to the two neighbour brothers (Jason and Darren) alongside her younger sister, Polly. She has been married to Luke for five years after dating since high school. She also dated Jason back in high school and used to be best friends with Sarah when they were teenagers.</p>
+          </div>
+
+          
+            <div class="dossier-section">
+              <h4>🎭 How to Act &amp; Party Prompts</h4>
+              <ul class="bullet-list">
+                <li>Stay close with your younger sister, Polly, who you grew up sharing everything with (including your matching silver snowflake hairpins).</li><li>Keep things polite and composed around your old high school best friend, Sarah.</li><li>Reminisce about growing up next door to the two neighbour brothers, Jason and Darren.</li><li>Keep the holiday dinner moving smoothly alongside your husband of five years, Luke.</li>
+              </ul>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>👗 What to Wear (Costume &amp; Props)</h4>
+              <p>Effortlessly glamorous holiday hostess: an emerald green silk midi dress or velvet jumpsuit, a matching sterling silver snowflake hairpin (a childhood sisters&#39; set shared with Polly), gold statement earrings, and heels.</p>
+            </div>
+          
+
+          
+            <div class="dossier-section motive-box xray-only">
+              <h4>🔥 Secret Motive (REVENGE • HIGH)</h4>
+              <p>Locked in bitter marital issues with Luke (who trapped her with a ruthless estate clause) and teamed up with her ex (Jason) to break into his study safe tonight.</p>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>🕸️ Connections &amp; Relationships (5)</h4>
+              <div class="rel-grid">
+                
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Luke (The Husband)</strong>
+                <span class="rel-tag">Married (5 Years), High School Sweethearts</span>
+              </div>
+              <div class="rel-notes">Married for 5 years after dating since high school.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Polly (The Sister-in-Law)</strong>
+                <span class="rel-tag">Sisters, Grew Up Together</span>
+              </div>
+              <div class="rel-notes">Sisters who grew up together right next door to the two neighbour brothers (Jason and Darren).</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Sarah (The Mistress)</strong>
+                <span class="rel-tag">Old High School Besties</span>
+              </div>
+              <div class="rel-notes">Were best friends back in high school before drifting apart after graduation.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Jason (The Co-Worker)</strong>
+                <span class="rel-tag">Childhood Neighbours, High School Exes</span>
+              </div>
+              <div class="rel-notes">Grew up next door to each other and dated back in high school before she married Luke and he married Sarah.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Darren (The Bestie)</strong>
+                <span class="rel-tag">Childhood Neighbours, Family Friends</span>
+              </div>
+              <div class="rel-notes">Grew up next door to each other alongside her sister (Polly) and his brother (Jason).</div>
+            </div>
+          
+              </div>
+            </div>
+          
+        </div>
+      
+        <div class="dossier-card">
+          <div class="dossier-top">
+            <img src="http://localhost:3033/outfits/christmas/sister-1.jpg" alt="Polly — The Sister-in-Law" class="dossier-avatar" />
+            <div class="dossier-title-block">
+              <div class="dossier-badges">
+                <span class="badge badge-killer xray-only">🔪 The Killer</span><span class="badge badge-suspect player-only">🎭 Suspect</span>
+                <span class="badge badge-outline">Silver</span>
+                <span class="badge badge-outline">FEMALE</span>
+              </div>
+              <h3>Polly — The Sister-in-Law</h3>
+              <p class="act-summary">Play the sharp-witted, loyal younger sister who grew up on the street with everyone at the table and knows all the old neighbourhood history.</p>
+            </div>
+          </div>
+
+          <div class="dossier-section">
+            <h4>📖 Character Backstory &amp; Bio</h4>
+            <p>Polly is Gabriella Blyth&#39;s younger sister and grew up next door to the two neighbour brothers (Jason and Darren). She went to high school with Luke and Sarah, and over the last few years she and Sarah have become close best friends.</p>
+          </div>
+
+          
+            <div class="dossier-section">
+              <h4>🎭 How to Act &amp; Party Prompts</h4>
+              <ul class="bullet-list">
+                <li>Always have your older sister Gabriella Blyth&#39;s back during family holiday dinners.</li><li>Chat and catch up with your current best friend, Sarah.</li><li>Banter with the two brothers you grew up next door to, Jason and Darren.</li><li>If anyone asks where you were around 8:15–8:25 PM, insist you were in the kitchen pantry corridor the entire time fetching extra holiday drinks with Darren.</li>
+              </ul>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>👗 What to Wear (Costume &amp; Props)</h4>
+              <p>Sleek winter chic: a shimmering silver sweater dress or satin blouse with tailored trousers, a matching sterling silver snowflake hairpin (identical to your sister Gabriella Blyth&#39;s), layered silver jewelry, and dark berry lipstick.</p>
+            </div>
+          
+
+          
+            <div class="dossier-section motive-box xray-only">
+              <h4>🔥 Secret Motive (LOVE • CRITICAL)</h4>
+              <p>After exposing that her current bestie (Sarah) was having an affair with Luke and overhearing Luke and Gabriella Blyth&#39;s marital issues, Polly ended Luke with the Christmas lights because she chose for her sister to finally be happy and free.</p>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>🕸️ Connections &amp; Relationships (5)</h4>
+              <div class="rel-grid">
+                
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Luke (The Husband)</strong>
+                <span class="rel-tag">Siblings-in-Law, High School Classmates</span>
+              </div>
+              <div class="rel-notes">Went to high school together and have been siblings-in-law for 5 years through his marriage to Gabriella Blyth.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Gabriella Blyth (The Wife)</strong>
+                <span class="rel-tag">Sisters, Grew Up Together</span>
+              </div>
+              <div class="rel-notes">Sisters who grew up together right next door to the two neighbour brothers (Jason and Darren).</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Sarah (The Mistress)</strong>
+                <span class="rel-tag">Current Besties, High School Friends</span>
+              </div>
+              <div class="rel-notes">Went to high school together and have been close best friends for the past few years.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Darren (The Bestie)</strong>
+                <span class="rel-tag">Childhood Neighbours, High School Friends</span>
+              </div>
+              <div class="rel-notes">Grew up in the houses right next door to each other and went to high school together.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Jason (The Co-Worker)</strong>
+                <span class="rel-tag">Childhood Neighbours, Family Friends</span>
+              </div>
+              <div class="rel-notes">Grew up next door to each other and have been close family friends since childhood.</div>
+            </div>
+          
+              </div>
+            </div>
+          
+        </div>
+      
+        <div class="dossier-card">
+          <div class="dossier-top">
+            <img src="http://localhost:3033/outfits/christmas/mistress-1.jpg" alt="Sarah — The Mistress" class="dossier-avatar" />
+            <div class="dossier-title-block">
+              <div class="dossier-badges">
+                <span class="badge badge-suspect">🎭 Suspect</span>
+                <span class="badge badge-outline">Gold</span>
+                <span class="badge badge-outline">FEMALE</span>
+              </div>
+              <h3>Sarah — The Mistress</h3>
+              <p class="act-summary">Act like the glamorous, outgoing socialite of the friend group who loves holiday parties and knows everyone from high school and the office.</p>
+            </div>
+          </div>
+
+          <div class="dossier-section">
+            <h4>📖 Character Backstory &amp; Bio</h4>
+            <p>Sarah went to high school with the whole group and has been married to Jason for three years. She works at the same company as her brother-in-law, Darren. Back in high school she was best friends with Gabriella Blyth, and today she is close best friends with Polly.</p>
+          </div>
+
+          
+            <div class="dossier-section">
+              <h4>🎭 How to Act &amp; Party Prompts</h4>
+              <ul class="bullet-list">
+                <li>Be affectionate with your husband of three years, Jason.</li><li>Gossip and laugh with your current best friend, Polly.</li><li>Reminisce about high school days with your old best friend, Gabriella Blyth, and her husband, Luke.</li><li>Talk work life with your brother-in-law and office colleague, Darren.</li>
+              </ul>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>👗 What to Wear (Costume &amp; Props)</h4>
+              <p>Show-stopping holiday glamour: a gold sequin or scarlet cocktail dress, statement heels, and bold holiday makeup.</p>
+            </div>
+          
+
+          
+            <div class="dossier-section motive-box xray-only">
+              <h4>🔥 Secret Motive (FEAR • HIGH)</h4>
+              <p>Terrified that her secret affair with Luke and missing office funds would be exposed to her husband (Jason), her old bestie (Gabriella Blyth), and her current bestie (Polly).</p>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>🕸️ Connections &amp; Relationships (5)</h4>
+              <div class="rel-grid">
+                
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Luke (The Husband)</strong>
+                <span class="rel-tag">High School Friends, Neighbour Couples</span>
+              </div>
+              <div class="rel-notes">Went to high school in the same friend group and live on the same street.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Gabriella Blyth (The Wife)</strong>
+                <span class="rel-tag">Old High School Besties</span>
+              </div>
+              <div class="rel-notes">Were best friends back in high school before drifting apart after graduation.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Polly (The Sister-in-Law)</strong>
+                <span class="rel-tag">Current Besties, High School Friends</span>
+              </div>
+              <div class="rel-notes">Went to high school together and have been close best friends for the past few years.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Jason (The Co-Worker)</strong>
+                <span class="rel-tag">Married (3 Years), High School Friends</span>
+              </div>
+              <div class="rel-notes">Married for 3 years after knowing each other since high school.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Darren (The Bestie)</strong>
+                <span class="rel-tag">Work Together, In-Laws</span>
+              </div>
+              <div class="rel-notes">Work in the same office and have been siblings-in-law for 3 years through her marriage to his brother (Jason).</div>
+            </div>
+          
+              </div>
+            </div>
+          
+        </div>
+      
+        <div class="dossier-card">
+          <div class="dossier-top">
+            <img src="http://localhost:3033/outfits/christmas/coworker-1.jpg" alt="Jason — The Co-Worker" class="dossier-avatar" />
+            <div class="dossier-title-block">
+              <div class="dossier-badges">
+                <span class="badge badge-suspect">🎭 Suspect</span>
+                <span class="badge badge-outline">Charcoal</span>
+                <span class="badge badge-outline">MALE</span>
+              </div>
+              <h3>Jason — The Co-Worker</h3>
+              <p class="act-summary">Be the observant, level-headed older neighbour brother who grew up next door to the sisters and works at the same company as Luke.</p>
+            </div>
+          </div>
+
+          <div class="dossier-section">
+            <h4>📖 Character Backstory &amp; Bio</h4>
+            <p>Jason grew up right next door to the two sisters (Gabriella Blyth and Polly) alongside his brother, Darren. He has been married to Sarah for three years, works at the same company as Luke, and briefly dated Gabriella Blyth back when they were in high school.</p>
+          </div>
+
+          
+            <div class="dossier-section">
+              <h4>🎭 How to Act &amp; Party Prompts</h4>
+              <ul class="bullet-list">
+                <li>Chat about work with Luke, since the two of you work in the same department.</li><li>Share childhood street memories with the sisters you grew up next door to, Gabriella Blyth and Polly.</li><li>Enjoy the Christmas party alongside your wife of three years, Sarah.</li><li>Joke around with your younger brother, Darren.</li>
+              </ul>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>👗 What to Wear (Costume &amp; Props)</h4>
+              <p>Sleek smart-casual holiday attire: a charcoal blazer over a dark merino knit sweater, tailored trousers, and a whiskey glass in hand.</p>
+            </div>
+          
+
+          
+            <div class="dossier-section motive-box xray-only">
+              <h4>🔥 Secret Motive (REVENGE • HIGH)</h4>
+              <p>Works together with Luke (who threatened to ruin him with company audit files), harbors protective feelings for his ex (Gabriella Blyth), and is married to Sarah.</p>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>🕸️ Connections &amp; Relationships (5)</h4>
+              <div class="rel-grid">
+                
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Luke (The Husband)</strong>
+                <span class="rel-tag">Work Together, Childhood Neighbours</span>
+              </div>
+              <div class="rel-notes">Grew up on the same street, went to high school together, and work at the same company.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Gabriella Blyth (The Wife)</strong>
+                <span class="rel-tag">Childhood Neighbours, High School Exes</span>
+              </div>
+              <div class="rel-notes">Grew up next door to each other and dated back in high school before she married Luke and he married Sarah.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Sarah (The Mistress)</strong>
+                <span class="rel-tag">Married (3 Years), High School Friends</span>
+              </div>
+              <div class="rel-notes">Married for 3 years after knowing each other since high school.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Darren (The Bestie)</strong>
+                <span class="rel-tag">Brothers, Grew Up Together</span>
+              </div>
+              <div class="rel-notes">Brothers who grew up together in the house next door to Gabriella Blyth and Polly.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Polly (The Sister-in-Law)</strong>
+                <span class="rel-tag">Childhood Neighbours, Family Friends</span>
+              </div>
+              <div class="rel-notes">Grew up next door to each other and have been close family friends since childhood.</div>
+            </div>
+          
+              </div>
+            </div>
+          
+        </div>
+      
+        <div class="dossier-card">
+          <div class="dossier-top">
+            <img src="http://localhost:3033/outfits/christmas/bestie-1.jpg" alt="Darren — The Bestie" class="dossier-avatar" />
+            <div class="dossier-title-block">
+              <div class="dossier-badges">
+                <span class="badge badge-suspect">🎭 Suspect</span>
+                <span class="badge badge-outline">Navy Blue</span>
+                <span class="badge badge-outline">MALE</span>
+              </div>
+              <h3>Darren — The Bestie</h3>
+              <p class="act-summary">Act like Luke&#39;s easygoing lifelong best friend and the fun-loving younger neighbour brother who grew up on the street with everyone.</p>
+            </div>
+          </div>
+
+          <div class="dossier-section">
+            <h4>📖 Character Backstory &amp; Bio</h4>
+            <p>Darren grew up next door to Gabriella Blyth and Polly alongside his older brother, Jason. He has been Luke&#39;s best friend since high school and works in the same office as his sister-in-law, Sarah.</p>
+          </div>
+
+          
+            <div class="dossier-section">
+              <h4>🎭 How to Act &amp; Party Prompts</h4>
+              <ul class="bullet-list">
+                <li>Talk up how you and Luke have been inseparable best friends since high school.</li><li>Trade stories with your older brother, Jason, and your sister-in-law and co-worker, Sarah.</li><li>Catch up with Gabriella Blyth and Polly, who grew up in the house right next door to yours.</li><li>If anyone asks about 8:15–8:25 PM, back up Polly and say the two of you were in the kitchen pantry pouring holiday drinks together.</li>
+              </ul>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>👗 What to Wear (Costume &amp; Props)</h4>
+              <p>Classic, disarming holiday style: a navy cable-knit sweater layered over a crisp Oxford shirt, dark chinos, and an easygoing smile.</p>
+            </div>
+          
+
+          
+            <div class="dossier-section motive-box xray-only">
+              <h4>🔥 Secret Motive (FEAR • MODERATE)</h4>
+              <p>Besties with Luke, who threatened tonight to expose Darren&#39;s secret fling with Polly as well as his workplace cover-up with his co-worker and sister-in-law (Sarah).</p>
+            </div>
+          
+
+          
+            <div class="dossier-section">
+              <h4>🕸️ Connections &amp; Relationships (5)</h4>
+              <div class="rel-grid">
+                
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Luke (The Husband)</strong>
+                <span class="rel-tag">Lifelong Besties, High School Friends</span>
+              </div>
+              <div class="rel-notes">Best friends since high school who grew up on the same street.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Jason (The Co-Worker)</strong>
+                <span class="rel-tag">Brothers, Grew Up Together</span>
+              </div>
+              <div class="rel-notes">Brothers who grew up together in the house next door to Gabriella Blyth and Polly.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Polly (The Sister-in-Law)</strong>
+                <span class="rel-tag">Childhood Neighbours, High School Friends</span>
+              </div>
+              <div class="rel-notes">Grew up in the houses right next door to each other and went to high school together.</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Sarah (The Mistress)</strong>
+                <span class="rel-tag">Work Together, In-Laws</span>
+              </div>
+              <div class="rel-notes">Work in the same office and have been siblings-in-law for 3 years through her marriage to his brother (Jason).</div>
+            </div>
+          
+            <div class="rel-item">
+              <div class="rel-header">
+                <strong>↔ Gabriella Blyth (The Wife)</strong>
+                <span class="rel-tag">Childhood Neighbours, Family Friends</span>
+              </div>
+              <div class="rel-notes">Grew up next door to each other alongside her sister (Polly) and his brother (Jason).</div>
+            </div>
+          
+              </div>
+            </div>
+          
+        </div>
+      
+      </div>
+    </section>
+
+    <!-- ROUND 1, 2, 3 CLUES -->
+    
+      <section id="round-1" class="pack-section page-break">
+        <div class="section-header">
+          <div>
+            <span class="section-kicker">Evidence Deck • Round 1 of 3</span>
+            <h2>Round 1 Clues (6 Cards)</h2>
+          </div>
+        </div>
+        <div class="clues-grid">
+          
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 1 • CLUE #1</span>
+                <span class="clue-format-pill">💬 Phone Text / Chat</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 1</span>
+            </div>
+
+            <h4 class="clue-title">❤️</h4>
+
+            
+
+            
+
+            <div class="clue-body">❤️ (7:32 PM): Sneak into the coat closet before dinner. I can&#39;t keep smiling across the table like we&#39;re all just one big happy street.
+Me (7:33 PM): Keep your voice down. Someone&#39;s been staring at us all night like they know.
+❤️ (7:34 PM): Relax, she&#39;s my best friend. She&#39;d never suspect me.</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R1-C1] REAL / CANON (Beat 1) - Exposes the secret affair between Luke and Sarah, and shows Polly was suspicious.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-fake">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 1 • CLUE #2</span>
+                <span class="clue-format-pill">🎙️ Audio Recording / Voicemail</span>
+              </div>
+              <span class="badge badge-fake xray-only">🎭 Red Herring / Subplot</span>
+            </div>
+
+            <h4 class="clue-title">Accidental Pocket Voicemail (7:25 PM)</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/db9ad3d8-94fd-4b67-8de8-f2fcdc75b8ea-a2d1f7c12954.jpg" alt="Accidental Pocket Voicemail (7:25 PM)" class="clue-image" />
+              </div>
+            
+
+            
+              <div class="clue-audio-wrap">
+                <audio controls src="http://localhost:3033/mystery-audio/61196e53-09c3-427f-8862-30151f2ca75b/db9ad3d8-94fd-4b67-8de8-f2fcdc75b8ea.mp3" style="width:100%;height:36px;"></audio>
+              </div>
+            
+
+            <div class="clue-body">Recording Duration: 22.4 Seconds (7:25 PM • Kitchen Patio):
+Male Voice: &quot;He brought the company audit folder to the house tonight. If he hands that over on Monday, my career is finished.&quot;
+Female Voice: &quot;And if I try to leave him, his new prenup clause leaves me with nothing. We grew up on this street together, you promised you&#39;d protect me.&quot;
+Male Voice: &quot;I will. Meet me by the hallway closet at 8PM. We get into his study safe tonight.&quot;</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R1-C2] Fake Arc Step 1 (Gabriella Blyth + Jason) - Exposes that exes Gabriella Blyth and Jason conspired to break into Luke&#39;s study safe at 8:00 PM.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 1 • CLUE #3</span>
+                <span class="clue-format-pill">📸 Crime Scene Visual Exhibit</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 1</span>
+            </div>
+
+            <h4 class="clue-title">Hallway Coat Closet (7:40 PM) • Dropped Silver Snowflake Hairpin</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/5ff23ebe-96f7-49d5-8222-84ca13a932f4-840601e54d17.jpg" alt="Hallway Coat Closet (7:40 PM) • Dropped Silver Snowflake Hairpin" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body"><span class="muted-italic">Visual Crime Scene Exhibit — Inspect the photographic evidence above for physical items, locations, and suspect details.</span></div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing Luke and Sarah inside the coat closet with a dropped sterling silver snowflake hairpin (worn by both sisters) on the carpet outside.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 1 • CLUE #4</span>
+                <span class="clue-format-pill">📸 Crime Scene Visual Exhibit</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 2</span>
+            </div>
+
+            <h4 class="clue-title">Hallway Utility Closet Shelves (7:00 PM Stocked -&gt; 7:55 PM Empty)</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/17ed93b2-803b-4fa4-964c-3a5800c6bad8-6aed0c43dde6.jpg" alt="Hallway Utility Closet Shelves (7:00 PM Stocked -&gt; 7:55 PM Empty)" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body"><span class="muted-italic">Visual Crime Scene Exhibit — Inspect the photographic evidence above for physical items, locations, and suspect details.</span></div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R1-C4] REAL / CANON (Beat 2) - Visual photo showing the heavy leather work gloves on the top shelf and the vintage red-and-green Christmas tree lights on the middle shelf of the utility closet.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-fake">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 1 • CLUE #5</span>
+                <span class="clue-format-pill">💬 Phone Text / Chat</span>
+              </div>
+              <span class="badge badge-fake xray-only">🎭 Red Herring / Subplot</span>
+            </div>
+
+            <h4 class="clue-title">🤫💼</h4>
+
+            
+
+            
+
+            <div class="clue-body">🤫💼 (7:35 PM): He just cornered me in the kitchen. Said he&#39;s never leaving her, and if I make a scene tonight he&#39;s telling my husband AND reporting the missing money from our work account.
+Me (7:36 PM): Are you kidding?! He just threatened me too. Said if I don&#39;t end my little secret tonight, he&#39;s telling my brother everything.
+🤫💼 (7:37 PM): Everything he has on us is on his phone. Help me get it unlocked before dessert or we&#39;re both done.</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R1-C5] Fake Arc Step 1 (Sarah + Darren) - Exposes that co-workers Sarah and Darren were both threatened by Luke and plotted to wipe his phone.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 1 • CLUE #6</span>
+                <span class="clue-format-pill">⚡ Smart-Home / Digital Log</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 4</span>
+            </div>
+
+            <h4 class="clue-title">Living Room Smart-Outlet Surge Log (8:18 PM - 8:22 PM)</h4>
+
+            
+
+            
+
+            <div class="clue-body">SMART HOME POWER LOG • GROUND FLOOR LIVING ROOM:
+• 8:18:04 PM - Zone 1 Overhead Dimmer: Manual switch -&gt; 0% (DARK)
+• 8:19:12 PM - Wall Outlet #1 (Tree Corner): Load spike 0W -&gt; 1,840W (OVERLOAD FAULT / SHORT CIRCUIT)
+• 8:21:55 PM - Side Hallway Door Sensor (Pantry Corridor): OPEN -&gt; CLOSED</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R1-C6] REAL / CANON (Beat 4) - Pinpoints the exact time of the living room blackout and 1,840W outlet overload fault to 8:19:12 PM without yet revealing who took the Christmas lights or gloves.
+              </div>
+            
+          </div>
+        
+        </div>
+      </section>
+    
+    
+      <section id="round-2" class="pack-section page-break">
+        <div class="section-header">
+          <div>
+            <span class="section-kicker">Evidence Deck • Round 2 of 3</span>
+            <h2>Round 2 Clues (6 Cards)</h2>
+          </div>
+        </div>
+        <div class="clues-grid">
+          
+          <div class="clue-card clue-fake">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 2 • CLUE #1</span>
+                <span class="clue-format-pill">📸 Crime Scene Visual Exhibit</span>
+              </div>
+              <span class="badge badge-fake xray-only">🎭 Red Herring / Subplot</span>
+            </div>
+
+            <h4 class="clue-title">2F Upstairs Study Wall Safe (8:06 PM)</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/a1111111-1111-4111-8111-111111111105-1bc1e4116176.jpg" alt="2F Upstairs Study Wall Safe (8:06 PM)" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body"><span class="muted-italic">Visual Crime Scene Exhibit — Inspect the photographic evidence above for physical items, locations, and suspect details.</span></div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R2-C1] Fake Arc Step 2 (Gabriella Blyth + Jason) - Visual photo showing Gabriella Blyth and Jason beside the open upstairs study safe with the leather work glove.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 2 • CLUE #2</span>
+                <span class="clue-format-pill">🎙️ Audio Recording / Voicemail</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 3</span>
+            </div>
+
+            <h4 class="clue-title">Upstairs Hallway Nursery-Monitor Audio (8:12 PM)</h4>
+
+            
+
+            
+              <div class="clue-audio-wrap">
+                <audio controls src="http://localhost:3033/mystery-audio/61196e53-09c3-427f-8862-30151f2ca75b/a1111111-1111-4111-8111-111111111101.mp3" style="width:100%;height:36px;"></audio>
+              </div>
+            
+
+            <div class="clue-body">Recording Duration: 19.2 Seconds (8:12 PM • Upstairs Master Hallway):
+Gabriella Blyth: &quot;Why are you doing this to me?! Everyone downstairs knows our marriage is a lie! Just let me go!&quot;
+Luke: &quot;You&#39;re never leaving me. You&#39;ll fix your makeup, come downstairs, and play the grateful wife, or I&#39;ll ruin your whole family.&quot;
+[Sound of footsteps retreating from the door and a hushed voice in the hallway: &quot;He&#39;s never going to let her be happy...&quot;]</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R2-C2] REAL / CANON (Beat 3) - Captures the explosive marital fight between Luke and Gabriella Blyth, overheard outside the door at 8:12 PM.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 2 • CLUE #3</span>
+                <span class="clue-format-pill">✍️ Handwritten Note / Polaroid Back</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 3</span>
+            </div>
+
+            <h4 class="clue-title">Torn Place-Card Note in Bathroom (8:14 PM)</h4>
+
+            
+
+            
+
+            <div class="clue-body">Recovered: Torn in half inside the upstairs bathroom bin (8:14 PM)
+&quot;...heard him through the bedroom door just now. First the coat closet, and now he swears she&#39;ll never leave this marriage free. Twenty years on this street and he still thinks he owns us. Not after tonight.&quot;</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R2-C3] REAL / CANON (Beat 3) - Written right after overhearing the marital fight; ambiguous enough to sound like a childhood neighbour or sibling.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-fake">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 2 • CLUE #4</span>
+                <span class="clue-format-pill">💊 Medical / Prescription Exhibit</span>
+              </div>
+              <span class="badge badge-fake xray-only">🎭 Red Herring / Subplot</span>
+            </div>
+
+            <h4 class="clue-title">Prescription: Zolpidem Tartrate Drops (8:08 PM • Kitchen Bar)</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/a1111111-1111-4111-8111-111111111106-45fd5371bedd.jpg" alt="Prescription: Zolpidem Tartrate Drops (8:08 PM • Kitchen Bar)" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body">Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)
+Prescribed to: [Torn] ... Co. Group Plan #B-04
+Issue date: Dec 18 (Found 8:08 PM • Kitchen Bar)
+Ref: RX-409-12
+WARNING: 5 drops in warm/spiced alcohol induces 20-minute sleep onset (Sub-lethal dose).</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R2-C4] Fake Arc Step 2 (Sarah + Darren) - Visual bar photo + Rx label showing the two co-workers spiking the eggnog cup with fast-acting sleeping drops.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 2 • CLUE #5</span>
+                <span class="clue-format-pill">💬 Phone Text / Chat</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 4</span>
+            </div>
+
+            <h4 class="clue-title">❤️‍🔥</h4>
+
+            
+
+            
+
+            <div class="clue-body">Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you&#39;ve been gone 10 minutes.
+❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.
+Me (8:27 PM): Of course I&#39;ll cover for you, if my brother found out about us we&#39;d be dead. Wait, why are your hands shaking?</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R2-C5] REAL / CANON (Beat 4) - Proves Polly left Darren alone in the pantry from 8:15 to 8:25 PM and asked him to lie for her alibi.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 2 • CLUE #6</span>
+                <span class="clue-format-pill">📹 Security CCTV Still</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 2</span>
+            </div>
+
+            <h4 class="clue-title">Hallway Storage &amp; Breaker Cam (7:52 PM - 8:03 PM)</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-0eefa60444a8.jpg" alt="Hallway Storage &amp; Breaker Cam (7:52 PM - 8:03 PM)" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body">Header: CAM 01 • HALLWAY STORAGE &amp; 2F STUDY BREAKER
+Timestamp: 7:52 PM - 8:03 PM</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R2-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV showing Polly carrying the Christmas tree lights out of the storage closet and Jason wearing the leather work gloves at the 2F breaker panel.
+              </div>
+            
+          </div>
+        
+        </div>
+      </section>
+    
+    
+      <section id="round-3" class="pack-section page-break">
+        <div class="section-header">
+          <div>
+            <span class="section-kicker">Evidence Deck • Round 3 of 3</span>
+            <h2>Round 3 Clues (4 Cards)</h2>
+          </div>
+        </div>
+        <div class="clues-grid">
+          
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 3 • CLUE #1</span>
+                <span class="clue-format-pill">📁 Forensic / Official Report</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 5</span>
+            </div>
+
+            <h4 class="clue-title">Crime Scene Report: Wrapped in Christmas Lights (8:30 PM)</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/a1111111-1111-4111-8111-111111111109-6c6f2b97ac73.jpg" alt="Crime Scene Report: Wrapped in Christmas Lights (8:30 PM)" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body">LAB: FORENSIC CRIME SCENE UNIT
+TIME: DEATH AT 8:19:12 PM • 1ST FLOOR TREE CORNER
+• Cause of Death: 25-ft vintage Christmas light cord (Wall Outlet #1).
+• Toxicology: Zolpidem 0.04 mg/L (mild sedation only; non-fatal).
+• Cord Trace: Broken silver snowflake hairpin clasp (&quot;...ever Sisters&quot;) snagged inside wire knot.</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19:12 PM (not the sedative drops or work gloves), and shows the broken &quot;...ever Sisters&quot; snowflake hairpin snagged inside the knotted light cord.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-fake">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 3 • CLUE #2</span>
+                <span class="clue-format-pill">📸 Crime Scene Visual Exhibit</span>
+              </div>
+              <span class="badge badge-fake xray-only">🎭 Red Herring / Subplot</span>
+            </div>
+
+            <h4 class="clue-title">2F Upstairs Study Fireplace • Locked Inside (8:18 PM - 8:21 PM)</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/a1111111-1111-4111-8111-111111111107-6c95b13d6d2e.jpg" alt="2F Upstairs Study Fireplace • Locked Inside (8:18 PM - 8:21 PM)" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body"><span class="muted-italic">Visual Crime Scene Exhibit — Inspect the photographic evidence above for physical items, locations, and suspect details.</span></div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R3-C2] Fake Arc Step 3 &amp; Fatal Hole (Gabriella Blyth + Jason) - Visual photo showing Gabriella Blyth and Jason burning the stolen safe papers in the locked 2nd-floor study fireplace during the 8:19 PM murder downstairs.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-real">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 3 • CLUE #3</span>
+                <span class="clue-format-pill">✍️ Handwritten Note / Polaroid Back</span>
+              </div>
+              <span class="badge badge-real xray-only">✓ Real Canon • Beat 4</span>
+            </div>
+
+            <h4 class="clue-title">Recovered Party Polaroid: &quot;Happy &amp; Free&quot;</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/a1111111-1111-4111-8111-111111111110-2de9619b65ec.jpg" alt="Recovered Party Polaroid: &quot;Happy &amp; Free&quot;" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body">Recovered: Written on back of Polaroid inside coat pocket near pantry
+&quot;We grew up on this street together, and I meant it when I promised you wouldn&#39;t be trapped in this marriage another year. After what I heard him say to you upstairs at 8:12 PM, I knew there was only one way you&#39;d ever be happy and free.&quot;</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Visual Polaroid photo of Polly and Gabriella Blyth + cryptic handwritten message on the back that requires cross-referencing the 8:19 PM study alibi and pantry chat.
+              </div>
+            
+          </div>
+        
+          <div class="clue-card clue-fake">
+            <div class="clue-header">
+              <div class="clue-meta">
+                <span class="clue-round-pill">ROUND 3 • CLUE #4</span>
+                <span class="clue-format-pill">📹 Security CCTV Still</span>
+              </div>
+              <span class="badge badge-fake xray-only">🎭 Red Herring / Subplot</span>
+            </div>
+
+            <h4 class="clue-title">Living Room Sofa &amp; Dining Arch Cam (8:16 PM - 8:22 PM)</h4>
+
+            
+              <div class="clue-image-wrap">
+                <img src="http://localhost:3033/generated-clues/a1111111-1111-4111-8111-111111111108-b5c9ed05ea0e.jpg" alt="Living Room Sofa &amp; Dining Arch Cam (8:16 PM - 8:22 PM)" class="clue-image" />
+              </div>
+            
+
+            
+
+            <div class="clue-body">Header: CAM 02 • LIVING ROOM DOOR (8:16 PM) -&gt; DINING TABLE (8:17-8:22 PM)
+Timestamp: 8:16:10 PM - 8:22:00 PM</div>
+
+            
+              <div class="clue-xray-notes xray-only">
+                <strong>🔬 Designer / QA Logic:</strong> [CODE:R3-C4] Fake Arc Step 3 &amp; Fatal Hole (Sarah + Darren) - Visual CCTV still proving Luke was still alive on the sofa at 8:16:10 PM when Sarah slipped out with his unlocked phone to the dining table.
+              </div>
+            
+          </div>
+        
+        </div>
+      </section>
+    
+
+    <!-- MASTER SOLUTION & TIMELINE -->
+    <section id="solution" class="pack-section page-break xray-only">
+      <div class="section-header">
+        <div>
+          <span class="section-kicker">Section 4 • Master Reveal, Timeline &amp; Red Herrings</span>
+          <h2>The Master Crime Solution &amp; Beat Matrix</h2>
+        </div>
+      </div>
+
+      <div class="hero-card" style="margin-bottom:24px;">
+        <span class="kicker">🚨 Top Secret Final Reveal</span>
+        <h3 style="font-size:24px;margin:0 0 10px 0;">🔪 The Killer: Polly (The Sister-in-Law) &nbsp;|&nbsp; 🩸 The Victim: Luke (The Husband)</h3>
+        <p class="hero-desc" style="margin:0;"><strong>True Motive &amp; Solution:</strong> After exposing that her current bestie (Sarah) was having an affair with Luke and overhearing Luke and Gabriella Blyth&#39;s marital issues, Polly ended Luke with the Christmas lights because she chose for her sister to finally be happy and free.</p>
+      </div>
+
+      <h3>Chronological Main Plot Beats (5)</h3>
+      
+        <div class="beat-card">
+          <div class="beat-header">
+            <span class="badge badge-real">BEAT 1 • PRE_CRIME</span>
+            <h3>Sarah&#39;s Affair Exposed to Polly</h3>
+          </div>
+          <p>Early in the Christmas party, Polly discovers that her own current bestie (Sarah, who is married to Jason and used to be Gabriella Blyth&#39;s old bestie) is having a secret affair with Luke.</p>
+          
+            <div class="beat-clues">
+              <strong>Proved by Clues:</strong>
+              <ul>
+                <li><strong>R1:</strong> ❤️</li><li><strong>R1:</strong> Hallway Coat Closet (7:40 PM) • Dropped Silver Snowflake Hairpin</li>
+              </ul>
+            </div>
+          
+        </div>
+      
+        <div class="beat-card">
+          <div class="beat-header">
+            <span class="badge badge-real">BEAT 2 • PRE_CRIME</span>
+            <h3>The Christmas Lights Go Missing</h3>
+          </div>
+          <p>Before dinner is served, a heavy-duty strand of vintage Christmas tree lights vanishes from the holiday storage box near the hallway closet.</p>
+          
+            <div class="beat-clues">
+              <strong>Proved by Clues:</strong>
+              <ul>
+                <li><strong>R1:</strong> Hallway Utility Closet Shelves (7:00 PM Stocked -&gt; 7:55 PM Empty)</li><li><strong>R2:</strong> Hallway Storage &amp; Breaker Cam (7:52 PM - 8:03 PM)</li>
+              </ul>
+            </div>
+          
+        </div>
+      
+        <div class="beat-card">
+          <div class="beat-header">
+            <span class="badge badge-real">BEAT 3 • PRE_CRIME</span>
+            <h3>Marital Issues Between Luke &amp; Gabriella Blyth Overheard by Polly</h3>
+          </div>
+          <p>Polly overhears a bitter, heartbreaking argument between Luke and Gabriella Blyth behind closed doors as their marriage implodes.</p>
+          
+            <div class="beat-clues">
+              <strong>Proved by Clues:</strong>
+              <ul>
+                <li><strong>R2:</strong> Upstairs Hallway Nursery-Monitor Audio (8:12 PM)</li><li><strong>R2:</strong> Torn Place-Card Note in Bathroom (8:14 PM)</li>
+              </ul>
+            </div>
+          
+        </div>
+      
+        <div class="beat-card">
+          <div class="beat-header">
+            <span class="badge badge-real">BEAT 4 • CRIME</span>
+            <h3>Polly Ends Luke So Gabriella Blyth Can Be Happy &amp; Free</h3>
+          </div>
+          <p>Determined that the only way for Gabriella Blyth to finally be happy and free is with Luke gone, Polly slips away from her pantry tryst with Darren and uses the missing Christmas lights on Luke.</p>
+          
+            <div class="beat-clues">
+              <strong>Proved by Clues:</strong>
+              <ul>
+                <li><strong>R1:</strong> Living Room Smart-Outlet Surge Log (8:18 PM - 8:22 PM)</li><li><strong>R2:</strong> ❤️‍🔥</li><li><strong>R3:</strong> Recovered Party Polaroid: &quot;Happy &amp; Free&quot;</li>
+              </ul>
+            </div>
+          
+        </div>
+      
+        <div class="beat-card">
+          <div class="beat-header">
+            <span class="badge badge-real">BEAT 5 • INVESTIGATION</span>
+            <h3>Luke Found Dead Wrapped in Christmas Lights</h3>
+          </div>
+          <p>Luke is discovered dead on the living room floor, tightly wrapped in the glowing Christmas lights, turning the childhood neighbours&#39; holiday gathering into a Christmas Nightmare.</p>
+          
+            <div class="beat-clues">
+              <strong>Proved by Clues:</strong>
+              <ul>
+                <li><strong>R3:</strong> Crime Scene Report: Wrapped in Christmas Lights (8:30 PM)</li>
+              </ul>
+            </div>
+          
+        </div>
+      
+
+      
+        <h3 style="margin-top:28px;">Double-Duty Red Herring Subplots (2)</h3>
+        
+        <div class="beat-card subplot-card">
+          <div class="beat-header">
+            <span class="badge badge-fake">RED HERRING SUBPLOT #1</span>
+            <h3>Gabriella Blyth &amp; Jason: The Study Safe &amp; Prenup Heist</h3>
+          </div>
+          <p>Childhood neighbours and exes Gabriella Blyth and Jason (Neighbour A) team up during the party to break into Luke&#39;s upstairs study safe, stealing and burning the company audit files that would ruin Jason and the prenup clause trapping Gabriella Blyth.</p>
+          
+            <ul class="bullet-list" style="margin-top:10px;">
+              <li>Step 1 (The Trigger): Jason learns Luke brought company audit files to ruin him on Monday, while Gabriella Blyth reveals Luke&#39;s prenup clause leaves her penniless. The exes agree to meet by the hallway closet at 8:00 PM.</li><li>Step 2 (The Escalation): Jason grabs heavy work gloves from the hallway storage closet at 7:58 PM and Gabriella Blyth flips the study circuit breaker at 8:03 PM so they can pry open the upstairs study safe.</li><li>Step 3 (The Suspicious Action &amp; Hole): From 8:18 to 8:21 PM, Gabriella Blyth and Jason are locked inside the upstairs study burning the stolen papers in the fireplace, proving they were upstairs when the 8:19 PM living room attack happened.</li>
+            </ul>
+          
+        </div>
+      
+        <div class="beat-card subplot-card">
+          <div class="beat-header">
+            <span class="badge badge-fake">RED HERRING SUBPLOT #2</span>
+            <h3>Sarah &amp; Darren: The Spiked Eggnog &amp; Phone Wipe</h3>
+          </div>
+          <p>Co-workers and in-laws Sarah and Darren (Neighbour B) panic when Luke threatens to expose both Sarah&#39;s affair/work account and Darren&#39;s secret fling with Polly, leading them to spike his eggnog with sleep drops to wipe his phone.</p>
+          
+            <ul class="bullet-list" style="margin-top:10px;">
+              <li>Step 1 (The Trigger): Luke refuses to leave Gabriella Blyth for Sarah and threatens to expose both Sarah&#39;s affair to Jason and Darren&#39;s secret fling with Polly.</li><li>Step 2 (The Escalation): At 8:08 PM, Sarah and Darren spike Luke&#39;s spiced eggnog with fast-acting sleep drops so they can unlock his phone with FaceID and delete his blackmail files.</li><li>Step 3 (The Suspicious Action &amp; Hole): At 8:16 PM, Sarah steals Luke&#39;s phone while he is groggy but alive on the living room sofa, and returns to the dining table by 8:18 PM, accidentally leaving him easy for Polly to overpower at 8:19 PM.</li>
+            </ul>
+          
+        </div>
+      
+      
+    </section>
+  </div>
+</body>
+</html>

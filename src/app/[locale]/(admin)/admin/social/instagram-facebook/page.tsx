@@ -21,9 +21,23 @@ import {
   Share2,
   Download,
   ArrowLeft,
+  Sparkles,
+  Maximize2,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+
+const TEMPLATE_LABELS = [
+  "1. Noir Editorial",
+  "2. Framed Bento",
+  "3. Stat Dark",
+  "4. Colour Block",
+  "5. Case Card",
+  "6. Circle Spotlight",
+  "7. Stat Light",
+  "8. Gazette Cover",
+];
 
 interface SocialPostItem {
   id: string;
@@ -37,6 +51,7 @@ interface SocialPostItem {
     linkUrl?: string;
     slidesCopy?: string;
     stat?: { value: string; label: string };
+    templateIndex?: number | null;
   } | null;
   caption_data?: {
     caption?: string;
@@ -231,8 +246,8 @@ export default function InstagramFacebookManagementPage() {
           </div>
           <div>
             <p className="text-xs text-gray-500 font-semibold">Target Channels</p>
-            <p className="text-base font-black text-brand-dark">Instagram &amp; Facebook</p>
-            <p className="text-[11px] text-gray-500">Back Pocket Mysteries</p>
+            <p className="text-base font-black text-brand-dark">@backpocketgames_ &amp; FB</p>
+            <p className="text-[11px] text-emerald-600 font-bold">● Connected via Buffer (IG + FB Page)</p>
           </div>
         </div>
 
@@ -358,6 +373,30 @@ export default function InstagramFacebookManagementPage() {
                       copiedId={copiedId}
                       onCopy={handleCopyText}
                       onToggleScheduled={handleToggleScheduled}
+                      onSelectTemplate={async (postId, templateIndex) => {
+                        const target = posts.find((p) => p.id === postId);
+                        const nextSlideContent = {
+                          ...(target?.slide_content || {}),
+                          templateIndex,
+                        };
+                        setPosts((prev) =>
+                          prev.map((p) =>
+                            p.id === postId ? { ...p, slide_content: nextSlideContent } : p
+                          )
+                        );
+                        await supabase
+                          .from("social_posts")
+                          .update({
+                            slide_content: nextSlideContent,
+                            updated_at: new Date().toISOString(),
+                          })
+                          .eq("id", postId);
+                        toast.success(
+                          templateIndex === null
+                            ? "Set to Auto-Rotate template"
+                            : `Saved template: ${TEMPLATE_LABELS[templateIndex]}`
+                        );
+                      }}
                     />
                   ))}
                 </div>
@@ -400,6 +439,30 @@ export default function InstagramFacebookManagementPage() {
                       copiedId={copiedId}
                       onCopy={handleCopyText}
                       onToggleScheduled={handleToggleScheduled}
+                      onSelectTemplate={async (postId, templateIndex) => {
+                        const target = posts.find((p) => p.id === postId);
+                        const nextSlideContent = {
+                          ...(target?.slide_content || {}),
+                          templateIndex,
+                        };
+                        setPosts((prev) =>
+                          prev.map((p) =>
+                            p.id === postId ? { ...p, slide_content: nextSlideContent } : p
+                          )
+                        );
+                        await supabase
+                          .from("social_posts")
+                          .update({
+                            slide_content: nextSlideContent,
+                            updated_at: new Date().toISOString(),
+                          })
+                          .eq("id", postId);
+                        toast.success(
+                          templateIndex === null
+                            ? "Set to Auto-Rotate template"
+                            : `Saved template: ${TEMPLATE_LABELS[templateIndex]}`
+                        );
+                      }}
                     />
                   ))}
                 </div>
@@ -422,10 +485,23 @@ interface IgFbPostCardProps {
     cleanCopy?: string,
     imgSrc?: string
   ) => void;
+  onSelectTemplate: (postId: string, templateIndex: number | null) => void;
 }
 
-function IgFbPostCard({ post, copiedId, onCopy, onToggleScheduled }: IgFbPostCardProps) {
+function IgFbPostCard({
+  post,
+  copiedId,
+  onCopy,
+  onToggleScheduled,
+  onSelectTemplate,
+}: IgFbPostCardProps) {
   const [copiedTitle, setCopiedTitle] = useState(false);
+  const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const selectedTemplate =
+    typeof post.slide_content?.templateIndex === "number"
+      ? post.slide_content.templateIndex
+      : null;
+
   const isScheduledOrPosted =
     post.status === "scheduled" || post.status === "posted" || post.status === "published";
   const isDraft = post.status === "draft";
@@ -433,51 +509,46 @@ function IgFbPostCard({ post, copiedId, onCopy, onToggleScheduled }: IgFbPostCar
   const initialImageUrl =
     (post.caption_data?.media_urls && post.caption_data.media_urls[0]) || "";
 
-  const resolveCardUrl = (url: string, postUrl?: string) => {
-    let slug = "";
+  const extractSlug = (url: string, postUrl?: string) => {
     if (postUrl && postUrl.includes("/blog/")) {
-      slug = postUrl.split("/blog/")[1].split("?")[0].replace(/\/$/, "");
-    } else if (postUrl && postUrl.includes("/themes/")) {
-      slug = postUrl.split("/themes/")[1].split("?")[0].replace(/\/$/, "");
+      return postUrl.split("/blog/")[1].split("?")[0].replace(/\/$/, "");
     }
-
-    if (slug) {
-      return `/api/social-card/${slug}?t=${Date.now()}`;
+    if (postUrl && postUrl.includes("/themes/")) {
+      return postUrl.split("/themes/")[1].split("?")[0].replace(/\/$/, "");
     }
-
-    if (!url) return "/api/social-card/diy-murder-mystery-party-guide";
     if (url.includes("/blog-images/social-card-")) {
-      const extracted = url
+      return url
         .split("/blog-images/social-card-")[1]
         .replace(/\.jpg$/, "")
         .replace(/\.png$/, "");
-      return `/api/social-card/${extracted}?t=${Date.now()}`;
     }
     if (url.startsWith("/blog-images/") || url.startsWith("/blog/")) {
-      const extracted = url
+      return url
         .replace(/^\/blog-images\//, "")
         .replace(/^\/blog\//, "")
         .replace(/\.jpg$/, "")
         .replace(/\.png$/, "");
-      return `/api/social-card/${extracted}?t=${Date.now()}`;
     }
-    return url;
+    return "diy-murder-mystery-party-guide";
   };
 
-  const displayUrl = resolveCardUrl(
+  const cardSlug = extractSlug(
     initialImageUrl,
     post.slide_content?.linkUrl || post.caption_data?.post_url
   );
-  const [imgSrc, setImgSrc] = useState(displayUrl);
+
+  const buildCardUrl = (tIndex: number | null) => {
+    if (typeof tIndex === "number") {
+      return `/api/social-card/${cardSlug}?t=${tIndex}`;
+    }
+    return `/api/social-card/${cardSlug}?v=auto`;
+  };
+
+  const [imgSrc, setImgSrc] = useState(() => buildCardUrl(selectedTemplate));
 
   useEffect(() => {
-    setImgSrc(
-      resolveCardUrl(
-        initialImageUrl,
-        post.slide_content?.linkUrl || post.caption_data?.post_url
-      )
-    );
-  }, [initialImageUrl, post.slide_content?.linkUrl, post.caption_data?.post_url]);
+    setImgSrc(buildCardUrl(selectedTemplate));
+  }, [cardSlug, selectedTemplate]);
 
   // Cap hashtags to a maximum of 5 for Instagram
   const hashtags = (post.caption_data?.hashtags || []).slice(0, 5);
@@ -506,23 +577,14 @@ function IgFbPostCard({ post, copiedId, onCopy, onToggleScheduled }: IgFbPostCar
     cleanCopy += `\n\n${hashtagString}`;
   }
 
-  const handleDownloadImage = (url: string, title: string) => {
-    const slug = url.includes("/api/social-card/")
-      ? url.split("/api/social-card/")[1].split("?")[0]
-      : title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "");
-
-    const downloadApiUrl = `/api/social-card/${slug}?download=true`;
-
+  const handleDownloadImage = (url: string) => {
     const link = document.createElement("a");
-    link.href = downloadApiUrl;
-    link.download = `${slug}.png`;
+    link.href = url;
+    link.download = `${cardSlug}${selectedTemplate !== null ? `-t${selectedTemplate}` : ""}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Downloading image...");
+    toast.success("Downloading 1080×1350 social card PNG...");
   };
 
   return (
@@ -534,9 +596,9 @@ function IgFbPostCard({ post, copiedId, onCopy, onToggleScheduled }: IgFbPostCar
       }`}
     >
       <div className="flex flex-col lg:flex-row gap-5">
-        {/* Featured Image Thumbnail */}
+        {/* Featured 4:5 Social Card Thumbnail */}
         {imgSrc ? (
-          <div className="lg:w-48 h-60 rounded-xl overflow-hidden shrink-0 bg-gray-100 border border-gray-200 relative group">
+          <div className="lg:w-56 aspect-[4/5] rounded-xl overflow-hidden shrink-0 bg-gray-900 border border-gray-200 relative group shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imgSrc}
@@ -546,29 +608,39 @@ function IgFbPostCard({ post, copiedId, onCopy, onToggleScheduled }: IgFbPostCar
                 setImgSrc("/blog/hosting-guide.png");
               }}
             />
-            <div className="absolute top-2 left-2 flex gap-1">
-              <span className="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold gap-1 px-1.5 py-0.5 rounded">
+            <div className="absolute top-2.5 left-2.5 flex gap-1">
+              <span className="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold gap-1 px-1.5 py-0.5 rounded shadow-xs">
                 <Instagram className="h-3 w-3" />
                 IG
               </span>
-              <span className="inline-flex items-center bg-[#1877F2] text-white text-[10px] font-bold gap-1 px-1.5 py-0.5 rounded">
+              <span className="inline-flex items-center bg-[#1877F2] text-white text-[10px] font-bold gap-1 px-1.5 py-0.5 rounded shadow-xs">
                 <Facebook className="h-3 w-3" />
                 FB
               </span>
             </div>
 
-            {/* Hover Quick Download Button */}
-            <button
-              type="button"
-              onClick={() => handleDownloadImage(imgSrc, post.brief)}
-              className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-bold text-xs cursor-pointer"
-            >
-              <Download className="h-4 w-4" />
-              Download Image
-            </button>
+            {/* Hover Overlay Actions */}
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3">
+              <button
+                type="button"
+                onClick={() => setShowGalleryModal(true)}
+                className="w-full py-2 px-3 rounded-lg bg-brand-pink text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-md hover:bg-brand-pink/90"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+                Compare All 8 Templates
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDownloadImage(imgSrc)}
+                className="w-full py-2 px-3 rounded-lg bg-white/95 text-brand-dark font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer hover:bg-white"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download 1080×1350 PNG
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="lg:w-48 h-48 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
+          <div className="lg:w-56 aspect-[4/5] rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
             <ImageIcon className="h-8 w-8 text-gray-300" />
           </div>
         )}
@@ -682,14 +754,55 @@ function IgFbPostCard({ post, copiedId, onCopy, onToggleScheduled }: IgFbPostCar
               {imgSrc && (
                 <button
                   type="button"
-                  onClick={() => handleDownloadImage(imgSrc, post.brief)}
+                  onClick={() => handleDownloadImage(imgSrc)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200 shadow-xs cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Download Image</span>
+                  <span>Download PNG</span>
                 </button>
               )}
             </div>
+          </div>
+
+          {/* 8-Template Design Switcher Bar */}
+          <div className="bg-gray-50/90 border border-gray-200/80 rounded-xl p-2.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider px-1.5 flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-brand-pink" />
+              Card Template:
+            </span>
+            <button
+              type="button"
+              onClick={() => onSelectTemplate(post.id, null)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                selectedTemplate === null
+                  ? "bg-brand-dark text-white shadow-xs"
+                  : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              Auto Rotate
+            </button>
+            {TEMPLATE_LABELS.map((label, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => onSelectTemplate(post.id, idx)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                  selectedTemplate === idx
+                    ? "bg-brand-pink text-white shadow-xs"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-brand-pink/40"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setShowGalleryModal(true)}
+              className="ml-auto px-2.5 py-1 rounded-lg text-[11px] font-bold bg-pink-50 text-brand-pink border border-pink-200 hover:bg-pink-100 cursor-pointer inline-flex items-center gap-1"
+            >
+              <Maximize2 className="h-3 w-3" />
+              Compare All 8
+            </button>
           </div>
 
           {/* Caption Text Preview Box */}
@@ -698,6 +811,79 @@ function IgFbPostCard({ post, copiedId, onCopy, onToggleScheduled }: IgFbPostCar
           </div>
         </div>
       </div>
+
+      {/* 8-Template Comparison Lightbox Modal */}
+      {showGalleryModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setShowGalleryModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-gray-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-black text-brand-dark">
+                  8-Template Social Card Gallery — {post.brief}
+                </h3>
+                <p className="text-xs text-gray-500 font-medium">
+                  Click any template below to set it as the active 1080×1350 Instagram &amp; Facebook card for this post.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGalleryModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {TEMPLATE_LABELS.map((label, idx) => {
+                const tUrl = `/api/social-card/${cardSlug}?t=${idx}`;
+                const isSelected = selectedTemplate === idx;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      onSelectTemplate(post.id, idx);
+                      setShowGalleryModal(false);
+                    }}
+                    className={`rounded-2xl overflow-hidden border-2 transition-all cursor-pointer group flex flex-col ${
+                      isSelected
+                        ? "border-brand-pink ring-4 ring-brand-pink/15 shadow-lg"
+                        : "border-gray-200 hover:border-brand-pink/60 hover:shadow-md"
+                    }`}
+                  >
+                    <div className="aspect-[4/5] bg-gray-900 relative overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={tUrl}
+                        alt={label}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3 bg-white flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-brand-dark">{label}</span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          isSelected
+                            ? "bg-brand-pink text-white"
+                            : "bg-gray-100 text-gray-600 group-hover:bg-pink-50 group-hover:text-brand-pink"
+                        }`}
+                      >
+                        {isSelected ? "Active" : "Use Template"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

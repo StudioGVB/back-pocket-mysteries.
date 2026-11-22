@@ -20,22 +20,137 @@ const SLUGS = {
 };
 const url = (k) => `${SITE}/blog/${SLUGS[k]}`;
 
+// Extra December blogs to remove so only the active 2-week batch (Nov 19 - Nov 30) is scheduled
+const EXTRA_DEC_BLOG_SLUGS = [
+  "spoiler-free-murder-mystery-hosting-how-the-host-plays-along",
+  "introvert-friendly-murder-mystery-party-guide-mixed-crowds",
+  "cabin-weekend-airbnb-away-trip-murder-mystery-party-guide",
+  "mocktail-paired-sober-curious-murder-mystery-dinner-party-guide",
+];
+
 // Strict Content Guardrails:
-// - Cadence: Blogs Mon & Thu 09:00:00Z; Socials Tue & Fri 09:00:00Z; Weekly EDM Fri 09:00:00Z.
+// - Cadence: 4 Blogs (Mon & Thu 09:00:00Z); 4 Socials (Tue & Fri 09:00:00Z); 1 Weekly EDM (Fri 09:00:00Z).
 // - Review-First Workflow: Always insert social_posts and edm_campaigns with status: "draft".
 // - IG/FB: Same caption & cover photo (rendered with 8-template overlay via /api/social-card/[slug]),
-//   punchy stat: { value, label } in slide_content.stat (no postCopy in slide_content),
-//   scannable emoji bullets + "👇 Link in bio to read the full guide", max 5 hashtags.
+//   punchy stat: { value, label } in slide_content.stat, scannable emoji bullets + Pre-Launch First 50 VIP Waitlist CTA, max 5 hashtags.
 // - LinkedIn: 600–700 words expert post validated before insert, structured subheadings, real numbers/tables,
-//   no em-dashes, direct blog link at bottom, media_urls: [], trailing hashtags matching hashtags array.
-// - EDM: Structured blocks_json + compiled table-based html_content featuring the week's 2 blogs.
+//   no em-dashes, direct blog link + First 50 Pre-Launch VIP Waitlist CTA at bottom, media_urls: [], trailing hashtags.
+
+async function ensureGeneratedIntroImage() {
+  const dir = "public/blog-images";
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const slug = "introducing-back-pocket-mysteries";
+  const targetPath = `${dir}/${slug}.png`;
+  if (fs.existsSync(targetPath) && fs.statSync(targetPath).size > 10000) {
+    return `/blog-images/${slug}.png`;
+  }
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (apiKey) {
+    try {
+      console.log(`🎨 generating AI soft-launch cover image for ${slug}...`);
+      const prompt =
+        "Cinematic editorial photography of a stylish group of friends in their late 20s and 30s laughing and leaning across a candlelit dinner party table examining noir detective evidence polaroids and listening to a smartphone audio voice note together, warm neon pink and royal blue ambient rim lighting in a modern apartment, 8k photorealistic, zero text or letters.";
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ["IMAGE"] },
+          }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const imgPart = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+        const b64 = imgPart?.inlineData?.data;
+        if (b64) {
+          fs.writeFileSync(targetPath, Buffer.from(b64, "base64"));
+          console.log(`✓ saved AI soft-launch image: /blog-images/${slug}.png`);
+          return `/blog-images/${slug}.png`;
+        }
+      }
+    } catch {
+      // fallback below
+    }
+  }
+  fs.copyFileSync("public/hero-mystery-playing.png", targetPath);
+  return `/blog-images/${slug}.png`;
+}
 
 const campaigns = [
   {
+    key: "soft_launch_intro",
+    isStandalone: true,
+    cardSlug: "introducing-back-pocket-mysteries",
+    cardTitle: "INTRODUCING BACK POCKET MYSTERIES: Put Your Friends In The Crime Scene",
+    cardCategory: "FROM THE CREATORS OF PROTTACK",
+    ctaText: "FIRST 50 PLAY FREE",
+    kickerText: "SOFT LAUNCH ANNOUNCEMENT",
+    templateIndex: 0,
+    linkUrl: `${SITE}/free-murder-mystery-game`,
+    brief: "Soft-Launch Announcement: From Prottack to Back Pocket Mysteries (First 50 VIP Giveaway)",
+    schedule: "2026-11-23T09:00:00Z", // #1 First post out
+    image: "/blog-images/introducing-back-pocket-mysteries.png",
+    stat: { value: "FIRST 50", label: "VIP Launch Sign-Ups Get A Complete Custom Mystery Pack 100% Free" },
+    hashtags: ["BackPocketGames", "BackPocketMysteries", "Prottack", "MurderMysteryParty", "GameNight"],
+    igFb: `👋 If you've been here since our card game Prottack, you already know our obsession at Back Pocket Games: building games that turn a regular night with friends into total, unforgettable chaos 🃏🔥
+
+Over the last few months, we've been quietly building our biggest project yet... and it's finally time to let you in on the secret.
+
+🕵️‍♀️ Meet BACK POCKET MYSTERIES — an interactive murder mystery party builder that puts YOUR actual friend group inside the crime scene!
+
+We hated how old-school murder mystery kits forced the host to print 40 pages of paper, sit out of the game as a referee, and hand out generic stock characters. So we completely reinvented it:
+
+🎭 Your Friends' Real Names & Inside Jokes Woven In: Every character dossier, alibi, and secret motive is custom-hydrated around your actual guest list (for 5 to 16 players)
+📹 Real Multimedia Forensic Clues: Unlock grainy CCTV security camera stills (CAM 04 // REC), dark-mode recovered group chats & toxicology lab reports on your phones
+🎙️ Playable Audio Wiretaps: Tap play at the dinner table and hear two suspects whispering your actual friend's name in a leaked voice recording
+🥂 Spoiler-Free Host Mode: Our live 6-digit Game PIN controller hides the killer so the host gets to play, sip, and accuse right alongside everyone else
+⚡ Ready in 30 Minutes: Play 100% on phones or print physical dossiers + Polaroid clue cards
+
+🎁 SOFT-LAUNCH VIP GIVEAWAY (FIRST 50 ONLY):
+Before we open public checkout, the First 50 people to join our VIP Launch List get a complete Custom Murder Mystery Pack 100% FREE on launch day (up to $49 value)!
+
+👇 Tap the link in our bio right now to claim one of the 50 Free VIP spots before they fill up!
+${SITE}/free-murder-mystery-game
+
+#BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight`,
+    linkedin: `From Prottack to Back Pocket Mysteries: How We Are Re-Engineering the At-Home Murder Mystery Party With Real-Name Hydration and Multimedia Evidence
+
+When we first launched our tabletop card game Prottack under Back Pocket Games, our mission was simple: create fast, high-energy social games that get friends off their screens and laughing around the same table. Watching hundreds of game nights unfold taught us something important about how adults socialise today. People are hungry for structured, memorable experiences at home, whether for a birthday dinner, a bachelorette weekend, a Friday office social, or a Saturday night in with six friends.
+
+Yet whenever we tried to host a traditional boxed or downloadable murder mystery party, we ran into the exact same wall of friction.
+
+Why Legacy Murder Mystery Kits Feel Like Homework:
+The traditional murder mystery format has barely changed since the 1990s. If you buy a standard downloadable PDF kit today, four problems happen immediately:
+1. The Organiser Penalty: The person who buys the kit and cooks the dinner has to read the master setup file, which spoils who the killer is and forces the host to sit on the sidelines as an unpaid referee all night.
+2. Forty Pages of Printing and Cutting: Hosts spend three hours at a printer sorting paper slips into envelopes before guests arrive.
+3. Rigid Guest Counts and Fixed Genders: If a game is written for eight fixed characters and one friend cancels an hour before dinner with a babysitter emergency, a mandatory clue disappears and the plot breaks.
+4. Clunky Fictional Names and Wall-of-Text Fatigue: Guests spend the first hour squinting at name tags trying to remember who is playing Lord Ravenscroft, and by Round 2 nobody wants to read a 500-word paper monologue in a dim dining room.
+
+Introducing Back Pocket Mysteries:
+Over the past several months, we have been building Back Pocket Mysteries, an interactive digital and printable murder mystery platform engineered to take a host from zero to a fully personalised party in under thirty minutes.
+
+Here are the four core product innovations we built into the platform:
+- Dynamic Real-Name and Inside-Joke Hydration: Instead of forcing guests to memorize awkward fictional names, hosts enter their real guests' first names, select adaptable character genders (Male, Female, or Adaptable), and optionally add friend-group inside jokes or guest selfies. Our hydration engine weaves your real friends' names directly into the character dossiers, text logs, and spoken audio dialogue.
+- Diegetic Multimedia Forensic Clues: Across three progressive rounds, players unlock high-angle grainy CCTV security camera stills stamped with camera metadata, dark-mode smartphone chat threads with Deleted Message Recovered badges, styled toxicology reports, and multi-speaker ElevenLabs audio wiretaps that make the entire dinner table go silent when played aloud.
+- Spoiler-Free Host Mode via a 6-Digit Game PIN: Inspired by the zero-friction onboarding of Kahoot, guests join the live mobile Playroom in ten seconds via a 6-digit PIN in their browser with zero app downloads required. The host's screen acts as a spoiler-free round controller that conceals the killer and upcoming clues behind timed unlocks so the host plays as a full suspect.
+- Elastic Cast Scaling (5 to 16 Suspects) and One-Click Print Studio: Core mandatory roles anchor the murder timeline while expandable suspect roles can be toggled on or off in sixty seconds. Hosts can run the night 100% paper-free on smartphones or print physical character booklets and Polaroid clue cards from our Print Studio.
+
+Claim One of Our First 50 Soft-Launch VIP Spots (100% Free Mystery Pack):
+As we prepare to open public checkout, we are giving the First 50 members of our community who join our VIP Launch List a 100%-Off Free Mystery Pack code on launch day, plus instant access to test-drive our free mini-mystery experience right now.
+
+Join the First 50 VIP Launch List here:
+${SITE}/free-murder-mystery-game
+
+#BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight`,
+  },
+  {
     key: "corporate",
     brief: "Corporate Team Building Murder Mysteries (8–24 Players)",
-    schedule: "2026-11-20T09:00:00Z", // Fri – Thu 19 Nov blog
-    image: "/blog/hosting-guide.png",
+    schedule: "2026-11-24T09:00:00Z", // Shifted to Tue Nov 24 so Soft-Launch goes out first on Mon Nov 23!
+    image: `/blog-images/${SLUGS.corporate}.png`,
     stat: { value: "95%+", label: "team participation rate when every guest holds unique clues" },
     hashtags: ["TeamBuilding", "CorporateEvents", "WorkplaceCulture", "MurderMystery", "BackPocketMysteries"],
     igFb: `🕵️‍♀️ Tired of awkward corporate trust falls and noisy pub tables where you only talk to the person next to you?
@@ -50,7 +165,8 @@ Why they work so well:
 
 Our latest guide breaks down how to cast your colleagues, how host-blind mode lets the organiser play along, and a minute-by-minute corporate run sheet.
 
-👇 Link in bio to read the full guide
+🎁 Pre-Launch VIP Perks: We're building Back Pocket Mysteries right now, and the First 50 people to join our VIP Waitlist get a complete Murder Mystery Pack 100% FREE on launch day!
+👇 Link in bio to read the full guide & claim your Free VIP spot:
 ${url("corporate")}
 
 #TeamBuilding #CorporateEvents #WorkplaceCulture #MurderMystery #BackPocketMysteries`,
@@ -85,16 +201,15 @@ You do not need a four-hour sit-down dinner to run a complete investigation. Our
 
 When a 14-person software and product team used this exact structure for their Sydney offsite, the quietest backend engineer cracked the case by spotting a 7-minute discrepancy between a recovered text message and a security camera timestamp.
 
-Read the full guide, including casting rules and the complete corporate run sheet:
-${url("corporate")}
+Read the full corporate guide (${url("corporate")}) or claim one of our First 50 Pre-Launch VIP spots for a 100% Free Mystery Pack on launch day (${SITE}/free-murder-mystery-game).
 
 #TeamBuilding #CorporateEvents #WorkplaceCulture #MurderMystery #BackPocketMysteries`,
   },
   {
     key: "audio",
     brief: "Audio Wiretaps, CCTV Stills & Chat Logs in Murder Mysteries",
-    schedule: "2026-11-24T09:00:00Z", // Tue – Mon 23 Nov blog
-    image: "/blog/ai-generator.png",
+    schedule: "2026-11-26T09:00:00Z", // Thu 26 Nov – follows Soft-Launch (Mon 23) & Corporate (Tue 24)
+    image: `/blog-images/${SLUGS.audio}.png`,
     stat: { value: "4 Formats", label: "Audio Wiretaps, CCTV Stills, Chat Logs & Forensic Docs" },
     hashtags: ["MurderMysteryParty", "AudioClues", "GameDesign", "PartyHosting", "BackPocketMysteries"],
     igFb: `🎙️ Imagine tapping play on your phone at a dinner party and hearing two suspects whispering your actual friend's name in a wiretapped voice note 👀
@@ -108,7 +223,8 @@ For decades, murder mystery games were just slips of paper. Now you can drop rea
 
 The best part? Phones act strictly as an evidence locker while all interrogation happens face-to-face around the table 🥂
 
-👇 Link in bio to read the full guide
+🎁 Pre-Launch VIP Perks: We're putting the finishing touches on Back Pocket Mysteries, and the First 50 people to join our VIP Waitlist get a complete Murder Mystery Pack 100% FREE on launch day!
+👇 Link in bio to read the full guide & claim your Free VIP spot:
 ${url("audio")}
 
 #MurderMysteryParty #AudioClues #GameDesign #PartyHosting #BackPocketMysteries`,
@@ -144,8 +260,7 @@ Pacing your evidence formats keeps energy rising from arrival to the final vote:
 Case Study from a 10-Player Gala Mystery:
 In our Love on the Rocks reunion mystery, three suspects hold strong motives to poison the victim's champagne flute. When the host triggers Round 3, a recovered backstage voice recording unlocks in the Playroom. Hearing the background clinking of glasses and a specific 23:12 timestamp allows observant players to cross-reference the Round 1 chat logs and unmask the killer in under ten minutes.
 
-Read the full guide on staging audio and visual evidence for your next mystery night:
-${url("audio")}
+Read the full multimedia evidence guide (${url("audio")}) or join our First 50 Pre-Launch VIP Waitlist for a 100% Free Mystery Pack on launch day (${SITE}/free-murder-mystery-game).
 
 #MurderMysteryParty #AudioClues #GameDesign #PartyHosting #BackPocketMysteries`,
   },
@@ -153,7 +268,7 @@ ${url("audio")}
     key: "smallGroup",
     brief: "Hosting a Small Group Murder Mystery Dinner (6–8 Players)",
     schedule: "2026-11-27T09:00:00Z", // Fri – Thu 26 Nov blog
-    image: "/blog/viral-themes.png",
+    image: `/blog-images/${SLUGS.smallGroup}.png`,
     stat: { value: "6–8", label: "players around one dining table for peak Knives Out energy" },
     hashtags: ["DinnerPartyIdeas", "MurderMystery", "SmallGroupGames", "HostingTips", "BackPocketMysteries"],
     igFb: `🍷 Think you need 20 people and a mansion to host a murder mystery?
@@ -162,13 +277,14 @@ Some of the funniest, sharpest mystery nights happen around a single dining tabl
 
 Why 6–8 players is the ultimate dinner party sweet spot:
 🍽️ Pair the 3 rounds of clues directly with Entrée, Main, and Dessert
-👀 Nobody can hide in the corner—every accusation and alibi happens in front of the whole table
+👀 Nobody can hide in the corner, every accusation and alibi happens in front of the whole table
 🏠 Works in a 1-bedroom apartment with zero crowd-herding stress
 🔄 Flexible digital roles mean a last-minute cancellation never breaks the game
 
 Our latest blog shares how to pace a 3-course seated mystery and set the mood on a $50 budget.
 
-👇 Link in bio to read the full guide
+🎁 Pre-Launch VIP Perks: The First 50 people to join our VIP Waitlist get a complete Murder Mystery Pack 100% FREE when we launch!
+👇 Link in bio to read the full guide & claim your Free VIP spot:
 ${url("smallGroup")}
 
 #DinnerPartyIdeas #MurderMystery #SmallGroupGames #HostingTips #BackPocketMysteries`,
@@ -198,8 +314,7 @@ In a 20-person party, losing a guest on the afternoon of the event barely affect
 Creating Noir Atmosphere in a Compact Apartment on a $50 Budget:
 Because all the action centres on a single dining table, small staging choices have outsized impact. Switching off overhead ceiling lights in favour of warm table lamps and LED candles, placing sealed confidential dossier envelopes on each napkin, curating a low-volume jazz or cinematic soundtrack at 25% volume, and serving shared platters rather than individually plated mains keeps the host seated at the centre of the drama all night. Even in a compact one-bedroom apartment, six friends around a single table can experience a complete three-act whodunit.
 
-Read the full guide to hosting a 6 to 8 player murder mystery dinner party:
-${url("smallGroup")}
+Read the full 6 to 8 player dinner guide (${url("smallGroup")}) or claim one of our First 50 Pre-Launch VIP spots for a 100% Free Mystery Pack on launch day (${SITE}/free-murder-mystery-game).
 
 #DinnerPartyIdeas #MurderMystery #SmallGroupGames #HostingTips #BackPocketMysteries`,
   },
@@ -207,23 +322,24 @@ ${url("smallGroup")}
     key: "holiday",
     brief: "Holiday & New Year's Eve Murder Mystery Party Guide",
     schedule: "2026-12-01T09:00:00Z", // Tue – Mon 30 Nov blog
-    image: "/blog/20s-costumes.png",
+    image: `/blog-images/${SLUGS.holiday}.png`,
     stat: { value: "11:45 PM", label: "time the killer confession right before the NYE midnight toast" },
     hashtags: ["NewYearsEveParty", "HolidayPartyIdeas", "Friendsmas", "MurderMysteryParty", "BackPocketMysteries"],
-    igFb: `🥂 We have all experienced the dreaded 10:30 PM New Year's Eve slump—when dinner is over and everyone is just waiting on the couch for midnight.
+    igFb: `🥂 We have all experienced the dreaded 10:30 PM New Year's Eve slump, when dinner is over and everyone is just waiting on the couch for midnight.
 
 This year, time a 3-round Murder Mystery so the killer is unmasked at 11:45 PM, right before the champagne toast 🍾🕵️‍♀️
 
 How the NYE Countdown Run Sheet works:
-📸 8:00 PM — Red carpet arrival & suspect mugshots
-🍸 8:45 PM — Round 1 mingling & alibis
-🚨 9:30 PM — The crime broadcast & dinner platters
-📹 10:15 PM — Round 2 CCTV & recovered text clues unlock
-🎧 11:00 PM — Round 3 smoking-gun audio wiretap
-🏆 11:30 PM — Final votes, awards & the killer's confession
-🎆 11:55 PM — Pour the champagne for midnight!
+📸 8:00 PM: Red carpet arrival & suspect mugshots
+🍸 8:45 PM: Round 1 mingling & alibis
+🚨 9:30 PM: The crime broadcast & dinner platters
+📹 10:15 PM: Round 2 CCTV & recovered text clues unlock
+🎧 11:00 PM: Round 3 smoking-gun audio wiretap
+🏆 11:30 PM: Final votes, awards & the killer's confession
+🎆 11:55 PM: Pour the champagne for midnight!
 
-👇 Link in bio to read the full guide
+🎁 Pre-Launch VIP Perks: The First 50 people to join our VIP Waitlist get a complete Murder Mystery Pack 100% FREE on launch day!
+👇 Link in bio to read the full guide & claim your Free VIP spot:
 ${url("holiday")}
 
 #NewYearsEveParty #HolidayPartyIdeas #Friendsmas #MurderMysteryParty #BackPocketMysteries`,
@@ -258,8 +374,7 @@ Sending the digital RSVP link one week before the party lets guests enter their 
 A Stress-Free 7-Day Prep Timeline for Busy Hosts:
 With digital RSVP links and mobile clue delivery, holiday hosts only need 30 minutes of game setup: choose your theme and send character links seven days out, generate personalized CCTV and audio clues four days out, and spend twenty minutes on party afternoon dimming the lights and testing your Bluetooth speaker. Even if your printer runs out of ink on December 30th, every dossier and clue works seamlessly on guests' phones.
 
-Read the full New Year's Eve and Holiday hosting guide:
-${url("holiday")}
+Read the full Holiday and NYE guide (${url("holiday")}) or join our First 50 Pre-Launch VIP Waitlist for a 100% Free Mystery Pack on launch day (${SITE}/free-murder-mystery-game).
 
 #NewYearsEveParty #HolidayPartyIdeas #Friendsmas #MurderMysteryParty #BackPocketMysteries`,
   },
@@ -272,16 +387,10 @@ async function run() {
     ? JSON.parse(fs.readFileSync(storePath, "utf8"))
     : { blog_posts: [], social_posts: [], social_post_captions: [], edm_campaigns: [], edm_events: [] };
 
-  let { data: blogs, error } = await supabase
-    .from("blog_posts")
-    .select("id, slug, title")
-    .in("slug", Object.values(SLUGS));
+  // Remove the 4 extra December scheduled blogs so only the current 2-week batch of 4 blogs is scheduled
+  store.blog_posts = store.blog_posts.filter((b) => !EXTRA_DEC_BLOG_SLUGS.includes(b.slug));
 
-  const useStore = Boolean(error);
-  if (useStore) {
-    blogs = store.blog_posts.filter((b) => Object.values(SLUGS).includes(b.slug));
-  }
-
+  const blogs = store.blog_posts.filter((b) => Object.values(SLUGS).includes(b.slug));
   if (!blogs || blogs.length !== 4) {
     throw new Error("Could not load the 4 blogs. Run scripts/create-nov-dec-4-blogs.mjs first.");
   }
@@ -292,6 +401,9 @@ async function run() {
     const igTags = (c.igFb.match(/#\w+/g) || []).length;
     if (igTags > 5) throw new Error(`${c.key}: IG/FB has ${igTags} hashtags (max 5)`);
     const liWords = c.linkedin.split(/\s+/).filter(Boolean).length;
+    if (c.linkedin.includes("—")) {
+      throw new Error(`${c.key}: LinkedIn post contains an em-dash (—)`);
+    }
     console.log(`${c.key}: IG/FB hashtags=${igTags}, LinkedIn words=${liWords}`);
     if (liWords < 600 || liWords > 700) {
       throw new Error(`${c.key}: LinkedIn is ${liWords} words (target 600–700)`);
@@ -299,176 +411,86 @@ async function run() {
   }
 
   const nowIso = new Date().toISOString();
+  await ensureGeneratedIntroImage();
+
+  // Declutter social_posts and social_post_captions: keep ONLY the Soft-Launch Intro + 4 blog campaigns
+  const newSocialPosts = [];
+  const newSocialCaptions = [];
 
   for (const c of campaigns) {
-    const blog = bySlug[SLUGS[c.key]];
-    if (!useStore) {
-      const { data: existing } = await supabase
-        .from("social_posts")
-        .select("id")
-        .eq("source_blog_id", blog.id);
+    const blog = c.isStandalone ? null : bySlug[SLUGS[c.key]];
+    const targetUrl = c.linkUrl || url(c.key);
+    const existing = store.social_posts.find((p) =>
+      blog ? p.source_blog_id === blog.id : p.brief === c.brief
+    );
+    const postId = existing ? existing.id : crypto.randomUUID();
+    const postRow = {
+      id: postId,
+      brief: c.brief,
+      status: "draft",
+      scheduled_at: c.schedule,
+      timezone: "Australia/Sydney",
+      posted_at: null,
+      source_blog_id: blog ? blog.id : null,
+      content_type: c.isStandalone ? "brand_announcement" : "article_summary",
+      slide_content: {
+        linkUrl: targetUrl,
+        stat: c.stat,
+        ...(c.cardSlug ? { cardSlug: c.cardSlug } : {}),
+        ...(c.cardTitle ? { cardTitle: c.cardTitle } : {}),
+        ...(c.cardCategory ? { cardCategory: c.cardCategory } : {}),
+        ...(c.ctaText ? { ctaText: c.ctaText } : {}),
+        ...(c.kickerText ? { kickerText: c.kickerText } : {}),
+        ...(typeof c.templateIndex === "number" ? { templateIndex: c.templateIndex } : {}),
+      },
+      error_message: null,
+      created_at: existing ? existing.created_at : nowIso,
+      updated_at: nowIso,
+    };
+    newSocialPosts.push(postRow);
 
-      if (existing?.length) {
-        const postId = existing[0].id;
-        const { error: uErr } = await supabase
-          .from("social_posts")
-          .update({
-            brief: c.brief,
-            status: "draft",
-            scheduled_at: c.schedule,
-            timezone: "Australia/Sydney",
-            slide_content: { linkUrl: url(c.key), stat: c.stat },
-          })
-          .eq("id", postId);
-        if (uErr) throw uErr;
-
-        await supabase.from("social_post_captions").delete().eq("post_id", postId);
-        const { error: cErr } = await supabase.from("social_post_captions").insert([
-          {
-            post_id: postId,
-            platform: "linkedin",
-            caption: c.linkedin,
-            hashtags: c.hashtags,
-            media_urls: [],
-            post_url: url(c.key),
-          },
-          {
-            post_id: postId,
-            platform: "instagram",
-            caption: c.igFb,
-            hashtags: c.hashtags,
-            media_urls: [c.image],
-            post_url: url(c.key),
-            engagement_data: {},
-          },
-          {
-            post_id: postId,
-            platform: "facebook",
-            caption: c.igFb,
-            hashtags: c.hashtags,
-            media_urls: [c.image],
-            post_url: url(c.key),
-            engagement_data: {},
-          },
-        ]);
-        if (cErr) throw cErr;
-        console.log(`✓ updated draft social: ${c.brief} → ${c.schedule}`);
-        continue;
+    newSocialCaptions.push(
+      {
+        id: crypto.randomUUID(),
+        post_id: postId,
+        platform: "linkedin",
+        caption: c.linkedin,
+        hashtags: c.hashtags,
+        media_urls: [],
+        post_url: targetUrl,
+        engagement_data: {},
+        created_at: nowIso,
+      },
+      {
+        id: crypto.randomUUID(),
+        post_id: postId,
+        platform: "instagram",
+        caption: c.igFb,
+        hashtags: c.hashtags,
+        media_urls: [c.image],
+        post_url: targetUrl,
+        engagement_data: {},
+        created_at: nowIso,
+      },
+      {
+        id: crypto.randomUUID(),
+        post_id: postId,
+        platform: "facebook",
+        caption: c.igFb,
+        hashtags: c.hashtags,
+        media_urls: [c.image],
+        post_url: targetUrl,
+        engagement_data: {},
+        created_at: nowIso,
       }
-
-      const { data: post, error: pErr } = await supabase
-        .from("social_posts")
-        .insert({
-          brief: c.brief,
-          status: "draft",
-          scheduled_at: c.schedule,
-          timezone: "Australia/Sydney",
-          source_blog_id: blog.id,
-          content_type: "article_summary",
-          slide_content: { linkUrl: url(c.key), stat: c.stat },
-        })
-        .select("id")
-        .single();
-      if (pErr) throw pErr;
-
-      const { error: cErr } = await supabase.from("social_post_captions").insert([
-        {
-          post_id: post.id,
-          platform: "linkedin",
-          caption: c.linkedin,
-          hashtags: c.hashtags,
-          media_urls: [],
-          post_url: url(c.key),
-        },
-        {
-          post_id: post.id,
-          platform: "instagram",
-          caption: c.igFb,
-          hashtags: c.hashtags,
-          media_urls: [c.image],
-          post_url: url(c.key),
-          engagement_data: {},
-        },
-        {
-          post_id: post.id,
-          platform: "facebook",
-          caption: c.igFb,
-          hashtags: c.hashtags,
-          media_urls: [c.image],
-          post_url: url(c.key),
-          engagement_data: {},
-        },
-      ]);
-      if (cErr) throw cErr;
-      console.log(`✓ draft social: ${c.brief} → ${c.schedule}`);
-    } else {
-      // Store sync
-      const existingIdx = store.social_posts.findIndex((p) => p.source_blog_id === blog.id);
-      const postId =
-        existingIdx >= 0 ? store.social_posts[existingIdx].id : crypto.randomUUID();
-      const postRow = {
-        id: postId,
-        brief: c.brief,
-        status: "draft",
-        scheduled_at: c.schedule,
-        timezone: "Australia/Sydney",
-        posted_at: null,
-        source_blog_id: blog.id,
-        content_type: "article_summary",
-        slide_content: { linkUrl: url(c.key), stat: c.stat },
-        error_message: null,
-        created_at: existingIdx >= 0 ? store.social_posts[existingIdx].created_at : nowIso,
-        updated_at: nowIso,
-      };
-      if (existingIdx >= 0) {
-        store.social_posts[existingIdx] = postRow;
-      } else {
-        store.social_posts.push(postRow);
-      }
-
-      store.social_post_captions = store.social_post_captions.filter(
-        (cap) => cap.post_id !== postId
-      );
-      store.social_post_captions.push(
-        {
-          id: crypto.randomUUID(),
-          post_id: postId,
-          platform: "linkedin",
-          caption: c.linkedin,
-          hashtags: c.hashtags,
-          media_urls: [],
-          post_url: url(c.key),
-          engagement_data: {},
-          created_at: nowIso,
-        },
-        {
-          id: crypto.randomUUID(),
-          post_id: postId,
-          platform: "instagram",
-          caption: c.igFb,
-          hashtags: c.hashtags,
-          media_urls: [c.image],
-          post_url: url(c.key),
-          engagement_data: {},
-          created_at: nowIso,
-        },
-        {
-          id: crypto.randomUUID(),
-          post_id: postId,
-          platform: "facebook",
-          caption: c.igFb,
-          hashtags: c.hashtags,
-          media_urls: [c.image],
-          post_url: url(c.key),
-          engagement_data: {},
-          created_at: nowIso,
-        }
-      );
-      console.log(`✓ draft social: ${c.brief} → ${c.schedule}`);
-    }
+    );
+    console.log(`✓ draft social: ${c.brief} → ${c.schedule}`);
   }
 
-  // ---------------- EDM: Fri 27 Nov – week's blogs (Mon 23 Audio Clues + Thu 26 Small Group 6-8)
+  store.social_posts = newSocialPosts;
+  store.social_post_captions = newSocialCaptions;
+
+  // ---------------- SINGLE FRIDAY WEEKLY EDM: Fri 27 Nov ----------------
   const subject = "Audio Wiretaps, CCTV Clues & Hosting for 6–8 Friends: The Mystery Gazette 🕵️‍♀️";
   const utm = "utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27";
   const blocks = [
@@ -531,9 +553,10 @@ async function run() {
       id: "blog1-img",
       type: "image",
       data: {
-        src: `${BASE_URL}/blog/ai-generator.png`,
+        src: `${BASE_URL}/blog-images/${SLUGS.audio}.png`,
         alt: bySlug[SLUGS.audio].title,
         width: "100%",
+        height: 210,
         align: "center",
         linkUrl: `${url("audio")}?${utm}`,
         borderRadius: 8,
@@ -606,9 +629,10 @@ async function run() {
       id: "blog2-img",
       type: "image",
       data: {
-        src: `${BASE_URL}/blog/viral-themes.png`,
+        src: `${BASE_URL}/blog-images/${SLUGS.smallGroup}.png`,
         alt: bySlug[SLUGS.smallGroup].title,
         width: "100%",
+        height: 210,
         align: "center",
         linkUrl: `${url("smallGroup")}?${utm}`,
         borderRadius: 8,
@@ -661,19 +685,75 @@ async function run() {
       },
     },
     {
+      id: "div3",
+      type: "divider",
+      data: {
+        color: "#e8e8eb",
+        style: "solid",
+        margin: 24,
+        thickness: 1,
+        sectionStyles: {
+          backgroundColor: "transparent",
+          paddingTop: 4,
+          paddingBottom: 4,
+          paddingLeft: 16,
+          paddingRight: 16,
+        },
+      },
+    },
+    {
+      id: "vip-waitlist-spotlight",
+      type: "text",
+      data: {
+        content:
+          "<div style='background-color:#fdf2f8;border:1px solid #fbcfe8;border-radius:10px;padding:20px;'><span style='background-color:#fe04c6;color:#ffffff;font-size:11px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;'>PRE-LAUNCH VIP GIVEAWAY</span><h3 style='font-size:18px;font-weight:800;color:#1e191c;margin:4px 0 8px 0;'>🎁 First 50 VIP Sign-Ups Get a Complete Mystery Pack 100% FREE</h3><p style='margin:0;color:#374151;font-size:14px;line-height:1.6;'>We're putting the final touches on the Back Pocket Mysteries builder! Before we open public checkout, the <strong>First 50 people</strong> on our VIP Launch List receive a <strong>100%-Off Free Mystery Code</strong> (up to $49 value) on launch day. Forward this to a friend who loves hosting before the 50 VIP spots fill up!</p></div>",
+        fontSize: 14,
+        textAlign: "left",
+        textColor: "#1e191c",
+        lineHeight: 1.6,
+        sectionStyles: {
+          backgroundColor: "transparent",
+          paddingTop: 4,
+          paddingBottom: 8,
+          paddingLeft: 16,
+          paddingRight: 16,
+        },
+      },
+    },
+    {
+      id: "vip-waitlist-cta",
+      type: "button",
+      data: {
+        text: "Claim Your Free Pre-Launch VIP Spot (First 50) →",
+        url: `${SITE}/free-murder-mystery-game?${utm}`,
+        backgroundColor: "#1e191c",
+        textColor: "#ffffff",
+        borderRadius: 6,
+        align: "left",
+        padding: { x: 24, y: 12 },
+        sectionStyles: {
+          backgroundColor: "transparent",
+          paddingTop: 4,
+          paddingBottom: 24,
+          paddingLeft: 16,
+          paddingRight: 16,
+        },
+      },
+    },
+    {
       id: "footer-text",
       type: "text",
       data: {
         content:
-          "<p style='margin:0 0 4px 0;font-size:16px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;text-transform:uppercase;'>Back Pocket <span style='color:#fe04c6;'>Mysteries</span></p><p style='margin:0 0 16px 0;font-size:13px;color:#d1d5db;line-height:1.6;max-width:420px;display:inline-block;'>Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 30 minutes.</p>",
+          "<div style='margin-bottom:12px;'><img src='https://backpocketmysteries.com/logo-horizontal-white.png' width='150' alt='Back Pocket Mysteries' style='display:block;margin:0 auto;max-width:150px;height:auto;' /></div><p style='margin:0 0 12px 0;font-size:12px;color:#a1a1aa;line-height:1.6;max-width:420px;display:inline-block;'>Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 30 minutes.</p><p style='margin:0;font-size:11px;color:#71717a;'>© 2026 Back Pocket Mysteries · <a href='https://backpocketmysteries.com/en' style='color:#fe04c6;text-decoration:none;'>backpocketmysteries.com</a></p>",
         fontSize: 13,
         textAlign: "center",
         textColor: "#d1d5db",
         lineHeight: 1.5,
         sectionStyles: {
-          backgroundColor: "#1e191c",
-          paddingTop: 28,
-          paddingBottom: 28,
+          backgroundColor: "#141115",
+          paddingTop: 32,
+          paddingBottom: 32,
           paddingLeft: 32,
           paddingRight: 32,
         },
@@ -687,87 +767,63 @@ async function run() {
     const d = block.data;
     if (block.type === "text")
       return `<tr><td style="${sw}"><div style="color:${d.textColor};text-align:${d.textAlign};font-size:${d.fontSize}px;font-family:${EMAIL_FONT_FAMILY};line-height:${d.lineHeight};margin:0;">${d.content}</div></td></tr>`;
-    if (block.type === "image")
-      return `<tr><td style="${sw}" align="${d.align}"><a href="${d.linkUrl}" target="_blank" style="display:inline-block;width:100%;"><img src="${d.src}" alt="${d.alt}" style="width:${d.width};max-width:100%;height:auto;border-radius:${d.borderRadius}px;display:block;" /></a></td></tr>`;
+    if (block.type === "image") {
+      const h = d.height || 210;
+      return `<tr><td style="${sw}" align="${d.align}"><a href="${d.linkUrl}" target="_blank" style="display:block;width:100%;max-height:${h}px;overflow:hidden;border-radius:${d.borderRadius}px;"><img src="${d.src}" alt="${d.alt}" height="${h}" style="width:${d.width};max-width:100%;height:${h}px;object-fit:cover;object-position:center;border-radius:${d.borderRadius}px;display:block;" /></a></td></tr>`;
+    }
     if (block.type === "button")
-      return `<tr><td style="${sw}" align="${d.align}"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background-color:${d.backgroundColor};border-radius:${d.borderRadius}px;padding:${d.padding.y}px ${d.padding.x}px;"><a href="${d.url}" target="_blank" style="display:inline-block;color:${d.textColor};font-weight:700;font-family:${EMAIL_FONT_FAMILY};font-size:15px;text-decoration:none;">${d.text}</a></td></tr></table></td></tr>`;
+      return `<tr><td style="${sw}" align="${d.align}"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background-color:${d.backgroundColor};border-radius:999px;padding:${d.padding.y}px ${d.padding.x}px;"><a href="${d.url}" target="_blank" style="display:inline-block;color:${d.textColor};font-weight:800;font-family:${EMAIL_FONT_FAMILY};font-size:13px;letter-spacing:1.2px;text-transform:uppercase;text-decoration:none;">${d.text}</a></td></tr></table></td></tr>`;
     if (block.type === "divider")
       return `<tr><td style="${sw}"><div style="padding:${d.margin}px 0;"><hr style="border:none;border-top:${d.thickness}px ${d.style} ${d.color};margin:0;" /></div></td></tr>`;
     return "";
   };
-  const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><body style="margin:0;padding:0;background-color:#f4f4f5;font-family:${EMAIL_FONT_FAMILY};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;"><tr><td align="center" style="padding:20px 0;"><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;max-width:600px;">${blocks
+  const topBrandHeaderRow = `<tr><td style="background-color:#141115;padding:24px 32px 20px 32px;border-bottom:4px solid #fe04c6;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="left" valign="middle"><a href="https://backpocketmysteries.com/en" target="_blank" style="text-decoration:none;display:inline-block;"><img src="https://backpocketmysteries.com/logo-horizontal-white.png" width="180" alt="Back Pocket Mysteries" style="display:block;border:0;max-width:180px;height:auto;" /></a></td><td align="right" valign="middle"><span style="display:inline-block;background-color:rgba(254,4,198,0.14);border:1px solid rgba(254,4,198,0.35);color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:5px 10px;border-radius:999px;">THE MYSTERY GAZETTE</span></td></tr></table></td></tr>`;
+  const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><body style="margin:0;padding:0;background-color:#f4f4f5;font-family:${EMAIL_FONT_FAMILY};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;"><tr><td align="center" style="padding:28px 12px;"><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;max-width:600px;width:100%;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(17,17,17,0.08);border:1px solid #e4e4e7;">${topBrandHeaderRow}${blocks
     .map(renderBlock)
     .join("")}</table></td></tr></table></body></html>`;
 
-  const edmPayload = {
-    subject,
-    preheader:
-      "This week on The Mystery Gazette: how audio wiretaps and CCTV stills transform your party, plus hosting for 6–8 friends.",
-    status: "draft",
-    scheduled_at: "2026-11-27T09:00:00Z",
-    scheduled_at_tz: "Australia/Sydney",
-    sent_at: null,
-    audience_type: "group",
-    audience_group_id: "67858376-44bc-4956-a899-354c9f65cbe8",
-    from_name: "Gabby from Back Pocket Mysteries",
-    from_email: "hello@backpocketmysteries.com",
-    blocks_json: blocks,
-    html_content: html,
-    global_styles_json: {
-      backgroundColor: "#f4f4f5",
-      fontFamily: EMAIL_FONT_FAMILY,
-      primaryColor: "#fe04c6",
-      contentWidth: 600,
-    },
-    updated_at: nowIso,
-  };
-
-  if (!useStore) {
-    const { data: dupe } = await supabase
-      .from("edm_campaigns")
-      .select("id")
-      .eq("subject", subject);
-    if (dupe?.length) {
-      console.log("skip EDM: already exists");
-      return;
-    }
-    const { data: edm, error: eErr } = await supabase
-      .from("edm_campaigns")
-      .insert(edmPayload)
-      .select("id")
-      .single();
-    if (eErr) throw eErr;
-    console.log(`✓ draft EDM ${edm.id} for Fri 27 Nov`);
-  } else {
-    const existingEdmIdx = store.edm_campaigns.findIndex((e) => e.subject === subject);
-    const edmId =
-      existingEdmIdx >= 0 ? store.edm_campaigns[existingEdmIdx].id : crypto.randomUUID();
-    const row = {
+  const existingEdm = store.edm_campaigns.find((e) => e.subject === subject);
+  const edmId = existingEdm ? existingEdm.id : crypto.randomUUID();
+  store.edm_campaigns = [
+    {
       id: edmId,
-      created_at:
-        existingEdmIdx >= 0 ? store.edm_campaigns[existingEdmIdx].created_at : nowIso,
-      ...edmPayload,
-    };
-    if (existingEdmIdx >= 0) {
-      store.edm_campaigns[existingEdmIdx] = row;
-    } else {
-      store.edm_campaigns.push(row);
-    }
-    console.log(`✓ draft EDM ${edmId} for Fri 27 Nov`);
+      created_at: existingEdm ? existingEdm.created_at : nowIso,
+      subject,
+      preheader:
+        "This week on The Mystery Gazette: how audio wiretaps and CCTV stills transform your party, plus hosting for 6–8 friends.",
+      status: "draft",
+      scheduled_at: "2026-11-27T09:00:00Z",
+      scheduled_at_tz: "Australia/Sydney",
+      sent_at: null,
+      audience_type: "group",
+      audience_group_id: "67858376-44bc-4956-a899-354c9f65cbe8",
+      from_name: "Gabby from Back Pocket Mysteries",
+      from_email: "hello@backpocketmysteries.com",
+      blocks_json: blocks,
+      html_content: html,
+      global_styles_json: {
+        backgroundColor: "#f4f4f5",
+        fontFamily: EMAIL_FONT_FAMILY,
+        primaryColor: "#fe04c6",
+        contentWidth: 600,
+      },
+      updated_at: nowIso,
+    },
+  ];
+  console.log(`✓ draft EDM: ${subject} → 2026-11-27T09:00:00Z`);
 
-    fs.writeFileSync(storePath, JSON.stringify(store, null, 2), "utf8");
-    await supabase.storage
-      .from("character-images")
-      .upload(
-        "system/marketing-suite-store.json",
-        Buffer.from(JSON.stringify(store, null, 2), "utf8"),
-        {
-          contentType: "application/json",
-          upsert: true,
-        }
-      )
-      .catch(() => {});
-  }
+  fs.writeFileSync(storePath, JSON.stringify(store, null, 2), "utf8");
+  await supabase.storage
+    .from("character-images")
+    .upload(
+      "system/marketing-suite-store.json",
+      Buffer.from(JSON.stringify(store, null, 2), "utf8"),
+      {
+        contentType: "application/json",
+        upsert: true,
+      }
+    )
+    .catch(() => {});
 }
 
 run().catch((e) => {

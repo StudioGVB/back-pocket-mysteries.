@@ -27,20 +27,33 @@ export function ProfileCard({ user, profile, onEdit }: ProfileCardProps) {
       }, user.name);
 
   return (
-    <div className="bg-white border-2 border-brand-pink/20 p-8 rounded-[2rem] shadow-xl shadow-brand-pink/5 relative overflow-hidden mb-10 group transition-all hover:border-brand-pink/40">
+    <div className="bg-white border-2 border-brand-pink/20 p-5 sm:p-8 rounded-3xl sm:rounded-[2rem] shadow-xl shadow-brand-pink/5 relative overflow-hidden mb-8 sm:mb-10 group transition-all hover:border-brand-pink/40">
       <div className="absolute top-0 right-0 w-64 h-64 bg-brand-pink/5 rounded-bl-full -z-10 transition-transform group-hover:scale-110" />
       
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        {/* Avatar Section */}
-        <div className="w-32 h-32 bg-white rounded-3xl flex items-center justify-center overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={avatarUrl} alt={user.name} className="w-[120%] h-[120%] object-cover mt-4" />
+      <div className="flex flex-col md:flex-row gap-5 sm:gap-8 items-start">
+        {/* Top Row on Mobile: Avatar + Name side-by-side */}
+        <div className="flex items-center gap-4 md:block w-full md:w-auto">
+          <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-white rounded-2xl sm:rounded-3xl flex items-center justify-center overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={avatarUrl} alt={user.name} className="w-[120%] h-[120%] object-cover mt-3 sm:mt-4" />
+          </div>
+          <div className="md:hidden min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight truncate">{user.name}</h2>
+              {profile?.pronouns && (
+                <span className="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                  {profile.pronouns}
+                </span>
+              )}
+            </div>
+            <p className="text-xs font-bold text-slate-400 truncate">{user.email}</p>
+          </div>
         </div>
 
         {/* Info Section */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-            <div>
+        <div className="flex-1 min-w-0 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 mb-4">
+            <div className="hidden md:block">
               <div className="flex items-center gap-3 mb-1">
                 <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none">{user.name}</h2>
                 {profile?.pronouns && (
@@ -54,7 +67,7 @@ export function ProfileCard({ user, profile, onEdit }: ProfileCardProps) {
             
             <button
               onClick={onEdit}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-pink text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-colors shadow-md shadow-brand-pink/30 hover:shadow-xl hover:shadow-brand-dark/20 hover:-translate-y-0.5"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 sm:px-6 py-3 bg-brand-pink text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-colors shadow-md shadow-brand-pink/30 hover:shadow-xl hover:shadow-brand-dark/20"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
               Edit My Profile

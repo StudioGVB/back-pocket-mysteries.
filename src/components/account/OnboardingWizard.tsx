@@ -103,19 +103,28 @@ export function OnboardingWizard({ onboardingCompleted, userName }: OnboardingWi
         </div>
       )}
 
-      {/* Step 2 & 3: Contextual Tooltips attached to the highlighted sidebar element */}
-      {step > 1 && targetRect && (
+      {/* Step 2 & 3: Contextual Tooltips attached to the highlighted sidebar element on desktop, or centered modal on mobile */}
+      {step > 1 && (
         <div 
-          className="fixed z-[105] w-72 md:w-80 animate-in slide-in-from-left-4 fade-in duration-300"
-          style={{
-            // Position tooltip to the right of the highlighted element
-            top: `${targetRect.top}px`,
-            left: `${targetRect.right + 20}px`,
-          }}
+          className={
+            targetRect && targetRect.width > 0 && typeof window !== 'undefined' && window.innerWidth >= 768
+              ? 'fixed z-[105] w-72 md:w-80 animate-in slide-in-from-left-4 fade-in duration-300'
+              : 'fixed inset-0 z-[105] flex items-center justify-center p-4'
+          }
+          style={
+            targetRect && targetRect.width > 0 && typeof window !== 'undefined' && window.innerWidth >= 768
+              ? {
+                  top: `${targetRect.top}px`,
+                  left: `${targetRect.right + 20}px`,
+                }
+              : undefined
+          }
         >
-          <div className="bg-white rounded-2xl p-6 shadow-2xl relative">
-            {/* Arrow pointing left */}
-            <div className="absolute top-4 -left-3 w-6 h-6 bg-white rotate-45 rounded-sm" />
+          <div className="bg-white rounded-2xl p-6 shadow-2xl relative w-full max-w-sm">
+            {/* Arrow pointing left (desktop only) */}
+            {targetRect && targetRect.width > 0 && (
+              <div className="hidden md:block absolute top-4 -left-3 w-6 h-6 bg-white rotate-45 rounded-sm" />
+            )}
             
             <div className="relative z-10">
               <div className="text-brand-pink mb-2">

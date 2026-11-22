@@ -113,15 +113,15 @@ export default function InviteClient({
     'w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 focus:ring-2 focus:border-[#fe04c6] outline-none transition-all';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: '#f9f9f9' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6" style={{ background: '#f9f9f9' }}>
       {/* Card */}
-      <div className="w-full max-w-md bg-white rounded-[2rem] overflow-hidden shadow-xl">
+      <div className="w-full max-w-md bg-white rounded-3xl sm:rounded-[2rem] overflow-hidden shadow-xl">
         {/* Header */}
-        <div className="px-10 py-7 flex items-center justify-center" style={{ background: '#111', borderBottom: '4px solid #fe04c6' }}>
-          <Image src="/logo-horizontal-white.png" alt="Back Pocket Mysteries" width={200} height={40} className="h-8 w-auto object-contain" />
+        <div className="px-6 sm:px-10 py-5 sm:py-7 flex items-center justify-center" style={{ background: '#111', borderBottom: '4px solid #fe04c6' }}>
+          <Image src="/logo-horizontal-white.png" alt="Back Pocket Mysteries" width={200} height={40} className="h-7 sm:h-8 w-auto object-contain" />
         </div>
 
-        <div className="p-8 sm:p-10">
+        <div className="p-6 sm:p-10">
           {statusMessage ? (
             /* Invalid state */
             <div className="text-center">

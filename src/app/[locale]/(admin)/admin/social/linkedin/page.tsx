@@ -225,8 +225,8 @@ export default function LinkedInManagementPage() {
           </div>
           <div>
             <p className="text-xs text-gray-500 font-semibold">Target Channel</p>
-            <p className="text-base font-black text-brand-dark">LinkedIn Company</p>
-            <p className="text-[11px] text-gray-500">Back Pocket Mysteries</p>
+            <p className="text-base font-black text-brand-dark">Back Pocket Games</p>
+            <p className="text-[11px] text-emerald-600 font-bold">● Connected via Buffer (LinkedIn Page)</p>
           </div>
         </div>
 
