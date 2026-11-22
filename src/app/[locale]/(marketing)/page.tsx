@@ -491,9 +491,9 @@ export default async function HomePage(props: {
               </thead>
               <tbody>
                 {[
-                  [dict.home.compare.table.f1, '✓', '✓ (slow)', '✓ (basic)'],
-                  [dict.home.compare.table.f2, '✓', '✗', '✗'],
-                  [dict.home.compare.table.f3, '✓', 'Varies', 'Rarely'],
+                  [dict.home.compare.table.f1, '✓ (100% Human)', '✓ (Rigid template)', '✗ (Plot holes)'],
+                  [dict.home.compare.table.f2, '✓ (AI-tailored)', '✓ (Manual & slow)', '✓ (Basic)'],
+                  [dict.home.compare.table.f3, '✓', '✗', '✗'],
                   [dict.home.compare.table.f4, '~30 min', '3–21 days', 'Hours of prompting'],
                   [dict.home.compare.table.f5, <PriceDisplay key="p1" tier="basic" locale={locale as Locale} />, '$60–$150+', '$20/mo + DIY layout'],
                   [dict.home.compare.table.f6, '✓', 'Depends', '✗'],

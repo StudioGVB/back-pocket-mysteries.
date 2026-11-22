@@ -111,9 +111,8 @@ export default async function FreeMurderMysteryGamePage(props: {
               </h1>
 
               <p className="text-lg sm:text-xl text-gray-600 font-medium leading-relaxed max-w-2xl">
-                Forget generic, cheesy PDF downloads where nobody fits their character. To celebrate the launch of{' '}
-                <strong className="text-brand-dark">Back Pocket Mysteries</strong>, the{' '}
-                <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete, personalised murder mystery dinner party kit—built around your actual friends—100% free.
+                Every core mystery at <strong className="text-brand-dark">Back Pocket Mysteries</strong> is written by a human author for complex, watertight clue logic—then our AI engine builds your custom package around your actual friends. To celebrate our launch, the{' '}
+                <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete custom mystery pack 100% free.
               </p>
 
               <div className="grid sm:grid-cols-2 gap-4 pt-2">
@@ -123,10 +122,10 @@ export default async function FreeMurderMysteryGamePage(props: {
                   </span>
                   <div>
                     <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
-                      Built Around Your Friends
+                      Human-Written Plot + AI Personalised
                     </h3>
                     <p className="text-xs text-gray-500 font-medium mt-1">
-                      We weave your guests&apos; personalities, traits, and inside jokes directly into the alibis and motives.
+                      Human authors architect the plot, twists, and clue logic; AI weaves your guests&apos; names, traits, and inside jokes into the dossiers and evidence.
                     </p>
                   </div>
                 </div>

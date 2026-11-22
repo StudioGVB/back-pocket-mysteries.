@@ -29,49 +29,49 @@
   },
   "home": {
     "hero": {
-      "badge": "Your party, sorted in 30 minutes",
+      "badge": "Human-Written Mysteries • AI-Tailored to Your Guests in ~30 Mins",
       "title": "Murder mystery, built around, your people.",
-      "subtitle": "Real names. Real relationships. Real drama. We workshop a fully personalised, print-ready murder mystery pack, in ~30 minutes, not days.",
+      "subtitle": "Every plot, clue chain, and alibi is written by human mystery writers for watertight logic—then our AI engine builds your custom package around your friends' real names, traits, and inside jokes in ~30 minutes.",
       "ctaPick": "Pick a Theme",
       "ctaHow": "How it Works",
       "priceLabel": "From {{price}}",
       "readyBadge": "Ready in ~30 min"
     },
     "why": {
-      "title": "Not just a kit. Your kit.",
-      "desc": "Every other mystery pack gives you a fixed story with blank spaces to fill in. We take our human-crafted mystery plots and adapt them entirely around your actual guest list, names, relationships, and all the drama, so every clue, character, and confession feels like it was written just for your party.",
+      "title": "Human-written plots. AI-tailored to your friends.",
+      "desc": "Generic AI tools hallucinate plot holes and weak endings, while off-the-shelf PDF kits force your friends into rigid stranger templates. At Back Pocket Mysteries, every core mystery is architected by a human writer with airtight forensic logic, interlocking alibis, and multi-layered twists—then our AI customises the character dossiers, CCTV evidence, and audio wiretaps around your actual guest list.",
       "features": {
         "guestStory": {
-          "title": "Guest-Specific Story",
-          "desc": "Tell us who's coming and their relationships. We weave real names, dynamics, and 'vibes' directly into the narrative.",
-          "badge": "Personalised"
+          "title": "Human-Architected Mystery Plots",
+          "desc": "Every storyline, motive, timeline, and plot twist is written and play-tested by human writers first—so the logic is complex, fair, and impossible to guess in Round 1.",
+          "badge": "100% Human-Written Plot"
         },
         "evidence": {
-          "title": "Real Evidence Images",
-          "desc": "Fake texts, DM screenshots, and 'receipts', enhanced by AI to match your exact story. Evidence that actually names your guests.",
-          "badge": "Custom Graphics"
+          "title": "AI-Personalised to Your Guests",
+          "desc": "Once you enter your guests' names, traits, and inside jokes, our AI engine tailors the character scripts, leaked DMs, CCTV stills, and voice wiretaps to your exact group.",
+          "badge": "AI-Customised Package"
         },
         "instant": {
-          "title": "Print-Ready in ~30 Mins",
-          "desc": "Download your complete pack, host guide, character packets, and evidence assets, all formatted and ready to print.",
+          "title": "Live Mobile Lobby + Print Kit",
+          "desc": "In ~30 minutes, your custom package is ready with a 6-digit Game PIN mobile lobby, Spoiler-Free Host Mode, and formatted print-ready PDF booklets.",
           "badge": "Ready in ~30 Mins"
         }
       }
     },
     "steps": {
       "title": "Your party is sorted in 3 steps.",
-      "subtitle": "No planning. No stress. No spoilers for the host.",
+      "subtitle": "Human-crafted story depth. AI-powered personalisation. Zero spoilers for the host.",
       "step1": {
-        "title": "Pick a theme that fits your crowd",
-        "desc": "Reality TV reunion scandal? Poisoned champagne toast? Secret NDA drama? Choose your active theme, we handle the rest."
+        "title": "Pick a human-written mystery theme",
+        "desc": "Every theme is crafted by a human writer with three structured rounds, verified clue logic, and a dramatic final reveal."
       },
       "step2": {
-        "title": "Tell us who's coming",
-        "desc": "Add your guest names and their relationships. The more detail you give, the funnier and more personal the mystery gets."
+        "title": "Cast your friends & add inside jokes",
+        "desc": "Enter your guests' names, personalities, and relationships so our AI engine can weave them into the human-written plot without breaking a single clue."
       },
       "step3": {
-        "title": "Launch live lobby or print & play",
-        "desc": "Your complete pack and Kahoot-style 6-digit Game PIN lobby are ready in ~30 minutes. Play on phones or print at home."
+        "title": "AI builds your custom package in ~30 mins",
+        "desc": "Your personalised suspect dossiers, custom evidence, print-ready PDFs, and 6-digit Game PIN lobby are compiled automatically."
       },
       "cta": "See the full process"
     },
@@ -106,15 +106,15 @@
     },
     "compare": {
       "title": "Etsy takes weeks. We take 30 minutes.",
-      "subtitle": "The same level of personalisation, without the wait, the Canva faff, or the £150 price tag.",
+      "subtitle": "Human-written mystery complexity combined with instant AI personalisation—without plot holes or a £150 price tag.",
       "table": {
         "feature": "Feature",
         "bpm": "Back Pocket Mysteries",
         "etsy": "Etsy Custom Kits",
         "ai": "Generic AI Tools",
-        "f1": "Guest names in the story",
-        "f2": "Custom evidence & live mobile lobby",
-        "f3": "Print-ready pack, all docs",
+        "f1": "Human-written plot & watertight clue logic",
+        "f2": "Guest names & inside jokes woven into the story",
+        "f3": "Custom evidence & live mobile lobby",
         "f4": "Delivery time",
         "f5": "Price (4–16 guests)",
         "f6": "Spoiler-Free Host Mode"
@@ -122,7 +122,7 @@
     },
     "ctaSection": {
       "title": "Your party deserves better than a blank template.",
-      "desc": "Get a mystery that's actually about your people. Packs from {{price}}.",
+      "desc": "Human-written mystery depth, AI-tailored around your people. Packs from {{price}}.",
       "meta": "Rated 16+ · UK, US & AU friendly · Live Mobile Lobby + Print-Ready PDFs"
     }
   },
@@ -168,25 +168,25 @@
     }
   },
   "howItWorks": {
-    "title": "Your party sorted, in ~30 minutes.",
-    "subtitle": "You've got enough on your plate. We handle the script, the evidence, the character booklets, the live mobile lobby, and the host guide, all personalised to your actual guest list.",
-    "badge": "The Process",
+    "title": "Human-written mysteries. AI-built for your group in ~30 minutes.",
+    "subtitle": "Every core mystery is written by a human writer so the clue logic, alibis, and twists are complex and watertight. Then our AI builds your personalised package—weaving your real guests into the character scripts, evidence, and live mobile lobby.",
+    "badge": "Human Plot + AI Personalisation",
     "steps": {
       "pick": {
-        "title": "Pick a theme that fits your crowd",
-        "desc": "Browse our active themes and pick the setting that matches your event energy. Every theme comes with a full plot, 3 structured rounds, and a dramatic final reveal.",
+        "title": "Pick a human-crafted mystery theme",
+        "desc": "Browse our active themes and pick the setting that matches your event energy. Every theme is written by a human mystery author with 3 structured rounds, interlocking alibis, and a dramatic final reveal.",
         "bullets": [
-          "Flagship Reality TV Reunion ('Love On The Rocks') live now",
+          "100% human-written plot architecture & watertight clue chains",
           "Configurable Spice Level (Mild PG-13, Spicy, or Extra Juicy)",
           "Configurable Complexity (Light, Standard, or Complex)"
         ]
       },
       "guests": {
-        "title": "Cast your real guests into iconic roles",
-        "desc": "This is where the magic happens. Add your guests' names, quirks, and relationships. Instead of forcing friends to memorize pre-set stranger names, your guests' real names become 'The Star', 'The Villain', 'The Ex', and more.",
+        "title": "AI casts your real guests into the plot",
+        "desc": "Add your guests' names, quirks, and relationships. Our AI engine adapts the human-written character dossiers around your actual friends—weaving in inside jokes and dynamics without ever altering the underlying clue logic.",
         "bullets": [
-          "Real guest names woven throughout every script & clue",
-          "Relationship dynamics & inside jokes shape character motives",
+          "Real guest names & traits woven into a human-written script",
+          "Zero AI plot holes—every alibi and forensic timestamp stays airtight",
           "Spoiler-Free Host Mode so the host can play as a full suspect"
         ]
       },
