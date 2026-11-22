@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { BrainstormWorksheetButton } from '@/components/builder/BrainstormWorksheetModal';
 
 export function AdminSidebar() {
   const linkClass =
@@ -47,6 +48,15 @@ export function AdminSidebar() {
                 <Link href="/admin/mysteries" className={linkClass}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                   Mystery Bases
+                </Link>
+              </li>
+              <li>
+                <BrainstormWorksheetButton variant="sidebar-item" />
+              </li>
+              <li>
+                <Link href="/admin/tickets" className={linkClass}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Support &amp; Tickets
                 </Link>
               </li>
               <li>
@@ -164,12 +174,6 @@ export function AdminSidebar() {
                 <Link href="/admin/enquiries" className={linkClass}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   Enquiries
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin/tickets" className={linkClass}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  Support Tickets
                 </Link>
               </li>
               <li>

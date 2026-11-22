@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { BrainstormWorksheetButton } from './BrainstormWorksheetModal';
 
 interface BuilderSidebarProps {
   children?: React.ReactNode;
@@ -170,32 +169,6 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
       ]
     : [];
 
-  const studioItems = [
-    {
-      label: 'All Mysteries',
-      href: `/${locale}/builder/mysteries`,
-      exact: true,
-      icon: (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Support & Tickets',
-      href: activeMysteryId
-        ? `/${locale}/builder/support?mysteryId=${activeMysteryId}`
-        : `/${locale}/builder/support`,
-      exact: false,
-      matchPrefix: `/${locale}/builder/support`,
-      icon: (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      ),
-    },
-  ];
-
   const isItemActive = (item: { href: string; exact?: boolean; matchPrefix?: string }) => {
     const cleanHref = item.href.split('?')[0];
     if (item.exact) {
@@ -278,24 +251,6 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
             </div>
           </>
         )}
-
-        {/* 4. Studio */}
-        <div>
-          <h3 className={sectionTitleClass}>Studio</h3>
-          <ul className="space-y-0.5">
-            {studioItems.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className={getLinkClass(isItemActive(item))}>
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Link>
-              </li>
-            ))}
-            <li>
-              <BrainstormWorksheetButton variant="sidebar-item" />
-            </li>
-          </ul>
-        </div>
       </nav>
 
       {/* Bottom Footer Actions */}
