@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Resend } from 'resend';
+import { buildBrandedEmailShell } from '@/lib/branded-email-template';
 
 export interface PurchaseNotificationPayload {
   dedupeKey?: string;
@@ -323,36 +324,26 @@ export async function sendCustomerGenerationStartedEmail(
 
   const subject = `☕ We're Brewing Your Mystery Package! ("${payload.mysteryTitle}") - Ready in ~20 Mins`;
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0b0914; color: #ffffff; padding: 32px 24px; border-radius: 16px; border-top: 6px solid #fe04c6;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <span style="display: inline-block; background-color: rgba(254,4,198,0.18); color: #fe04c6; padding: 6px 14px; border-radius: 999px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">
-          ☕ Custom AI Package Generating (~20 Mins)
-        </span>
-        <h1 style="color: #ffffff; margin: 16px 0 8px 0; font-size: 26px; font-weight: 900;">
-          Go Get a Coffee, ${greetingName}!
-        </h1>
-        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0;">
-          Your cast for <strong style="color: #ffffff;">${payload.mysteryTitle}</strong> is locked in. Our system is now generating your personalized character portraits, outfit guides, visual clues, and audio evidence.
+  const html = buildBrandedEmailShell({
+    preheader: `Your custom cast for "${payload.mysteryTitle}" is locked in — your mystery pack will be ready in ~20 minutes.`,
+    kicker: 'CUSTOM PACKAGE GENERATING (~20 MINS)',
+    headline: `Go Grab a Coffee, ${greetingName} — Your Case Is Being Built.`,
+    bodyHtml: `
+      <p style="margin:0 0 16px 0;color:#374151;">
+        Your cast for <strong style="color:#1e191c;">${payload.mysteryTitle}</strong> is locked in. Our story engine is now generating your personalized character dossiers, outfit guides, CCTV stills, and multi-speaker audio clues.
+      </p>
+      <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #10b981;padding:20px 24px;border-radius:12px;margin-bottom:8px;">
+        <p style="margin:0 0 6px 0;color:#34d399;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;">
+          ✓ SAFE TO CLOSE YOUR BROWSER
+        </p>
+        <p style="margin:0;color:#d4d4d8;font-size:13px;line-height:1.65;">
+          Your complete package will be ready in <strong>~20 minutes</strong>. You can safely close your browser while our servers build everything in the background. We will email you the moment it is ready, and it will be waiting for you inside <strong>My Mysteries</strong>.
         </p>
       </div>
-
-      <div style="background-color: #161224; border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-        <p style="margin: 0 0 8px 0; color: #34d399; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">
-          ✅ Safe to Close Your Browser
-        </p>
-        <p style="margin: 0; color: #e2e8f0; font-size: 13px; line-height: 1.6;">
-          Your package will be ready in <strong>~20 minutes</strong>. You can safely close your browser while our servers build everything in the background. We will send you another email the moment it's ready, and it will be waiting for you in <strong>My Mysteries (My Stories)</strong>!
-        </p>
-      </div>
-
-      <div style="text-align: center; margin-top: 24px;">
-        <a href="${myStoriesUrl}" style="display: inline-block; background: linear-gradient(135deg, #fe04c6 0%, #c026d3 100%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">
-          Open My Mysteries (Stories) →
-        </a>
-      </div>
-    </div>
-  `;
+    `,
+    ctaText: 'Open My Mysteries →',
+    ctaUrl: myStoriesUrl,
+  });
 
   try {
     const apiKey = resolveResendApiKey();
@@ -418,7 +409,7 @@ export async function sendCustomerMysteryReadyEmail(
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
-    'http://localhost:3000';
+    'https://backpocketmysteries.com';
   const targetSlug = payload.mysterySlug || payload.mysteryId;
   const myStoriesUrl = `${siteUrl}/${locale}/account/orders`;
   const readyHubUrl = `${siteUrl}/${locale}/mysteries/${targetSlug}/ready`;
@@ -429,51 +420,48 @@ export async function sendCustomerMysteryReadyEmail(
 
   const subject = `🎉 Your Murder Mystery Package is Ready! - "${payload.mysteryTitle}"`;
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0b0914; color: #ffffff; padding: 32px 24px; border-radius: 16px; border-top: 6px solid #10b981;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <span style="display: inline-block; background-color: rgba(16,185,129,0.2); color: #34d399; padding: 6px 14px; border-radius: 999px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">
-          🎉 Your Mystery Package is Ready!
-        </span>
-        <h1 style="color: #ffffff; margin: 16px 0 8px 0; font-size: 26px; font-weight: 900;">
-          ${greetingName}, "${payload.mysteryTitle}" is Ready to Play!
-        </h1>
-        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0;">
-          Your custom character dossiers, outfit guides, visual clues, and 6-digit Kahoot Game PIN are ready in <strong>My Mysteries (My Stories)</strong>.
+  const html = buildBrandedEmailShell({
+    preheader: `Your custom dossiers, clues, and 6-digit Game PIN (${formattedPin}) for "${payload.mysteryTitle}" are ready!`,
+    kicker: 'CASE FILE COMPLETE • READY TO HOST',
+    headline: `${greetingName}, "${payload.mysteryTitle}" Is Ready to Play.`,
+    bodyHtml: `
+      <p style="margin:0 0 20px 0;color:#374151;">
+        Your custom character dossiers, outfit guides, visual evidence, and 6-digit Live Game PIN are ready inside your Pre-Party Ready Hub.
+      </p>
+      <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;padding:22px;border-radius:12px;margin-bottom:24px;text-align:center;">
+        <p style="margin:0 0 6px 0;color:#fe04c6;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">
+          6-DIGIT LIVE GAME PIN
         </p>
-      </div>
-
-      <div style="background-color: #161224; border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: center;">
-        <p style="margin: 0 0 6px 0; color: #94a3b8; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">
-          6-Digit Live Game PIN
-        </p>
-        <p style="margin: 0; color: #ffffff; font-size: 28px; font-family: monospace; font-weight: 900; letter-spacing: 4px;">
+        <p style="margin:0;color:#ffffff;font-size:28px;font-family:monospace;font-weight:900;letter-spacing:4px;">
           ${formattedPin}
         </p>
       </div>
-
-      <div style="background-color: #161224; border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-        <p style="margin: 0 0 10px 0; color: #fe04c6; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">
-          What's Waiting Inside Your Ready Hub:
-        </p>
-        <ul style="margin: 0; padding-left: 18px; color: #e2e8f0; font-size: 13px; line-height: 1.7;">
-          <li><strong>1-Click Group Chat Character Link</strong> - Drop one link in the group chat so guests can click their character &amp; see their outfit!</li>
-          <li><strong>Individual Character Invites</strong> - Outlines, dress code, vibe &amp; reminder to bring a charged phone.</li>
-          <li><strong>How to Play Run-Through &amp; Host Set-Up Guide</strong> - Everything you need before party night starts.</li>
-        </ul>
-      </div>
-
-      <div style="text-align: center; margin-top: 24px;">
-        <a href="${readyHubUrl}" style="display: inline-block; background: linear-gradient(135deg, #fe04c6 0%, #c026d3 100%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
-          🎉 Open Your Pre-Party Ready Hub →
-        </a>
-        <br />
-        <a href="${myStoriesUrl}" style="display: inline-block; color: #94a3b8; text-decoration: underline; font-size: 12px; font-weight: 700; margin-top: 6px;">
-          Or view all your mysteries in My Stories →
-        </a>
-      </div>
-    </div>
-  `;
+      <h3 style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:#1e191c;margin:0 0 12px 0;">
+        Waiting Inside Your Ready Hub
+      </h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.6;">
+            <strong style="color:#1e191c;">01 · 1-Click Group Chat Character Link:</strong> Drop one link into your group chat so guests can view their character bio and outfit brief.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.6;">
+            <strong style="color:#1e191c;">02 · Individual Character Invites:</strong> Public character outlines, dress code, and pre-party instructions.
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:10px 0;color:#374151;font-size:14px;line-height:1.6;">
+            <strong style="color:#1e191c;">03 · Spoiler-Free Host Run Sheet:</strong> Everything you need before guests arrive, without spoiling who did it.
+          </td>
+        </tr>
+      </table>
+    `,
+    ctaText: 'Open Your Pre-Party Ready Hub →',
+    ctaUrl: readyHubUrl,
+    secondaryCtaText: 'Or view all your mysteries in My Stories →',
+    secondaryCtaUrl: myStoriesUrl,
+  });
 
   try {
     const apiKey = resolveResendApiKey();

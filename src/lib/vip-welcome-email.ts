@@ -1,3 +1,5 @@
+import { buildBrandedEmailShell } from '@/lib/branded-email-template';
+
 export interface VipWelcomeEmailParams {
   firstName?: string | null;
   vipRank?: number;
@@ -5,6 +7,9 @@ export interface VipWelcomeEmailParams {
   qualifiesForFreeMystery?: boolean;
   spotsRemaining?: number;
 }
+
+const BASE_URL = "https://backpocketmysteries.com";
+const LOGO_WHITE_URL = `${BASE_URL}/logo-horizontal-white.png`;
 
 export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
   const firstName = params.firstName || "{{first_name}}";
@@ -17,21 +22,21 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "hero",
       type: "text",
       data: {
-        content: `<p style='font-size:12px;font-weight:800;letter-spacing:2px;color:#fe04c6;text-transform:uppercase;margin:0 0 12px 0;'>${
+        content: `<div style='margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.12);'><img src='${LOGO_WHITE_URL}' width='175' alt='Back Pocket Mysteries' style='display:block;max-width:175px;height:auto;' /></div><p style='font-size:11px;font-weight:800;letter-spacing:2.2px;color:#fe04c6;text-transform:uppercase;margin:0 0 10px 0;'>${
           qualifies
             ? `FIRST ${vipCap} VIP FOUNDING HOST • SPOT #${vipRank} OF ${vipCap}`
             : `VIP LAUNCH WAITLIST • OFFICIAL CONFIRMATION`
-        }</p><h1 style='font-size:28px;font-weight:900;color:#ffffff;margin:0;line-height:1.2;'>You're In! Your Free Mystery Spot Is Locked In 🕵️‍♀️</h1>`,
+        }</p><h1 style='font-size:27px;font-weight:900;color:#ffffff;margin:0;line-height:1.22;'>You're In — Your Free Mystery Spot Is Locked In.</h1>`,
         fontSize: 16,
         textAlign: "left",
         textColor: "#ffffff",
         lineHeight: 1.5,
         sectionStyles: {
-          backgroundColor: "#1e191c",
-          paddingTop: 40,
+          backgroundColor: "#141115",
+          paddingTop: 36,
           paddingBottom: 32,
-          paddingLeft: 32,
-          paddingRight: 32,
+          paddingLeft: 36,
+          paddingRight: 36,
         },
       },
     },
@@ -39,21 +44,21 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "intro",
       type: "text",
       data: {
-        content: `<p style='margin:0 0 14px 0;font-size:16px;font-weight:700;color:#1e191c;'>Hi ${firstName},</p><p style='margin:0 0 14px 0;color:#374151;line-height:1.7;'>Welcome to the inner circle! You're officially on the <strong>Back Pocket Mysteries VIP Launch List</strong>${
+        content: `<p style='margin:0 0 14px 0;font-size:16px;font-weight:700;color:#1e191c;'>Hi ${firstName},</p><p style='margin:0 0 14px 0;color:#374151;line-height:1.75;'>Welcome to the inner circle. You are officially registered on the <strong>Back Pocket Mysteries VIP Launch List</strong>${
           qualifies
-            ? ` and you snagged <strong>VIP Spot #${vipRank} of ${vipCap}</strong>.`
+            ? ` with <strong>Founding Host Spot #${vipRank} of ${vipCap}</strong>.`
             : `.`
-        }</p><p style='margin:0;color:#374151;line-height:1.7;'>Because you joined among our first ${vipCap} founding hosts, you've locked in a <strong>100% FREE Custom Murder Mystery Game Pack</strong> (up to $49 value) the moment we open the doors.</p>`,
+        }</p><p style='margin:0;color:#374151;line-height:1.75;'>Because you joined among our first ${vipCap} founding hosts, you have locked in a <strong>100% FREE Custom Murder Mystery Game Pack</strong> (up to $49 value) the moment public doors open.</p>`,
         fontSize: 15,
         textAlign: "left",
         textColor: "#1e191c",
         lineHeight: 1.7,
         sectionStyles: {
           backgroundColor: "transparent",
-          paddingTop: 28,
-          paddingBottom: 12,
-          paddingLeft: 24,
-          paddingRight: 24,
+          paddingTop: 32,
+          paddingBottom: 14,
+          paddingLeft: 32,
+          paddingRight: 32,
         },
       },
     },
@@ -61,17 +66,17 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "vip-pass-card",
       type: "text",
       data: {
-        content: `<div style='background-color:#1e191c;border:2px dashed #fe04c6;border-radius:14px;padding:24px;text-align:center;'><p style='margin:0 0 6px 0;color:#fe04c6;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;'>🎟️ YOUR VIP FOUNDING HOST PASS</p><h2 style='margin:0 0 8px 0;color:#ffffff;font-size:22px;font-weight:900;'>1x Complete Murder Mystery Pack (100% FREE)</h2><p style='margin:0 0 14px 0;color:#d1d5db;font-size:13px;line-height:1.5;'>Your personal single-use 100%-Off Promo Code is reserved under this email address and will be sent straight to your inbox on Launch Day.</p><span style='display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:11px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:999px;'>STATUS: SPOT #${vipRank} OF ${vipCap} RESERVED ✓</span></div>`,
+        content: `<div style='background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;border-radius:12px;padding:24px;text-align:left;'><p style='margin:0 0 6px 0;color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;'>FOUNDING HOST CREDENTIAL</p><h2 style='margin:0 0 8px 0;color:#ffffff;font-size:20px;font-weight:900;'>1× Complete Murder Mystery Pack (100% Complimentary)</h2><p style='margin:0 0 16px 0;color:#a1a1aa;font-size:13px;line-height:1.6;'>Your single-use 100%-Off Promo Code is reserved under this email address and will be dispatched directly to your inbox on Launch Day.</p><span style='display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;padding:6px 14px;border-radius:999px;'>SPOT #${vipRank} OF ${vipCap} CONFIRMED ✓</span></div>`,
         fontSize: 14,
-        textAlign: "center",
+        textAlign: "left",
         textColor: "#ffffff",
         lineHeight: 1.5,
         sectionStyles: {
           backgroundColor: "transparent",
           paddingTop: 12,
           paddingBottom: 16,
-          paddingLeft: 24,
-          paddingRight: 24,
+          paddingLeft: 32,
+          paddingRight: 32,
         },
       },
     },
@@ -79,7 +84,7 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "what-to-expect",
       type: "text",
       data: {
-        content: `<h3 style='font-size:18px;font-weight:800;color:#1e191c;margin:0 0 12px 0;'>What You Can Do With Your Free Mystery Pack:</h3><ul style='margin:0;padding-left:20px;color:#374151;line-height:1.75;font-size:14px;'><li style='margin-bottom:10px;'><strong style='color:#1e191c;'>📸 Put Your Friends in the Crime Scene:</strong> Cast your real friends and watch their faces appear inside custom CCTV stills, Polaroids, and multi-speaker voice wiretaps.</li><li style='margin-bottom:10px;'><strong style='color:#1e191c;'>📱 Zero-Stress Mobile Clues:</strong> No 40-page PDFs to print. Every guest gets a private, spoiler-free character brief and live round-by-round evidence right on their phone.</li><li style='margin-bottom:0;'><strong style='color:#1e191c;'>🍷 Built for Dinner Parties (5 to 16+ Players):</strong> Three rounds of secrets and clues that align effortlessly with Entrée, Main, and Dessert.</li></ul>`,
+        content: `<h3 style='font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#1e191c;margin:0 0 14px 0;'>Inside Your Complimentary Mystery Pack:</h3><table role='presentation' width='100%' cellspacing='0' cellpadding='0' border='0'><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>01 · Your Friends Cast in the Story:</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.</td></tr><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>02 · Spoiler-Free Host Mode:</strong> Run the rounds from your phone via a 6-digit Game PIN lobby without ever seeing the killer—so you play as a full suspect.</td></tr><tr><td style='padding:10px 0;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>03 · Flexible for 4 to 20+ Guests:</strong> Three structured rounds that pace naturally with drinks, a seated 3-course dinner, or a weekend away.</td></tr></table>`,
         fontSize: 14,
         textAlign: "left",
         textColor: "#1e191c",
@@ -88,8 +93,8 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
           backgroundColor: "transparent",
           paddingTop: 8,
           paddingBottom: 12,
-          paddingLeft: 24,
-          paddingRight: 24,
+          paddingLeft: 32,
+          paddingRight: 32,
         },
       },
     },
@@ -97,19 +102,19 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "cta-themes",
       type: "button",
       data: {
-        text: "Sneak Peek: Explore Our Mystery Themes →",
+        text: "Explore Our Mystery Themes →",
         url: "https://backpocketmysteries.com/en/themes?utm_source=edm&utm_medium=email&utm_campaign=vip_welcome_youre_in",
         backgroundColor: "#fe04c6",
         textColor: "#ffffff",
-        borderRadius: 8,
+        borderRadius: 999,
         align: "center",
-        padding: { x: 28, y: 14 },
+        padding: { x: 32, y: 15 },
         sectionStyles: {
           backgroundColor: "transparent",
-          paddingTop: 12,
-          paddingBottom: 28,
-          paddingLeft: 24,
-          paddingRight: 24,
+          paddingTop: 16,
+          paddingBottom: 32,
+          paddingLeft: 32,
+          paddingRight: 32,
         },
       },
     },
@@ -117,15 +122,15 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "footer-text",
       type: "text",
       data: {
-        content: `<p style='margin:0 0 4px 0;font-size:16px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;text-transform:uppercase;'>Back Pocket <span style='color:#fe04c6;'>Mysteries</span></p><p style='margin:0;font-size:13px;color:#d1d5db;line-height:1.6;max-width:420px;display:inline-block;'>Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 30 minutes.</p>`,
-        fontSize: 13,
+        content: `<div style='margin-bottom:12px;'><img src='${LOGO_WHITE_URL}' width='145' alt='Back Pocket Mysteries' style='display:block;margin:0 auto;max-width:145px;height:auto;' /></div><p style='margin:0 0 12px 0;font-size:12px;color:#a1a1aa;line-height:1.6;max-width:420px;display:inline-block;'>Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 30 minutes.</p><p style='margin:0;font-size:11px;color:#71717a;'>© 2026 Back Pocket Mysteries · <a href='https://backpocketmysteries.com/en' style='color:#fe04c6;text-decoration:none;'>backpocketmysteries.com</a></p>`,
+        fontSize: 12,
         textAlign: "center",
-        textColor: "#d1d5db",
+        textColor: "#a1a1aa",
         lineHeight: 1.5,
         sectionStyles: {
-          backgroundColor: "#1e191c",
-          paddingTop: 28,
-          paddingBottom: 28,
+          backgroundColor: "#141115",
+          paddingTop: 32,
+          paddingBottom: 32,
           paddingLeft: 32,
           paddingRight: 32,
         },
@@ -140,119 +145,72 @@ export function buildVipWelcomeEmailHtml(params: VipWelcomeEmailParams = {}): st
   const vipCap = params.vipCap ?? 50;
   const qualifies = params.qualifiesForFreeMystery !== false;
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>You're In! Back Pocket Mysteries VIP List</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f4f5;padding:24px 12px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);">
-          <!-- HERO -->
-          <tr>
-            <td style="background-color:#1e191c;padding:40px 32px 32px 32px;">
-              <p style="font-size:12px;font-weight:800;letter-spacing:2px;color:#fe04c6;text-transform:uppercase;margin:0 0 12px 0;">
-                ${
-                  qualifies
-                    ? `FIRST ${vipCap} VIP FOUNDING HOST • SPOT #${vipRank} OF ${vipCap}`
-                    : `VIP LAUNCH WAITLIST • OFFICIAL CONFIRMATION`
-                }
-              </p>
-              <h1 style="font-size:28px;font-weight:900;color:#ffffff;margin:0;line-height:1.2;">
-                You're In! Your Free Mystery Spot Is Locked In 🕵️‍♀️
-              </h1>
-            </td>
-          </tr>
+  const bodyHtml = `
+    <p style="margin:0 0 14px 0;font-size:16px;font-weight:700;color:#1e191c;">Hi ${firstName},</p>
+    <p style="margin:0 0 14px 0;color:#374151;">
+      Welcome to the inner circle. You are officially registered on the <strong>Back Pocket Mysteries VIP Launch List</strong>${
+        qualifies
+          ? ` with <strong>Founding Host Spot #${vipRank} of ${vipCap}</strong>.`
+          : `.`
+      }
+    </p>
+    <p style="margin:0 0 24px 0;color:#374151;">
+      ${
+        qualifies
+          ? `Because you joined among our first ${vipCap} founding hosts, you have locked in a <strong>100% FREE Custom Murder Mystery Game Pack</strong> (up to $49 value) the moment we open public checkout.`
+          : `You will be the very first to receive early access, behind-the-scenes mystery previews, and launch-day perks.`
+      }
+    </p>
 
-          <!-- INTRO -->
-          <tr>
-            <td style="padding:28px 28px 12px 28px;color:#1e191c;font-size:15px;line-height:1.7;">
-              <p style="margin:0 0 14px 0;font-size:16px;font-weight:700;color:#1e191c;">Hi ${firstName},</p>
-              <p style="margin:0 0 14px 0;color:#374151;">
-                Welcome to the inner circle! You're officially on the <strong>Back Pocket Mysteries VIP Launch List</strong>${
-                  qualifies
-                    ? ` and you snagged <strong>VIP Spot #${vipRank} of ${vipCap}</strong>.`
-                    : `.`
-                }
-              </p>
-              <p style="margin:0;color:#374151;">
-                ${
-                  qualifies
-                    ? `Because you joined among our first ${vipCap} founding hosts, you've locked in a <strong>100% FREE Custom Murder Mystery Game Pack</strong> (up to $49 value) the moment we open public checkout.`
-                    : `You'll be the very first to get early access, behind-the-scenes mystery previews, and launch-day perks.`
-                }
-              </p>
-            </td>
-          </tr>
+    <!-- FOUNDING HOST CREDENTIAL CARD -->
+    <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <p style="margin:0 0 6px 0;color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;">
+        FOUNDING HOST CREDENTIAL
+      </p>
+      <h2 style="margin:0 0 8px 0;color:#ffffff;font-size:20px;font-weight:900;">
+        1× Complete Murder Mystery Pack (100% Complimentary)
+      </h2>
+      <p style="margin:0 0 16px 0;color:#a1a1aa;font-size:13px;line-height:1.6;">
+        Your personal single-use 100%-Off Promo Code is reserved under this email address and will be dispatched directly to your inbox on Launch Day.
+      </p>
+      <span style="display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;padding:6px 14px;border-radius:999px;">
+        SPOT #${vipRank} OF ${vipCap} CONFIRMED ✓
+      </span>
+    </div>
 
-          <!-- VIP PASS CARD -->
-          <tr>
-            <td style="padding:12px 28px 16px 28px;">
-              <div style="background-color:#1e191c;border:2px dashed #fe04c6;border-radius:14px;padding:24px;text-align:center;">
-                <p style="margin:0 0 6px 0;color:#fe04c6;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;">
-                  🎟️ YOUR VIP FOUNDING HOST PASS
-                </p>
-                <h2 style="margin:0 0 8px 0;color:#ffffff;font-size:21px;font-weight:900;">
-                  1x Complete Murder Mystery Pack (100% FREE)
-                </h2>
-                <p style="margin:0 0 16px 0;color:#d1d5db;font-size:13px;line-height:1.55;">
-                  Your personal single-use 100%-Off Promo Code is reserved under this email address and will be sent straight to your inbox on Launch Day.
-                </p>
-                <span style="display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:11px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;padding:7px 16px;border-radius:999px;">
-                  STATUS: SPOT #${vipRank} OF ${vipCap} RESERVED ✓
-                </span>
-              </div>
-            </td>
-          </tr>
+    <h3 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:#1e191c;margin:0 0 12px 0;">
+      Inside Your Complimentary Mystery Pack
+    </h3>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;">
+          <strong style="color:#1e191c;">01 · Your Friends Cast in the Story:</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;">
+          <strong style="color:#1e191c;">02 · Spoiler-Free Host Mode:</strong> Run the rounds from your phone via a 6-digit Game PIN lobby without ever seeing the killer—so you play as a full suspect.
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0;color:#374151;font-size:14px;line-height:1.65;">
+          <strong style="color:#1e191c;">03 · Flexible for 4 to 20+ Guests:</strong> Three structured rounds that pace naturally with drinks, a seated 3-course dinner, or a weekend away.
+        </td>
+      </tr>
+    </table>
+  `;
 
-          <!-- WHAT TO EXPECT -->
-          <tr>
-            <td style="padding:12px 28px 12px 28px;">
-              <h3 style="font-size:17px;font-weight:800;color:#1e191c;margin:0 0 12px 0;">
-                What You Can Do With Your Free Mystery Pack:
-              </h3>
-              <ul style="margin:0;padding-left:20px;color:#374151;line-height:1.75;font-size:14px;">
-                <li style="margin-bottom:10px;">
-                  <strong style="color:#1e191c;">📸 Put Your Friends in the Crime Scene:</strong> Cast your real friends and watch their faces appear inside custom CCTV stills, Polaroids, and multi-speaker voice wiretaps.
-                </li>
-                <li style="margin-bottom:10px;">
-                  <strong style="color:#1e191c;">📱 Zero-Stress Mobile Clues:</strong> No 40-page PDFs to print. Every guest gets a private, spoiler-free character brief and live round-by-round evidence right on their phone.
-                </li>
-                <li style="margin-bottom:0;">
-                  <strong style="color:#1e191c;">🍷 Built for Dinner Parties (5 to 16+ Players):</strong> Three rounds of secrets and clues that align effortlessly with Entrée, Main, and Dessert.
-                </li>
-              </ul>
-            </td>
-          </tr>
-
-          <!-- CTA BUTTON -->
-          <tr>
-            <td align="center" style="padding:16px 28px 32px 28px;">
-              <a href="https://backpocketmysteries.com/en/themes?utm_source=edm&utm_medium=email&utm_campaign=vip_welcome_youre_in" style="display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:14px 28px;border-radius:8px;">
-                Sneak Peek: Explore Our Mystery Themes →
-              </a>
-            </td>
-          </tr>
-
-          <!-- FOOTER -->
-          <tr>
-            <td align="center" style="background-color:#1e191c;padding:28px 32px;">
-              <p style="margin:0 0 4px 0;font-size:16px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;text-transform:uppercase;">
-                Back Pocket <span style="color:#fe04c6;">Mysteries</span>
-              </p>
-              <p style="margin:0;font-size:12px;color:#d1d5db;line-height:1.6;">
-                Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 30 minutes.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+  return buildBrandedEmailShell({
+    preheader: qualifies
+      ? `VIP Founding Host Spot #${vipRank} of ${vipCap} is confirmed — your 100% Free Murder Mystery Pack is reserved.`
+      : `Welcome to the Back Pocket Mysteries VIP Launch List.`,
+    kicker: qualifies
+      ? `FIRST ${vipCap} VIP FOUNDING HOST • SPOT #${vipRank} OF ${vipCap}`
+      : `VIP LAUNCH WAITLIST • OFFICIAL CONFIRMATION`,
+    headline: `You're In — Your Free Mystery Spot Is Locked In.`,
+    bodyHtml,
+    ctaText: 'Explore Our Mystery Themes →',
+    ctaUrl: 'https://backpocketmysteries.com/en/themes?utm_source=edm&utm_medium=email&utm_campaign=vip_welcome_youre_in',
+    footerNote: 'You are receiving this email because you registered for the Back Pocket Mysteries VIP Launch List.',
+  });
 }

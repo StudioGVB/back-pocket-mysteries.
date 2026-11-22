@@ -163,30 +163,32 @@ export default async function BlogPostPage(props: {
             {/* Sidebar */}
             <aside className="lg:col-span-4 space-y-12">
               <div className="sticky top-32 space-y-8">
-                {/* Product CTA Card */}
+                {/* Pre-Launch First 50 VIP Free Mystery CTA Card */}
                 <div className="bg-brand-dark rounded-[3rem] p-10 text-white overflow-hidden relative shadow-2xl group border-4 border-white">
                   <div className="relative z-10">
-                    <span className="inline-block px-3 py-1 bg-brand-pink text-[9px] font-black uppercase tracking-widest rounded-full mb-6 italic">Featured Theme</span>
+                    <span className="inline-block px-3 py-1 bg-brand-pink text-[9px] font-black uppercase tracking-widest rounded-full mb-6 italic">
+                      🎁 Pre-Launch VIP Giveaway
+                    </span>
                     <h4 className="text-3xl font-black mb-4 uppercase tracking-tighter leading-none">
-                      Love on <br />
-                      <span className="text-brand-pink italic">The Rocks</span>
+                      First 50 Get a <br />
+                      <span className="text-brand-pink italic">Free Mystery</span>
                     </h4>
-                    <p className="text-gray-400 text-sm font-bold mb-8 leading-relaxed">
-                      The cameras stopped rolling six months ago, but the drama never did. Secret affairs, leaked NDA receipts, and a poisoned champagne toast at the Season 3 reunion.
+                    <p className="text-gray-300 text-sm font-bold mb-8 leading-relaxed">
+                      We&apos;re putting the finishing touches on Back Pocket Mysteries! Be one of the first 50 hosts on our VIP launch list to claim a 100% FREE custom murder mystery game pack when we open the doors.
                     </p>
-                    <Link href={`/${locale}/themes/love-on-the-rocks`} className="w-full py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-[10px] text-center block hover:bg-white hover:text-brand-pink transition-all shadow-xl">
-                      Build your mystery
+                    <Link href={`/${locale}/free-murder-mystery-game`} className="w-full py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-[10px] text-center block hover:bg-white hover:text-brand-pink transition-all shadow-xl">
+                      Claim My Free Mystery Spot →
                     </Link>
                   </div>
                 </div>
 
-                {/* Newsletter Card */}
+                {/* Newsletter / Waitlist Card */}
                 <div className="card-branded p-10 bg-brand-gray border-2 border-gray-100">
-                  <h4 className="text-xl font-black text-brand-dark uppercase tracking-tight mb-4">The Gazette Newsletter</h4>
-                  <p className="text-sm text-gray-500 font-bold mb-8 leading-relaxed">Never miss a theme or a tip. Get our best hosting secrets delivered weekly.</p>
+                  <h4 className="text-xl font-black text-brand-dark uppercase tracking-tight mb-4">Join the First 50 VIP List</h4>
+                  <p className="text-sm text-gray-500 font-bold mb-8 leading-relaxed">Lock in your founding host spot for a free custom mystery pack at launch + weekly hosting guides.</p>
                   <NewsletterForm 
                     placeholder="Your email"
-                    buttonText="Join the loop"
+                    buttonText="Claim VIP Spot"
                     isSidebar={true}
                   />
                 </div>

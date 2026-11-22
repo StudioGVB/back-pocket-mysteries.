@@ -1,0 +1,16 @@
+{
+  "leads": {
+    "gabriellablyth@me.com": {
+      "id": "01a20451-8de2-7f18-a582-3faf5ba74c30",
+      "email": "gabriellablyth@me.com",
+      "full_name": "Testing",
+      "source": "first_50_vip_modal",
+      "vip_rank": 1,
+      "qualifies_for_free_mystery": true,
+      "free_mystery_code": null,
+      "code_sent_at": null,
+      "marketing_consent": true,
+      "created_at": "2026-11-22T17:33:03.459Z"
+    }
+  }
+}

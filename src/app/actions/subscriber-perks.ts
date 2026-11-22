@@ -284,45 +284,32 @@ export async function claimSubscriberMonthlyGiftPassAction(params: {
         const safePersonalMessage = personalMessage ? escapeHtml(personalMessage) : '';
 
         const subject = `🎁 ${senderDisplay} gifted you a Free Murder Mystery Party!`;
-        const html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 24px; border-radius: 12px; border-top: 5px solid #F02882;">
-            <div style="text-align: center; margin-bottom: 24px;">
-              <h2 style="color: #1a1a1a; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Back Pocket Mysteries</h2>
-              <p style="color: #F02882; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px;">
-                🎁 You Received a Free Murder Mystery Gift Pass!
-              </p>
+        const { buildBrandedEmailShell } = await import('@/lib/branded-email-template');
+        const html = buildBrandedEmailShell({
+          preheader: `${senderDisplay} sent you a 100%-Off Complimentary Murder Mystery Gift Pass (${code}).`,
+          kicker: 'COMPLIMENTARY VIP GIFT PASS',
+          headline: `${safeSenderDisplay} Gifted You a Murder Mystery Party.`,
+          bodyHtml: `
+            <p style="margin:0 0 14px 0;font-size:16px;font-weight:700;color:#1e191c;">Hi ${safeRecipientName},</p>
+            <p style="margin:0 0 20px 0;color:#374151;">
+              <strong>${safeSenderDisplay}</strong> used their monthly VIP Gift Pass to send you a <strong>100% Free Murder Mystery Party Package</strong> (valid for any mystery up to 16 players).
+            </p>
+            ${
+              safePersonalMessage
+                ? `<div style="background-color:#fdf2fa;border-left:4px solid #fe04c6;padding:16px 20px;border-radius:10px;margin:0 0 24px 0;font-style:italic;color:#1e191c;">
+                    "${safePersonalMessage}"
+                  </div>`
+                : ''
+            }
+            <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;color:#ffffff;text-align:center;padding:24px;border-radius:12px;margin:0 0 8px 0;">
+              <p style="margin:0 0 8px 0;font-size:10px;text-transform:uppercase;letter-spacing:2.2px;color:#fe04c6;font-weight:800;">YOUR 100% OFF GIFT CODE</p>
+              <p style="margin:0 0 8px 0;font-size:28px;font-family:monospace;font-weight:900;letter-spacing:3px;color:#ffffff;">${code}</p>
+              <p style="margin:0;font-size:12px;color:#a1a1aa;">Valid for 1 complete mystery package (Basic, Premium, or Grand, up to 16 players)</p>
             </div>
-
-            <div style="background-color: #ffffff; padding: 24px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-              <p style="color: #1a1a1a; font-size: 16px; line-height: 1.6; margin-top: 0;">
-                Hi ${safeRecipientName},
-              </p>
-              <p style="color: #444; font-size: 15px; line-height: 1.6;">
-                <strong>${safeSenderDisplay}</strong> used their monthly VIP Gift Pass to send you a <strong>100% Free Murder Mystery Party Package</strong> (good for any mystery up to 16 players)!
-              </p>
-
-              ${
-                safePersonalMessage
-                  ? `<div style="background-color: #fdf2f8; border-left: 4px solid #F02882; padding: 14px 16px; border-radius: 6px; margin: 20px 0; font-style: italic; color: #333;">
-                      "${safePersonalMessage}"
-                    </div>`
-                  : ''
-              }
-
-              <div style="background-color: #1a1a1a; color: #ffffff; text-align: center; padding: 20px; border-radius: 10px; margin: 24px 0;">
-                <p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #F02882; font-weight: bold;">Your 100% Off Gift Code</p>
-                <p style="margin: 8px 0 0 0; font-size: 28px; font-family: monospace; font-weight: 900; letter-spacing: 3px;">${code}</p>
-                <p style="margin: 8px 0 0 0; font-size: 12px; color: #aaa;">Valid for 1 full mystery package (Basic, Premium, or Grand, up to 16 players)</p>
-              </div>
-
-              <div style="text-align: center; margin-top: 24px;">
-                <a href="${siteUrl}/en/mysteries" style="display: inline-block; background-color: #F02882; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
-                  Choose Your Free Mystery →
-                </a>
-              </div>
-            </div>
-          </div>
-        `;
+          `,
+          ctaText: 'Choose Your Free Mystery →',
+          ctaUrl: `${siteUrl}/en/themes`,
+        });
 
         let res = await resend.emails.send({
           from: PRIMARY_FROM_EMAIL,

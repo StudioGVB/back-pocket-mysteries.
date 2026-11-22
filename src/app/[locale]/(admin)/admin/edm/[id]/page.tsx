@@ -33,8 +33,8 @@ export function compileBlocksToHtml(blocks: any[]): string {
     const sw = `background-color:${s.backgroundColor || "transparent"};padding-top:${
       s.paddingTop ?? 12
     }px;padding-bottom:${s.paddingBottom ?? 12}px;padding-left:${
-      s.paddingLeft ?? 16
-    }px;padding-right:${s.paddingRight ?? 16}px;`;
+      s.paddingLeft ?? 28
+    }px;padding-right:${s.paddingRight ?? 28}px;`;
     const d = block.data || {};
     if (block.type === "text") {
       return `<tr><td style="${sw}"><div style="color:${d.textColor || "#1e191c"};text-align:${
@@ -44,13 +44,16 @@ export function compileBlocksToHtml(blocks: any[]): string {
       };margin:0;">${d.content || ""}</div></td></tr>`;
     }
     if (block.type === "image") {
+      const h = d.height || 210;
       return `<tr><td style="${sw}" align="${d.align || "center"}"><a href="${
         d.linkUrl || "#"
-      }" target="_blank" style="display:inline-block;width:100%;"><img src="${
+      }" target="_blank" style="display:block;width:100%;max-height:${h}px;overflow:hidden;border-radius:${
+        d.borderRadius ?? 8
+      }px;"><img src="${
         d.src || ""
-      }" alt="${d.alt || ""}" style="width:${
+      }" alt="${d.alt || ""}" height="${h}" style="width:${
         d.width || "100%"
-      };max-width:100%;height:auto;border-radius:${
+      };max-width:100%;height:${h}px;object-fit:cover;object-position:center;border-radius:${
         d.borderRadius ?? 8
       }px;display:block;" /></a></td></tr>`;
     }
@@ -59,11 +62,11 @@ export function compileBlocksToHtml(blocks: any[]): string {
         d.align || "left"
       }"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background-color:${
         d.backgroundColor || "#fe04c6"
-      };border-radius:${d.borderRadius ?? 6}px;padding:${d.padding?.y ?? 12}px ${
-        d.padding?.x ?? 24
+      };border-radius:${d.borderRadius ?? 999}px;padding:${d.padding?.y ?? 14}px ${
+        d.padding?.x ?? 28
       }px;"><a href="${d.url || "#"}" target="_blank" style="display:inline-block;color:${
         d.textColor || "#ffffff"
-      };font-weight:700;font-family:${EMAIL_FONT_FAMILY};font-size:15px;text-decoration:none;">${
+      };font-weight:800;font-family:${EMAIL_FONT_FAMILY};font-size:13px;letter-spacing:1.2px;text-transform:uppercase;text-decoration:none;">${
         d.text || "Read More"
       }</a></td></tr></table></td></tr>`;
     }
@@ -77,7 +80,14 @@ export function compileBlocksToHtml(blocks: any[]): string {
     return "";
   };
 
-  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><body style="margin:0;padding:0;background-color:#f4f4f5;font-family:${EMAIL_FONT_FAMILY};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;"><tr><td align="center" style="padding:20px 0;"><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;max-width:600px;">${blocks
+  const hasLogoInHero = blocks.some(
+    (b) => typeof b.data?.content === "string" && b.data.content.includes("logo-horizontal-white.png")
+  );
+  const topBrandHeaderRow = hasLogoInHero
+    ? ""
+    : `<tr><td style="background-color:#141115;padding:24px 32px 20px 32px;border-bottom:4px solid #fe04c6;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="left" valign="middle"><a href="https://backpocketmysteries.com/en" target="_blank" style="text-decoration:none;display:inline-block;"><img src="https://backpocketmysteries.com/logo-horizontal-white.png" width="180" alt="Back Pocket Mysteries" style="display:block;border:0;max-width:180px;height:auto;" /></a></td><td align="right" valign="middle"><span style="display:inline-block;background-color:rgba(254,4,198,0.14);border:1px solid rgba(254,4,198,0.35);color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:5px 10px;border-radius:999px;">THE MYSTERY GAZETTE</span></td></tr></table></td></tr>`;
+
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><body style="margin:0;padding:0;background-color:#f4f4f5;font-family:${EMAIL_FONT_FAMILY};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;"><tr><td align="center" style="padding:28px 12px;"><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;max-width:600px;width:100%;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(17,17,17,0.08);border:1px solid #e4e4e7;">${topBrandHeaderRow}${blocks
     .map(renderBlock)
     .join("")}</table></td></tr></table></body></html>`;
 }
@@ -93,7 +103,7 @@ export default function EdmCampaignDetailPage() {
   const [saving, setSaving] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [sendingLive, setSendingLive] = useState(false);
-  const [testEmail, setTestEmail] = useState("gabby@batchbase.com.au");
+  const [testEmail, setTestEmail] = useState("hello@backpocketgames.com");
   const [selectedMysterySlug, setSelectedMysterySlug] = useState(
     ACTIVE_MYSTERIES[0]?.slug || "love-on-the-rocks"
   );
@@ -102,7 +112,7 @@ export default function EdmCampaignDetailPage() {
   const [preheader, setPreheader] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [fromName, setFromName] = useState("Gabby from Back Pocket Mysteries");
-  const [fromEmail, setFromEmail] = useState("hello@backpocketmysteries.com");
+  const [fromEmail, setFromEmail] = useState("hello@backpocketgames.com");
   const [blocks, setBlocks] = useState<any[]>([]);
   const [htmlContent, setHtmlContent] = useState("");
   const [leadsCount, setLeadsCount] = useState<number>(0);
@@ -122,14 +132,14 @@ export default function EdmCampaignDetailPage() {
             type: "text",
             data: {
               content:
-                "<p style='font-size:12px;font-weight:700;letter-spacing:2px;color:#fe04c6;text-transform:uppercase;margin:0 0 12px 0;'>THE MYSTERY GAZETTE</p><h1 style='font-size:26px;font-weight:800;color:#ffffff;margin:0;line-height:1.25;'>Weekly Hosting Roundup</h1>",
+                "<p style='font-size:11px;font-weight:800;letter-spacing:2.2px;color:#fe04c6;text-transform:uppercase;margin:0 0 10px 0;'>THE MYSTERY GAZETTE • WEEKLY BRIEFING</p><h1 style='font-size:26px;font-weight:900;color:#ffffff;margin:0;line-height:1.25;'>Weekly Hosting Roundup</h1>",
               fontSize: 16,
               textAlign: "left",
               textColor: "#ffffff",
               lineHeight: 1.5,
               sectionStyles: {
                 backgroundColor: "#1e191c",
-                paddingTop: 40,
+                paddingTop: 32,
                 paddingBottom: 32,
                 paddingLeft: 32,
                 paddingRight: 32,
@@ -141,17 +151,17 @@ export default function EdmCampaignDetailPage() {
             type: "text",
             data: {
               content:
-                "<p style='margin:0 0 14px 0;'>Hi {{first_name}},</p><p style='margin:0;'>Welcome to this week's Back Pocket Mysteries roundup! Here are our two latest guides to help you host an unforgettable murder mystery night.</p>",
+                "<p style='margin:0 0 14px 0;font-weight:700;'>Hi {{first_name}},</p><p style='margin:0;'>Welcome to this week's Back Pocket Mysteries briefing. Here are our two latest guides to help you host an unforgettable murder mystery night.</p>",
               fontSize: 16,
               textAlign: "left",
               textColor: "#1e191c",
               lineHeight: 1.7,
               sectionStyles: {
                 backgroundColor: "transparent",
-                paddingTop: 24,
+                paddingTop: 28,
                 paddingBottom: 12,
-                paddingLeft: 16,
-                paddingRight: 16,
+                paddingLeft: 28,
+                paddingRight: 28,
               },
             },
           },

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@/utils/supabase/server";
 import { executeStoreOperation, loadMarketingStore, saveMarketingStore } from "@/lib/marketing-store";
-import { getAllMarketingLeadsAction } from "@/app/actions/marketing";
+import { getUnifiedNewsletterDirectoryAction } from "@/app/actions/marketing";
 
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
 
@@ -47,9 +47,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "EDM campaign not found" }, { status: 404 });
     }
 
-    const fromAddress = `${campaign.from_name || "Back Pocket Mysteries"} <${
-      campaign.from_email || "hello@backpocketmysteries.com"
-    }>`;
+    const rawFromEmail = String(campaign.from_email || "hello@backpocketgames.com").replace(
+      /@backpocketmysteries\.com$/i,
+      "@backpocketgames.com"
+    );
+    const fromAddress = `${campaign.from_name || "Back Pocket Mysteries"} <${rawFromEmail}>`;
     const baseHtml = String(campaign.html_content || "");
 
     // 1. TEST SEND MODE
@@ -80,13 +82,12 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. PRODUCTION SEND MODE (Send to all active marketing leads)
-    const allLeads = await getAllMarketingLeadsAction();
-    const activeLeads = allLeads.filter((l) => l.marketing_consent !== false && l.email);
+    // 2. PRODUCTION SEND MODE (Send to all Newsletter Leads + Registered Customers, deduplicated)
+    const { combinedActiveEmails: activeLeads } = await getUnifiedNewsletterDirectoryAction();
 
     if (activeLeads.length === 0) {
       return NextResponse.json(
-        { error: "No subscribed marketing leads found to send this campaign to." },
+        { error: "No subscribed marketing leads or customers found to send this campaign to." },
         { status: 400 }
       );
     }

@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { getLeads } from '../admin-data';
+import { getUnifiedNewsletterDirectoryAction } from '@/app/actions/marketing';
 import AdminLeadsClient from './AdminLeadsClient';
 
 export const unstable_instant = false;
@@ -9,10 +9,10 @@ export default async function AdminLeadsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-4xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-3">
-          First 50 VIP &amp; Marketing <span className="text-brand-pink italic">Leads</span>
+          Newsletter Subscribers &amp; <span className="text-brand-pink italic">First 50 VIPs</span>
         </h1>
         <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px]">
-          Pre-launch First 50 Free Mystery VIP Waitlist &amp; Newsletter Sign-Ups
+          Separate Email-Only Newsletter Sign-Ups · First 50 Free Mystery VIP Tally (#1–#50) · Unified Customer Newsletter Audience
         </p>
       </div>
 
@@ -24,8 +24,15 @@ export default async function AdminLeadsPage() {
 }
 
 async function LeadsContent() {
-  const leads = await getLeads();
-  return <AdminLeadsClient initialLeads={leads} />;
+  const { newsletterLeads, customerSubscribers, combinedActiveEmails } =
+    await getUnifiedNewsletterDirectoryAction();
+  return (
+    <AdminLeadsClient
+      initialLeads={newsletterLeads}
+      customerSubscribers={customerSubscribers}
+      totalCombinedAudienceCount={combinedActiveEmails.length}
+    />
+  );
 }
 
 function LeadsTableSkeleton() {

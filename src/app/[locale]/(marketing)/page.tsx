@@ -367,49 +367,64 @@ export default async function HomePage(props: {
         </div>
       </section>
 
-      {/* Occasions Section (Linked to Dedicated Occasion SEO Landing Pages) */}
-      <section className="py-16 lg:py-24 bg-brand-gray">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16 lg:mb-20">
-            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
-              {dict.home.occasions.title.split('every')[0]} every <span className="text-brand-pink italic">occasion.</span>
-            </h2>
+      {/* Occasions Section (Sleek Editorial Layout Linked to Dedicated Occasion Landing Pages) */}
+      <section className="py-20 lg:py-28 bg-brand-gray border-t border-gray-200/70">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 lg:mb-16 gap-6 pb-8 border-b border-gray-300/80">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink mb-3">
+                Private Events &amp; Gatherings
+              </p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
+                {dict.home.occasions.title.split('every')[0]} every <span className="text-brand-pink italic">occasion.</span>
+              </h2>
+            </div>
+            <p className="text-gray-500 font-medium text-sm sm:text-base max-w-sm leading-relaxed">
+              From intimate six-person dining tables to twenty-guest milestone weekends, every dossier is tailored to the room.
+            </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-gray-300/80 bg-white shadow-sm">
             {[
               {
+                num: 'I',
+                meta: '6–20 Guests · Milestone Nights',
                 title: dict.home.occasions.items.birthdays.title,
-                emoji: '🎂',
                 desc: dict.home.occasions.items.birthdays.desc,
                 href: `/${locale}/occasions/birthday-murder-mystery-party-games`,
               },
               {
+                num: 'II',
+                meta: '8–18 Guests · Weekend Away',
                 title: dict.home.occasions.items.hens.title,
-                emoji: '💍',
                 desc: dict.home.occasions.items.hens.desc,
                 href: `/${locale}/occasions/hen-party-bachelorette-murder-mystery-games`,
               },
               {
+                num: 'III',
+                meta: '6–12 Guests · 3-Course Pacing',
                 title: dict.home.occasions.items.dinner.title,
-                emoji: '🍷',
                 desc: dict.home.occasions.items.dinner.desc,
                 href: `/${locale}/occasions/dinner-party-murder-mystery-games-for-adults`,
               },
               {
+                num: 'IV',
+                meta: '8–24 Guests · 90-Min Run Sheet',
                 title: dict.home.occasions.items.corporate.title,
-                emoji: '💼',
                 desc: dict.home.occasions.items.corporate.desc,
                 href: `/${locale}/custom-murder-mystery`,
               },
               {
+                num: 'V',
+                meta: '4–10 Guests · Annual Hosting',
                 title: dict.home.occasions.items.friends.title,
-                emoji: '🎲',
                 desc: dict.home.occasions.items.friends.desc,
                 href: `/${locale}/occasions/small-group-murder-mystery-games-4-6-8-players`,
               },
               {
+                num: 'VI',
+                meta: '10–20+ Guests · Family & Friends',
                 title: dict.home.occasions.items.engagement.title,
-                emoji: '🥂',
                 desc: dict.home.occasions.items.engagement.desc,
                 href: `/${locale}/occasions/dinner-party-murder-mystery-games-for-adults`,
               },
@@ -417,18 +432,37 @@ export default async function HomePage(props: {
               <Link
                 key={i}
                 href={occ.href}
-                className="card-branded p-8 lg:p-10 group hover:border-brand-pink block"
+                className="group relative flex flex-col justify-between p-8 lg:p-10 border-r border-b border-gray-300/80 bg-white hover:bg-brand-dark transition-colors duration-300"
               >
-                <div className="text-4xl mb-6">{occ.emoji}</div>
-                <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight mb-3 group-hover:text-brand-pink transition-colors">
-                  {occ.title}
-                </h3>
-                <p className="text-gray-500 font-semibold leading-relaxed mb-4">
-                  {occ.desc}
-                </p>
-                <span className="text-xs font-black uppercase tracking-widest text-brand-pink group-hover:underline">
-                  Explore Guide →
-                </span>
+                <div>
+                  <div className="flex items-center justify-between mb-8">
+                    <span className="font-serif italic text-sm tracking-widest text-gray-400 group-hover:text-brand-pink transition-colors">
+                      No. {occ.num}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 group-hover:text-gray-300 transition-colors">
+                      {occ.meta}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl lg:text-2xl font-black text-brand-dark uppercase tracking-tight mb-3 group-hover:text-white transition-colors">
+                    {occ.title}
+                  </h3>
+
+                  <p className="text-gray-500 text-sm sm:text-base font-medium leading-relaxed mb-8 group-hover:text-gray-300 transition-colors">
+                    {occ.desc}
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100 group-hover:border-white/15 flex items-center justify-between transition-colors">
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-brand-dark group-hover:text-brand-pink transition-colors">
+                    Read Hosting Guide
+                  </span>
+                  <span className="w-7 h-7 rounded-full border border-gray-200 group-hover:border-brand-pink group-hover:bg-brand-pink flex items-center justify-center text-brand-dark group-hover:text-white transition-all duration-300">
+                    <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </span>
+                </div>
               </Link>
             ))}
           </div>
