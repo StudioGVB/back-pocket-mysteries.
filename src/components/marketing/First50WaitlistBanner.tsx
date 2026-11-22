@@ -132,7 +132,7 @@ export default function First50WaitlistBanner() {
 
   const progressPercent = Math.min(
     100,
-    Math.max(8, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
+    Math.max(0, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
   );
 
   return (
@@ -303,7 +303,7 @@ export default function First50WaitlistBanner() {
                   </form>
 
                   <p className="text-[11px] text-slate-400 text-center font-medium">
-                    No spam, ever. We&apos;ll email your free mystery code on launch day.
+                    We&apos;ll email your free mystery code on launch day, plus weekly murder mystery tips &amp; blog updates. Unsubscribe anytime.
                   </p>
                 </div>
               )}

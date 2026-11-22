@@ -80,7 +80,7 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
 
   const progressPercent = Math.min(
     100,
-    Math.max(8, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
+    Math.max(0, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
   );
 
   if (resultInfo) {
