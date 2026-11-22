@@ -82,22 +82,15 @@ async function MysteryHeader({
     progress += 20;
   }
 
+  const isLive = mystery.status === 'published';
+
   return (
     <div className="px-8 lg:px-10 py-3.5 max-w-[1500px] mx-auto w-full flex flex-wrap items-center justify-between gap-4">
-      {/* Left: Mystery Title & Badges */}
+      {/* Left: Mystery Title & Package / Role Metadata */}
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight leading-none">
           {mystery.title}
         </h1>
-        <span
-          className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
-            mystery.status === 'published'
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-brand-pink/10 text-brand-pink border-brand-pink/20'
-          }`}
-        >
-          {mystery.status === 'published' ? 'Live' : mystery.status}
-        </span>
         <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold text-slate-600 border border-slate-200">
           {pkgInfo.label} ({pkgInfo.rangeLabel})
         </span>
@@ -112,9 +105,9 @@ async function MysteryHeader({
         </span>
       </div>
 
-      {/* Right: Completion & Digital Quick Actions */}
-      <div className="flex items-center gap-4">
-        <div className="hidden sm:flex items-center gap-2.5 bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-xl">
+      {/* Right: Readiness Progress & Live / Draft Status Indicator */}
+      <div className="flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-2.5 bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-full">
           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
             Ready
           </span>
@@ -127,27 +120,22 @@ async function MysteryHeader({
           <span className="text-[10px] font-black text-brand-pink">{progress}%</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/${locale}/builder/mysteries/${id}/screen`}
-            className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 text-[11px] font-black uppercase tracking-wider transition-all shadow-xs"
-          >
-            🕵️ Screen Pack
-          </Link>
-          <Link
-            href={`/${locale}/mysteries/${id}/cast`}
-            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-black uppercase tracking-wider transition-all"
-          >
-            Cast View
-          </Link>
-          <Link
-            href={`/${locale}/play/${id}`}
-            target="_blank"
-            className="px-3.5 py-1.5 rounded-lg bg-brand-pink hover:opacity-90 text-white text-[11px] font-black uppercase tracking-wider transition-all shadow-xs"
-          >
-            Live Playroom ↗
-          </Link>
-        </div>
+        <Link
+          href={`/${locale}/builder/mysteries/${id}/status`}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${
+            isLive
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+              : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+          }`}
+          title="Click to manage publishing status"
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+            }`}
+          />
+          {isLive ? 'Status: Live on Site' : 'Status: Draft (Not Live)'}
+        </Link>
       </div>
     </div>
   );
