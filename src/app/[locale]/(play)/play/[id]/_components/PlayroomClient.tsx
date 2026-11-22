@@ -2702,78 +2702,212 @@ export function PlayroomClient({
 
         {/* TAB 2: RELATIONSHIPS */}
         {activeTab === 'relations' && selectedChar && (
-          <div className="space-y-3 animate-in fade-in duration-200">
+          <div className="space-y-3.5 animate-in fade-in duration-200">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-900/50 border border-white/10 px-4 py-2.5">
+              <div>
+                <h2 className="text-xs font-black uppercase tracking-wider text-white">
+                  🕸️ Your Direct Connections ({charConnections.length})
+                </h2>
+                <p className="text-[11px] text-slate-400">
+                  Walk up to these people first to spark drama and test their alibis!
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRoomCastOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-brand-pink/20 hover:bg-brand-pink text-brand-pink hover:text-white border border-brand-pink/30 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
+              >
+                👥 View All {activeCharacters.length} Room Characters →
+              </button>
+            </div>
+
             {charConnections.length === 0 ? (
               <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-6 text-center text-slate-400 text-xs font-medium">
-                You don&apos;t have any seeded connections with other characters.
+                You don&apos;t have any seeded connections with other characters. Tap &ldquo;View All Room Characters&rdquo; above to see everyone in the room!
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {charConnections.map(conn => {
-                  const { name: otherName, archetype: otherArch } = parseCharacter(conn.character);
-                  const otherPres = getCleanCharacterPresentation(conn.character, characters, { mode: 'generic' });
+                  const {
+                    name: otherName,
+                    archetype: otherArch,
+                    guestName: otherGuest,
+                  } = parseCharacter(conn.character);
+                  const otherPres = getCleanCharacterPresentation(conn.character, characters, {
+                    mode: 'generic',
+                  });
                   const otherAvatarUrl = resolveDisplayAvatarUrl(
-                    otherPres.characterPhotoUrl || conn.character.profile_data?.avatar_url || conn.character.image_url
+                    otherPres.characterPhotoUrl ||
+                      conn.character.profile_data?.avatar_url ||
+                      conn.character.image_url
                   );
                   const dynamics = conn.relationship.dynamics;
                   const notes = conn.relationship.notes;
+                  const dynJoin = (dynamics || []).join(' ').toLowerCase();
+                  const icebreakerPrompt = dynJoin.includes('affair') ||
+                    dynJoin.includes('lover') ||
+                    dynJoin.includes('ex') ||
+                    dynJoin.includes('roman')
+                    ? `"Keep your voice low and ask ${otherName} if anyone else in the room found out about the two of you before tonight."`
+                    : dynJoin.includes('rival') ||
+                      dynJoin.includes('blackmail') ||
+                      dynJoin.includes('debt') ||
+                      dynJoin.includes('feud')
+                    ? `"Corner ${otherName} and ask what they were doing in the 20 minutes before the victim was found—and whether they're still hiding what they owe."`
+                    : `"Pull ${otherName} aside, bring up your shared history, and ask who they saw acting nervous around the victim tonight."`;
+
+                  let keyCount = 0;
+                  let alibiCount = 0;
+                  let decoyCount = 0;
+                  let pinCount = 0;
+                  for (const c of clues.filter(
+                    rc => (rc.round_number || 1) <= Math.min(maxClueRound, unlockedClueRound)
+                  )) {
+                    if ((clueSuspects[c.id] || []).includes(conn.character.id)) {
+                      pinCount++;
+                      const t = clueTags[c.id];
+                      if (t === 'key') keyCount++;
+                      else if (t === 'alibi') alibiCount++;
+                      else if (t === 'red_herring') decoyCount++;
+                    }
+                  }
 
                   return (
                     <div
                       key={conn.character.id}
-                      className="p-4 sm:p-5 bg-slate-900/40 border border-white/10 rounded-2xl space-y-3"
+                      className="p-4 sm:p-5 bg-slate-900/40 border border-white/10 rounded-2xl flex flex-col justify-between gap-3"
                     >
-                      <div className="flex items-center gap-4 border-b border-white/5 pb-3.5">
-                        <div
-                          onClick={() => {
-                            if (otherAvatarUrl) {
-                              setLightboxPhoto({
-                                url: otherAvatarUrl,
-                                title: otherName,
-                                subtitle: otherArch,
-                              });
-                            }
-                          }}
-                          className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-white/15 relative bg-slate-950 shrink-0 shadow-lg cursor-pointer"
-                        >
-                          {otherAvatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={otherAvatarUrl}
-                              alt={otherName}
-                              className="w-full h-full object-cover object-top"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-3xl">
-                              👤
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-4 border-b border-white/5 pb-3.5">
+                          <div
+                            onClick={() => {
+                              if (otherAvatarUrl) {
+                                setLightboxPhoto({
+                                  url: otherAvatarUrl,
+                                  title: otherName,
+                                  subtitle: otherArch,
+                                });
+                              }
+                            }}
+                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-white/15 relative bg-slate-950 shrink-0 shadow-lg cursor-pointer"
+                          >
+                            {otherAvatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={otherAvatarUrl}
+                                alt={otherName}
+                                className="w-full h-full object-cover object-top"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-3xl">
+                                👤
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                  conn.character.is_victim
+                                    ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                    : 'bg-white/10 text-slate-300'
+                                }`}
+                              >
+                                {conn.character.is_victim ? '💀 Victim' : '🕵️ Suspect'}
+                              </span>
+                              {otherGuest && (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[9px] font-black uppercase">
+                                  👤 Played by {otherGuest}
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="text-base font-black text-white truncate">
+                              {otherName}
+                            </h3>
+                            <p className="text-xs font-black uppercase tracking-wider text-slate-400 truncate">
+                              {otherArch}
+                            </p>
+                            {(keyCount > 0 || alibiCount > 0 || decoyCount > 0 || pinCount > 0) && (
+                              <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                                {keyCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 text-[9px] font-black uppercase">
+                                    🔑 {keyCount} Key
+                                  </span>
+                                )}
+                                {alibiCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded bg-sky-400/20 text-sky-300 text-[9px] font-black uppercase">
+                                    🛡️ {alibiCount} Alibi
+                                  </span>
+                                )}
+                                {decoyCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[9px] font-black uppercase">
+                                    🐟 {decoyCount} Decoy
+                                  </span>
+                                )}
+                                {keyCount === 0 &&
+                                  alibiCount === 0 &&
+                                  decoyCount === 0 &&
+                                  pinCount > 0 && (
+                                    <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 text-[9px] font-black uppercase">
+                                      📌 {pinCount} Clues
+                                    </span>
+                                  )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 text-xs">
+                          {dynamics && dynamics.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {dynamics.map((d, i) => (
+                                <span
+                                  key={i}
+                                  className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-brand-pink/15 text-brand-pink"
+                                >
+                                  {d}
+                                </span>
+                              ))}
                             </div>
                           )}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-base font-black text-white truncate">{otherName}</h3>
-                          <p className="text-xs font-black uppercase tracking-wider text-slate-400 truncate">
-                            {otherArch}
-                          </p>
+                          {notes && (
+                            <p className="text-slate-200 text-xs leading-relaxed">
+                              {hydrateTextWithCharacters(notes, characters, 'print')}
+                            </p>
+                          )}
                         </div>
                       </div>
 
-                      <div className="space-y-1.5 text-xs">
-                        {dynamics && dynamics.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {dynamics.map((d, i) => (
-                              <span
-                                key={i}
-                                className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-brand-pink/15 text-brand-pink"
-                              >
-                                {d}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {notes && (
-                          <p className="text-slate-300 text-xs leading-relaxed">
-                            {hydrateTextWithCharacters(notes, characters, 'print')}
+                      <div className="pt-2.5 border-t border-white/10 space-y-2">
+                        <div className="rounded-xl bg-brand-pink/10 border border-brand-pink/25 px-3 py-2 space-y-0.5">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-brand-pink block">
+                            💬 Icebreaker / Ask Them Tonight:
+                          </span>
+                          <p className="text-[11px] text-slate-200 italic leading-snug">
+                            {icebreakerPrompt}
                           </p>
+                        </div>
+
+                        {!conn.character.is_victim && unlockedClueRound >= 1 && (
+                          <div className="flex items-center justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAccusedCharId(conn.character.id);
+                                setActiveTab('clues');
+                                if (typeof document !== 'undefined') {
+                                  setTimeout(() => {
+                                    const el = document.getElementById('round-suspect-vote-box');
+                                    if (el)
+                                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  }, 120);
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-brand-pink text-slate-200 hover:text-white text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
+                            >
+                              🗳️ Accuse {otherName} in Vote →
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
