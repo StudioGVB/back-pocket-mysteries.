@@ -19,8 +19,11 @@ import {
   generateStandardCharacterPhotoAction,
   generateClueImageAction,
 } from '@/app/actions/generator';
+import { generateAudioClueAction } from '@/app/actions/audio-generator';
 import { GuestModal } from '@/components/account/GuestModal';
 import { saveGuestAction } from '@/app/actions/guests';
+import { MysteryPreLaunchQaPanel } from '@/components/builder/MysteryPreLaunchQaPanel';
+import { downloadFullMysteryPackHtml } from '@/utils/export-full-mystery-pack';
 
 export interface FriendRosterItem {
   id: string;
@@ -42,7 +45,7 @@ interface PackScreenerClientProps {
   friendRoster: FriendRosterItem[];
 }
 
-type ScreenerStep = 'cast' | 'round1' | 'round2' | 'round3' | 'reveal' | 'all_clues';
+type ScreenerStep = 'cast' | 'round1' | 'round2' | 'round3' | 'reveal' | 'all_clues' | 'qa_20x';
 
 interface RoundGuess {
   suspectId: string;
@@ -146,6 +149,12 @@ export function PackScreenerClient({
     label: string;
   } | null>(null);
   const [regeneratingClueIds, setRegeneratingClueIds] = useState<Set<string>>(new Set());
+  const [selectedRevealClue, setSelectedRevealClue] = useState<any | null>(null);
+  const [selectedPortraitModal, setSelectedPortraitModal] = useState<{
+    url: string;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
 
   const [selectedPovCharId, setSelectedPovCharId] = useState<string>(
     initialCharacters.find((c) => !c.is_victim)?.id || initialCharacters[0]?.id || ''
@@ -168,6 +177,20 @@ export function PackScreenerClient({
   useEffect(() => {
     setStickyClueIds(new Set());
   }, [tagFilter, step]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const reqStep = params.get('step') as ScreenerStep | null;
+    if (
+      reqStep &&
+      ['cast', 'round1', 'round2', 'round3', 'reveal', 'all_clues', 'qa_20x'].includes(
+        reqStep
+      )
+    ) {
+      setStep(reqStep);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !mystery?.id) return;
@@ -489,25 +512,34 @@ export function PackScreenerClient({
         };
       }>;
 
-      // Identify visual clues that depict characters in their prompt or have visual photos
+      // Identify all visual clues that depict characters (via prompt or description tokens, CCTV, Polaroids, props)
       const visualCluesToRegen = rawClues.filter((c) => {
         const prompt = String(c.generation_prompt || c.prompt_template || '');
-        const hasCharacterToken = /\{\{[^}]+\}\}/.test(prompt);
+        const desc = String(c.description || '');
+        const title = String(c.title || '');
+        const combined = `${prompt} ${desc} ${title}`;
+        const hasCharacterToken = /\{\{[^}]+\}\}/.test(combined);
         const fmt = c.format || inferClueFormat(c);
-        return (
-          hasCharacterToken ||
-          ((fmt === 'physical_prop' || fmt === 'cctv' || fmt === 'social_post') &&
-            Boolean(c.static_image_url || prompt))
-        );
+        if (fmt === 'audio') return false;
+        const isVisualFormat =
+          fmt === 'physical_prop' || fmt === 'cctv' || fmt === 'social_post' || Boolean(c.static_image_url);
+        return (hasCharacterToken && (Boolean(prompt) || isVisualFormat)) || (isVisualFormat && Boolean(prompt));
       });
 
-      const totalSteps = 1 + assignmentsPayload.length + visualCluesToRegen.length;
+      // Identify all audio clues so their voice notes are re-synthesized with the newly cast friends' names & voices
+      const audioCluesToRegen = rawClues.filter((c) => {
+        const fmt = c.format || inferClueFormat(c);
+        return fmt === 'audio' && Boolean((c.description || '').trim());
+      });
+
+      const totalSteps =
+        1 + assignmentsPayload.length + visualCluesToRegen.length + audioCluesToRegen.length;
       let currentStep = 1;
 
       setGenerationProgress({
         current: currentStep,
         total: totalSteps,
-        label: 'Locking in selected friends & updating 15 relationships...',
+        label: 'Locking in selected friends & updating relationships...',
       });
 
       await applyScreenerCastAssignmentAction(
@@ -581,37 +613,86 @@ export function PackScreenerClient({
         }
       }
 
-      // 3. Generate Stage 2 Visual Clue Photos featuring the selected cast
-      for (const clue of visualCluesToRegen) {
-        currentStep++;
-        const cleanTitle = stripCustomerFacingTitle(clue.title) || clue.title;
+      // 3. Generate Stage 2 Visual Clue Photos featuring the selected cast (in batches of 2 for speed)
+      const batchSize = 2;
+      for (let i = 0; i < visualCluesToRegen.length; i += batchSize) {
+        const batch = visualCluesToRegen.slice(i, i + batchSize);
+        const batchTitles = batch
+          .map((clue) => stripCustomerFacingTitle(clue.title) || clue.title)
+          .join(' & ');
+        currentStep = Math.min(totalSteps, currentStep + batch.length);
         setGenerationProgress({
           current: currentStep,
           total: totalSteps,
-          label: `Generating visual clue photo (R${clue.round_number || 1}): ${cleanTitle}...`,
+          label: `Generating visual clue photo(s) with your cast: ${batchTitles}...`,
         });
-        setRegeneratingClueIds((prev) => new Set(prev).add(clue.id));
+        setRegeneratingClueIds((prev) => {
+          const next = new Set(prev);
+          batch.forEach((c) => next.add(c.id));
+          return next;
+        });
 
+        await Promise.all(
+          batch.map(async (clue) => {
+            try {
+              const clueRes = await generateClueImageAction(
+                clue.id,
+                mystery.id,
+                clue.generation_prompt || clue.prompt_template || '',
+                true
+              );
+              if (clueRes?.imageUrl) {
+                const freshClueUrl = clueRes.imageUrl.startsWith('data:')
+                  ? clueRes.imageUrl
+                  : `${clueRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
+                setRawClues((prev) =>
+                  prev.map((item) =>
+                    item.id === clue.id ? { ...item, static_image_url: freshClueUrl } : item
+                  )
+                );
+              }
+            } finally {
+              setRegeneratingClueIds((prev) => {
+                const next = new Set(prev);
+                next.delete(clue.id);
+                return next;
+              });
+            }
+          })
+        );
+      }
+
+      // 4. Regenerate Stage 3 Multi-Speaker Audio Clues with the newly cast friends' names & voices
+      for (const audioClue of audioCluesToRegen) {
+        currentStep = Math.min(totalSteps, currentStep + 1);
+        const audioTitle = stripCustomerFacingTitle(audioClue.title) || audioClue.title;
+        setGenerationProgress({
+          current: currentStep,
+          total: totalSteps,
+          label: `Synthesizing audio wiretap with your cast's names: ${audioTitle}...`,
+        });
+        setRegeneratingClueIds((prev) => new Set(prev).add(audioClue.id));
         try {
-          const clueRes = await generateClueImageAction(
-            clue.id,
-            mystery.id,
-            clue.generation_prompt || clue.prompt_template || ''
-          );
-          if (clueRes?.imageUrl) {
-            const freshClueUrl = clueRes.imageUrl.startsWith('data:')
-              ? clueRes.imageUrl
-              : `${clueRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
+          const audioRes = await generateAudioClueAction({
+            clueId: audioClue.id,
+            mysteryId: mystery.id,
+            transcript: audioClue.description || '',
+            title: audioClue.title,
+          });
+          if (audioRes?.success && audioRes.audioUrl) {
+            const freshAudioUrl = `${audioRes.audioUrl.split('?')[0]}?v=${Date.now()}`;
             setRawClues((prev) =>
               prev.map((item) =>
-                item.id === clue.id ? { ...item, static_image_url: freshClueUrl } : item
+                item.id === audioClue.id ? { ...item, audio_url: freshAudioUrl } : item
               )
             );
           }
+        } catch (audioErr) {
+          console.error('Failed to regenerate audio clue:', audioErr);
         } finally {
           setRegeneratingClueIds((prev) => {
             const next = new Set(prev);
-            next.delete(clue.id);
+            next.delete(audioClue.id);
             return next;
           });
         }
@@ -1564,6 +1645,61 @@ export function PackScreenerClient({
             >
               {xRayMode ? '🔬 Admin X-Ray: ON (Spoilers)' : '🙈 Blind Player Mode'}
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined' && mystery?.id) {
+                  try {
+                    window.localStorage.setItem(
+                      `bpm_friend_assignments_${mystery.id}`,
+                      JSON.stringify(friendAssignments)
+                    );
+                  } catch {
+                    // ignore
+                  }
+                }
+                downloadFullMysteryPackHtml({
+                  mystery,
+                  activeCharacters,
+                  relationships,
+                  subplots,
+                  plotBeats,
+                  cluesByRound,
+                  useFriendNames,
+                  includeXRaySpoilers: true,
+                  getPortraitUrl,
+                });
+              }}
+              title="Downloads a single self-contained .html file straight to your computer with all friend character dossiers, portraits, relationships, Round 1–3 clues, and the master reveal"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-white text-slate-950 border-white hover:bg-slate-100 transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+            >
+              <span>📥</span>
+              <span>Download Offline File (.HTML)</span>
+            </button>
+
+            <a
+              href={`/en/builder/mysteries/${mystery?.id}/compile/print-all`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                if (typeof window !== 'undefined' && mystery?.id) {
+                  try {
+                    window.localStorage.setItem(
+                      `bpm_friend_assignments_${mystery.id}`,
+                      JSON.stringify(friendAssignments)
+                    );
+                  } catch {
+                    // ignore
+                  }
+                }
+              }}
+              title="Opens the live all-in-one Master Pack page in a new tab where you can inspect everything or click Save as PDF (Cmd+P)"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-1.5"
+            >
+              <span>🖨️</span>
+              <span>View Full Pack &amp; Save PDF ↗</span>
+            </a>
           </div>
         </div>
 
@@ -1654,6 +1790,7 @@ export function PackScreenerClient({
             { id: 'round3', label: `4. Round 3 (${cluesByRound[3].length} Clues)` },
             { id: 'all_clues', label: `All ${rawClues.length} Clues Grid` },
             { id: 'reveal', label: '5. Final Solution & Score' },
+            { id: 'qa_20x', label: '🧪 6. 20× Pre-Launch QA' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1787,18 +1924,35 @@ export function PackScreenerClient({
                   }`}
                 >
                   <div className="space-y-2">
-                    <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-slate-900">
+                    <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-slate-900 group">
                       {photo ? (
-                        <img
-                          src={photo}
-                          alt={char.displayName}
-                          onError={() => {
-                            if (char.assignedFriend) {
-                              void triggerFriendAiPhoto(char.assignedFriend);
-                            }
-                          }}
-                          className="w-full h-full object-cover"
-                        />
+                        <>
+                          <img
+                            src={photo}
+                            alt={char.displayName}
+                            onError={() => {
+                              if (char.assignedFriend) {
+                                void triggerFriendAiPhoto(char.assignedFriend);
+                              }
+                            }}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPortraitModal({
+                                url: photo,
+                                title: char.displayName,
+                                subtitle: hydrate(char.profile_data?.outfit_advice || ''),
+                              });
+                            }}
+                            title="Enlarge character portrait"
+                            className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/80 hover:bg-brand-pink text-white text-[9px] font-black uppercase tracking-wider border border-white/20 transition-colors cursor-zoom-in z-10"
+                          >
+                            🔍 Zoom
+                          </button>
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
                           No Photo
@@ -1914,11 +2068,32 @@ export function PackScreenerClient({
             <span className="px-2.5 py-1 rounded-full bg-brand-pink/20 text-brand-pink text-[10px] font-black uppercase tracking-widest">
               Your Character Dossier
             </span>
+            {getPortraitUrl(povChar) && (
+              <div
+                onClick={() =>
+                  setSelectedPortraitModal({
+                    url: getPortraitUrl(povChar)!,
+                    title: povChar.displayName,
+                    subtitle: hydrate(povChar.profile_data?.outfit_advice || ''),
+                  })
+                }
+                className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-brand-pink bg-slate-950 cursor-zoom-in shadow-xl"
+              >
+                <img
+                  src={getPortraitUrl(povChar)!}
+                  alt={povChar.displayName}
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/80 text-white text-[10px] font-black uppercase tracking-wider border border-white/20">
+                  🔍 Click to Enlarge
+                </span>
+              </div>
+            )}
             <h2 className="text-xl font-black uppercase tracking-tight">
               {povChar.displayName}
             </h2>
             <p className="text-xs text-slate-300 leading-relaxed">
-              {hydrate(povChar.profile_data?.act_summary)}
+              {hydrate(povChar.profile_data?.bio || povChar.profile_data?.act_summary)}
             </p>
             {Array.isArray(povChar.profile_data?.act_bullets) && (
               <div className="space-y-2 pt-2 border-t border-slate-800">
@@ -2150,341 +2325,881 @@ export function PackScreenerClient({
         </div>
       )}
 
-      {/* STEP 5: FINAL SOLUTION & SOLO PLAYER SCORECARD */}
-      {step === 'reveal' && (
-        <div className="space-y-6">
-          <div className="rounded-2xl bg-slate-900 text-white p-6 border border-emerald-500/40 shadow-xl space-y-4">
-            <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
-              Official Case Solution
-            </span>
-            <h2 className="text-xl font-black uppercase">
-              The Killer: {killerChar?.displayName || 'Unknown'} • Victim:{' '}
-              {victimChar?.displayName || 'Unknown'}
-            </h2>
-            <p className="text-xs text-slate-200 leading-relaxed">
-              {hydrate(
-                killerChar?.motive?.notes ||
-                  killerChar?.profile_data?.bio ||
-                  mystery?.description
-              )}
-            </p>
+      {/* STEP 5: FINAL SOLUTION & SOLO PLAYER SCORECARD (SIMPLIFIED 3-SECTION FLOW) */}
+      {step === 'reveal' &&
+        (() => {
+          // 1. Index all clues in round order
+          const allOrderedClues: Array<{
+            clue: any;
+            round: number;
+            indexInRound: number;
+            isFake: boolean;
+            cleanTitle: string;
+            cleanProofText: string;
+            beatNum: number | null;
+            formatLabel: string;
+          }> = [];
 
-            {/* Compare Solo Player's Round 1, 2, 3 Guesses */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-800">
-              {[1, 2, 3].map((rNum) => {
-                const g = guesses[rNum];
-                const guessedChar = getCharById(g?.suspectId);
-                const isCorrect =
-                  guessedChar && killerChar && guessedChar.id === killerChar.id;
-                return (
-                  <div
-                    key={rNum}
-                    className={`rounded-xl p-4 border ${
-                      !guessedChar
-                        ? 'bg-slate-950 border-slate-800'
-                        : isCorrect
-                        ? 'bg-emerald-950/40 border-emerald-500/50'
-                        : 'bg-rose-950/30 border-rose-500/40'
-                    }`}
-                  >
-                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                      Your Round {rNum} Accusation
-                    </div>
-                    <div className="text-sm font-black mt-1">
-                      {guessedChar ? (
-                        <span>
-                          {guessedChar.displayName}{' '}
-                          {isCorrect ? '✅ (Correct Killer!)' : '❌ (Decoy / Innocent)'}
-                        </span>
-                      ) : (
-                        <span className="text-slate-500">No suspect selected</span>
-                      )}
-                    </div>
-                    {g?.motiveGuess && (
-                      <div className="text-xs text-slate-300 mt-1.5 italic">
-                        &ldquo;{g.motiveGuess}&rdquo;
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          const cleanInternalNoteProof = (rawNotes?: string | null, fallbackDesc?: string | null) => {
+            const stripped = stripFormatTagFromNotes(rawNotes || '')
+              .replace(/\[CODE:[^\]]+\]/gi, '')
+              .replace(/\[AUDIO_URL:[^\]]+\]/gi, '')
+              .replace(/\[VOICE_REGION:[^\]]+\]/gi, '')
+              .trim()
+              .replace(
+                /^(REAL\s*\/\s*CANON|Fake\s*Arc\s*Step\s*\d+(?:\s*&\s*Fatal\s*Hole)?)\s*(?:\([^)]*\))?\s*[-—:]?\s*/i,
+                ''
+              )
+              .trim();
+            if (stripped) return hydrate(stripped);
+            const descLine = String(fallbackDesc || '')
+              .split('\n')
+              .map((l) => l.trim())
+              .filter(Boolean)[0];
+            return descLine ? hydrate(descLine) : 'Corroborating case evidence.';
+          };
 
-          {/* Clue Tagging & Detective Notes Accuracy Scorecard */}
-          {(() => {
-            const allOrderedClues: Array<{ clue: any; round: number; indexInRound: number }> = [];
-            for (const r of [1, 2, 3] as const) {
-              (cluesByRound[r] || []).forEach((c: any, idx: number) => {
-                allOrderedClues.push({ clue: c, round: r, indexInRound: idx + 1 });
-              });
-            }
+          for (const r of [1, 2, 3] as const) {
+            (cluesByRound[r] || []).forEach((c: any, idx: number) => {
+              const isFake =
+                c.evidence_status === 'fake' || c.implication_type === 'red_herring';
+              const rawNotes = String(c.internal_notes || '');
+              const noteBeatMatch = rawNotes.match(/Beat\s*(\d+)/i);
+              let beatNum: number | null =
+                typeof c.beatNumber === 'number'
+                  ? c.beatNumber
+                  : typeof c.beat_number === 'number'
+                  ? c.beat_number
+                  : noteBeatMatch
+                  ? parseInt(noteBeatMatch[1], 10)
+                  : null;
 
-            const taggedOrNoted = allOrderedClues.filter(
-              ({ clue: c }) =>
-                Boolean(clueTags[c.id]) ||
-                Boolean((clueNotes[c.id] || '').trim()) ||
-                (clueSuspects[c.id] || []).length > 0
-            );
-            const taggedItems = allOrderedClues.filter(({ clue: c }) => Boolean(clueTags[c.id]));
-
-            let correctKeyCount = 0;
-            let totalKeyTagged = 0;
-            let trickedByDecoyCount = 0;
-            let correctDecoyOrAlibiCount = 0;
-            let totalDecoyOrAlibiTagged = 0;
-
-            for (const { clue: c } of taggedItems) {
-              const t = clueTags[c.id];
-              const isFake = c.evidence_status === 'fake' || c.implication_type === 'red_herring';
-              if (t === 'key') {
-                totalKeyTagged++;
-                if (!isFake) correctKeyCount++;
-                else trickedByDecoyCount++;
-              } else if (t === 'red_herring' || t === 'alibi') {
-                totalDecoyOrAlibiTagged++;
-                if (isFake) correctDecoyOrAlibiCount++;
+              if (!beatNum && c.linked_plot_beat_id) {
+                const matchedBeat = plotBeats.find((b: any) => b.id === c.linked_plot_beat_id);
+                if (matchedBeat?.beat_number) beatNum = Number(matchedBeat.beat_number);
               }
+              if (!isFake && !beatNum && plotBeats.length > 0) {
+                beatNum = r === 1 ? 1 : r === 2 ? 3 : 5;
+              }
+
+              const fmt = String(c.format || inferClueFormat(c) || 'document')
+                .replace(/_/g, ' ')
+                .toUpperCase();
+
+              allOrderedClues.push({
+                clue: c,
+                round: r,
+                indexInRound: idx + 1,
+                isFake,
+                cleanTitle: hydrate(stripCustomerFacingTitle(c.title) || c.title),
+                cleanProofText: cleanInternalNoteProof(c.internal_notes, c.description),
+                beatNum,
+                formatLabel: fmt,
+              });
+            });
+          }
+
+          const realClues = allOrderedClues.filter((item) => !item.isFake);
+          const fakeClues = allOrderedClues.filter((item) => item.isFake);
+
+          // 2. Concise 1-sentence WHO, WHY, and HOW
+          const killerPortrait = killerChar ? getPortraitUrl(killerChar) : null;
+          const victimPortrait = victimChar ? getPortraitUrl(victimChar) : null;
+          const innocentSuspects = activeCharacters.filter(
+            (c) => !c.is_victim && (!killerChar || c.id !== killerChar.id)
+          );
+
+          const rawMotiveNotes =
+            killerChar?.motive?.notes ||
+            killerChar?.motives?.[0]?.notes ||
+            plotBeats.find((b: any) => b.beat_number === 3)?.description ||
+            plotBeats[0]?.description ||
+            mystery?.description;
+          const whyOneSentence = hydrate(rawMotiveNotes);
+
+          const murderExecutionBeat =
+            plotBeats.find((b: any) => b.beat_number === 4) ||
+            plotBeats[plotBeats.length - 2] ||
+            plotBeats[0];
+          const clincherClue = realClues.find((rc) => rc.round === 3) || realClues[realClues.length - 1];
+          const howOneSentence = [
+            murderExecutionBeat ? hydrate(murderExecutionBeat.description) : '',
+            clincherClue ? clincherClue.cleanProofText : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
+
+          // 3. Map each subplot to its exact 3 clues (R1, R2, R3)
+          const getCluesForSubplot = (sp: any, spIdx: number) => {
+            const titleTokens = Array.from(
+              String(sp.title || '').matchAll(/\{\{([^}]+)\}\}/g)
+            ).map((m) => m[1].trim().toLowerCase());
+
+            const descTokens = Array.from(
+              String(sp.description || '').matchAll(/\{\{([^}]+)\}\}/g)
+            )
+              .map((m) => m[1].trim().toLowerCase())
+              .filter(
+                (t) =>
+                  !victimChar ||
+                  !t.includes(
+                    String(victimChar.displayRoleTitle || victimChar.name || '').toLowerCase()
+                  )
+              );
+
+            const targetTokens = titleTokens.length > 0 ? titleTokens : descTokens.slice(0, 2);
+
+            const matched = fakeClues.filter(({ clue }) => {
+              if (clue.subplot_id && sp.id && clue.subplot_id === sp.id) return true;
+              const notesHeader = String(clue.internal_notes || '').toLowerCase();
+              const hay = `${notesHeader} ${clue.generation_prompt || ''}`.toLowerCase();
+              if (targetTokens.length > 0) {
+                const hitCount = targetTokens.filter((tok) => hay.includes(tok)).length;
+                if (hitCount >= Math.min(2, targetTokens.length)) return true;
+              }
+              return false;
+            });
+
+            if (matched.length > 0) return matched;
+            return fakeClues.filter((_, i) => i % Math.max(1, subplots.length) === spIdx);
+          };
+
+          // 4. Solo Player Scorecard Metrics
+          let correctKeyCount = 0;
+          let totalKeyTagged = 0;
+          let correctDecoyOrAlibiCount = 0;
+          let totalDecoyOrAlibiTagged = 0;
+
+          for (const { clue: c, isFake } of allOrderedClues) {
+            const t = clueTags[c.id];
+            if (!t) continue;
+            if (t === 'key') {
+              totalKeyTagged++;
+              if (!isFake) correctKeyCount++;
+            } else if (t === 'red_herring' || t === 'alibi') {
+              totalDecoyOrAlibiTagged++;
+              if (isFake) correctDecoyOrAlibiCount++;
             }
+          }
 
-            const totalTagged = totalKeyTagged + totalDecoyOrAlibiTagged;
-            const totalCorrectTags = correctKeyCount + correctDecoyOrAlibiCount;
-            const bonusPoints = correctKeyCount * 10 + correctDecoyOrAlibiCount * 15;
-            const accuracyPct =
-              totalTagged > 0 ? Math.round((totalCorrectTags / totalTagged) * 100) : null;
-            const notesWrittenCount = allOrderedClues.filter(({ clue: c }) =>
-              Boolean((clueNotes[c.id] || '').trim())
-            ).length;
+          const totalTagged = totalKeyTagged + totalDecoyOrAlibiTagged;
+          const totalCorrectTags = correctKeyCount + correctDecoyOrAlibiCount;
+          const bonusPoints = correctKeyCount * 10 + correctDecoyOrAlibiCount * 15;
+          const accuracyPct =
+            totalTagged > 0 ? Math.round((totalCorrectTags / totalTagged) * 100) : null;
 
-            return (
-              <div className="rounded-2xl bg-slate-900 text-white p-6 border border-amber-400/40 shadow-xl space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <span className="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-widest">
-                      📓 Detective Notebook Scorecard
+          const roundPoints = [1, 2, 3].reduce((acc, rNum) => {
+            const gId = guesses[rNum]?.suspectId;
+            if (gId && killerChar && gId === killerChar.id) {
+              return acc + (rNum === 1 ? 40 : rNum === 2 ? 30 : 50);
+            }
+            return acc;
+          }, 0);
+          const yourTotalScore = roundPoints + bonusPoints;
+
+          // 5. Room Voting & Leaderboard Data
+          const nonVictimSuspects = activeCharacters.filter((c) => !c.is_victim);
+          const primaryDecoyA = innocentSuspects[0] || nonVictimSuspects[0];
+          const primaryDecoyB = innocentSuspects[1] || primaryDecoyA;
+          const primaryDecoyC = innocentSuspects[2] || primaryDecoyB;
+          const primaryDecoyD = innocentSuspects[3] || primaryDecoyA;
+
+          const yourR1Pick =
+            getCharById(guesses[1]?.suspectId) || primaryDecoyA || killerChar;
+          const yourR2Pick =
+            getCharById(guesses[2]?.suspectId) || primaryDecoyB || killerChar;
+          const yourR3Pick =
+            getCharById(guesses[3]?.suspectId) || killerChar || primaryDecoyA;
+
+          const simulatedTablePlayers = [
+            {
+              id: 'you-player',
+              isYou: true,
+              playerName: 'You',
+              roleLabel: povChar?.displayName || 'Playtester',
+              r1Suspect: yourR1Pick,
+              r2Suspect: yourR2Pick,
+              r3Suspect: yourR3Pick,
+              tagAccuracy: accuracyPct ?? 78,
+              clueBonus: bonusPoints > 0 ? bonusPoints : 65,
+              totalScore:
+                guesses[1]?.suspectId ||
+                guesses[2]?.suspectId ||
+                guesses[3]?.suspectId ||
+                totalTagged > 0
+                  ? yourTotalScore
+                  : 145,
+            },
+            ...nonVictimSuspects.map((seatChar, sIdx) => {
+              const r1Pick =
+                sIdx % 3 === 0
+                  ? primaryDecoyA
+                  : sIdx % 3 === 1
+                  ? primaryDecoyB
+                  : primaryDecoyC;
+              const r2Pick =
+                sIdx === 0
+                  ? killerChar
+                  : sIdx % 2 === 0
+                  ? primaryDecoyB
+                  : primaryDecoyC;
+              const r3Pick =
+                sIdx === 0 || sIdx === 2 || sIdx === 4
+                  ? killerChar
+                  : sIdx === 1
+                  ? primaryDecoyA
+                  : primaryDecoyD;
+
+              const seatRoundPts =
+                (r1Pick?.id === killerChar?.id ? 40 : 0) +
+                (r2Pick?.id === killerChar?.id ? 30 : 0) +
+                (r3Pick?.id === killerChar?.id ? 50 : 0);
+              const seatTagAcc = [88, 72, 81, 64, 75, 69][sIdx % 6];
+              const seatClueBonus = [85, 55, 70, 45, 60, 50][sIdx % 6];
+
+              return {
+                id: `seat-${seatChar.id}`,
+                isYou: false,
+                playerName:
+                  seatChar.assignedFriend?.name ||
+                  seatChar.profile_data?.guest_name ||
+                  seatChar.displayRoleTitle ||
+                  seatChar.name,
+                roleLabel: seatChar.displayRoleTitle || seatChar.name,
+                r1Suspect: r1Pick,
+                r2Suspect: r2Pick,
+                r3Suspect: r3Pick,
+                tagAccuracy: seatTagAcc,
+                clueBonus: seatClueBonus,
+                totalScore: seatRoundPts + seatClueBonus,
+              };
+            }),
+          ].sort((a, b) => b.totalScore - a.totalScore);
+
+          const totalPlayersCount = simulatedTablePlayers.length;
+
+          const suspectVoteStats = nonVictimSuspects
+            .map((susp) => {
+              const r1Votes = simulatedTablePlayers.filter(
+                (p) => p.r1Suspect?.id === susp.id
+              ).length;
+              const r2Votes = simulatedTablePlayers.filter(
+                (p) => p.r2Suspect?.id === susp.id
+              ).length;
+              const r3Votes = simulatedTablePlayers.filter(
+                (p) => p.r3Suspect?.id === susp.id
+              ).length;
+              const isTrueKiller = Boolean(killerChar && susp.id === killerChar.id);
+              return {
+                suspect: susp,
+                r1Votes,
+                r2Votes,
+                r3Votes,
+                r3Pct: Math.round((r3Votes / Math.max(1, totalPlayersCount)) * 100),
+                isTrueKiller,
+              };
+            })
+            .sort((a, b) => b.r3Votes - a.r3Votes);
+
+          return (
+            <div className="space-y-6">
+              {/* =====================================================================
+                  SECTION 1: THE VERDICT HERO (ONE SENTENCE EACH FOR WHO, WHY, HOW)
+              ====================================================================== */}
+              <div className="rounded-3xl bg-slate-950 text-white border border-emerald-500/40 shadow-xl p-6 space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                  <div className="flex items-center gap-4">
+                    {killerPortrait && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedPortraitModal({
+                            url: killerPortrait,
+                            title: `🔪 Killer: ${killerChar?.displayName || 'Killer'}`,
+                            subtitle: hydrate(killerChar?.profile_data?.outfit_advice || ''),
+                          })
+                        }
+                        title="Click to enlarge Killer portrait"
+                        className="relative group w-24 h-24 rounded-2xl overflow-hidden border-2 border-rose-500 shrink-0 cursor-zoom-in shadow-lg"
+                      >
+                        <img
+                          src={killerPortrait}
+                          alt={killerChar?.displayName || 'Killer'}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-white text-[8px] font-black uppercase">
+                          🔍
+                        </span>
+                      </button>
+                    )}
+                    <div>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
+                        Official Case Solution
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mt-0.5">
+                        {killerChar?.displayName || 'Unknown Killer'} Killed{' '}
+                        {victimChar?.displayName || 'The Victim'}
+                      </h2>
+                    </div>
+                  </div>
+
+                  {victimPortrait && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedPortraitModal({
+                          url: victimPortrait,
+                          title: `🩸 Victim: ${victimChar?.displayName || 'Victim'}`,
+                          subtitle: hydrate(victimChar?.profile_data?.outfit_advice || ''),
+                        })
+                      }
+                      title="Click to enlarge Victim portrait"
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-colors cursor-zoom-in"
+                    >
+                      <img
+                        src={victimPortrait}
+                        alt={victimChar?.displayName || 'Victim'}
+                        className="w-16 h-16 rounded-xl object-cover border border-pink-500/50"
+                      />
+                      <div className="text-left">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-pink-400">
+                          🩸 Victim (Click to Enlarge)
+                        </div>
+                        <div className="text-sm font-black text-white">
+                          {victimChar?.displayName}
+                        </div>
+                      </div>
+                    </button>
+                  )}
+                </div>
+
+                {/* 3 Clean Summary Rows: WHO / WHY / HOW */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="rounded-2xl bg-slate-900/90 border border-rose-500/30 p-4 space-y-1.5">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-rose-400">
+                      🔪 1. Who Killed
+                    </div>
+                    <div className="text-sm font-black text-white">
+                      {killerChar?.displayName || 'Unknown Killer'} (Acted Alone)
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Cleared suspects:{' '}
+                      {innocentSuspects.map((s) => s.displayName).join(', ')}.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-900/90 border border-amber-500/30 p-4 space-y-1.5">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                      💔 2. Why They Killed (Motive)
+                    </div>
+                    <p className="text-xs text-slate-200 leading-relaxed">
+                      {whyOneSentence}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-900/90 border border-sky-500/30 p-4 space-y-1.5">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-sky-400">
+                      ⚡ 3. How They Killed (Method &amp; Proof)
+                    </div>
+                    <p className="text-xs text-slate-200 leading-relaxed">
+                      {howOneSentence}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* =====================================================================
+                  SECTION 2: THE 5 MURDER BEATS (+ CLICKABLE CLUE ROWS) & CLEARED SUBPLOTS
+              ====================================================================== */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* LEFT 7 COLS: THE 5 MAIN BEATS & CLICKABLE SUPPORTING CLUES */}
+                <div className="lg:col-span-7 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                        🎯 True Murder Timeline • Click Any Clue to Open Full Card
+                      </span>
+                      <h3 className="text-base font-black uppercase text-slate-900">
+                        The {plotBeats.length} Main Beats &amp; Supporting Clues
+                      </h3>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-black">
+                      {realClues.length} Real Clues
                     </span>
-                    <h3 className="text-lg font-black uppercase mt-1">
-                      How Your Clue Tags &amp; Notes Stacked Up Against the Truth
-                    </h3>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {bonusPoints > 0 && (
-                      <div className="px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-right">
-                        <div className="text-[10px] font-black uppercase tracking-wider text-emerald-300">
-                          Clue Tag Bonus
-                        </div>
-                        <div className="text-base font-black text-emerald-300">
-                          +{bonusPoints} Detective Pts
-                        </div>
-                      </div>
-                    )}
-                    {accuracyPct !== null && (
-                      <div className="px-4 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
-                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                          Tag Accuracy
-                        </div>
-                        <div className="text-base font-black text-amber-300">
-                          {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Party Awards Preview */}
-                {(correctDecoyOrAlibiCount > 0 || trickedByDecoyCount > 0) && (
-                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                    {correctDecoyOrAlibiCount > 0 && (
-                      <div className="px-3 py-1.5 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-200 text-xs font-black">
-                        🦅 Earned Party Award: &ldquo;The BS Detector&rdquo; ({correctDecoyOrAlibiCount}{' '}
-                        {correctDecoyOrAlibiCount === 1 ? 'Red Herring' : 'Red Herrings'} Spotted)
-                      </div>
-                    )}
-                    {trickedByDecoyCount > 0 && (
-                      <div className="px-3 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-black">
-                        🎣 Party Award Risk: &ldquo;Hook, Line &amp; Sinker&rdquo; (Baited by {trickedByDecoyCount}{' '}
-                        {trickedByDecoyCount === 1 ? 'Decoy' : 'Decoys'})
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="rounded-xl bg-slate-950 border border-slate-800 p-3.5">
-                    <div className="text-[10px] font-black uppercase tracking-wider text-amber-400">
-                      🔑 Key Evidence Tagged (+10 pts each)
-                    </div>
-                    <div className="text-sm font-black text-white mt-1">
-                      {totalKeyTagged > 0
-                        ? `${correctKeyCount}/${totalKeyTagged} were Real Murder Clues`
-                        : 'No clues tagged 🔑 Key'}
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-slate-950 border border-slate-800 p-3.5">
-                    <div className="text-[10px] font-black uppercase tracking-wider text-rose-400">
-                      🐟 Decoys &amp; 🛡️ Alibis Spotted (+15 pts each)
-                    </div>
-                    <div className="text-sm font-black text-white mt-1">
-                      {totalDecoyOrAlibiTagged > 0
-                        ? `${correctDecoyOrAlibiCount}/${totalDecoyOrAlibiTagged} were Red Herrings`
-                        : 'No clues tagged Decoy/Alibi'}
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-slate-950 border border-slate-800 p-3.5">
-                    <div className="text-[10px] font-black uppercase tracking-wider text-sky-400">
-                      ✍️ Detective Notes Written
-                    </div>
-                    <div className="text-sm font-black text-white mt-1">
-                      {notesWrittenCount} {notesWrittenCount === 1 ? 'Note' : 'Notes'} Recorded
-                    </div>
-                  </div>
-                </div>
-
-                {taggedOrNoted.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">
-                    You didn&apos;t tag any clues or write any notes during this run. In Rounds 1–3, use the <strong className="text-amber-300">🔑 Key</strong>, <strong className="text-rose-300">🐟 Decoy</strong>, and <strong className="text-sky-300">🛡️ Alibi</strong> buttons and the note field on any clue card to track your deductions!
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-                    {taggedOrNoted.map(({ clue: c, round, indexInRound }) => {
-                      const t = clueTags[c.id];
-                      const note = (clueNotes[c.id] || '').trim();
-                      const pinnedCharNames = (clueSuspects[c.id] || [])
-                        .map((sId) => getCharById(sId)?.displayName)
-                        .filter(Boolean);
-                      const isFake =
-                        c.evidence_status === 'fake' || c.implication_type === 'red_herring';
-                      const tagWasCorrect =
-                        t === 'key'
-                          ? !isFake
-                          : t === 'red_herring' || t === 'alibi'
-                          ? isFake
-                          : null;
-                      const cTitle = hydrate(stripCustomerFacingTitle(c.title) || c.title);
+                  <div className="space-y-3">
+                    {plotBeats.map((b: any) => {
+                      const bNum = Number(b.beat_number);
+                      const supportingClues = realClues.filter((rc) => rc.beatNum === bNum);
 
                       return (
                         <div
-                          key={c.id}
-                          className={`rounded-xl p-3.5 border space-y-1.5 ${
-                            tagWasCorrect === true
-                              ? 'bg-emerald-950/30 border-emerald-500/40'
-                              : tagWasCorrect === false
-                              ? 'bg-rose-950/30 border-rose-500/40'
-                              : 'bg-slate-950 border-slate-800'
-                          }`}
+                          key={b.id || bNum}
+                          className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2.5"
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
-                                R{round} • #{indexInRound}
-                              </span>
-                              <span className="text-xs font-black text-white truncate">
-                                {cTitle}
-                              </span>
-                            </div>
-
-                            <span
-                              className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${
-                                isFake
-                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                              }`}
-                            >
-                              {isFake ? '🎭 Fake / Subplot' : '✓ Real Clue'}
-                            </span>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <h4 className="text-sm font-black text-slate-900">
+                              <span className="text-emerald-700 mr-1.5">Beat {bNum}:</span>
+                              {hydrate(b.event_title || b.title)}
+                            </h4>
                           </div>
 
-                          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                            {t ? (
-                              <span className="font-bold text-slate-300">
-                                Your Tag:{' '}
-                                <strong className="text-white">
-                                  {t === 'key'
-                                    ? '🔑 Key'
-                                    : t === 'red_herring'
-                                    ? '🐟 Decoy'
-                                    : '🛡️ Alibi'}
-                                </strong>{' '}
-                                {tagWasCorrect
-                                  ? '✅ Spot-on!'
-                                  : isFake
-                                  ? '❌ Tricked by a decoy!'
-                                  : '❌ Dismissed real evidence!'}
-                              </span>
-                            ) : (
-                              <span className="text-slate-500">Untagged (Note / Suspect Pin only)</span>
-                            )}
-                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {hydrate(b.description)}
+                          </p>
 
-                          {pinnedCharNames.length > 0 && (
-                            <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                              {pinnedCharNames.map((sName, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-1.5 py-0.5 rounded bg-brand-pink/20 text-brand-pink text-[9px] font-black uppercase"
-                                >
-                                  📌 {sName}
-                                </span>
-                              ))}
+                          {supportingClues.length > 0 && (
+                            <div className="space-y-1.5 pt-1">
+                              {supportingClues.map((rc) => {
+                                const userTag = clueTags[rc.clue.id];
+                                return (
+                                  <button
+                                    key={rc.clue.id}
+                                    type="button"
+                                    onClick={() => setSelectedRevealClue(rc.clue)}
+                                    title="Click to open and view this full clue card"
+                                    className="w-full text-left rounded-xl bg-white hover:bg-emerald-50/50 border border-emerald-200/80 hover:border-emerald-500 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs transition-all cursor-pointer group"
+                                  >
+                                    <div className="min-w-0 flex-1 flex items-center gap-2.5">
+                                      {rc.clue.static_image_url && (
+                                        <img
+                                          src={rc.clue.static_image_url}
+                                          alt=""
+                                          className="w-11 h-8 rounded-md object-cover shrink-0 border border-slate-200"
+                                        />
+                                      )}
+                                      <div className="min-w-0 flex-1">
+                                        <span className="px-1.5 py-0.5 rounded bg-emerald-700 text-white text-[9px] font-black uppercase mr-2">
+                                          R{rc.round} • #{rc.indexInRound}
+                                        </span>
+                                        <strong className="text-slate-900 group-hover:text-emerald-800 mr-1.5 underline decoration-emerald-400/60">
+                                          {rc.cleanTitle}:
+                                        </strong>
+                                        <span className="text-slate-600">
+                                          {rc.cleanProofText}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      {userTag && (
+                                        <span
+                                          className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${
+                                            userTag === 'key'
+                                              ? 'bg-emerald-100 text-emerald-800'
+                                              : 'bg-rose-100 text-rose-800'
+                                          }`}
+                                        >
+                                          {userTag === 'key' ? '🔑 Tagged Key ✅' : '❌ Missed'}
+                                        </span>
+                                      )}
+                                      <span className="px-2 py-0.5 rounded bg-slate-100 group-hover:bg-emerald-700 text-slate-700 group-hover:text-white text-[9px] font-black uppercase transition-colors">
+                                        👁️ View Clue
+                                      </span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
                             </div>
-                          )}
-
-                          {note && (
-                            <p className="text-xs text-slate-300 italic pt-1 border-t border-white/10">
-                              Your Note: &ldquo;{note}&rdquo;
-                            </p>
                           )}
                         </div>
                       );
                     })}
                   </div>
-                )}
+                </div>
+
+                {/* RIGHT 5 COLS: COMPACT RED-HERRING SUBPLOTS (R1/R2 BAIT -> R3 ALIBI) */}
+                <div className="lg:col-span-5 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-rose-700">
+                        🎭 Red-Herring Subplots • Click Any Clue to View
+                      </span>
+                      <h3 className="text-base font-black uppercase text-slate-900">
+                        Why The Other Suspects Were Cleared
+                      </h3>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-800 text-xs font-black">
+                      {fakeClues.length} Decoy Clues
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {subplots.map((sp: any, spIdx: number) => {
+                      const spClues = getCluesForSubplot(sp, spIdx);
+                      const baitClues = spClues.filter((fc) => fc.round < 3);
+                      const alibiClues = spClues.filter((fc) => fc.round === 3);
+
+                      return (
+                        <div
+                          key={sp.id || spIdx}
+                          className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-3"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="text-sm font-black text-slate-900">
+                              {hydrate(sp.title)}
+                            </h4>
+                            <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 text-[10px] font-black uppercase shrink-0">
+                              🛡️ Cleared in R3
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {hydrate(sp.description)}
+                          </p>
+
+                          <div className="space-y-1.5 pt-1">
+                            {baitClues.map((fc) => (
+                              <button
+                                key={fc.clue.id}
+                                type="button"
+                                onClick={() => setSelectedRevealClue(fc.clue)}
+                                title="Click to open and view this full clue card"
+                                className="w-full text-left rounded-xl bg-white hover:bg-rose-50/50 border border-rose-200 hover:border-rose-400 px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer group"
+                              >
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  {fc.clue.static_image_url && (
+                                    <img
+                                      src={fc.clue.static_image_url}
+                                      alt=""
+                                      className="w-10 h-8 rounded object-cover shrink-0 border border-slate-200"
+                                    />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <span className="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-black uppercase mr-2">
+                                      R{fc.round} Bait
+                                    </span>
+                                    <strong className="text-slate-900 group-hover:text-rose-800 mr-1 underline decoration-rose-400/60">
+                                      {fc.cleanTitle}:
+                                    </strong>
+                                    <span className="text-slate-600">{fc.cleanProofText}</span>
+                                  </div>
+                                </div>
+                                <span className="px-2 py-0.5 rounded bg-slate-100 group-hover:bg-rose-600 text-slate-700 group-hover:text-white text-[9px] font-black uppercase shrink-0 transition-colors">
+                                  👁️ View
+                                </span>
+                              </button>
+                            ))}
+
+                            {alibiClues.map((fc) => (
+                              <button
+                                key={fc.clue.id}
+                                type="button"
+                                onClick={() => setSelectedRevealClue(fc.clue)}
+                                title="Click to open and view this full alibi clue card"
+                                className="w-full text-left rounded-xl bg-sky-50 hover:bg-sky-100/70 border border-sky-300 hover:border-sky-500 px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer group"
+                              >
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  {fc.clue.static_image_url && (
+                                    <img
+                                      src={fc.clue.static_image_url}
+                                      alt=""
+                                      className="w-10 h-8 rounded object-cover shrink-0 border border-sky-200"
+                                    />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <span className="px-1.5 py-0.5 rounded bg-sky-700 text-white text-[9px] font-black uppercase mr-2">
+                                      🛡️ R3 Alibi
+                                    </span>
+                                    <strong className="text-slate-900 group-hover:text-sky-900 mr-1 underline decoration-sky-400/60">
+                                      {fc.cleanTitle}:
+                                    </strong>
+                                    <span className="text-slate-700">{fc.cleanProofText}</span>
+                                  </div>
+                                </div>
+                                <span className="px-2 py-0.5 rounded bg-white group-hover:bg-sky-700 text-sky-800 group-hover:text-white text-[9px] font-black uppercase shrink-0 transition-colors">
+                                  👁️ View
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            );
-          })()}
 
-          {/* Main Plot Beats & Fake Subplots Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-2xl bg-white border border-slate-200 p-6 space-y-3">
-              <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
-                Main Plot Beats (True Murder Timeline)
-              </h3>
-              {plotBeats.map((b: any) => (
-                <div
-                  key={b.id}
-                  className="rounded-xl bg-emerald-50/60 border border-emerald-200 p-3.5 space-y-1"
-                >
-                  <div className="text-xs font-black text-emerald-950">
-                    Beat {b.beat_number}: {hydrate(b.event_title || b.title)}
+              {/* =====================================================================
+                  SECTION 3 (UNDERNEATH): YOUR SCORECARD & COMBINED ROOM RESULTS
+              ====================================================================== */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+                {/* CARD A (5 COLS): YOUR ACCUSATIONS & CLUE CHECKLIST */}
+                <div className="lg:col-span-5 rounded-3xl bg-slate-900 text-white p-6 border border-slate-800 shadow-lg space-y-5">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                        📓 Your Detective Scorecard
+                      </span>
+                      <h3 className="text-base font-black uppercase text-white">
+                        How Your Picks &amp; Clues Stacked Up
+                      </h3>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
+                      <div className="text-[9px] font-black uppercase text-slate-400">
+                        Your Score
+                      </div>
+                      <div className="text-sm font-black text-amber-300">
+                        {yourTotalScore} Pts{' '}
+                        {accuracyPct !== null ? `• ${accuracyPct}% Tags` : ''}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-700 leading-relaxed">
-                    {hydrate(b.description)}
-                  </p>
-                </div>
-              ))}
-            </div>
 
-            <div className="rounded-2xl bg-white border border-slate-200 p-6 space-y-3">
-              <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
-                Red-Herring Subplots & Why They Are Cleared
-              </h3>
-              {subplots.map((sp: any) => (
-                <div
-                  key={sp.id}
-                  className="rounded-xl bg-rose-50/60 border border-rose-200 p-3.5 space-y-1"
-                >
-                  <div className="text-xs font-black text-rose-950">
-                    {hydrate(sp.title)}
+                  {/* Compact 3-Round Guesses Strip */}
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {[1, 2, 3].map((rNum) => {
+                      const g = guesses[rNum];
+                      const guessedChar = getCharById(g?.suspectId);
+                      const isCorrect =
+                        guessedChar && killerChar && guessedChar.id === killerChar.id;
+                      return (
+                        <div
+                          key={rNum}
+                          className={`rounded-xl p-3 border text-xs ${
+                            !guessedChar
+                              ? 'bg-slate-950 border-slate-800'
+                              : isCorrect
+                              ? 'bg-emerald-950/40 border-emerald-500/50'
+                              : 'bg-rose-950/30 border-rose-500/40'
+                          }`}
+                        >
+                          <div className="text-[9px] font-black uppercase text-slate-400">
+                            Round {rNum}
+                          </div>
+                          <div className="font-black text-white mt-0.5 truncate">
+                            {guessedChar ? guessedChar.displayName : 'No Pick'}
+                          </div>
+                          <div className="text-[10px] mt-0.5 font-bold">
+                            {!guessedChar ? (
+                              <span className="text-slate-500">—</span>
+                            ) : isCorrect ? (
+                              <span className="text-emerald-400">✅ Correct</span>
+                            ) : (
+                              <span className="text-rose-400">❌ Decoy</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="text-xs text-slate-700 leading-relaxed">
-                    {hydrate(sp.description)}
-                  </p>
+
+                  {/* Compact Single-Line Clue Checklist (All 16 Clues - Clickable!) */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-400 pb-1">
+                      <span>All {allOrderedClues.length} Clues vs. The Truth (Click to View)</span>
+                      <span>
+                        {totalCorrectTags}/{totalTagged} Tagged Right (+{bonusPoints} pts)
+                      </span>
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto pr-1 space-y-1.5">
+                      {allOrderedClues.map((item) => {
+                        const { clue: c, round, indexInRound, isFake, cleanTitle, beatNum } = item;
+                        const t = clueTags[c.id];
+                        const tagWasCorrect =
+                          t === 'key'
+                            ? !isFake
+                            : t === 'red_herring' || t === 'alibi'
+                            ? isFake
+                            : null;
+
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => setSelectedRevealClue(c)}
+                            title="Click to inspect full clue card"
+                            className="w-full text-left rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-brand-pink px-3 py-2 flex items-center justify-between gap-2 text-xs transition-all cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
+                                R{round}#{indexInRound}
+                              </span>
+                              <span className="font-bold text-white group-hover:text-brand-pink truncate underline decoration-white/20">
+                                {cleanTitle}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                                  isFake
+                                    ? round === 3
+                                      ? 'bg-sky-500/20 text-sky-300'
+                                      : 'bg-rose-500/20 text-rose-300'
+                                    : 'bg-emerald-500/20 text-emerald-300'
+                                }`}
+                              >
+                                {isFake
+                                  ? round === 3
+                                    ? '🛡️ Alibi'
+                                    : '🎭 Decoy'
+                                  : `✓ Beat ${beatNum}`}
+                              </span>
+
+                              {t && (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black ${
+                                    tagWasCorrect
+                                      ? 'bg-emerald-500 text-slate-950'
+                                      : 'bg-rose-500 text-white'
+                                  }`}
+                                >
+                                  {tagWasCorrect ? '✅' : '❌'}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              ))}
+
+                {/* CARD B (7 COLS): COMBINED ROOM VOTING & PLAYER LEADERBOARD */}
+                <div className="lg:col-span-7 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700">
+                        📊 All-Players Room Results
+                      </span>
+                      <h3 className="text-base font-black uppercase text-slate-900">
+                        Who The Room Voted For &amp; Detective Leaderboard
+                      </h3>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-black">
+                      {totalPlayersCount} Players
+                    </span>
+                  </div>
+
+                  {/* Compact Suspect Vote Bars */}
+                  <div className="space-y-2.5">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Final Round 3 Suspect Vote Share
+                    </div>
+                    {suspectVoteStats.map((st) => (
+                      <div key={st.suspect.id} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-slate-900">
+                              {st.suspect.displayName}
+                            </span>
+                            {st.isTrueKiller && (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-700 text-white text-[9px] font-black uppercase">
+                                🔪 True Killer
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-slate-600 font-bold">
+                            R1: {st.r1Votes} • R2: {st.r2Votes} •{' '}
+                            <strong className="text-slate-900">
+                              Final: {st.r3Votes} ({st.r3Pct}%)
+                            </strong>
+                          </span>
+                        </div>
+                        <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              st.isTrueKiller ? 'bg-emerald-600' : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${Math.max(st.r3Votes > 0 ? 6 : 2, st.r3Pct)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Compact All-Players Leaderboard Table */}
+                  <div className="pt-3 border-t border-slate-100">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
+                      Player-by-Player Round Picks &amp; Final Score
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                            <th className="py-2 pr-2">#</th>
+                            <th className="py-2 px-2">Player</th>
+                            <th className="py-2 px-2">R1</th>
+                            <th className="py-2 px-2">R2</th>
+                            <th className="py-2 px-2">R3 Final</th>
+                            <th className="py-2 pl-2 text-right">Score</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                          {simulatedTablePlayers.map((p, idx) => {
+                            const r1Right =
+                              p.r1Suspect && killerChar && p.r1Suspect.id === killerChar.id;
+                            const r2Right =
+                              p.r2Suspect && killerChar && p.r2Suspect.id === killerChar.id;
+                            const r3Right =
+                              p.r3Suspect && killerChar && p.r3Suspect.id === killerChar.id;
+
+                            return (
+                              <tr
+                                key={p.id}
+                                className={p.isYou ? 'bg-amber-50/70 font-bold' : ''}
+                              >
+                                <td className="py-2.5 pr-2 font-black text-slate-500">
+                                  {idx + 1}
+                                </td>
+                                <td className="py-2.5 px-2">
+                                  <span className="font-black text-slate-900">
+                                    {p.playerName}
+                                  </span>
+                                  {p.isYou && (
+                                    <span className="ml-1.5 px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 text-[9px] font-black uppercase">
+                                      YOU
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-2">
+                                  <span className={r1Right ? 'text-emerald-700 font-bold' : 'text-slate-500'}>
+                                    {p.r1Suspect?.displayName?.split(' (')[0] || '—'}{' '}
+                                    {r1Right ? '✅' : '❌'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-2">
+                                  <span className={r2Right ? 'text-emerald-700 font-bold' : 'text-slate-500'}>
+                                    {p.r2Suspect?.displayName?.split(' (')[0] || '—'}{' '}
+                                    {r2Right ? '✅' : '❌'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-2">
+                                  <span
+                                    className={`px-2 py-0.5 rounded font-black text-[11px] ${
+                                      r3Right
+                                        ? 'bg-emerald-100 text-emerald-900'
+                                        : 'bg-rose-50 text-rose-800'
+                                    }`}
+                                  >
+                                    {p.r3Suspect?.displayName?.split(' (')[0] || '—'}{' '}
+                                    {r3Right ? '🔪✅' : '❌'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 pl-2 text-right font-black text-slate-900">
+                                  {p.totalScore} pts
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
+
+      {/* STEP 6: 20x PRE-LAUNCH AUTOMATED STRESS-TEST & STABILITY REVIEW */}
+      {step === 'qa_20x' && (
+        <MysteryPreLaunchQaPanel
+          mysteryId={mystery?.id}
+          mysteryTitle={mystery?.title || 'Mystery Pack'}
+        />
       )}
 
       <GuestModal
@@ -2515,6 +3230,123 @@ export function PackScreenerClient({
           setLiveFriends((prev) => [newItem, ...prev]);
         }}
       />
+
+      {/* CLICKABLE REVEAL CLUE LIGHTBOX MODAL */}
+      {selectedRevealClue && (() => {
+        const cleanTitle =
+          stripCustomerFacingTitle(selectedRevealClue.title) ||
+          selectedRevealClue.title;
+        const hydratedTitle = hydrate(cleanTitle);
+        const hydratedDesc = hydrate(selectedRevealClue.description);
+        const isFake =
+          selectedRevealClue.evidence_status === 'fake' ||
+          selectedRevealClue.implication_type === 'red_herring';
+        const linkedBeat = plotBeats.find(
+          (b: any) => b.id === selectedRevealClue.linked_plot_beat_id
+        );
+        const cleanNotes = hydrate(
+          stripFormatTagFromNotes(selectedRevealClue.internal_notes)
+        );
+
+        return (
+          <div
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedRevealClue(null)}
+          >
+            <div
+              className="relative bg-slate-900 border border-brand-pink/50 rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-5 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedRevealClue(null)}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-black flex items-center justify-center cursor-pointer z-20"
+              >
+                ✕
+              </button>
+
+              <div className="pr-10 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink text-[10px] font-black uppercase">
+                    Round {selectedRevealClue.round_number || 1} Evidence
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                      isFake
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    }`}
+                  >
+                    {isFake
+                      ? '🎭 Red Herring / Subplot'
+                      : `✓ Real Canon${linkedBeat ? ` • Beat ${linkedBeat.beat_number}` : ''}`}
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-white">{hydratedTitle}</h3>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
+                <ClueRenderer
+                  clue={{
+                    ...selectedRevealClue,
+                    title: hydratedTitle,
+                    description: hydratedDesc,
+                  }}
+                  characters={activeCharacters}
+                  compact={false}
+                />
+              </div>
+
+              {cleanNotes && (
+                <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-xs text-sky-200">
+                  <strong>🔬 Designer / QA Logic:</strong> {cleanNotes}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* FULL CHARACTER PORTRAIT LIGHTBOX MODAL */}
+      {selectedPortraitModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setSelectedPortraitModal(null)}
+        >
+          <div
+            className="relative bg-slate-900 border border-brand-pink/50 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedPortraitModal(null)}
+              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-black flex items-center justify-center cursor-pointer"
+            >
+              ✕
+            </button>
+            <div className="pr-10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                Character Costume Portrait
+              </span>
+              <h3 className="text-xl font-black text-white">
+                {selectedPortraitModal.title}
+              </h3>
+            </div>
+            <div className="w-full aspect-square rounded-2xl overflow-hidden bg-black border border-slate-800">
+              <img
+                src={selectedPortraitModal.url}
+                alt={selectedPortraitModal.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {selectedPortraitModal.subtitle && (
+              <p className="text-xs text-slate-300 leading-relaxed">
+                <strong>👗 What to Wear:</strong> {selectedPortraitModal.subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

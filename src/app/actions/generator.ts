@@ -608,11 +608,11 @@ export async function ensureStandardCharacterPhoto(
   const existingStandardUrl = profile.standard_character_photo_url || rawProfile.standard_character_photo_url;
   const existingHash = profile.standard_character_photo_hash || rawProfile.standard_character_photo_hash;
 
-  // Reuse existing standard character photo if it matches the current guest + character identity hash
-  if (!forceRegenerate && existingStandardUrl && existingHash === identityHash) {
+  // Reuse existing standard character photo when not force-regenerating (applyScreenerCastAssignmentAction clears it whenever a character is recasted to a new friend)
+  if (!forceRegenerate && existingStandardUrl) {
     return {
       photoUrl: existingStandardUrl,
-      identityHash,
+      identityHash: existingHash || identityHash,
       physicalDesc,
       outfit,
     };
@@ -897,9 +897,7 @@ export async function applyScreenerCastAssignmentAction(
     }
 
     try {
-      revalidatePath(`/builder/mysteries/${mysteryId}/screen`);
       revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
-      revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
     } catch {
       // ignore outside request context
     }
@@ -947,9 +945,16 @@ export async function generateStandardCharacterPhotoAction(
       .eq('mystery_id', mysteryId)
       .single();
 
-    const charData =
-      dbCharData ||
-      (cachedMystery?.characters || []).find((c: any) => c.id === characterId);
+    const cachedChar = (cachedMystery?.characters || []).find((c: any) => c.id === characterId);
+    const charData = dbCharData
+      ? {
+          ...dbCharData,
+          profile_data: {
+            ...(dbCharData.profile_data || {}),
+            ...(cachedChar?.profile_data || {}),
+          },
+        }
+      : cachedChar;
 
     if (!charData) {
       return { error: charError?.message || 'Character not found' };
@@ -983,9 +988,7 @@ export async function generateStandardCharacterPhotoAction(
     }
 
     try {
-      revalidatePath(`/builder/mysteries/${mysteryId}/screen`);
       revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
-      revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
     } catch {
       // ignore
     }
@@ -1038,13 +1041,10 @@ function getInvolvedCharacters(clue: any, characters: any[], livePromptText?: st
     }
   }
 
-  // 3. Only scan the description text if no explicit generation_prompt was provided
-  const hasExplicitPrompt = Boolean((livePromptText || clue.generation_prompt || '').trim());
-  if (involved.size === 0 && !hasExplicitPrompt) {
-    const descMatches = findInvolvedCharactersInText(desc, characters);
-    for (const char of descMatches) {
-      involved.add(char);
-    }
+  // 3. Also scan the description text for any character tokens (e.g. {{The Star}}) so clues that reference characters in their description are always personalized
+  const descMatches = findInvolvedCharactersInText(desc, characters);
+  for (const char of descMatches) {
+    involved.add(char);
   }
 
   return Array.from(involved);
@@ -1079,7 +1079,12 @@ function buildCharDescription(char: any, refId?: number): string {
   return details ? `${label} ${details}` : label;
 }
 
-export async function generateClueImageAction(clueId: string, mysteryId: string, promptText: string) {
+export async function generateClueImageAction(
+  clueId: string,
+  mysteryId: string,
+  promptText: string,
+  forceRegenerate = true
+) {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
   }
@@ -1189,7 +1194,7 @@ export async function generateClueImageAction(clueId: string, mysteryId: string,
       }
     }
 
-    // Find involved characters in the clue (scanning live promptText + clue fields)
+    // Find involved characters in the clue (scanning live promptText + clue fields + description)
     const involvedCharacters = getInvolvedCharacters(clue, hydratedCharacters, promptText).slice(0, 4);
 
     // STAGE 1 -> STAGE 2 BRIDGE:
@@ -1339,12 +1344,14 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
     const identityHashesKey = referenceImages.map(r => r.standardPhoto.identityHash).join(',');
     const promptHash = crypto.createHash('sha256').update(`${finalPrompt}|refs:${identityHashesKey}`).digest('hex');
 
-    // Check cache first
-    const { data: cached } = await supabase
-      .from('image_generation_cache')
-      .select('image_url')
-      .eq('prompt_hash', promptHash)
-      .single();
+    // Only reuse image_generation_cache when NOT explicitly force-regenerating
+    const { data: cached } = !forceRegenerate
+      ? await supabase
+          .from('image_generation_cache')
+          .select('image_url')
+          .eq('prompt_hash', promptHash)
+          .single()
+      : { data: null };
 
     let finalImageUrl: string | null = '';
 

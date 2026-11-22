@@ -1847,18 +1847,34 @@ export function PlayroomClient({
             />
           )}
           <div className="relative z-10 max-w-6xl mx-auto px-3.5 sm:px-6 py-3 flex items-center justify-between gap-2.5">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-pink bg-brand-pink/10 px-2 py-0.5 rounded-full border border-brand-pink/20">
-                  {mystery.theme || 'Murder Mystery'}
-                </span>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white bg-white/10 px-2 py-0.5 rounded-full border border-white/15 font-mono">
-                  🔑 PIN {pin.slice(0, 3)} {pin.slice(3)}
-                </span>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Link
+                href={
+                  initialIsHost
+                    ? `/${locale}/builder/mysteries/${mystery.id.split('__u_')[0]}`
+                    : `/${locale}/account/orders`
+                }
+                title="Exit Playroom"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Exit</span>
+              </Link>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-pink bg-brand-pink/10 px-2 py-0.5 rounded-full border border-brand-pink/20">
+                    {mystery.theme || 'Murder Mystery'}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white bg-white/10 px-2 py-0.5 rounded-full border border-white/15 font-mono">
+                    🔑 PIN {pin.slice(0, 3)} {pin.slice(3)}
+                  </span>
+                </div>
+                <h1 className="text-base sm:text-xl font-black uppercase tracking-tight text-white truncate">
+                  {mystery.title}
+                </h1>
               </div>
-              <h1 className="text-base sm:text-xl font-black uppercase tracking-tight text-white truncate">
-                {mystery.title}
-              </h1>
             </div>
 
             {/* Host Controls + QR Code or Guest Invite */}
@@ -2240,8 +2256,22 @@ export function PlayroomClient({
       {/* Compact Sticky Player & Navigation Bar */}
       <header className="bg-slate-950/90 border-b border-white/10 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-5xl mx-auto w-full px-3 sm:px-5 py-2 flex items-center justify-between gap-2">
-          {/* Left: Compact Player Identity + Who's Who Room Cast Button */}
+          {/* Left: Exit Button + Compact Player Identity + Who's Who Room Cast Button */}
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <Link
+              href={
+                initialIsHost
+                  ? `/${locale}/builder/mysteries/${mystery.id.split('__u_')[0]}`
+                  : `/${locale}/account/orders`
+              }
+              title="Exit Playroom"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Exit</span>
+            </Link>
             <button
               type="button"
               onClick={() => {
