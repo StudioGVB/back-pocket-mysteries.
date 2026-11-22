@@ -329,6 +329,9 @@ export function PlayroomClient({
   const [pendingNextConfirm, setPendingNextConfirm] = useState<boolean>(false);
   const [hostShowWhoSaidWho, setHostShowWhoSaidWho] = useState<boolean>(false);
   const [isRefreshingSession, setIsRefreshingSession] = useState<boolean>(false);
+  const [isRoomCastOpen, setIsRoomCastOpen] = useState<boolean>(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
+  const [showHostScriptStrip, setShowHostScriptStrip] = useState<boolean>(true);
 
   // Kahoot-style Round Unlock Alert Toast for Guests
   const prevRoundRef = useRef<number>(currentRound);
@@ -339,10 +342,11 @@ export function PlayroomClient({
     currentRound >= 5 ? 'reveal' : currentRound >= 1 ? 'clues' : 'profile'
   );
 
-  // Swipeable Clue Carousel State
-  const [selectedClueRoundFilter, setSelectedClueRoundFilter] = useState<number>(
+  // Swipeable Clue Carousel / Grid State
+  const [selectedClueRoundFilter, setSelectedClueRoundFilter] = useState<number | 'all'>(
     Math.max(1, Math.min(4, Math.floor(currentRound || 1)))
   );
+  const [clueViewMode, setClueViewMode] = useState<'swipe' | 'grid'>('swipe');
   const [clueSlideIndex, setClueSlideIndex] = useState<number>(0);
   const [selectedClueModalIndex, setSelectedClueModalIndex] = useState<number | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -550,8 +554,18 @@ export function PlayroomClient({
   // 1 = 2. Round 1 Clues, 1.5 = 3. Guess 1
   // 2 = 4. Round 2 Clues, 2.5 = 5. Guess 2
   // 3 = 6. Round 3 Clues, 3.5 = 7. Guess 3
-  // 4 = 8. Round 4 Clues, 4.5 = 9. Guess 4
-  // 5 = 10. Reveal
+  // 4 = 8. Round 4 Clues, 4.5 = 9. Guess 4 (only if maxClueRound === 4)
+  // 5 = Reveal
+  const maxClueRound = useMemo(() => {
+    const highest = clues.reduce((acc, c) => Math.max(acc, c.round_number || 1), 3);
+    return Math.max(3, Math.min(4, highest));
+  }, [clues]);
+
+  const availableClueRounds = useMemo(
+    () => Array.from({ length: maxClueRound }, (_, i) => i + 1),
+    [maxClueRound]
+  );
+
   const unlockedClueRound = Math.floor(currentRound);
   const isGuessStep = Math.round((currentRound % 1) * 10) === 5;
 
@@ -573,7 +587,7 @@ export function PlayroomClient({
       const timer = setTimeout(() => setRoundUnlockToast(null), 8000);
       prevRoundRef.current = currentRound;
 
-      if (nextUnlockedRound >= 1 && nextUnlockedRound <= 4) {
+      if (nextUnlockedRound >= 1 && nextUnlockedRound <= maxClueRound) {
         setSelectedClueRoundFilter(nextUnlockedRound);
         if (!nextIsGuess && nextUnlockedRound > prevUnlockedRound) {
           setClueSlideIndex(0);
@@ -591,7 +605,7 @@ export function PlayroomClient({
     }
 
     prevRoundRef.current = currentRound;
-    if (nextUnlockedRound >= 1 && nextUnlockedRound <= 4) {
+    if (nextUnlockedRound >= 1 && nextUnlockedRound <= maxClueRound) {
       setSelectedClueRoundFilter(nextUnlockedRound);
       if (!nextIsGuess && nextUnlockedRound !== prevUnlockedRound) {
         setClueSlideIndex(0);
@@ -600,10 +614,10 @@ export function PlayroomClient({
     if (currentRound >= 5) {
       setActiveTab('reveal');
     }
-  }, [currentRound]);
+  }, [currentRound, maxClueRound]);
 
   // Pre-fill existing submission for the active round when switching rounds
-  const activeVotingRound = Math.max(1, Math.min(4, unlockedClueRound || 1));
+  const activeVotingRound = Math.max(1, Math.min(maxClueRound, unlockedClueRound || 1));
   const voterId = selectedChar?.id || (isClueOnlySleuth ? `sleuth-${customSleuthName || 'guest'}` : '');
   const voterDisplayName = selectedChar
     ? parseCharacter(selectedChar).name
@@ -632,14 +646,18 @@ export function PlayroomClient({
     }
   }, [selectedChar, customSleuthName, parseCharacter, reviewName]);
 
-  // Clues for the selected round filter
+  // Clues for the selected round filter (supports single round 1..4 OR 'all' unlocked rounds)
   const allUnlockedCluesForSelectedRound = useMemo(() => {
     if (unlockedClueRound <= 0) return [];
+    const allUnlocked = clues.filter(
+      c => (c.round_number || 1) <= Math.min(maxClueRound, unlockedClueRound)
+    );
+    if (selectedClueRoundFilter === 'all') {
+      return allUnlocked;
+    }
     const roundClues = clues.filter(c => (c.round_number || 1) === selectedClueRoundFilter);
-    return roundClues.length > 0
-      ? roundClues
-      : clues.filter(c => (c.round_number || 1) <= unlockedClueRound);
-  }, [clues, unlockedClueRound, selectedClueRoundFilter]);
+    return roundClues.length > 0 ? roundClues : allUnlocked;
+  }, [clues, unlockedClueRound, selectedClueRoundFilter, maxClueRound]);
 
   const unlockedCluesForSelectedRound = useMemo(() => {
     if (clueTagFilter === 'all') return allUnlockedCluesForSelectedRound;
@@ -683,9 +701,11 @@ export function PlayroomClient({
 
   const totalUnreadUnlockedClues = useMemo(() => {
     if (unlockedClueRound <= 0) return 0;
-    const allUnlocked = clues.filter(c => (c.round_number || 1) <= Math.min(4, unlockedClueRound));
+    const allUnlocked = clues.filter(
+      c => (c.round_number || 1) <= Math.min(maxClueRound, unlockedClueRound)
+    );
     return allUnlocked.filter(c => !viewedClueIds.includes(c.id)).length;
-  }, [clues, unlockedClueRound, viewedClueIds]);
+  }, [clues, unlockedClueRound, viewedClueIds, maxClueRound]);
 
   const handlePrevClue = () => {
     setStickyClueId(null);
@@ -775,7 +795,7 @@ export function PlayroomClient({
         setMostSuspectedList(updated.mostSuspectedList || []);
         if (updated.solutionData) setSolutionData(updated.solutionData);
         const floorRound = Math.floor(newRound);
-        if (floorRound >= 1 && floorRound <= 4) {
+        if (floorRound >= 1 && floorRound <= maxClueRound) {
           setSelectedClueRoundFilter(floorRound);
           if (Math.round((newRound % 1) * 10) !== 5) {
             setClueSlideIndex(0);
@@ -916,11 +936,11 @@ export function PlayroomClient({
   );
 
   const missingVotersForActiveRound = useMemo(() => {
-    if (unlockedClueRound < 1 || unlockedClueRound > 4) return [];
+    if (unlockedClueRound < 1 || unlockedClueRound > maxClueRound) return [];
     return suspectCharacters.filter(
       c => !currentRoundSubmissions.some(sub => sub.voterCharId === c.id)
     );
-  }, [unlockedClueRound, suspectCharacters, currentRoundSubmissions]);
+  }, [unlockedClueRound, maxClueRound, suspectCharacters, currentRoundSubmissions]);
 
   // Helper to format current stage pill label
   const currentStageLabel = useMemo(() => {
@@ -929,6 +949,60 @@ export function PlayroomClient({
     if (isGuessStep) return `Guess ${unlockedClueRound}`;
     return `Round ${unlockedClueRound}`;
   }, [currentRound, isGuessStep, unlockedClueRound]);
+
+  // Dynamic Guest Objective & Spoiler-Free Host Read-Aloud Script for the current half-step
+  const stageGuidance = useMemo(() => {
+    const roundClueCount = clues.filter(c => (c.round_number || 1) === unlockedClueRound).length;
+    if (currentRound <= 0) {
+      return {
+        badge: '🥂 Stage 1 • Pre-Party Mingle',
+        guestHeadline: 'Read Your Dossier & Mingle in Character',
+        guestDetail:
+          'Check your Character tab (secrets & how to act) and Connections tab (who you know in the room). When everyone is ready, the host will drop Round 1 clues!',
+        timerLabel: '⏱️ 10–15 mins mingle',
+        hostScript:
+          '"Welcome everyone! Tap your character on your phone to read your secret backstory and connections—keep your secrets hidden! Mingle in character for a few minutes before our first evidence drop."',
+      };
+    }
+    if (currentRound >= 5) {
+      return {
+        badge: '🏆 Final Stage • Grand Reveal',
+        guestHeadline: 'Final Detective Leaderboard, Awards & True Timeline',
+        guestDetail:
+          'See who won Master Detective, The BS Detector, and Hook, Line & Sinker—and read the full step-by-step reconstruction of the crime!',
+        timerLabel: '⏱️ Grand Finale',
+        hostScript:
+          '"All final votes are locked! Before I reveal the killer, let’s look at the Final Detective Leaderboard and Party Awards—then we’ll unveil the true killer, motive, and murder timeline!"',
+      };
+    }
+    if (isGuessStep) {
+      const isFinalGuess = unlockedClueRound >= maxClueRound;
+      return {
+        badge: `🗳️ Guess ${unlockedClueRound} • Voting Open`,
+        guestHeadline: isFinalGuess
+          ? `Lock In Your Final Guess ${unlockedClueRound} Accusation!`
+          : `Lock In Your Round ${unlockedClueRound} Suspect Vote Below`,
+        guestDetail: isFinalGuess
+          ? 'This is your final accusation before the Grand Reveal! Review your 📓 Detective Notebook & Crime Timeline, pick your #1 suspect, and lock in your vote.'
+          : `Scroll to the Voting Box below, check your 🔑 Key & 🛡️ Alibi badges on each suspect, and lock in who you suspect right now & why before Round ${unlockedClueRound + 1} drops!`,
+        timerLabel: '⏱️ 2–3 mins to vote',
+        hostScript: isFinalGuess
+          ? `"Everyone open your phones—Final Guess ${unlockedClueRound} voting is now OPEN! Check your Detective Notebook and lock in your final accusation for who did it and how. Once all votes are in, we head to the Grand Reveal!"`
+          : `"Round ${unlockedClueRound} voting is now OPEN on your phones! Scroll down to the Voting Box and lock in your #1 suspect right now and why. Once everyone has voted, I’ll drop Round ${unlockedClueRound + 1} evidence!"`,
+      };
+    }
+    return {
+      badge: `🔍 Round ${unlockedClueRound} of ${maxClueRound} • Evidence Live`,
+      guestHeadline: `Inspect the ${roundClueCount} Round ${unlockedClueRound} Clues & Interrogate the Room`,
+      guestDetail:
+        'Swipe (or switch to 📋 Grid view), play any audio voice memos out loud, tag clues as 🔑 Key / 🐟 Decoy / 🛡️ Alibi, pin suspects, and question the other guests!',
+      timerLabel: '⏱️ 12–15 mins investigation',
+      hostScript:
+        unlockedClueRound === 1
+          ? `"A crime has been committed! Round 1 evidence (${roundClueCount} clues) just dropped on your phones. Swipe through the clues, play any voice memos, tag Key evidence or Decoys in your notebook, and start questioning each other!"`
+          : `"Breaking news—Round ${unlockedClueRound} evidence (${roundClueCount} new clues) just dropped on everyone’s phones! Check the new timestamps against everyone’s alibis and confront your top suspects!"`,
+    };
+  }, [currentRound, isGuessStep, unlockedClueRound, maxClueRound, clues]);
 
   // Advance the game to the next logical half-step with one click ("Next" button)
   const nextStepInfo = useMemo(() => {
@@ -939,56 +1013,21 @@ export function PlayroomClient({
     if (currentRound <= 0) {
       return { label: 'Next: Round 1 →', fullLabel: 'Start Round 1 Clues →', canAdvance: true };
     }
-    if (currentRound === 1) {
+    if (currentRound >= 1 && currentRound <= maxClueRound && !isGuessStep) {
       return {
-        label: 'Next: Guess 1 →',
-        fullLabel: 'Open Guess 1 Voting →',
+        label: `Next: Guess ${unlockedClueRound} →`,
+        fullLabel: `Open Guess ${unlockedClueRound} Voting →`,
         canAdvance: true,
       };
     }
-    if (currentRound === 1.5) {
+    if (isGuessStep && unlockedClueRound < maxClueRound) {
       return {
-        label: `Next: Round 2${voteBadge} →`,
-        fullLabel: `Unlock Round 2 Clues${voteBadge} →`,
+        label: `Next: Round ${unlockedClueRound + 1}${voteBadge} →`,
+        fullLabel: `Unlock Round ${unlockedClueRound + 1} Clues${voteBadge} →`,
         canAdvance: true,
       };
     }
-    if (currentRound === 2) {
-      return {
-        label: 'Next: Guess 2 →',
-        fullLabel: 'Open Guess 2 Voting →',
-        canAdvance: true,
-      };
-    }
-    if (currentRound === 2.5) {
-      return {
-        label: `Next: Round 3${voteBadge} →`,
-        fullLabel: `Unlock Round 3 Clues${voteBadge} →`,
-        canAdvance: true,
-      };
-    }
-    if (currentRound === 3) {
-      return {
-        label: 'Next: Guess 3 →',
-        fullLabel: 'Open Guess 3 Voting →',
-        canAdvance: true,
-      };
-    }
-    if (currentRound === 3.5) {
-      return {
-        label: `Next: Round 4${voteBadge} →`,
-        fullLabel: `Unlock Round 4 Clues${voteBadge} →`,
-        canAdvance: true,
-      };
-    }
-    if (currentRound === 4) {
-      return {
-        label: 'Next: Guess 4 →',
-        fullLabel: 'Open Final Guess 4 Voting →',
-        canAdvance: true,
-      };
-    }
-    if (currentRound === 4.5) {
+    if (isGuessStep && unlockedClueRound >= maxClueRound) {
       return {
         label: `Next: Reveal${voteBadge} →`,
         fullLabel: `Go to Final Stats & Reveal${voteBadge} →`,
@@ -999,16 +1038,24 @@ export function PlayroomClient({
       return { label: 'Next: Solution →', fullLabel: 'Share Final Solution →', canAdvance: true };
     }
     return { label: '✓ Complete', fullLabel: 'Game Complete', canAdvance: false };
-  }, [currentRound, revealMode, currentRoundSubmissions.length, suspectCharacters.length]);
+  }, [
+    currentRound,
+    maxClueRound,
+    isGuessStep,
+    unlockedClueRound,
+    revealMode,
+    currentRoundSubmissions.length,
+    suspectCharacters.length,
+  ]);
 
   const handleHostNextStep = async (force = false) => {
     if (isRefreshingSession) return;
-    // Guardrail: when moving FROM a Guess step (1.5, 2.5, 3.5, 4.5) to the next Round/Reveal, warn if not everyone voted
+    // Guardrail: when moving FROM a Guess step to the next Round/Reveal, warn if not everyone voted
     if (
       !force &&
       isGuessStep &&
       unlockedClueRound >= 1 &&
-      unlockedClueRound <= 4 &&
+      unlockedClueRound <= maxClueRound &&
       missingVotersForActiveRound.length > 0
     ) {
       setPendingNextConfirm(true);
@@ -1018,7 +1065,10 @@ export function PlayroomClient({
 
     if (currentRound <= 0) {
       await handleHostSetRound(1);
-    } else if (currentRound >= 1 && currentRound < 5) {
+    } else if (isGuessStep && unlockedClueRound >= maxClueRound) {
+      // Jump straight from the final Guess round (e.g. 3.5 on a 3-round mystery) to 5 (Reveal)
+      await handleHostSetRound(5);
+    } else if (currentRound >= 1 && currentRound < maxClueRound + 0.5) {
       const nextStep = Number((currentRound + 0.5).toFixed(1));
       await handleHostSetRound(nextStep);
     } else if (currentRound >= 5 && revealMode === 'hidden') {
@@ -1034,7 +1084,9 @@ export function PlayroomClient({
     const votedCount = currentRoundSubmissions.length;
     const totalSuspects = suspectCharacters.length;
     const nextStageLabel =
-      activeVotingRound >= 4 ? 'Final Stats & Reveal' : `Round ${activeVotingRound + 1} Clues`;
+      activeVotingRound >= maxClueRound
+        ? 'Final Stats & Reveal'
+        : `Round ${activeVotingRound + 1} Clues`;
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
@@ -1166,10 +1218,289 @@ export function PlayroomClient({
     );
   };
 
+  // Full-Screen "Scan to Join Party" QR Code Modal
+  const renderQrJoinModal = () => {
+    if (!isQrModalOpen) return null;
+    const guestUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/${locale}/play/${mystery.id}`
+        : `https://www.backpocketmysteries.com/${locale}/play/${mystery.id}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data=${encodeURIComponent(
+      guestUrl
+    )}`;
+
+    return (
+      <div
+        className="fixed inset-0 z-[95] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150"
+        onClick={() => setIsQrModalOpen(false)}
+      >
+        <div
+          className="relative w-full max-w-sm rounded-3xl bg-slate-950 border border-brand-pink/40 p-6 text-center space-y-4 shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => setIsQrModalOpen(false)}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-black flex items-center justify-center cursor-pointer"
+          >
+            ✕
+          </button>
+
+          <div className="space-y-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+              📲 Instant Party Join (No Login)
+            </span>
+            <h3 className="text-lg font-black text-white uppercase tracking-tight">
+              Scan With Phone Camera
+            </h3>
+            <p className="text-xs text-slate-400">
+              Point any phone camera at this QR code to open the character lobby &amp; live clues.
+            </p>
+          </div>
+
+          <div className="mx-auto w-60 h-60 rounded-2xl bg-white p-3 shadow-xl flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={qrSrc}
+              alt="Scan to join Murder Mystery Playroom"
+              className="w-full h-full object-contain"
+            />
+          </div>
+
+          <div className="rounded-2xl bg-slate-900 border border-white/10 py-2.5 px-4">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Party Access PIN
+            </div>
+            <div className="text-xl font-black font-mono tracking-widest text-brand-pink mt-0.5">
+              {pin.slice(0, 3)} {pin.slice(3)}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleShareOrCopyGuestLink(false)}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                copiedGuestLink
+                  ? 'bg-emerald-500 text-slate-950'
+                  : 'bg-white/10 hover:bg-white/15 text-white border border-white/15'
+              }`}
+            >
+              {copiedGuestLink ? '✓ Link Copied!' : '📋 Copy Link'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleShareOrCopyGuestLink(true)}
+              className="flex-1 py-2.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+            >
+              📲 Share Link
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Slide-Up / Modal "👥 Who's Who Tonight (Room Cast Directory)" — view all characters without unclaiming yours
+  const renderRoomCastModal = () => {
+    if (!isRoomCastOpen) return null;
+
+    return (
+      <div
+        className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150"
+        onClick={() => setIsRoomCastOpen(false)}
+      >
+        <div
+          className="relative w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-3xl bg-slate-900 border border-white/15 shadow-2xl p-4 sm:p-6 space-y-4"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                👥 Who&apos;s Who Tonight • Room Cast Directory
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+                All {activeCharacters.length} Characters in the Room
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsRoomCastOpen(false)}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-black flex items-center justify-center cursor-pointer shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {activeCharacters.map(char => {
+              const { name, archetype, guestName } = parseCharacter(char);
+              const charPres = getCleanCharacterPresentation(char, characters, { mode: 'generic' });
+              const charAvatarUrl = resolveDisplayAvatarUrl(
+                charPres.characterPhotoUrl || char.profile_data?.avatar_url || char.image_url
+              );
+              const isMe = selectedChar?.id === char.id;
+              const isClaimed = Boolean(claimedCharacters[char.id]);
+              const isPinnedToCurrent =
+                Boolean(currentSlideClue?.id) &&
+                (clueSuspects[currentSlideClue!.id] || []).includes(char.id);
+
+              return (
+                <div
+                  key={char.id}
+                  className={`rounded-2xl border p-3 flex items-center gap-3.5 transition-all ${
+                    isMe
+                      ? 'bg-brand-pink/15 border-brand-pink/50'
+                      : 'bg-slate-950/80 border-white/10'
+                  }`}
+                >
+                  <div
+                    onClick={() => {
+                      if (charAvatarUrl) {
+                        setLightboxPhoto({
+                          url: charAvatarUrl,
+                          title: charPres.roleTitle || archetype,
+                          subtitle: guestName ? `Played by ${guestName}` : undefined,
+                        });
+                      }
+                    }}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-slate-900 border border-white/15 shrink-0 cursor-pointer relative"
+                  >
+                    {charAvatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={charAvatarUrl}
+                        alt={name}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">
+                        {char.is_victim ? '💀' : '🕵️'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                          char.is_victim
+                            ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                            : 'bg-white/10 text-slate-300'
+                        }`}
+                      >
+                        {char.is_victim ? '💀 Victim' : '🕵️ Suspect'}
+                      </span>
+                      {isMe && (
+                        <span className="px-2 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase">
+                          ★ You
+                        </span>
+                      )}
+                      {!isMe && isClaimed && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[9px] font-black uppercase">
+                          ✓ In Room
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-sm font-black text-white truncate">
+                      {charPres.roleTitle || archetype}
+                    </h3>
+                    {guestName && (
+                      <p className="text-xs font-black text-emerald-400 truncate">
+                        👤 Played by {guestName}
+                      </p>
+                    )}
+                    <p className="text-[11px] text-slate-400 line-clamp-2">{charPres.shortBlurb}</p>
+
+                    {!char.is_victim && unlockedClueRound >= 1 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {currentSlideClue && (
+                          <button
+                            type="button"
+                            onClick={() => toggleClueSuspect(currentSlideClue.id, char.id)}
+                            className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                              isPinnedToCurrent
+                                ? 'bg-brand-pink text-white'
+                                : 'bg-white/10 text-slate-300 hover:text-white'
+                            }`}
+                          >
+                            {isPinnedToCurrent ? '📌 Pinned to Clue' : '📌 Pin to Clue'}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAccusedCharId(char.id);
+                            setIsRoomCastOpen(false);
+                            setActiveTab('clues');
+                            if (typeof document !== 'undefined') {
+                              setTimeout(() => {
+                                const el = document.getElementById('round-suspect-vote-box');
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }, 120);
+                            }
+                          }}
+                          className="px-2 py-0.5 rounded-lg bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer"
+                        >
+                          🗳️ Accuse in Vote
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[11px] text-slate-400">
+              Selected the wrong character by mistake?
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRoomCastOpen(false);
+                void handleSwitchCharacter();
+              }}
+              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-rose-500/20 text-slate-200 hover:text-rose-300 border border-white/10 text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+            >
+              🔄 Switch My Character (Return to Lobby)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Reusable Host Controls Modal Overlay ("Console" - Full Flow)
   const renderHostControlsModal = () => {
     if (!isHostPanelOpen) return null;
     const claimedCount = Object.keys(claimedCharacters).length;
+    const flowSteps =
+      maxClueRound === 3
+        ? [
+            { r: 0, label: '1. Lobby' },
+            { r: 1, label: '2. Round 1' },
+            { r: 1.5, label: '3. Guess 1' },
+            { r: 2, label: '4. Round 2' },
+            { r: 2.5, label: '5. Guess 2' },
+            { r: 3, label: '6. Round 3' },
+            { r: 3.5, label: '7. Guess 3' },
+            { r: 5, label: '8. Reveal' },
+          ]
+        : [
+            { r: 0, label: '1. Lobby' },
+            { r: 1, label: '2. Round 1' },
+            { r: 1.5, label: '3. Guess 1' },
+            { r: 2, label: '4. Round 2' },
+            { r: 2.5, label: '5. Guess 2' },
+            { r: 3, label: '6. Round 3' },
+            { r: 3.5, label: '7. Guess 3' },
+            { r: 4, label: '8. Round 4' },
+            { r: 4.5, label: '9. Guess 4' },
+            { r: 5, label: '10. Reveal' },
+          ];
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
@@ -1210,24 +1541,32 @@ export function PlayroomClient({
             </div>
           </div>
 
-          {/* Full 10-Stage Game Flow Stepper (Lobby -> Round 1 -> Guess 1 -> Round 2 -> Guess 2...) */}
+          {/* Spoiler-Free Host Read-Aloud Announcement Box */}
+          <div className="rounded-xl bg-amber-400/10 border border-amber-400/35 p-3.5 space-y-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                📢 Read Out Loud to the Room (Spoiler-Free MC Script)
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200 text-[9px] font-black uppercase">
+                {stageGuidance.timerLabel}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-white leading-relaxed italic">
+              {stageGuidance.hostScript}
+            </p>
+          </div>
+
+          {/* Dynamic Game Flow Stepper */}
           <div className="space-y-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
-              Full Game Flow (Tap any step or use Next)
+              Full Game Flow ({flowSteps.length} Stages • Tap any step or use Next)
             </span>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-              {[
-                { r: 0, label: '1. Lobby' },
-                { r: 1, label: '2. Round 1' },
-                { r: 1.5, label: '3. Guess 1' },
-                { r: 2, label: '4. Round 2' },
-                { r: 2.5, label: '5. Guess 2' },
-                { r: 3, label: '6. Round 3' },
-                { r: 3.5, label: '7. Guess 3' },
-                { r: 4, label: '8. Round 4' },
-                { r: 4.5, label: '9. Guess 4' },
-                { r: 5, label: '10. Reveal' },
-              ].map(step => (
+            <div
+              className={`grid grid-cols-2 ${
+                maxClueRound === 3 ? 'sm:grid-cols-4' : 'sm:grid-cols-5'
+              } gap-1.5`}
+            >
+              {flowSteps.map(step => (
                 <button
                   key={step.r}
                   type="button"
@@ -1246,8 +1585,8 @@ export function PlayroomClient({
             </div>
           </div>
 
-          {/* Round Submissions & Vote Tally (Rounds 1..4.5) */}
-          {unlockedClueRound >= 1 && unlockedClueRound <= 4 && (
+          {/* Round Submissions & Vote Tally */}
+          {unlockedClueRound >= 1 && unlockedClueRound <= maxClueRound && (
             <div className="bg-slate-950/90 border border-white/10 rounded-xl p-4 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
@@ -1389,6 +1728,16 @@ export function PlayroomClient({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
+                onClick={() => {
+                  setIsHostPanelOpen(false);
+                  setIsQrModalOpen(true);
+                }}
+                className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg bg-brand-pink text-white hover:opacity-95 transition-all cursor-pointer"
+              >
+                📷 Show QR Code
+              </button>
+              <button
+                type="button"
                 onClick={() => handleShareOrCopyGuestLink(false)}
                 className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                   copiedGuestLink
@@ -1396,7 +1745,7 @@ export function PlayroomClient({
                     : 'bg-brand-pink/20 border border-brand-pink/40 text-brand-pink hover:bg-brand-pink hover:text-white'
                 }`}
               >
-                {copiedGuestLink ? '✓ Guest Link Copied (No Login)!' : '📋 Copy Guest Link (No Login)'}
+                {copiedGuestLink ? '✓ Guest Link Copied!' : '📋 Copy Guest Link'}
               </button>
               <button
                 type="button"
@@ -1484,6 +1833,8 @@ export function PlayroomClient({
         {renderNextConfirmModal()}
         {renderRoundUnlockToast()}
         {renderPhotoLightboxModal()}
+        {renderQrJoinModal()}
+        {renderRoomCastModal()}
 
         {/* Compact Lobby Header */}
         <header className="relative border-b border-white/10 bg-slate-950/90 overflow-hidden sticky top-0 z-30 backdrop-blur-md">
@@ -1510,9 +1861,26 @@ export function PlayroomClient({
               </h1>
             </div>
 
-            {/* 2-Button Host Controls ([Console] + [Next]) ONLY when isHostMode is true */}
+            {/* Host Controls + QR Code or Guest Invite */}
             {isHostMode ? (
               <div className="flex items-center gap-1.5 shrink-0">
+                <span
+                  className={`hidden sm:inline-flex items-center px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border ${
+                    claimedCount >= activeCharacters.length
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                      : 'bg-white/5 text-slate-300 border-white/10'
+                  }`}
+                >
+                  👥 {claimedCount}/{activeCharacters.length} Claimed
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="min-h-[38px] text-[10px] font-black uppercase tracking-wider px-2.5 py-2 rounded-xl bg-white/5 text-slate-200 border border-white/10 hover:border-brand-pink/50 hover:text-white transition-all cursor-pointer"
+                  title="Show Full-Screen QR Code to Join"
+                >
+                  📷 QR
+                </button>
                 <button
                   type="button"
                   onClick={() => setIsHostPanelOpen(true)}
@@ -1531,6 +1899,13 @@ export function PlayroomClient({
               </div>
             ) : (
               <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="min-h-[36px] text-[10px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-xl bg-white/5 text-slate-200 border border-white/15 hover:border-brand-pink/50 transition-all cursor-pointer"
+                >
+                  📷 QR
+                </button>
                 <button
                   type="button"
                   onClick={() => handleShareOrCopyGuestLink(true)}
@@ -1570,6 +1945,13 @@ export function PlayroomClient({
               </div>
 
               <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="min-h-[36px] px-3 py-1.5 rounded-xl bg-brand-pink/20 hover:bg-brand-pink text-brand-pink hover:text-white border border-brand-pink/30 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  📷 Show QR Code
+                </button>
                 <button
                   type="button"
                   onClick={() => handleShareOrCopyGuestLink(false)}
@@ -1852,11 +2234,13 @@ export function PlayroomClient({
       {renderNextConfirmModal()}
       {renderRoundUnlockToast()}
       {renderPhotoLightboxModal()}
+      {renderQrJoinModal()}
+      {renderRoomCastModal()}
 
       {/* Compact Sticky Player & Navigation Bar */}
       <header className="bg-slate-950/90 border-b border-white/10 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-5xl mx-auto w-full px-3 sm:px-5 py-2 flex items-center justify-between gap-2">
-          {/* Left: Compact Player Identity + Switch Role */}
+          {/* Left: Compact Player Identity + Who's Who Room Cast Button */}
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <button
               type="button"
@@ -1892,11 +2276,11 @@ export function PlayroomClient({
                 </span>
                 <button
                   type="button"
-                  onClick={handleSwitchCharacter}
+                  onClick={() => setIsRoomCastOpen(true)}
+                  title="View Who's Who in the Room & Switch Character"
                   className="text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 shrink-0 cursor-pointer transition-colors"
                 >
-                  <span className="sm:hidden">← Switch</span>
-                  <span className="hidden sm:inline">← All Characters</span>
+                  <span>👥 Room Cast ({activeCharacters.length})</span>
                 </button>
               </div>
               <p className="text-[10px] font-bold text-slate-400 truncate">
@@ -1905,9 +2289,40 @@ export function PlayroomClient({
             </div>
           </div>
 
-          {/* Right: 2-Button Host Controls ([🎛️ Console] + [Next →]) ONLY when isHostMode is true */}
-          {isHostMode && (
+          {/* Right: Host Controls + Live Readiness/Vote Counter OR Guest QR Button */}
+          {isHostMode ? (
             <div className="flex items-center gap-1.5 shrink-0">
+              <span
+                className={`hidden md:inline-flex items-center px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border ${
+                  isGuessStep
+                    ? currentRoundSubmissions.length >= suspectCharacters.length
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 animate-pulse'
+                      : 'bg-amber-400/15 text-amber-300 border-amber-400/35'
+                    : currentRound <= 0
+                    ? 'bg-white/5 text-slate-300 border-white/10'
+                    : 'bg-brand-pink/15 text-brand-pink border-brand-pink/30'
+                }`}
+              >
+                {currentRound <= 0
+                  ? `👥 ${claimedCount}/${activeCharacters.length} Claimed`
+                  : isGuessStep
+                  ? currentRoundSubmissions.length >= suspectCharacters.length
+                    ? `✓ ${currentRoundSubmissions.length}/${suspectCharacters.length} Voted!`
+                    : `🗳️ ${currentRoundSubmissions.length}/${suspectCharacters.length} Voted`
+                  : currentRound >= 5
+                  ? '🏆 Finale'
+                  : `🔍 R${unlockedClueRound} Live`}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setIsQrModalOpen(true)}
+                title="Show Full-Screen QR Code"
+                className="min-h-[34px] text-[10px] font-black uppercase tracking-wider px-2 py-1.5 rounded-lg border bg-white/5 text-slate-200 border-white/10 hover:border-brand-pink/50 hover:text-white transition-all cursor-pointer"
+              >
+                📷
+              </button>
+
               <button
                 type="button"
                 onClick={() => setIsHostPanelOpen(true)}
@@ -1926,6 +2341,14 @@ export function PlayroomClient({
                 {isRefreshingSession ? '⏳...' : nextStepInfo.label}
               </button>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsQrModalOpen(true)}
+              className="min-h-[32px] text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 border border-white/10 cursor-pointer shrink-0"
+            >
+              📷 QR
+            </button>
           )}
         </div>
 
@@ -1967,7 +2390,7 @@ export function PlayroomClient({
             >
               <span>
                 {isGuessStep ? '🗳️' : '🔍'} Clues &amp; Vote{' '}
-                {unlockedClueRound >= 1 && unlockedClueRound <= 4
+                {unlockedClueRound >= 1 && unlockedClueRound <= maxClueRound
                   ? isGuessStep
                     ? `(Guess ${unlockedClueRound})`
                     : `(R${unlockedClueRound})`
@@ -1980,7 +2403,7 @@ export function PlayroomClient({
               )}
             </button>
 
-            {unlockedClueRound >= 4 && (
+            {unlockedClueRound >= maxClueRound && (
               <button
                 onClick={() => setActiveTab('reveal')}
                 className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border shrink-0 cursor-pointer ${
@@ -1998,38 +2421,60 @@ export function PlayroomClient({
 
       {/* Main Content Area */}
       <main className="flex-grow max-w-5xl mx-auto w-full px-3 sm:px-5 py-4 space-y-4">
-        {/* Slim Status Strip (When in Lobby or when Clues/Guess are live on another tab) */}
-        {currentRound <= 0 && (
-          <div className="bg-brand-pink/10 border border-brand-pink/25 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3">
-            <p className="text-xs text-slate-200 font-medium">
-              <strong className="text-white font-black uppercase tracking-wider mr-1.5">
-                🥂 Pre-Game Lobby:
-              </strong>
-              Mingle in character! Clues unlock when the host starts Round 1.
+        {/* Universal "What To Do Right Now" Stage Objective Banner + Optional Host Read-Aloud Script */}
+        <div className="rounded-2xl bg-slate-900/70 border border-brand-pink/30 p-3.5 sm:p-4 space-y-2.5 shadow-lg">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
+                {stageGuidance.badge}
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white/10 text-slate-200 text-[9px] font-black uppercase">
+                {stageGuidance.timerLabel}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {isHostMode && (
+                <button
+                  type="button"
+                  onClick={() => setShowHostScriptStrip(prev => !prev)}
+                  className="px-2.5 py-1 rounded-lg bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border border-amber-400/35 text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  {showHostScriptStrip ? '📢 Hide Host Script' : '📢 Read-Aloud Script'}
+                </button>
+              )}
+              {unlockedClueRound >= 1 && unlockedClueRound <= maxClueRound && activeTab !== 'clues' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('clues')}
+                  className="px-3 py-1 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider hover:opacity-95 transition-all shrink-0 cursor-pointer"
+                >
+                  {isGuessStep ? `Vote Guess ${unlockedClueRound} →` : 'Open Clues →'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-xs sm:text-sm font-black text-white">
+              🎯 {stageGuidance.guestHeadline}
+            </h2>
+            <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5 leading-relaxed">
+              {stageGuidance.guestDetail}
             </p>
           </div>
-        )}
 
-        {unlockedClueRound >= 1 && unlockedClueRound <= 4 && activeTab !== 'clues' && (
-          <div className="bg-brand-pink/15 border border-brand-pink/35 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-brand-pink animate-ping shrink-0" />
-              <p className="text-xs font-bold text-white truncate">
-                {isGuessStep
-                  ? `🗳️ Guess ${unlockedClueRound} Voting is Open! Submit who & why!`
-                  : `🔍 Round ${unlockedClueRound} Clues are live!`}
-                {totalUnreadUnlockedClues > 0 ? ` (${totalUnreadUnlockedClues} unread)` : ''}
+          {isHostMode && showHostScriptStrip && (
+            <div className="rounded-xl bg-amber-400/10 border border-amber-400/30 px-3 py-2.5 space-y-1">
+              <span className="text-[9px] font-black uppercase tracking-widest text-amber-300 block">
+                📢 Host Announcement to Read Out Loud (Spoiler-Free):
+              </span>
+              <p className="text-xs font-bold text-amber-100 italic leading-relaxed">
+                {stageGuidance.hostScript}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setActiveTab('clues')}
-              className="px-3 py-1 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider hover:opacity-95 transition-all shrink-0 cursor-pointer"
-            >
-              {isGuessStep ? `Vote Guess ${unlockedClueRound} →` : 'View Clues →'}
-            </button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* TAB 1: CHARACTER PROFILE (CLEAN STRUCTURED DOSSIER) */}
         {activeTab === 'profile' && selectedChar && (() => {
@@ -2342,22 +2787,43 @@ export function PlayroomClient({
         {/* TAB 3: SWIPEABLE CLUES + BETWEEN-ROUND "WHO & WHY" VOTING */}
         {activeTab === 'clues' && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Compact Round Selector & Tag Filter Bar */}
+            {/* Compact Round Selector, View Mode Toggle & Tag Filter Bar */}
             <div className="bg-slate-900/40 border border-white/10 rounded-2xl px-3.5 py-2.5 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <h2 className="text-xs font-black uppercase tracking-wider text-white">
                     Evidence Deck
                   </h2>
-                  {unlockedCluesForSelectedRound.length > 0 && unlockedClueRound > 0 && (
-                    <span className="text-[10px] font-bold text-slate-400">
-                      • Swipe or use arrows
-                    </span>
+                  {unlockedClueRound >= 1 && (
+                    <div className="inline-flex rounded-lg bg-slate-950/80 border border-white/10 p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setClueViewMode('swipe')}
+                        className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          clueViewMode === 'swipe'
+                            ? 'bg-brand-pink text-white shadow'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        🃏 Swipe
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClueViewMode('grid')}
+                        className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          clueViewMode === 'grid'
+                            ? 'bg-brand-pink text-white shadow'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        📋 Grid ({unlockedCluesForSelectedRound.length})
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4].map(rNum => {
+                <div className="flex flex-wrap items-center gap-1">
+                  {availableClueRounds.map(rNum => {
                     const isUnlocked = unlockedClueRound >= rNum;
                     const isSelected = selectedClueRoundFilter === rNum;
                     const unreadInRound = isUnlocked ? getUnreadCountForRound(rNum) : 0;
@@ -2368,6 +2834,7 @@ export function PlayroomClient({
                         type="button"
                         disabled={!isUnlocked}
                         onClick={() => {
+                          setStickyClueId(null);
                           setSelectedClueRoundFilter(rNum);
                           setClueSlideIndex(0);
                         }}
@@ -2392,6 +2859,30 @@ export function PlayroomClient({
                       </button>
                     );
                   })}
+
+                  {unlockedClueRound >= 2 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStickyClueId(null);
+                        setSelectedClueRoundFilter('all');
+                        setClueSlideIndex(0);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        selectedClueRoundFilter === 'all'
+                          ? 'bg-brand-pink text-white shadow'
+                          : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+                      }`}
+                    >
+                      All Unlocked (
+                      {
+                        clues.filter(
+                          c => (c.round_number || 1) <= Math.min(maxClueRound, unlockedClueRound)
+                        ).length
+                      }
+                      )
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -2399,7 +2890,11 @@ export function PlayroomClient({
               {unlockedClueRound >= 1 && allUnlockedCluesForSelectedRound.length > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                    🔍 Filter R{selectedClueRoundFilter} Clues:
+                    🔍 Filter{' '}
+                    {selectedClueRoundFilter === 'all'
+                      ? 'All Unlocked'
+                      : `R${selectedClueRoundFilter}`}{' '}
+                    Clues:
                   </span>
                   <div className="flex flex-wrap items-center gap-1">
                     {(
@@ -2441,7 +2936,7 @@ export function PlayroomClient({
               )}
             </div>
 
-            {/* SWIPEABLE CLUE CAROUSEL */}
+            {/* SWIPEABLE CLUE CAROUSEL OR ALL-CLUES GRID VIEW */}
             {unlockedClueRound <= 0 ? (
               <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-8 text-center space-y-2">
                 <div className="text-2xl">🔒</div>
@@ -2456,8 +2951,8 @@ export function PlayroomClient({
               <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-8 text-center space-y-2">
                 <div className="text-xs font-bold text-slate-300">
                   {clueTagFilter === 'all'
-                    ? `No clues found for Round ${selectedClueRoundFilter}.`
-                    : `No Round ${selectedClueRoundFilter} clues match this tag filter.`}
+                    ? `No clues found for this round.`
+                    : `No clues match this tag filter.`}
                 </div>
                 {clueTagFilter !== 'all' && (
                   <button
@@ -2468,9 +2963,182 @@ export function PlayroomClient({
                     }}
                     className="px-3 py-1.5 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider cursor-pointer"
                   >
-                    Show All Round {selectedClueRoundFilter} Clues
+                    Show All Clues
                   </button>
                 )}
+              </div>
+            ) : clueViewMode === 'grid' ? (
+              /* 2-COLUMN COMPACT EVIDENCE GRID VIEW */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {unlockedCluesForSelectedRound.map((clueItem, idx) => {
+                  const itemTag = clueTags[clueItem.id];
+                  const tsInfo = extractClueTimestampInfo(clueItem);
+                  return (
+                    <div
+                      key={clueItem.id}
+                      className={`bg-slate-900/50 border rounded-2xl p-3.5 sm:p-4 shadow-xl flex flex-col justify-between gap-3 transition-all ${
+                        itemTag === 'key'
+                          ? 'border-amber-400 ring-1 ring-amber-400/35'
+                          : itemTag === 'red_herring'
+                          ? 'border-rose-500/70 ring-1 ring-rose-500/25'
+                          : itemTag === 'alibi'
+                          ? 'border-sky-400/70 ring-1 ring-sky-400/25'
+                          : 'border-white/15'
+                      }`}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-white/10 pb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink border border-brand-pink/30 text-[9px] font-black uppercase tracking-wider">
+                              R{clueItem.round_number || 1} • #{idx + 1}
+                            </span>
+                            {tsInfo.label && (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black uppercase">
+                                🕒 {tsInfo.label}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (clueTagFilter !== 'all') setStickyClueId(clueItem.id);
+                                setClueTags(prev => ({
+                                  ...prev,
+                                  [clueItem.id]: prev[clueItem.id] === 'key' ? undefined : 'key',
+                                }));
+                              }}
+                              className={`px-2 py-0.5 rounded-lg text-[9px] font-bold transition-all cursor-pointer ${
+                                itemTag === 'key'
+                                  ? 'bg-amber-400 text-slate-950 font-black shadow'
+                                  : 'bg-white/5 text-slate-300 hover:text-white border border-white/10'
+                              }`}
+                            >
+                              🔑 Key
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (clueTagFilter !== 'all') setStickyClueId(clueItem.id);
+                                setClueTags(prev => ({
+                                  ...prev,
+                                  [clueItem.id]:
+                                    prev[clueItem.id] === 'red_herring' ? undefined : 'red_herring',
+                                }));
+                              }}
+                              className={`px-2 py-0.5 rounded-lg text-[9px] font-bold transition-all cursor-pointer ${
+                                itemTag === 'red_herring'
+                                  ? 'bg-rose-500 text-white font-black shadow'
+                                  : 'bg-white/5 text-slate-300 hover:text-white border border-white/10'
+                              }`}
+                            >
+                              🐟 Decoy
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (clueTagFilter !== 'all') setStickyClueId(clueItem.id);
+                                setClueTags(prev => ({
+                                  ...prev,
+                                  [clueItem.id]:
+                                    prev[clueItem.id] === 'alibi' ? undefined : 'alibi',
+                                }));
+                              }}
+                              className={`px-2 py-0.5 rounded-lg text-[9px] font-bold transition-all cursor-pointer ${
+                                itemTag === 'alibi'
+                                  ? 'bg-sky-400 text-slate-950 font-black shadow'
+                                  : 'bg-white/5 text-slate-300 hover:text-white border border-white/10'
+                              }`}
+                            >
+                              🛡️ Alibi
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedClueModalIndex(idx)}
+                              className="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase cursor-pointer"
+                            >
+                              🔍 Expand
+                            </button>
+                          </div>
+                        </div>
+
+                        <div
+                          onClick={() => setSelectedClueModalIndex(idx)}
+                          className="cursor-pointer"
+                        >
+                          {renderClueFormatView(clueItem, true)}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 pt-2 border-t border-white/10">
+                        <input
+                          type="text"
+                          value={clueNotes[clueItem.id] || ''}
+                          onChange={e =>
+                            setClueNotes(prev => ({
+                              ...prev,
+                              [clueItem.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="✍️ Detective note..."
+                          className="w-full min-h-[34px] bg-slate-950/90 border border-white/15 focus:border-brand-pink rounded-xl px-2.5 py-1 text-xs text-slate-200 placeholder:text-slate-500 outline-none"
+                        />
+                        <div className="flex flex-wrap items-center gap-1">
+                          {[
+                            '⏱️ Timeline Gap',
+                            '💔 Affair Motive',
+                            '💰 Money / Blackmail',
+                            '🔪 Murder Weapon',
+                            '🤥 Fake Alibi',
+                          ].map(chip => {
+                            const hasChip = (clueNotes[clueItem.id] || '').includes(chip);
+                            return (
+                              <button
+                                key={chip}
+                                type="button"
+                                onClick={() => toggleQuickNoteChip(clueItem.id, chip)}
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
+                                  hasChip
+                                    ? 'bg-amber-400/20 text-amber-300 border border-amber-400/50'
+                                    : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                                }`}
+                              >
+                                {chip}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">
+                            📌 Pin:
+                          </span>
+                          {activeCharacters
+                            .filter(ch => !ch.is_victim)
+                            .map(ch => {
+                              const { name: sName } = parseCharacter(ch);
+                              const isPinned = (clueSuspects[clueItem.id] || []).includes(ch.id);
+                              return (
+                                <button
+                                  key={ch.id}
+                                  type="button"
+                                  onClick={() => toggleClueSuspect(clueItem.id, ch.id)}
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${
+                                    isPinned
+                                      ? 'bg-brand-pink text-white'
+                                      : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                                  }`}
+                                >
+                                  {isPinned ? '📌 ' : ''}
+                                  {sName}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               currentSlideClue && (
@@ -2489,10 +3157,17 @@ export function PlayroomClient({
                 >
                   {/* Compact Card Top Bar with Deduction Tags + Expand */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2.5">
-                    <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink border border-brand-pink/30 text-[10px] font-black uppercase tracking-wider">
-                      Round {selectedClueRoundFilter} • Clue {safeSlideIndex + 1}/
-                      {unlockedCluesForSelectedRound.length}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink border border-brand-pink/30 text-[10px] font-black uppercase tracking-wider">
+                        Round {currentSlideClue.round_number || 1} • Clue {safeSlideIndex + 1}/
+                        {unlockedCluesForSelectedRound.length}
+                      </span>
+                      {extractClueTimestampInfo(currentSlideClue).label && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase">
+                          🕒 {extractClueTimestampInfo(currentSlideClue).label}
+                        </span>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-1 flex-wrap">
                       <button
@@ -2689,7 +3364,7 @@ export function PlayroomClient({
                     {safeSlideIndex === unlockedCluesForSelectedRound.length - 1 &&
                     isGuessStep &&
                     unlockedClueRound >= 1 &&
-                    unlockedClueRound <= 4 ? (
+                    unlockedClueRound <= maxClueRound ? (
                       <button
                         type="button"
                         onClick={() => {
@@ -2903,8 +3578,8 @@ export function PlayroomClient({
               );
             })()}
 
-            {/* HALF-STEP GUESS VOTING BOX ("GUESS 1..4: WHO & WHY") */}
-            {unlockedClueRound >= 1 && unlockedClueRound <= 4 && (
+            {/* HALF-STEP GUESS VOTING BOX ("GUESS 1..maxClueRound: WHO & WHY") */}
+            {unlockedClueRound >= 1 && unlockedClueRound <= maxClueRound && (
               <div
                 id="round-suspect-vote-box"
                 className={`rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 transition-all ${
@@ -3112,17 +3787,459 @@ export function PlayroomClient({
           </div>
         )}
 
-        {/* TAB 4: FINAL STATS, SOLUTION REVEAL & 5-STAR GUEST REVIEW */}
+        {/* TAB 4: FINAL SOLUTION REVEAL, CLUE SCORECARD, ALL-PLAYERS CHARTS & 5-STAR GUEST REVIEW */}
         {activeTab === 'reveal' && (
-          <div className="space-y-5 animate-in fade-in duration-200">
-            {/* 1. DETECTIVE ACCURACY STATS & LEADERBOARD */}
-            <section className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* 1. OFFICIAL CASE SOLUTION: WHO KILLED, WHY, HOW & PLOT BEATS + SUPPORTING CLUES */}
+            <section className="bg-slate-900/70 border border-emerald-500/40 rounded-2xl p-4 sm:p-6 shadow-xl space-y-5">
+              {solutionData ? (
+                (() => {
+                  const realMurderClues = clues.filter(
+                    c => c.evidence_status !== 'fake' && c.implication_type !== 'red_herring'
+                  );
+                  const decoyClues = clues.filter(
+                    c => c.evidence_status === 'fake' || c.implication_type === 'red_herring'
+                  );
+                  const beatsList: any[] = Array.isArray(solutionData.plotBeats)
+                    ? solutionData.plotBeats
+                    : [];
+                  const howBeats = beatsList.filter(
+                    b => Number(b.beat_number) === 2 || Number(b.beat_number) >= 4
+                  );
+
+                  return (
+                    <div className="space-y-5">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                            📂 Official Case Solution • Declassified
+                          </span>
+                          <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
+                            🔪 {solutionData.killer?.name || 'The Killer'} Murdered{' '}
+                            {solutionData.victim?.name || 'The Victim'}
+                          </h2>
+                        </div>
+                        {revealMode === 'phone_free' && (
+                          <span className="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-black uppercase tracking-widest">
+                            📵 Host Read-Aloud View
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 3-Column Core Summary: WHO KILLED / WHY THEY KILLED / HOW THEY KILLED */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        {/* WHO KILLED */}
+                        <div className="p-4 rounded-xl bg-rose-950/35 border border-rose-500/40 space-y-3">
+                          <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-black uppercase tracking-widest">
+                            🔪 1. Who Killed
+                          </span>
+                          {solutionData.killer && (
+                            <div>
+                              <div className="text-[10px] font-black uppercase text-rose-400">
+                                True Murderer
+                              </div>
+                              <h3 className="text-base font-black text-white">
+                                {solutionData.killer.name}
+                              </h3>
+                              <p className="text-xs font-bold text-rose-200/80">
+                                {solutionData.killer.role}
+                              </p>
+                            </div>
+                          )}
+                          {solutionData.victim && (
+                            <div className="pt-2 border-t border-white/10">
+                              <div className="text-[10px] font-black uppercase text-slate-400">
+                                Victim
+                              </div>
+                              <div className="text-sm font-black text-white">
+                                {solutionData.victim.name}{' '}
+                                <span className="text-xs font-normal text-slate-400">
+                                  ({solutionData.victim.role})
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {solutionData.assistant && (
+                            <div className="pt-2 border-t border-white/10">
+                              <div className="text-[10px] font-black uppercase text-amber-400">
+                                Accomplice
+                              </div>
+                              <div className="text-sm font-black text-white">
+                                {solutionData.assistant.name} ({solutionData.assistant.role})
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* WHY THEY KILLED */}
+                        <div className="p-4 rounded-xl bg-amber-950/25 border border-amber-500/40 space-y-2">
+                          <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+                            💔 2. Why They Killed (Motive)
+                          </span>
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                            {hydrateTextWithCharacters(
+                              solutionData.killer?.motiveNotes ||
+                                beatsList.find(b => Number(b.beat_number) === 3)?.description ||
+                                beatsList[0]?.description ||
+                                'Committed to protect their secret and settle a deep personal betrayal.',
+                              characters,
+                              'print'
+                            )}
+                          </p>
+                        </div>
+
+                        {/* HOW THEY KILLED */}
+                        <div className="p-4 rounded-xl bg-sky-950/25 border border-sky-500/40 space-y-2">
+                          <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-black uppercase tracking-widest">
+                            ⚡ 3. How They Killed (Method &amp; Execution)
+                          </span>
+                          <div className="space-y-1.5 text-xs text-slate-200 leading-relaxed">
+                            {howBeats.length > 0 ? (
+                              howBeats.map((hb: any) => (
+                                <p key={hb.id}>
+                                  <strong className="text-sky-300">
+                                    Beat {hb.beat_number}:
+                                  </strong>{' '}
+                                  {hydrateTextWithCharacters(hb.description || '', characters, 'print')}
+                                </p>
+                              ))
+                            ) : (
+                              <p>
+                                Used a pre-staged weapon during an alibi window and was caught by physical forensic trace in Round 3.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* MAIN PLOT BEATS & THE CLUES THAT SUPPORTED EACH BEAT */}
+                      {beatsList.length > 0 && (
+                        <div className="space-y-3 pt-2 border-t border-white/10">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-emerald-300">
+                              🎯 The Main Plot Beats &amp; The Clues That Supported This
+                            </h4>
+                            <span className="text-[11px] font-bold text-slate-400">
+                              {realMurderClues.length} Real Murder Clues • {decoyClues.length} Red Herrings
+                            </span>
+                          </div>
+
+                          <div className="space-y-3">
+                            {beatsList.map((beat: any, idx: number) => {
+                              const bNum = Number(beat.beat_number || idx + 1);
+                              const matchedBeatClues = realMurderClues.filter(c => {
+                                const ca = c as any;
+                                if (ca.linked_plot_beat_id && beat.id && ca.linked_plot_beat_id === beat.id) {
+                                  return true;
+                                }
+                                if (Number(ca.beatNumber || ca.beat_number) === bNum) return true;
+                                const m = String(ca.internal_notes || '').match(/Beat\s*(\d+)/i);
+                                if (m && Number(m[1]) === bNum) return true;
+                                return false;
+                              });
+                              const beatClues =
+                                matchedBeatClues.length > 0
+                                  ? matchedBeatClues
+                                  : realMurderClues.filter(c => {
+                                      const r = c.round_number || 1;
+                                      if (bNum <= 2) return r === 1;
+                                      if (bNum <= 4) return r === 2;
+                                      return r === 3;
+                                    });
+
+                              return (
+                                <div
+                                  key={beat.id || idx}
+                                  className="rounded-xl bg-slate-950/80 border border-emerald-500/30 p-3.5 space-y-2.5"
+                                >
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest">
+                                        Beat {bNum}
+                                      </span>
+                                      <h5 className="text-xs sm:text-sm font-black text-white">
+                                        {hydrateTextWithCharacters(
+                                          beat.event_title || beat.title || '',
+                                          characters,
+                                          'print'
+                                        )}
+                                      </h5>
+                                    </div>
+                                    <span className="text-[10px] font-black text-emerald-400 uppercase">
+                                      {beatClues.length} Supporting{' '}
+                                      {beatClues.length === 1 ? 'Clue' : 'Clues'}
+                                    </span>
+                                  </div>
+
+                                  <p className="text-xs text-slate-300 leading-relaxed">
+                                    {hydrateTextWithCharacters(
+                                      beat.description || '',
+                                      characters,
+                                      'print'
+                                    )}
+                                  </p>
+
+                                  {beatClues.length > 0 && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1.5 border-t border-white/10">
+                                      {beatClues.map(bc => {
+                                        const cTitle = hydrateTextWithCharacters(
+                                          stripCustomerFacingTitle(bc.title) || bc.title,
+                                          characters,
+                                          'print'
+                                        );
+                                        return (
+                                          <div
+                                            key={bc.id}
+                                            className="rounded-lg bg-emerald-950/30 border border-emerald-500/30 px-2.5 py-2 flex items-center justify-between gap-2"
+                                          >
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase shrink-0">
+                                                R{bc.round_number || 1}
+                                              </span>
+                                              <span className="text-xs font-bold text-white truncate">
+                                                {cTitle}
+                                              </span>
+                                            </div>
+                                            <span className="text-[9px] font-black text-emerald-300 uppercase shrink-0">
+                                              🔑 Real Proof
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="text-center py-6 space-y-2">
+                  <div className="text-3xl">📵</div>
+                  <h3 className="text-base font-black uppercase tracking-tight text-white">
+                    Phones Down for the Grand Reveal!
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Your host is revealing the killer live to the room!
+                  </p>
+                </div>
+              )}
+            </section>
+
+            {/* 2. HOW YOUR CLUES STACKED UP AGAINST THE TRUTH (PERSONAL DETECTIVE NOTEBOOK SCORECARD) */}
+            {solutionData &&
+              (() => {
+                const taggedItems = clues.filter(c => Boolean(clueTags[c.id]));
+
+                let correctKeyCount = 0;
+                let totalKeyTagged = 0;
+                let correctDecoyOrAlibiCount = 0;
+                let totalDecoyOrAlibiTagged = 0;
+
+                for (const c of taggedItems) {
+                  const t = clueTags[c.id];
+                  const isFake =
+                    c.evidence_status === 'fake' || c.implication_type === 'red_herring';
+                  if (t === 'key') {
+                    totalKeyTagged++;
+                    if (!isFake) correctKeyCount++;
+                  } else if (t === 'red_herring' || t === 'alibi') {
+                    totalDecoyOrAlibiTagged++;
+                    if (isFake) correctDecoyOrAlibiCount++;
+                  }
+                }
+
+                const totalTagged = totalKeyTagged + totalDecoyOrAlibiTagged;
+                const totalCorrectTags = correctKeyCount + correctDecoyOrAlibiCount;
+                const bonusPoints = correctKeyCount * 10 + correctDecoyOrAlibiCount * 15;
+                const accuracyPct =
+                  totalTagged > 0 ? Math.round((totalCorrectTags / totalTagged) * 100) : null;
+                const notesWrittenCount = clues.filter(c =>
+                  Boolean((clueNotes[c.id] || '').trim())
+                ).length;
+
+                return (
+                  <section className="bg-slate-900/50 border border-amber-400/35 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                          📓 Below the Solution • Evidence Truth Breakdown
+                        </span>
+                        <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
+                          How All Clues &amp; Your Tags Stacked Up Against the Truth
+                        </h2>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {bonusPoints > 0 && (
+                          <div className="px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-right">
+                            <div className="text-[9px] font-black uppercase tracking-wider text-emerald-300">
+                              Clue Tag Bonus
+                            </div>
+                            <div className="text-sm sm:text-base font-black text-emerald-300">
+                              +{bonusPoints} Detective Pts
+                            </div>
+                          </div>
+                        )}
+                        {accuracyPct !== null && (
+                          <div className="px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
+                            <div className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                              Evidence Accuracy
+                            </div>
+                            <div className="text-sm sm:text-base font-black text-amber-300">
+                              {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
+                        <div className="text-[9px] font-black uppercase tracking-wider text-amber-400">
+                          🔑 Key Evidence Tagged (+10 pts each)
+                        </div>
+                        <div className="text-xs sm:text-sm font-black text-white mt-1">
+                          {totalKeyTagged > 0
+                            ? `${correctKeyCount}/${totalKeyTagged} were Real Murder Clues`
+                            : 'No clues tagged 🔑 Key'}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
+                        <div className="text-[9px] font-black uppercase tracking-wider text-rose-400">
+                          🐟 Decoys &amp; 🛡️ Alibis Spotted (+15 pts each)
+                        </div>
+                        <div className="text-xs sm:text-sm font-black text-white mt-1">
+                          {totalDecoyOrAlibiTagged > 0
+                            ? `${correctDecoyOrAlibiCount}/${totalDecoyOrAlibiTagged} were Red Herrings`
+                            : 'No clues tagged Decoy/Alibi'}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
+                        <div className="text-[9px] font-black uppercase tracking-wider text-sky-400">
+                          ✍️ Detective Notes Written
+                        </div>
+                        <div className="text-xs sm:text-sm font-black text-white mt-1">
+                          {notesWrittenCount} {notesWrittenCount === 1 ? 'Note' : 'Notes'} Saved
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-white/10">
+                      {clues.map(c => {
+                        const t = clueTags[c.id];
+                        const note = (clueNotes[c.id] || '').trim();
+                        const pinnedNames = (clueSuspects[c.id] || [])
+                          .map(sId => {
+                            const ch = activeCharacters.find(ac => ac.id === sId);
+                            return ch ? parseCharacter(ch).name : null;
+                          })
+                          .filter(Boolean);
+                        const isFake =
+                          c.evidence_status === 'fake' || c.implication_type === 'red_herring';
+                        const tagWasCorrect =
+                          t === 'key'
+                            ? !isFake
+                            : t === 'red_herring' || t === 'alibi'
+                            ? isFake
+                            : null;
+                        const cleanTitle = hydrateTextWithCharacters(
+                          stripCustomerFacingTitle(c.title) || c.title,
+                          characters,
+                          'print'
+                        );
+
+                        return (
+                          <div
+                            key={c.id}
+                            className={`rounded-xl p-3 border space-y-1.5 ${
+                              tagWasCorrect === true
+                                ? 'bg-emerald-950/30 border-emerald-500/40'
+                                : tagWasCorrect === false
+                                ? 'bg-rose-950/30 border-rose-500/40'
+                                : 'bg-slate-950/80 border-white/10'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
+                                  R{c.round_number || 1}
+                                </span>
+                                <span className="text-xs font-black text-white truncate">
+                                  {cleanTitle}
+                                </span>
+                              </div>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${
+                                  isFake
+                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                }`}
+                              >
+                                {isFake ? '🎭 Truth: Decoy / Alibi' : '✓ Truth: Real Clue'}
+                              </span>
+                            </div>
+
+                            <div className="text-[11px] font-bold text-slate-300">
+                              {t ? (
+                                <>
+                                  Your Tag:{' '}
+                                  <strong className="text-white">
+                                    {t === 'key'
+                                      ? '🔑 Key'
+                                      : t === 'red_herring'
+                                      ? '🐟 Decoy'
+                                      : '🛡️ Alibi'}
+                                  </strong>{' '}
+                                  {tagWasCorrect
+                                    ? '✅ Spot-on!'
+                                    : isFake
+                                    ? '❌ Tricked by a decoy!'
+                                    : '❌ Dismissed real evidence!'}
+                                </>
+                              ) : (
+                                <span className="text-slate-500 italic">Untagged</span>
+                              )}
+                            </div>
+
+                            {pinnedNames.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                                {pinnedNames.map((sName, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-1.5 py-0.5 rounded bg-brand-pink/20 text-brand-pink text-[9px] font-black uppercase"
+                                  >
+                                    📌 {sName}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {note && (
+                              <p className="text-xs text-slate-300 italic pt-1 border-t border-white/10">
+                                Your Note: &ldquo;{note}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })()}
+
+            {/* 3. ALL-PLAYERS INPUT CHARTS, SUSPECT VOTE BREAKDOWN & DETECTIVE LEADERBOARD */}
+            <section className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl space-y-5">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                  End of Mystery Superlatives
+                  📊 All-Players Inputs &amp; End of Mystery Superlatives
                 </span>
                 <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                  🏆 Final Detective Stats
+                  🏆 All-Players Voting Charts &amp; Detective Leaderboard
                 </h2>
               </div>
 
@@ -3132,6 +4249,52 @@ export function PlayroomClient({
                 </p>
               ) : (
                 <>
+                  {/* Chart A: Suspect Accusation Breakdown Bar Chart across all players */}
+                  {mostSuspectedList.length > 0 && (
+                    <div className="rounded-xl bg-slate-950/70 border border-white/10 p-4 space-y-3">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        📊 Suspect Accusation Distribution (All Players&apos; Votes)
+                      </div>
+                      <div className="space-y-2.5">
+                        {mostSuspectedList.map(item => {
+                          const totalCastVotes = Math.max(
+                            1,
+                            mostSuspectedList.reduce((acc, s) => acc + s.count, 0)
+                          );
+                          const pct = Math.round((item.count / totalCastVotes) * 100);
+                          const isTrueKiller =
+                            solutionData?.killer?.id && item.suspectId === solutionData.killer.id;
+                          return (
+                            <div key={item.suspectId} className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-black text-white">
+                                  {item.suspectName}{' '}
+                                  {isTrueKiller && (
+                                    <span className="ml-1 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase">
+                                      🔪 True Killer
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-slate-300 font-bold">
+                                  {item.count} {item.count === 1 ? 'vote' : 'votes'} ({pct}%)
+                                </span>
+                              </div>
+                              <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    isTrueKiller ? 'bg-emerald-500' : 'bg-brand-pink'
+                                  }`}
+                                  style={{ width: `${Math.max(6, pct)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Party Awards & Superlatives */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {detectiveLeaderboard[0] && (
                       <div className="p-3.5 rounded-xl bg-gradient-to-br from-amber-500/20 to-slate-900 border border-amber-400/30 space-y-1">
@@ -3221,6 +4384,7 @@ export function PlayroomClient({
                     })()}
                   </div>
 
+                  {/* Full Player Leaderboard */}
                   <div className="divide-y divide-white/5 rounded-xl border border-white/10 bg-slate-950/60 overflow-hidden">
                     {detectiveLeaderboard.map((row, idx) => (
                       <div
@@ -3257,330 +4421,6 @@ export function PlayroomClient({
                 </>
               )}
             </section>
-
-            {/* 2. THE GRAND REVEAL */}
-            <section className="bg-slate-900/60 border border-red-500/30 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-              {solutionData ? (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-red-400">
-                        Official Solution
-                      </span>
-                      <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                        🔪 The Killer &amp; Timeline
-                      </h2>
-                    </div>
-                    {revealMode === 'phone_free' && (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-black uppercase tracking-widest">
-                        📵 Host Read-Aloud View
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {solutionData.victim && (
-                      <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-0.5">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-brand-pink">
-                          🩸 Victim
-                        </span>
-                        <h3 className="text-sm font-black text-white">
-                          {solutionData.victim.name}
-                        </h3>
-                        <p className="text-[10px] font-bold text-slate-400">
-                          {solutionData.victim.role}
-                        </p>
-                      </div>
-                    )}
-
-                    {solutionData.killer && (
-                      <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/40 space-y-0.5">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-red-400">
-                          🔪 Killer
-                        </span>
-                        <h3 className="text-sm font-black text-white">
-                          {solutionData.killer.name}
-                        </h3>
-                        <p className="text-[10px] font-bold text-red-200">
-                          {solutionData.killer.role}
-                        </p>
-                      </div>
-                    )}
-
-                    {solutionData.assistant && (
-                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-0.5">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-400">
-                          🤝 Accomplice
-                        </span>
-                        <h3 className="text-sm font-black text-white">
-                          {solutionData.assistant.name}
-                        </h3>
-                        <p className="text-[10px] font-bold text-slate-400">
-                          {solutionData.assistant.role}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {solutionData.killer?.motiveNotes && (
-                    <div className="p-3.5 rounded-xl bg-slate-950 border border-white/10 space-y-1">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-red-400">
-                        💭 Motive ({solutionData.killer.motiveType})
-                      </span>
-                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-                        {hydrateTextWithCharacters(
-                          solutionData.killer.motiveNotes,
-                          characters,
-                          'print'
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  {Array.isArray(solutionData.plotBeats) && solutionData.plotBeats.length > 0 && (
-                    <div className="space-y-2.5 pt-1">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        Step-by-Step Reconstruction
-                      </h4>
-                      <div className="space-y-2.5 border-l-2 border-red-500/40 pl-4">
-                        {solutionData.plotBeats.map((beat: any, idx: number) => (
-                          <div key={beat.id} className="space-y-0.5">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-red-400">
-                              Step {beat.beat_number || idx + 1}
-                            </span>
-                            <h5 className="text-xs font-black text-white">
-                              {hydrateTextWithCharacters(beat.event_title, characters, 'print')}
-                            </h5>
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              {hydrateTextWithCharacters(
-                                beat.description || '',
-                                characters,
-                                'print'
-                              )}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6 space-y-2">
-                  <div className="text-3xl">📵</div>
-                  <h3 className="text-base font-black uppercase tracking-tight text-white">
-                    Phones Down for the Grand Reveal!
-                  </h3>
-                  <p className="text-xs text-slate-400 max-w-md mx-auto">
-                    Your host is revealing the killer live to the room!
-                  </p>
-                </div>
-              )}
-            </section>
-
-            {/* 2A. PERSONAL DETECTIVE NOTEBOOK & CLUE TAGGING SCORECARD (UNLOCKED WITH SOLUTION) */}
-            {solutionData && (() => {
-              const taggedOrNoted = clues.filter(
-                c =>
-                  Boolean(clueTags[c.id]) ||
-                  Boolean((clueNotes[c.id] || '').trim()) ||
-                  (clueSuspects[c.id] || []).length > 0
-              );
-              const taggedItems = clues.filter(c => Boolean(clueTags[c.id]));
-
-              let correctKeyCount = 0;
-              let totalKeyTagged = 0;
-              let correctDecoyOrAlibiCount = 0;
-              let totalDecoyOrAlibiTagged = 0;
-
-              for (const c of taggedItems) {
-                const t = clueTags[c.id];
-                const isFake =
-                  c.evidence_status === 'fake' || c.implication_type === 'red_herring';
-                if (t === 'key') {
-                  totalKeyTagged++;
-                  if (!isFake) correctKeyCount++;
-                } else if (t === 'red_herring' || t === 'alibi') {
-                  totalDecoyOrAlibiTagged++;
-                  if (isFake) correctDecoyOrAlibiCount++;
-                }
-              }
-
-              const totalTagged = totalKeyTagged + totalDecoyOrAlibiTagged;
-              const totalCorrectTags = correctKeyCount + correctDecoyOrAlibiCount;
-              const bonusPoints = correctKeyCount * 10 + correctDecoyOrAlibiCount * 15;
-              const accuracyPct =
-                totalTagged > 0 ? Math.round((totalCorrectTags / totalTagged) * 100) : null;
-              const notesWrittenCount = clues.filter(c =>
-                Boolean((clueNotes[c.id] || '').trim())
-              ).length;
-
-              return (
-                <section className="bg-slate-900/50 border border-amber-400/35 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
-                        📓 Your Detective Notebook Scorecard
-                      </span>
-                      <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                        How Your Clue Tags &amp; Notes Stacked Up
-                      </h2>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      {bonusPoints > 0 && (
-                        <div className="px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-right">
-                          <div className="text-[9px] font-black uppercase tracking-wider text-emerald-300">
-                            Clue Tag Bonus
-                          </div>
-                          <div className="text-sm sm:text-base font-black text-emerald-300">
-                            +{bonusPoints} Detective Pts
-                          </div>
-                        </div>
-                      )}
-                      {accuracyPct !== null && (
-                        <div className="px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
-                          <div className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                            Evidence Accuracy
-                          </div>
-                          <div className="text-sm sm:text-base font-black text-amber-300">
-                            {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
-                      <div className="text-[9px] font-black uppercase tracking-wider text-amber-400">
-                        🔑 Key Evidence Tagged (+10 pts each)
-                      </div>
-                      <div className="text-xs sm:text-sm font-black text-white mt-1">
-                        {totalKeyTagged > 0
-                          ? `${correctKeyCount}/${totalKeyTagged} were Real Murder Clues`
-                          : 'No clues tagged 🔑 Key'}
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
-                      <div className="text-[9px] font-black uppercase tracking-wider text-rose-400">
-                        🐟 Decoys &amp; 🛡️ Alibis Spotted (+15 pts each)
-                      </div>
-                      <div className="text-xs sm:text-sm font-black text-white mt-1">
-                        {totalDecoyOrAlibiTagged > 0
-                          ? `${correctDecoyOrAlibiCount}/${totalDecoyOrAlibiTagged} were Red Herrings`
-                          : 'No clues tagged Decoy/Alibi'}
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
-                      <div className="text-[9px] font-black uppercase tracking-wider text-sky-400">
-                        ✍️ Detective Notes Written
-                      </div>
-                      <div className="text-xs sm:text-sm font-black text-white mt-1">
-                        {notesWrittenCount} {notesWrittenCount === 1 ? 'Note' : 'Notes'} Saved
-                      </div>
-                    </div>
-                  </div>
-
-                  {taggedOrNoted.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-white/10">
-                      {taggedOrNoted.map(c => {
-                        const t = clueTags[c.id];
-                        const note = (clueNotes[c.id] || '').trim();
-                        const pinnedNames = (clueSuspects[c.id] || [])
-                          .map(sId => {
-                            const ch = activeCharacters.find(ac => ac.id === sId);
-                            return ch ? parseCharacter(ch).name : null;
-                          })
-                          .filter(Boolean);
-                        const isFake =
-                          c.evidence_status === 'fake' || c.implication_type === 'red_herring';
-                        const tagWasCorrect =
-                          t === 'key'
-                            ? !isFake
-                            : t === 'red_herring' || t === 'alibi'
-                            ? isFake
-                            : null;
-                        const cleanTitle = hydrateTextWithCharacters(
-                          stripCustomerFacingTitle(c.title) || c.title,
-                          characters,
-                          'print'
-                        );
-
-                        return (
-                          <div
-                            key={c.id}
-                            className={`rounded-xl p-3 border space-y-1.5 ${
-                              tagWasCorrect === true
-                                ? 'bg-emerald-950/30 border-emerald-500/40'
-                                : tagWasCorrect === false
-                                ? 'bg-rose-950/30 border-rose-500/40'
-                                : 'bg-slate-950/80 border-white/10'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
-                                  R{c.round_number || 1}
-                                </span>
-                                <span className="text-xs font-black text-white truncate">
-                                  {cleanTitle}
-                                </span>
-                              </div>
-                              <span
-                                className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${
-                                  isFake
-                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                }`}
-                              >
-                                {isFake ? '🎭 Fake / Decoy' : '✓ Real Clue'}
-                              </span>
-                            </div>
-
-                            {t && (
-                              <div className="text-[11px] font-bold text-slate-300">
-                                Your Tag:{' '}
-                                <strong className="text-white">
-                                  {t === 'key'
-                                    ? '🔑 Key'
-                                    : t === 'red_herring'
-                                    ? '🐟 Decoy'
-                                    : '🛡️ Alibi'}
-                                </strong>{' '}
-                                {tagWasCorrect
-                                  ? '✅ Spot-on!'
-                                  : isFake
-                                  ? '❌ Tricked by a decoy!'
-                                  : '❌ Dismissed real evidence!'}
-                              </div>
-                            )}
-
-                            {pinnedNames.length > 0 && (
-                              <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                                {pinnedNames.map((sName, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="px-1.5 py-0.5 rounded bg-brand-pink/20 text-brand-pink text-[9px] font-black uppercase"
-                                  >
-                                    📌 {sName}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-
-                            {note && (
-                              <p className="text-xs text-slate-300 italic pt-1 border-t border-white/10">
-                                Your Note: &ldquo;{note}&rdquo;
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </section>
-              );
-            })()}
 
             {/* 2B. FULL CHARACTER RELATIONSHIP & SECRET WEB (UNLOCKED AT FINAL REVEAL) */}
             {solutionData && relationships.length > 0 && (
@@ -3979,6 +4819,17 @@ export function PlayroomClient({
 
         <button
           type="button"
+          onClick={() => setIsRoomCastOpen(true)}
+          className="flex-1 py-1.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all text-slate-400 hover:text-slate-200 cursor-pointer"
+        >
+          <span className="text-sm leading-none">👥</span>
+          <span className="text-[9px] font-black uppercase tracking-wider">
+            Cast ({activeCharacters.length})
+          </span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('clues')}
           className={`flex-1 py-1.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all relative cursor-pointer ${
             activeTab === 'clues'
@@ -3990,7 +4841,7 @@ export function PlayroomClient({
           <span className="text-[9px] font-black uppercase tracking-wider">
             {isGuessStep
               ? `Guess ${unlockedClueRound}`
-              : unlockedClueRound >= 1 && unlockedClueRound <= 4
+              : unlockedClueRound >= 1 && unlockedClueRound <= maxClueRound
               ? `Clues R${unlockedClueRound}`
               : 'Clues'}
           </span>
@@ -3999,7 +4850,7 @@ export function PlayroomClient({
           )}
         </button>
 
-        {unlockedClueRound >= 4 && (
+        {unlockedClueRound >= maxClueRound && (
           <button
             type="button"
             onClick={() => setActiveTab('reveal')}
