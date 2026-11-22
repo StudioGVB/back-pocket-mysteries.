@@ -140,3 +140,111 @@ export function buildBrandedEmailShell(options: BrandedEmailShellOptions): strin
 </body>
 </html>`;
 }
+
+export interface NewAccountNotificationParams {
+  userId?: string | null;
+  email: string;
+  fullName?: string | null;
+  country?: string | null;
+  currency?: string | null;
+  timezone?: string | null;
+  howFoundUs?: string | null;
+  promoCode?: string | null;
+  source?: string;
+}
+
+/**
+ * Sends a fully branded Admin Notification email to Hello@backpocketgames.com whenever
+ * a new user creates an account (via standard onboarding or guest invitation link).
+ */
+export async function sendAdminNewAccountNotificationEmail(
+  params: NewAccountNotificationParams
+): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+
+  try {
+    const { Resend } = await import('resend');
+    const resend = new Resend(apiKey);
+    const displayName = (params.fullName || '').trim() || params.email;
+    const adminProfileUrl = params.userId
+      ? `${BASE_URL}/en/admin/users/${params.userId}`
+      : `${BASE_URL}/en/admin/users`;
+
+    const html = buildBrandedEmailShell({
+      preheader: `${displayName} (${params.email}) just created a Back Pocket Mysteries customer account.`,
+      kicker: 'NEW CUSTOMER ACCOUNT CREATED',
+      headline: `New Member Joined: ${displayName}`,
+      bodyHtml: `
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:20px;">
+          <tr>
+            <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+              <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Full Name</span><br/>
+              <span style="color:#1e191c;font-size:16px;font-weight:800;">${displayName}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+              <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Account Email</span><br/>
+              <a href="mailto:${params.email}" style="color:#fe04c6;text-decoration:none;font-size:16px;font-weight:800;">${params.email}</a>
+            </td>
+          </tr>
+          ${
+            params.country
+              ? `<tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+                    <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Country · Currency · Timezone</span><br/>
+                    <span style="color:#1e191c;font-size:14px;font-weight:700;">${params.country} (${params.currency || 'GBP'} · ${params.timezone || 'UTC'})</span>
+                  </td>
+                </tr>`
+              : ''
+          }
+          ${
+            params.howFoundUs
+              ? `<tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+                    <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">How They Heard About Us</span><br/>
+                    <span style="color:#1e191c;font-size:14px;font-weight:700;">${params.howFoundUs}</span>
+                  </td>
+                </tr>`
+              : ''
+          }
+          ${
+            params.promoCode
+              ? `<tr>
+                  <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+                    <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Promo / Referral Code Entered</span><br/>
+                    <span style="color:#fe04c6;font-size:15px;font-family:monospace;font-weight:900;">${params.promoCode}</span>
+                  </td>
+                </tr>`
+              : ''
+          }
+          <tr>
+            <td style="padding:12px 0;">
+              <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Registration Path</span><br/>
+              <span style="color:#1e191c;font-size:13px;font-weight:600;">${params.source || 'Website Onboarding (/en/login)'}</span>
+            </td>
+          </tr>
+        </table>
+        <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;padding:16px 20px;border-radius:12px;">
+          <p style="margin:0;color:#d4d4d8;font-size:13px;line-height:1.6;">
+            ✓ This member now has an active Customer profile and is automatically included in your Weekly EDM Newsletter audience.
+          </p>
+        </div>
+      `,
+      ctaText: 'View Customer in Admin →',
+      ctaUrl: adminProfileUrl,
+    });
+
+    await resend.emails.send({
+      from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+      to: ['Hello@backpocketgames.com'],
+      replyTo: params.email,
+      subject: `👤 New Member Account Created: ${displayName} (${params.email})`,
+      html,
+    });
+  } catch (err) {
+    console.error('[NEW ACCOUNT EMAIL] Failed to send admin notification:', err);
+  }
+}
+

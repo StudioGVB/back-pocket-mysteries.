@@ -284,31 +284,20 @@ export async function signup(formData: FormData) {
     }
   }
 
-  // Send Admin Notification Email
+  // Send Fully Branded Admin Notification Email whenever a new member creates an account
   try {
-    if (process.env.RESEND_API_KEY) {
-      await resend.emails.send({
-        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
-        to: 'Hello@backpocketgames.com',
-        subject: `New User Signed Up: ${fullName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 8px; border-top: 4px solid #F02882;">
-            <div style="text-align: center; margin-bottom: 20px;">
-              <h2 style="color: #1a1a1a; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Back Pocket Mysteries</h2>
-              <p style="color: #F02882; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">New Account Created</p>
-            </div>
-            <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              <p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Name</strong><br/><span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${fullName}</span></p>
-              <p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Email</strong><br/><span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${email}</span></p>
-              ${country ? `<p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Country / Currency / Timezone</strong><br/><span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${country} (${currency} • ${timezone})</span></p>` : ''}
-              ${howFoundUs ? `<p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">How they found us</strong><br/><span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${howFoundUs}</span></p>` : ''}
-              ${promoCode ? `<p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Promo / Referral Code</strong><br/><span style="color: #F02882; font-size: 16px; font-weight: bold;">${promoCode}</span></p>` : ''}
-            </div>
-          </div>
-        `
-      })
-      console.log(`[EMAIL NOTIFICATION] Sent new account notification for ${email}`)
-    }
+    const { sendAdminNewAccountNotificationEmail } = await import('@/lib/branded-email-template')
+    await sendAdminNewAccountNotificationEmail({
+      userId: signUpData?.user?.id || null,
+      email,
+      fullName,
+      country,
+      currency,
+      timezone,
+      howFoundUs,
+      promoCode,
+      source: 'Website Account Onboarding (/en/login)',
+    })
   } catch (err) {
     console.error('Failed to send new account email notification:', err)
   }

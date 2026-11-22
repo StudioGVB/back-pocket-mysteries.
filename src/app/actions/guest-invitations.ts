@@ -415,6 +415,23 @@ export async function claimInvitationWithAuthAction(input: {
       userId = signUpData.user?.id || null;
       hasActiveSession = Boolean(signUpData.session);
 
+      // Notify Admin whenever a guest creates a new member account via an invitation link
+      try {
+        const { sendAdminNewAccountNotificationEmail } = await import('@/lib/branded-email-template');
+        await sendAdminNewAccountNotificationEmail({
+          userId,
+          email,
+          fullName:
+            fullName ||
+            (invite.invite_email?.startsWith('link:')
+              ? invite.invite_email.replace(/^link:/, '')
+              : 'Guest Member'),
+          source: 'Guest Invitation Link (/en/invite/[token])',
+        });
+      } catch (err) {
+        console.error('Failed to send guest invite new account notification:', err);
+      }
+
       // If signUp didn't return a session, try immediate signInWithPassword in case auto-confirm is enabled
       if (userId && !hasActiveSession) {
         const { data: signInData } = await supabase.auth.signInWithPassword({
