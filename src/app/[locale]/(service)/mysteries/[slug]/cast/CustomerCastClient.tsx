@@ -1461,10 +1461,10 @@ export default function CustomerCastClient({
                       )}
                     </div>
                     <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
-                      1. All Friend Profiles ({minRoles}–{maxRoles})
+                      1. All Friend Profiles ({minRoles === maxRoles ? `${maxRoles} Roles` : `${minRoles}–${maxRoles} Roles`})
                     </h3>
                     <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                      Cast real friends &amp; family into every role. Tap <strong>+ Add Guest</strong> below to create profiles for anyone attending!
+                      Cast real friends &amp; family into every role. Tap <strong>+ Add Friend Profile</strong> below to create profiles for anyone attending!
                     </p>
                   </div>
                 </button>
@@ -1553,10 +1553,10 @@ export default function CustomerCastClient({
                   </div>
                   <p className="text-xs text-slate-300 font-medium">
                     {casefileCastSource === 'random'
-                      ? 'Tap "🎲 Shuffle Fictional Cast" to deal a fresh lineup of characters, or tap any suspect card below.'
+                      ? 'Tap "🎲 Shuffle Fictional Suspects" to deal a fresh lineup of characters, or tap any suspect card below.'
                       : casefileCastSource === 'hybrid'
                       ? 'Tap your real friends below to toggle them IN or OUT — we automatically fill the remaining slots with Fictional Mystery Suspects!'
-                      : `Tap friends below to mark them IN or OUT (minimum ${minRoles} required). Need more people? Click "+ Add Guest" or switch to Hybrid Mode!`}
+                      : `Tap friends below to mark them IN or OUT (minimum ${minRoles} required). Need more people? Click "+ Add Friend Profile" or switch to Hybrid Mode!`}
                   </p>
                 </div>
 
@@ -1633,7 +1633,7 @@ export default function CustomerCastClient({
                 </div>
               )}
 
-              {/* GUEST & SUSPECT SELECTION GRID */}
+              {/* GUEST & SUSPECT SELECTION GRID (3 Columns on Desktop for Spacious Name Display) */}
               {casefileCastSource === 'hybrid' ? (
                 <div className="space-y-6">
                   {/* SUB-SECTION A: YOUR REAL FRIENDS */}
@@ -1643,7 +1643,7 @@ export default function CustomerCastClient({
                         👥 Your Real Friends &amp; Profiles ({selectedRealFriendsCount} Selected — Tap to Toggle In/Out)
                       </h3>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {guests
                         .filter(g => !g.id.startsWith('random-suspect-'))
                         .map(guest => {
@@ -1663,7 +1663,7 @@ export default function CustomerCastClient({
                                   handleToggleGuestAttendance(guest.id);
                                 }
                               }}
-                              className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
+                              className={`p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-3.5 cursor-pointer ${
                                 isIn
                                   ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
                                   : 'border-slate-200 hover:border-brand-pink/50 bg-white'
@@ -1681,20 +1681,20 @@ export default function CustomerCastClient({
                                   <span className="text-2xl">{guest.isHost ? '👑' : '👤'}</span>
                                 )}
                               </div>
-                              <div className="min-w-0 flex-grow">
-                                <div className="flex items-center gap-1.5">
-                                  <p className="text-sm font-black text-slate-900 truncate">
-                                    {guest.name}
-                                  </p>
+                              <div className="min-w-0 flex-grow space-y-1">
+                                <p className="text-sm font-black text-slate-900 truncate leading-tight">
+                                  {guest.name}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-1.5">
                                   {guest.isHost && (
-                                    <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[8px] font-black uppercase tracking-wider shrink-0">
+                                    <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[9px] font-black uppercase tracking-wider shrink-0">
                                       You
                                     </span>
                                   )}
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                    {gBadge.shortLabel}
+                                  </span>
                                 </div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                  {gBadge.shortLabel}
-                                </p>
                               </div>
                               <span
                                 className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
@@ -1735,7 +1735,7 @@ export default function CustomerCastClient({
                           🎲 Swap Fictional Strangers
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {guests
                           .filter(
                             g =>
@@ -1748,7 +1748,7 @@ export default function CustomerCastClient({
                             return (
                               <div
                                 key={stranger.id}
-                                className="p-3.5 rounded-2xl border-2 border-emerald-500/40 bg-emerald-50/30 flex items-center gap-3 shadow-sm"
+                                className="p-4 rounded-2xl border-2 border-emerald-500/40 bg-emerald-50/30 flex items-center gap-3.5 shadow-sm"
                               >
                                 <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-emerald-200 shadow-sm">
                                   {strangerAvatar ? (
@@ -1762,12 +1762,10 @@ export default function CustomerCastClient({
                                     <span className="text-2xl">🕵️</span>
                                   )}
                                 </div>
-                                <div className="min-w-0 flex-grow">
-                                  <div className="flex items-center gap-1.5">
-                                    <p className="text-sm font-black text-slate-900 truncate">
-                                      {stranger.name}
-                                    </p>
-                                  </div>
+                                <div className="min-w-0 flex-grow space-y-1">
+                                  <p className="text-sm font-black text-slate-900 truncate leading-tight">
+                                    {stranger.name}
+                                  </p>
                                   <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
                                     {gBadge.shortLabel}
                                     {stranger.accent ? ` • ${stranger.accent}` : ''}
@@ -1784,7 +1782,7 @@ export default function CustomerCastClient({
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {guests
                     .filter(g =>
                       casefileCastSource === 'random'
@@ -1809,7 +1807,7 @@ export default function CustomerCastClient({
                               handleToggleGuestAttendance(guest.id);
                             }
                           }}
-                          className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
+                          className={`p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-3.5 cursor-pointer ${
                             isIn
                               ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
                               : 'border-slate-200 hover:border-brand-pink/50 bg-white'
@@ -1827,11 +1825,11 @@ export default function CustomerCastClient({
                               <span className="text-2xl">{guest.isHost ? '👑' : '👤'}</span>
                             )}
                           </div>
-                          <div className="min-w-0 flex-grow">
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-sm font-black text-slate-900 truncate">
-                                {guest.name}
-                              </p>
+                          <div className="min-w-0 flex-grow space-y-1">
+                            <p className="text-sm font-black text-slate-900 truncate leading-tight">
+                              {guest.name}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5">
                               {guest.isHost && (
                                 <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[8px] font-black uppercase tracking-wider shrink-0">
                                   Host
@@ -1842,11 +1840,11 @@ export default function CustomerCastClient({
                                   Fictional
                                 </span>
                               )}
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                {gBadge.shortLabel}
+                                {guest.accent ? ` • ${guest.accent}` : ''}
+                              </span>
                             </div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                              {gBadge.shortLabel}
-                              {guest.accent ? ` • ${guest.accent}` : ''}
-                            </p>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {!isRandomSuspect && !guest.isLinked && (
