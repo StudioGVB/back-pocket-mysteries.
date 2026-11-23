@@ -26,440 +26,576 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
 
-  const flowSteps = [
-    {
-      num: '01',
-      badge: 'Before the Party',
-      title: 'Create Your Guests',
-      desc: 'Add the friends coming to your party — enter their names, appearances (or upload a quick photo), accents, and a real-life quirk or inside joke so the mystery feels unmistakably like your crowd.',
-      highlights: [
-        'Save your friends once and reuse them for future mystery nights',
-        'Add fun traits & inside jokes that get woven straight into the story',
-      ],
-      numBg: 'bg-brand-pink text-white shadow-lg shadow-brand-pink/30',
-      badgeClass: 'bg-brand-pink/10 text-brand-pink',
-      topBar: 'from-brand-pink via-fuchsia-500 to-rose-500',
-      borderHover: 'hover:border-brand-pink',
-      isDark: false,
-    },
-    {
-      num: '02',
-      badge: 'Choose the Vibe',
-      title: 'Pick Your Mystery Theme',
-      desc: 'Browse our human-written mystery themes and pick the setting, difficulty, and spice level that fits your occasion — from work-friendly Clean mysteries to Spicy reality-TV drama.',
-      highlights: [
-        '100% human-architected plots with watertight clue logic',
-        'Clear Difficulty (Easy, Medium, Hard) & Spice ratings on every story',
-      ],
-      numBg: 'bg-brand-blue text-white shadow-lg shadow-brand-blue/30',
-      badgeClass: 'bg-brand-blue/10 text-brand-blue',
-      topBar: 'from-brand-blue via-indigo-500 to-sky-400',
-      borderHover: 'hover:border-brand-blue',
-      isDark: false,
-    },
-    {
-      num: '03',
-      badge: 'Match Your Crew',
-      title: 'Assign Your Guests to Characters',
-      desc: 'Cast your friends into iconic character archetypes — or let our AI auto-match them in one click. Don’t have enough people for every role? Use Hybrid Mode or a 100% Fictional Cast!',
-      highlights: [
-        'Gender-Flex Casting automatically adapts roles & outfits to any gender mix',
-        'Cast all real friends, a hybrid mix, or ready-made fictional suspects',
-      ],
-      numBg: 'bg-purple-600 text-white shadow-lg shadow-purple-600/30',
-      badgeClass: 'bg-purple-100 text-purple-700',
-      topBar: 'from-purple-600 via-fuchsia-500 to-brand-pink',
-      borderHover: 'hover:border-purple-500',
-      isDark: false,
-    },
-    {
-      num: '04',
-      badge: 'Ready in ~20 Mins',
-      title: 'Generate Your Custom Mystery & Clues',
-      desc: 'Our engine builds your entire mystery pack around your specific cast in ~20 minutes — generating custom character portraits, crime-scene CCTV photos featuring your friends, leaked text threads, and voice-acted audio clues.',
-      highlights: [
-        'Visual CCTV clues, iMessage chats & multi-speaker voice wiretaps tailored to your guests',
-        'Includes both the interactive Live Game Room and print-ready PDF booklets',
-      ],
-      numBg: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30',
-      badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-      topBar: 'from-emerald-400 via-teal-500 to-cyan-500',
-      borderHover: 'hover:border-emerald-500',
-      isDark: false,
-    },
-    {
-      num: '05',
-      badge: 'Build the Hype',
-      title: 'Send Character Invites Before the Night',
-      desc: 'Drop a single 1-click link into your group chat (or send individual links) before the party so guests can tap their name, read their spoiler-free character blurb, and see their outfit & dress code guide!',
-      highlights: [
-        'Guests see their character vibe & costume guide days before the party',
-        'Zero spoilers — all clues and secrets stay locked until party night',
-      ],
-      numBg: 'bg-amber-500 text-white shadow-lg shadow-amber-500/30',
-      badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200',
-      topBar: 'from-amber-400 via-orange-500 to-brand-pink',
-      borderHover: 'hover:border-amber-500',
-      isDark: false,
-    },
-    {
-      num: '06',
-      badge: 'Party Night Finale',
-      title: 'Launch Live Game Mode When Everyone Arrives',
-      desc: 'Open the Live Playroom on your laptop and pop up the QR code or 6-digit Game PIN. Guests join on their phones to view their role cheat-sheet, get live clue drops each round, and vote on who did it!',
-      highlights: [
-        'You control when each round’s clues and voting unlock from your laptop',
-        'Extra friends show up? They can join on the spot as “Detective [Their Name]”!',
-      ],
-      numBg: 'bg-brand-pink text-white shadow-lg shadow-brand-pink/40',
-      badgeClass: 'bg-brand-pink text-white',
-      topBar: 'from-brand-pink via-purple-500 to-amber-400',
-      borderHover: 'hover:border-brand-pink',
-      isDark: true,
-    },
-  ];
-
-  const coolFeatures = [
-    {
-      icon: '🕵️',
-      tag: 'Have More Than 6 Guests?',
-      title: 'Extra Guest Players (“Detective [Name]”)',
-      desc: 'Have extra friends or last-minute plus-ones come along? They can scan the QR code and join as “Detective [Their Name]” — getting interrogation prompts, live clues on their phone, and round voting at $0 extra!',
-      iconBg: 'bg-brand-pink text-white shadow-lg shadow-brand-pink/30',
-      tagBg: 'bg-brand-pink/20 text-brand-pink border border-brand-pink/30',
-      cardStyle:
-        'bg-brand-dark text-white border-2 border-brand-pink shadow-[0_20px_40px_-15px_rgba(254,4,198,0.28)]',
-      isDark: true,
-    },
-    {
-      icon: '📢',
-      tag: 'Host Plays Too',
-      title: '100% Spoiler-Free Host Mode',
-      desc: 'The killer’s identity stays sealed until the final reveal round, so you can take on a suspect role, sip your drink, and guess the murderer right alongside your guests.',
-      iconBg: 'bg-brand-blue text-white shadow-lg shadow-brand-blue/25',
-      tagBg: 'bg-brand-blue/10 text-brand-blue',
-      cardStyle: 'bg-white border-2 border-gray-100 hover:border-brand-blue',
-      isDark: false,
-    },
-    {
-      icon: '💻',
-      tag: 'Simple & Clean UI',
-      title: 'Host on a Laptop · Guests on Phones',
-      desc: 'You pace the rounds and decide when voting opens from your laptop, while everyone else gets a super clean, distraction-free mobile screen for their role and clues.',
-      iconBg: 'bg-purple-600 text-white shadow-lg shadow-purple-600/25',
-      tagBg: 'bg-purple-100 text-purple-700',
-      cardStyle: 'bg-white border-2 border-gray-100 hover:border-purple-500',
-      isDark: false,
-    },
-    {
-      icon: '📸',
-      tag: 'Tailored to Your Cast',
-      title: 'Custom CCTV, Texts & Voice Wiretaps',
-      desc: 'Your friends don’t just get a name swap — their custom costume portraits appear inside the crime-scene evidence photos, leaked group chats, and regional-accent audio clues.',
-      iconBg: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25',
-      tagBg: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-      cardStyle: 'bg-white border-2 border-gray-100 hover:border-emerald-500',
-      isDark: false,
-    },
-    {
-      icon: '✨',
-      tag: 'Works for Any Group',
-      title: 'Automatic Gender-Flex Casting',
-      desc: 'Hosting an all-girls hen party, a couples dinner, or a mixed group? Every role automatically adapts pronouns, titles, and costume guides to match the guest playing it.',
-      iconBg: 'bg-amber-500 text-white shadow-lg shadow-amber-500/25',
-      tagBg: 'bg-amber-50 text-amber-700 border border-amber-200',
-      cardStyle: 'bg-white border-2 border-gray-100 hover:border-amber-500',
-      isDark: false,
-    },
-    {
-      icon: '🛋️',
-      tag: '1 to 16+ Players',
-      title: 'Dinner Party OR Couch Detective Mode',
-      desc: 'Play as a full-cast dinner party where everyone acts out a character — or solve all the suspect dossiers and clues together on the sofa with 1–5 players (no acting required!).',
-      iconBg: 'bg-brand-pink text-white shadow-lg shadow-brand-pink/25',
-      tagBg: 'bg-brand-pink/10 text-brand-pink',
-      cardStyle: 'bg-white border-2 border-gray-100 hover:border-brand-pink',
-      isDark: false,
-    },
-  ];
-
-  const packIcons: Record<string, string> = {
-    hostGuide: '📖',
-    characterPackets: '🎭',
-    clues: '🕵️‍♀️',
-    evidence: '💬',
-    reveal: '🏆',
-    ready: '🖨️',
-  };
-
   return (
     <div className="bg-white overflow-hidden">
-      {/* Hero Header with Ambient Glow */}
-      <div className="relative pt-10 pb-12 lg:pt-16 lg:pb-16 overflow-hidden bg-white">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-pink/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-32 -left-24 w-80 h-80 bg-brand-blue/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="container mx-auto px-6 max-w-6xl relative z-10">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-brand-pink animate-ping" />
-              {dict.howItWorks.badge}
+      {/* =====================================================================
+          HERO HEADER
+      ===================================================================== */}
+      <div className="relative pt-10 pb-14 lg:pt-16 lg:pb-20 border-b border-gray-200 bg-white">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="grid lg:grid-cols-12 gap-8 items-end">
+            <div className="lg:col-span-8">
+              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 mb-6 text-[11px] font-black tracking-[0.22em] uppercase text-white bg-brand-dark rounded-full">
+                <span className="w-2 h-2 rounded-full bg-brand-pink" />
+                {dict.howItWorks.badge}
+              </div>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-brand-dark tracking-tighter uppercase leading-[0.9]">
+                From Your Group Chat
+                <br />
+                To <span className="text-brand-pink italic">Crime Scene.</span>
+              </h1>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-brand-dark mb-6 tracking-tighter uppercase leading-[0.95]">
-              How It Works,
-              <br />
-              <span className="text-brand-pink italic">Start to Party Night.</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-500 leading-relaxed font-semibold max-w-2xl border-l-4 border-brand-pink pl-6">
-              From creating your guests and generating custom clues to sending out pre-party character invites and launching Live Game Mode when everyone arrives.
-            </p>
+            <div className="lg:col-span-4">
+              <p className="text-base sm:text-lg text-gray-600 leading-relaxed font-semibold border-l-4 border-brand-pink pl-5">
+                Create your guests, pick a human-written story, generate custom clues around your friends in ~20 minutes, and launch Live Game Mode when everyone arrives.
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* =====================================================================
-          SECTION 1: THE 6-STEP HIGH-LEVEL FLOW (WITH COLOUR, VISUALS & MOVEMENT)
+          SECTION 1: THE 6-STEP VISUAL TIMELINE (ALTERNATING COLLAGES)
       ===================================================================== */}
-      <section className="relative py-12 lg:py-20 bg-gradient-to-b from-white via-brand-gray/70 to-white">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-tr from-brand-pink/10 via-brand-blue/10 to-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      <section className="relative py-20 lg:py-28 bg-white">
+        <div className="container mx-auto px-6 max-w-6xl relative">
+          {/* Central Vertical Timeline Spine on Desktop */}
+          <div className="hidden lg:block absolute left-1/2 top-8 bottom-8 w-0.5 bg-gray-200 -translate-x-1/2" />
 
-        <div className="container mx-auto px-6 max-w-6xl relative z-10">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {flowSteps.map((step, idx) => (
-              <div
-                key={step.num}
-                className={`group relative rounded-[2.25rem] overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl flex flex-col justify-between ${
-                  step.isDark
-                    ? 'bg-brand-dark text-white border-2 border-brand-pink shadow-[0_20px_45px_-15px_rgba(254,4,198,0.35)]'
-                    : `bg-white text-brand-dark border-2 border-gray-100 shadow-xl ${step.borderHover}`
-                }`}
-              >
-                {/* Vibrant Top Gradient Accent Strip */}
-                <div className={`h-2 w-full bg-gradient-to-r ${step.topBar}`} />
+          <div className="space-y-24 lg:space-y-32">
+            {/* ---------------------------------------------------------------
+                STEP 01: CREATE YOUR GUESTS
+            ---------------------------------------------------------------- */}
+            <div className="relative grid lg:grid-cols-12 gap-10 lg:gap-16 items-center group">
+              <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-brand-dark text-white border-4 border-white shadow-lg items-center justify-center font-black text-xs z-10 group-hover:bg-brand-pink transition-colors">
+                01
+              </div>
 
-                <div className="p-7 sm:p-8 flex-1 flex flex-col justify-between space-y-6">
-                  <div className="space-y-5">
-                    {/* Top Row: Solid Coloured Step Badge + Animated Connector Pill */}
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className={`w-12 h-12 rounded-2xl font-black text-lg flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 ${step.numBg}`}
-                        >
-                          {step.num}
-                        </span>
-                        {idx < 5 && (
-                          <span className="text-xs font-black uppercase tracking-widest text-gray-300 group-hover:text-brand-pink group-hover:translate-x-1 transition-all">
-                            →
-                          </span>
-                        )}
-                      </div>
-                      <span
-                        className={`px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${step.badgeClass}`}
+              {/* Left Copy */}
+              <div className="lg:col-span-5 lg:text-right space-y-4">
+                <span className="inline-block text-[11px] font-black uppercase tracking-[0.22em] text-brand-pink">
+                  Step 01 · Before the Party
+                </span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.98]">
+                  Create Your <span className="text-brand-pink italic">Guests.</span>
+                </h2>
+                <p className="text-base text-gray-500 font-semibold leading-relaxed">
+                  Add the friends coming to your party—enter their names, appearances (or upload a quick photo), accents, and an inside joke. Save them once and reuse them for future mystery nights.
+                </p>
+              </div>
+
+              <div className="hidden lg:block lg:col-span-2" />
+
+              {/* Right Visual Collage: Tilted Polaroid Guest Cards */}
+              <div className="lg:col-span-5">
+                <div className="relative py-4 px-2">
+                  <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                    {[
+                      {
+                        name: 'Sarah',
+                        trait: 'Always 15m late with an espresso martini',
+                        img: '/generated-avatars/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-6224c730c6c6.jpg',
+                        tilt: '-rotate-3 group-hover:-rotate-6',
+                      },
+                      {
+                        name: 'Jason',
+                        trait: 'Knows everyone’s office gossip',
+                        img: '/generated-avatars/da18ef00-ecdc-41e7-8c71-97d78046e43b-486590f0918d.jpg',
+                        tilt: 'rotate-2 translate-y-3 group-hover:translate-y-1',
+                      },
+                      {
+                        name: 'Chloe',
+                        trait: 'Brings up the 2023 Ibiza trip',
+                        img: '/generated-avatars/5f9b36e0-44ae-4c3d-9762-432c5bb17783-5518cb6b6215.jpg',
+                        tilt: 'rotate-3 group-hover:rotate-6',
+                      },
+                    ].map((g) => (
+                      <div
+                        key={g.name}
+                        className={`bg-white p-2.5 pb-3.5 rounded-2xl border-2 border-brand-dark shadow-[6px_6px_0px_#120914] transition-transform duration-300 ${g.tilt}`}
                       >
-                        {step.badge}
-                      </span>
-                    </div>
-
-                    {/* Visual Mini-Preview Banner inside Each Step Card */}
-                    {idx === 0 && (
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-50 via-fuchsia-50 to-rose-50 border border-brand-pink/20 flex items-center justify-between gap-3">
-                        <div className="flex items-center -space-x-2.5">
-                          {[
-                            '/generated-avatars/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-6224c730c6c6.jpg',
-                            '/generated-avatars/da18ef00-ecdc-41e7-8c71-97d78046e43b-486590f0918d.jpg',
-                            '/generated-avatars/5f9b36e0-44ae-4c3d-9762-432c5bb17783-5518cb6b6215.jpg',
-                          ].map((src, i) => (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              key={i}
-                              src={src}
-                              alt="Guest profile"
-                              className="w-10 h-10 rounded-full object-cover object-top border-2 border-white shadow-md group-hover:scale-105 transition-transform"
-                            />
-                          ))}
+                        <div className="aspect-[4/5] rounded-xl overflow-hidden bg-brand-dark mb-2.5">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={g.img}
+                            alt={g.name}
+                            className="w-full h-full object-cover object-top"
+                          />
                         </div>
-                        <span className="px-2.5 py-1 rounded-xl bg-white text-brand-pink text-[10px] font-black uppercase tracking-wider shadow-sm">
-                          + Add Traits &amp; Jokes
+                        <p className="text-xs font-black uppercase text-brand-dark">{g.name}</p>
+                        <p className="text-[10px] text-gray-500 font-semibold leading-tight mt-0.5 line-clamp-2">
+                          &ldquo;{g.trait}&rdquo;
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ---------------------------------------------------------------
+                STEP 02: PICK YOUR MYSTERY THEME
+            ---------------------------------------------------------------- */}
+            <div className="relative grid lg:grid-cols-12 gap-10 lg:gap-16 items-center group">
+              <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-brand-dark text-white border-4 border-white shadow-lg items-center justify-center font-black text-xs z-10 group-hover:bg-brand-pink transition-colors">
+                02
+              </div>
+
+              {/* Left Visual Collage: Overlapping Story Cover & Spice Stamp */}
+              <div className="lg:col-span-5 order-2 lg:order-1">
+                <div className="relative">
+                  <div className="rounded-3xl overflow-hidden border-2 border-brand-dark shadow-[8px_8px_0px_#fe04c6] -rotate-1 group-hover:rotate-0 transition-transform duration-300 bg-brand-dark">
+                    <div className="relative aspect-[16/10]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/moodboard/lotr/main-promo-murder.jpg"
+                        alt="Mystery Theme"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/20 to-transparent" />
+                      <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
+                            Human-Crafted Storylines
+                          </span>
+                          <p className="text-2xl font-black text-white uppercase tracking-tight">
+                            Love On The Rocks
+                          </p>
+                        </div>
+                        <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider">
+                          4 Spice Levels
                         </span>
                       </div>
-                    )}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                    {idx === 1 && (
-                      <div className="relative h-16 rounded-2xl overflow-hidden border border-brand-blue/20 shadow-sm">
+              <div className="hidden lg:block lg:col-span-2 order-2" />
+
+              {/* Right Copy */}
+              <div className="lg:col-span-5 order-1 lg:order-3 space-y-4">
+                <span className="inline-block text-[11px] font-black uppercase tracking-[0.22em] text-brand-pink">
+                  Step 02 · Choose the Vibe
+                </span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.98]">
+                  Pick Your <span className="text-brand-pink italic">Theme.</span>
+                </h2>
+                <p className="text-base text-gray-500 font-semibold leading-relaxed">
+                  Every plot, alibi, and twist is written by a human mystery author first so the clue logic is watertight. Pick the setting, difficulty, and spice level that fits your crowd—from work-friendly Clean to Spicy or Filthy.
+                </p>
+              </div>
+            </div>
+
+            {/* ---------------------------------------------------------------
+                STEP 03: ASSIGN YOUR GUESTS TO CHARACTERS
+            ---------------------------------------------------------------- */}
+            <div className="relative grid lg:grid-cols-12 gap-10 lg:gap-16 items-center group">
+              <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-brand-dark text-white border-4 border-white shadow-lg items-center justify-center font-black text-xs z-10 group-hover:bg-brand-pink transition-colors">
+                03
+              </div>
+
+              {/* Left Copy */}
+              <div className="lg:col-span-5 lg:text-right space-y-4">
+                <span className="inline-block text-[11px] font-black uppercase tracking-[0.22em] text-brand-pink">
+                  Step 03 · Match Your Crew
+                </span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.98]">
+                  Assign Your <span className="text-brand-pink italic">Cast.</span>
+                </h2>
+                <p className="text-base text-gray-500 font-semibold leading-relaxed">
+                  Match your friends to iconic character roles—or let our AI auto-cast them in one click. Every role automatically gender-flexes to fit any group mix, and you can auto-fill any empty slots with fictional suspects.
+                </p>
+              </div>
+
+              <div className="hidden lg:block lg:col-span-2" />
+
+              {/* Right Visual: Tactile Casting Stack */}
+              <div className="lg:col-span-5">
+                <div className="bg-brand-gray rounded-3xl p-5 border-2 border-brand-dark shadow-[8px_8px_0px_#120914] space-y-3 rotate-1 group-hover:rotate-0 transition-transform duration-300">
+                  {[
+                    {
+                      guest: 'Sarah',
+                      role: 'The Sister-in-Law',
+                      img: '/generated-avatars/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-6224c730c6c6.jpg',
+                      tag: 'Suspect',
+                    },
+                    {
+                      guest: 'Gabby',
+                      role: 'The Wife',
+                      img: '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-b130e47b4cee2149a7aad02dfc972e91.jpg',
+                      tag: 'Host Playing',
+                    },
+                    {
+                      guest: 'Jason',
+                      role: 'The Co-Worker',
+                      img: '/generated-avatars/da18ef00-ecdc-41e7-8c71-97d78046e43b-486590f0918d.jpg',
+                      tag: 'Suspect',
+                    },
+                  ].map((row) => (
+                    <div
+                      key={row.guest}
+                      className="bg-white rounded-2xl p-3 border border-gray-200 flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src="/moodboard/lotr/main-promo-murder.jpg"
-                          alt="Mystery Theme"
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          src={row.img}
+                          alt={row.guest}
+                          className="w-10 h-10 rounded-xl object-cover object-top border border-gray-200"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/80 via-brand-dark/40 to-transparent flex items-center justify-between px-4">
-                          <span className="text-[11px] font-black uppercase tracking-wider text-white">
-                            ✨ Clean · 🌶️ Mild · 🌶️🌶️ Spicy
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase">
-                            Themes
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {idx === 2 && (
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200/80 flex items-center justify-between gap-2">
-                        <span className="px-2.5 py-1 rounded-xl bg-white text-brand-dark text-[11px] font-black shadow-sm">
-                          👤 Sarah
-                        </span>
-                        <span className="text-purple-600 font-black text-xs group-hover:translate-x-1 transition-transform">
-                          ⚡ AI Match →
-                        </span>
-                        <span className="px-2.5 py-1 rounded-xl bg-purple-600 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
-                          🎭 The Sister-in-Law
-                        </span>
-                      </div>
-                    )}
-
-                    {idx === 3 && (
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 flex items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="px-2.5 py-1 rounded-lg bg-white text-emerald-700 text-[10px] font-black shadow-sm">
-                            📹 CCTV
-                          </span>
-                          <span className="px-2.5 py-1 rounded-lg bg-white text-emerald-700 text-[10px] font-black shadow-sm">
-                            💬 DMs
-                          </span>
-                          <span className="px-2.5 py-1 rounded-lg bg-white text-emerald-700 text-[10px] font-black shadow-sm">
-                            🎙️ Audio
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700">
-                          ~20 Mins
-                        </span>
-                      </div>
-                    )}
-
-                    {idx === 4 && (
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-black text-amber-900">
-                          👗 Outfit Guide + Role Blurb
-                        </span>
-                        <span className="px-2.5 py-1 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
-                          💬 1-Click Share
-                        </span>
-                      </div>
-                    )}
-
-                    {idx === 5 && (
-                      <div className="p-3.5 rounded-2xl bg-white/10 border border-brand-pink/40 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                          <span className="text-xs font-black tracking-wider text-white">
-                            PIN: 146 492
+                          <span className="text-sm font-black text-brand-dark">{row.guest}</span>
+                          <span className="text-brand-pink font-black">→</span>
+                          <span className="text-sm font-black uppercase text-brand-pink">
+                            {row.role}
                           </span>
                         </div>
-                        <span className="px-2.5 py-1 rounded-xl bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider">
-                          + Detective [Name]
-                        </span>
                       </div>
-                    )}
+                      <span className="px-2.5 py-1 rounded-full bg-brand-dark text-white text-[9px] font-black uppercase tracking-widest">
+                        {row.tag}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-                    {/* Title & Description */}
-                    <div className="space-y-2.5">
-                      <h2
-                        className={`text-2xl font-black uppercase tracking-tight leading-snug ${
-                          step.isDark ? 'text-white' : 'text-brand-dark'
-                        }`}
-                      >
-                        {step.title}
-                      </h2>
-                      <p
-                        className={`text-sm font-medium leading-relaxed ${
-                          step.isDark ? 'text-gray-300' : 'text-gray-500'
-                        }`}
-                      >
-                        {step.desc}
-                      </p>
+            {/* ---------------------------------------------------------------
+                STEP 04: GENERATE YOUR CUSTOM MYSTERY & CLUES
+            ---------------------------------------------------------------- */}
+            <div className="relative grid lg:grid-cols-12 gap-10 lg:gap-16 items-center group">
+              <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-brand-dark text-white border-4 border-white shadow-lg items-center justify-center font-black text-xs z-10 group-hover:bg-brand-pink transition-colors">
+                04
+              </div>
+
+              {/* Left Visual Collage: Layered CCTV Photo + Intercepted Chat Bubble */}
+              <div className="lg:col-span-5 order-2 lg:order-1">
+                <div className="relative pt-2 pb-8">
+                  {/* Base CCTV Evidence Frame */}
+                  <div className="rounded-3xl overflow-hidden border-2 border-brand-dark bg-brand-dark shadow-[8px_8px_0px_#120914] -rotate-2 group-hover:-rotate-1 transition-transform">
+                    <div className="relative h-48">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/moodboard/lotr/caught-on-camera.jpg"
+                        alt="Custom CCTV Clue"
+                        className="w-full h-full object-cover opacity-90"
+                      />
+                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/80 text-brand-pink font-mono text-[10px] font-bold">
+                        ● REC · CAM 02 · 19:55:14
+                      </div>
                     </div>
                   </div>
 
-                  {/* Bottom Checkmark Highlights */}
-                  <ul
-                    className={`space-y-2 pt-5 border-t ${
-                      step.isDark ? 'border-white/15' : 'border-gray-100'
-                    }`}
-                  >
-                    {step.highlights.map((h, i) => (
-                      <li
-                        key={i}
-                        className={`flex items-start gap-2 text-xs font-bold leading-snug ${
-                          step.isDark ? 'text-gray-100' : 'text-brand-dark'
-                        }`}
-                      >
-                        <span className="text-brand-pink font-black shrink-0">✓</span>
-                        <span>{h}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {/* Overlapping iMessage Chat Card */}
+                  <div className="relative -mt-12 ml-6 sm:ml-10 bg-white rounded-2xl p-4 border-2 border-brand-dark shadow-[6px_6px_0px_#fe04c6] rotate-1 group-hover:rotate-0 transition-transform">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-brand-pink">
+                        Leaked Text Thread · 7:32 PM
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400">+ Voice Wiretaps</span>
+                    </div>
+                    <p className="text-xs font-bold text-brand-dark leading-snug">
+                      &ldquo;Meet me by the coat closet before dinner. Someone left a bank transfer in Luke&apos;s coat pocket...&rdquo;
+                    </p>
+                  </div>
                 </div>
               </div>
-            ))}
+
+              <div className="hidden lg:block lg:col-span-2 order-2" />
+
+              {/* Right Copy */}
+              <div className="lg:col-span-5 order-1 lg:order-3 space-y-4">
+                <span className="inline-block text-[11px] font-black uppercase tracking-[0.22em] text-brand-pink">
+                  Step 04 · Ready in ~20 Minutes
+                </span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.98]">
+                  Generate Custom <span className="text-brand-pink italic">Clues.</span>
+                </h2>
+                <p className="text-base text-gray-500 font-semibold leading-relaxed">
+                  Our engine builds your entire mystery around your cast—generating custom costume portraits, crime-scene CCTV photos with your friends&apos; faces, leaked text threads, and regional-accent audio wiretaps.
+                </p>
+              </div>
+            </div>
+
+            {/* ---------------------------------------------------------------
+                STEP 05: SEND CHARACTER INVITES BEFORE THE NIGHT
+            ---------------------------------------------------------------- */}
+            <div className="relative grid lg:grid-cols-12 gap-10 lg:gap-16 items-center group">
+              <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-brand-dark text-white border-4 border-white shadow-lg items-center justify-center font-black text-xs z-10 group-hover:bg-brand-pink transition-colors">
+                05
+              </div>
+
+              {/* Left Copy */}
+              <div className="lg:col-span-5 lg:text-right space-y-4">
+                <span className="inline-block text-[11px] font-black uppercase tracking-[0.22em] text-brand-pink">
+                  Step 05 · Build the Hype
+                </span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.98]">
+                  Invite Your <span className="text-brand-pink italic">Friends.</span>
+                </h2>
+                <p className="text-base text-gray-500 font-semibold leading-relaxed">
+                  Drop a single 1-click link into your group chat before the party. Each guest taps their name to preview their spoiler-free character blurb and outfit &amp; dress code guide so everyone arrives in character.
+                </p>
+              </div>
+
+              <div className="hidden lg:block lg:col-span-2" />
+
+              {/* Right Visual: Pre-Party Character & Outfit Invite Card */}
+              <div className="lg:col-span-5">
+                <div className="bg-brand-dark text-white rounded-3xl p-6 border-2 border-brand-dark shadow-[8px_8px_0px_#fe04c6] -rotate-1 group-hover:rotate-0 transition-transform space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/15 pb-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                      Pre-Party Character Invite · For Sarah
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-white text-[9px] font-black uppercase">
+                      Spoiler-Free
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xl font-black uppercase tracking-tight">
+                      Your Role: The Sister-in-Law
+                    </p>
+                    <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+                      What to Wear: Sleek winter chic—an emerald silk dress or tailored velvet blazer, silver snowflake hairpin, and dark berry lipstick.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-brand-pink">
+                    <span>Shared via 1-Click Group Chat Link</span>
+                    <span>→</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ---------------------------------------------------------------
+                STEP 06: LAUNCH LIVE GAME MODE WHEN EVERYONE ARRIVES
+            ---------------------------------------------------------------- */}
+            <div className="relative grid lg:grid-cols-12 gap-10 lg:gap-16 items-center group">
+              <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-brand-pink text-white border-4 border-white shadow-lg items-center justify-center font-black text-xs z-10">
+                06
+              </div>
+
+              {/* Left Visual: Live Game PIN + Extra Guest Detective Join */}
+              <div className="lg:col-span-5 order-2 lg:order-1">
+                <div className="bg-brand-pink text-white rounded-3xl p-6 border-2 border-brand-dark shadow-[8px_8px_0px_#120914] rotate-1 group-hover:rotate-0 transition-transform space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="px-3 py-1 rounded-full bg-brand-dark text-white text-[10px] font-black uppercase tracking-widest">
+                      Live Game PIN · 146 492
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white">
+                      6/6 Cast + 2 Detectives
+                    </span>
+                  </div>
+                  <div className="bg-brand-dark text-white rounded-2xl p-4 space-y-1.5">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                      Extra Friend Joining the Party?
+                    </p>
+                    <p className="text-base font-black uppercase tracking-tight">
+                      Join as &ldquo;Detective Sarah&rdquo; →
+                    </p>
+                    <p className="text-xs text-gray-300 leading-snug">
+                      Scan the QR code to get an official Detective Briefing, interrogate suspects, see every live clue, and vote in every round.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="hidden lg:block lg:col-span-2 order-2" />
+
+              {/* Right Copy */}
+              <div className="lg:col-span-5 order-1 lg:order-3 space-y-4">
+                <span className="inline-block text-[11px] font-black uppercase tracking-[0.22em] text-brand-pink">
+                  Step 06 · Party Night
+                </span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.98]">
+                  Launch Live <span className="text-brand-pink italic">Game Mode.</span>
+                </h2>
+                <p className="text-base text-gray-500 font-semibold leading-relaxed">
+                  Open the Live Playroom on your laptop when everyone arrives. Guests scan the QR code on their phones to view their role cheat-sheet, get live clue drops each round, and vote on who did it—while extra friends join on the spot as <strong>Detective [Their Name]</strong>.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* =====================================================================
-          SECTION 2: INTERACTIVE CUSTOM MYSTERY PREVIEW
+          SECTION 2: INTERACTIVE LIVE GAME ROOM PREVIEW
       ===================================================================== */}
       <InteractivePackPreview locale={locale} />
 
       {/* =====================================================================
-          SECTION 3: COOL FEATURES BUILT FOR PARTY NIGHT
+          SECTION 3: COOL FEATURES — ASYMMETRIC BENTO GRID (NO EMOJI SQUARES)
       ===================================================================== */}
-      <section className="py-24 lg:py-32 bg-white relative overflow-hidden">
-        <div className="container mx-auto px-6 max-w-6xl space-y-24">
-          <div className="space-y-14">
-            <div className="text-center max-w-3xl mx-auto space-y-4">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink text-[11px] font-black uppercase tracking-[0.2em]">
+      <section className="py-24 lg:py-32 bg-white">
+        <div className="container mx-auto px-6 max-w-6xl space-y-16">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink mb-3">
                 Built for Effortless Hosting
-              </div>
-              <h2 className="text-3xl sm:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
-                Cool Features That Make It <span className="text-brand-pink italic">Unforgettable.</span>
-              </h2>
-              <p className="text-gray-500 font-semibold text-base sm:text-lg leading-relaxed">
-                Everything is designed so you spend zero time stressing over rules and 100% of the night laughing, mingling, and accusing your friends.
               </p>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-brand-dark uppercase tracking-tight leading-[0.95]">
+                Why Hosts Love <span className="text-brand-pink italic">Playing It.</span>
+              </h2>
+            </div>
+            <p className="text-gray-500 font-semibold text-base max-w-md leading-relaxed">
+              Designed so you spend zero time reading rules and 100% of the night laughing, mingling, and accusing your friends.
+            </p>
+          </div>
+
+          {/* Asymmetric 4-Card Bento Grid */}
+          <div className="grid lg:grid-cols-12 gap-6">
+            {/* BENTO 1 (7 Cols — Deep Party Ink): Extra Guest Players ("Detective [Name]") */}
+            <div className="lg:col-span-7 bg-brand-dark text-white rounded-[2.5rem] p-8 sm:p-10 border-2 border-brand-dark shadow-xl flex flex-col justify-between gap-8 relative overflow-hidden group">
+              <div className="space-y-4 max-w-xl">
+                <span className="inline-block px-3.5 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                  Have More Than 6 Guests? · $0 Extra
+                </span>
+                <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-none">
+                  Extra Friends Play Along as <span className="text-brand-pink italic">&ldquo;Detective [Name]&rdquo;</span>
+                </h3>
+                <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed">
+                  Originally planned for 6 people and extra friends or plus-ones show up? They don&apos;t need a pre-assigned character role to join the party. They scan the QR code, type their name, and get a custom <strong>Suspect Interrogation Lineup</strong>, every live clue drop on their phone, and round-by-round voting.
+                </p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3 pt-4 border-t border-white/15">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink mb-1">
+                    Official Detective Briefing
+                  </p>
+                  <p className="text-xs text-gray-200 font-medium">
+                    Tailored &ldquo;Ask Them Tonight&rdquo; interrogation prompts for every suspect in the room.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink mb-1">
+                    Full Clues, Voting &amp; Leaderboard
+                  </p>
+                  <p className="text-xs text-gray-200 font-medium">
+                    Votes in every round and competes on the final room Detective Leaderboard.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
-              {coolFeatures.map((feat) => (
-                <div
-                  key={feat.title}
-                  className={`rounded-[2.25rem] p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl flex flex-col justify-between space-y-4 group ${feat.cardStyle}`}
+            {/* BENTO 2 (5 Cols — Electric Brand Pink): 100% Spoiler-Free Host Mode */}
+            <div className="lg:col-span-5 bg-brand-pink text-white rounded-[2.5rem] p-8 sm:p-10 border-2 border-brand-dark shadow-[8px_8px_0px_#120914] flex flex-col justify-between gap-6">
+              <div className="space-y-4">
+                <span className="inline-block px-3.5 py-1 rounded-full bg-brand-dark text-white text-[10px] font-black uppercase tracking-widest">
+                  Host Plays Too
+                </span>
+                <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-none">
+                  100% Spoiler-Free for the Host.
+                </h3>
+                <p className="text-sm sm:text-base text-white/90 font-semibold leading-relaxed">
+                  In traditional murder mystery kits, the host has to sit out or already knows who did it. We seal the killer&apos;s identity until the final reveal round—so you play a full suspect role and solve the crime alongside your guests.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-brand-dark text-white flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider">
+                  Killer Sealed Until Final Reveal
+                </span>
+                <span className="text-brand-pink font-black text-sm">✓</span>
+              </div>
+            </div>
+
+            {/* BENTO 3 (5 Cols — Crisp White + Hard Shadow): Host on Laptop, Guests on Phones */}
+            <div className="lg:col-span-5 bg-white text-brand-dark rounded-[2.5rem] p-8 sm:p-10 border-2 border-brand-dark shadow-[8px_8px_0px_#120914] flex flex-col justify-between gap-6">
+              <div className="space-y-4">
+                <span className="inline-block px-3.5 py-1 rounded-full bg-brand-gray text-brand-dark text-[10px] font-black uppercase tracking-widest border border-gray-300">
+                  Effortless Pacing
+                </span>
+                <h3 className="text-3xl font-black uppercase tracking-tight leading-none">
+                  Host on a <span className="text-brand-pink italic">Laptop.</span>
+                  <br />
+                  Guests on <span className="text-brand-pink italic">Phones.</span>
+                </h3>
+                <p className="text-sm text-gray-600 font-semibold leading-relaxed">
+                  Only the host sees the round controller on their laptop and decides when voting opens for each round—keeping guest phones super clean, simple, and distraction-free.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-gray-200 flex items-center justify-between text-xs font-black uppercase tracking-wider text-brand-dark">
+                <span>Zero App Store Downloads</span>
+                <span className="text-brand-pink">Instant QR Join</span>
+              </div>
+            </div>
+
+            {/* BENTO 4 (7 Cols — Warm Gray + Photo Split): Gender-Flex & 2 Ways to Play */}
+            <div className="lg:col-span-7 bg-brand-gray text-brand-dark rounded-[2.5rem] p-8 sm:p-10 border-2 border-gray-200 flex flex-col justify-between gap-6">
+              <div className="grid sm:grid-cols-12 gap-6 items-center">
+                <div className="sm:col-span-7 space-y-4">
+                  <span className="inline-block px-3.5 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                    1 to 16+ Players · Any Group Mix
+                  </span>
+                  <h3 className="text-3xl font-black uppercase tracking-tight leading-none">
+                    Gender-Flex Casting &amp; <span className="text-brand-pink italic">Two Ways to Play.</span>
+                  </h3>
+                  <p className="text-sm text-gray-600 font-semibold leading-relaxed">
+                    Every character role automatically adapts pronouns, titles, and costume guides to match any guest gender—and you can host a full-cast <strong>Dinner Party Roleplay</strong> or solve all the dossiers together on the sofa in <strong>Couch Detective Mode</strong>.
+                  </p>
+                </div>
+
+                <div className="sm:col-span-5">
+                  <div className="rounded-2xl overflow-hidden border-2 border-brand-dark shadow-[6px_6px_0px_#120914] rotate-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/moodboard/lotr/cocktail-hour.jpg"
+                      alt="Murder Mystery Dinner Party"
+                      className="w-full h-44 object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          SECTION 4: WHAT'S IN THE PACK (2-COLUMN EDITORIAL SPLIT)
+      ===================================================================== */}
+      <section className="py-20 lg:py-28 bg-brand-gray border-t border-gray-200">
+        <div className="container mx-auto px-6 max-w-6xl space-y-16">
+          <div className="grid lg:grid-cols-12 gap-12 items-start">
+            <div className="lg:col-span-5 space-y-4">
+              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink block">
+                Digital + Print Included
+              </span>
+              <h2 className="text-4xl sm:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.95]">
+                Everything Inside <span className="text-brand-pink italic">Your Pack.</span>
+              </h2>
+              <p className="text-base text-gray-500 font-semibold leading-relaxed">
+                Every mystery includes both our live interactive Playroom and formatted PDF booklets you can print at home.
+              </p>
+              <div className="pt-4">
+                <Link
+                  href={`/${locale}/themes`}
+                  className="inline-block px-8 py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-lg"
                 >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div
-                        className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ${feat.iconBg}`}
-                      >
-                        {feat.icon}
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${feat.tagBg}`}
-                      >
-                        {feat.tag}
-                      </span>
-                    </div>
-                    <h3
-                      className={`text-xl font-black uppercase tracking-tight ${
-                        feat.isDark ? 'text-white' : 'text-brand-dark'
-                      }`}
-                    >
-                      {feat.title}
+                  Browse Mystery Themes →
+                </Link>
+              </div>
+            </div>
+
+            <div className="lg:col-span-7 bg-white rounded-[2.5rem] border-2 border-brand-dark shadow-[8px_8px_0px_#120914] divide-y divide-gray-200 overflow-hidden">
+              {Object.entries(dict.howItWorks.packContents.items).map(([key, item], i) => (
+                <div
+                  key={key}
+                  className="p-6 sm:p-7 flex items-start gap-5 hover:bg-brand-gray/50 transition-colors"
+                >
+                  <span className="text-xl font-black text-brand-pink shrink-0 mt-0.5">
+                    0{i + 1}
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">
+                      {item.title}
                     </h3>
-                    <p
-                      className={`text-sm font-medium leading-relaxed ${
-                        feat.isDark ? 'text-gray-300' : 'text-gray-500'
-                      }`}
-                    >
-                      {feat.desc}
+                    <p className="text-sm text-gray-500 font-medium leading-relaxed mt-1">
+                      {item.desc}
                     </p>
                   </div>
                 </div>
@@ -467,41 +603,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
             </div>
           </div>
 
-          {/* =================================================================
-              SECTION 4: WHAT'S IN THE PACK
-          ================================================================== */}
-          <div className="py-14 sm:py-20 px-8 sm:px-12 lg:px-20 bg-brand-gray rounded-[2.5rem] lg:rounded-[3rem] border-2 border-gray-100">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark mb-4 uppercase tracking-tight">
-                {dict.howItWorks.packContents.title.split(',').map((part, i) => (
-                  <span key={i} className={i === 1 ? 'text-brand-pink italic' : ''}>
-                    {part}
-                  </span>
-                ))}
-              </h2>
-              <p className="text-gray-500 font-bold max-w-xl mx-auto">
-                {dict.howItWorks.packContents.subtitle}
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {Object.entries(dict.howItWorks.packContents.items).map(([key, item], i) => (
-                <div
-                  key={i}
-                  className="card-branded p-9 group hover:border-brand-pink hover:-translate-y-1.5 transition-all"
-                >
-                  <div className="w-12 h-12 bg-brand-pink rounded-2xl mb-6 group-hover:scale-110 transition-transform flex items-center justify-center shadow-lg shadow-brand-pink/20 text-xl">
-                    {packIcons[key] || '✨'}
-                  </div>
-                  <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-3">
-                    {item.title}
-                  </h3>
-                  <p className="text-gray-500 font-semibold leading-relaxed text-sm">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Final CTA */}
+          {/* Final CTA Banner */}
           <div className="text-center bg-brand-dark rounded-[2.5rem] lg:rounded-[3rem] p-10 sm:p-16 lg:p-24 relative overflow-hidden shadow-2xl">
             <div className="relative z-10">
               <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white mb-8 uppercase tracking-tighter leading-[0.95]">
@@ -528,9 +630,6 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                   {dict.howItWorks.cta.ctaPricing}
                 </Link>
               </div>
-            </div>
-            <div className="absolute inset-0 opacity-10 pointer-events-none">
-              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_2px_2px,rgba(255,255,255,0.15)_1px,transparent_0)] [background-size:24px_24px]"></div>
             </div>
           </div>
         </div>
