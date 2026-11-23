@@ -385,28 +385,28 @@ export default async function HomePage(props: {
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 border-t border-l border-gray-300/80 bg-white shadow-sm">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
                 {
-                  num: 'I',
+                  num: '01',
                   stage: 'Pre-Party Mingle',
                   title: 'QR Join & Role Claim',
-                  desc: 'Guests scan the QR code to claim their character card—or join as Detective [Name] if you have more than 6 guests—and mingle with icebreakers.',
+                  desc: 'Guests scan the QR code to claim their character card — or join as Detective [Name] if you have more than 6 guests — and mingle with icebreakers.',
                 },
                 {
-                  num: 'II',
+                  num: '02',
                   stage: 'Rounds 1–3 Clues',
                   title: 'Host Unlocks Clues',
                   desc: 'As you unlock each round on your laptop, intercepted text threads, CCTV stills, and voice wiretaps drop onto every guest’s phone.',
                 },
                 {
-                  num: 'III',
+                  num: '03',
                   stage: 'Host-Gated Voting',
                   title: 'Host Opens Ballot',
                   desc: 'You decide when voting opens for each round. Suspects and Guest Detectives lock in their vote while you watch the live vote counter.',
                 },
                 {
-                  num: 'IV',
+                  num: '04',
                   stage: 'Final Reveal',
                   title: 'Confession & Scores',
                   desc: 'With one click, broadcast the Killer’s Confession, full timeline solution, and Combined Detective Leaderboard to every phone.',
@@ -414,21 +414,21 @@ export default async function HomePage(props: {
               ].map((item) => (
                 <div
                   key={item.num}
-                  className="p-8 border-r border-b border-gray-300/80 bg-white flex flex-col justify-between"
+                  className="card-branded p-7 border-2 border-gray-100 hover:border-brand-pink transition-all flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <span className="font-serif italic text-sm tracking-widest text-brand-pink">
-                        No. {item.num}
+                    <div className="flex items-center justify-between mb-5">
+                      <span className="text-3xl font-black text-gray-200 group-hover:text-brand-pink transition-colors">
+                        {item.num}
                       </span>
-                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                      <span className="px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[9px] font-black uppercase tracking-widest">
                         {item.stage}
                       </span>
                     </div>
-                    <h4 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-3">
+                    <h4 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-2.5">
                       {item.title}
                     </h4>
-                    <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold leading-relaxed">
                       {item.desc}
                     </p>
                   </div>

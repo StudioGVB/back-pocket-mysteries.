@@ -31,119 +31,83 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
     {
       ...dict.howItWorks.steps.pick,
       step: '01',
+      accent: 'bg-brand-pink',
     },
     {
       ...dict.howItWorks.steps.guests,
       step: '02',
+      accent: 'bg-brand-blue',
     },
     {
       ...dict.howItWorks.steps.download,
       step: '03',
+      accent: 'bg-emerald-500',
     },
   ];
+
+  const packIcons: Record<string, string> = {
+    hostGuide: '📖',
+    characterPackets: '🎭',
+    clues: '🕵️‍♀️',
+    evidence: '💬',
+    reveal: '🏆',
+    ready: '🖨️',
+  };
 
   const partyRunOfShow = [
     {
-      num: 'I',
-      stage: 'Stage 00 · Pre-Party Mingle',
-      title: 'QR Join, Character Claim & Extra Guest Detectives',
-      hostAction:
-        'Open the Playroom on your laptop and display the full-screen QR Poster or 6-digit Game PIN while guests arrive with welcome drinks.',
-      guestView:
-        'Guests tap their character card in the mobile Lobby—or extra friends type their name at the bottom to join as Detective [Their Name]. Everyone reads their Role Cheat-Sheet and icebreakers while clues stay locked.',
-    },
-    {
-      num: 'II',
-      stage: 'Stages 01 & 02 · Round 1',
-      title: 'Round 1 Evidence Drop & First Suspect Ballot',
-      hostAction:
-        'Click “Unlock Round 1 Clues” on your laptop and read the brief spoiler-free Round 1 script. Once the room has mingled and inspected the evidence, click “Open Round 1 Voting”.',
-      guestView:
-        'Guest phones automatically open the clean Round 1 Clue Feed (leaked text threads, hallway CCTV stills, and voice wiretaps). When you open voting, the Round 1 Suspect Ballot appears at the top of their screen.',
-    },
-    {
-      num: 'III',
-      stage: 'Stages 03 & 04 · Round 2',
-      title: 'Forensic Contradictions & 15-Minute Alibi Gaps',
-      hostAction:
-        'Over the main course or second round of drinks, unlock Round 2 Clues on your laptop to drop deeper forensic evidence and timeline contradictions, then open the Round 2 Ballot.',
-      guestView:
-        'Round 2 evidence drops straight onto every phone (with Round 1 clues accessible in one tap). Suspects and Extra Guest Detectives cross-examine each other and lock in their Round 2 vote.',
-    },
-    {
-      num: 'IV',
-      stage: 'Stages 05 & 06 · Round 3 & Final Vote',
-      title: 'Decisive Proof & Final Killer Accusation',
-      hostAction:
-        'Unlock the decisive Round 3 clues and open the Final Accusation Ballot. Watch the live vote counter on your laptop (e.g. 8 of 8 Votes In) as every player locks in their final theory.',
-      guestView:
-        'Players align the final timestamps to eliminate the remaining decoys and lock in their Final Killer Accusation and motive on their phones.',
-    },
-    {
-      num: 'V',
-      stage: 'Stage 07 · Final Reveal',
-      title: 'The Confession & Combined Room Leaderboard',
-      hostAction:
-        'Click “Trigger Final Reveal” on your laptop to broadcast the solution to every phone in the room—and discover who the killer is right alongside your guests.',
-      guestView:
-        'Every phone unlocks the Killer’s Confession, the complete Crime Timeline Breakdown, each player’s Personal Detective Scorecard, and the Combined Cast + Guest Detective Leaderboard.',
-    },
-  ];
-
-  const portalCapabilities = [
-    {
       num: '01',
-      meta: 'Instant Table Access',
-      title: 'QR Code & 6-Digit PIN Join',
-      desc: 'No app downloads or guest accounts required. Guests scan once with their phone camera to enter the lobby and claim their character.',
+      stage: 'Welcome Drinks & Mingle',
+      title: 'Guests Scan the QR Code & Claim Their Role (or Join as “Detective [Name]”)',
+      hostAction:
+        'Open the Playroom on your laptop and pop up the full-screen QR Poster or 6-digit Game PIN while everyone arrives and grabs a drink.',
+      guestView:
+        'Guests tap their character card in the mobile Lobby — or extra friends type their name at the bottom to join as Detective [Their Name]. Everyone gets their Role Cheat-Sheet and icebreakers while clues stay locked.',
     },
     {
       num: '02',
-      meta: 'Mobile Role Dossier',
-      title: 'Scannable Party Cheat-Sheet',
-      desc: 'Each guest sees how to play their role, their hidden secret at eye level, and tap-to-reveal conversation prompts for specific friends in the room.',
+      stage: 'Round 1 · Clues & First Vote',
+      title: 'Round 1 Evidence Drops & You Open the First Suspect Ballot',
+      hostAction:
+        'Tap “Unlock Round 1 Clues” on your laptop and read the brief spoiler-free Round 1 script. Once everyone has mingled and inspected the clues, tap “Open Round 1 Voting”.',
+      guestView:
+        'Guest phones automatically open the Round 1 Clue Feed (leaked texts, CCTV photos & voice wiretaps). When you open voting, the Round 1 Suspect Ballot pops up right at the top of their screen!',
     },
     {
       num: '03',
-      meta: 'Have More Than 6 Guests?',
-      title: 'Unlimited “Detective [Name]” Players',
-      desc: 'Extra friends or last-minute plus-ones join free on their phones as Detective [Their Name] with a Suspect Interrogation Lineup, live clues, and round voting.',
+      stage: 'Rounds 2 & 3 · Deeper Secrets',
+      title: 'Forensic Contradictions, Alibi Cracks & Final Accusations',
+      hostAction:
+        'Over dinner or the next round of drinks, unlock Round 2 and Round 3 clues on your laptop, then open the Final Accusation Vote and watch the live vote counter (e.g. 8/8 Votes In).',
+      guestView:
+        'New forensic reports and 15-minute timeline gaps drop onto every phone. Suspects and Extra Guest Detectives grill each other and lock in their final killer accusation.',
     },
     {
       num: '04',
-      meta: 'Multi-Modal Evidence',
-      title: 'Texts, CCTV & Voice Wiretaps',
-      desc: 'Clues drop round by round onto guest phones—including intercepted iMessage threads, crime-scene CCTV photos, and regional-accent audio wiretaps.',
-    },
-    {
-      num: '05',
-      meta: 'Laptop Pacing Controls',
-      title: 'Host-Gated Clues & Voting',
-      desc: 'Only the host sees the stage controller on their laptop and decides when voting opens for each round, while playing spoiler-free as a suspect.',
-    },
-    {
-      num: '06',
-      meta: 'End-of-Night Scoring',
-      title: 'Combined Detective Leaderboard',
-      desc: 'At the Final Reveal, both character suspects and extra Guest Detectives are scored across Rounds 1–3 on the shared room leaderboard.',
+      stage: 'The Big Finale',
+      title: 'The Killer’s Confession & Combined Detective Leaderboard',
+      hostAction:
+        'Tap “Trigger Final Reveal” on your laptop to broadcast the solution to every phone in the room — and find out who the killer is right alongside your friends!',
+      guestView:
+        'Every phone unlocks the Killer’s Dramatic Confession, the full crime timeline solution, Personal Scorecards, and the Combined Cast + Guest Detective Leaderboard.',
     },
   ];
 
   return (
     <div className="bg-white">
-      {/* Editorial Hero Header */}
-      <div className="pt-10 pb-14 lg:pt-16 lg:pb-20 border-b border-gray-200">
+      {/* Fun, High-Energy Hero Header */}
+      <div className="relative pt-8 pb-12 lg:pt-16 lg:pb-20 overflow-hidden bg-white">
         <div className="container mx-auto px-6 max-w-6xl">
-          <div className="max-w-4xl">
-            <p className="text-[11px] font-black tracking-[0.25em] uppercase text-brand-pink mb-5">
-              {dict.howItWorks.badge} · Host on Laptop, Guests on Phones
-            </p>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-brand-dark mb-8 tracking-tighter uppercase leading-[0.92]">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-[11px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/10 rounded-full">
+              {dict.howItWorks.badge} · Ready in ~20 Mins
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-brand-dark mb-6 tracking-tighter uppercase leading-[0.95]">
               {dict.howItWorks.title.split(',')[0]},
               <br />
               <span className="text-brand-pink italic">{dict.howItWorks.title.split(',')[1]}</span>
             </h1>
-            <p className="text-lg sm:text-xl text-gray-500 leading-relaxed font-medium max-w-2xl border-l-4 border-brand-pink pl-6">
+            <p className="text-lg sm:text-xl text-gray-500 leading-relaxed font-medium max-w-2xl">
               {dict.howItWorks.subtitle}
             </p>
           </div>
@@ -151,179 +115,179 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
       </div>
 
       {/* =====================================================================
-          SECTION 1: 3-STEP PRE-PARTY SETUP (~20 MINUTES)
+          SECTION 1: 3-STEP PRE-PARTY SETUP
       ===================================================================== */}
-      <section className="py-20 lg:py-28 bg-white">
-        <div className="container mx-auto px-6 max-w-6xl space-y-24">
+      <div className="container mx-auto px-6 max-w-6xl pb-24 lg:pb-32">
+        <div className="space-y-28">
           {steps.map((item, i) => (
             <div
               key={i}
-              className={`grid lg:grid-cols-12 gap-12 lg:gap-16 items-center ${
-                i % 2 === 1 ? 'lg:[&>*:first-child]:order-2' : ''
+              className={`flex flex-col lg:flex-row gap-14 lg:items-center ${
+                i % 2 === 1 ? 'lg:flex-row-reverse' : ''
               }`}
             >
-              {/* Copy Column */}
-              <div className="lg:col-span-6 space-y-6">
-                <div className="flex items-center gap-4">
-                  <span className="font-serif italic text-base tracking-widest text-brand-pink">
-                    Step {item.step}
-                  </span>
-                  <span className="h-px w-12 bg-gray-300" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                    {i === 0
-                      ? 'Theme, Spice & Difficulty'
-                      : i === 1
-                      ? 'Flexible Cast & Gender-Flex'
-                      : 'Live Game PIN & Print PDFs'}
-                  </span>
+              <div className="flex-1">
+                <div
+                  className={`inline-block px-4 py-1 rounded-full text-white font-bold text-sm ${item.accent} mb-5`}
+                >
+                  STEP {item.step}
                 </div>
-
-                <h2 className="text-3xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight leading-[1.05]">
+                <h2 className="text-3xl sm:text-4xl font-black text-brand-dark mb-5 uppercase tracking-tight leading-[1.1]">
                   {item.title}
                 </h2>
-
-                <p className="text-base sm:text-lg text-gray-500 leading-relaxed font-medium">
+                <p className="text-base sm:text-lg text-gray-500 leading-relaxed font-medium mb-6">
                   {item.desc}
                 </p>
-
-                <ul className="space-y-3 pt-2 border-t border-gray-200">
+                <ul className="space-y-3.5">
                   {item.bullets.map((feat, j) => (
-                    <li
-                      key={j}
-                      className="flex items-start gap-3 text-brand-dark font-bold text-sm sm:text-base"
-                    >
-                      <span className="text-brand-pink font-black">—</span>
+                    <li key={j} className="flex items-start gap-3 text-brand-dark font-bold">
+                      <div
+                        className={`mt-0.5 w-5 h-5 rounded-full ${item.accent} flex items-center justify-center text-[10px] text-white shrink-0`}
+                      >
+                        ✓
+                      </div>
                       <span>{feat}</span>
                     </li>
                   ))}
                   {i === 1 && (
-                    <li className="flex items-start gap-3 text-brand-dark font-bold text-sm sm:text-base">
-                      <span className="text-brand-pink font-black">—</span>
+                    <li className="flex items-start gap-3 text-brand-dark font-bold">
+                      <div
+                        className={`mt-0.5 w-5 h-5 rounded-full ${item.accent} flex items-center justify-center text-[10px] text-white shrink-0`}
+                      >
+                        ✓
+                      </div>
                       <span>
-                        Bidirectional Gender-Flex Casting adapts pronouns, titles, and outfits to any group mix
+                        Gender-Flex Casting adapts pronouns, titles &amp; outfits to any group mix
                       </span>
                     </li>
                   )}
                   {i === 2 && (
-                    <li className="flex items-start gap-3 text-brand-dark font-bold text-sm sm:text-base">
-                      <span className="text-brand-pink font-black">—</span>
+                    <li className="flex items-start gap-3 text-brand-dark font-bold">
+                      <div
+                        className={`mt-0.5 w-5 h-5 rounded-full ${item.accent} flex items-center justify-center text-[10px] text-white shrink-0`}
+                      >
+                        ✓
+                      </div>
                       <span>
-                        Have more than 6 guests? Unlimited extra friends join free as &ldquo;Detective [Their Name]&rdquo;
+                        Have more than 6 guests? Extra friends join free as &ldquo;Detective [Their Name]&rdquo;
                       </span>
                     </li>
                   )}
                 </ul>
               </div>
 
-              {/* Visual Column */}
-              <div className="lg:col-span-6">
+              <div className="flex-1">
                 {i === 0 && (
-                  <div className="border border-gray-300/80 bg-white shadow-sm overflow-hidden">
-                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-brand-dark">
+                  <Link
+                    href={`/${locale}/themes/love-on-the-rocks`}
+                    className="block rounded-[2rem] border-2 border-gray-100 bg-brand-dark overflow-hidden shadow-2xl group hover:border-brand-pink transition-all"
+                  >
+                    <div className="relative aspect-[16/10] w-full overflow-hidden">
                       <Image
                         src="/moodboard/lotr/main-promo-murder.jpg"
-                        alt="Murder Mystery Theme & Vibe Selection"
+                        alt="Love On The Rocks - Reality TV Reunion Murder Mystery"
                         fill
                         sizes="(max-width: 1024px) 100vw, 600px"
-                        className="object-cover"
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/90 via-brand-dark/20 to-transparent" />
-                      <div className="absolute bottom-5 left-6 right-6 flex items-end justify-between gap-4">
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">
-                            4 Spice Tiers · 3 Complexity Brackets
-                          </p>
-                          <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
-                            Pick Your Story &amp; Tone
-                          </h3>
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-300">
-                          6–16 Roles + Extra Detectives
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/30 to-transparent" />
+                      <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                        <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                          Active Package
+                        </span>
+                        <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest border border-white/15">
+                          6–16 Roles (+ Extra Detectives)
                         </span>
                       </div>
+                      <div className="absolute bottom-4 left-6 right-6">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">
+                          Reality TV Reunion · Holiday · Noir
+                        </p>
+                        <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                          Love On The Rocks
+                        </h3>
+                      </div>
                     </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-gray-300/80 divide-y sm:divide-y-0 sm:divide-x divide-gray-300/80 bg-white">
-                      {[
-                        { tier: 'Clean (SFW)', sub: '0 Affairs · 0 Cussing' },
-                        { tier: 'Mild', sub: 'Affairs · Clean Dialog' },
-                        { tier: 'Spicy', sub: 'Cussing & Scandal' },
-                        { tier: 'Filthy', sub: '18+ Unfiltered' },
-                      ].map((s) => (
-                        <div key={s.tier} className="p-4">
-                          <p className="text-xs font-black uppercase tracking-tight text-brand-dark">
-                            {s.tier}
-                          </p>
-                          <p className="text-[11px] text-gray-500 font-medium mt-0.5">{s.sub}</p>
-                        </div>
-                      ))}
+                    <div className="p-6 bg-brand-dark border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        {['✨ Clean (SFW)', '🌶️ Mild', '🌶️🌶️ Spicy', '🔥🔥🔥 Filthy'].map((spice) => (
+                          <span
+                            key={spice}
+                            className="px-2.5 py-1 rounded-full bg-white/10 text-white/90 text-[10px] font-bold"
+                          >
+                            {spice}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-brand-pink group-hover:translate-x-1 transition-transform">
+                        Explore Themes →
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 )}
 
                 {i === 1 && (
-                  <div className="border border-gray-300/80 bg-white shadow-sm">
-                    <div className="p-6 border-b border-gray-300/80 flex items-center justify-between bg-brand-gray">
+                  <div className="rounded-[2rem] border-2 border-gray-100 bg-brand-gray p-6 sm:p-8 shadow-xl space-y-4">
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                       <div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-pink block">
-                          4-Step Casting Roster
+                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue block">
+                          Step 2 · Cast Your Crew
                         </span>
                         <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">
-                          Your Friends Become the Suspects
+                          Real Friends → Iconic Roles
                         </h3>
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
-                        Gender-Flex Enabled
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                        ✨ Gender-Flex
                       </span>
                     </div>
-
-                    <div className="divide-y divide-gray-200">
+                    <div className="space-y-3">
                       {[
                         {
-                          guest: 'Luke (Host)',
-                          role: 'The Husband',
-                          detail: 'Custom studio portrait · Spoiler-Free Host Mode enabled',
-                          tag: 'Story Catalyst',
+                          guest: 'Chloe (Bride-to-be)',
+                          role: 'The Star',
+                          note: 'Loves espresso martinis & dramatic toasts',
+                          badge: 'Catalyst',
                         },
                         {
-                          guest: 'Gabby',
-                          role: 'The Wife',
-                          detail: 'Emerald silk dress code · Matching silver hairpin clue',
-                          tag: 'Suspect',
+                          guest: 'Marco (Best Man)',
+                          role: 'The Ex',
+                          note: 'Still brings up the 2023 Ibiza holiday',
+                          badge: 'Suspect',
                         },
                         {
-                          guest: 'Jason',
-                          role: 'The Co-Worker',
-                          detail: 'Placed into the 7:55 PM hallway surveillance photo',
-                          tag: 'Suspect',
+                          guest: 'Sam (Host)',
+                          role: 'The Producer',
+                          note: 'Spoiler-Free Host Mode enabled',
+                          badge: 'Host Playing',
                         },
                         {
-                          guest: '+ Extra Guests (Sarah, Alex…)',
+                          guest: '+ Extra Friends (Sarah, Alex…)',
                           role: 'Detective [Name]',
-                          detail: 'Join free on party night with a Suspect Interrogation Lineup',
-                          tag: 'Extra Detective',
+                          note: 'Join free on party night with interrogation prompts!',
+                          badge: 'Extra Detective',
                         },
                       ].map((row, idx) => (
                         <div
                           key={idx}
-                          className="p-5 flex items-center justify-between gap-4 bg-white"
+                          className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center justify-between gap-4 shadow-sm"
                         >
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="font-black text-brand-dark text-sm">
                                 {row.guest}
                               </span>
-                              <span className="text-gray-300">—</span>
+                              <span className="text-gray-300">→</span>
                               <span className="font-black text-brand-pink text-sm uppercase">
                                 {row.role}
                               </span>
                             </div>
                             <p className="text-xs text-gray-500 font-medium mt-0.5">
-                              {row.detail}
+                              &ldquo;{row.note}&rdquo;
                             </p>
                           </div>
-                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 shrink-0">
-                            {row.tag}
+                          <span className="px-2.5 py-1 rounded-full bg-brand-gray text-brand-dark text-[10px] font-black uppercase tracking-widest shrink-0">
+                            {row.badge}
                           </span>
                         </div>
                       ))}
@@ -332,52 +296,55 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                 )}
 
                 {i === 2 && (
-                  <div className="border border-gray-300/80 bg-brand-dark text-white p-8 sm:p-10 shadow-sm space-y-8">
-                    <div className="flex items-end justify-between pb-6 border-b border-white/15">
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-pink block mb-1">
-                          Ready in ~20 Minutes
-                        </span>
-                        <h3 className="text-2xl font-black uppercase tracking-tight">
-                          Live Game PIN: 146 492
-                        </h3>
+                  <div className="rounded-[2rem] border-2 border-gray-100 bg-brand-dark text-white p-6 sm:p-8 shadow-2xl space-y-6">
+                    <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-brand-pink/20 border border-brand-pink/40 flex items-center justify-center text-brand-pink text-lg">
+                          📱
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
+                            Live Digital Playroom + PDFs
+                          </span>
+                          <h3 className="text-lg font-black uppercase tracking-tight">
+                            Game PIN: 146 492
+                          </h3>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
-                        Digital + Print PDFs
+                      <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest">
+                        Ready in ~20m
                       </span>
                     </div>
-
-                    <div className="grid sm:grid-cols-2 gap-8">
-                      <div className="space-y-3">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-pink">
-                          01 / Live Digital Portal
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink mb-2">
+                          Interactive Mobile Lobby
                         </p>
-                        <ul className="space-y-2.5 text-xs text-gray-300 font-medium leading-relaxed">
-                          <li className="pl-3 border-l border-white/25">
-                            1-Click Group Chat link for pre-party outfit &amp; role previews
+                        <ul className="space-y-2 text-xs text-gray-300 font-semibold">
+                          <li className="flex items-center gap-2">
+                            <span className="text-brand-pink font-black">✓</span> Join via 6-digit PIN or QR code
                           </li>
-                          <li className="pl-3 border-l border-white/25">
-                            Host controls the 8 stages &amp; voting gates from a laptop
+                          <li className="flex items-center gap-2">
+                            <span className="text-brand-pink font-black">✓</span> Host-gated clues &amp; round voting
                           </li>
-                          <li className="pl-3 border-l border-white/25">
-                            Unlimited extra friends join as Detective [Their Name]
+                          <li className="flex items-center gap-2">
+                            <span className="text-brand-pink font-black">✓</span> Extra friends play as Detective [Name]
                           </li>
                         </ul>
                       </div>
-
-                      <div className="space-y-3">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                          02 / Print-Ready PDF Kit
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-white mb-2">
+                          Print-Ready PDF Kit
                         </p>
-                        <ul className="space-y-2.5 text-xs text-gray-300 font-medium leading-relaxed">
-                          <li className="pl-3 border-l border-white/25">
-                            Formatted Character Booklets &amp; Spoiler-Free Host Guide
+                        <ul className="space-y-2 text-xs text-gray-300 font-semibold">
+                          <li className="flex items-center gap-2">
+                            <span className="text-brand-pink font-black">✓</span> Spoiler-Free Host Guide PDF
                           </li>
-                          <li className="pl-3 border-l border-white/25">
-                            Printable crime-scene photos, chat logs &amp; receipts
+                          <li className="flex items-center gap-2">
+                            <span className="text-brand-pink font-black">✓</span> Custom Suspect Booklets
                           </li>
-                          <li className="pl-3 border-l border-white/25">
-                            Tailored Spotify playlist &amp; signature cocktail guide
+                          <li className="flex items-center gap-2">
+                            <span className="text-brand-pink font-black">✓</span> Printable Crime Scene Evidence
                           </li>
                         </ul>
                       </div>
@@ -388,233 +355,194 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
       {/* =====================================================================
-          SECTION 2: INTERACTIVE PRODUCT WALKTHROUGH (WHAT IT LOOKS LIKE)
+          SECTION 2: INTERACTIVE LIVE GAME ROOM PREVIEW
       ===================================================================== */}
       <InteractivePackPreview locale={locale} />
 
       {/* =====================================================================
-          SECTION 3: HOW PARTY NIGHT RUNS (ARCHITECTURAL HAIRLINE TABLE)
+          SECTION 3: HOW TO PLAY ON PARTY NIGHT (ROUNDED BRANDED CARDS)
       ===================================================================== */}
-      <section className="py-20 lg:py-28 bg-white">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 lg:mb-16 gap-6 pb-8 border-b border-gray-300/80">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink mb-3">
-                Party Night Run Sheet · 5 Phases
-              </p>
-              <h2 className="text-3xl sm:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
-                Host on a <span className="text-brand-pink italic">Laptop.</span> Guests on <span className="text-brand-pink italic">Phones.</span>
-              </h2>
+      <div className="container mx-auto px-6 max-w-6xl py-24 lg:py-32 space-y-28">
+        <div className="space-y-14">
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink text-[11px] font-black uppercase tracking-[0.2em]">
+              How to Play on Party Night
             </div>
-            <p className="text-gray-500 font-medium text-sm sm:text-base max-w-md leading-relaxed">
-              Guest phones stay clean and distraction-free while you mingle. Only the <strong>Host</strong> sees the round controller on their laptop and decides when each round&apos;s clues and voting unlock.
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-brand-dark uppercase tracking-tight leading-none">
+              Host on Your <span className="text-brand-pink italic">Laptop.</span> Guests on Their <span className="text-brand-pink italic">Phones.</span>
+            </h2>
+            <p className="text-gray-500 font-semibold text-base sm:text-lg leading-relaxed">
+              We recommend the <strong>Host uses a laptop</strong> while everyone else uses their phone. That way guest phones stay super simple and clean while only you control when each round&apos;s clues and voting unlock:
             </p>
           </div>
 
-          {/* Architectural Hairline Run-of-Show Grid */}
-          <div className="border-t border-l border-gray-300/80 bg-white shadow-sm">
+          <div className="space-y-6 max-w-5xl mx-auto">
             {partyRunOfShow.map((phase) => (
               <div
                 key={phase.num}
-                className="grid lg:grid-cols-12 border-r border-b border-gray-300/80 bg-white hover:bg-brand-gray/40 transition-colors"
+                className="card-branded p-7 sm:p-10 border-2 border-gray-100 hover:border-brand-pink transition-all flex flex-col lg:flex-row gap-6 lg:gap-10 items-start group"
               >
-                {/* Col 1: Phase Number & Title */}
-                <div className="lg:col-span-4 p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-gray-300/80 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="font-serif italic text-sm tracking-widest text-brand-pink">
-                      No. {phase.num}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                <span className="text-6xl lg:text-7xl font-black text-gray-100 leading-none group-hover:text-brand-pink/20 transition-colors shrink-0">
+                  {phase.num}
+                </span>
+
+                <div className="flex-1 space-y-5 w-full">
+                  <div>
+                    <span className="inline-block px-3.5 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest mb-2">
                       {phase.stage}
                     </span>
+                    <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">
+                      {phase.title}
+                    </h3>
                   </div>
-                  <h3 className="text-xl lg:text-2xl font-black text-brand-dark uppercase tracking-tight leading-snug">
-                    {phase.title}
-                  </h3>
-                </div>
 
-                {/* Col 2: On the Host's Laptop */}
-                <div className="lg:col-span-4 p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-gray-300/80 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-dark">
-                    On the Host&apos;s Laptop
-                  </p>
-                  <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                    {phase.hostAction}
-                  </p>
-                </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-5 rounded-2xl bg-brand-gray border border-gray-200/70 space-y-1.5">
+                      <p className="text-[11px] font-black uppercase tracking-widest text-brand-dark">
+                        💻 On the Host&apos;s Laptop
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed">
+                        {phase.hostAction}
+                      </p>
+                    </div>
 
-                {/* Col 3: On Guests' Phones */}
-                <div className="lg:col-span-4 p-8 lg:p-10 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-pink">
-                    On Guests&apos; Phones
-                  </p>
-                  <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                    {phase.guestView}
-                  </p>
+                    <div className="p-5 rounded-2xl bg-brand-pink/5 border border-brand-pink/20 space-y-1.5">
+                      <p className="text-[11px] font-black uppercase tracking-widest text-brand-pink">
+                        📱 On Guests&apos; Phones
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed">
+                        {phase.guestView}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* =====================================================================
-          SECTION 4: THREE WAYS TO HOST (ARCHITECTURAL 3-COLUMN GRID)
-      ===================================================================== */}
-      <section className="py-20 lg:py-28 bg-brand-gray border-t border-gray-300/80">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 lg:mb-16 gap-6 pb-8 border-b border-gray-300/80">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink mb-3">
-                Flexible Group Formats · 1 to 16+ People
-              </p>
-              <h2 className="text-3xl sm:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
-                Built for <span className="text-brand-pink italic">Any Group Size.</span>
-              </h2>
-            </div>
-            <p className="text-gray-500 font-medium text-sm sm:text-base max-w-md leading-relaxed">
-              Every mystery story features at least 6 interlocking characters so the alibis and motives tangle properly—plus unlimited Extra Guest Detectives if more friends arrive.
+        {/* =====================================================================
+            SECTION 4: 3 FLEXIBLE WAYS TO PLAY (INCLUDING EXTRA GUEST DETECTIVES)
+        ===================================================================== */}
+        <div className="p-8 sm:p-12 lg:p-16 bg-brand-dark text-white rounded-[2.5rem] lg:rounded-[3rem] shadow-2xl border-2 border-brand-pink/30">
+          <div className="max-w-3xl mb-10">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest mb-4">
+              Flexible Format · 1 to 16+ People
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.05] mb-4">
+              Host a Full-Cast Party — Or Bring <span className="text-brand-pink italic">Extra Guest Detectives</span>
+            </h2>
+            <p className="text-gray-300 font-medium text-base sm:text-lg leading-relaxed">
+              Every mystery story features at least <strong>6 interlocking characters</strong> (1 Victim + 5 Suspects) so the alibis and motives tangle properly — plus <strong>unlimited Extra Guest Detectives (&ldquo;Detective [Name]&rdquo;)</strong> if more friends come along!
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 border-t border-l border-gray-300/80 bg-white shadow-sm">
-            {[
-              {
-                num: 'I',
-                meta: '6–16 Players · Full Roleplay',
-                title: 'Dinner Party Roleplay',
-                desc: 'Assign each guest attending your dinner party, birthday, or hen night to their own custom character role with personalized outfit guides, secret alibis, and round-by-round talking points.',
-                foot: 'Everyone Plays a Suspect Around the Table',
-              },
-              {
-                num: 'II',
-                meta: 'Unlimited Extra Guests · $0 Extra',
-                title: 'Extra Guest Detectives',
-                desc: 'Have more than 6 guests coming (or last-minute plus-ones)? Any additional friends simply scan the party QR code and join as Detective [Their Name]—complete with a Suspect Interrogation Lineup, live clues, and round voting.',
-                foot: 'No One Ever Sits on the Sidelines',
-              },
-              {
-                num: 'III',
-                meta: '1–5 Players · Zero Acting Required',
-                title: 'Couch Detective Case File',
-                desc: 'Playing solo, on a date night, or with a small group? Cast yourselves + fictional suspects (or a 100% Fictional Cast in one click) and inspect all suspect dossiers, texts, CCTV photos, and voice wiretaps together.',
-                foot: 'Solve It Together Over Wine',
-              },
-            ].map((fmt) => (
-              <div
-                key={fmt.num}
-                className="p-8 lg:p-10 border-r border-b border-gray-300/80 flex flex-col justify-between bg-white"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-8">
-                    <span className="font-serif italic text-sm tracking-widest text-brand-pink">
-                      No. {fmt.num}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
-                      {fmt.meta}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-4">
-                    {fmt.title}
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-500 font-medium leading-relaxed mb-8">
-                    {fmt.desc}
-                  </p>
-                </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-3">
+              <span className="text-xs font-black uppercase tracking-widest text-brand-pink block">
+                🎭 1 · Dinner Party Roleplay (6–16 Players)
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight text-white">
+                Everyone Plays a Suspect Around the Table
+              </h3>
+              <p className="text-sm text-gray-300 font-medium leading-relaxed">
+                Having friends over for a dinner party, birthday, or hen night? Cast your guests into their own custom character roles with personalized outfit guides, secret alibis, and round-by-round talking points.
+              </p>
+            </div>
 
-                <div className="pt-4 border-t border-gray-100">
-                  <span className="text-[11px] font-black uppercase tracking-[0.18em] text-brand-dark">
-                    {fmt.foot}
-                  </span>
-                </div>
-              </div>
-            ))}
+            <div className="bg-brand-pink/15 border-2 border-brand-pink rounded-3xl p-8 space-y-3 shadow-lg">
+              <span className="text-xs font-black uppercase tracking-widest text-brand-pink block">
+                🕵️ 2 · Have More Than 6 Guests? ($0 Extra)
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight text-white">
+                Extra Friends Join as &ldquo;Detective [Name]&rdquo;
+              </h3>
+              <p className="text-sm text-gray-200 font-medium leading-relaxed">
+                Have 7, 8, or 10+ friends coming to a 6-character mystery (or last-minute plus-ones)? Any extra guests simply scan the QR code and join as <strong className="text-white">Detective [Their Name]</strong> — getting a Suspect Interrogation Lineup, live phone clues, and round voting!
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-3">
+              <span className="text-xs font-black uppercase tracking-widest text-brand-pink block">
+                🕵️‍♀️ 3 · Couch Detective Mode (1–5 Players)
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight text-white">
+                Solve the Whole Case File Together Over Wine
+              </h3>
+              <p className="text-sm text-gray-300 font-medium leading-relaxed">
+                Playing solo, on a date night, or with a small group? Cast your friends, a <strong>Hybrid mix of you + fictional suspects</strong>, or generate a <strong>100% Fictional Cast</strong> in one click — then inspect all suspect dossiers, texts, CCTV photos, and voice wiretaps together!
+              </p>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* =====================================================================
-          SECTION 5: 6 CORE PORTAL CAPABILITIES (ARCHITECTURAL 3x2 GRID)
-      ===================================================================== */}
-      <section className="py-20 lg:py-28 bg-white border-t border-gray-200">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 lg:mb-16 gap-6 pb-8 border-b border-gray-300/80">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink mb-3">
-                What&apos;s Included in Every Pack
-              </p>
-              <h2 className="text-3xl sm:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
-                Every Detail <span className="text-brand-pink italic">Handled.</span>
-              </h2>
-            </div>
-            <p className="text-gray-500 font-medium text-sm sm:text-base max-w-md leading-relaxed">
-              Every mystery includes both our interactive live portal and formatted printable PDFs.
+        {/* =====================================================================
+            SECTION 5: WHAT'S IN THE PACK
+        ===================================================================== */}
+        <div className="py-12 sm:py-20 px-8 sm:px-12 lg:px-20 bg-brand-gray rounded-[2.5rem] lg:rounded-[3rem] border-2 border-gray-100">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark mb-4 uppercase tracking-tight">
+              {dict.howItWorks.packContents.title.split(',').map((part, i) => (
+                <span key={i} className={i === 1 ? 'text-brand-pink italic' : ''}>
+                  {part}
+                </span>
+              ))}
+            </h2>
+            <p className="text-gray-500 font-bold max-w-xl mx-auto">
+              {dict.howItWorks.packContents.subtitle}
             </p>
           </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-gray-300/80 bg-white shadow-sm">
-            {portalCapabilities.map((cap) => (
-              <div
-                key={cap.num}
-                className="p-8 lg:p-10 border-r border-b border-gray-300/80 bg-white flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="font-serif italic text-sm tracking-widest text-gray-400">
-                      {cap.num}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-pink">
-                      {cap.meta}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight mb-3">
-                    {cap.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                    {cap.desc}
-                  </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Object.entries(dict.howItWorks.packContents.items).map(([key, item], i) => (
+              <div key={i} className="card-branded p-9 group hover:border-brand-pink">
+                <div className="w-12 h-12 bg-brand-pink rounded-2xl mb-6 group-hover:scale-110 transition-transform flex items-center justify-center shadow-lg shadow-brand-pink/20 text-xl">
+                  {packIcons[key] || '✨'}
                 </div>
+                <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-3">
+                  {item.title}
+                </h3>
+                <p className="text-gray-500 font-semibold leading-relaxed text-sm">{item.desc}</p>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Final CTA Banner */}
-          <div className="mt-20 bg-brand-dark text-white p-10 sm:p-16 lg:p-20 text-center">
-            <div className="max-w-2xl mx-auto">
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink mb-4">
-                Ready in ~20 Minutes
-              </p>
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-6 uppercase tracking-tighter leading-[0.95]">
-                {dict.howItWorks.cta.title.split(',')[0]},
-                <br />
-                <span className="text-brand-pink italic">{dict.howItWorks.cta.title.split(',')[1]}</span>
-              </h2>
-              <p className="text-base sm:text-lg text-gray-400 mb-10 font-medium">
-                {dict.howItWorks.cta.desc.split('{{price}}')[0]}
-                <PriceDisplay tier="basic" locale={locale as Locale} />
-                {dict.howItWorks.cta.desc.split('{{price}}')[1]}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href={`/${locale}/themes`}
-                  className="px-10 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-dark transition-all"
-                >
-                  {dict.howItWorks.cta.ctaThemes}
-                </Link>
-                <Link
-                  href={`/${locale}/pricing`}
-                  className="px-10 py-5 bg-white/10 text-white border border-white/20 rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-dark transition-all"
-                >
-                  {dict.howItWorks.cta.ctaPricing}
-                </Link>
-              </div>
+        {/* Final CTA */}
+        <div className="text-center bg-brand-dark rounded-[2.5rem] lg:rounded-[3rem] p-10 sm:p-16 lg:p-24 relative overflow-hidden shadow-2xl">
+          <div className="relative z-10">
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white mb-8 uppercase tracking-tighter leading-[0.95]">
+              {dict.howItWorks.cta.title.split(',')[0]}
+              <br />
+              <span className="text-brand-pink italic">{dict.howItWorks.cta.title.split(',')[1]}</span>
+            </h2>
+            <p className="text-lg text-gray-400 mb-12 max-w-xl mx-auto font-bold">
+              {dict.howItWorks.cta.desc.split('{{price}}')[0]}
+              <PriceDisplay tier="basic" locale={locale as Locale} />
+              {dict.howItWorks.cta.desc.split('{{price}}')[1]}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+              <Link
+                href={`/${locale}/themes`}
+                className="px-10 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-white hover:text-brand-pink transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 w-full sm:w-auto text-center"
+              >
+                {dict.howItWorks.cta.ctaThemes}
+              </Link>
+              <Link
+                href={`/${locale}/pricing`}
+                className="px-10 py-5 bg-white/10 text-white border-2 border-white/20 rounded-full font-black uppercase tracking-widest text-sm hover:border-brand-pink transition-all hover:translate-y-[-4px] active:scale-95 w-full sm:w-auto text-center"
+              >
+                {dict.howItWorks.cta.ctaPricing}
+              </Link>
             </div>
           </div>
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_2px_2px,rgba(255,255,255,0.15)_1px,transparent_0)] [background-size:24px_24px]"></div>
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
