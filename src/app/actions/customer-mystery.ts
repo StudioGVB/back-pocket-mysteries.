@@ -13,6 +13,7 @@ import {
   saveStoredGameSession,
   updateCachedMysteryCharacters,
   StoredGuestReview,
+  StoredDetectiveGuest,
 } from '@/lib/live-session-store';
 import {
   checkAndFinalizeGenerationIfDue,
@@ -34,6 +35,7 @@ export interface RoundSubmission {
 }
 
 export type GuestReviewItem = StoredGuestReview;
+export type DetectiveGuestItem = StoredDetectiveGuest;
 
 export interface GameSessionMeta {
   pin: string;
@@ -41,6 +43,7 @@ export interface GameSessionMeta {
   currentRound?: number;
   activeCharacterIds: string[];
   claimedCharacters: Record<string, { token: string; claimedAt: string }>;
+  detectiveGuests?: DetectiveGuestItem[];
   submissions: RoundSubmission[];
   sharedTheoryRounds: number[];
   revealMode: 'hidden' | 'phone_free' | 'shared_with_guests';
@@ -92,6 +95,20 @@ function mergeReviews(a: GuestReviewItem[] = [], b: GuestReviewItem[] = []): Gue
   );
 }
 
+function mergeDetectiveGuests(
+  a: DetectiveGuestItem[] = [],
+  b: DetectiveGuestItem[] = []
+): DetectiveGuestItem[] {
+  const map = new Map<string, DetectiveGuestItem>();
+  for (const d of [...a, ...b]) {
+    if (!d || !d.id) continue;
+    map.set(d.id, d);
+  }
+  return Array.from(map.values()).sort((x, y) =>
+    (x.joinedAt || '').localeCompare(y.joinedAt || '')
+  );
+}
+
 /**
  * Helper to read and merge GameSessionMeta from both Supabase character JSONB and the server-side live session store.
  */
@@ -130,6 +147,10 @@ async function readSessionFromCharacters(
     ? { ...(raw?.claimedCharacters || {}), ...(stored?.claimedCharacters || {}) }
     : { ...(stored?.claimedCharacters || {}), ...(raw?.claimedCharacters || {}) };
 
+  const mergedDetectives = preferStored
+    ? mergeDetectiveGuests(raw?.detectiveGuests || [], stored?.detectiveGuests || [])
+    : mergeDetectiveGuests(stored?.detectiveGuests || [], raw?.detectiveGuests || []);
+
   const session: GameSessionMeta = {
     pin: stored?.pin || raw?.pin || defaultPin,
     hostUserId: stored?.hostUserId || raw?.hostUserId || stored?.paidByUserId,
@@ -141,6 +162,7 @@ async function readSessionFromCharacters(
         ? raw!.activeCharacterIds
         : activeFromFlags,
     claimedCharacters: mergedClaims,
+    detectiveGuests: mergedDetectives,
     submissions: mergeSubmissions(raw?.submissions || [], stored?.submissions || []),
     sharedTheoryRounds: preferStored
       ? stored?.sharedTheoryRounds || []
@@ -160,6 +182,7 @@ async function readSessionFromCharacters(
     currentRound: resolvedRound,
     activeCharacterIds: session.activeCharacterIds,
     claimedCharacters: session.claimedCharacters,
+    detectiveGuests: session.detectiveGuests || [],
     submissions: session.submissions,
     sharedTheoryRounds: session.sharedTheoryRounds,
     revealMode: session.revealMode,
@@ -190,6 +213,7 @@ async function writeSessionToCarrier(
     currentRound: updatedSession.currentRound ?? 0,
     activeCharacterIds: updatedSession.activeCharacterIds,
     claimedCharacters: updatedSession.claimedCharacters || {},
+    detectiveGuests: updatedSession.detectiveGuests || [],
     submissions: updatedSession.submissions,
     sharedTheoryRounds: updatedSession.sharedTheoryRounds,
     revealMode: updatedSession.revealMode,
@@ -715,6 +739,7 @@ export async function getGameSessionAction(mysteryId: string) {
     pin: session.pin,
     activeCharacterIds: session.activeCharacterIds,
     claimedCharacters: session.claimedCharacters || {},
+    detectiveGuests: session.detectiveGuests || [],
     submissions: session.submissions,
     sharedTheoryRounds: session.sharedTheoryRounds,
     revealMode: session.revealMode,
@@ -765,6 +790,10 @@ export async function claimCharacterInLobbyAction(
       token: playerToken,
       claimedAt: new Date().toISOString(),
     };
+    // If this player previously joined as a Guest Detective, remove their detective entry so they aren't double-counted
+    session.detectiveGuests = (session.detectiveGuests || []).filter(
+      d => d.token !== playerToken
+    );
   }
 
   session.claimedCharacters = claims;
@@ -774,6 +803,76 @@ export async function claimCharacterInLobbyAction(
   return {
     success: true,
     claimedCharacters: claims,
+    detectiveGuests: session.detectiveGuests || [],
+  };
+}
+
+/**
+ * Registers an extra guest player who doesn't have an assigned character role as "Detective [Name]".
+ * They appear in the Host's Lobby & Room Cast, receive all live clues, vote in every round,
+ * and compete on the Final Detective Leaderboard without being a suspect in the murder plot.
+ */
+export async function registerDetectiveGuestAction(
+  mysteryId: string,
+  rawName: string,
+  playerToken: string
+) {
+  const supabase = await createClient();
+  let { data: characters } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('mystery_id', mysteryId);
+
+  if (!characters || characters.length === 0) {
+    const cached = getCachedMysterySnapshot(mysteryId);
+    characters = cached?.characters || [];
+  }
+
+  const { session, carrierCharacter } = await readSessionFromCharacters(
+    characters || [],
+    mysteryId
+  );
+
+  const stripped = (rawName || '')
+    .replace(/^🕵️\s*/i, '')
+    .replace(/^detective\s+/i, '')
+    .trim();
+  const cleanName = stripped || 'Guest';
+  const displayName = `Detective ${cleanName}`;
+  const slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'guest';
+  const detectiveId = playerToken ? `detective-${playerToken}` : `detective-${slug}`;
+
+  // Release any character claim held by this playerToken
+  const claims = { ...(session.claimedCharacters || {}) };
+  if (playerToken) {
+    for (const [cId, info] of Object.entries(claims)) {
+      if (info.token === playerToken) {
+        delete claims[cId];
+      }
+    }
+  }
+  session.claimedCharacters = claims;
+
+  const existingList = (session.detectiveGuests || []).filter(
+    d => d.id !== detectiveId && (!playerToken || d.token !== playerToken)
+  );
+  const detectiveGuest: DetectiveGuestItem = {
+    id: detectiveId,
+    name: cleanName,
+    displayName,
+    token: playerToken || detectiveId,
+    joinedAt: new Date().toISOString(),
+  };
+
+  session.detectiveGuests = [...existingList, detectiveGuest];
+  await writeSessionToCarrier(supabase, mysteryId, carrierCharacter, session);
+
+  revalidatePath(`/play/${mysteryId}`);
+  return {
+    success: true,
+    detectiveGuest,
+    detectiveGuests: session.detectiveGuests,
+    claimedCharacters: session.claimedCharacters,
   };
 }
 
@@ -924,6 +1023,7 @@ export async function updateHostGameControlAction(
 
   if (updates.resetClaimedCharacters) {
     session.claimedCharacters = {};
+    session.detectiveGuests = [];
   }
 
   await writeSessionToCarrier(supabase, mysteryId, carrierCharacter, session);

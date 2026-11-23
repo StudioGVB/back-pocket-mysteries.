@@ -30,10 +30,12 @@ import { CallSheetClueView } from '@/components/clues/CallSheetClueView';
 import {
   getGameSessionAction,
   claimCharacterInLobbyAction,
+  registerDetectiveGuestAction,
   submitRoundTheoryAction,
   updateHostGameControlAction,
   submitGuestMysteryReviewAction,
   RoundSubmission,
+  DetectiveGuestItem,
 } from '@/app/actions/customer-mystery';
 import { RelationshipGraph } from '@/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipGraph';
 
@@ -118,10 +120,14 @@ export function PlayroomClient({
   const [claimedCharacters, setClaimedCharacters] = useState<
     Record<string, { token: string; claimedAt: string }>
   >(initialSession?.claimedCharacters || {});
+  const [detectiveGuests, setDetectiveGuests] = useState<DetectiveGuestItem[]>(
+    initialSession?.detectiveGuests || []
+  );
+  const [isJoiningDetective, setIsJoiningDetective] = useState<boolean>(false);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaimingCharId, setIsClaimingCharId] = useState<string | null>(null);
 
-  // Selected character (or 'sleuth-guest' if joining via PIN for clues/voting only)
+  // Selected character (or 'sleuth-guest' if joining via PIN as Detective [Name])
   const [selectedCharId, setSelectedCharId] = useState<string | null>(() => {
     if (forceSelect) return null;
     if (initialCharId && characters.some(c => c.id === initialCharId)) {
@@ -247,6 +253,11 @@ export function PlayroomClient({
       // Ignore
     } finally {
       setNotebookLoaded(true);
+    }
+
+    const savedDetectiveName = window.localStorage.getItem(`bpm_detective_name_${mystery.id}`);
+    if (savedDetectiveName) {
+      setCustomSleuthName(savedDetectiveName);
     }
 
     const savedCharKey = `bpm_selected_char_${mystery.id}`;
@@ -444,6 +455,7 @@ export function PlayroomClient({
       if (!('error' in latest)) {
         setCurrentRound(latest.currentRound);
         setClaimedCharacters(latest.claimedCharacters || {});
+        setDetectiveGuests(latest.detectiveGuests || []);
         setSubmissions(latest.submissions || []);
         setSharedTheoryRounds(latest.sharedTheoryRounds || []);
         setRevealMode(latest.revealMode || 'hidden');
@@ -508,8 +520,62 @@ export function PlayroomClient({
       if (res.claimedCharacters) {
         setClaimedCharacters(res.claimedCharacters);
       }
+      if (res.detectiveGuests) {
+        setDetectiveGuests(res.detectiveGuests);
+      }
     } finally {
       setIsClaimingCharId(null);
+    }
+  };
+
+  // Join the party as an Extra Guest ("Detective [Name]") without taking a suspect character slot
+  const handleJoinAsDetective = async (nameInput?: string) => {
+    const raw = (nameInput ?? customSleuthName)
+      .replace(/^🕵️\s*/i, '')
+      .replace(/^detective\s+/i, '')
+      .trim();
+    const cleanFirstName = raw || 'Guest';
+    setCustomSleuthName(cleanFirstName);
+
+    const activeToken =
+      playerToken ||
+      `plr_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
+    if (!playerToken) {
+      setPlayerToken(activeToken);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(`bpm_player_token_${mystery.id}`, activeToken);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(`bpm_detective_name_${mystery.id}`, cleanFirstName);
+      window.localStorage.setItem(`bpm_selected_char_${mystery.id}`, 'sleuth-guest');
+    }
+
+    setSelectedCharId('sleuth-guest');
+    setIsRoomCastOpen(false);
+    if (currentRound >= 5) {
+      setActiveTab('reveal');
+    } else if (currentRound >= 1) {
+      setActiveTab('clues');
+    } else {
+      setActiveTab('profile');
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    setIsJoiningDetective(true);
+    try {
+      const res = await registerDetectiveGuestAction(mystery.id, cleanFirstName, activeToken);
+      if (res.detectiveGuests) {
+        setDetectiveGuests(res.detectiveGuests);
+      }
+      if (res.claimedCharacters) {
+        setClaimedCharacters(res.claimedCharacters);
+      }
+    } finally {
+      setIsJoiningDetective(false);
     }
   };
 
@@ -543,6 +609,7 @@ export function PlayroomClient({
       });
       if (!('error' in updated)) {
         setClaimedCharacters(updated.claimedCharacters || {});
+        setDetectiveGuests(updated.detectiveGuests || []);
       }
     } finally {
       setIsRefreshingSession(false);
@@ -619,10 +686,29 @@ export function PlayroomClient({
 
   // Pre-fill existing submission for the active round when switching rounds
   const activeVotingRound = Math.max(1, Math.min(maxClueRound, unlockedClueRound || 1));
-  const voterId = selectedChar?.id || (isClueOnlySleuth ? `sleuth-${customSleuthName || 'guest'}` : '');
+  const rawDetectiveFirstName = customSleuthName
+    .replace(/^🕵️\s*/i, '')
+    .replace(/^detective\s+/i, '')
+    .trim();
+  const formattedDetectiveName = rawDetectiveFirstName
+    ? `Detective ${rawDetectiveFirstName}`
+    : 'Detective Guest';
+  const detectiveSlug =
+    rawDetectiveFirstName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'guest';
+
+  const voterId =
+    selectedChar?.id ||
+    (isClueOnlySleuth
+      ? playerToken
+        ? `detective-${playerToken}`
+        : `detective-${detectiveSlug}`
+      : '');
   const voterDisplayName = selectedChar
     ? parseCharacter(selectedChar).name
-    : customSleuthName || 'Party Sleuth';
+    : formattedDetectiveName;
 
   useEffect(() => {
     if (!voterId) return;
@@ -642,10 +728,10 @@ export function PlayroomClient({
   useEffect(() => {
     if (selectedChar && !reviewName) {
       setReviewName(parseCharacter(selectedChar).name);
-    } else if (customSleuthName && !reviewName) {
-      setReviewName(customSleuthName);
+    } else if (isClueOnlySleuth && !reviewName) {
+      setReviewName(formattedDetectiveName);
     }
-  }, [selectedChar, customSleuthName, parseCharacter, reviewName]);
+  }, [selectedChar, isClueOnlySleuth, formattedDetectiveName, parseCharacter, reviewName]);
 
   // Clues for the selected round filter (supports single round 1..4 OR 'all' unlocked rounds)
   const allUnlockedCluesForSelectedRound = useMemo(() => {
@@ -1417,21 +1503,8 @@ export function PlayroomClient({
                     )}
                     <p className="text-[11px] text-slate-400 line-clamp-2">{charPres.shortBlurb}</p>
 
-                    {!char.is_victim && unlockedClueRound >= 1 && (
+                    {!char.is_victim && isGuessStep && unlockedClueRound >= 1 && (
                       <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        {currentSlideClue && (
-                          <button
-                            type="button"
-                            onClick={() => toggleClueSuspect(currentSlideClue.id, char.id)}
-                            className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                              isPinnedToCurrent
-                                ? 'bg-brand-pink text-white'
-                                : 'bg-white/10 text-slate-300 hover:text-white'
-                            }`}
-                          >
-                            {isPinnedToCurrent ? '📌 Pinned to Clue' : '📌 Pin to Clue'}
-                          </button>
-                        )}
                         <button
                           type="button"
                           onClick={() => {
@@ -1457,9 +1530,45 @@ export function PlayroomClient({
             })}
           </div>
 
+          {/* Guest Detectives Section inside Room Cast Directory */}
+          {detectiveGuests.length > 0 && (
+            <div className="rounded-2xl bg-slate-950/80 border border-sky-400/30 p-3.5 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-sky-300">
+                  🕵️ Extra Guest Detectives in the Room ({detectiveGuests.length})
+                </span>
+                <span className="text-[10px] text-slate-400 font-bold">
+                  Airtight Alibi • Can Vote &amp; Win Top Detective
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {detectiveGuests.map(det => {
+                  const isMeDet = isClueOnlySleuth && det.token === playerToken;
+                  return (
+                    <span
+                      key={det.id}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-black flex items-center gap-1.5 border ${
+                        isMeDet
+                          ? 'bg-sky-400/20 text-sky-200 border-sky-400'
+                          : 'bg-white/5 text-slate-200 border-white/10'
+                      }`}
+                    >
+                      <span>🕵️ {det.displayName}</span>
+                      {isMeDet && (
+                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-sky-400 text-slate-950 font-black">
+                          You
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
             <span className="text-[11px] text-slate-400">
-              Selected the wrong character by mistake?
+              Need to switch your character or join as a Guest Detective?
             </span>
             <button
               type="button"
@@ -1469,7 +1578,7 @@ export function PlayroomClient({
               }}
               className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-rose-500/20 text-slate-200 hover:text-rose-300 border border-white/10 text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
             >
-              🔄 Switch My Character (Return to Lobby)
+              🔄 Switch Role (Return to Lobby)
             </button>
           </div>
         </div>
@@ -1946,9 +2055,14 @@ export function PlayroomClient({
               </span>
               <div className="flex items-center gap-1.5 sm:hidden">
                 <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-emerald-400">
-                  👥 {claimedCount}/{activeCharacters.length} Joined
+                  👥 {claimedCount}/{activeCharacters.length} Cast
                 </span>
-                {isHostMode && claimedCount > 0 && (
+                {detectiveGuests.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-lg bg-sky-400/15 border border-sky-400/30 text-[10px] font-black text-sky-300">
+                    🕵️ +{detectiveGuests.length} Detective{detectiveGuests.length === 1 ? '' : 's'}
+                  </span>
+                )}
+                {isHostMode && (claimedCount > 0 || detectiveGuests.length > 0) && (
                   <button
                     type="button"
                     onClick={handleHostResetClaims}
@@ -1959,14 +2073,19 @@ export function PlayroomClient({
                 )}
               </div>
               <span className="text-xs sm:text-sm font-bold text-slate-200 w-full sm:w-auto">
-                Find your name below and tap your card to unlock your secrets, connections &amp; live clue deck.
+                Find your name below and tap your card — or join at the bottom as <strong className="text-sky-300">🕵️ Detective [Your Name]</strong> if you&apos;re an extra guest!
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-2 shrink-0">
               <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-emerald-400">
-                👥 {claimedCount}/{activeCharacters.length} Joined
+                👥 {claimedCount}/{activeCharacters.length} Cast Joined
               </span>
-              {isHostMode && claimedCount > 0 && (
+              {detectiveGuests.length > 0 && (
+                <span className="px-2.5 py-1 rounded-lg bg-sky-400/15 border border-sky-400/30 text-[11px] font-black text-sky-300">
+                  🕵️ +{detectiveGuests.length} Detective{detectiveGuests.length === 1 ? '' : 's'}
+                </span>
+              )}
+              {isHostMode && (claimedCount > 0 || detectiveGuests.length > 0) && (
                 <button
                   type="button"
                   onClick={handleHostResetClaims}
@@ -2117,39 +2236,67 @@ export function PlayroomClient({
             })}
           </div>
 
-          {/* Extra Guest Sleuth Join Bar */}
-          <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-white">
-                Extra Guest Playing Without a Character Role?
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Join as a Party Sleuth to view all live clues and vote in every round.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <input
-                type="text"
-                value={customSleuthName}
-                onChange={e => setCustomSleuthName(e.target.value)}
-                placeholder="Your Name"
-                className="flex-grow sm:w-44 min-h-[40px] bg-slate-950 border border-white/15 rounded-xl px-3 py-1.5 text-xs font-bold text-white placeholder:text-slate-500 outline-none focus:border-brand-pink"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (!customSleuthName.trim()) setCustomSleuthName('Guest Sleuth');
-                  setSelectedCharId('sleuth-guest');
-                  if (typeof window !== 'undefined') {
-                    window.localStorage.setItem(`bpm_selected_char_${mystery.id}`, 'sleuth-guest');
-                  }
-                  setActiveTab('clues');
+          {/* Prominent Extra Friend / Guest Detective Card ("Detective [Your Name]") */}
+          <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-sky-950/35 to-slate-900 border-2 border-sky-400/40 p-4 sm:p-5 shadow-xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-sky-400 text-slate-950 text-[10px] font-black uppercase tracking-widest">
+                    🕵️ Extra Guest Player
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-sky-400/15 border border-sky-400/30 text-sky-300 text-[10px] font-black uppercase tracking-wider">
+                    Play as &ldquo;{formattedDetectiveName}&rdquo;
+                  </span>
+                </div>
+                <h3 className="text-sm sm:text-base font-black text-white">
+                  Extra Friend Joining the Party Without an Assigned Character?
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Enter your name below to join as <strong className="text-sky-300">🕵️ Detective [Your Name]</strong> — you&apos;ll get an official Detective Briefing to interrogate the suspects, see every live clue on your phone, vote in every round, and compete on the leaderboard!
+                </p>
+              </div>
+
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  void handleJoinAsDetective();
                 }}
-                className="min-h-[40px] px-4 py-1.5 rounded-xl bg-white/10 hover:bg-brand-pink text-white text-[11px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer"
+                className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full sm:w-auto shrink-0"
               >
-                Join as Sleuth →
-              </button>
+                <input
+                  type="text"
+                  value={customSleuthName}
+                  onChange={e => setCustomSleuthName(e.target.value)}
+                  placeholder="Your Name (e.g. Sarah)"
+                  className="flex-grow sm:w-48 min-h-[42px] bg-slate-950 border border-sky-400/40 rounded-xl px-3.5 py-2 text-xs font-bold text-white placeholder:text-slate-500 outline-none focus:border-sky-400"
+                />
+                <button
+                  type="submit"
+                  disabled={isJoiningDetective}
+                  className="min-h-[42px] px-4 py-2 rounded-xl bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-lg shrink-0 cursor-pointer"
+                >
+                  {isJoiningDetective
+                    ? 'Joining...'
+                    : `🕵️ Join as ${formattedDetectiveName} →`}
+                </button>
+              </form>
             </div>
+
+            {detectiveGuests.length > 0 && (
+              <div className="pt-2.5 border-t border-white/10 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-sky-300 mr-1">
+                  🕵️ Guest Detectives Joined ({detectiveGuests.length}):
+                </span>
+                {detectiveGuests.map(det => (
+                  <span
+                    key={det.id}
+                    className="px-2.5 py-0.5 rounded-full bg-sky-400/15 border border-sky-400/30 text-sky-200 text-[11px] font-black"
+                  >
+                    🕵️ {det.displayName}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2159,8 +2306,8 @@ export function PlayroomClient({
   // ============================================================================
   // 2. ACTIVE PLAYROOM (CLEAN HEADER + HOST STAGE BAR + FOCUSED TABS)
   // ============================================================================
-  const selectedName = selectedChar ? parseCharacter(selectedChar).name : customSleuthName || 'Party Sleuth';
-  const selectedArchetype = selectedChar ? parseCharacter(selectedChar).archetype : 'Investigator';
+  const selectedName = selectedChar ? parseCharacter(selectedChar).name : formattedDetectiveName;
+  const selectedArchetype = selectedChar ? parseCharacter(selectedChar).archetype : 'Official Guest Detective';
   const selectedCharAvatar = selectedChar
     ? resolveDisplayAvatarUrl(
         getCleanCharacterPresentation(selectedChar, characters, { mode: 'print' })
@@ -2309,7 +2456,7 @@ export function PlayroomClient({
         <div className="hidden sm:block border-t border-white/5 bg-slate-950/80">
           <div className="max-w-5xl mx-auto w-full px-3 sm:px-5 py-1.5 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              {!isClueOnlySleuth && (
+              {!isClueOnlySleuth ? (
                 <>
                   <button
                     onClick={() => setActiveTab('profile')}
@@ -2332,6 +2479,17 @@ export function PlayroomClient({
                     🕸️ Connections ({charConnections.length})
                   </button>
                 </>
+              ) : (
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`px-3.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border cursor-pointer ${
+                    activeTab === 'profile'
+                      ? 'bg-sky-400 text-slate-950 border-sky-400 shadow-xs'
+                      : 'text-slate-400 border-transparent hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  🕵️ Detective Briefing &amp; Suspects ({activeCharacters.length})
+                </button>
               )}
 
               <button
@@ -2396,7 +2554,10 @@ export function PlayroomClient({
                 </span>
                 {unlockedClueRound >= 1 && unlockedClueRound <= maxClueRound && (
                   <span className="px-2 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[9px] sm:text-[10px] font-black">
-                    🗳️ {currentRoundSubmissions.length}/{suspectCharacters.length} Votes In
+                    🗳️ {currentRoundSubmissions.length}/{suspectCharacters.length + detectiveGuests.length} Votes In
+                    {detectiveGuests.length > 0
+                      ? ` (${detectiveGuests.length} Detective${detectiveGuests.length === 1 ? '' : 's'})`
+                      : ''}
                   </span>
                 )}
               </div>
@@ -2471,6 +2632,168 @@ export function PlayroomClient({
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* =====================================================================
+            TAB 1A: GUEST DETECTIVE BRIEFING & SUSPECT INTERROGATION LINEUP
+        ====================================================================== */}
+        {activeTab === 'profile' && isClueOnlySleuth && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* 1. Guest Detective Hero Card */}
+            <div className="bg-gradient-to-r from-slate-900 via-sky-950/40 to-slate-900 border-2 border-sky-400/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex flex-row items-start gap-4 shadow-xl">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl bg-sky-400/15 border-2 border-sky-400/50 flex items-center justify-center text-3xl sm:text-5xl shrink-0 shadow-lg">
+                🕵️
+              </div>
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full bg-sky-400 text-slate-950 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
+                    🕵️ Official Guest Detective
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
+                    ✓ Airtight Alibi • Not a Suspect
+                  </span>
+                </div>
+                <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight">
+                  {formattedDetectiveName}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                  You are an official Guest Investigator at tonight&apos;s party! Because you aren&apos;t one of the suspects, your mission is to roam the room, grill the suspects below using your interrogation prompts, inspect every live clue drop, and vote in every round to catch the killer.
+                </p>
+              </div>
+            </div>
+
+            {/* 2. Interactive Suspect Interrogation Lineup */}
+            <div className="bg-slate-900/60 border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 space-y-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div>
+                  <h3 className="text-xs sm:text-sm font-black uppercase tracking-widest text-sky-300">
+                    💬 Suspect Interrogation Lineup ({activeCharacters.length} Cast Members)
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Walk up to anyone below during the party and ask them their interrogation question
+                  </p>
+                </div>
+                {unlockedClueRound >= 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('clues')}
+                    className="px-3 py-1.5 rounded-xl bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider cursor-pointer shrink-0"
+                  >
+                    {isGuessStep
+                      ? `🗳️ Go to Round ${unlockedClueRound} Vote →`
+                      : `🔍 View Round ${unlockedClueRound} Clues →`}
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {activeCharacters.map((char, charIdx) => {
+                  const { name, archetype, guestName } = parseCharacter(char);
+                  const charPres = getCleanCharacterPresentation(char, characters, { mode: 'print' });
+                  const charAvatarUrl = resolveDisplayAvatarUrl(
+                    charPres.characterPhotoUrl || char.profile_data?.avatar_url || char.image_url
+                  );
+                  const roleLabel = charPres.roleTitle || archetype || name;
+                  const victimChar = activeCharacters.find(c => c.is_victim);
+                  const victimName = victimChar ? parseCharacter(victimChar).name : 'the victim';
+                  const suspectQuestions = [
+                    `"Ask ${name} (${roleLabel}) what their last private conversation with ${victimName} was really about — and who else overheard it."`,
+                    `"Ask ${name} (${roleLabel}) to walk you through their exact alibi timeline tonight and who in the room can actually vouch for them."`,
+                    `"Ask ${name} (${roleLabel}) what secret or grudge they think ${victimName} was holding over someone at this party."`,
+                    `"Ask ${name} (${roleLabel}) who they saw acting suspiciously near ${victimName} earlier — and why they haven't spoken up yet."`,
+                    `"Ask ${name} (${roleLabel}) what they stand to gain or lose after tonight, and which guest they trust the least right now."`,
+                  ];
+                  const interrogationPrompt = char.is_victim
+                    ? `"Ask ${name} (${roleLabel}) who in the room has been acting tense, defensive, or secretive around them tonight."`
+                    : suspectQuestions[charIdx % suspectQuestions.length];
+
+                  return (
+                    <div
+                      key={char.id}
+                      className="rounded-2xl bg-slate-950/80 border border-white/10 p-3.5 flex flex-col justify-between gap-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          onClick={() => {
+                            if (charAvatarUrl) {
+                              setLightboxPhoto({
+                                url: charAvatarUrl,
+                                title: charPres.roleTitle || archetype,
+                                subtitle: guestName ? `Played by ${guestName}` : undefined,
+                              });
+                            }
+                          }}
+                          className="w-14 h-16 sm:w-16 sm:h-20 rounded-xl overflow-hidden bg-slate-900 border border-white/15 shrink-0 cursor-pointer"
+                        >
+                          {charAvatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={charAvatarUrl}
+                              alt={name}
+                              className="w-full h-full object-cover object-top"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-2xl">
+                              {char.is_victim ? '💀' : '🕵️'}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                char.is_victim
+                                  ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                  : 'bg-white/10 text-slate-300'
+                              }`}
+                            >
+                              {char.is_victim ? '💀 Victim' : '🕵️ Suspect'}
+                            </span>
+                            {guestName && (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[9px] font-black uppercase">
+                                👤 {guestName}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-sm font-black text-white truncate">
+                            {charPres.roleTitle || archetype}
+                          </h4>
+                          <p className="text-[11px] text-slate-300 leading-snug line-clamp-2">
+                            {charPres.shortBlurb}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 pt-2 border-t border-white/10">
+                        <div className="rounded-xl bg-sky-400/10 border border-sky-400/25 px-3 py-2 text-[11px] text-slate-200 italic leading-snug">
+                          <strong className="text-sky-300 not-italic uppercase text-[9px] tracking-wider mr-1">
+                            🕵️ Ask them:
+                          </strong>
+                          {interrogationPrompt}
+                        </div>
+
+                        {!char.is_victim && isGuessStep && unlockedClueRound >= 1 && (
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAccusedCharId(char.id);
+                                setActiveTab('clues');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                            >
+                              🗳️ Vote for {name} →
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
@@ -4240,7 +4563,7 @@ export function PlayroomClient({
 
       {/* THUMB-FRIENDLY MOBILE BOTTOM NAVIGATION BAR (< 640px) */}
       <nav className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-slate-950/95 border-t border-white/10 backdrop-blur-lg px-2 py-1.5 flex items-center justify-around">
-        {!isClueOnlySleuth && (
+        {!isClueOnlySleuth ? (
           <>
             <button
               type="button"
@@ -4270,6 +4593,19 @@ export function PlayroomClient({
               </span>
             </button>
           </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setActiveTab('profile')}
+            className={`flex-1 py-1.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+              activeTab === 'profile'
+                ? 'text-sky-300 bg-sky-400/15'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span className="text-sm leading-none">🕵️</span>
+            <span className="text-[9px] font-black uppercase tracking-wider">Briefing</span>
+          </button>
         )}
 
         <button
