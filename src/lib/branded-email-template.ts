@@ -1,5 +1,5 @@
 const BASE_URL = 'https://backpocketmysteries.com';
-const LOGO_WHITE_URL = `${BASE_URL}/logo-horizontal-white.png?v=2`;
+const LOGO_WHITE_URL = `${BASE_URL}/logo-horizontal-white.png?v=5`;
 const EMAIL_FONT = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 export interface BrandedEmailShellOptions {

@@ -318,10 +318,10 @@ function resolvePublicMysteryCoverUrl(payload: CustomerMysteryEmailPayload): str
       return cover;
     }
     const cleanRel = cover.startsWith('/') ? cover : `/${cover}`;
-    return `${PUBLIC_BRAND_DOMAIN}${cleanRel}?v=2`;
+    return `${PUBLIC_BRAND_DOMAIN}${cleanRel}?v=5`;
   }
 
-  return `${PUBLIC_BRAND_DOMAIN}/hero-mystery-playing.png?v=2`;
+  return `${PUBLIC_BRAND_DOMAIN}/hero-mystery-playing.png?v=5`;
 }
 
 export async function sendCustomerGenerationStartedEmail(
