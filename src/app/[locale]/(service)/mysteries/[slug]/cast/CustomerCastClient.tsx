@@ -376,14 +376,22 @@ export default function CustomerCastClient({
   // Minimum 5 characters must always be in the mystery so backstories & alibis tangle properly
   const minRoles = Math.min(Math.max(5, mystery.min_players || 5), maxRoles);
 
-  // Play Mode: 'party' (5+ guests playing 1 character each, zero extra side characters)
-  // vs 'casefile' (1–4 players solving all selected suspect dossiers together like a detective box)
+  // Play Mode: 'party' (Dinner Party Roleplay — everyone plays a character)
+  // vs 'casefile' (Couch Detective / Small Group — investigate all dossiers together)
   const [playMode, setPlayMode] = useState<'party' | 'casefile'>('party');
 
-  // When in Case-File Detective Mode, let players choose between:
-  // - 'friends': Cast their own friends / created guest profiles
-  // - 'random': Instant Random Mystery Cast (fictional characters matched to the story)
-  const [casefileCastSource, setCasefileCastSource] = useState<'friends' | 'random'>('friends');
+  // 4-Step Guided Quiz / Wizard State:
+  // Step 1: How Are You Playing Tonight? (Dinner Party Roleplay vs Couch Detective / Small Group)
+  // Step 2: Select Your Cast (All Real Friends, Hybrid: Friends + Fictional Strangers, or 100% Fictional Mystery Cast)
+  // Step 3: Choose The Victim
+  // Step 4: Review Spoiler-Free Suspect Lineup & Lock In
+  const [castWizardStep, setCastWizardStep] = useState<1 | 2 | 3 | 4>(1);
+
+  // Cast Source:
+  // - 'friends': All Real Friends / Created Profiles
+  // - 'hybrid': Mix of Selected Friends + Auto-Filled Fictional Mystery Suspects
+  // - 'random': 100% Fictional Mystery Cast
+  const [casefileCastSource, setCasefileCastSource] = useState<'friends' | 'hybrid' | 'random'>('friends');
   const [randomCastCount, setRandomCastCount] = useState<number>(() =>
     Math.min(maxRoles, Math.max(minRoles, 6))
   );
@@ -516,7 +524,6 @@ export default function CustomerCastClient({
     pin: string;
     mysteryId: string;
   } | null>(() => (initialIsPaid ? { pin: initialPin, mysteryId: mystery.id } : null));
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (justCheckedOut) {
@@ -532,35 +539,15 @@ export default function CustomerCastClient({
     [guests, attendingGuestIds]
   );
 
-  // Toggle a guest In or Out (if at maxRoles and clicking an OUT guest, swap out the last selected non-host guest)
-  const handleToggleGuestAttendance = (guestId: string) => {
-    setLockedSession(null);
-    setAttendingGuestIds(prev => {
-      const isCurrentlyIn = prev.includes(guestId);
-      let nextIds: string[];
+  const selectedRealFriendsCount = useMemo(
+    () => attendingGuestIds.filter(id => !id.startsWith('random-suspect-')).length,
+    [attendingGuestIds]
+  );
 
-      if (isCurrentlyIn) {
-        nextIds = prev.filter(id => id !== guestId);
-      } else {
-        if (prev.length >= maxRoles) {
-          const hostObj = guests.find(g => g.isHost);
-          const removableIds = prev.filter(id => id !== hostObj?.id);
-          const idToDrop =
-            removableIds.length > 0
-              ? removableIds[removableIds.length - 1]
-              : prev[prev.length - 1];
-          nextIds = [...prev.filter(id => id !== idToDrop), guestId];
-        } else {
-          nextIds = [...prev, guestId];
-        }
-      }
-
-      // Reconcile assignments with the updated attending guest list
-      const nextAttendingObjs = guests.filter(g => nextIds.includes(g.id));
-      reconcileAssignments(nextAttendingObjs);
-      return nextIds;
-    });
-  };
+  const selectedRandomStrangersCount = useMemo(
+    () => attendingGuestIds.filter(id => id.startsWith('random-suspect-')).length,
+    [attendingGuestIds]
+  );
 
   // Reconciles assignments when guests are toggled In/Out
   const reconcileAssignments = (nextAttending: GuestItem[], customSeed?: number) => {
@@ -626,7 +613,149 @@ export default function CustomerCastClient({
     });
   };
 
-  // Apply an instant gender-matched Random Mystery Cast for Case-File Detective Mode
+  // Helper that takes a list of selected real friend IDs and auto-fills remaining slots up to targetTotal with gender-matched Random Mystery Characters
+  const applyHybridFriendsAndStrangers = (
+    friendIdsToKeep: string[],
+    targetTotalOverride?: number,
+    seedOverride?: number
+  ) => {
+    if (!victimCharacter) return;
+    setLockedSession(null);
+    const targetTotal = Math.min(
+      maxRoles,
+      Math.max(minRoles, targetTotalOverride ?? randomCastCount, friendIdsToKeep.length)
+    );
+    setRandomCastCount(targetTotal);
+    setCasefileCastSource('hybrid');
+
+    const seed = seedOverride ?? shuffleSeed + 3;
+    if (seedOverride !== undefined) {
+      setShuffleSeed(seed);
+    }
+
+    // Ensure random pool is loaded in `guests`
+    const currentNonRandom = guests.filter(g => !g.id.startsWith('random-suspect-'));
+    const allAvailableGuests = [...currentNonRandom, ...RANDOM_DETECTIVE_SUSPECT_POOL];
+    setGuests(allAvailableGuests);
+
+    const selectedFriends = currentNonRandom.filter(g => friendIdsToKeep.includes(g.id));
+    const slotsToFillWithStrangers = Math.max(0, targetTotal - selectedFriends.length);
+
+    const mandatoryPool = nonVictimCharacters.filter(c => c.is_mandatory);
+    const optionalPool = nonVictimCharacters.filter(c => !c.is_mandatory);
+    const targetSuspects = [...mandatoryPool, ...optionalPool].slice(
+      0,
+      Math.max(0, targetTotal - 1)
+    );
+    const allActiveChars = [victimCharacter, ...targetSuspects];
+
+    // First assign the selected real friends to gender-matched roles
+    const nextMap: Record<string, string> = {};
+    const assignedCharIds = new Set<string>();
+    const remainingFriends = [...selectedFriends];
+
+    for (const char of allActiveChars) {
+      if (remainingFriends.length === 0) break;
+      const charGender = normalizeGender(char.gender);
+      if (charGender !== 'adaptable') {
+        const fIdx = remainingFriends.findIndex(f => normalizeGender(f.gender) === charGender);
+        if (fIdx !== -1) {
+          nextMap[char.id] = remainingFriends[fIdx].id;
+          assignedCharIds.add(char.id);
+          remainingFriends.splice(fIdx, 1);
+        }
+      }
+    }
+    for (const char of allActiveChars) {
+      if (remainingFriends.length === 0) break;
+      if (assignedCharIds.has(char.id)) continue;
+      nextMap[char.id] = remainingFriends[0].id;
+      assignedCharIds.add(char.id);
+      remainingFriends.shift();
+    }
+
+    // Now fill the remaining unassigned active roles with gender-matched Random Mystery Characters
+    const shuffledStrangers = shuffleArray(RANDOM_DETECTIVE_SUSPECT_POOL, seed);
+    const usedStrangerIds = new Set<string>();
+    const chosenStrangers: GuestItem[] = [];
+
+    for (const char of allActiveChars) {
+      if (assignedCharIds.has(char.id)) continue;
+      if (chosenStrangers.length >= slotsToFillWithStrangers) break;
+      const charGender = normalizeGender(char.gender);
+      let candidate = shuffledStrangers.find(
+        g =>
+          !usedStrangerIds.has(g.id) &&
+          (charGender === 'adaptable' || normalizeGender(g.gender) === charGender)
+      );
+      if (!candidate) {
+        candidate = shuffledStrangers.find(g => !usedStrangerIds.has(g.id));
+      }
+      if (candidate) {
+        usedStrangerIds.add(candidate.id);
+        chosenStrangers.push(candidate);
+        nextMap[char.id] = candidate.id;
+        assignedCharIds.add(char.id);
+      }
+    }
+
+    const nextAttendingIds = [
+      ...selectedFriends.map(f => f.id),
+      ...chosenStrangers.map(s => s.id),
+    ];
+    setAttendingGuestIds(nextAttendingIds);
+    setAssignments(nextMap);
+  };
+
+  // Toggle a guest In or Out
+  // In Hybrid Mode, toggling a real friend In/Out automatically adjusts the number of Random Fictional Strangers so the total cast stays at targetTotal!
+  const handleToggleGuestAttendance = (guestId: string) => {
+    setLockedSession(null);
+
+    if (casefileCastSource === 'hybrid' && !guestId.startsWith('random-suspect-')) {
+      const currentFriendIds = attendingGuestIds.filter(id => !id.startsWith('random-suspect-'));
+      const isCurrentlyIn = currentFriendIds.includes(guestId);
+      let nextFriendIds: string[];
+      if (isCurrentlyIn) {
+        nextFriendIds = currentFriendIds.filter(id => id !== guestId);
+      } else {
+        if (currentFriendIds.length >= maxRoles) {
+          nextFriendIds = [...currentFriendIds.slice(0, maxRoles - 1), guestId];
+        } else {
+          nextFriendIds = [...currentFriendIds, guestId];
+        }
+      }
+      applyHybridFriendsAndStrangers(nextFriendIds, randomCastCount, shuffleSeed);
+      return;
+    }
+
+    setAttendingGuestIds(prev => {
+      const isCurrentlyIn = prev.includes(guestId);
+      let nextIds: string[];
+
+      if (isCurrentlyIn) {
+        nextIds = prev.filter(id => id !== guestId);
+      } else {
+        if (prev.length >= maxRoles) {
+          const hostObj = guests.find(g => g.isHost);
+          const removableIds = prev.filter(id => id !== hostObj?.id);
+          const idToDrop =
+            removableIds.length > 0
+              ? removableIds[removableIds.length - 1]
+              : prev[prev.length - 1];
+          nextIds = [...prev.filter(id => id !== idToDrop), guestId];
+        } else {
+          nextIds = [...prev, guestId];
+        }
+      }
+
+      const nextAttendingObjs = guests.filter(g => nextIds.includes(g.id));
+      reconcileAssignments(nextAttendingObjs);
+      return nextIds;
+    });
+  };
+
+  // Apply an instant 100% gender-matched Random Mystery Cast
   const handleApplyRandomDetectiveCast = (countOverride?: number, customSeed?: number) => {
     if (!victimCharacter) return;
     setLockedSession(null);
@@ -672,7 +801,6 @@ export default function CustomerCastClient({
       }
     }
 
-    // Ensure the random characters exist in the `guests` state so Victim & Suspect cards display their names/avatars
     setGuests(prev => {
       const existingNonRandom = prev.filter(g => !g.id.startsWith('random-suspect-'));
       return [...existingNonRandom, ...RANDOM_DETECTIVE_SUSPECT_POOL];
@@ -682,7 +810,25 @@ export default function CustomerCastClient({
     setAssignments(nextMap);
   };
 
-  // Switch back to the user's own Friends & Created Guest Profiles
+  // Switch to Hybrid Mode (defaults to Host + 1–2 friends, and fills the rest with Random Mystery Characters)
+  const handleSwitchToHybridCast = () => {
+    const friendOnlyGuests = guests.filter(g => !g.id.startsWith('random-suspect-'));
+    const currentRealFriends = attendingGuestIds.filter(id => !id.startsWith('random-suspect-'));
+    // If they had all 6 friends selected, default hybrid to Host + first friend (2 friends + 4 strangers) so they immediately see the hybrid mix
+    let initialHybridFriends = currentRealFriends;
+    if (initialHybridFriends.length === 0 || initialHybridFriends.length >= minRoles) {
+      initialHybridFriends = friendOnlyGuests
+        .slice(0, Math.min(2, friendOnlyGuests.length))
+        .map(g => g.id);
+    }
+    applyHybridFriendsAndStrangers(
+      initialHybridFriends,
+      Math.min(maxRoles, Math.max(minRoles, 6)),
+      shuffleSeed
+    );
+  };
+
+  // Switch back to 100% the user's own Friends & Created Guest Profiles
   const handleRestoreFriendsCast = () => {
     setLockedSession(null);
     setCasefileCastSource('friends');
@@ -698,8 +844,13 @@ export default function CustomerCastClient({
     setLockedSession(null);
     const nextSeed = shuffleSeed + 1;
     setShuffleSeed(nextSeed);
-    if (playMode === 'casefile' && casefileCastSource === 'random') {
+    if (casefileCastSource === 'random') {
       handleApplyRandomDetectiveCast(randomCastCount, nextSeed);
+      return;
+    }
+    if (casefileCastSource === 'hybrid') {
+      const currentFriends = attendingGuestIds.filter(id => !id.startsWith('random-suspect-'));
+      applyHybridFriendsAndStrangers(currentFriends, randomCastCount, nextSeed);
       return;
     }
     reconcileAssignments(attendingGuests, nextSeed);
@@ -728,7 +879,6 @@ export default function CustomerCastClient({
       const next = { ...prev };
       const prevGuest = next[characterId];
 
-      // Find if newGuestId is already assigned to another active character
       const otherCharId = Object.keys(next).find(
         cId => cId !== characterId && next[cId] === newGuestId
       );
@@ -770,7 +920,6 @@ export default function CustomerCastClient({
 
     const guestGender = normalizeGender(selectedGuest.gender);
 
-    // Check if the Victim role (or current Victim) has a specific gender ('male' or 'female') and the new guest's gender doesn't match
     if (
       (effectiveVictimGender === 'male' || effectiveVictimGender === 'female') &&
       guestGender !== effectiveVictimGender
@@ -833,7 +982,10 @@ export default function CustomerCastClient({
       const updatedGuests = hostObj ? [hostObj, saved, ...nonHostGuests] : [saved, ...guests];
       setGuests(updatedGuests);
 
-      if (attendingGuestIds.length < maxRoles) {
+      if (casefileCastSource === 'hybrid') {
+        const currentFriendIds = attendingGuestIds.filter(id => !id.startsWith('random-suspect-'));
+        applyHybridFriendsAndStrangers([...currentFriendIds, saved.id], randomCastCount, shuffleSeed);
+      } else if (attendingGuestIds.length < maxRoles) {
         const nextIds = [...attendingGuestIds, saved.id];
         setAttendingGuestIds(nextIds);
         reconcileAssignments(updatedGuests.filter(g => nextIds.includes(g.id)));
@@ -878,7 +1030,6 @@ export default function CustomerCastClient({
         return;
       }
 
-      // Linear workflow: Select Guests -> Lock In Cast -> Pay -> 20-Min Coffee Screen -> My Mysteries (Stories)
       router.push(
         `/${locale}/checkout/${mystery.id}?slug=${encodeURIComponent(mystery.slug)}&guests=${attendingGuests.length}`
       );
@@ -899,8 +1050,28 @@ export default function CustomerCastClient({
 
   const effectivePin = lockedSession?.pin || initialPin;
 
+  // Pool of guests shown in Victim / Suspect swap dropdowns
+  const dropdownPoolGuests = useMemo(() => {
+    if (casefileCastSource === 'random') {
+      return guests.filter(g => g.id.startsWith('random-suspect-'));
+    }
+    if (casefileCastSource === 'hybrid') {
+      return guests.filter(
+        g => !g.id.startsWith('random-suspect-') || attendingGuestIds.includes(g.id)
+      );
+    }
+    return guests.filter(g => !g.id.startsWith('random-suspect-'));
+  }, [guests, casefileCastSource, attendingGuestIds]);
+
+  const goToStep = (step: 1 | 2 | 3 | 4) => {
+    setCastWizardStep(step);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="space-y-8 pb-16 max-w-6xl mx-auto">
+    <div className="space-y-8 pb-16 max-w-5xl mx-auto">
       {viewMode === 'generating' ? (
         <MysteryGeneratingScreen
           locale={locale}
@@ -944,25 +1115,6 @@ export default function CustomerCastClient({
         </div>
       ) : (
         <>
-          {/* Clean Linear 4-Stage Workflow Stepper */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[11px] font-black uppercase tracking-widest">
-            <span className="px-3.5 py-1.5 rounded-full bg-brand-pink text-white shadow-sm">
-              1. Select Guests ({attendingGuestIds.length})
-            </span>
-            <span className="text-slate-300">→</span>
-            <span className="px-3.5 py-1.5 rounded-full bg-slate-900 text-white">
-              2. Lock In Cast
-            </span>
-            <span className="text-slate-300">→</span>
-            <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-500">
-              3. Pay &amp; Brew (~20 Mins)
-            </span>
-            <span className="text-slate-300">→</span>
-            <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-500">
-              4. Ready in My Mysteries (Stories)
-            </span>
-          </div>
-
           {/* Top Breadcrumb & Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
@@ -985,851 +1137,1145 @@ export default function CustomerCastClient({
                 </span>
               </div>
               <p className="text-sm text-slate-500 font-medium mt-1">
-                Pick who is coming tonight, choose your Victim, and lock in your cast. Once you pay, we&apos;ll generate your custom mystery package in ~20 minutes and email you when it&apos;s ready!
+                Follow the 4 quick steps below to set up your cast for <strong>{mystery.title}</strong>.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-right">
+              <div className="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-right shadow-sm">
                 <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">
                   {tier.toUpperCase()} Package ({PLAYER_TIER_LIMITS[tier].label})
                 </span>
                 <span className="text-sm font-black text-slate-900">
                   <PriceDisplay tier={tier} locale={locale as Locale} />{' '}
-                  <span className="text-xs font-bold text-emerald-600">• Up to {maxRoles} players included</span>
+                  <span className="text-xs font-bold text-emerald-600">• {minRoles === maxRoles ? `${maxRoles} Characters` : `${minRoles}–${maxRoles} Characters`}</span>
                 </span>
               </div>
             </div>
           </div>
 
-      {/* PLAY FORMAT SELECTOR: PARTY ROLEPLAY VS CASE-FILE DETECTIVE MODE */}
-      <section className="bg-slate-900 text-white rounded-[2.5rem] p-6 sm:p-8 shadow-xl border border-slate-800 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
-              How Are You Solving Tonight?
-            </span>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-              Two Ways to Play Every Mystery Package
-            </h2>
-          </div>
-          <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-white/10 shrink-0">
-            ✓ Min {minRoles} Suspects Required in Story Web
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              setPlayMode('party');
-              if (casefileCastSource === 'random') {
-                handleRestoreFriendsCast();
-              }
-            }}
-            className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer ${
-              playMode === 'party'
-                ? 'border-brand-pink bg-brand-pink/15 shadow-lg'
-                : 'border-white/10 bg-white/5 hover:border-white/25'
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
-                <span>🎭</span> Full-Cast Party Mode ({minRoles}–{maxRoles} Guests)
-              </span>
-              {playMode === 'party' && (
-                <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
-                  Selected
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-300 font-medium leading-relaxed">
-              <strong>1 Character Per Guest - Zero Random Side Characters.</strong> Select the exact friends attending your party ({minRoles} to {maxRoles} people). We only include the exact number of characters you select so nobody is left unplayed.
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setPlayMode('casefile');
-              if (casefileCastSource === 'friends') {
-                const friendGuests = guests.filter(g => !g.id.startsWith('random-suspect-'));
-                if (attendingGuestIds.length < minRoles && friendGuests.length >= minRoles) {
-                  const autoIds = friendGuests
-                    .slice(0, Math.min(friendGuests.length, Math.max(minRoles, 6)))
-                    .map(g => g.id);
-                  setAttendingGuestIds(autoIds);
-                  reconcileAssignments(friendGuests.filter(g => autoIds.includes(g.id)));
-                } else if (friendGuests.length < minRoles) {
-                  handleApplyRandomDetectiveCast(Math.min(maxRoles, Math.max(minRoles, 6)));
-                }
-              }
-            }}
-            className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer ${
-              playMode === 'casefile'
-                ? 'border-brand-pink bg-brand-pink/15 shadow-lg'
-                : 'border-white/10 bg-white/5 hover:border-white/25'
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
-                <span>📁</span> Case-File Detective Mode (1–4 Players / Solo / Duo)
-              </span>
-              {playMode === 'casefile' && (
-                <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
-                  Selected
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-300 font-medium leading-relaxed">
-              <strong>Solve It Together Like a Cold-Case Box - No Acting Needed!</strong> Playing solo, as a couple, or with 3–4 friends? Star your own friends in the crime scene OR generate a <strong>Random Mystery Cast</strong> of characters to investigate together!
-            </p>
-          </button>
-        </div>
-
-        {/* CASE-FILE SUB-CHOICE: CAST YOUR FRIENDS VS. RANDOM MYSTERY CHARACTERS */}
-        {playMode === 'casefile' && (
-          <div className="pt-4 border-t border-white/10 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
-                  Case-File Cast Option • Who Should Star as the Suspects?
-                </span>
-                <p className="text-xs text-slate-300 font-medium mt-0.5">
-                  Even when solving solo or as a duo, you can cast your real friends as the suspects OR use an instant random cast of mystery characters.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              <button
-                type="button"
-                onClick={handleRestoreFriendsCast}
-                className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-3.5 ${
-                  casefileCastSource === 'friends'
-                    ? 'border-brand-pink bg-white/10 shadow-md'
-                    : 'border-white/10 bg-white/5 hover:border-white/25'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-xl bg-brand-pink/20 border border-brand-pink/40 flex items-center justify-center text-lg shrink-0">
-                  👥
-                </div>
-                <div className="min-w-0 flex-grow">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-black uppercase tracking-wider text-white">
-                      Cast My Friends &amp; Profiles
-                    </span>
-                    {casefileCastSource === 'friends' && (
-                      <span className="px-2 py-0.5 rounded-full bg-brand-pink text-white text-[8px] font-black uppercase tracking-widest">
-                        Active
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-300 font-medium mt-1 leading-relaxed">
-                    Put yourself, your partner, or your friend group into the CCTV photos, text logs, and voice wiretaps—even if you&apos;re solving it solo on the couch!
-                  </p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleApplyRandomDetectiveCast(randomCastCount)}
-                className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-3.5 ${
-                  casefileCastSource === 'random'
-                    ? 'border-brand-pink bg-white/10 shadow-md'
-                    : 'border-white/10 bg-white/5 hover:border-white/25'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-lg shrink-0">
-                  🎲
-                </div>
-                <div className="min-w-0 flex-grow">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-black uppercase tracking-wider text-white">
-                      Use a Random Cast of Characters
-                    </span>
-                    {casefileCastSource === 'random' && (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[8px] font-black uppercase tracking-widest">
-                        Active
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-300 font-medium mt-1 leading-relaxed">
-                    Don&apos;t want to create friend profiles? Instantly populate the story web with {minRoles}–{maxRoles} ready-made fictional suspects with studio portraits &amp; accents.
-                  </p>
-                </div>
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* STEP 1: GUEST ATTENDANCE (IN OR OUT) OR RANDOM CAST GENERATOR */}
-      <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
-              Step 1 •{' '}
-              {playMode === 'casefile'
-                ? casefileCastSource === 'random'
-                  ? 'Random Mystery Suspect Web'
-                  : 'Populate Your Suspect File'
-                : 'In or Out (1 Character Per Guest)'}
-            </span>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-              {playMode === 'casefile'
-                ? casefileCastSource === 'random'
-                  ? `Random Detective Cast (${attendingGuestIds.length} Suspects Generated)`
-                  : `Select ${minRoles}–${maxRoles} Profiles for the Story Web (${attendingGuestIds.length} / ${maxRoles} Selected)`
-                : `Who's Playing Tonight? (${attendingGuestIds.length} / ${maxRoles} Selected - Min ${minRoles})`}
-            </h2>
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              {playMode === 'casefile' ? (
-                casefileCastSource === 'random' ? (
-                  <>
-                    We&apos;ve populated your case file with <strong>{attendingGuestIds.length} ready-made fictional characters</strong> (matched to each role&apos;s gender and voice accent). You can shuffle for a fresh random cast, or switch back to casting your friends anytime!
-                  </>
-                ) : (
-                  <>
-                    Every mystery requires at least <strong>{minRoles} suspects</strong> so the alibis, backstories, and motives tangle properly. Pick {minRoles}–{maxRoles} friends/profiles below to star in your case file, or click <strong>🎲 Use Random Cast</strong> to fill the case with fictional suspects!
-                  </>
-                )
-              ) : (
-                <>
-                  Tap guests to mark them <strong>In</strong> or <strong>Out</strong> (minimum <strong>{minRoles}</strong> so the backstories and alibis interlock). We generate <strong>strictly {attendingGuestIds.length} characters</strong> - zero unplayed side characters!
-                </>
-              )}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {playMode === 'casefile' && casefileCastSource === 'random' ? (
-              <>
-                {maxRoles > minRoles && (
-                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    {Array.from(
-                      { length: maxRoles - minRoles + 1 },
-                      (_, idx) => minRoles + idx
-                    ).map(countNum => (
-                      <button
-                        key={countNum}
-                        type="button"
-                        onClick={() => handleApplyRandomDetectiveCast(countNum, shuffleSeed)}
-                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                          attendingGuestIds.length === countNum
-                            ? 'bg-slate-900 text-white shadow-sm'
-                            : 'text-slate-600 hover:text-slate-900'
+          {/* CLICKABLE 4-STEP QUIZ PROGRESS BAR */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-3 sm:p-4 shadow-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                {
+                  step: 1 as const,
+                  label: '1. Play Style',
+                  sub: playMode === 'party' ? 'Dinner Party' : 'Couch Detective',
+                },
+                {
+                  step: 2 as const,
+                  label: '2. Select Cast',
+                  sub:
+                    casefileCastSource === 'random'
+                      ? `${attendingGuestIds.length} Fictional`
+                      : casefileCastSource === 'hybrid'
+                      ? `${selectedRealFriendsCount} Friends + ${selectedRandomStrangersCount} Random`
+                      : `${attendingGuestIds.length} / ${maxRoles} Selected`,
+                },
+                {
+                  step: 3 as const,
+                  label: '3. The Victim',
+                  sub: victimAssignedGuest?.name || 'Pick Victim',
+                },
+                {
+                  step: 4 as const,
+                  label: '4. Review & Pay',
+                  sub: `${activeSuspectCharacters.length} Suspects`,
+                },
+              ].map(item => {
+                const isCurrent = castWizardStep === item.step;
+                const isCompleted = castWizardStep > item.step;
+                return (
+                  <button
+                    key={item.step}
+                    type="button"
+                    onClick={() => goToStep(item.step)}
+                    className={`p-3 rounded-2xl text-left transition-all cursor-pointer flex items-center justify-between gap-2 border ${
+                      isCurrent
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                        : isCompleted
+                        ? 'bg-brand-pink/5 text-slate-900 border-brand-pink/30 hover:bg-brand-pink/10'
+                        : 'bg-slate-50 text-slate-500 border-slate-200/70 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <span
+                        className={`block text-[10px] font-black uppercase tracking-widest truncate ${
+                          isCurrent ? 'text-brand-pink' : isCompleted ? 'text-brand-pink' : 'text-slate-400'
                         }`}
                       >
-                        {countNum} Suspects
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleApplyRandomDetectiveCast(randomCastCount, shuffleSeed + 1)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-brand-pink transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>🎲</span> Shuffle Random Cast
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRestoreFriendsCast}
-                  className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-brand-pink hover:text-brand-pink text-xs font-black uppercase tracking-widest transition-colors cursor-pointer"
-                >
-                  👥 Switch to Friend Profiles
-                </button>
-              </>
-            ) : (
-              <>
-                {playMode === 'casefile' && (
-                  <button
-                    type="button"
-                    onClick={() => handleApplyRandomDetectiveCast(randomCastCount)}
-                    className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
-                  >
-                    <span>🎲</span> Use Random Cast
+                        {item.label}
+                      </span>
+                      <span
+                        className={`block text-xs font-bold truncate mt-0.5 ${
+                          isCurrent ? 'text-white' : 'text-slate-700'
+                        }`}
+                      >
+                        {item.sub}
+                      </span>
+                    </div>
+                    <span
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                        isCurrent
+                          ? 'bg-brand-pink text-white'
+                          : isCompleted
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-slate-200 text-slate-500'
+                      }`}
+                    >
+                      {isCompleted ? '✓' : item.step}
+                    </span>
                   </button>
-                )}
-                {attendingGuestIds.length < minRoles && guests.length >= minRoles && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const friendGuests = guests.filter(g => !g.id.startsWith('random-suspect-'));
-                      const targetCount = Math.min(friendGuests.length, Math.max(minRoles, 6), maxRoles);
-                      const nextIds = friendGuests.slice(0, targetCount).map(g => g.id);
-                      setAttendingGuestIds(nextIds);
-                      reconcileAssignments(friendGuests.filter(g => nextIds.includes(g.id)));
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-brand-pink transition-colors cursor-pointer"
-                  >
-                    ⚡ Auto-Select {Math.min(guests.length, Math.max(minRoles, 6))} Suspects
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setIsHostProfileModalOpen(true)}
-                  className="px-4 py-2.5 rounded-xl bg-brand-pink/10 border border-brand-pink/30 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-colors cursor-pointer"
-                >
-                  👑 View / Edit Host Profile
-                </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* =====================================================================
+              STEP 1 OF 4: HOW ARE YOU PLAYING TONIGHT?
+          ===================================================================== */}
+          {castWizardStep === 1 && (
+            <section className="bg-slate-900 text-white rounded-[2.5rem] p-8 sm:p-10 shadow-xl border border-slate-800 space-y-8 animate-in fade-in duration-200">
+              <div className="space-y-2 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="px-3.5 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                    Step 1 of 4 • Quick Setup Quiz
+                  </span>
+                  <span className="px-3.5 py-1 rounded-full bg-white/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-white/10">
+                    ✓ {minRoles === maxRoles ? `${maxRoles} Interlocking Characters` : `${minRoles}–${maxRoles} Interlocking Characters`}
+                  </span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  How Are You Playing Tonight?
+                </h2>
+                <p className="text-sm text-slate-300 font-medium leading-relaxed">
+                  To keep the alibis, motives, and red herrings watertight, this mystery features{' '}
+                  <strong className="text-white">
+                    {minRoles === maxRoles ? `${maxRoles} characters` : `${minRoles} to ${maxRoles} characters`}
+                  </strong>{' '}
+                  (1 Victim + {minRoles - 1} Suspects). Choose how your group is playing:
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* OPTION A: DINNER PARTY ROLEPLAY */}
                 <button
                   type="button"
                   onClick={() => {
-                    setEditingCastGuest(null);
-                    setIsGuestModalOpen(true);
+                    setPlayMode('party');
                   }}
-                  className="px-4 py-2.5 rounded-xl border-2 border-dashed border-brand-pink/40 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink/5 transition-colors cursor-pointer"
+                  className={`p-6 sm:p-7 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-5 ${
+                    playMode === 'party'
+                      ? 'border-brand-pink bg-brand-pink/15 shadow-xl'
+                      : 'border-white/15 bg-white/5 hover:border-white/30'
+                  }`}
                 >
-                  + Add Guest
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Dedicated Host Profile Spotlight Banner (shown when casting friends/profiles) */}
-        {!(playMode === 'casefile' && casefileCastSource === 'random') && (() => {
-          const hostGuest = guests.find(g => g.isHost);
-          if (!hostGuest) return null;
-          const isHostIn = attendingGuestIds.includes(hostGuest.id);
-          const hostAvatar = resolveDisplayAvatarUrl(hostGuest.avatar_url);
-          const hostGenderBadge = formatGenderLabel(hostGuest.gender);
-          const assignedCharId = Object.keys(assignments).find(
-            cId => assignments[cId] === hostGuest.id
-          );
-          const assignedChar = characters.find(c => c.id === assignedCharId);
-
-          return (
-            <div className="p-5 sm:p-6 rounded-3xl border-2 border-brand-pink/30 bg-gradient-to-r from-brand-pink/5 via-white to-brand-pink/5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-              <div className="flex items-start sm:items-center gap-4 min-w-0">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border-2 border-brand-pink/40 shadow-md">
-                  {hostAvatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={hostAvatar}
-                      alt={hostGuest.name}
-                      className="w-full h-full object-cover object-top"
-                    />
-                  ) : (
-                    <span className="text-3xl">👑</span>
-                  )}
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
-                      👑 Host Profile (You)
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-wider">
-                      {hostGenderBadge.shortLabel}
-                    </span>
-                    {assignedChar && isHostIn && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-wider">
-                        🎭 Cast as {assignedChar.roleTitle}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="w-12 h-12 rounded-2xl bg-brand-pink/20 border border-brand-pink/40 flex items-center justify-center text-2xl">
+                        🎭
                       </span>
-                    )}
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          playMode === 'party'
+                            ? 'bg-brand-pink text-white'
+                            : 'bg-white/10 text-slate-300'
+                        }`}
+                      >
+                        {playMode === 'party' ? '✓ Selected' : `${minRoles === maxRoles ? `${maxRoles} Players` : `${minRoles}–${maxRoles} Players`}`}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-white">
+                        Dinner Party Roleplay ({minRoles === maxRoles ? `${maxRoles}` : `${minRoles}–${maxRoles}`} Players)
+                      </h3>
+                      <p className="text-xs font-bold text-brand-pink uppercase tracking-wider mt-0.5">
+                        Everyone Plays a Character Around the Table
+                      </p>
+                    </div>
+
+                    <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                      Hosting a party with {minRoles === maxRoles ? `${maxRoles}` : `${minRoles}–${maxRoles}`} people? Each guest gets their own custom character booklet, outfit guide, and secret alibi to act out across 3 rounds.
+                    </p>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-black text-slate-900 truncate">
-                    {hostGuest.name}
-                  </h3>
-                  {hostGuest.bio ? (
-                    <p className="text-xs text-slate-600 font-medium line-clamp-2 max-w-2xl">
-                      {hostGuest.bio}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-slate-400 italic">
-                      Click &ldquo;View / Edit Host Profile&rdquo; to customize your bio, pronouns, and avatar.
-                    </p>
-                  )}
-                </div>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-black text-white">
+                    <span>Best for Birthdays, Dinner Parties &amp; Hosting</span>
+                    <span className="text-brand-pink">→</span>
+                  </div>
+                </button>
+
+                {/* OPTION B: COUCH DETECTIVE / SMALL GROUP */}
                 <button
                   type="button"
-                  onClick={() => setIsHostProfileModalOpen(true)}
-                  className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-brand-pink text-slate-700 hover:text-brand-pink text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
-                >
-                  ✎ View / Edit Profile
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleGuestAttendance(hostGuest.id)}
-                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer shadow-sm ${
-                    isHostIn
-                      ? 'bg-brand-pink text-white hover:opacity-95'
-                      : 'bg-slate-900 text-white hover:bg-brand-pink'
-                  }`}
-                >
-                  {isHostIn ? '✓ Playing Tonight (IN)' : '+ Add Host to Cast (IN)'}
-                </button>
-              </div>
-            </div>
-          );
-        })()}
-
-        {attendingGuestIds.length < minRoles && (
-          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <p className="text-xs font-bold text-amber-800">
-              ⚠️ Please select at least <strong>{minRoles} profiles</strong> ({minRoles - attendingGuestIds.length} more needed) so the murder mystery has enough interlocking suspects, alibis, and red herrings. Don&apos;t have {minRoles} profiles yet? Click <strong>🎲 Use Random Cast</strong> above to instantly populate your case file with fictional suspects!
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setPlayMode('casefile');
-                handleApplyRandomDetectiveCast(Math.min(maxRoles, Math.max(minRoles, 6)));
-              }}
-              className="px-4 py-2 rounded-xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest hover:bg-brand-pink transition-colors shrink-0 cursor-pointer"
-            >
-              🎲 Fill with Random Cast
-            </button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-          {guests
-            .filter(g =>
-              playMode === 'casefile' && casefileCastSource === 'random'
-                ? g.id.startsWith('random-suspect-')
-                : !g.id.startsWith('random-suspect-')
-            )
-            .map(guest => {
-              const isIn = attendingGuestIds.includes(guest.id);
-              const gBadge = formatGenderLabel(guest.gender);
-              const guestAvatar = resolveDisplayAvatarUrl(guest.avatar_url);
-              const isRandomSuspect = guest.id.startsWith('random-suspect-');
-
-              return (
-                <div
-                  key={guest.id}
-                  onClick={() => handleToggleGuestAttendance(guest.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleToggleGuestAttendance(guest.id);
-                    }
+                  onClick={() => {
+                    setPlayMode('casefile');
                   }}
-                  className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
-                    isIn
-                      ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
-                      : 'border-slate-200 hover:border-brand-pink/50 bg-white'
+                  className={`p-6 sm:p-7 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-5 ${
+                    playMode === 'casefile'
+                      ? 'border-brand-pink bg-brand-pink/15 shadow-xl'
+                      : 'border-white/15 bg-white/5 hover:border-white/30'
                   }`}
                 >
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
-                    {guestAvatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={guestAvatar} alt={guest.name} className="w-full h-full object-cover object-top" />
-                    ) : (
-                      <span className="text-2xl">{guest.isHost ? '👑' : '👤'}</span>
-                    )}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-2xl">
+                        🕵️‍♀️
+                      </span>
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          playMode === 'casefile'
+                            ? 'bg-brand-pink text-white'
+                            : 'bg-white/10 text-slate-300'
+                        }`}
+                      >
+                        {playMode === 'casefile' ? '✓ Selected' : `1–${Math.max(4, minRoles - 1)} Players`}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-white">
+                        Couch Detective / Case-File Mode (1–{Math.max(4, minRoles - 1)} Players)
+                      </h3>
+                      <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mt-0.5">
+                        Solo, Date Night, or Small Group — No Acting Required!
+                      </p>
+                    </div>
+
+                    <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                      Have fewer than {minRoles} people (or prefer solving without acting)? Cast your friends, a <strong>Hybrid mix of you + random suspects</strong>, or <strong>100% fictional characters</strong>, and inspect all {minRoles} dossiers &amp; clues together like a cold-case detective box!
+                    </p>
                   </div>
-                  <div className="min-w-0 flex-grow">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-black text-slate-900 truncate">{guest.name}</p>
-                      {guest.isHost && (
-                        <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[8px] font-black uppercase tracking-wider shrink-0">
-                          Host
-                        </span>
-                      )}
-                      {isRandomSuspect && (
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] font-black uppercase tracking-wider shrink-0">
-                          Suspect
+
+                  <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-black text-white">
+                    <span>Best for Solo, Couples &amp; Casual Game Nights</span>
+                    <span className="text-emerald-400">→</span>
+                  </div>
+                </button>
+              </div>
+
+              <div className="pt-4 border-t border-white/10 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => goToStep(2)}
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all shadow-xl active:scale-95 cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
+                    boxShadow: '0 10px 25px -8px rgba(254,4,198,0.5)',
+                  }}
+                >
+                  Next: Choose Who Stars in Your Mystery →
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* =====================================================================
+              STEP 2 OF 4: WHO SHOULD STAR AS THE CHARACTERS? (FRIENDS / HYBRID / RANDOM)
+          ===================================================================== */}
+          {castWizardStep === 2 && (
+            <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm space-y-7 animate-in fade-in duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
+                    Step 2 of 4 • Cast Your {minRoles === maxRoles ? `${maxRoles}` : `${minRoles}–${maxRoles}`} Characters
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                    Who Should Star in Tonight&apos;s Mystery?
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium mt-1">
+                    Choose whether to cast <strong>All Real Friends</strong>, a <strong>Hybrid Mix (Friends + Fictional Strangers)</strong>, or a <strong>100% Fictional Mystery Cast</strong>.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => goToStep(1)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest transition-colors self-start sm:self-auto shrink-0 cursor-pointer"
+                >
+                  ← Back to Play Style
+                </button>
+              </div>
+
+              {/* 3 CASTING SOURCE TABS: ALL FRIENDS vs HYBRID vs 100% RANDOM */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {/* 1. ALL REAL FRIENDS */}
+                <button
+                  type="button"
+                  onClick={handleRestoreFriendsCast}
+                  className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                    casefileCastSource === 'friends'
+                      ? 'border-brand-pink bg-brand-pink/5 shadow-md'
+                      : 'border-slate-200 bg-slate-50/60 hover:border-brand-pink/40 hover:bg-white'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="w-10 h-10 rounded-xl bg-brand-pink/15 text-brand-pink flex items-center justify-center text-lg">
+                        👥
+                      </span>
+                      {casefileCastSource === 'friends' && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
+                          Active
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      {gBadge.shortLabel}
-                      {guest.accent ? ` • ${guest.accent}` : ''}
+                    <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
+                      1. All Friend Profiles ({minRoles}–{maxRoles})
+                    </h3>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                      Cast real friends &amp; family into every role. Tap <strong>+ Add Guest</strong> below to create profiles for anyone attending!
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {!isRandomSuspect && !guest.isLinked && (
+                </button>
+
+                {/* 2. HYBRID (FRIENDS + RANDOM STRANGERS) */}
+                <button
+                  type="button"
+                  onClick={handleSwitchToHybridCast}
+                  className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                    casefileCastSource === 'hybrid'
+                      ? 'border-brand-pink bg-brand-pink/5 shadow-md'
+                      : 'border-slate-200 bg-slate-50/60 hover:border-brand-pink/40 hover:bg-white'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg">
+                        ✨
+                      </span>
+                      {casefileCastSource === 'hybrid' ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[9px] font-black uppercase tracking-widest">
+                          Great for 2–5 Players
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
+                      2. Hybrid: Friends + Strangers
+                    </h3>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                      Select just yourselves or a few friends (e.g. 2–4 people) and we&apos;ll <strong>auto-fill the remaining slots</strong> with fictional Mystery Suspects!
+                    </p>
+                  </div>
+                </button>
+
+                {/* 3. 100% RANDOM MYSTERY CAST */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyRandomDetectiveCast(randomCastCount)}
+                  className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                    casefileCastSource === 'random'
+                      ? 'border-brand-pink bg-brand-pink/5 shadow-md'
+                      : 'border-slate-200 bg-slate-50/60 hover:border-brand-pink/40 hover:bg-white'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+                        🎲
+                      </span>
+                      {casefileCastSource === 'random' ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-widest">
+                          Instant Setup
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
+                      3. 100% Fictional Mystery Cast
+                    </h3>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                      Zero profile setup! Instantly populate all {minRoles} roles with ready-made fictional suspects, studio portraits &amp; voice accents.
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              {/* STATUS & ACTION BAR FOR CURRENT CAST SOURCE */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                      {attendingGuestIds.length} / {maxRoles} Total Characters Active
+                    </span>
+                    {casefileCastSource === 'hybrid' && (
+                      <span className="px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
+                        👥 {selectedRealFriendsCount} Real Friends + 🎲 {selectedRandomStrangersCount} Fictional Suspects
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 font-medium">
+                    {casefileCastSource === 'random'
+                      ? 'Tap "🎲 Shuffle Fictional Cast" to deal a fresh lineup of characters, or tap any suspect card below.'
+                      : casefileCastSource === 'hybrid'
+                      ? 'Tap your real friends below to toggle them IN or OUT — we automatically fill the remaining slots with Fictional Mystery Suspects!'
+                      : `Tap friends below to mark them IN or OUT (minimum ${minRoles} required). Need more people? Click "+ Add Guest" or switch to Hybrid Mode!`}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {(casefileCastSource === 'random' || casefileCastSource === 'hybrid') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (casefileCastSource === 'random') {
+                          handleApplyRandomDetectiveCast(randomCastCount, shuffleSeed + 1);
+                        } else {
+                          const currentFriends = attendingGuestIds.filter(
+                            id => !id.startsWith('random-suspect-')
+                          );
+                          applyHybridFriendsAndStrangers(
+                            currentFriends,
+                            randomCastCount,
+                            shuffleSeed + 1
+                          );
+                        }
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-brand-pink text-white text-xs font-black uppercase tracking-widest transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span>🎲</span> Shuffle Fictional Suspects
+                    </button>
+                  )}
+
+                  {casefileCastSource !== 'random' && (
+                    <>
                       <button
                         type="button"
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (guest.isHost) {
-                            setIsHostProfileModalOpen(true);
-                          } else {
-                            setEditingCastGuest(guest);
-                            setIsGuestModalOpen(true);
-                          }
-                        }}
-                        title={`Edit ${guest.name}`}
-                        className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-brand-pink/15 text-slate-500 hover:text-brand-pink flex items-center justify-center text-xs transition-colors cursor-pointer"
+                        onClick={() => setIsHostProfileModalOpen(true)}
+                        className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-widest transition-colors cursor-pointer"
                       >
-                        ✎
+                        👑 Edit Host
                       </button>
-                    )}
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
-                        isIn
-                          ? 'bg-brand-pink text-white'
-                          : 'bg-slate-100 text-slate-500 hover:bg-brand-pink/10 hover:text-brand-pink'
-                      }`}
-                    >
-                      {isIn ? 'IN' : 'OUT'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-      </section>
-
-      {/* STEP 2: PICK THE VICTIM (WITH GENDER MISMATCH MODAL GUARD) */}
-      {victimCharacter && (
-        <section className="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white rounded-[2.5rem] p-8 sm:p-10 shadow-xl border border-white/10 relative overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-brand-pink/15 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-            <div className="space-y-4 max-w-2xl">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
-                  Step 2 • 💀 Choose The Victim
-                </span>
-                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/10 text-slate-200 border border-white/10">
-                  Written Role: {formatGenderLabel(victimCharacter.gender).label}
-                </span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                {victimCharacter.roleTitle}
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                    📖 Character Blurb
-                  </span>
-                  <p className="text-xs text-slate-200 font-medium leading-relaxed">
-                    {victimCharacter.cleanBio}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                    👗 What to Wear (Outfit Vibe)
-                  </span>
-                  <p className="text-xs text-slate-200 font-medium leading-relaxed">
-                    {victimAssignedGuest && normalizeGender(victimAssignedGuest.gender) === 'female' && victimCharacter.outfitFeminine
-                      ? victimCharacter.outfitFeminine
-                      : victimAssignedGuest && normalizeGender(victimAssignedGuest.gender) === 'male' && victimCharacter.outfitMasculine
-                      ? victimCharacter.outfitMasculine
-                      : victimCharacter.outfitAdvice}
-                  </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCastGuest(null);
+                          setIsGuestModalOpen(true);
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs font-black uppercase tracking-widest transition-all cursor-pointer shadow-md"
+                      >
+                        + Add Friend Profile
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Victim Guest Selector Card */}
-            <div className="bg-white/5 border border-white/15 rounded-3xl p-6 w-full lg:w-96 shrink-0 space-y-4 backdrop-blur-md">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                Who is getting murdered tonight?
-              </label>
-
-              {victimAssignedGuest && (
-                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/10 border border-white/10">
-                  <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-800 shrink-0 flex items-center justify-center border border-white/15 shadow-lg">
-                    {resolveDisplayAvatarUrl(victimAssignedGuest.avatar_url) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={resolveDisplayAvatarUrl(victimAssignedGuest.avatar_url)}
-                        alt={victimAssignedGuest.name}
-                        className="w-full h-full object-cover object-top"
-                      />
-                    ) : (
-                      <span className="text-3xl">💀</span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-base font-black text-white truncate">
-                      {victimAssignedGuest.name}
-                    </p>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-300 mt-0.5">
-                      Assigned as {victimCharacter.roleTitle}
-                    </p>
-                  </div>
+              {/* IF FEWER THAN MIN ROLES IN FRIENDS MODE, OFFER 1-CLICK HYBRID TOP-UP */}
+              {attendingGuestIds.length < minRoles && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <p className="text-xs font-bold text-amber-900 leading-relaxed">
+                    ⚠️ You currently have <strong>{attendingGuestIds.length} of {minRoles} required characters</strong> selected. Select {minRoles - attendingGuestIds.length} more friend profile(s) below, or click <strong>✨ Auto-Fill Remaining {minRoles - attendingGuestIds.length} Slots with Fictional Suspects</strong>!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentFriends = attendingGuestIds.filter(
+                        id => !id.startsWith('random-suspect-')
+                      );
+                      applyHybridFriendsAndStrangers(
+                        currentFriends,
+                        Math.min(maxRoles, Math.max(minRoles, 6)),
+                        shuffleSeed
+                      );
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest hover:bg-brand-pink transition-colors shrink-0 cursor-pointer shadow-sm"
+                  >
+                    ✨ Auto-Fill {minRoles - attendingGuestIds.length} Random Suspects
+                  </button>
                 </div>
               )}
 
-              <CustomSelect
-                value={assignments[victimCharacter.id] || ''}
-                onChange={e => handleSelectVictimGuest(e.target.value)}
-                variant="dark"
-                placeholder="Select guest for Victim..."
-                className="w-full bg-slate-900 border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-brand-pink cursor-pointer"
-              >
-                <option value="" disabled>
-                  Select guest for Victim...
-                </option>
-                {guests
-                  .filter(g =>
-                    playMode === 'casefile' && casefileCastSource === 'random'
-                      ? g.id.startsWith('random-suspect-')
-                      : !g.id.startsWith('random-suspect-')
-                  )
-                  .map(g => {
-                    const gNorm = normalizeGender(g.gender);
-                    const vNorm = normalizeGender(victimCharacter.gender);
-                    const isMismatch =
-                      (vNorm === 'male' || vNorm === 'female') && gNorm !== vNorm;
-                    const isAttending = attendingGuestIds.includes(g.id);
-                    return (
-                      <option key={g.id} value={g.id}>
-                        {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
-                        {formatGenderLabel(g.gender).shortLabel}
-                        {isMismatch ? ' ⚠️ Gender Mismatch' : ''}
-                        {!isAttending ? ' • Tap to Add' : ''})
-                      </option>
-                    );
-                  })}
-              </CustomSelect>
-
-              <p className="text-[11px] text-slate-400 font-medium leading-snug">
-                Tip: Great for the birthday guest, hen/stag, or yourself! Even the Victim still gets to play and guess who killed them.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* STEP 3: SPOILER-FREE SUSPECTS POOL & AI RE-SORT */}
-      <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
-              Step 3 • Blind Suspect Casting
-            </span>
-            <h2 className="text-2xl font-black text-slate-900">
-              Tonight&apos;s Suspect Lineup ({activeSuspectCharacters.length} Suspects)
-            </h2>
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              Mandatory and optional roles are secretly mixed below so you have <strong>zero spoilers</strong> about who the killer is. Hit <strong>AI Re-Sort</strong> or swap anyone freely!
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleAiResort}
-            className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-brand-pink text-white text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center gap-2 shrink-0 cursor-pointer"
-          >
-            <span>⚡</span> AI Re-Sort Suspects
-          </button>
-        </div>
-
-        {activeSuspectCharacters.length < minRoles - 1 ? (
-          <div className="p-12 text-center text-slate-500 font-bold text-sm border-2 border-dashed border-slate-200 rounded-3xl space-y-2">
-            <p className="text-slate-900 font-black text-base">
-              Select at least {minRoles} profiles in Step 1 to build your suspect lineup!
-            </p>
-            <p className="text-xs font-medium text-slate-500 max-w-lg mx-auto">
-              Every mystery needs at least {minRoles} characters (1 Victim + {minRoles - 1} Suspects) so their alibis, motives, and backstories tangle together. Playing solo or in a duo? Use <strong>Case-File Detective Mode</strong> and select {minRoles}+ profiles to inspect all of their files!
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {activeSuspectCharacters.map(char => {
-              const assignedGuestId = assignments[char.id] || '';
-              const assignedGuest = guests.find(g => g.id === assignedGuestId);
-              const genderBadge = formatGenderLabel(char.gender);
-              const guestNormGender = assignedGuest ? normalizeGender(assignedGuest.gender) : 'adaptable';
-              const resolvedOutfit =
-                guestNormGender === 'female' && char.outfitFeminine
-                  ? char.outfitFeminine
-                  : guestNormGender === 'male' && char.outfitMasculine
-                  ? char.outfitMasculine
-                  : char.outfitAdvice;
-              const suspectPhotoUrl = resolveDisplayAvatarUrl(
-                assignedGuest?.avatar_url || char.characterPhotoUrl || undefined
-              );
-
-              return (
-                <div
-                  key={char.id}
-                  className="rounded-3xl border border-slate-200 bg-slate-50/50 hover:bg-white overflow-hidden flex flex-col justify-between transition-all hover:shadow-md"
-                >
-                  {/* Large Suspect / Assigned Guest Portrait Header */}
-                  <div className="relative w-full aspect-[4/5] sm:aspect-auto sm:h-80 bg-slate-900 overflow-hidden border-b border-slate-200">
-                    {suspectPhotoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={suspectPhotoUrl}
-                        alt={assignedGuest?.name || char.roleTitle}
-                        className="w-full h-full object-cover object-top"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-6xl text-white">
-                        🕵️
-                      </div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent pointer-events-none" />
-
-                    {/* Top Spoiler-Free Badges */}
-                    <div className="absolute top-3.5 sm:top-4 inset-x-3.5 sm:inset-x-4 flex items-center justify-between gap-2 z-10">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900/90 text-white border border-white/15 backdrop-blur-md shrink-0">
-                          🕵️ Suspect
-                        </span>
-                        {assignedGuest && (
-                          <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-black bg-brand-pink text-white shadow-md truncate max-w-[140px] sm:max-w-[200px]">
-                            {assignedGuest.isHost ? '👑' : '👤'} {assignedGuest.name}
-                          </span>
-                        )}
-                      </div>
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border shadow-sm shrink-0 ${genderBadge.badgeClass}`}
-                      >
-                        {genderBadge.label}
-                      </span>
-                    </div>
-
-                    {/* Role Title */}
-                    <div className="absolute bottom-3.5 inset-x-4 sm:inset-x-5 z-10">
-                      <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-md">
-                        {char.roleTitle}
+              {/* GUEST & SUSPECT SELECTION GRID */}
+              {casefileCastSource === 'hybrid' ? (
+                <div className="space-y-6">
+                  {/* SUB-SECTION A: YOUR REAL FRIENDS */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">
+                        👥 Your Real Friends &amp; Profiles ({selectedRealFriendsCount} Selected — Tap to Toggle In/Out)
                       </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                      {guests
+                        .filter(g => !g.id.startsWith('random-suspect-'))
+                        .map(guest => {
+                          const isIn = attendingGuestIds.includes(guest.id);
+                          const gBadge = formatGenderLabel(guest.gender);
+                          const guestAvatar = resolveDisplayAvatarUrl(guest.avatar_url);
+
+                          return (
+                            <div
+                              key={guest.id}
+                              onClick={() => handleToggleGuestAttendance(guest.id)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  handleToggleGuestAttendance(guest.id);
+                                }
+                              }}
+                              className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
+                                isIn
+                                  ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
+                                  : 'border-slate-200 hover:border-brand-pink/50 bg-white'
+                              }`}
+                            >
+                              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
+                                {guestAvatar ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={guestAvatar}
+                                    alt={guest.name}
+                                    className="w-full h-full object-cover object-top"
+                                  />
+                                ) : (
+                                  <span className="text-2xl">{guest.isHost ? '👑' : '👤'}</span>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-grow">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-sm font-black text-slate-900 truncate">
+                                    {guest.name}
+                                  </p>
+                                  {guest.isHost && (
+                                    <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[8px] font-black uppercase tracking-wider shrink-0">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                  {gBadge.shortLabel}
+                                </p>
+                              </div>
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
+                                  isIn
+                                    ? 'bg-brand-pink text-white'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}
+                              >
+                                {isIn ? 'IN' : 'OUT'}
+                              </span>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
 
-                  <div className="p-4 sm:p-6 flex flex-col justify-between flex-grow gap-4">
-                    <div className="space-y-4">
-                      {/* Clean Blurb Box */}
-                      <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1.5">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                          📖 The Blurb
-                        </p>
-                        <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                          {char.cleanBio}
-                        </p>
+                  {/* SUB-SECTION B: AUTO-FILLED FICTIONAL MYSTERY SUSPECTS */}
+                  {selectedRandomStrangersCount > 0 && (
+                    <div className="space-y-3 pt-4 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-emerald-700">
+                          🎲 Auto-Filled Fictional Mystery Suspects ({selectedRandomStrangersCount} Slots Filled)
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentFriends = attendingGuestIds.filter(
+                              id => !id.startsWith('random-suspect-')
+                            );
+                            applyHybridFriendsAndStrangers(
+                              currentFriends,
+                              randomCastCount,
+                              shuffleSeed + 1
+                            );
+                          }}
+                          className="text-[11px] font-black uppercase tracking-widest text-brand-pink hover:underline cursor-pointer"
+                        >
+                          🎲 Swap Fictional Strangers
+                        </button>
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                        {guests
+                          .filter(
+                            g =>
+                              g.id.startsWith('random-suspect-') &&
+                              attendingGuestIds.includes(g.id)
+                          )
+                          .map(stranger => {
+                            const gBadge = formatGenderLabel(stranger.gender);
+                            const strangerAvatar = resolveDisplayAvatarUrl(stranger.avatar_url);
+                            return (
+                              <div
+                                key={stranger.id}
+                                className="p-3.5 rounded-2xl border-2 border-emerald-500/40 bg-emerald-50/30 flex items-center gap-3 shadow-sm"
+                              >
+                                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-emerald-200 shadow-sm">
+                                  {strangerAvatar ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={strangerAvatar}
+                                      alt={stranger.name}
+                                      className="w-full h-full object-cover object-top"
+                                    />
+                                  ) : (
+                                    <span className="text-2xl">🕵️</span>
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-grow">
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="text-sm font-black text-slate-900 truncate">
+                                      {stranger.name}
+                                    </p>
+                                  </div>
+                                  <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
+                                    {gBadge.shortLabel}
+                                    {stranger.accent ? ` • ${stranger.accent}` : ''}
+                                  </p>
+                                </div>
+                                <span className="px-2 py-1 rounded-full bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest shrink-0">
+                                  NPC
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                  {guests
+                    .filter(g =>
+                      casefileCastSource === 'random'
+                        ? g.id.startsWith('random-suspect-') && attendingGuestIds.includes(g.id)
+                        : !g.id.startsWith('random-suspect-')
+                    )
+                    .map(guest => {
+                      const isIn = attendingGuestIds.includes(guest.id);
+                      const gBadge = formatGenderLabel(guest.gender);
+                      const guestAvatar = resolveDisplayAvatarUrl(guest.avatar_url);
+                      const isRandomSuspect = guest.id.startsWith('random-suspect-');
 
-                      {/* Clean Outfit Guide */}
-                      <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                            👗 What to Wear
-                          </p>
-                          {assignedGuest && (char.outfitFeminine || char.outfitMasculine) && (
-                            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                              Matched for {assignedGuest.name}
+                      return (
+                        <div
+                          key={guest.id}
+                          onClick={() => handleToggleGuestAttendance(guest.id)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleToggleGuestAttendance(guest.id);
+                            }
+                          }}
+                          className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
+                            isIn
+                              ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
+                              : 'border-slate-200 hover:border-brand-pink/50 bg-white'
+                          }`}
+                        >
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
+                            {guestAvatar ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={guestAvatar}
+                                alt={guest.name}
+                                className="w-full h-full object-cover object-top"
+                              />
+                            ) : (
+                              <span className="text-2xl">{guest.isHost ? '👑' : '👤'}</span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-grow">
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-black text-slate-900 truncate">
+                                {guest.name}
+                              </p>
+                              {guest.isHost && (
+                                <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[8px] font-black uppercase tracking-wider shrink-0">
+                                  Host
+                                </span>
+                              )}
+                              {isRandomSuspect && (
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] font-black uppercase tracking-wider shrink-0">
+                                  Fictional
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              {gBadge.shortLabel}
+                              {guest.accent ? ` • ${guest.accent}` : ''}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {!isRandomSuspect && !guest.isLinked && (
+                              <button
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  if (guest.isHost) {
+                                    setIsHostProfileModalOpen(true);
+                                  } else {
+                                    setEditingCastGuest(guest);
+                                    setIsGuestModalOpen(true);
+                                  }
+                                }}
+                                title={`Edit ${guest.name}`}
+                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-brand-pink/15 text-slate-500 hover:text-brand-pink flex items-center justify-center text-xs transition-colors cursor-pointer"
+                              >
+                                ✎
+                              </button>
+                            )}
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
+                                isIn
+                                  ? 'bg-brand-pink text-white'
+                                  : 'bg-slate-100 text-slate-500 hover:bg-brand-pink/10 hover:text-brand-pink'
+                              }`}
+                            >
+                              {isIn ? 'IN' : 'OUT'}
                             </span>
-                          )}
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                          {resolvedOutfit}
+                      );
+                    })}
+                </div>
+              )}
+
+              {/* STEP 2 FOOTER NAVIGATION */}
+              <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <button
+                  type="button"
+                  onClick={() => goToStep(1)}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest transition-colors cursor-pointer"
+                >
+                  ← Back
+                </button>
+                <button
+                  type="button"
+                  disabled={attendingGuestIds.length < minRoles}
+                  onClick={() => goToStep(3)}
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all shadow-xl active:scale-95 disabled:opacity-50 cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
+                    boxShadow: '0 10px 25px -8px rgba(254,4,198,0.5)',
+                  }}
+                >
+                  Next: Choose Your Victim ({attendingGuestIds.length} Cast Selected) →
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* =====================================================================
+              STEP 3 OF 4: CHOOSE THE VICTIM
+          ===================================================================== */}
+          {castWizardStep === 3 && victimCharacter && (
+            <section className="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white rounded-[2.5rem] p-8 sm:p-10 shadow-xl border border-white/10 relative overflow-hidden space-y-8 animate-in fade-in duration-200">
+              <div className="absolute -top-20 -right-20 w-64 h-64 bg-brand-pink/15 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+                <div className="space-y-4 max-w-2xl">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
+                      Step 3 of 4 • 💀 Choose The Victim
+                    </span>
+                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/10 text-slate-200 border border-white/10">
+                      Written Role: {formatGenderLabel(victimCharacter.gender).label}
+                    </span>
+                  </div>
+
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                    {victimCharacter.roleTitle}
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                      <span className="block text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                        📖 Character Blurb
+                      </span>
+                      <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                        {victimCharacter.cleanBio}
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                      <span className="block text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                        👗 What to Wear (Outfit Vibe)
+                      </span>
+                      <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                        {victimAssignedGuest &&
+                        normalizeGender(victimAssignedGuest.gender) === 'female' &&
+                        victimCharacter.outfitFeminine
+                          ? victimCharacter.outfitFeminine
+                          : victimAssignedGuest &&
+                            normalizeGender(victimAssignedGuest.gender) === 'male' &&
+                            victimCharacter.outfitMasculine
+                          ? victimCharacter.outfitMasculine
+                          : victimCharacter.outfitAdvice}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Victim Guest Selector Card */}
+                <div className="bg-white/5 border border-white/15 rounded-3xl p-6 w-full lg:w-96 shrink-0 space-y-4 backdrop-blur-md">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                    Who is getting murdered tonight?
+                  </label>
+
+                  {victimAssignedGuest && (
+                    <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/10 border border-white/10">
+                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-800 shrink-0 flex items-center justify-center border border-white/15 shadow-lg">
+                        {resolveDisplayAvatarUrl(victimAssignedGuest.avatar_url) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={resolveDisplayAvatarUrl(victimAssignedGuest.avatar_url)}
+                            alt={victimAssignedGuest.name}
+                            className="w-full h-full object-cover object-top"
+                          />
+                        ) : (
+                          <span className="text-3xl">💀</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-base font-black text-white truncate">
+                          {victimAssignedGuest.name}
+                        </p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-300 mt-0.5">
+                          Assigned as {victimCharacter.roleTitle}
                         </p>
                       </div>
                     </div>
+                  )}
 
-                    {/* Guest Assignment / Swap Selector */}
-                    <div className="pt-4 border-t border-slate-200/70 space-y-2.5">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        Assigned Guest (Select to Swap)
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0 flex items-center justify-center border border-slate-300">
-                          {resolveDisplayAvatarUrl(assignedGuest?.avatar_url) ? (
+                  <CustomSelect
+                    value={assignments[victimCharacter.id] || ''}
+                    onChange={e => handleSelectVictimGuest(e.target.value)}
+                    variant="dark"
+                    placeholder="Select guest for Victim..."
+                    className="w-full bg-slate-900 border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-brand-pink cursor-pointer"
+                  >
+                    <option value="" disabled>
+                      Select guest for Victim...
+                    </option>
+                    {dropdownPoolGuests.map(g => {
+                      const gNorm = normalizeGender(g.gender);
+                      const vNorm = normalizeGender(victimCharacter.gender);
+                      const isMismatch =
+                        (vNorm === 'male' || vNorm === 'female') && gNorm !== vNorm;
+                      const isAttending = attendingGuestIds.includes(g.id);
+                      return (
+                        <option key={g.id} value={g.id}>
+                          {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
+                          {formatGenderLabel(g.gender).shortLabel}
+                          {isMismatch ? ' ⚠️ Gender Mismatch' : ''}
+                          {!isAttending ? ' • Tap to Add' : ''})
+                        </option>
+                      );
+                    })}
+                  </CustomSelect>
+
+                  <p className="text-[11px] text-slate-400 font-medium leading-snug">
+                    Tip: Great for the birthday guest, hen/stag, or yourself! Even the Victim still gets to play and guess who killed them.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => goToStep(2)}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-widest transition-colors cursor-pointer"
+                >
+                  ← Back to Select Cast
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goToStep(4)}
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all shadow-xl active:scale-95 cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
+                    boxShadow: '0 10px 25px -8px rgba(254,4,198,0.5)',
+                  }}
+                >
+                  Next: Review {activeSuspectCharacters.length} Suspects &amp; Lock In →
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* =====================================================================
+              STEP 4 OF 4: SPOILER-FREE SUSPECT LINEUP & LOCK IN
+          ===================================================================== */}
+          {castWizardStep === 4 && (
+            <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm space-y-8 animate-in fade-in duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                      Step 4 of 4 • Blind Suspect Casting
+                    </span>
+                    {victimAssignedGuest && victimCharacter && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
+                        💀 Victim: {victimAssignedGuest.name} ({victimCharacter.roleTitle})
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900">
+                    Tonight&apos;s Suspect Lineup ({activeSuspectCharacters.length} Suspects)
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium mt-1">
+                    Roles are secretly mixed below so you have <strong>zero spoilers</strong> about who the killer is. Hit <strong>AI Re-Sort</strong> or swap anyone freely before locking in!
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => goToStep(3)}
+                    className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest transition-colors cursor-pointer"
+                  >
+                    ← Change Victim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAiResort}
+                    className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-brand-pink text-white text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center gap-2 shrink-0 cursor-pointer"
+                  >
+                    <span>⚡</span> AI Re-Sort Suspects
+                  </button>
+                </div>
+              </div>
+
+              {activeSuspectCharacters.length < minRoles - 1 ? (
+                <div className="p-12 text-center text-slate-500 font-bold text-sm border-2 border-dashed border-slate-200 rounded-3xl space-y-3">
+                  <p className="text-slate-900 font-black text-base">
+                    You need at least {minRoles} characters in Step 2 to build your suspect lineup!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => goToStep(2)}
+                    className="px-6 py-3 rounded-xl bg-brand-pink text-white text-xs font-black uppercase tracking-widest cursor-pointer"
+                  >
+                    ← Go to Step 2: Select Cast
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {activeSuspectCharacters.map(char => {
+                    const assignedGuestId = assignments[char.id] || '';
+                    const assignedGuest = guests.find(g => g.id === assignedGuestId);
+                    const genderBadge = formatGenderLabel(char.gender);
+                    const guestNormGender = assignedGuest
+                      ? normalizeGender(assignedGuest.gender)
+                      : 'adaptable';
+                    const resolvedOutfit =
+                      guestNormGender === 'female' && char.outfitFeminine
+                        ? char.outfitFeminine
+                        : guestNormGender === 'male' && char.outfitMasculine
+                        ? char.outfitMasculine
+                        : char.outfitAdvice;
+                    const suspectPhotoUrl = resolveDisplayAvatarUrl(
+                      assignedGuest?.avatar_url || char.characterPhotoUrl || undefined
+                    );
+                    const isRandomSuspect = assignedGuest?.id.startsWith('random-suspect-');
+
+                    return (
+                      <div
+                        key={char.id}
+                        className="rounded-3xl border border-slate-200 bg-slate-50/50 hover:bg-white overflow-hidden flex flex-col justify-between transition-all hover:shadow-md"
+                      >
+                        {/* Large Suspect / Assigned Guest Portrait Header */}
+                        <div className="relative w-full aspect-[4/5] sm:aspect-auto sm:h-80 bg-slate-900 overflow-hidden border-b border-slate-200">
+                          {suspectPhotoUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={resolveDisplayAvatarUrl(assignedGuest?.avatar_url)}
-                              alt={assignedGuest?.name || 'Guest'}
+                              src={suspectPhotoUrl}
+                              alt={assignedGuest?.name || char.roleTitle}
                               className="w-full h-full object-cover object-top"
                             />
                           ) : (
-                            <span className="text-base">👤</span>
+                            <div className="w-full h-full flex items-center justify-center text-6xl text-white">
+                              🕵️
+                            </div>
                           )}
+                          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent pointer-events-none" />
+
+                          {/* Top Spoiler-Free Badges */}
+                          <div className="absolute top-3.5 sm:top-4 inset-x-3.5 sm:inset-x-4 flex items-center justify-between gap-2 z-10">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900/90 text-white border border-white/15 backdrop-blur-md shrink-0">
+                                🕵️ Suspect
+                              </span>
+                              {assignedGuest && (
+                                <span
+                                  className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-black text-white shadow-md truncate max-w-[160px] sm:max-w-[210px] ${
+                                    isRandomSuspect ? 'bg-emerald-600' : 'bg-brand-pink'
+                                  }`}
+                                >
+                                  {assignedGuest.isHost
+                                    ? '👑'
+                                    : isRandomSuspect
+                                    ? '🎲'
+                                    : '👤'}{' '}
+                                  {assignedGuest.name}
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold border shadow-sm shrink-0 ${genderBadge.badgeClass}`}
+                            >
+                              {genderBadge.label}
+                            </span>
+                          </div>
+
+                          {/* Role Title */}
+                          <div className="absolute bottom-3.5 inset-x-4 sm:inset-x-5 z-10">
+                            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-md">
+                              {char.roleTitle}
+                            </h3>
+                          </div>
                         </div>
-                        <CustomSelect
-                          value={assignedGuestId}
-                          onChange={e => commitAssignment(char.id, e.target.value)}
-                          variant="light"
-                          className="flex-grow min-w-0 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-black text-slate-900 hover:border-slate-300 focus:outline-none focus:border-brand-pink cursor-pointer"
-                        >
-                          <option value="">Unassigned</option>
-                          {guests
-                            .filter(g =>
-                              playMode === 'casefile' && casefileCastSource === 'random'
-                                ? g.id.startsWith('random-suspect-')
-                                : !g.id.startsWith('random-suspect-')
-                            )
-                            .map(g => {
-                              const isAttending = attendingGuestIds.includes(g.id);
-                              return (
-                                <option key={g.id} value={g.id}>
-                                  {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
-                                  {formatGenderLabel(g.gender).shortLabel}
-                                  {!isAttending ? ' • Tap to Add' : ''})
-                                </option>
-                              );
-                            })}
-                        </CustomSelect>
+
+                        <div className="p-4 sm:p-6 flex flex-col justify-between flex-grow gap-4">
+                          <div className="space-y-4">
+                            {/* Clean Blurb Box */}
+                            <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1.5">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                                📖 The Blurb
+                              </p>
+                              <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                                {char.cleanBio}
+                              </p>
+                            </div>
+
+                            {/* Clean Outfit Guide */}
+                            <div className="p-3.5 rounded-2xl bg-white border border-slate-100 space-y-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                  👗 What to Wear
+                                </p>
+                                {assignedGuest && (char.outfitFeminine || char.outfitMasculine) && (
+                                  <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                    Matched for {assignedGuest.name}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                                {resolvedOutfit}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Guest Assignment / Swap Selector */}
+                          <div className="pt-4 border-t border-slate-200/70 space-y-2.5">
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Assigned Suspect (Select to Swap)
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0 flex items-center justify-center border border-slate-300">
+                                {resolveDisplayAvatarUrl(assignedGuest?.avatar_url) ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={resolveDisplayAvatarUrl(assignedGuest?.avatar_url)}
+                                    alt={assignedGuest?.name || 'Guest'}
+                                    className="w-full h-full object-cover object-top"
+                                  />
+                                ) : (
+                                  <span className="text-base">👤</span>
+                                )}
+                              </div>
+                              <CustomSelect
+                                value={assignedGuestId}
+                                onChange={e => commitAssignment(char.id, e.target.value)}
+                                variant="light"
+                                className="flex-grow min-w-0 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-black text-slate-900 hover:border-slate-300 focus:outline-none focus:border-brand-pink cursor-pointer"
+                              >
+                                <option value="">Unassigned</option>
+                                {dropdownPoolGuests.map(g => {
+                                  const isAttending = attendingGuestIds.includes(g.id);
+                                  const isRand = g.id.startsWith('random-suspect-');
+                                  return (
+                                    <option key={g.id} value={g.id}>
+                                      {g.isHost
+                                        ? `👑 ${g.name} (Host - You)`
+                                        : isRand
+                                        ? `🎲 ${g.name} (Fictional Suspect)`
+                                        : g.name}{' '}
+                                      ({formatGenderLabel(g.gender).shortLabel}
+                                      {!isAttending ? ' • Tap to Add' : ''})
+                                    </option>
+                                  );
+                                })}
+                              </CustomSelect>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        {saveError && (
-          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-xs font-bold">
-            {saveError}
-          </div>
-        )}
-
-        {/* Lock Cast CTA */}
-        <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-xs text-slate-500 font-medium">
-            {isEditMode && initialIsPaid ? (
-              <>
-                Need to adjust your lineup? Save changes to immediately update your <strong>Pre-Party Ready Hub</strong> and <strong>Guest Assignments</strong>.
-              </>
-            ) : (
-              <>
-                Happy with your lineup? Click <strong>Lock In Cast &amp; Pay</strong> (
-                <strong className="text-slate-900 uppercase">
-                  {tier} ({PLAYER_TIER_LIMITS[tier].label}):{' '}
-                  <PriceDisplay tier={tier} locale={locale as Locale} />
-                </strong>{' '}
-                flat - up to {maxRoles} players included). Once paid, our site will generate your custom package in ~20 minutes and email you when it&apos;s ready in <strong>My Mysteries (Stories)</strong>!
-              </>
-            )}
-          </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto shrink-0">
-            <button
-              type="button"
-              disabled={isSaving || attendingGuests.length < minRoles}
-              onClick={handleLockCast}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all shadow-xl active:scale-95 disabled:opacity-50 cursor-pointer"
-              style={{
-                background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
-                boxShadow: '0 10px 25px -8px rgba(254,4,198,0.5)',
-              }}
-            >
-              {isSaving ? (
-                isEditMode && initialIsPaid ? (
-                  'Saving Cast Updates...'
-                ) : (
-                  'Locking In Cast & Opening Payment...'
-                )
-              ) : isEditMode && initialIsPaid ? (
-                '✓ Save Updated Cast & Return to Ready Hub →'
-              ) : (
-                <>
-                  🔒 Lock In Cast &amp; Pay (
-                  <PriceDisplay tier={tier} locale={locale as Locale} />
-                  ) →
-                </>
               )}
-            </button>
-          </div>
-        </div>
-      </section>
+
+              {saveError && (
+                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-xs font-bold">
+                  {saveError}
+                </div>
+              )}
+
+              {/* Lock Cast CTA */}
+              <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-xs text-slate-500 font-medium">
+                  {isEditMode && initialIsPaid ? (
+                    <>
+                      Need to adjust your lineup? Save changes to immediately update your <strong>Pre-Party Ready Hub</strong> and <strong>Guest Assignments</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Happy with your lineup? Click <strong>Lock In Cast &amp; Pay</strong> (
+                      <strong className="text-slate-900 uppercase">
+                        {tier} ({PLAYER_TIER_LIMITS[tier].label}):{' '}
+                        <PriceDisplay tier={tier} locale={locale as Locale} />
+                      </strong>{' '}
+                      flat). Once unlocked, we&apos;ll tailor your mystery package and email you as soon as it&apos;s ready in <strong>My Mysteries (Stories)</strong>!
+                    </>
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto shrink-0">
+                  <button
+                    type="button"
+                    disabled={isSaving || attendingGuests.length < minRoles}
+                    onClick={handleLockCast}
+                    className="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all shadow-xl active:scale-95 disabled:opacity-50 cursor-pointer"
+                    style={{
+                      background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
+                      boxShadow: '0 10px 25px -8px rgba(254,4,198,0.5)',
+                    }}
+                  >
+                    {isSaving ? (
+                      isEditMode && initialIsPaid ? (
+                        'Saving Cast Updates...'
+                      ) : (
+                        'Locking In Cast & Opening Payment...'
+                      )
+                    ) : isEditMode && initialIsPaid ? (
+                      '✓ Save Updated Cast & Return to Ready Hub →'
+                    ) : (
+                      <>
+                        🔒 Lock In Cast &amp; Pay (
+                        <PriceDisplay tier={tier} locale={locale as Locale} />
+                        ) →
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
         </>
       )}
 
