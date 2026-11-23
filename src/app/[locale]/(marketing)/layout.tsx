@@ -54,12 +54,18 @@ export default async function MarketingLayout(props: {
             />
           </Link>
           
-          <nav className="hidden lg:flex items-center gap-8 text-xs font-black uppercase tracking-[0.15em] text-brand-dark/60">
+          <nav className="hidden lg:flex items-center gap-7 text-xs font-black uppercase tracking-[0.15em] text-brand-dark/60">
             <Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.howItWorks}</Link>
             <Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.themes}</Link>
             <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.pricing}</Link>
             <Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.faq}</Link>
             <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.contact}</Link>
+            <Link
+              href={`/${locale}/free-murder-mystery-game`}
+              className="px-3.5 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink border border-brand-pink/25 hover:bg-brand-pink hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
+            >
+              🎁 Free Giveaway
+            </Link>
           </nav>
           
           <Suspense fallback={<div className="h-12 w-48 bg-slate-100 rounded-full animate-pulse"></div>}>

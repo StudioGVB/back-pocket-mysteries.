@@ -7,6 +7,7 @@ import { Locale } from '@/lib/i18n-config';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import HeroImageCarousel from '@/components/marketing/HeroImageCarousel';
 import LightsOut from '@/components/marketing/LightsOut';
+import InteractivePackPreview from '@/components/marketing/InteractivePackPreview';
 import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -334,6 +335,87 @@ export default async function HomePage(props: {
         </section>
       )}
 
+      {/* Interactive Live Demo: Clue Tagging & Custom Dossier Preview */}
+      <InteractivePackPreview locale={locale} />
+
+      {/* Live Mobile Playroom & Detective Notebook Showcase */}
+      <section className="py-16 lg:py-24 bg-slate-50 border-b border-gray-100">
+        <div className="container mx-auto px-6 max-w-6xl space-y-12">
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-[0.2em]">
+              📱 Mobile Playroom + 🖨️ Printable PDFs Included
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
+              Built for Effortless Hosting on <span className="text-brand-pink italic">Guests&apos; Phones</span>
+            </h2>
+            <p className="text-gray-500 font-medium text-sm sm:text-base leading-relaxed">
+              Every game pack comes with a print-ready PDF kit <strong>and</strong> our live interactive Playroom app—so guests can scan a QR code at the table, track clues in their Detective Notebook, and let the host play completely spoiler-free.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: '📷',
+                badge: 'Zero App Store Download',
+                title: '1-Scan QR Code & 6-Digit PIN Join',
+                desc: 'Pop open the full-screen QR code on your phone or TV. Guests scan once with their camera to claim their custom character dossier in seconds.',
+              },
+              {
+                icon: '👥',
+                badge: 'Live Room Directory',
+                title: '“Who’s Who Tonight” Cast & Icebreakers',
+                desc: 'Guests see who is playing which character around the room, plus custom “💬 Ask Them Tonight” conversation starters on every relationship card.',
+              },
+              {
+                icon: '⏱️',
+                badge: 'Swipe or Grid Evidence Deck',
+                title: 'Chronological Crime Timeline',
+                desc: 'Toggle the Evidence Deck into a timestamped crime timeline (7:25 PM → 9:15 PM) to spot 15-minute alibi gaps across CCTV stills, texts, and audio wiretaps.',
+              },
+              {
+                icon: '📌',
+                badge: 'Mobile Detective Notebook',
+                title: 'Pin Suspects & 1-Tap Deduction Chips',
+                desc: 'Tag clues as 🔑 Key, 🛡️ Alibi, or 🐟 Red Herring, pin suspects to specific evidence, and tap quick chips (⏱️ Timeline Gap, 💔 Affair Motive, 🤥 Fake Alibi).',
+              },
+              {
+                icon: '📢',
+                badge: '100% Spoiler-Free Host Mode',
+                title: 'Read-Aloud Host Scripts & Vote Tracker',
+                desc: 'A live header pill shows how many guests have claimed roles and voted (🗳️ 7/7 Voted), with word-for-word round announcements so the host plays as a suspect.',
+              },
+              {
+                icon: '🏆',
+                badge: 'End-of-Night Leaderboard',
+                title: 'Detective Bonus Points & Party Awards',
+                desc: 'Guests earn +10/+15 bonus points for spotting real Key Clues and Red Herrings, unlocking awards like “🦅 The BS Detector” and “🎣 Hook, Line & Sinker”.',
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-white rounded-[2rem] p-7 border border-gray-100 shadow-sm hover:border-brand-pink transition-all flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-3xl">{item.icon}</span>
+                    <span className="px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[9px] font-black uppercase tracking-widest">
+                      {item.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 font-medium leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* How It Works - Quick Preview */}
       <section className="py-16 lg:py-24 bg-white">
         <div className="container mx-auto px-6">
@@ -574,6 +656,109 @@ export default async function HomePage(props: {
                 </span>
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4.9★ Host Reviews & Social Proof Section */}
+      <section className="py-16 lg:py-24 bg-white border-t border-gray-100">
+        <div className="container mx-auto px-6 max-w-6xl space-y-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/15 text-amber-600 text-[11px] font-black uppercase tracking-widest">
+                ★★★★★ 4.9 / 5 Average Host Rating
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
+                What Hosts Say After <span className="text-brand-pink italic">Round 3</span>
+              </h2>
+            </div>
+            <Link
+              href={`/${locale}/reviews`}
+              className="text-xs font-black uppercase tracking-widest text-brand-pink hover:underline"
+            >
+              Read More Host Stories →
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                quote:
+                  '“When my friends opened their dossiers on their phones and saw their actual jobs and our 2023 Portugal trip woven into the alibis, the whole table lost it. Best dinner party we’ve ever hosted.”',
+                author: 'Hannah M.',
+                event: 'Hosted 10-Guest 30th Birthday • Love On The Rocks',
+                highlight: '🎭 Custom Inside Jokes + QR Join',
+              },
+              {
+                quote:
+                  '“I always hated that hosting a murder mystery meant I couldn’t play or already knew the killer. With the Playroom announcements and audio briefings, I played as The Producer and was completely shocked by the reveal!”',
+                author: 'James & Liam',
+                event: 'Hosted 8-Guest Dinner Party • Spoiler-Free Host Mode',
+                highlight: '📢 100% Spoiler-Free for the Host',
+              },
+              {
+                quote:
+                  '“Tagging clues as Red Herrings and pinning suspects on our phones kept everyone arguing over wine for two hours straight. My sister won ‘The BS Detector’ award at the end and still brags about it.”',
+                author: 'Sophie K.',
+                event: 'Hosted 12-Guest Hen Weekend • Mobile Detective Notebook',
+                highlight: '🦅 Detective Clue Tagging & Awards',
+              },
+            ].map((review) => (
+              <div
+                key={review.author}
+                className="rounded-[2rem] bg-slate-50 border border-slate-100 p-8 flex flex-col justify-between space-y-6 shadow-sm"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-amber-500 text-sm font-black tracking-widest">
+                      ★★★★★
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-wider">
+                      {review.highlight}
+                    </span>
+                  </div>
+                  <p className="text-sm sm:text-base text-brand-dark font-semibold leading-relaxed">
+                    {review.quote}
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-gray-200/70">
+                  <p className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    {review.author}
+                  </p>
+                  <p className="text-[11px] font-bold text-gray-500 mt-0.5">
+                    {review.event}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* First 50 Founding Host Giveaway Spotlight Banner */}
+      <section className="pt-4 pb-8 bg-white">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="rounded-[2.5rem] bg-gradient-to-r from-brand-dark via-slate-900 to-brand-dark text-white p-8 sm:p-12 border-2 border-brand-pink shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
+            <div className="absolute -right-20 -top-20 w-80 h-80 bg-brand-pink/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="space-y-3 max-w-2xl relative z-10">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                🎁 Pre-Launch Founding Host Offer • First 50 Only
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight leading-tight">
+                Be One of Our First 50 Sign-Ups &amp; Get Your First Custom Mystery <span className="text-brand-pink italic">100% Free</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+                Lock in one of the first 50 VIP spots in 10 seconds (no credit card needed) and we&apos;ll email you a <strong>100%-off Founding Host voucher code</strong> good for any custom murder mystery pack up to 16 players (worth up to £45 / $55).
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 relative z-10 w-full lg:w-auto">
+              <Link
+                href={`/${locale}/free-murder-mystery-game`}
+                className="w-full sm:w-auto text-center px-8 py-4 bg-brand-pink hover:bg-white hover:text-brand-dark text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl transition-all"
+              >
+                Claim Free VIP Spot →
+              </Link>
+            </div>
           </div>
         </div>
       </section>

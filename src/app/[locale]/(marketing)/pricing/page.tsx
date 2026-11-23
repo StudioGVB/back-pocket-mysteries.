@@ -112,6 +112,27 @@ export default async function PricingPage(props: {
       </div>
 
       <div className="container mx-auto px-6 pb-24 lg:pb-32">
+        {/* Pre-Launch First 50 Free Pack Callout */}
+        <div className="max-w-6xl mx-auto mb-16 rounded-[2.5rem] bg-brand-dark text-white p-8 sm:p-10 border-2 border-brand-pink shadow-xl flex flex-col lg:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute -right-20 -top-20 w-72 h-72 bg-brand-pink/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="space-y-2 max-w-2xl relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+              🎁 Pre-Launch Founding Host Offer • First 50 Sign-Ups
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">
+              Get Any Tier Below (Up to Grand 16-Player Pack) <span className="text-brand-pink italic">100% Free</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+              The first 50 hosts on our pre-launch VIP list receive a 100%-off promo code on launch day good for any Basic, Premium, or Grand custom mystery pack.
+            </p>
+          </div>
+          <Link
+            href={`/${locale}/free-murder-mystery-game`}
+            className="w-full lg:w-auto text-center px-8 py-4 bg-brand-pink hover:bg-white hover:text-brand-dark text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl transition-all shrink-0 relative z-10"
+          >
+            Claim Free VIP Spot →
+          </Link>
+        </div>
 
         <PricingCalculator 
           basicTier={tiers[0]}

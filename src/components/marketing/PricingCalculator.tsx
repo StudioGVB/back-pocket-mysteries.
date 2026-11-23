@@ -119,6 +119,9 @@ export default function PricingCalculator({
                   <div className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
                     ✓ {activeTier.name} Package - {guests} Character Dossiers (For {guests} Party Guests OR 1–5 Couch Detectives)
                   </div>
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-xs font-black uppercase tracking-wider">
+                    🍷 Only {formatCurrency(totalCost / guests, effectiveCurrency, locale)} per guest — cheaper than a glass of wine!
+                  </div>
                 </div>
 
                 <button
@@ -141,6 +144,11 @@ export default function PricingCalculator({
                 <span>6 Basic</span>
                 <span>7–10 Premium</span>
                 <span>11–16 Grand</span>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-xs font-bold text-gray-500 text-center">
+                <span className="text-emerald-600 font-black">🛡️ Last-Minute Dropout Protection:</span>
+                <span>Someone cancels on party night? Switch or scale characters in the Playroom in 1 tap without breaking the plot.</span>
               </div>
             </div>
           </div>
@@ -277,6 +285,9 @@ export default function PricingCalculator({
                     </span>
                   )}
                 </div>
+                <span className="mt-1.5 inline-block text-xs font-black uppercase tracking-wider text-brand-pink">
+                  ≈ {formatCurrency(totalCost / guests, effectiveCurrency, locale)} per guest ({guests} characters)
+                </span>
               </div>
             </div>
 

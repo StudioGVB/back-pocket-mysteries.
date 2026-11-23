@@ -254,6 +254,82 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
           </div>
         </div>
 
+        {/* Inside the Live Guest & Host Playroom */}
+        <div className="mt-24 lg:mt-36 space-y-12">
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-[0.2em]">
+              📱 Built for Party Night • Zero App Store Download
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
+              Inside the Live <span className="text-brand-pink italic">Playroom &amp; Detective Notebook</span>
+            </h2>
+            <p className="text-gray-500 font-medium text-sm sm:text-base leading-relaxed">
+              Whether your guests prefer holding printed booklets or playing on their phones, our live mobile Playroom keeps everyone immersed, mingling, and tracking suspects round by round.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: '📷',
+                tag: 'Instant Table Join',
+                title: '1-Scan QR Code & 6-Digit Game PIN',
+                desc: 'Open the full-screen QR code modal on your phone or TV. Guests scan once with their phone camera to enter the room and claim their character dossier.',
+              },
+              {
+                icon: '👥',
+                tag: 'Live Room Cast',
+                title: '“Who’s Who Tonight” & Icebreakers',
+                desc: 'Tap “Room Cast” anytime to see which friend is playing which character, plus custom “💬 Ask Them Tonight” conversation starters on every relationship card.',
+              },
+              {
+                icon: '⏱️',
+                tag: 'Swipe or Grid Deck',
+                title: 'Chronological Crime Timeline',
+                desc: 'Switch the Evidence Deck between Swipe Cards, a 2-Column Grid, or a chronological Crime Timeline (7:25 PM → 9:15 PM) to catch alibi contradictions.',
+              },
+              {
+                icon: '📌',
+                tag: 'Interactive Deductions',
+                title: 'Clue Tagging & Suspect Pinning',
+                desc: 'Label evidence as 🔑 Key Clue, 🛡️ Alibi, or 🐟 Red Herring, pin suspects directly to clues, and tap 1-click deduction chips while mingling with a drink in hand.',
+              },
+              {
+                icon: '📢',
+                tag: 'Host Plays Spoiler-Free',
+                title: 'Read-Aloud Host Scripts & Vote Counter',
+                desc: 'A live readiness pill shows how many guests have claimed roles and voted (🗳️ 7/7 Voted), with word-for-word round scripts so the host never sees spoilers.',
+              },
+              {
+                icon: '🏆',
+                tag: 'Final Reveal & Awards',
+                title: 'Detective Bonus Points & Superlatives',
+                desc: 'Accurate clue tags earn +10/+15 bonus points on the final leaderboard and unlock party awards like “🦅 The BS Detector” and “🎣 Hook, Line & Sinker”.',
+              },
+            ].map((feat) => (
+              <div
+                key={feat.title}
+                className="rounded-[2rem] bg-slate-50 border border-slate-100 p-8 flex flex-col justify-between space-y-4 hover:border-brand-pink transition-all"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-3xl">{feat.icon}</span>
+                    <span className="px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[9px] font-black uppercase tracking-widest">
+                      {feat.tag}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">
+                    {feat.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed">
+                    {feat.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* What's In The Pack */}
         <div className="mt-24 lg:mt-36 py-12 sm:py-20 px-8 sm:px-12 lg:px-24 bg-brand-gray rounded-[2rem] lg:rounded-[3rem] border-2 border-gray-100">
           <div className="text-center mb-20">

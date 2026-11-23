@@ -71,6 +71,12 @@ export default function MobileNav({ locale, dict }: MobileNavProps) {
               <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all w-fit">
                 {dict.common.contact}
               </Link>
+              <Link
+                href={`/${locale}/free-murder-mystery-game`}
+                className="text-brand-pink hover:text-white transition-all w-fit flex items-center gap-2"
+              >
+                <span>🎁 Free Mystery Giveaway</span>
+              </Link>
             </nav>
 
             <div className="mt-16 border-t border-white/10 pt-10 flex flex-col gap-8">
