@@ -1901,28 +1901,28 @@ export function PlayroomClient({
               </span>
             </div>
 
-            <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 shrink-0">
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setIsQrModalOpen(true)}
-                  className="min-h-[34px] text-[10px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all cursor-pointer"
-                >
-                  📷 QR &amp; PIN
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleShareOrCopyGuestLink(false)}
-                  className={`min-h-[34px] text-[10px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                    copiedGuestLink
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400'
-                      : 'bg-white/5 text-slate-200 border-white/15 hover:border-brand-pink/50'
-                  }`}
-                >
-                  {copiedGuestLink ? '✓ Copied' : '📋 Copy Link'}
-                </button>
-              </div>
-              {isHostMode && (
+            {isHostMode && (
+              <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsQrModalOpen(true)}
+                    className="min-h-[34px] text-[10px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all cursor-pointer"
+                  >
+                    📲 Invite / QR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShareOrCopyGuestLink(false)}
+                    className={`min-h-[34px] text-[10px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                      copiedGuestLink
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                        : 'bg-white/5 text-slate-200 border-white/15 hover:border-brand-pink/50'
+                    }`}
+                  >
+                    {copiedGuestLink ? '✓ Copied' : '📋 Copy Link'}
+                  </button>
+                </div>
                 <button
                   type="button"
                   disabled={isRefreshingSession || !nextStepInfo.canAdvance}
@@ -1931,8 +1931,8 @@ export function PlayroomClient({
                 >
                   {isRefreshingSession ? '⏳...' : nextStepInfo.label}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </header>
 
@@ -2274,38 +2274,35 @@ export function PlayroomClient({
             </div>
           )}
 
-          {/* Right: PIN/QR + Host Controls (Host Only) */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsQrModalOpen(true)}
-              className="min-h-[34px] px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-200 cursor-pointer"
-              title="Show Game PIN & QR Code"
-            >
-              📷 <span className="hidden sm:inline font-mono">{pin.slice(0, 3)} {pin.slice(3)}</span>
-            </button>
-
-            {isHostMode && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setIsHostPanelOpen(true)}
-                  className="min-h-[34px] px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-300 cursor-pointer"
-                  title="Open Full Host Stage Console"
-                >
-                  🎛️
-                </button>
-                <button
-                  type="button"
-                  disabled={isRefreshingSession || !nextStepInfo.canAdvance}
-                  onClick={() => handleHostNextStep(false)}
-                  className="min-h-[34px] px-3 py-1.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-[10px] font-black uppercase tracking-wider shadow transition-all disabled:opacity-40 cursor-pointer"
-                >
-                  {isRefreshingSession ? '⏳...' : nextStepInfo.label}
-                </button>
-              </>
-            )}
-          </div>
+          {/* Right: Invite/QR + Host Controls (Host Only — Hidden on Guest Phones) */}
+          {isHostMode && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsQrModalOpen(true)}
+                className="min-h-[34px] px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-200 cursor-pointer"
+                title="Show Game PIN & Invite QR Code"
+              >
+                📲 Invite / QR
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsHostPanelOpen(true)}
+                className="min-h-[34px] px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-300 cursor-pointer"
+                title="Open Full Host Stage Console"
+              >
+                🎛️
+              </button>
+              <button
+                type="button"
+                disabled={isRefreshingSession || !nextStepInfo.canAdvance}
+                onClick={() => handleHostNextStep(false)}
+                className="min-h-[34px] px-3 py-1.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-[10px] font-black uppercase tracking-wider shadow transition-all disabled:opacity-40 cursor-pointer"
+              >
+                {isRefreshingSession ? '⏳...' : nextStepInfo.label}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Row 2: Clean Desktop Tab Bar */}
