@@ -1,5 +1,9 @@
 import {
-  getCharacterRoleTitle,
+  getBaseCharacterRoleTitle,
+  adaptRoleTitleForGuestGender,
+  adaptOutfitForGuestGender,
+  adaptBioForGuestGender,
+  adaptOutfitReferenceImagesForGuestGender,
   getCharacterDisplayName,
   hydrateTextWithCharacters,
   replacePlaceholderNamesWithRoles,
@@ -60,7 +64,6 @@ export function getCleanCharacterPresentation(
 ): CleanCharacterPresentation {
   const mode = options?.mode || 'print';
   const profile = (char?.profile_data || {}) as Record<string, any>;
-  const roleTitle = getCharacterRoleTitle(char) || 'The Suspect';
   const displayName = getCharacterDisplayName(char);
   const guestName = (profile.guest_name || profile.name || '').trim() || null;
 
@@ -74,6 +77,7 @@ export function getCleanCharacterPresentation(
 
   const guestGenderRaw = (
     options?.overrideGuestGender ||
+    char?.assignedFriend?.gender ||
     profile.gender ||
     char?.gender ||
     'adaptable'
@@ -85,6 +89,12 @@ export function getCleanCharacterPresentation(
       : guestGenderRaw === 'female' || guestGenderRaw === 'feminine' || guestGenderRaw === 'f'
       ? 'female'
       : charGender;
+
+  const baseRoleTitle = getBaseCharacterRoleTitle(char) || 'The Suspect';
+  const roleTitle =
+    profile.keep_original_role_gender === true
+      ? baseRoleTitle
+      : adaptRoleTitleForGuestGender(baseRoleTitle, effectiveGender);
 
   const presFemale = profile.presentation_female || {};
   const presMale = profile.presentation_male || {};
@@ -99,7 +109,7 @@ export function getCleanCharacterPresentation(
       ? presFemale
       : presMale;
 
-  // 1. Outfit Advice
+  // 1. Outfit Advice (with bidirectional gender-flex adaptation)
   const rawOutfit =
     profile.outfit_description ||
     profile.outfit_advice ||
@@ -108,19 +118,20 @@ export function getCleanCharacterPresentation(
     presMale?.outfit_advice ||
     'Dress to match the mystery theme and your character’s personality.';
 
-  const outfitAdvice = cleanText(rawOutfit, allCharacters, mode);
+  const baseCleanOutfit = cleanText(rawOutfit, allCharacters, mode);
+  const outfitAdvice = adaptOutfitForGuestGender(baseCleanOutfit, effectiveGender);
 
   const femOutfit = presFemale?.outfit_advice
     ? cleanText(presFemale.outfit_advice, allCharacters, mode)
-    : undefined;
+    : adaptOutfitForGuestGender(baseCleanOutfit, 'female');
   const mascOutfit = presMale?.outfit_advice
     ? cleanText(presMale.outfit_advice, allCharacters, mode)
-    : undefined;
+    : adaptOutfitForGuestGender(baseCleanOutfit, 'male');
 
-  const outfitVariants =
-    femOutfit && mascOutfit && femOutfit !== mascOutfit
-      ? { feminine: femOutfit, masculine: mascOutfit }
-      : undefined;
+  const outfitVariants = {
+    feminine: femOutfit,
+    masculine: mascOutfit,
+  };
 
   // 2. How to Act (Summary & Bullets)
   const rawActSummary =
@@ -130,7 +141,10 @@ export function getCleanCharacterPresentation(
     presMale?.act_summary ||
     '';
 
-  const actSummary = cleanText(rawActSummary, allCharacters, mode);
+  const actSummary = adaptBioForGuestGender(
+    cleanText(rawActSummary, allCharacters, mode),
+    effectiveGender
+  );
 
   const rawBullets: string[] =
     (Array.isArray(profile.act_bullets) && profile.act_bullets.length > 0
@@ -144,7 +158,7 @@ export function getCleanCharacterPresentation(
       : []) || [];
 
   const actBullets = rawBullets
-    .map(b => cleanText(b, allCharacters, mode))
+    .map(b => adaptBioForGuestGender(cleanText(b, allCharacters, mode), effectiveGender))
     .filter(Boolean);
 
   // 3. Backstory / Blurb
@@ -161,7 +175,10 @@ export function getCleanCharacterPresentation(
       ? `${roleTitle} commands the spotlight at tonight’s gathering, until a fatal turn sets the mystery in motion.`
       : `A key figure at tonight’s gathering with their own motives, secrets, and alibis to defend.`);
 
-  const cleanedBio = cleanText(rawBio, allCharacters, mode);
+  const cleanedBio = adaptBioForGuestGender(
+    cleanText(rawBio, allCharacters, mode),
+    effectiveGender
+  );
   const blurbParagraphs = cleanedBio
     .split(/\n+/)
     .map(p => p.trim())
@@ -170,10 +187,16 @@ export function getCleanCharacterPresentation(
   // Short hook for overview cards: prefer actSummary if concise, otherwise first 1-2 sentences of bio
   const shortSource = actSummary || blurbParagraphs[0] || cleanedBio;
   const sentences = shortSource.match(/[^.!?]+[.!?]+/g) || [shortSource];
-  const shortBlurb = sentences.slice(0, 2).join(' ').trim() || shortSource;
+  const shortBlurb = adaptBioForGuestGender(
+    sentences.slice(0, 2).join(' ').trim() || shortSource,
+    effectiveGender
+  );
 
   // 4. Secrets
-  const secrets = cleanText(profile.secrets || '', allCharacters, mode);
+  const secrets = adaptBioForGuestGender(
+    cleanText(profile.secrets || '', allCharacters, mode),
+    effectiveGender
+  );
 
   // 5. Standard Character Photo / Outfit Photo / Guest AI Portrait
   const guestIdStr = String(profile.guest_id || '').trim();
@@ -209,8 +232,7 @@ export function getCleanCharacterPresentation(
       resolvedAvatar.startsWith('/generated-avatars/') ||
       resolvedAvatar.includes('/character-images/'));
 
-  const characterPhotoUrl =
-    (hasAiGuestPortrait ? resolvedAvatar : null) ||
+  const rawFallbackPhoto =
     profile.standard_character_photo_url ||
     profile.outfit_image_url ||
     activePres?.outfit_image_url ||
@@ -219,7 +241,15 @@ export function getCleanCharacterPresentation(
     char?.image_url ||
     null;
 
-  // 6. 3 Outfit Reference Photos
+  const adaptedFallbackPhoto = rawFallbackPhoto
+    ? adaptOutfitReferenceImagesForGuestGender([rawFallbackPhoto], effectiveGender)[0] || rawFallbackPhoto
+    : null;
+
+  const characterPhotoUrl =
+    (hasAiGuestPortrait ? resolvedAvatar : null) ||
+    adaptedFallbackPhoto;
+
+  // 6. 3 Outfit Reference Photos (with bidirectional gender-flex adaptation)
   const rawOutfitImages: string[] =
     (Array.isArray(activePres?.outfit_reference_images) &&
     activePres.outfit_reference_images.filter(Boolean).length > 0
@@ -235,9 +265,14 @@ export function getCleanCharacterPresentation(
       ? presMale.outfit_reference_images
       : []) || [];
 
-  const outfitReferenceImages = rawOutfitImages
+  const filteredOutfitImages = rawOutfitImages
     .filter((u: any) => typeof u === 'string' && u.trim().length > 0)
     .slice(0, 3);
+
+  const outfitReferenceImages = adaptOutfitReferenceImagesForGuestGender(
+    filteredOutfitImages,
+    effectiveGender
+  ).slice(0, 3);
 
   return {
     roleTitle,

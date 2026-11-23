@@ -10,8 +10,17 @@ import PriceDisplay from '@/components/marketing/PriceDisplay';
 import { Locale } from '@/lib/i18n-config';
 import { getTierForPlayerCount, PLAYER_TIER_LIMITS } from '@/utils/localization';
 import { resolveDisplayAvatarUrl, buildAvatarUrl } from '@/utils/avatar';
+import {
+  adaptRoleTitleForGuestGender,
+  adaptBioForGuestGender,
+  adaptOutfitForGuestGender,
+} from '@/utils/hydration';
 import { saveGuestAction, updateGuestAction } from '@/app/actions/guests';
-import { saveCustomerCastAction } from '@/app/actions/customer-mystery';
+import {
+  saveCustomerCastAction,
+  updatePartyEventDetailsAction,
+  getGameSessionAction,
+} from '@/app/actions/customer-mystery';
 import MysteryReadyHub from '@/components/mysteries/MysteryReadyHub';
 import MysteryGeneratingScreen from '@/components/mysteries/MysteryGeneratingScreen';
 
@@ -1031,6 +1040,120 @@ export default function CustomerCastClient({
     }
   };
 
+  // Party Date, Time & Address (or Playing ASAP) configurable during Step 4 before checkout
+  const [partyDate, setPartyDate] = useState('');
+  const [arrivalTime, setArrivalTime] = useState('');
+  const [partyLocation, setPartyLocation] = useState('');
+  const [partySavedBadge, setPartySavedBadge] = useState(false);
+  const [partyGameStart, setPartyGameStart] = useState('');
+  const [partyHostNotes, setPartyHostNotes] = useState('');
+  const [partyFoodVibe, setPartyFoodVibe] = useState('nibbles');
+  const [partyWhatToBring, setPartyWhatToBring] = useState<string[]>([
+    'Fully charged phone (for scanning clues & voting)',
+    'Your costume & signature prop',
+    'Your favourite drink / BYOB',
+  ]);
+
+  const baseMysteryId = mystery.id.split('__u_')[0];
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const cached =
+        window.localStorage.getItem(`bpm_party_details_${mystery.id}`) ||
+        window.localStorage.getItem(`bpm_party_details_${baseMysteryId}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.partyDate) setPartyDate(parsed.partyDate);
+        if (parsed.arrivalTime) setArrivalTime(parsed.arrivalTime);
+        if (parsed.location) setPartyLocation(parsed.location);
+        if (parsed.gameStartTime) setPartyGameStart(parsed.gameStartTime);
+        if (parsed.hostNotes) setPartyHostNotes(parsed.hostNotes);
+        if (parsed.foodAndDrinkVibe) setPartyFoodVibe(parsed.foodAndDrinkVibe);
+        if (Array.isArray(parsed.whatToBringItems) && parsed.whatToBringItems.length > 0) {
+          setPartyWhatToBring(parsed.whatToBringItems);
+        }
+      }
+    } catch {
+      // ignore
+    }
+    void getGameSessionAction(mystery.id).then(res => {
+      if (!res || 'error' in res || !res.partyDetails) return;
+      const pd = res.partyDetails;
+      if (pd.partyDate) setPartyDate(prev => prev || pd.partyDate || '');
+      if (pd.arrivalTime) setArrivalTime(prev => prev || pd.arrivalTime || '');
+      if (pd.location) setPartyLocation(prev => prev || pd.location || '');
+      if (pd.gameStartTime) setPartyGameStart(pd.gameStartTime);
+      if (pd.hostNotes) setPartyHostNotes(pd.hostNotes);
+      if (pd.foodAndDrinkVibe) setPartyFoodVibe(pd.foodAndDrinkVibe);
+      if (Array.isArray(pd.whatToBringItems) && pd.whatToBringItems.length > 0) {
+        setPartyWhatToBring(pd.whatToBringItems);
+      }
+    });
+  }, [mystery.id, baseMysteryId]);
+
+  const persistCastPartyDetails = async (overrides?: {
+    partyDate?: string;
+    arrivalTime?: string;
+    location?: string;
+    gameStartTime?: string;
+  }) => {
+    const nextDate = (overrides?.partyDate ?? partyDate).trim();
+    const nextArrival = (overrides?.arrivalTime ?? arrivalTime).trim();
+    const nextLocation = (overrides?.location ?? partyLocation).trim();
+    const nextStart = (overrides?.gameStartTime ?? partyGameStart).trim();
+
+    if (!nextDate && !nextArrival && !nextLocation) return;
+
+    const payload = {
+      partyDate: nextDate,
+      arrivalTime: nextArrival,
+      gameStartTime: nextStart,
+      location: nextLocation,
+      hostNotes: partyHostNotes,
+      foodAndDrinkVibe: partyFoodVibe,
+      whatToBringItems: partyWhatToBring,
+    };
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(`bpm_party_details_${mystery.id}`, JSON.stringify(payload));
+        window.localStorage.setItem(`bpm_party_details_${baseMysteryId}`, JSON.stringify(payload));
+      } catch {
+        // ignore
+      }
+    }
+
+    try {
+      await updatePartyEventDetailsAction(mystery.id, payload);
+      setPartySavedBadge(true);
+      setTimeout(() => setPartySavedBadge(false), 2600);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSelectAsapInCast = () => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const nextArrival = 'Tonight / ASAP';
+    const nextStart = 'Right Away (ASAP)';
+    const nextLoc = partyLocation.trim() || 'Right Here / Host Home';
+    setPartyDate(todayIso);
+    setArrivalTime(nextArrival);
+    setPartyGameStart(nextStart);
+    if (!partyLocation.trim()) setPartyLocation(nextLoc);
+    void persistCastPartyDetails({
+      partyDate: todayIso,
+      arrivalTime: nextArrival,
+      gameStartTime: nextStart,
+      location: nextLoc,
+    });
+  };
+
+  const isCastAsapSelected =
+    arrivalTime.toLowerCase().includes('asap') ||
+    arrivalTime.toLowerCase().includes('tonight');
+
   // Lock Cast & Proceed to Checkout (or save updates if editing from My Mysteries)
   const handleLockCast = async () => {
     if (!victimCharacter) return;
@@ -1038,6 +1161,7 @@ export default function CustomerCastClient({
     setSaveError(null);
 
     try {
+      await persistCastPartyDetails();
       const allActiveCharIds = [
         victimCharacter.id,
         ...activeSuspectCharacters.map(c => c.id),
@@ -2120,12 +2244,21 @@ export default function CustomerCastClient({
                     const guestNormGender = assignedGuest
                       ? normalizeGender(assignedGuest.gender)
                       : 'adaptable';
-                    const resolvedOutfit =
+                    const displayRoleTitle = adaptRoleTitleForGuestGender(
+                      char.roleTitle,
+                      guestNormGender
+                    );
+                    const displayBio = adaptBioForGuestGender(char.cleanBio, guestNormGender);
+                    const rawResolvedOutfit =
                       guestNormGender === 'female' && char.outfitFeminine
                         ? char.outfitFeminine
                         : guestNormGender === 'male' && char.outfitMasculine
                         ? char.outfitMasculine
                         : char.outfitAdvice;
+                    const resolvedOutfit = adaptOutfitForGuestGender(
+                      rawResolvedOutfit,
+                      guestNormGender
+                    );
                     const suspectPhotoUrl = resolveDisplayAvatarUrl(
                       assignedGuest?.avatar_url || char.characterPhotoUrl || undefined
                     );
@@ -2142,7 +2275,7 @@ export default function CustomerCastClient({
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={suspectPhotoUrl}
-                              alt={assignedGuest?.name || char.roleTitle}
+                              alt={assignedGuest?.name || displayRoleTitle}
                               className="w-full h-full object-cover object-top"
                             />
                           ) : (
@@ -2183,7 +2316,7 @@ export default function CustomerCastClient({
                           {/* Role Title */}
                           <div className="absolute bottom-3.5 inset-x-4 sm:inset-x-5 z-10">
                             <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-md">
-                              {char.roleTitle}
+                              {displayRoleTitle}
                             </h3>
                           </div>
                         </div>
@@ -2196,7 +2329,7 @@ export default function CustomerCastClient({
                                 📖 The Blurb
                               </p>
                               <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                                {char.cleanBio}
+                                {displayBio}
                               </p>
                             </div>
 
@@ -2206,7 +2339,7 @@ export default function CustomerCastClient({
                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                                   👗 What to Wear
                                 </p>
-                                {assignedGuest && (char.outfitFeminine || char.outfitMasculine) && (
+                                {assignedGuest && (
                                   <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                                     Matched for {assignedGuest.name}
                                   </span>
@@ -2271,6 +2404,89 @@ export default function CustomerCastClient({
                   {saveError}
                 </div>
               )}
+
+              {/* PARTY DATE, TIME & ADDRESS OR "PLAYING ASAP" SELECTOR AT PURCHASE */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-slate-100/90 border-2 border-slate-300 space-y-4 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                        📅 Optional Party Schedule
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-black uppercase tracking-wider">
+                        ⚡ Pre-Renders on All Guest Character Sheets
+                      </span>
+                      {partySavedBadge && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider">
+                          ✓ Saved
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="text-base sm:text-lg font-black text-slate-900 mt-1.5">
+                      When &amp; Where Is Your Party? (Or Click ASAP)
+                    </h4>
+                    <p className="text-xs text-slate-600 font-semibold">
+                      Enter your party date, arrival time, and address now (or click <strong>Playing ASAP / Tonight</strong>) so it renders on your Guest Invites &amp; Character Sheets from the get-go:
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSelectAsapInCast}
+                    className={`h-11 px-4 rounded-xl text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs ${
+                      isCastAsapSelected
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white hover:bg-slate-50 text-slate-900 border-slate-300'
+                    }`}
+                  >
+                    <span>⚡</span>
+                    <span>{isCastAsapSelected ? 'Playing ASAP / Tonight ✓' : 'Playing ASAP / Tonight'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-end">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
+                      📅 Party Date
+                    </label>
+                    <input
+                      type="date"
+                      value={partyDate}
+                      onChange={e => setPartyDate(e.target.value)}
+                      onBlur={() => void persistCastPartyDetails()}
+                      className="h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-900 outline-none focus:border-brand-pink shadow-2xs"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
+                      🥂 Arrival Time
+                    </label>
+                    <input
+                      type="text"
+                      value={arrivalTime}
+                      onChange={e => setArrivalTime(e.target.value)}
+                      onBlur={() => void persistCastPartyDetails()}
+                      placeholder="e.g. 7:00 PM or ASAP"
+                      className="h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
+                      📍 Party Address / Location
+                    </label>
+                    <input
+                      type="text"
+                      value={partyLocation}
+                      onChange={e => setPartyLocation(e.target.value)}
+                      onBlur={() => void persistCastPartyDetails()}
+                      placeholder="e.g. 42 Oxford St (Buzzer #4)"
+                      className="h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs"
+                    />
+                  </div>
+                </div>
+              </div>
 
               {/* Peace-of-Mind QA Guarantee Banner */}
               <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

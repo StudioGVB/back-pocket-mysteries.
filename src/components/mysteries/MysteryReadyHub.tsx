@@ -4,6 +4,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { resolveDisplayAvatarUrl } from '@/utils/avatar';
 import {
+  adaptRoleTitleForGuestGender,
+  adaptBioForGuestGender,
+  adaptOutfitForGuestGender,
+  adaptOutfitReferenceImagesForGuestGender,
+} from '@/utils/hydration';
+import {
   saveCustomerCastAction,
   getGameSessionAction,
   updatePartyEventDetailsAction,
@@ -798,12 +804,19 @@ export function MysteryReadyHub({
               const guestId = assignments[char.id] || '';
               const guest = guests.find(g => g.id === guestId);
               const guestGender = guest ? normalizeGender(guest.gender) : 'adaptable';
-              const outfitText =
+              const displayRoleTitle = adaptRoleTitleForGuestGender(char.roleTitle, guestGender);
+              const displayBio = adaptBioForGuestGender(char.cleanBio, guestGender);
+              const rawOutfitText =
                 guestGender === 'female' && char.outfitFeminine
                   ? char.outfitFeminine
                   : guestGender === 'male' && char.outfitMasculine
                   ? char.outfitMasculine
                   : char.outfitAdvice;
+              const outfitText = adaptOutfitForGuestGender(rawOutfitText, guestGender);
+              const displayOutfitRefImages = adaptOutfitReferenceImagesForGuestGender(
+                char.outfitReferenceImages || [],
+                guestGender
+              );
 
               const isSent = sentCharIds.includes(char.id);
               const isConfirmedReady = Boolean(prepConfirmedCharacters[char.id]);
@@ -820,10 +833,10 @@ export function MysteryReadyHub({
                 const url = buildCharacterUrl();
                 const vibeLine =
                   char.actBullets && char.actBullets.length > 0
-                    ? `\n🎭 How to Play Them: ${char.actBullets.join(' • ')}`
+                    ? `\n🎭 How to Play Them: ${char.actBullets.map(b => adaptBioForGuestGender(b, guestGender)).join(' • ')}`
                     : '';
                 const partyBlock = buildPartyEventSummaryBlock();
-                return `🕵️‍♀️ ${guest ? `Hey ${guest.name}! ` : ''}You're cast in our Murder Mystery party: "${mystery.title}"!${partyBlock}\n🎭 Your Role: ${char.roleTitle}\n📖 First Glance: ${char.cleanBio}${vibeLine}\n👗 What to Wear: ${outfitText}\n\n🔗 Tap to open your Pre-Party "First Glance" Character & Outfit Sheet (no login needed, zero game-night spoilers):\n${url}`;
+                return `🕵️‍♀️ ${guest ? `Hey ${guest.name}! ` : ''}You're cast in our Murder Mystery party: "${mystery.title}"!${partyBlock}\n🎭 Your Role: ${displayRoleTitle}\n📖 First Glance: ${displayBio}${vibeLine}\n👗 What to Wear: ${outfitText}\n\n🔗 Tap to open your Pre-Party "First Glance" Character & Outfit Sheet (no login needed, zero game-night spoilers):\n${url}`;
               };
 
               return (
@@ -838,7 +851,7 @@ export function MysteryReadyHub({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={guestAvatar}
-                          alt={guest?.name || char.roleTitle}
+                          alt={guest?.name || displayRoleTitle}
                           className="w-full h-full object-cover object-top"
                         />
                       ) : (
@@ -878,7 +891,7 @@ export function MysteryReadyHub({
                           {guest ? guest.name : 'Unassigned'}
                         </p>
                         <h3 className="text-xl font-black text-white tracking-tight leading-tight truncate">
-                          {char.roleTitle}
+                          {displayRoleTitle}
                         </h3>
                       </div>
                     </div>
@@ -890,7 +903,7 @@ export function MysteryReadyHub({
                           isExpanded ? '' : 'line-clamp-2'
                         }`}
                       >
-                        {char.cleanBio}
+                        {displayBio}
                       </p>
 
                       {isExpanded && (
@@ -902,6 +915,28 @@ export function MysteryReadyHub({
                             <p className="text-slate-700 font-medium mt-0.5 leading-relaxed">
                               {outfitText}
                             </p>
+                            {displayOutfitRefImages.length > 0 && (
+                              <div className="grid grid-cols-3 gap-2 pt-2">
+                                {displayOutfitRefImages.slice(0, 3).map((refUrl, optIdx) => (
+                                  <div
+                                    key={optIdx}
+                                    className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex flex-col"
+                                  >
+                                    <div className="aspect-[3/4] w-full overflow-hidden bg-slate-100">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={refUrl}
+                                        alt={`${displayRoleTitle} Outfit Option ${optIdx + 1}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    <span className="py-1 text-center text-[8px] font-black uppercase tracking-widest text-slate-500 bg-white border-t border-slate-100">
+                                      Option {optIdx + 1}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           {char.actBullets && char.actBullets.length > 0 && (
                             <div>
@@ -909,7 +944,7 @@ export function MysteryReadyHub({
                                 🎭 How to Act
                               </span>
                               <p className="text-slate-600 font-medium mt-0.5 leading-relaxed">
-                                {char.actBullets.join(' • ')}
+                                {char.actBullets.map(b => adaptBioForGuestGender(b, guestGender)).join(' • ')}
                               </p>
                             </div>
                           )}

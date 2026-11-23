@@ -193,8 +193,8 @@ export function adaptOutfitForGuestGender(
 ): string {
   if (!outfit) return '';
   const g = String(guestGender || '').toLowerCase().trim();
-  const isFemale = g === 'female' || g === 'f' || g === 'woman';
-  const isMale = g === 'male' || g === 'm' || g === 'man';
+  const isFemale = g === 'female' || g === 'f' || g === 'woman' || g === 'feminine';
+  const isMale = g === 'male' || g === 'm' || g === 'man' || g === 'masculine';
 
   let result = outfit;
   if (isMale) {
@@ -211,18 +211,173 @@ export function adaptOutfitForGuestGender(
         /\ba gold sequin or scarlet cocktail dress\b/gi,
         'a tailored scarlet or gold-accented velvet evening jacket and dark dress trousers'
       )
-      .replace(/\b(?:midi|cocktail|sweater|evening)\s+dress\b/gi, 'tailored evening jacket')
+      .replace(
+        /\ba champagne or rose-gold silk slip dress,\s*sparkling drop earrings,\s*and resort evening heels\b/gi,
+        'a champagne or ivory linen dinner jacket, open-collar silk resort shirt, and tailored evening loafers'
+      )
+      .replace(
+        /\ba chic tailored linen or satin two-piece resort set,\s*layered gold necklaces,\s*and designer sunglasses\b/gi,
+        'a sharp tailored linen resort blazer over a fitted dark crew-neck, tailored trousers, and designer sunglasses'
+      )
+      .replace(
+        /\ban emerald or black satin cocktail dress,\s*sleek styling,\s*and a small clutch or touch-up kit\b/gi,
+        'a sleek black or emerald silk-blend evening shirt, tailored dark dress trousers, and a luxury dress watch'
+      )
+      .replace(
+        /\ba white or pastel silk halter dress,\s*delicate gold jewelry,\s*and strappy resort heels\b/gi,
+        'a crisp white or pastel tailored linen dress shirt, cream resort trousers, and woven leather loafers'
+      )
+      .replace(/\b(?:midi|cocktail|sweater|evening|slip|halter)\s+dress\b/gi, 'tailored evening jacket')
       .replace(/\bsatin blouse\b/gi, 'satin dress shirt')
-      .replace(/\bstatement heels\b/gi, 'polished leather dress shoes')
+      .replace(/\bsilk blouse\b/gi, 'silk dress shirt')
+      .replace(/\b(?:statement|strappy|resort|evening)\s+heels\b/gi, 'polished leather dress shoes')
       .replace(/\band heels\b/gi, 'and polished dress shoes')
+      .replace(/\bsparkling drop earrings\b/gi, 'a luxury dress watch')
       .replace(/\bdark berry lipstick\b/gi, 'sharp holiday grooming')
       .replace(/\bbold holiday makeup\b/gi, 'sharp tailored holiday styling');
   } else if (isFemale) {
-    if (/\b(?:blazer|turtleneck|sweater|trousers|chinos)\b/i.test(result) && !/\b(?:dress|gown|jumpsuit|blouse|feminine)\b/i.test(result)) {
-      result = `${result} (styled in a chic feminine evening silhouette)`;
+    // Only convert purely masculine outfits (skip strings that already offer feminine gown/dress/jumpsuit options)
+    const alreadyHasFeminineOption = /\b(?:dress|gown|jumpsuit|skirt|blouse|heels)\b/i.test(result);
+    if (!alreadyHasFeminineOption) {
+      result = result
+        .replace(
+          /\ba navy cable-knit sweater layered over a crisp Oxford shirt,\s*dark chinos\b/gi,
+          'a chic navy cashmere off-the-shoulder sweater or silk holiday blouse with a satin midi skirt or tailored high-waisted evening trousers'
+        )
+        .replace(
+          /\ba tailored velvet blazer or cashmere turtleneck in deep crimson or forest green,\s*dark tailored trousers,\s*and a luxury dress watch\b/gi,
+          'a tailored crimson or forest-green velvet evening dress or chic velvet jumpsuit with gold statement jewelry and evening heels'
+        )
+        .replace(
+          /\ba charcoal or navy suit jacket,\s*crisp white shirt,\s*silk pocket square,\s*and expensive leather dress shoes\b/gi,
+          'a sleek charcoal or navy satin cocktail dress or tailored feminine evening blazer with gold jewelry and statement heels'
+        )
+        .replace(/\bcrisp Oxford shirt\b/gi, 'silk holiday blouse')
+        .replace(/\bOxford shirt\b/gi, 'silk blouse')
+        .replace(/\bcrisp white shirt\b/gi, 'crisp silk blouse')
+        .replace(/\bdark chinos\b/gi, 'a satin midi skirt or tailored high-waisted evening trousers')
+        .replace(/\bchinos\b/gi, 'tailored high-waisted trousers')
+        .replace(/\bsuit jacket\b/gi, 'tailored evening dress or feminine velvet blazer')
+        .replace(/\bdinner jacket\b/gi, 'silk evening gown or velvet cocktail dress')
+        .replace(/\bsilk pocket square\b/gi, 'gold statement earrings')
+        .replace(/\bpocket square\b/gi, 'statement jewelry')
+        .replace(/\bexpensive leather dress shoes\b/gi, 'statement evening heels')
+        .replace(/\bleather dress shoes\b/gi, 'statement heels or chic evening flats')
+        .replace(/\bdress shoes\b/gi, 'statement heels')
+        .replace(/\bluxury dress watch\b/gi, 'gold statement jewelry and evening heels');
     }
   }
   return result;
+}
+
+/**
+ * Adapts self-referential gendered nouns in character outlines, act summaries, and bios
+ * when a guest of the opposite gender is cast (e.g. "younger neighbour brother" <-> "younger neighbour sister").
+ */
+export function adaptBioForGuestGender(
+  text: string,
+  guestGender?: string | null
+): string {
+  if (!text) return '';
+  const g = String(guestGender || '').toLowerCase().trim();
+  const isFemale = g === 'female' || g === 'f' || g === 'woman' || g === 'feminine';
+  const isMale = g === 'male' || g === 'm' || g === 'man' || g === 'masculine';
+
+  let result = text;
+  if (isFemale) {
+    result = result
+      .replace(/\byounger neighbour brother\b/gi, 'younger neighbour sister')
+      .replace(/\byounger neighbor brother\b/gi, 'younger neighbor sister')
+      .replace(/\bneighbour brother\b/gi, 'neighbour sister')
+      .replace(/\bneighbor brother\b/gi, 'neighbor sister')
+      .replace(/\b(little|younger|older|big)\s+brother\b/gi, '$1 sister')
+      .replace(/\blike a brother\b/gi, 'like a sister')
+      .replace(/\bfrat brother\b/gi, 'sorority sister')
+      .replace(/\bbest man\b/gi, 'maid of honor')
+      .replace(/\bgroomsman\b/gi, 'bridesmaid')
+      .replace(/\bgolden boy\b/gi, 'golden girl');
+  } else if (isMale) {
+    result = result
+      .replace(/\byounger neighbour sister\b/gi, 'younger neighbour brother')
+      .replace(/\byounger neighbor sister\b/gi, 'younger neighbor brother')
+      .replace(/\bneighbour sister\b/gi, 'neighbour brother')
+      .replace(/\bneighbor sister\b/gi, 'neighbor brother')
+      .replace(/\b(little|younger|older|big)\s+sister\b/gi, '$1 brother')
+      .replace(/\blike a sister\b/gi, 'like a brother')
+      .replace(/\bsorority sister\b/gi, 'frat brother')
+      .replace(/\bmaid of honor\b/gi, 'best man')
+      .replace(/\bbridesmaid\b/gi, 'groomsman')
+      .replace(/\bgolden girl\b/gi, 'golden boy');
+  }
+  return result;
+}
+
+/**
+ * Adapts outfit reference image URLs so that a female guest cast in a male-default or adaptable role
+ * always sees feminine outfit reference photos, and a male guest always sees masculine outfit reference photos.
+ */
+export function adaptOutfitReferenceImagesForGuestGender(
+  images: string[],
+  guestGender?: string | null
+): string[] {
+  if (!Array.isArray(images) || images.length === 0) return [];
+  const g = String(guestGender || '').toLowerCase().trim();
+  const isFemale = g === 'female' || g === 'f' || g === 'woman' || g === 'feminine';
+  const isMale = g === 'male' || g === 'm' || g === 'man' || g === 'masculine';
+
+  if (!isFemale && !isMale) {
+    return images;
+  }
+
+  // 1. Check for Love On The Rocks dual-gender roles (/outfits/lotr/<role>-(m|f)-<1..3>.jpg)
+  const firstImg = String(images[0] || '').trim();
+  const lotrDualMatch = firstImg.match(/^(\/outfits\/lotr\/[a-z-]+)-(?:m|f)-\d+\.jpg$/i);
+  if (lotrDualMatch) {
+    const prefix = lotrDualMatch[1];
+    const genderCode = isFemale ? 'f' : 'm';
+    return [`${prefix}-${genderCode}-1.jpg`, `${prefix}-${genderCode}-2.jpg`, `${prefix}-${genderCode}-3.jpg`];
+  }
+
+  // 2. Check for Love On The Rocks female-default roles when a male guest is cast
+  if (isMale && /^\/outfits\/lotr\/the-(?:star|sister|glam-artist|runner-up)-\d+\.jpg$/i.test(firstImg)) {
+    if (firstImg.includes('the-star-')) {
+      return ['/outfits/lotr/the-host-m-1.jpg', '/outfits/lotr/the-host-m-2.jpg', '/outfits/lotr/the-host-m-3.jpg'];
+    }
+    if (firstImg.includes('the-sister-')) {
+      return ['/outfits/lotr/the-ex-m-1.jpg', '/outfits/lotr/the-ex-m-2.jpg', '/outfits/lotr/the-ex-m-3.jpg'];
+    }
+    if (firstImg.includes('the-glam-artist-')) {
+      return ['/outfits/lotr/the-producer-plant-m-1.jpg', '/outfits/lotr/the-producer-plant-m-2.jpg', '/outfits/lotr/the-producer-plant-m-3.jpg'];
+    }
+    if (firstImg.includes('the-runner-up-')) {
+      return ['/outfits/lotr/the-superfan-m-1.jpg', '/outfits/lotr/the-superfan-m-2.jpg', '/outfits/lotr/the-superfan-m-3.jpg'];
+    }
+  }
+
+  // 3. Map individual Christmas Nightmare & individual images
+  const christmasMaleToFemale: Record<string, string> = {
+    '/outfits/christmas/bestie-1.jpg': '/outfits/christmas/sister-1.jpg',
+    '/outfits/christmas/husband-1.jpg': '/outfits/christmas/wife-1.jpg',
+    '/outfits/christmas/coworker-1.jpg': '/outfits/christmas/mistress-1.jpg',
+  };
+  const christmasFemaleToMale: Record<string, string> = {
+    '/outfits/christmas/wife-1.jpg': '/outfits/christmas/husband-1.jpg',
+    '/outfits/christmas/sister-1.jpg': '/outfits/christmas/bestie-1.jpg',
+    '/outfits/christmas/mistress-1.jpg': '/outfits/christmas/coworker-1.jpg',
+  };
+
+  return images.map(img => {
+    const clean = String(img || '').trim();
+    if (isFemale) {
+      if (christmasMaleToFemale[clean]) return christmasMaleToFemale[clean];
+      return clean.replace(/^(\/outfits\/lotr\/[a-z-]+)-m-(\d+\.jpg)$/i, '$1-f-$2');
+    }
+    if (isMale) {
+      if (christmasFemaleToMale[clean]) return christmasFemaleToMale[clean];
+      return clean.replace(/^(\/outfits\/lotr\/[a-z-]+)-f-(\d+\.jpg)$/i, '$1-m-$2');
+    }
+    return clean;
+  });
 }
 
 export function getCharacterRoleTitle(char: any): string {

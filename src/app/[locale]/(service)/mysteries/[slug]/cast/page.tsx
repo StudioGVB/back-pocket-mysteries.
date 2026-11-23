@@ -395,17 +395,22 @@ export default async function CustomerMysteryCastPage({
   }
 
   const ownedGuestIds = new Set(guests.map((g: any) => g.id));
+  const guestById = new Map(guests.map((g: any) => [g.id, g]));
 
   // 3. Format characters without leaking Killer / Mandatory / Optional metadata in UI labels
   const rawCharacters: any[] = mystery.characters || [];
   const formattedCharacters = rawCharacters.map((char: any) => {
     const profile = (char.profile_data || {}) as any;
-    const pres = getCleanCharacterPresentation(char, rawCharacters, { mode: 'generic' });
-    const effectiveGender = inferRoleGender(char, pres.shortBlurb);
-
     // Only pre-assign initialGuestId if that guest belongs to this customer's own roster
     const safeInitialGuestId =
       profile.guest_id && ownedGuestIds.has(profile.guest_id) ? profile.guest_id : null;
+    const assignedGuest = safeInitialGuestId ? guestById.get(safeInitialGuestId) : null;
+
+    const pres = getCleanCharacterPresentation(char, rawCharacters, {
+      mode: 'generic',
+      overrideGuestGender: assignedGuest?.gender || profile.gender || null,
+    });
+    const effectiveGender = inferRoleGender(char, pres.shortBlurb);
 
     return {
       id: char.id,
