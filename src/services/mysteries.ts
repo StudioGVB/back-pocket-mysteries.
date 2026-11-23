@@ -976,37 +976,36 @@ function normalizeCharacterList(
 
     // Recover AI guest portrait ONLY for the exact same guest_id (never by char.id across tenants)
     const curAvatarUrl = String(cleanedProfile.avatar_url || '');
-    if (cleanedProfile.guest_id && !curAvatarUrl.includes('aiPhotoUrl=')) {
-      const guestIdStr = String(cleanedProfile.guest_id);
+    const guestIdStr = String(cleanedProfile.guest_id || '').trim();
+    const isUuidGuest = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(guestIdStr);
+    const hasMismatchedGuestUuidInAvatar =
+      isUuidGuest &&
+      (curAvatarUrl.includes('character-images') || curAvatarUrl.includes('generated-avatars')) &&
+      /[0-9a-f]{8}-[0-9a-f]{4}-/i.test(curAvatarUrl) &&
+      !curAvatarUrl.includes(guestIdStr);
+
+    if (guestIdStr && (!curAvatarUrl.includes('aiPhotoUrl=') || hasMismatchedGuestUuidInAvatar)) {
       let recoveredAiPhotoUrl: string | null = null;
 
-      // 1. Check cached mysteries for an upgraded avatar_url for this specific guest_id
-      for (const cm of cachedMysteriesList) {
-        if (!Array.isArray(cm?.characters)) continue;
-        for (const cc of cm.characters) {
-          const ccPd = cc?.profile_data;
-          if (
-            ccPd &&
-            String(ccPd.guest_id || '') === guestIdStr &&
-            typeof ccPd.avatar_url === 'string' &&
-            ccPd.avatar_url.includes('aiPhotoUrl=')
-          ) {
-            const aiMatch = ccPd.avatar_url.match(/[?&]aiPhotoUrl=([^&]+)/);
-            if (curAvatarUrl && aiMatch) {
-              const sep = curAvatarUrl.includes('?') ? '&' : '?';
-              cleanedProfile.avatar_url = `${curAvatarUrl}${sep}aiPhotoUrl=${aiMatch[1]}`;
-            } else {
-              cleanedProfile.avatar_url = ccPd.avatar_url;
-            }
-            if (ccPd.standard_character_photo_url) {
-              cleanedProfile.standard_character_photo_url = ccPd.standard_character_photo_url;
-            }
-            profileRestored = true;
-            recoveredAiPhotoUrl = ccPd.standard_character_photo_url || ccPd.avatar_url;
-            break;
-          }
+      // 1. Check sibling characters or cached mysteries for an avatar_url whose filename matches this specific guest_id
+      const allCandidateChars = [
+        ...characters,
+        ...cachedMysteriesList.flatMap((cm: any) => (Array.isArray(cm?.characters) ? cm.characters : [])),
+      ];
+      for (const cc of allCandidateChars) {
+        const ccPd = cc?.profile_data;
+        const ccAvatar = String(ccPd?.avatar_url || '');
+        if (
+          ccAvatar &&
+          ccAvatar.includes('aiPhotoUrl=') &&
+          (ccAvatar.includes(guestIdStr) ||
+            (String(ccPd?.guest_id || '') === guestIdStr && !hasMismatchedGuestUuidInAvatar))
+        ) {
+          cleanedProfile.avatar_url = ccAvatar;
+          profileRestored = true;
+          recoveredAiPhotoUrl = ccAvatar;
+          break;
         }
-        if (recoveredAiPhotoUrl) break;
       }
 
       // 2. Check public/generated-avatars/${guestId}-*.jpg
@@ -1016,12 +1015,22 @@ function normalizeCharacterList(
         );
         if (matchedFile) {
           const localUrl = `/generated-avatars/${matchedFile}`;
-          const baseAvatar = curAvatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanedProfile.guest_name || cleanedProfile.name || guestIdStr)}`;
+          const baseAvatar =
+            !hasMismatchedGuestUuidInAvatar && curAvatarUrl
+              ? curAvatarUrl
+              : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanedProfile.guest_name || cleanedProfile.name || guestIdStr)}`;
           const separator = baseAvatar.includes('?') ? '&' : '?';
           cleanedProfile.avatar_url = `${baseAvatar}${separator}aiPhotoUrl=${encodeURIComponent(localUrl)}`;
           cleanedProfile.standard_character_photo_url = localUrl;
           profileRestored = true;
+          recoveredAiPhotoUrl = localUrl;
         }
+      }
+
+      // 3. If avatar_url still embeds a different guest's UUID, clear it so standard_character_photo_url is used
+      if (!recoveredAiPhotoUrl && hasMismatchedGuestUuidInAvatar) {
+        delete cleanedProfile.avatar_url;
+        profileRestored = true;
       }
     }
 
@@ -1222,6 +1231,7 @@ export const getMysteryById = cache(async (id: string) => {
             ...dbPd,
             ...(cachePd.guest_id ? { guest_id: cachePd.guest_id } : {}),
             ...(cachePd.guest_name ? { guest_name: cachePd.guest_name } : {}),
+            ...(cachePd.avatar_url ? { avatar_url: cachePd.avatar_url } : {}),
             ...(cachePd.standard_character_photo_url
               ? {
                   standard_character_photo_url: cachePd.standard_character_photo_url,

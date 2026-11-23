@@ -2160,9 +2160,14 @@ export function PlayroomClient({
   // ============================================================================
   const selectedName = selectedChar ? parseCharacter(selectedChar).name : customSleuthName || 'Party Sleuth';
   const selectedArchetype = selectedChar ? parseCharacter(selectedChar).archetype : 'Investigator';
-  const selectedCharAvatar = resolveDisplayAvatarUrl(
-    selectedChar?.profile_data?.avatar_url || selectedChar?.image_url
-  );
+  const selectedCharAvatar = selectedChar
+    ? resolveDisplayAvatarUrl(
+        getCleanCharacterPresentation(selectedChar, characters, { mode: 'print' })
+          .characterPhotoUrl ||
+          selectedChar.profile_data?.avatar_url ||
+          selectedChar.image_url
+      )
+    : '';
 
   const charConnections = selectedChar
     ? (relationships

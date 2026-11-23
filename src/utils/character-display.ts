@@ -176,7 +176,33 @@ export function getCleanCharacterPresentation(
   const secrets = cleanText(profile.secrets || '', allCharacters, mode);
 
   // 5. Standard Character Photo / Outfit Photo / Guest AI Portrait
-  const resolvedAvatar = profile.avatar_url ? resolveDisplayAvatarUrl(profile.avatar_url) : '';
+  const guestIdStr = String(profile.guest_id || '').trim();
+  const isUuidGuestId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(guestIdStr);
+  let resolvedAvatar = profile.avatar_url ? resolveDisplayAvatarUrl(profile.avatar_url) : '';
+
+  // Guard against stale avatar_url from a previous guest assignment after a cast re-sort:
+  // If guest_id is a UUID and resolvedAvatar embeds a different guest UUID in its filename,
+  // find the portrait that matches this guest_id or fall back to standard_character_photo_url.
+  const hasMismatchedGuestUuid =
+    isUuidGuestId &&
+    Boolean(resolvedAvatar) &&
+    /\/(character-images|generated-avatars)\/[0-9a-f]{8}-[0-9a-f]{4}-/i.test(resolvedAvatar) &&
+    !resolvedAvatar.includes(guestIdStr);
+
+  if (hasMismatchedGuestUuid) {
+    let recoveredForGuest = '';
+    for (const otherChar of allCharacters) {
+      const otherAvatar = otherChar?.profile_data?.avatar_url
+        ? resolveDisplayAvatarUrl(otherChar.profile_data.avatar_url)
+        : '';
+      if (otherAvatar && otherAvatar.includes(guestIdStr)) {
+        recoveredForGuest = otherAvatar;
+        break;
+      }
+    }
+    resolvedAvatar = recoveredForGuest;
+  }
+
   const hasAiGuestPortrait =
     Boolean(resolvedAvatar) &&
     (String(profile.avatar_url || '').includes('aiPhotoUrl=') ||
