@@ -125,12 +125,18 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
   const year = new Date().getFullYear();
 
   // Send the branded invite email
+  const plainInviteText = `${hostName} invited you to join Back Pocket Mysteries!\n\n${note ? `"${note}" - ${hostName}\n\n` : ''}Create your player profile and avatar so you can join their guest roster for upcoming murder mystery nights:\n\nAccept Invitation: ${inviteUrl}\n\nBack Pocket Mysteries`;
   const { error: emailError } = await resend.emails.send({
-    from: 'Back Pocket Mysteries <noreply@backpocketgames.com>',
+    from: 'Back Pocket Mysteries <hello@backpocketgames.com>',
     to: email,
+    replyTo: 'hello@backpocketgames.com',
     subject: `${hostName} invited you to join Back Pocket Mysteries`,
+    text: plainInviteText,
+    headers: {
+      'X-Entity-Ref-ID': `bpm-invite-${invite.id}`,
+    },
     html: `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
 <body style="background:#f9f9f9;margin:0;padding:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
@@ -139,7 +145,7 @@ export async function sendGuestInvitation(email: string, note?: string, manualGu
 
         <tr>
           <td style="background:#111111;padding:32px 40px;text-align:center;border-bottom:4px solid #fe04c6;">
-            <img src="https://backpocketmysteries.com/logo-horizontal-white.png" width="200" alt="Back Pocket Mysteries" style="display:block;margin:0 auto;" />
+            <img src="https://mysteries.backpocketgames.com/logo-horizontal-white.png?v=5" width="200" alt="Back Pocket Mysteries" style="display:block;margin:0 auto;" />
           </td>
         </tr>
 

@@ -7,6 +7,7 @@ export interface BrandedEmailShellOptions {
   badgeText?: string;
   kicker?: string;
   headline: string;
+  subheadline?: string;
   heroImageUrl?: string | null;
   heroImageAlt?: string;
   heroImageBadge?: string;
@@ -137,7 +138,7 @@ export function buildBrandedEmailShell(options: BrandedEmailShellOptions): strin
                 <img src="${LOGO_WHITE_URL}" width="150" alt="Back Pocket Mysteries" style="display:block;border:0;margin:0 auto;max-width:150px;height:auto;" />
               </a>
               <p style="margin:0 0 14px 0;font-size:12px;color:#a1a1aa;line-height:1.6;max-width:440px;">
-                Custom-built murder mystery parties with personalized characters, crime-scene photos, and mobile voice wiretaps, ready to play in ~20 minutes.
+                Custom-built murder mystery parties with personalized characters, clue photos, and mobile voice recordings, ready to play in ~20 minutes.
               </p>
               <p style="margin:0 0 12px 0;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">
                 <a href="${BASE_URL}/en/mysteries" target="_blank" style="color:#fe04c6;text-decoration:none;margin:0 8px;">Browse Mysteries</a>
@@ -152,7 +153,7 @@ export function buildBrandedEmailShell(options: BrandedEmailShellOptions): strin
                   : ''
               }
               <p style="margin:12px 0 0 0;font-size:11px;color:#71717a;">
-                © ${year} Back Pocket Mysteries · <a href="${BASE_URL}/en" target="_blank" style="color:#a1a1aa;text-decoration:none;">backpocketmysteries.com</a>
+                © ${year} <a href="${BASE_URL}/en" target="_blank" style="color:#a1a1aa;text-decoration:none;">Back Pocket Games</a> · All rights reserved
               </p>
             </td>
           </tr>
@@ -162,6 +163,29 @@ export function buildBrandedEmailShell(options: BrandedEmailShellOptions): strin
   </table>
 </body>
 </html>`;
+}
+
+/**
+ * Converts HTML email content into a clean, readable plain-text multipart fallback
+ * so mail servers (iCloud, Gmail, Outlook) never penalize emails for MIME_HTML_ONLY.
+ */
+export function htmlToPlainTextEmail(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<li[^>]*>/gi, '\n• ')
+    .replace(/<\/(p|div|h1|h2|h3|h4|tr|li)>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&rarr;/gi, '->')
+    .replace(/&middot;/gi, '·')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 export interface NewAccountNotificationParams {
@@ -260,11 +284,12 @@ export async function sendAdminNewAccountNotificationEmail(
     });
 
     await resend.emails.send({
-      from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
-      to: ['Hello@backpocketgames.com'],
+      from: 'Back Pocket Mysteries <hello@backpocketgames.com>',
+      to: ['hello@backpocketgames.com'],
       replyTo: params.email,
-      subject: `👤 New Member Account Created: ${displayName} (${params.email})`,
+      subject: `New Member Account Created: ${displayName} (${params.email})`,
       html,
+      text: htmlToPlainTextEmail(html),
     });
   } catch (err) {
     console.error('[NEW ACCOUNT EMAIL] Failed to send admin notification:', err);

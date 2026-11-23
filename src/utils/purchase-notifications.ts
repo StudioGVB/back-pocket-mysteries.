@@ -610,3 +610,104 @@ Back Pocket Mysteries`;
     return { sent: false, error: err?.message };
   }
 }
+
+export async function sendHostOwnershipTransferInviteEmail(payload: {
+  toEmail: string;
+  toName?: string | null;
+  fromName: string;
+  fromEmail?: string | null;
+  mysteryId: string;
+  mysteryTitle: string;
+  claimToken: string;
+  locale?: string;
+}): Promise<{ sent: boolean; id?: string; queuedInOutbox?: boolean; error?: string }> {
+  const email = (payload.toEmail || '').trim().toLowerCase();
+  if (!email) return { sent: false, error: 'Missing recipient email' };
+
+  const locale = payload.locale || 'en';
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://backpocketmysteries.com').replace(/\/$/, '');
+  const claimUrl = `${siteUrl}/${locale}/account/orders?claimTransfer=${encodeURIComponent(payload.claimToken)}`;
+  const recipientFirstName = (payload.toName || '').trim().split(/\s+/)[0] || 'Detective';
+  const senderDisplay = payload.fromName || payload.fromEmail || 'Your Party Host';
+  const subject = `🎭 ${senderDisplay} wants to transfer Host ownership of "${payload.mysteryTitle}" to you!`;
+
+  const plainText = `Hi ${recipientFirstName},\n\n${senderDisplay} wants to transfer Host ownership of the custom murder mystery package "${payload.mysteryTitle}" to you on Back Pocket Mysteries.\n\nOnce you log in and accept:\n• "${payload.mysteryTitle}" (with its locked cast, character dossiers, and Live Host Controls) will move into your My Mysteries library.\n• ${senderDisplay} will hand off Host privileges to you.\n\nAccept Host Ownership here:\n${claimUrl}\n\n— Back Pocket Mysteries`;
+
+  const html = buildBrandedEmailShell({
+    preheader: `${senderDisplay} invited you to become the Host of "${payload.mysteryTitle}"`,
+    badgeText: '🔁 HOST OWNERSHIP TRANSFER INVITE',
+    headline: `Take the Spotlight as Host of ${payload.mysteryTitle}!`,
+    subheadline: `${senderDisplay} has invited you to take over Host ownership for this custom murder mystery package.`,
+    bodyHtml: `
+      <p style="margin:0 0 18px 0;color:#1e191c;font-size:15.5px;line-height:1.7;">
+        Hi <strong>${recipientFirstName}</strong>,
+      </p>
+      <p style="margin:0 0 20px 0;color:#1e191c;font-size:15.5px;line-height:1.7;">
+        <strong>${senderDisplay}</strong>${payload.fromEmail ? ` (${payload.fromEmail})` : ''} has initiated a Host ownership transfer of <strong style="color:#fe04c6;">${payload.mysteryTitle}</strong> to your account.
+      </p>
+      <div style="background-color:#fdf2f8;border:2px solid #fe04c6;border-radius:12px;padding:20px;margin-bottom:22px;">
+        <p style="margin:0 0 8px 0;color:#1e191c;font-size:14px;font-weight:800;">
+          ✨ What happens when you log in &amp; accept:
+        </p>
+        <ul style="margin:0;padding-left:18px;color:#374151;font-size:13.5px;line-height:1.65;">
+          <li>The complete custom mystery package (with its locked cast, AI character portraits, and Pre-Party Ready Hub) moves into your <strong>My Mysteries (Stories)</strong> library.</li>
+          <li>You unlock full Live Host Controls to start the game and advance rounds on party night.</li>
+          <li>Ownership only transfers once you log in and click <strong>Accept &amp; Become Host</strong>.</li>
+        </ul>
+      </div>
+    `,
+    ctaText: 'Log In & Accept Host Ownership →',
+    ctaUrl: claimUrl,
+  });
+
+  try {
+    const apiKey = resolveResendApiKey();
+    if (!apiKey) {
+      appendToOutboxLog({
+        to: email,
+        subject,
+        type: 'host_ownership_transfer_invite',
+        payload,
+        claimUrl,
+        status: 'pending_resend_api_key',
+        createdAt: new Date().toISOString(),
+      });
+      return { sent: false, queuedInOutbox: true };
+    }
+
+    const resend = new Resend(apiKey);
+    let res = await resend.emails.send({
+      from: PRIMARY_FROM_EMAIL,
+      to: email,
+      replyTo: ADMIN_NOTIFICATION_EMAIL,
+      subject,
+      html,
+      text: plainText,
+    });
+    if (res.error) {
+      res = await resend.emails.send({
+        from: VERIFIED_FALLBACK_FROM,
+        to: email,
+        replyTo: ADMIN_NOTIFICATION_EMAIL,
+        subject,
+        html,
+        text: plainText,
+      });
+    }
+    appendToOutboxLog({
+      to: email,
+      subject,
+      type: 'host_ownership_transfer_invite',
+      payload,
+      claimUrl,
+      status: res.error ? 'resend_error' : 'sent',
+      id: res.data?.id,
+      error: res.error?.message,
+      createdAt: new Date().toISOString(),
+    });
+    return { sent: !res.error, id: res.data?.id };
+  } catch (err: any) {
+    return { sent: false, error: err?.message };
+  }
+}
+

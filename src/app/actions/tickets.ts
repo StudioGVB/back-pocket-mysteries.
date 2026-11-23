@@ -79,6 +79,16 @@ async function sendEmailWithDomainFallback(params: {
   const resend = new Resend(apiKey);
   const primaryFrom = `Back Pocket Mysteries <${SUPPORT_EMAIL}>`;
 
+  const plainText = params.html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h1|h2|h3|tr|li)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
   try {
     // 1. Try sending from Back Pocket Mysteries <hello@backpocketgames.com>
     let res = await resend.emails.send({
@@ -87,6 +97,7 @@ async function sendEmailWithDomainFallback(params: {
       replyTo: params.replyTo || SUPPORT_EMAIL,
       subject: params.subject,
       html: params.html,
+      text: plainText,
       attachments: params.attachments && params.attachments.length > 0 ? params.attachments : undefined,
     });
 
@@ -99,6 +110,7 @@ async function sendEmailWithDomainFallback(params: {
         replyTo: params.replyTo || SUPPORT_EMAIL,
         subject: params.subject,
         html: params.html,
+        text: plainText,
         attachments:
           params.attachments && params.attachments.length > 0 ? params.attachments : undefined,
       });
@@ -117,8 +129,8 @@ async function sendEmailWithDomainFallback(params: {
   }
 }
 
-const BRAND_LOGO_URL = 'https://backpocketmysteries.com/logo-horizontal-white.png';
-const SITE_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://backpocketmysteries.com';
+const BRAND_LOGO_URL = 'https://mysteries.backpocketgames.com/logo-horizontal-white.png?v=5';
+const SITE_BASE_URL = 'https://mysteries.backpocketgames.com';
 
 function escapeHtml(str: string): string {
   return String(str || '')

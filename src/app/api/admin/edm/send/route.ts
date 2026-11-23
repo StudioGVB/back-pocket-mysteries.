@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/utils/admin-auth";
 import { executeStoreOperation, loadMarketingStore, saveMarketingStore } from "@/lib/marketing-store";
 import { getUnifiedNewsletterDirectoryAction } from "@/app/actions/marketing";
 
@@ -8,6 +9,12 @@ const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
 
 export async function POST(request: Request) {
   try {
+    const cronHeader = request.headers.get("x-cron-secret") || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const validCron = Boolean(process.env.CRON_SECRET && cronHeader === process.env.CRON_SECRET);
+    if (!validCron) {
+      await requireAdmin();
+    }
+
     const body = await request.json();
     const { campaignId, mode = "test", testEmail } = body as {
       campaignId: string;
@@ -64,11 +71,26 @@ export async function POST(request: Request) {
       }
 
       const personalizedHtml = baseHtml.replace(/\{\{\s*first_name\s*\}\}/gi, "Detective");
+      const plainEdmText = personalizedHtml
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/(p|div|h1|h2|h3|tr|li)>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
       const { data: sendRes, error: sendErr } = await resend.emails.send({
         from: fromAddress,
         to: [testEmail.trim()],
+        replyTo: rawFromEmail,
         subject: `[TEST] ${campaign.subject}`,
         html: personalizedHtml,
+        text: plainEdmText,
+        headers: {
+          "List-Unsubscribe": `<mailto:${rawFromEmail}?subject=unsubscribe>`,
+        },
       });
 
       if (sendErr) {
@@ -101,13 +123,27 @@ export async function POST(request: Request) {
         ? lead.full_name.trim().split(/\s+/)[0]
         : "Detective";
       const personalizedHtml = baseHtml.replace(/\{\{\s*first_name\s*\}\}/gi, firstName);
+      const plainLeadText = personalizedHtml
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/(p|div|h1|h2|h3|tr|li)>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
 
       try {
         const { error: sendErr } = await resend.emails.send({
           from: fromAddress,
           to: [lead.email],
+          replyTo: rawFromEmail,
           subject: campaign.subject,
           html: personalizedHtml,
+          text: plainLeadText,
+          headers: {
+            "List-Unsubscribe": `<mailto:${rawFromEmail}?subject=unsubscribe>`,
+          },
         });
 
         if (sendErr) {

@@ -91,9 +91,11 @@ export async function submitContactForm(formData: FormData) {
         : '';
         
       await resend.emails.send({
-        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
-        to: 'Hello@backpocketgames.com',
+        from: 'Back Pocket Mysteries <hello@backpocketgames.com>',
+        to: 'hello@backpocketgames.com',
+        replyTo: email,
         subject: `New Inquiry from ${name}`,
+        text: `New Inquiry from ${name} (${email}):\n\n${message}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 8px; border-top: 4px solid #F02882;">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -126,9 +128,11 @@ export async function submitContactForm(formData: FormData) {
       const customerHtml = await render(CustomerEnquiryEmail({ name, message }));
       
       await resend.emails.send({
-        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+        from: 'Back Pocket Mysteries <hello@backpocketgames.com>',
         to: email,
+        replyTo: 'hello@backpocketgames.com',
         subject: 'We have received your enquiry',
+        text: `Hi ${name},\n\nThank you for reaching out to Back Pocket Mysteries! We have received your message and our team will get back to you shortly.\n\nYour message:\n"${message}"\n\nBack Pocket Mysteries`,
         html: customerHtml,
       });
     }
