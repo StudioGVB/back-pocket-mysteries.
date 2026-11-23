@@ -12,16 +12,27 @@ import {
   cacheRelationshipsSnapshot,
 } from '@/lib/live-session-store';
 import { checkAndFinalizeGenerationIfDue } from '@/lib/background-mystery-generator';
-import FinishGenerationButton from '@/components/account/FinishGenerationButton';
+import { confirmMysteryOrderAction } from '@/app/actions/stripe';
+import OrdersGeneratingPoller from '@/components/account/OrdersGeneratingPoller';
 
 export const unstable_instant = false;
 
 export default async function OrdersPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{
+    checkout?: string;
+    mysteryId?: string;
+    slug?: string;
+    orderId?: string;
+    session_id?: string;
+    payment_intent?: string;
+  }>;
 }) {
   const { locale } = await params;
+  const resolvedSearch = searchParams ? await searchParams : undefined;
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,6 +40,23 @@ export default async function OrdersPage({
 
   if (!user) {
     redirect(`/${locale}/login?next=${encodeURIComponent(`/${locale}/account/orders`)}`);
+  }
+
+  if (
+    resolvedSearch?.checkout === 'success' &&
+    (resolvedSearch?.mysteryId || resolvedSearch?.slug)
+  ) {
+    try {
+      await confirmMysteryOrderAction({
+        mysteryId: resolvedSearch.mysteryId || resolvedSearch.slug || '',
+        slug: resolvedSearch.slug || resolvedSearch.mysteryId,
+        orderId: resolvedSearch.orderId,
+        sessionId: resolvedSearch.session_id,
+        paymentIntentId: resolvedSearch.payment_intent,
+      });
+    } catch {
+      // non-fatal if already confirmed by client before redirect
+    }
   }
 
   // 1. Collect unlocked mystery IDs strictly belonging to this user from local live-session store
@@ -174,6 +202,12 @@ export default async function OrdersPage({
         </div>
       </div>
 
+      <OrdersGeneratingPoller
+        hasGeneratingStories={stories.some(
+          (s) => s.generationState?.status === 'generating'
+        )}
+      />
+
       {stories.length > 0 ? (
         <div className="grid gap-6">
           {stories.map((story) => {
@@ -183,6 +217,10 @@ export default async function OrdersPage({
               Math.ceil((story.generationState?.remainingSeconds || 60) / 60)
             );
             const progress = story.generationState?.progress ?? 100;
+            const playersRangeLabel =
+              story.min_players && story.min_players === story.max_players
+                ? `${story.min_players} Players`
+                : `${story.min_players || 4}–${story.max_players || 12} Players`;
 
             return (
               <div
@@ -211,24 +249,19 @@ export default async function OrdersPage({
                         </h3>
                         {isGenerating ? (
                           <span className="px-3 py-1 bg-brand-pink/10 text-brand-pink border border-brand-pink/30 rounded-full text-[10px] font-black uppercase tracking-wider">
-                            ☕ Generating Package (~{minsLeft} min{minsLeft === 1 ? '' : 's'} left • We&apos;ll email you!)
+                            {`☕ Generating Package (~${minsLeft} ${minsLeft === 1 ? 'min' : 'mins'} left • We'll email you!)`}
                           </span>
                         ) : (
                           <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wider">
                             ✓ Ready to Play
                           </span>
                         )}
-                        <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full text-[10px] font-black font-mono uppercase tracking-wider">
-                          PIN: {story.pin.slice(0, 3)} {story.pin.slice(3)}
-                        </span>
                       </div>
 
                       <div className="flex flex-wrap gap-3 text-xs font-bold uppercase tracking-widest text-slate-400">
                         <span>{story.theme || 'Murder Mystery'}</span>
                         <span>•</span>
-                        <span>
-                          {story.min_players || 4}–{story.max_players || 12} Players
-                        </span>
+                        <span>{playersRangeLabel}</span>
                         <span>•</span>
                         <span className="text-brand-pink">
                           {isGenerating
@@ -245,25 +278,26 @@ export default async function OrdersPage({
 
                   <div className="flex flex-wrap items-center gap-3">
                     {isGenerating ? (
-                      <>
-                        <Link
-                          href={`/${locale}/mysteries/${story.id}/cast?view=generating`}
-                          className="px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-                        >
-                          ☕ View 20-Min Progress
-                        </Link>
-                        <FinishGenerationButton
-                          mysteryId={story.id}
-                          slug={story.id}
-                          mysteryTitle={story.title}
-                          pin={story.pin}
-                          locale={locale}
-                        />
-                      </>
+                      <div className="px-5 py-3.5 rounded-2xl bg-pink-50/70 border border-brand-pink/25 flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-brand-pink/15 text-brand-pink flex items-center justify-center text-lg shrink-0">
+                          ⏱️
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                            Estimated Time Remaining
+                          </div>
+                          <div className="text-base font-black text-slate-900 leading-tight mt-0.5">
+                            {`~${minsLeft} ${minsLeft === 1 ? 'minute' : 'minutes'}`}
+                          </div>
+                          <div className="text-[11px] font-medium text-slate-500 mt-0.5">
+                            Total build time: ~15–20 mins
+                          </div>
+                        </div>
+                      </div>
                     ) : (
                       <>
                         <Link
-                          href={`/${locale}/mysteries/${story.id}/ready`}
+                          href={`/${locale}/account/orders/${story.id}`}
                           className="px-7 py-3.5 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:opacity-95 transition-all shadow-lg active:scale-95"
                           style={{
                             background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
@@ -276,13 +310,7 @@ export default async function OrdersPage({
                           href={`/${locale}/play/${story.id}?host=1`}
                           className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
                         >
-                          🚀 Launch Live Game
-                        </Link>
-                        <Link
-                          href={`/${locale}/mysteries/${story.id}/cast?edit=1`}
-                          className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-                        >
-                          ✏️ Edit Cast
+                          🚀 Start Game
                         </Link>
                       </>
                     )}
@@ -291,11 +319,13 @@ export default async function OrdersPage({
 
                 {isGenerating && (
                   <div className="pt-4 border-t border-slate-100 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-slate-500">
                       <span>
                         ✅ Safe to close browser, we&apos;ll email <strong>{user.email}</strong> when your mystery is ready!
                       </span>
-                      <span className="font-mono font-black text-brand-pink">{progress}%</span>
+                      <span className="font-mono font-black text-brand-pink">
+                        {`${progress}% • ~${minsLeft} ${minsLeft === 1 ? 'min' : 'mins'} remaining`}
+                      </span>
                     </div>
                     <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
                       <div

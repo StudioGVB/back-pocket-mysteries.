@@ -311,23 +311,6 @@ export function MysteryReadyHub({
                   {completedChecksCount} / {PRE_PARTY_CHECKLIST.length}
                 </span>
               </button>
-
-              {onEditCast ? (
-                <button
-                  type="button"
-                  onClick={onEditCast}
-                  className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
-                >
-                  ✏️ Swap / Edit Cast
-                </button>
-              ) : (
-                <Link
-                  href={`/${locale}/mysteries/${mystery.slug}/cast?edit=1`}
-                  className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors"
-                >
-                  ✏️ Swap / Edit Cast
-                </Link>
-              )}
             </div>
           </div>
 
@@ -371,40 +354,22 @@ export function MysteryReadyHub({
 
         {/* Bottom Action Bar in Hero */}
         <div className="relative z-10 mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => {
-                copyToClipboard(`${getOrigin()}/${locale}/play/${mystery.id}?select=1`, 'master-lobby');
-              }}
-              className={`w-full sm:w-auto px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
-                copiedId === 'master-lobby'
-                  ? 'bg-emerald-500 text-slate-950'
-                  : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
-              }`}
-            >
-              {copiedId === 'master-lobby'
-                ? '✓ Group Chat Character Link Copied!'
-                : '🔗 1-Click Copy Group Chat Link'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                copyToClipboard(buildGroupChatSelectInvite(), 'hero-group-invite');
-                markAllSent();
-              }}
-              className={`w-full sm:w-auto px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
-                copiedId === 'hero-group-invite'
-                  ? 'bg-emerald-500 text-slate-950'
-                  : 'bg-white/5 hover:bg-white/10 border border-white/15 text-slate-200'
-              }`}
-            >
-              {copiedId === 'hero-group-invite'
-                ? '✓ Group Chat Invite + Link Copied!'
-                : '💬 Copy Group Chat Message + Link'}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              copyToClipboard(buildGroupChatSelectInvite(), 'hero-group-invite');
+              markAllSent();
+            }}
+            className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
+              copiedId === 'hero-group-invite'
+                ? 'bg-emerald-500 text-slate-950'
+                : 'bg-white/10 hover:bg-white/15 border border-white/15 text-white'
+            }`}
+          >
+            {copiedId === 'hero-group-invite'
+              ? '✓ Group Chat Invite Copied!'
+              : '💬 Copy Group Chat Invite'}
+          </button>
 
           <Link
             href={hostLobbyUrl}
@@ -419,27 +384,27 @@ export function MysteryReadyHub({
         </div>
       </div>
 
-      {/* 2. NAVIGATION PILLS FOR THE 4 PRE-PARTY SECTIONS */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-2 shadow-sm flex flex-wrap items-center gap-2">
+      {/* 2. NAVIGATION PILLS FOR THE 4 PRE-PARTY SECTIONS (Full Width 4-Column Grid, Zero Truncation) */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-2 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         {[
           {
             id: 'characters' as const,
-            label: `🎭 1. Characters & Guest Links (${characters.length})`,
+            label: '🎭 1. Cast & Invites',
             badge: `${sentCount}/${characters.length} Sent`,
           },
           {
             id: 'howtoplay' as const,
-            label: '🕹️ 2. How to Play Run-Through',
-            badge: '4 Rounds + Reveal',
+            label: '🕹️ 2. How to Play',
+            badge: 'Run-Through',
           },
           {
             id: 'setup' as const,
-            label: '🛠️ 3. Host Set-Up Guide & Checklist',
+            label: '🛠️ 3. Host Checklist',
             badge: `${completedChecksCount}/${PRE_PARTY_CHECKLIST.length} Done`,
           },
           {
             id: 'toolkit' as const,
-            label: '✨ 4. Party Toolkit (Texts, Drinks & QR)',
+            label: '✨ 4. Party Toolkit',
             badge: 'Extras',
           },
         ].map(tab => {
@@ -449,13 +414,13 @@ export function MysteryReadyHub({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 min-w-[200px] px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between gap-2 cursor-pointer ${
+              className={`px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between gap-2 cursor-pointer ${
                 isActive
                   ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
               }`}
             >
-              <span className="truncate">{tab.label}</span>
+              <span className="whitespace-nowrap">{tab.label}</span>
               <span
                 className={`px-2 py-0.5 rounded-full text-[9px] font-black shrink-0 ${
                   isActive
@@ -484,7 +449,7 @@ export function MysteryReadyHub({
                 Your Cast: Outline, Outfit, Vibe &amp; Direct Guest Links
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1 max-w-2xl">
-                Send the <strong>1-Click Group Chat Link</strong> so everyone can pick their character from one page, or send each guest their individual link below!
+                Copy the <strong>Group Chat Invite</strong> so everyone can pick their character from one page, or send each guest their individual invite below!
               </p>
             </div>
 
@@ -499,96 +464,49 @@ export function MysteryReadyHub({
           </div>
 
           {/* 1-CLICK GENERIC GROUP CHAT CHARACTER SELECTION LINK CARD */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white border border-brand-pink/35 shadow-xl space-y-5">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="space-y-1.5 max-w-2xl">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
-                    ⚡ Fastest Option • 1-Click Group Chat Link
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    📱 Includes Charged Device Reminder
-                  </span>
-                </div>
-                <h3 className="text-lg sm:text-xl font-black text-white">
-                  Send One Generic Link to the Group Chat (Guests Click Their Character)
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-                  Don&apos;t want to text everyone individually? Drop this single link into your group chat! It opens a <strong>Character Selection Page</strong> where each guest finds their name and clicks into their character to see their <strong>Outline</strong>, <strong>Outfit &amp; Dress Code</strong>, <strong>Vibe</strong>, and a reminder to <strong>bring a charged phone/device</strong> on the night.
-                </p>
+          <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white border border-brand-pink/35 shadow-xl space-y-5">
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
+                  ⚡ Fastest Option • Group Chat Invite
+                </span>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  📱 Includes Charged Device Reminder
+                </span>
               </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white">
+                Send One Generic Link to the Group Chat (Guests Click Their Character)
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed max-w-3xl">
+                Don&apos;t want to text everyone individually? Drop this single invite into your group chat! It opens a <strong>Character Selection Page</strong> where each guest finds their name and clicks into their character to see their <strong>Outline</strong>, <strong>Outfit &amp; Dress Code</strong>, <strong>Vibe</strong>, and a reminder to <strong>bring a charged phone/device</strong> on the night.
+              </p>
+            </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    copyToClipboard(buildGroupChatSelectInvite(), 'group-select-msg');
-                    markAllSent();
-                  }}
-                  className={`px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg cursor-pointer ${
-                    copiedId === 'group-select-msg'
-                      ? 'bg-emerald-500 text-slate-950'
-                      : 'bg-brand-pink hover:opacity-95 text-white'
-                  }`}
-                >
-                  {copiedId === 'group-select-msg'
-                    ? '✓ Group Chat Message + Link Copied!'
-                    : '💬 1-Click Copy Group Chat Invite'}
-                </button>
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  copyToClipboard(buildGroupChatSelectInvite(), 'group-select-msg');
+                  markAllSent();
+                }}
+                className={`px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg cursor-pointer ${
+                  copiedId === 'group-select-msg'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'bg-brand-pink hover:opacity-95 text-white'
+                }`}
+              >
+                {copiedId === 'group-select-msg'
+                  ? '✓ Group Chat Invite Copied!'
+                  : '💬 Copy Group Chat Invite'}
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    copyToClipboard(
-                      `${getOrigin()}/${locale}/play/${mystery.id}?select=1`,
-                      'group-select-url'
-                    );
-                    markAllSent();
-                  }}
-                  className={`px-4 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-                    copiedId === 'group-select-url'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400'
-                      : 'bg-white/10 hover:bg-white/15 text-white border-white/15'
-                  }`}
-                >
-                  {copiedId === 'group-select-url'
-                    ? '✓ Generic Link Copied!'
-                    : '🔗 Copy Link Only'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const url = `${getOrigin()}/${locale}/play/${mystery.id}?select=1`;
-                    if (typeof navigator !== 'undefined' && navigator.share) {
-                      try {
-                        await navigator.share({
-                          title: `${mystery.title} - Pick Your Character`,
-                          text: buildGroupChatSelectInvite(),
-                          url,
-                        });
-                        markAllSent();
-                        return;
-                      } catch {
-                        // fallback
-                      }
-                    }
-                    copyToClipboard(buildGroupChatSelectInvite(), 'group-select-msg');
-                    markAllSent();
-                  }}
-                  className="px-4 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/15 text-slate-200 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer"
-                >
-                  📲 Share
-                </button>
-
-                <Link
-                  href={`/${locale}/play/${mystery.id}?select=1`}
-                  target="_blank"
-                  className="px-4 py-3.5 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/15 text-slate-200 hover:text-white text-xs font-black uppercase tracking-wider transition-colors"
-                >
-                  Preview Selection Page ↗
-                </Link>
-              </div>
+              <Link
+                href={`/${locale}/play/${mystery.id}?select=1`}
+                target="_blank"
+                className="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-slate-200 hover:text-white text-xs font-black uppercase tracking-wider transition-colors"
+              >
+                Preview Selection Page ↗
+              </Link>
             </div>
           </div>
 
@@ -807,77 +725,32 @@ export function MysteryReadyHub({
                     </div>
                   </div>
 
-                  {/* Action Footer: Copy Full Invite Text, Copy Direct Link, Native Share, Open Dossier */}
+                  {/* Action Footer: Single Copy Invite Text Button + Preview Dossier */}
                   <div className="pt-4 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          copyToClipboard(buildInviteText(), copyInviteKey);
-                          toggleSentChar(char.id, true);
-                        }}
-                        className={`px-3.5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer ${
-                          copiedId === copyInviteKey
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-brand-pink hover:opacity-95 text-white'
-                        }`}
-                      >
-                        {copiedId === copyInviteKey
-                          ? '✓ Invite Text Copied!'
-                          : `💬 Copy Text for ${guest ? guest.name.split(' ')[0] : char.roleTitle}`}
-                      </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        copyToClipboard(buildInviteText(), copyInviteKey);
+                        toggleSentChar(char.id, true);
+                      }}
+                      className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer ${
+                        copiedId === copyInviteKey
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-brand-pink hover:opacity-95 text-white'
+                      }`}
+                    >
+                      {copiedId === copyInviteKey
+                        ? '✓ Invite Text Copied!'
+                        : `💬 Copy Text for ${guest ? guest.name.split(' ')[0] : char.roleTitle}`}
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          copyToClipboard(buildCharacterUrl(), copyUrlKey);
-                          toggleSentChar(char.id, true);
-                        }}
-                        className={`px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
-                          copiedId === copyUrlKey
-                            ? 'bg-emerald-500 text-white border-emerald-500'
-                            : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
-                        }`}
-                      >
-                        {copiedId === copyUrlKey ? '✓ Link Copied!' : '🔗 Copy Link Only'}
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const url = buildCharacterUrl();
-                          if (typeof navigator !== 'undefined' && navigator.share) {
-                            try {
-                              await navigator.share({
-                                title: `${char.roleTitle} - ${mystery.title}`,
-                                text: buildInviteText(),
-                                url,
-                              });
-                              toggleSentChar(char.id, true);
-                              return;
-                            } catch {
-                              // fallback
-                            }
-                          }
-                          copyToClipboard(buildInviteText(), copyInviteKey);
-                          toggleSentChar(char.id, true);
-                        }}
-                        className="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600 transition-colors cursor-pointer"
-                        title="Share via phone message sheet"
-                      >
-                        📲 Share
-                      </button>
-
-                      <Link
-                        href={`/${locale}/play/${mystery.id}?char=${char.id}`}
-                        target="_blank"
-                        className="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600 hover:text-slate-900 transition-colors"
-                      >
-                        Preview ↗
-                      </Link>
-                    </div>
+                    <Link
+                      href={`/${locale}/play/${mystery.id}?char=${char.id}`}
+                      target="_blank"
+                      className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600 hover:text-slate-900 transition-colors"
+                    >
+                      Preview Dossier ↗
+                    </Link>
                   </div>
                   </div>
                 </div>
@@ -1008,7 +881,7 @@ export function MysteryReadyHub({
                 🔄 Someone Cancelled Last Minute?
               </p>
               <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                Click <strong>✏️ Swap / Edit Cast</strong> at the top of this page to mark them Out or swap another friend into their role in 10 seconds, all clues update automatically!
+                Simply open their Character Dossier from the <strong>Master Case File</strong> link during the party so the table can still inspect their backstory and alibi together!
               </p>
             </div>
           </div>

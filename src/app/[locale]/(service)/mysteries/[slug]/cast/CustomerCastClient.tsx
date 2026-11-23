@@ -1142,7 +1142,6 @@ export default function CustomerCastClient({
             characters={activeCastCharacters}
             guests={guests}
             assignments={assignments}
-            onEditCast={() => setViewMode('cast')}
           />
         </div>
       ) : (
