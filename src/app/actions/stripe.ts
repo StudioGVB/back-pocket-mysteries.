@@ -342,6 +342,7 @@ export async function createPaymentIntentAction({
   mysteryTitle,
   guests,
   promoCode,
+  skipTierLookup = false,
 }: {
   tier: PriceTierKey;
   locale: Locale;
@@ -352,24 +353,16 @@ export async function createPaymentIntentAction({
   mysteryTitle?: string;
   guests: number;
   promoCode?: string;
+  skipTierLookup?: boolean;
 }) {
   try {
     const targetSlug = slug || mysterySlug || mysteryId;
     const currency = sanitizeCurrency(rawCurrency);
-    const tier = await resolveAuthoritativeTier(requestedTier, mysteryId, targetSlug);
+    const tier = skipTierLookup
+      ? requestedTier
+      : await resolveAuthoritativeTier(requestedTier, mysteryId, targetSlug);
     const basePrice = getRegionalPrice(tier, currency);
     const subtotal = basePrice;
-    const discountInfo = await resolveDiscountForCheckout({
-      subtotal,
-      tier,
-      mysteryId,
-      mysterySlug: targetSlug,
-      mysteryTitle,
-      promoCode,
-    });
-
-    const totalCost = Math.max(0, subtotal - discountInfo.discountAmount);
-    const amountInCents = Math.max(50, Math.round(totalCost * 100));
 
     const cookieStore = await cookies();
     const supabase = createServerClient<Database>(
@@ -385,45 +378,64 @@ export async function createPaymentIntentAction({
       }
     );
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const [discountInfo, authResult] = await Promise.all([
+      resolveDiscountForCheckout({
+        subtotal,
+        tier,
+        mysteryId,
+        mysterySlug: targetSlug,
+        mysteryTitle,
+        promoCode,
+      }),
+      supabase.auth.getUser(),
+    ]);
 
-    let orderId: string | undefined;
+    const user = authResult.data?.user;
+    const totalCost = Math.max(0, subtotal - discountInfo.discountAmount);
+    const amountInCents = Math.max(50, Math.round(totalCost * 100));
 
-    if (user) {
-      const { data: existingOrder } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('mystery_id', mysteryId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingOrder) {
-        const { error: orderError } = await supabase
+    const upsertOrderPromise = (async (): Promise<string | undefined> => {
+      if (!user) return undefined;
+      try {
+        const { data: existingOrder } = await supabase
           .from('orders')
-          .update({ amount: totalCost, status: 'pending' } as any)
-          .eq('id', existingOrder.id);
-        if (!orderError) orderId = existingOrder.id;
-      } else {
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            user_id: user.id,
-            mystery_id: mysteryId,
-            amount: totalCost,
-            status: 'pending',
-          } as any)
-          .select()
-          .single();
-        if (!orderError && orderData) orderId = orderData.id;
+          .select('id')
+          .eq('mystery_id', mysteryId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existingOrder) {
+          const { error: orderError } = await supabase
+            .from('orders')
+            .update({ amount: totalCost, status: 'pending' } as any)
+            .eq('id', existingOrder.id);
+          if (!orderError) return existingOrder.id;
+        } else {
+          const { data: orderData, error: orderError } = await supabase
+            .from('orders')
+            .insert({
+              user_id: user.id,
+              mystery_id: mysteryId,
+              amount: totalCost,
+              status: 'pending',
+            } as any)
+            .select()
+            .single();
+          if (!orderError && orderData) return orderData.id;
+        }
+      } catch {
+        // non-fatal
       }
-    }
+      return undefined;
+    })();
 
-    let clientSecret: string | null = null;
-    let isMockGateway = true;
-
-    if (isStripeLiveConfigured() && totalCost > 0) {
+    const createStripePiPromise = (async (): Promise<{
+      clientSecret: string | null;
+      isMockGateway: boolean;
+    }> => {
+      if (!isStripeLiveConfigured() || totalCost <= 0) {
+        return { clientSecret: null, isMockGateway: true };
+      }
       try {
         const stripe = getStripe();
         const paymentIntent = await stripe.paymentIntents.create({
@@ -433,14 +445,13 @@ export async function createPaymentIntentAction({
             tier === 'subscribe'
               ? 'Back Pocket Mysteries - Unlimited Monthly Pass (+ 1 Free Monthly Gift Pass)'
               : `Back Pocket Mysteries - ${tier.toUpperCase()} Package (${guests} Players)`,
-          automatic_payment_methods: {
-            enabled: true,
-          },
+          // Strictly use 'card' (which natively enables Credit/Debit Cards, Apple Pay, and Google Pay
+          // without loading slow bank redirect modules like "Pay By Bank App").
+          payment_method_types: ['card'],
           metadata: {
             mysteryId,
             slug: targetSlug,
             userId: user?.id || 'guest',
-            orderId: orderId || '',
             tier,
             guests: guests.toString(),
             stripeProductId: STRIPE_PRODUCT_IDS[tier] || '',
@@ -451,13 +462,18 @@ export async function createPaymentIntentAction({
           receipt_email: user?.email,
         });
         if (paymentIntent.client_secret) {
-          clientSecret = paymentIntent.client_secret;
-          isMockGateway = false;
+          return { clientSecret: paymentIntent.client_secret, isMockGateway: false };
         }
       } catch (stripeErr) {
         console.error('Stripe PaymentIntent error:', stripeErr);
       }
-    }
+      return { clientSecret: null, isMockGateway: true };
+    })();
+
+    const [orderId, { clientSecret, isMockGateway }] = await Promise.all([
+      upsertOrderPromise,
+      createStripePiPromise,
+    ]);
 
     return {
       mode: isMockGateway ? ('test_simulation' as const) : ('stripe' as const),

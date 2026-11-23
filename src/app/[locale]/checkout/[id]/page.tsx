@@ -105,6 +105,42 @@ export default async function CheckoutPage(props: {
     // ignore
   }
 
+  let initialPaymentIntent:
+    | {
+        clientSecret: string | null
+        orderId?: string
+        mode: 'stripe' | 'test_simulation'
+        discountAmount?: number
+        discountLabel?: string | null
+        promoError?: string | null
+      }
+    | undefined = undefined
+
+  try {
+    const { createPaymentIntentAction } = await import('@/app/actions/stripe')
+    const piRes = await createPaymentIntentAction({
+      tier,
+      locale,
+      currency,
+      mysteryId: mystery.id,
+      slug,
+      mysteryTitle: mystery.title,
+      guests,
+      promoCode: initialPromoCode || undefined,
+      skipTierLookup: true,
+    })
+    initialPaymentIntent = {
+      clientSecret: piRes.clientSecret || null,
+      orderId: piRes.orderId,
+      mode: piRes.mode === 'stripe' && piRes.clientSecret ? 'stripe' : 'test_simulation',
+      discountAmount: piRes.discountAmount || 0,
+      discountLabel: piRes.discountLabel || null,
+      promoError: piRes.promoError || null,
+    }
+  } catch {
+    // Non-fatal; CheckoutClient will fall back gracefully
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/60">
       {/* Minimal Header for Checkout */}
@@ -133,6 +169,7 @@ export default async function CheckoutPage(props: {
         mysteryTitle={mystery.title}
         mysteryTheme={mystery.theme}
         initialPromoCode={initialPromoCode}
+        initialPaymentIntent={initialPaymentIntent}
       />
     </div>
   )
