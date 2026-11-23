@@ -195,7 +195,7 @@ export function MysteryReadyHub({
   const [sentCharIds, setSentCharIds] = useState<string[]>([]);
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
   const [expandedCharIds, setExpandedCharIds] = useState<string[]>([]);
-  const [showPartyDetailsDrawer, setShowPartyDetailsDrawer] = useState<boolean>(false);
+  const [showPartyDetailsDrawer, setShowPartyDetailsDrawer] = useState<boolean>(true);
 
   // Party Event Details & Custom "What to Bring" Checklist State
   const [partyDate, setPartyDate] = useState<string>('');
@@ -317,6 +317,23 @@ export function MysteryReadyHub({
     }
   };
 
+  const handleSelectAsapPartyMode = () => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const nextArrival = 'Tonight / ASAP';
+    const nextStart = 'Right Away (ASAP)';
+    const nextLocation = location.trim() || 'Right Here / Host Home';
+    setPartyDate(todayIso);
+    setArrivalTime(nextArrival);
+    setGameStartTime(nextStart);
+    if (!location.trim()) setLocation(nextLocation);
+    void handleSavePartyDetails(undefined, undefined, {
+      partyDate: todayIso,
+      arrivalTime: nextArrival,
+      gameStartTime: nextStart,
+      location: nextLocation,
+    });
+  };
+
   const toggleBringPreset = (preset: string) => {
     const exists = whatToBringItems.includes(preset);
     const next = exists
@@ -337,6 +354,12 @@ export function MysteryReadyHub({
     } else {
       setCustomBringInput('');
     }
+  };
+
+  const handleRemoveBringItem = (item: string) => {
+    const next = whatToBringItems.filter(i => i !== item);
+    setWhatToBringItems(next);
+    void handleSavePartyDetails(next);
   };
 
   // Sync cast assignments to cross-container carrier
@@ -634,12 +657,63 @@ export function MysteryReadyHub({
               </div>
             </div>
 
-            {/* Collapsible Party Details Drawer (Hidden by Default to Keep Page Clean!) */}
+            {/* High-Contrast, Razor-Aligned Party Details & "What to Bring" Checklist */}
             {showPartyDetailsDrawer && (
-              <div className="pt-5 border-t border-slate-100 space-y-5 animate-in fade-in duration-150">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-5 sm:p-6 rounded-2xl bg-slate-100/90 border-2 border-slate-300 space-y-5 animate-in fade-in duration-150">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-slate-200 pb-3.5">
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                        📅 Party Details &amp; Checklist
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-black uppercase tracking-wider">
+                        ⚡ Renders Live on Guest Character Sheets
+                      </span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 mt-1">
+                      When &amp; Where to Arrive + Your Custom &ldquo;What to Bring&rdquo; Checklist
+                    </h3>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {partyDetailsSavedNotice && (
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-[11px] font-black uppercase tracking-wider shadow-xs">
+                        ✓ Synced to All Guest Sheets!
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSelectAsapPartyMode}
+                      className={`h-11 px-4 rounded-xl text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                        arrivalTime.toLowerCase().includes('asap') ||
+                        arrivalTime.toLowerCase().includes('tonight')
+                          ? 'bg-emerald-600 text-white border-emerald-600'
+                          : 'bg-white hover:bg-slate-50 text-slate-900 border-slate-300'
+                      }`}
+                    >
+                      <span>⚡</span>
+                      <span>
+                        {arrivalTime.toLowerCase().includes('asap') ||
+                        arrivalTime.toLowerCase().includes('tonight')
+                          ? 'Playing ASAP / Tonight ✓'
+                          : 'Playing ASAP / Tonight'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isSavingPartyDetails}
+                      onClick={() => void handleSavePartyDetails()}
+                      className="h-11 px-5 rounded-xl bg-slate-900 hover:bg-brand-pink text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                    >
+                      {isSavingPartyDetails ? 'Saving...' : '💾 Save Party Details'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Row 1: Date, Arrival Time, Game Starts At, Party Address (Razor-Aligned 4-Column Grid) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-end">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
                       📅 Party Date
                     </label>
                     <input
@@ -647,11 +721,11 @@ export function MysteryReadyHub({
                       value={partyDate}
                       onChange={e => setPartyDate(e.target.value)}
                       onBlur={() => void handleSavePartyDetails()}
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-900 outline-none focus:border-brand-pink"
+                      className="h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-900 outline-none focus:border-brand-pink shadow-2xs"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
                       🥂 Arrival Time
                     </label>
                     <input
@@ -659,13 +733,13 @@ export function MysteryReadyHub({
                       value={arrivalTime}
                       onChange={e => setArrivalTime(e.target.value)}
                       onBlur={() => void handleSavePartyDetails()}
-                      placeholder="e.g. 7:00 PM"
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-900 outline-none focus:border-brand-pink"
+                      placeholder="e.g. 7:00 PM or ASAP"
+                      className="h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                      🔪 Game Starts At
+                  <div className="flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
+                      🔪 Mystery Starts At
                     </label>
                     <input
                       type="text"
@@ -673,12 +747,12 @@ export function MysteryReadyHub({
                       onChange={e => setGameStartTime(e.target.value)}
                       onBlur={() => void handleSavePartyDetails()}
                       placeholder="e.g. 7:30 PM"
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-900 outline-none focus:border-brand-pink"
+                      className="h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                      📍 Location / Address
+                  <div className="flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
+                      📍 Party Address
                     </label>
                     <input
                       type="text"
@@ -686,17 +760,18 @@ export function MysteryReadyHub({
                       onChange={e => setLocation(e.target.value)}
                       onBlur={() => void handleSavePartyDetails()}
                       placeholder="e.g. 42 Oxford St"
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-900 outline-none focus:border-brand-pink"
+                      className="h-12 w-full rounded-xl border-2 border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
-                      🍽️ Food &amp; Drink Vibe
+                {/* Row 2: Food & Drink Vibe + Host Note (Equal-Height Columns) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                  <div className="lg:col-span-7 flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
+                      🍽️ Food &amp; Drink Vibe (So Guests Know Whether to Eat First)
                     </label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {FOOD_VIBE_OPTIONS.map(opt => {
                         const isSelected = foodAndDrinkVibe === opt.id;
                         return (
@@ -707,92 +782,129 @@ export function MysteryReadyHub({
                               setFoodAndDrinkVibe(opt.id);
                               void handleSavePartyDetails(undefined, opt.id);
                             }}
-                            className={`px-3 py-2.5 rounded-xl text-[11px] font-bold text-left border transition-all cursor-pointer truncate ${
+                            className={`h-12 px-4 rounded-xl text-xs font-black text-left border-2 transition-all cursor-pointer flex items-center justify-between gap-2 shadow-2xs ${
                               isSelected
                                 ? 'bg-slate-900 text-white border-slate-900'
-                                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                                : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-300'
                             }`}
                           >
-                            {opt.label}
+                            <span className="truncate">{opt.label}</span>
+                            {isSelected && <span className="text-brand-pink font-black">✓</span>}
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
-                      🎒 What Guests Should Bring
+                  <div className="lg:col-span-5 flex flex-col gap-1.5">
+                    <label className="h-5 flex items-center text-[11px] font-black uppercase tracking-wider text-slate-800 truncate">
+                      📝 Optional Host Note / Parking or Entry Tip
                     </label>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {WHAT_TO_BRING_PRESETS.map(preset => {
-                        const isAdded = whatToBringItems.includes(preset);
-                        return (
-                          <button
-                            key={preset}
-                            type="button"
-                            onClick={() => toggleBringPreset(preset)}
-                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                              isAdded
-                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
-                          >
-                            {isAdded ? '✓ ' : '+ '}
-                            {preset}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={customBringInput}
-                        onChange={e => setCustomBringInput(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddCustomBringItem();
-                          }
-                        }}
-                        placeholder="Add custom item (e.g. $15 Secret Santa gift)..."
-                        className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-900 outline-none focus:border-brand-pink"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddCustomBringItem}
-                        className="h-9 px-3 rounded-lg bg-slate-900 text-white text-[11px] font-black uppercase tracking-wider cursor-pointer"
-                      >
-                        + Add
-                      </button>
-                    </div>
+                    <textarea
+                      value={hostNotes}
+                      onChange={e => setHostNotes(e.target.value)}
+                      onBlur={() => void handleSavePartyDetails()}
+                      rows={3}
+                      placeholder="e.g. Enter through the garden gate, street parking out front, welcome cocktails on arrival!"
+                      className="h-[106px] w-full rounded-xl border-2 border-slate-300 bg-white p-3.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink resize-none shadow-2xs leading-relaxed"
+                    />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 pt-1">
-                  <input
-                    type="text"
-                    value={hostNotes}
-                    onChange={e => setHostNotes(e.target.value)}
-                    onBlur={() => void handleSavePartyDetails()}
-                    placeholder="Optional Host Note (e.g. Enter via garden gate, welcome drinks on arrival)..."
-                    className="h-10 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-medium text-slate-900 outline-none focus:border-brand-pink"
-                  />
-                  <button
-                    type="button"
-                    disabled={isSavingPartyDetails}
-                    onClick={() => {
-                      void handleSavePartyDetails();
-                      setShowPartyDetailsDrawer(false);
-                    }}
-                    className="h-10 px-5 rounded-xl bg-brand-pink text-white text-xs font-black uppercase tracking-wider cursor-pointer shrink-0"
-                  >
-                    {partyDetailsSavedNotice
-                      ? '✓ Saved!'
-                      : isSavingPartyDetails
-                      ? 'Saving...'
-                      : 'Save Details'}
-                  </button>
+                {/* Row 3: Custom "What to Bring" Checklist Builder */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-white border-2 border-slate-300 space-y-3.5 shadow-2xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
+                    <div>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-brand-pink block">
+                        🎒 Interactive Guest &ldquo;What to Bring&rdquo; Checklist ({whatToBringItems.length}{' '}
+                        {whatToBringItems.length === 1 ? 'Item' : 'Items'} Active)
+                      </span>
+                      <p className="text-xs text-slate-600 font-semibold">
+                        Tap any preset box below to toggle items on/off, or add a custom item for guests to check off on their Character Sheet:
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3-Column Equal-Size Preset Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {WHAT_TO_BRING_PRESETS.map(preset => {
+                      const isAdded = whatToBringItems.includes(preset);
+                      return (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => toggleBringPreset(preset)}
+                          className={`h-11 px-3.5 rounded-xl text-xs font-black border-2 transition-all cursor-pointer flex items-center justify-between gap-2 text-left ${
+                            isAdded
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300'
+                          }`}
+                        >
+                          <span className="truncate">{preset}</span>
+                          <span
+                            className={`w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-black shrink-0 ${
+                              isAdded
+                                ? 'bg-white/20 text-white'
+                                : 'bg-white border border-slate-300 text-slate-500'
+                            }`}
+                          >
+                            {isAdded ? '✓' : '+'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Active Items List with Remove X */}
+                  {whatToBringItems.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      {whatToBringItems.map((item, idx) => (
+                        <div
+                          key={`${item}-${idx}`}
+                          className="h-11 px-3.5 rounded-xl bg-slate-100 border-2 border-slate-300 flex items-center justify-between gap-2 text-xs font-bold text-slate-900"
+                        >
+                          <span className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-5 h-5 rounded-md bg-brand-pink text-white text-[11px] font-black flex items-center justify-center shrink-0">
+                              ✓
+                            </span>
+                            <span className="truncate">{item}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBringItem(item)}
+                            className="w-6 h-6 rounded-lg bg-white border border-slate-300 hover:bg-red-50 hover:border-red-300 text-slate-500 hover:text-red-600 text-[11px] font-black flex items-center justify-center shrink-0 cursor-pointer transition-colors"
+                            title="Remove from checklist"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Custom Item Input Row (Side-by-Side Input + Button) */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+                    <input
+                      type="text"
+                      value={customBringInput}
+                      onChange={e => setCustomBringInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomBringItem();
+                        }
+                      }}
+                      placeholder="Add a custom item (e.g. Wrapped $15 Kris Kringle gift, Towel for hot tub...)"
+                      className="h-12 flex-1 rounded-xl border-2 border-slate-300 bg-white px-4 text-xs font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomBringItem}
+                      className="h-12 px-6 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-sm"
+                    >
+                      + Add Custom Item
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
