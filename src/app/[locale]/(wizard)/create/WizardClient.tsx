@@ -220,13 +220,13 @@ export default function WizardClient({
 
           {/* Spice Level */}
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">3. Spice Level</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">3. Spice Level (Dialogue &amp; Roleplay Boundaries)</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { level: 'clean', label: 'Clean (Family)', emoji: '😇' },
-                { level: 'mild', label: 'Mild (PG-13)', emoji: '🥂' },
-                { level: 'spicy', label: 'Spicy (Adults)', emoji: '🌶️' },
-                { level: 'filthy', label: 'Filthy (18+ Uncensored)', emoji: '🔥' },
+                { level: 'clean', label: 'Clean (Safe For Work)', sub: 'Murder & revenge • No affairs or cussing', emoji: '✨' },
+                { level: 'mild', label: 'Mild (Friends & Couples)', sub: 'Affairs & betrayal • Clean dialog / 0 cussing', emoji: '🌶️' },
+                { level: 'spicy', label: 'Spicy (Cussing & Scandal)', sub: 'Swearing, catfights & sex-tape scandal', emoji: '🌶️🌶️' },
+                { level: 'filthy', label: 'Filthy (18+ Unfiltered)', sub: 'Heavy F-bombs & after-dark chaos', emoji: '🔥🔥🔥' },
               ].map(s => (
                 <button
                   key={s.level}
@@ -239,6 +239,7 @@ export default function WizardClient({
                 >
                   <span className="text-lg">{s.emoji}</span>
                   <span>{s.label}</span>
+                  <span className="text-[10px] font-medium normal-case text-slate-500 leading-tight mt-0.5">{s.sub}</span>
                 </button>
               ))}
             </div>
@@ -246,7 +247,7 @@ export default function WizardClient({
 
           {/* Complexity Tier */}
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">4. Complexity Tier</label>
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">4. Story Difficulty &amp; Complexity</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {(['basic', 'premium', 'grand'] as const).map(tier => (
                 <button
@@ -259,12 +260,12 @@ export default function WizardClient({
                   }`}
                 >
                   <h3 className={`text-base font-black uppercase tracking-tight mb-1 ${complexity === tier ? 'text-brand-pink' : 'text-slate-900'}`}>
-                    {tier}
+                    {tier === 'basic' ? 'Easy (Basic)' : tier === 'premium' ? 'Medium (Premium)' : 'Hard (Grand)'}
                   </h3>
                   <p className="text-xs font-medium text-slate-500">
-                    {tier === 'basic' && 'Straightforward mystery perfect for beginners.'}
-                    {tier === 'premium' && 'Our most popular tier. Deep subplots and secrets.'}
-                    {tier === 'grand' && 'Complex, multi-layered story for expert sleuths.'}
+                    {tier === 'basic' && '1 Lone Killer, 1 simple decoy subplot, and casual icebreaker deduction.'}
+                    {tier === 'premium' && '1 Lone Killer, 2 entangled red-herring subplots, and timestamped alibi cross-referencing.'}
+                    {tier === 'grand' && '1 Killer + 1 Secret Accomplice/Assistant in a multi-layered forensic conspiracy.'}
                   </p>
                 </button>
               ))}

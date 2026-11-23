@@ -117,7 +117,7 @@ async function resolveDiscountForCheckout({
       const calc = calculateDiscountedPrice(subtotal, validation.discount);
       return {
         discountAmount: calc.discountAmount,
-        discountLabel: `${validation.discount.name} (${validation.discount.code})`,
+        discountLabel: `Promo Code (${validation.discount.code})`,
         discountCode: validation.discount.code,
       };
     }
@@ -242,7 +242,7 @@ export async function createCheckoutSessionAction({
     }
 
     const successUrl = targetSlug
-      ? `${origin}/${locale}/mysteries/${targetSlug}/cast?checkout=success&session_id={CHECKOUT_SESSION_ID}&orderId=${orderId || ''}`
+      ? `${origin}/${locale}/account/orders?checkout=success&mysteryId=${encodeURIComponent(mysteryId || targetSlug)}&slug=${encodeURIComponent(targetSlug)}&session_id={CHECKOUT_SESSION_ID}&orderId=${orderId || ''}`
       : `${origin}/${locale}/account/orders?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
 
     const cancelUrl = targetSlug
@@ -264,9 +264,7 @@ export async function createCheckoutSessionAction({
           currency,
         });
       }
-      const zeroCostSuccessUrl = targetSlug
-        ? `${origin}/${locale}/mysteries/${targetSlug}/cast?checkout=success&promo=${encodeURIComponent(discountInfo.discountCode || promoCode || '')}&orderId=${orderId || ''}`
-        : `${origin}/${locale}/account/orders?checkout=success`;
+      const zeroCostSuccessUrl = `${origin}/${locale}/account/orders?checkout=success`;
       return { url: zeroCostSuccessUrl };
     }
 

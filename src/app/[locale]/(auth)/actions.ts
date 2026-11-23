@@ -186,7 +186,7 @@ export async function verifySignupPromoCodeAction(code: string): Promise<{
       return {
         valid: true,
         code: cleanCode,
-        label: `${cleanCode} applied (${valueDesc} - ${d.name})`,
+        label: `Code ${cleanCode} applied (${valueDesc})`,
       }
     }
 

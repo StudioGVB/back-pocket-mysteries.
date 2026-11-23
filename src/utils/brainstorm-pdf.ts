@@ -21,20 +21,21 @@ export const BRAINSTORM_SPICE_OPTIONS: {
   sub: string;
 }[] = [
   { value: '', label: 'Circle on Sheet', shortPdf: '', sub: 'Leave unchecked to circle by hand' },
-  { value: 'clean', label: 'Clean (PG)', shortPdf: 'Clean (PG)', sub: 'Wholesome, family-friendly' },
-  { value: 'mild', label: 'Mild (MA15+)', shortPdf: 'Mild (MA15+)', sub: 'Cheeky, light drama & secrets' },
-  { value: 'spicy', label: 'Spicy (R18+)', shortPdf: 'Spicy (R18+)', sub: 'Affairs, blackmail, adult themes' },
-  { value: 'filthy', label: 'Filthy (NC-17)', shortPdf: 'Filthy (NC-17)', sub: 'Unhinged, wild, OTT chaos' },
+  { value: 'clean', label: 'Clean (SFW)', shortPdf: 'Clean (SFW)', sub: 'Murder & revenge • No affairs or cussing' },
+  { value: 'mild', label: 'Mild (No Cussing)', shortPdf: 'Mild (No Cussing)', sub: 'Romantic affairs • 100% clean dialogue' },
+  { value: 'spicy', label: 'Spicy (Cussing)', shortPdf: 'Spicy (Cussing)', sub: 'Swearing, bitch slaps & sex-tape scandal' },
+  { value: 'filthy', label: 'Filthy (18+)', shortPdf: 'Filthy (18+)', sub: 'Unfiltered F-bombs & after-dark chaos' },
 ];
 
 export const BRAINSTORM_COMPLEXITY_OPTIONS: {
   value: BrainstormComplexity;
   label: string;
+  sub: string;
 }[] = [
-  { value: '', label: 'Circle on Sheet' },
-  { value: 'easy', label: 'Easy' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hard', label: 'Hard' },
+  { value: '', label: 'Circle on Sheet', sub: 'Hand-circle' },
+  { value: 'easy', label: 'Easy', sub: '1 Killer • 1 Subplot' },
+  { value: 'medium', label: 'Medium', sub: '1 Killer • Multi-Alibi' },
+  { value: 'hard', label: 'Hard', sub: 'Killer + Accomplice' },
 ];
 
 export const BRAINSTORM_TIER_CONFIG: Record<
@@ -288,10 +289,10 @@ function drawWorksheetHeader(
   // --- ROW 2 (y: 94): SPICE LEVEL | COMPLEXITY | VIBE / DRESS CODE ---
   page.text('SPICE LEVEL:', 32, 94, { font: 'F2', size: 7.5, color: [100, 116, 139] });
   const spiceItems: { key: BrainstormSpiceLevel; text: string; x: number }[] = [
-    { key: 'clean', text: 'Clean (PG)', x: 92 },
-    { key: 'mild', text: 'Mild (MA15+)', x: 158 },
-    { key: 'spicy', text: 'Spicy (R18+)', x: 234 },
-    { key: 'filthy', text: 'Filthy (NC-17)', x: 308 },
+    { key: 'clean', text: 'Clean (SFW)', x: 92 },
+    { key: 'mild', text: 'Mild (Affairs)', x: 162 },
+    { key: 'spicy', text: 'Spicy (Cussing)', x: 236 },
+    { key: 'filthy', text: 'Filthy (18+)', x: 316 },
   ];
   for (const sp of spiceItems) {
     const checked = opts.spiceLevel === sp.key;

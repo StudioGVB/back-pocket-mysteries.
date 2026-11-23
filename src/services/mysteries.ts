@@ -21,6 +21,8 @@ import {
   cacheMysterySnapshot,
   getCachedMysterySnapshot,
   getAllCachedMysteries,
+  isLiveCarrierClue,
+  loadLiveStateFromSupabaseClueCarrier,
 } from '@/lib/live-session-store';
 import {
   ACTIVE_MYSTERIES,
@@ -336,7 +338,7 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
 
     // Sync clues if present
     if (Array.isArray(mystery.clues)) {
-      const existingClues = mystery.clues;
+      const existingClues = mystery.clues.filter((c: any) => !isLiveCarrierClue(c));
       mystery.clues = CHRISTMAS_NIGHTMARE_CLUES.map((cSpec, idx) => {
         const existingClue = existingClues.find((ec: any) => ec.id === cSpec.legacyId) || existingClues[idx] || null;
         const clueId = existingClue?.id || cSpec.legacyId || crypto.randomUUID();
@@ -1163,39 +1165,129 @@ function normalizeCharacterList(
   });
 }
 
+function overlayLiveCarrierCharacters(targetCharacters: any[], carrierCharacters: any[] | null | undefined): any[] {
+  if (!Array.isArray(targetCharacters) || !Array.isArray(carrierCharacters) || carrierCharacters.length === 0) {
+    return targetCharacters || [];
+  }
+  return targetCharacters.map((tc: any, idx: number) => {
+    const tcRole = getCharacterRoleTitle(tc).toLowerCase();
+    const match =
+      carrierCharacters.find((cc: any) => cc?.id === tc?.id) ||
+      carrierCharacters.find((cc: any) => getCharacterRoleTitle(cc).toLowerCase() === tcRole) ||
+      carrierCharacters[idx];
+    if (!match?.profile_data) return tc;
+    const tcPd = tc.profile_data || {};
+    const mPd = match.profile_data || {};
+    return {
+      ...tc,
+      profile_data: {
+        ...tcPd,
+        ...(mPd.guest_id ? { guest_id: mPd.guest_id } : {}),
+        ...(mPd.guest_name ? { guest_name: mPd.guest_name } : {}),
+        ...(mPd.name ? { name: mPd.name } : {}),
+        ...(mPd.gender ? { gender: mPd.gender } : {}),
+        ...(mPd.accent ? { accent: mPd.accent } : {}),
+        ...(mPd.age ? { age: mPd.age } : {}),
+        ...(mPd.eye_color ? { eye_color: mPd.eye_color } : {}),
+        ...(mPd.height ? { height: mPd.height } : {}),
+        ...(mPd.avatar_url ? { avatar_url: mPd.avatar_url } : {}),
+        ...(mPd.standard_character_photo_url
+          ? {
+              standard_character_photo_url: mPd.standard_character_photo_url,
+              standard_character_photo_hash: mPd.standard_character_photo_hash,
+              outfit_image_url: mPd.standard_character_photo_url,
+            }
+          : {}),
+        ...(mPd.is_active_in_session !== undefined
+          ? { is_active_in_session: mPd.is_active_in_session }
+          : {}),
+        ...(mPd.__game_session ? { __game_session: mPd.__game_session } : {}),
+      },
+    };
+  });
+}
+
 export const getMysteryById = cache(async (id: string) => {
   const supabase = await createClient();
-  const { data, error } = (await supabase
-    .from('mysteries')
-    .select(`
-      *,
-      characters (
+  const [{ data, error }, liveCarrier] = await Promise.all([
+    supabase
+      .from('mysteries')
+      .select(`
         *,
-        motives!motives_character_id_fkey (*)
-      ),
-      clues (*),
-      plot_beats (*),
-      subplots (*)
-    `)
-    .eq('id', id)
-    .single()) as any;
+        characters (
+          *,
+          motives!motives_character_id_fkey (*)
+        ),
+        clues (*),
+        plot_beats (*),
+        subplots (*)
+      `)
+      .eq('id', id)
+      .single() as any,
+    loadLiveStateFromSupabaseClueCarrier(id, supabase),
+  ]);
 
   if (error || !data) {
     const cached = getCachedMysterySnapshot(id);
     if (cached) {
+      if (liveCarrier?.characters?.length) {
+        cached.characters = overlayLiveCarrierCharacters(cached.characters || [], liveCarrier.characters);
+      }
+      if (Array.isArray(cached.clues)) {
+        cached.clues = cached.clues.filter((c: any) => !isLiveCarrierClue(c));
+      }
       return ensureChristmasNightmareCanon(cached, supabase);
     }
-    const canonical = getCanonicalActiveMysteryBySlugOrId(id);
+
+    const templateLookupId = liveCarrier?.templateMysteryId || id;
+    const isChristmas =
+      templateLookupId === '61196e53-09c3-427f-8862-30151f2ca75b' ||
+      id === '61196e53-09c3-427f-8862-30151f2ca75b' ||
+      isChristmasNightmareMystery(liveCarrier?.title, liveCarrier?.theme);
+
+    if (isChristmas) {
+      const christmasBase = ensureChristmasNightmareCanon({
+        id,
+        template_mystery_id: '61196e53-09c3-427f-8862-30151f2ca75b',
+        title: CHRISTMAS_NIGHTMARE_TITLE,
+        theme: CHRISTMAS_NIGHTMARE_THEME,
+        description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
+        inside_jokes: CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
+        min_players: 6,
+        max_players: 6,
+        complexity: 'medium',
+        spice_level: 'mild',
+        status: 'published',
+        current_round: liveCarrier?.current_round ?? 0,
+        characters: [],
+        plot_beats: [],
+        clues: [],
+        subplots: [],
+      });
+      if (liveCarrier?.characters?.length) {
+        christmasBase.characters = overlayLiveCarrierCharacters(
+          christmasBase.characters,
+          liveCarrier.characters
+        );
+      }
+      christmasBase.characters = normalizeCharacterList(christmasBase.characters);
+      cacheMysterySnapshot(id, christmasBase);
+      return christmasBase;
+    }
+
+    const canonical = getCanonicalActiveMysteryBySlugOrId(templateLookupId);
     if (canonical) {
       const upgradedCanonical = ensureChristmasNightmareCanon(
         ensureRealityPromoCover({
           ...canonical,
+          id,
           status: 'published',
+          current_round: liveCarrier?.current_round ?? 0,
           plot_beats:
             canonical.id === '69b65a91-1cc2-4267-94a4-59297428af28'
               ? Object.entries(LOTR_CANONICAL_BEATS).map(([num, b]) => ({
                   id: `lotr-beat-${num}`,
-                  mystery_id: canonical.id,
+                  mystery_id: id,
                   beat_number: Number(num),
                   sort_order: Number(num),
                   event_title: b.event_title,
@@ -1207,7 +1299,14 @@ export const getMysteryById = cache(async (id: string) => {
               : [],
         })
       );
+      if (liveCarrier?.characters?.length) {
+        upgradedCanonical.characters = overlayLiveCarrierCharacters(
+          upgradedCanonical.characters || [],
+          liveCarrier.characters
+        );
+      }
       upgradedCanonical.characters = normalizeCharacterList(upgradedCanonical.characters || []);
+      cacheMysterySnapshot(id, upgradedCanonical);
       return upgradedCanonical;
     }
     if (error?.code === '42703') {
@@ -1218,31 +1317,14 @@ export const getMysteryById = cache(async (id: string) => {
     return null;
   }
 
+  if (Array.isArray(data.clues)) {
+    data.clues = data.clues.filter((c: any) => !isLiveCarrierClue(c));
+  }
+
   const cachedSnapshot = getCachedMysterySnapshot(id);
   if (cachedSnapshot) {
     if (Array.isArray(data.characters) && Array.isArray(cachedSnapshot.characters)) {
-      data.characters = data.characters.map((dbChar: any) => {
-        const cachedChar = cachedSnapshot.characters.find((cc: any) => cc?.id === dbChar?.id);
-        if (!cachedChar?.profile_data) return dbChar;
-        const dbPd = dbChar.profile_data || {};
-        const cachePd = cachedChar.profile_data || {};
-        return {
-          ...dbChar,
-          profile_data: {
-            ...dbPd,
-            ...(cachePd.guest_id ? { guest_id: cachePd.guest_id } : {}),
-            ...(cachePd.guest_name ? { guest_name: cachePd.guest_name } : {}),
-            ...(cachePd.avatar_url ? { avatar_url: cachePd.avatar_url } : {}),
-            ...(cachePd.standard_character_photo_url
-              ? {
-                  standard_character_photo_url: cachePd.standard_character_photo_url,
-                  standard_character_photo_hash: cachePd.standard_character_photo_hash,
-                  outfit_image_url: cachePd.standard_character_photo_url,
-                }
-              : {}),
-          },
-        };
-      });
+      data.characters = overlayLiveCarrierCharacters(data.characters, cachedSnapshot.characters);
     }
     if (Array.isArray(data.clues) && Array.isArray(cachedSnapshot.clues)) {
       data.clues = data.clues.map((dbClue: any) => {
@@ -1258,8 +1340,16 @@ export const getMysteryById = cache(async (id: string) => {
     }
   }
 
+  if (liveCarrier?.characters?.length && Array.isArray(data.characters)) {
+    data.characters = overlayLiveCarrierCharacters(data.characters, liveCarrier.characters);
+  }
+
   const upgradedData = ensureChristmasNightmareCanon(ensureRealityPromoCover(data, supabase), supabase);
   data.image_url = upgradedData.image_url;
+
+  if (liveCarrier?.characters?.length && Array.isArray(data.characters)) {
+    data.characters = overlayLiveCarrierCharacters(data.characters, liveCarrier.characters);
+  }
 
   const rawChars = Array.isArray(data?.characters) ? data.characters : [];
   const dynamicRules = buildDynamicPlaceholderReplacements(rawChars);
@@ -1319,49 +1409,30 @@ export const getMysteryById = cache(async (id: string) => {
 
 export const getCharactersByMysteryId = cache(async (mysteryId: string) => {
   const supabase = await createClient();
-  
-  const { data, error } = (await supabase
-    .from('characters')
-    .select(`
-      *,
-      motives!motives_character_id_fkey (*)
-    `)
-    .eq('mystery_id', mysteryId)
-    .order('created_at', { ascending: true })) as any;
-
-  if (error) {
-    console.error('Error fetching characters with motives, attempting fallback without motives:', error);
-    const { data: fallbackData, error: fallbackError } = await supabase
+  const [{ data, error }, liveCarrier] = await Promise.all([
+    supabase
       .from('characters')
-      .select('*')
+      .select(`
+        *,
+        motives!motives_character_id_fkey (*)
+      `)
       .eq('mystery_id', mysteryId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true }) as any,
+    loadLiveStateFromSupabaseClueCarrier(mysteryId, supabase),
+  ]);
 
-    if (fallbackError || !fallbackData || fallbackData.length === 0) {
-      const cached = getCachedMysterySnapshot(mysteryId);
-      if (cached && Array.isArray(cached.characters) && cached.characters.length > 0) {
-        const upgraded = isChristmasNightmareMystery(cached.title, cached.theme)
-          ? ensureChristmasNightmareCanon(cached)
-          : cached;
-        return normalizeCharacterList(upgraded.characters || []);
-      }
-      console.error('Fallback fetch characters error:', fallbackError);
-      return [];
+  if (error || !data || data.length === 0) {
+    const full = await getMysteryById(mysteryId);
+    if (full && Array.isArray(full.characters) && full.characters.length > 0) {
+      return full.characters;
     }
-    return normalizeCharacterList(fallbackData, supabase);
+    return [];
   }
 
-  if (!data || data.length === 0) {
-    const cached = getCachedMysterySnapshot(mysteryId);
-    if (cached && Array.isArray(cached.characters) && cached.characters.length > 0) {
-      const upgraded = isChristmasNightmareMystery(cached.title, cached.theme)
-        ? ensureChristmasNightmareCanon(cached)
-        : cached;
-      return normalizeCharacterList(upgraded.characters || []);
-    }
-  }
-
-  return normalizeCharacterList(data, supabase);
+  const overlaid = liveCarrier?.characters?.length
+    ? overlayLiveCarrierCharacters(data, liveCarrier.characters)
+    : data;
+  return normalizeCharacterList(overlaid, supabase);
 });
 
 export async function createCharacter(character: Database['public']['Tables']['characters']['Insert']) {
@@ -1607,7 +1678,7 @@ function normalizeClueList(
   dynamicRules?: Array<[RegExp, string]>
 ): any[] {
   if (!Array.isArray(clues)) return [];
-  const normalized = clues.map((c: any) => {
+  const normalized = clues.filter((c: any) => !isLiveCarrierClue(c)).map((c: any) => {
     const cleanTitle = replaceLegacyNamesWithRoleTokens(c.title, dynamicRules);
     const cleanDesc = replaceLegacyNamesWithRoleTokens(c.description, dynamicRules);
     const cleanRawNotes = c.internal_notes ? replaceLegacyNamesWithRoleTokens(c.internal_notes, dynamicRules) : c.internal_notes;

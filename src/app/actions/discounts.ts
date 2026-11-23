@@ -610,8 +610,7 @@ export async function validatePromoCodeAction(params: {
   ) {
     return {
       valid: false,
-      error:
-        'This 100%-off code has rotated or expired. Please use your personal single-use VIP code or today\'s active rotating code.',
+      error: 'This promo code has expired or is no longer valid.',
     };
   }
 

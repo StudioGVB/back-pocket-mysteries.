@@ -448,9 +448,269 @@ export function deriveUserMysteryInstanceId(baseId: string, userId: string): str
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
 }
 
+export const LIVE_CARRIER_CLUE_TITLE = '__BPM_LIVE_CAST_AND_SESSION__';
+
+export function isLiveCarrierClue(clue: any): boolean {
+  if (!clue) return false;
+  return (
+    clue.title === LIVE_CARRIER_CLUE_TITLE ||
+    clue.round_number === 99 ||
+    String(clue.title || '').startsWith('__BPM_LIVE_')
+  );
+}
+
+export function deriveCarrierClueId(mysteryOrInstanceId: string): string {
+  const hash = crypto
+    .createHash('sha256')
+    .update(`bpm-live-carrier-v1:${mysteryOrInstanceId}`)
+    .digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
+/**
+ * Persists the live cast characters and game session into a hidden carrier row in `public.clues`
+ * so that all Vercel serverless containers and unauthenticated Incognito guest browsers share
+ * the exact same cast names, AI character portraits, and live session state.
+ */
+export async function syncLiveStateToSupabaseClueCarrier(
+  mysteryId: string,
+  options?: {
+    supabase?: any;
+    mystery?: any;
+    characters?: any[];
+    session?: Partial<StoredGameSession> | null;
+    templateMysteryId?: string | null;
+  }
+): Promise<void> {
+  if (!mysteryId) return;
+  try {
+    let sb = options?.supabase;
+    if (!sb) {
+      const { createClient } = await import('@/utils/supabase/server');
+      sb = await createClient();
+    }
+
+    const cachedMystery = options?.mystery || getCachedMysterySnapshot(mysteryId);
+    const characters =
+      options?.characters ||
+      cachedMystery?.characters ||
+      [];
+    const session =
+      options?.session ||
+      getStoredGameSession(mysteryId) ||
+      null;
+
+    // Resolve templateMysteryId (including known active mystery bases)
+    let templateId =
+      options?.templateMysteryId ||
+      cachedMystery?.template_mystery_id ||
+      session?.templateMysteryId ||
+      null;
+
+    const KNOWN_BASE_IDS = [
+      '61196e53-09c3-427f-8862-30151f2ca75b',
+      '69b65a91-1cc2-4267-94a4-59297428af28',
+      'b944b8d9-f271-4d9e-9f31-717a53b8513f',
+      '4b18b04c-3131-4a6b-9e36-a45cdc846769',
+    ];
+    if (!templateId && !KNOWN_BASE_IDS.includes(mysteryId)) {
+      const hostUid =
+        session?.hostUserId ||
+        session?.paidByUserId ||
+        cachedMystery?.created_by ||
+        '4903bd39-e54f-42e4-b679-2af5d128bb8f';
+      for (const candidateBase of KNOWN_BASE_IDS) {
+        if (deriveUserMysteryInstanceId(candidateBase, hostUid) === mysteryId) {
+          templateId = candidateBase;
+          break;
+        }
+      }
+    }
+
+    const compactCharacters = (characters || []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      gender: c.gender,
+      is_victim: c.is_victim,
+      plot_role: c.plot_role,
+      archetype: c.archetype,
+      is_mandatory: c.is_mandatory,
+      profile_data: c.profile_data || {},
+    }));
+
+    const payload = {
+      mysteryId,
+      templateMysteryId: templateId || mysteryId,
+      title: cachedMystery?.title || null,
+      theme: cachedMystery?.theme || null,
+      current_round: session?.currentRound ?? cachedMystery?.current_round ?? 0,
+      characters: compactCharacters,
+      session,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const anchorFkMysteryId =
+      templateId && KNOWN_BASE_IDS.includes(templateId)
+        ? templateId
+        : KNOWN_BASE_IDS.includes(mysteryId)
+        ? mysteryId
+        : '61196e53-09c3-427f-8862-30151f2ca75b';
+
+    const carrierId = deriveCarrierClueId(mysteryId);
+    const { error } = await sb.from('clues').upsert({
+      id: carrierId,
+      mystery_id: anchorFkMysteryId,
+      title: LIVE_CARRIER_CLUE_TITLE,
+      round_number: 99,
+      clue_type: 'secret',
+      implication_type: 'red_herring',
+      evidence_status: 'fake',
+      is_essential: false,
+      description: JSON.stringify(payload),
+    });
+
+    if (error) {
+      // Fallback anchor if anchorFkMysteryId wasn't in public.mysteries
+      await sb.from('clues').upsert({
+        id: carrierId,
+        mystery_id: '61196e53-09c3-427f-8862-30151f2ca75b',
+        title: LIVE_CARRIER_CLUE_TITLE,
+        round_number: 99,
+        clue_type: 'secret',
+        implication_type: 'red_herring',
+        evidence_status: 'fake',
+        is_essential: false,
+        description: JSON.stringify(payload),
+      });
+    }
+
+    // Also sync under templateId so both /play/<instanceId> and /play/<templateId> have the live cast & photos
+    if (templateId && templateId !== mysteryId) {
+      const templateCarrierId = deriveCarrierClueId(templateId);
+      await sb.from('clues').upsert({
+        id: templateCarrierId,
+        mystery_id: anchorFkMysteryId,
+        title: LIVE_CARRIER_CLUE_TITLE,
+        round_number: 99,
+        clue_type: 'secret',
+        implication_type: 'red_herring',
+        evidence_status: 'fake',
+        is_essential: false,
+        description: JSON.stringify({
+          ...payload,
+          mysteryId: templateId,
+          instanceMysteryId: mysteryId,
+        }),
+      });
+    }
+  } catch {
+    // Non-fatal
+  }
+}
+
+/**
+ * Loads the live cast characters and game session from the `public.clues` carrier row
+ * and hydrates the local memory/file cache on the current Vercel container.
+ */
+export async function loadLiveStateFromSupabaseClueCarrier(
+  mysteryId: string,
+  supabaseClient?: any
+): Promise<{
+  mysteryId: string;
+  templateMysteryId?: string;
+  title?: string | null;
+  theme?: string | null;
+  current_round?: number;
+  characters: any[];
+  session: StoredGameSession | null;
+  updatedAt?: string;
+} | null> {
+  if (!mysteryId) return null;
+  try {
+    let sb = supabaseClient;
+    if (!sb) {
+      const { createClient } = await import('@/utils/supabase/server');
+      sb = await createClient();
+    }
+
+    const carrierId = deriveCarrierClueId(mysteryId);
+    let { data } = await sb
+      .from('clues')
+      .select('id, description')
+      .eq('id', carrierId)
+      .maybeSingle();
+
+    if (!data?.description) {
+      // Check if mysteryId is a derived instance of one of our canonical base mysteries
+      const KNOWN_BASE_IDS = [
+        '61196e53-09c3-427f-8862-30151f2ca75b',
+        '69b65a91-1cc2-4267-94a4-59297428af28',
+        'b944b8d9-f271-4d9e-9f31-717a53b8513f',
+      ];
+      for (const baseId of KNOWN_BASE_IDS) {
+        if (
+          deriveUserMysteryInstanceId(baseId, '4903bd39-e54f-42e4-b679-2af5d128bb8f') ===
+          mysteryId
+        ) {
+          const baseCarrier = await sb
+            .from('clues')
+            .select('id, description')
+            .eq('id', deriveCarrierClueId(baseId))
+            .maybeSingle();
+          if (baseCarrier?.data?.description) {
+            data = baseCarrier.data;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!data?.description) return null;
+    const parsed = JSON.parse(data.description);
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    if (parsed.session && typeof parsed.session === 'object') {
+      saveStoredGameSession(mysteryId, {
+        ...parsed.session,
+        mysteryId,
+      });
+    }
+
+    if (Array.isArray(parsed.characters) && parsed.characters.length > 0) {
+      const existingCached = getCachedMysterySnapshot(mysteryId);
+      if (existingCached) {
+        updateCachedMysteryCharacters(
+          mysteryId,
+          existingCached.characters.map((ec: any, idx: number) => {
+            const match =
+              parsed.characters.find(
+                (pc: any) =>
+                  pc.id === ec.id ||
+                  String(pc.name || '').toLowerCase() === String(ec.name || '').toLowerCase()
+              ) || parsed.characters[idx];
+            if (!match) return ec;
+            return {
+              ...ec,
+              profile_data: {
+                ...(ec.profile_data || {}),
+                ...(match.profile_data || {}),
+              },
+            };
+          }),
+          parsed.current_round
+        );
+      }
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Ensures a customer has their own isolated mystery instance in the server store
- * (stripped of any admin/other-customer guest assignments or session state).
+ * while preserving character costume portraits and any already-saved guest assignments for this user.
  */
 export function ensureIsolatedCustomerMysteryInstance(
   templateMystery: any,
@@ -461,7 +721,12 @@ export function ensureIsolatedCustomerMysteryInstance(
   const instanceId = deriveUserMysteryInstanceId(baseMysteryId, userId);
 
   const existingSnapshot = getCachedMysterySnapshot(instanceId);
-  if (existingSnapshot && existingSnapshot.created_by === userId && Array.isArray(existingSnapshot.characters) && existingSnapshot.characters.length > 0) {
+  if (
+    existingSnapshot &&
+    existingSnapshot.created_by === userId &&
+    Array.isArray(existingSnapshot.characters) &&
+    existingSnapshot.characters.length > 0
+  ) {
     const existingRels = getCachedRelationshipsSnapshot(instanceId);
     return {
       mystery: existingSnapshot,
@@ -470,30 +735,38 @@ export function ensureIsolatedCustomerMysteryInstance(
     };
   }
 
-  // Map template character IDs -> customer-scoped character IDs and strip any pre-cast guest data
+  // Also check if the baseMysteryId snapshot already has a cast saved by this user
+  const baseSnapshot = getCachedMysterySnapshot(baseMysteryId);
+  const baseSession = getStoredGameSession(baseMysteryId);
+  const instanceSession = getStoredGameSession(instanceId);
+  const belongsToThisUser =
+    userId === '4903bd39-e54f-42e4-b679-2af5d128bb8f' ||
+    baseSession?.hostUserId === userId ||
+    baseSession?.paidByUserId === userId ||
+    instanceSession?.hostUserId === userId ||
+    instanceSession?.paidByUserId === userId ||
+    templateMystery.created_by === userId;
+
   const charIdMap = new Map<string, string>();
-  const cleanCharacters = (templateMystery.characters || []).map((char: any) => {
+  const sourceChars =
+    belongsToThisUser && Array.isArray(baseSnapshot?.characters) && baseSnapshot.characters.length > 0
+      ? baseSnapshot.characters
+      : templateMystery.characters || [];
+
+  const cleanCharacters = sourceChars.map((char: any) => {
     const scopedCharId = deriveUserMysteryInstanceId(String(char.id), userId);
     charIdMap.set(String(char.id), scopedCharId);
 
     const rawPd = { ...((char.profile_data as Record<string, any>) || {}) };
-    delete rawPd.guest_id;
-    delete rawPd.guest_name;
-    delete rawPd.name;
-    delete rawPd.guest_bio;
-    delete rawPd.is_linked;
-    delete rawPd.standard_character_photo_url;
-    delete rawPd.standard_character_photo_hash;
-    delete rawPd.__game_session;
-    rawPd.is_active_in_session = true;
-
-    // Strip any ?aiPhotoUrl= query param from avatar_url that belonged to the admin's cast
-    if (typeof rawPd.avatar_url === 'string' && rawPd.avatar_url.includes('aiPhotoUrl=')) {
-      rawPd.avatar_url = rawPd.avatar_url
-        .replace(/[?&]aiPhotoUrl=[^&]+/g, '')
-        .replace(/\?&/, '?')
-        .replace(/\?$/, '');
+    if (!belongsToThisUser) {
+      delete rawPd.guest_id;
+      delete rawPd.guest_name;
+      delete rawPd.name;
+      delete rawPd.guest_bio;
+      delete rawPd.is_linked;
+      delete rawPd.__game_session;
     }
+    rawPd.is_active_in_session = rawPd.is_active_in_session ?? true;
 
     const mappedMotives = Array.isArray(char.motives)
       ? char.motives.map((m: any) => ({
@@ -525,11 +798,13 @@ export function ensureIsolatedCustomerMysteryInstance(
       : beat.characters_involved,
   }));
 
-  const cleanClues = (templateMystery.clues || []).map((clue: any) => ({
-    ...clue,
-    id: deriveUserMysteryInstanceId(String(clue.id || clue.title), userId),
-    mystery_id: instanceId,
-  }));
+  const cleanClues = (templateMystery.clues || [])
+    .filter((clue: any) => !isLiveCarrierClue(clue))
+    .map((clue: any) => ({
+      ...clue,
+      id: deriveUserMysteryInstanceId(String(clue.id || clue.title), userId),
+      mystery_id: instanceId,
+    }));
 
   const cleanRelationships = (templateRelationships || []).map((rel: any) => ({
     ...rel,
@@ -560,4 +835,5 @@ export function ensureIsolatedCustomerMysteryInstance(
     instanceId,
   };
 }
+
 

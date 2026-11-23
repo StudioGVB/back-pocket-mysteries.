@@ -1451,32 +1451,39 @@ export async function createMysteryAction(formData: FormData) {
 
         Your job is to generate a fully complete, premium murder mystery base in a single JSON response matching the theme perfectly.
 
-        CRITICAL NAMING RULE (ZERO HUMAN NAMES ALLOWED):
+        CRITICAL NAMING & GENDER-FLEX TOKEN RULE (ZERO HUMAN NAMES OR HARDCODED THIRD-PERSON PRONOUNS):
         - NEVER invent or mention any fake human first or last names (e.g., NO "Elias", "Thorne", "Vivienne", "Clara", "Arthur", "Robin", etc.) anywhere in the JSON response (NOT in description, characters, bios, relationships, motives, plot_beats, clues, or subplot).
-        - Because real friends/guests will be cast into these roles later, every character MUST be defined exclusively by an iconic Role Title starting with "The " (e.g., "The Tycoon", "The Artist", "The Doctor", "The Caretaker", "The Holiday Host").
-        - In the mystery \`description\`, refer to the victim and characters strictly by their Role Title (e.g., "The Tycoon"), and do NOT spoil who the killer is.
+        - Because real friends/guests of any gender (including mixed 3M/3F, uneven, or all-female 6F / all-male 6M groups) will be cast into these roles later, every character MUST be defined exclusively by an iconic Role Title starting with "The " (e.g., "The Tycoon", "The Artist", "The Doctor", "The Caretaker", "The Holiday Host").
         - Across all \`bio\`, \`relationships.notes\`, \`motives.notes\`, \`plot_beats\`, \`clues\`, and \`subplot\` fields, always refer to characters using their bracketed Role Title tokens (e.g., \`{{The Tycoon}}\`, \`{{The Artist}}\`).
+        - Whenever referring to ANY character's pronouns or family nouns in the third person, ALWAYS use dynamic gender-flex tokens instead of hardcoding "he/she/him/her/his/brother/sister/husband/wife":
+          • Subject pronoun (he/she): \`{{The Tycoon_he}}\` or \`{{The Tycoon_He}}\`
+          • Object pronoun (him/her): \`{{The Tycoon_him}}\`
+          • Possessive pronoun (his/her): \`{{The Tycoon_his}}\`
+          • Reflexive pronoun (himself/herself): \`{{The Tycoon_himself}}\`
+          • Sibling noun (brother/sister): \`{{The Tycoon_sibling}}\`
+          • Spouse noun (husband/wife): \`{{The Tycoon_spouse}}\`
+          • In-law noun (brother-in-law/sister-in-law): \`{{The Tycoon_inlaw}}\`
         - CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
 
         CRITICAL CONSTRAINTS:
         1. **EXACTLY ${targetCharCount} CHARACTERS**: You must generate exactly ${targetCharCount} unique characters. No more, no less.
-        2. **PLOT ROLES**: Assign exactly:
+        2. **PLOT ROLES (Default Medium Complexity = Lone Killer, 0 Assistants)**: Assign:
            - 1 Victim (plot_role: 'victim', is_victim: true, is_mandatory: true, archetype: 'victim')
            - 1 Killer (plot_role: 'killer', is_victim: false, is_mandatory: true, archetype: 'villain')
-           - 1 Assistant/Accomplice (plot_role: 'assistant', is_victim: false, is_mandatory: true, archetype: 'sidekick' or 'villain')
-           - ${innocentCount} Innocents (plot_role: 'innocent', is_victim: false, is_mandatory: a mix of true and false, archetypes like 'hero', 'witness', 'investigator')
+           - ${suspectCount - 1} Innocents (plot_role: 'innocent', is_victim: false, is_mandatory: a mix of true and false, archetypes like 'hero', 'witness', 'sidekick', 'investigator')
+           (Note: Reserve \`plot_role: 'assistant'\` strictly for Hard-complexity mysteries; for default Medium mysteries, all non-killer suspects are \`innocent\` red herrings.)
         3. **VICTIM RELATIONSHIP**: The victim MUST have a direct relationship to EVERY SINGLE suspect (the other ${suspectCount} characters). No floaters!
         4. **INTER-SUSPECT RELATIONSHIPS**: Add at least 4 other interesting relationships between suspects to make a rich social web.
-        5. **MOTIVES**: Every suspect (${suspectCount} characters, excluding the victim) MUST have exactly ONE primary motive targeting the victim. The motive strength for the Killer must be 'critical' or 'high'. The accomplice must have 'high' or 'moderate'. Innocents must have 'low' or 'moderate' (red herrings). Motive types MUST be strictly one of: 'revenge', 'greed', 'love', 'fear', 'justice', 'power'.
-        6. **PLOT BEATS**: Generate exactly 4 chronological narrative beats covering:
+        5. **MOTIVES**: Every suspect (${suspectCount} characters, excluding the victim) MUST have exactly ONE primary motive targeting the victim. The motive strength for the Killer must be 'critical' or 'high'. Innocents must have 'low', 'moderate', or 'high' (red herrings). Motive types MUST be strictly one of: 'revenge', 'greed', 'love', 'fear', 'justice', 'power'.
+        6. **PLOT BEATS**: Generate exactly 4 chronological narrative beats with explicit clock timestamps (e.g., 7:45 PM, 8:05 PM, 8:15 PM, 8:20 PM) covering:
            - Beat 1: The gathering and initial tensions before the murder.
            - Beat 2: The discovery of the murder.
            - Beat 3: Key evidence or alibi cracks.
            - Beat 4: The climax / twist and resolution.
         7. **CLUES**: Generate exactly 6 clue cards linked to the plot beats. Clue types must be strictly one of: 'physical', 'testimony', 'background', 'secret'. Implication types must be strictly one of: 'direct', 'circumstantial', 'red_herring'.
            - **REALISTIC TEXT / CHAT TITLE RULE**: If any clue is a text chain, SMS, or chat message thread, its \`title\` MUST be a realistic contact name (\`{{Role Title}}\`), an emoji/codename (e.g., \`Wifey 🎄❤️\`, \`🔒 Unknown Number\`), or a group chat name (e.g., \`Work Ops 💼\`, \`Family GC\`). NEVER call a text chain "Intercepted Texts...", "Leaked Text Chain...", or "Direct Messages".
-        8. **SUBPLOT**: Generate exactly 1 secondary subplot arc involving 2 suspects (indexes 0-${maxCharIndex}, must not be the victim). Include 2 subplot beats linked to the plot beats.
-        9. **ADAPTABLE GENDERS**: At least 2 characters should have gender 'adaptable', and you must write their role title and bio gender-neutrally.
+        8. **SUBPLOT**: Generate exactly 1 secondary red-herring subplot arc involving 2 innocent suspects (indexes 0-${maxCharIndex}, must not be the victim). Include 2 subplot beats linked to the plot beats.
+        9. **DEFAULT MILD SPICE BOUNDARY**: Include juicy drama (e.g. secret affairs, financial blackmail, or revenge), while keeping all dialogue 100% clean and PG-13 (ZERO swearing/cussing, ZERO bitch slaps/catfights, ZERO sex tapes).
 
         Ensure the theme and setting are fully integrated into all character roles, outfits, and clues. Use realistic, engaging, and atmospheric details without any human names.
       `;

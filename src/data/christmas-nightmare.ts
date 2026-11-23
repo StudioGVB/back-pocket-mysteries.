@@ -34,6 +34,8 @@ export interface CanonicalChristmasCharacter {
     outfit_advice: string;
     outfit_reference_images: string[];
     avatar_url: string;
+    standard_character_photo_url?: string;
+    outfit_image_url?: string;
     act_summary: string;
     act_bullets: string[];
     traits: string[];
@@ -65,7 +67,9 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       outfit_reference_images: [
         '/outfits/christmas/husband-1.jpg',
       ],
-      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheHusband&eyebrows=default&eyes=default&mouth=smile&clothesColor=991b1b&backgroundColor=transparent&top=shortWaved&hairColor=282828&skinColor=ffe0bd',
+      standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg',
+      outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg',
+      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheHusband&eyebrows=default&eyes=default&mouth=smile&clothesColor=991b1b&backgroundColor=transparent&top=shortWaved&hairColor=282828&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2Fda18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg',
       act_summary: 'Act like the charming, larger-than-life host of the annual Christmas dinner who loves holding court with old high school friends and childhood neighbours.',
       act_bullets: [
         'Toast loudly to growing up on the same street and keeping the old high school crew together.',
@@ -94,7 +98,9 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       outfit_reference_images: [
         '/outfits/christmas/wife-1.jpg',
       ],
-      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheWife&eyebrows=default&eyes=default&mouth=smile&clothesColor=065f46&backgroundColor=transparent&top=straight01&hairColor=4a3123&skinColor=ffe0bd',
+      standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-20058bab3911.jpg',
+      outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-20058bab3911.jpg',
+      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheWife&eyebrows=default&eyes=default&mouth=smile&clothesColor=065f46&backgroundColor=transparent&top=straight01&hairColor=4a3123&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2F44d70cd0-9f04-408b-8ac9-e064eb5c31d0-20058bab3911.jpg',
       act_summary: 'Play the poised, gracious Christmas party hostess welcoming your sister and childhood neighbours back to the house for the holidays.',
       act_bullets: [
         'Stay close with your younger sister, {{The Sister-in-Law}}, who you grew up sharing everything with (including your matching silver snowflake hairpins).',
@@ -123,7 +129,9 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       outfit_reference_images: [
         '/outfits/christmas/sister-1.jpg',
       ],
-      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheSisterInLaw&eyebrows=default&eyes=default&mouth=smile&clothesColor=64748b&backgroundColor=transparent&top=curvy&hairColor=a55728&skinColor=ffe0bd',
+      standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/d1433643-ac1b-4689-af57-84bb77c2be33-63aa0e7355d6.jpg',
+      outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/d1433643-ac1b-4689-af57-84bb77c2be33-63aa0e7355d6.jpg',
+      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheSisterInLaw&eyebrows=default&eyes=default&mouth=smile&clothesColor=64748b&backgroundColor=transparent&top=curvy&hairColor=a55728&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2Fd1433643-ac1b-4689-af57-84bb77c2be33-63aa0e7355d6.jpg',
       act_summary: 'Play the sharp-witted, loyal younger sister who grew up on the street with everyone at the table and knows all the old neighbourhood history.',
       act_bullets: [
         'Always have your older sister {{The Wife}}\'s back during family holiday dinners.',
@@ -158,7 +166,9 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       outfit_reference_images: [
         '/outfits/christmas/mistress-1.jpg',
       ],
-      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheMistress&eyebrows=default&eyes=default&mouth=smile&clothesColor=b45309&backgroundColor=transparent&top=straight02&hairColor=d6b370&skinColor=ffe0bd',
+      standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/5f9b36e0-44ae-4c3d-9762-432c5bb17783-d468b1b12c33.jpg',
+      outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/5f9b36e0-44ae-4c3d-9762-432c5bb17783-d468b1b12c33.jpg',
+      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheMistress&eyebrows=default&eyes=default&mouth=smile&clothesColor=b45309&backgroundColor=transparent&top=straight02&hairColor=d6b370&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2F5f9b36e0-44ae-4c3d-9762-432c5bb17783-d468b1b12c33.jpg',
       act_summary: 'Act like the glamorous, outgoing socialite of the friend group who loves holiday parties and knows everyone from high school and the office.',
       act_bullets: [
         'Be affectionate with your spouse of three years, {{The Co-Worker}}.',
@@ -193,7 +203,9 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       outfit_reference_images: [
         '/outfits/christmas/coworker-1.jpg',
       ],
-      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheCoWorker&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e293b&backgroundColor=transparent&top=shortCurly&hairColor=282828&skinColor=ffe0bd',
+      standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/3f17dfda-9758-49fa-a3df-cdf4f6b25ef7-c2f4839cd4a1.jpg',
+      outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/3f17dfda-9758-49fa-a3df-cdf4f6b25ef7-c2f4839cd4a1.jpg',
+      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheCoWorker&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e293b&backgroundColor=transparent&top=shortCurly&hairColor=282828&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2F3f17dfda-9758-49fa-a3df-cdf4f6b25ef7-c2f4839cd4a1.jpg',
       act_summary: 'Be the observant, level-headed older neighbour sibling who grew up next door to the sisters and works at the same company as {{The Husband}}.',
       act_bullets: [
         'Chat about work with {{The Husband}}, since the two of you work in the same department.',
@@ -228,7 +240,9 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       outfit_reference_images: [
         '/outfits/christmas/bestie-1.jpg',
       ],
-      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheBestie&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e3a8a&backgroundColor=transparent&top=shortFlat&hairColor=4a3123&skinColor=ffe0bd',
+      standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/f3187085-155b-4389-9bf2-58c6dcc26d1b-1dcd5acb69d9.jpg',
+      outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/f3187085-155b-4389-9bf2-58c6dcc26d1b-1dcd5acb69d9.jpg',
+      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheBestie&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e3a8a&backgroundColor=transparent&top=shortFlat&hairColor=4a3123&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2Ff3187085-155b-4389-9bf2-58c6dcc26d1b-1dcd5acb69d9.jpg',
       act_summary: 'Act like {{The Husband}}\'s easygoing lifelong best friend and the fun-loving younger neighbour brother who grew up on the street with everyone.',
       act_bullets: [
         'Talk up how you and {{The Husband}} have been inseparable best friends since high school.',

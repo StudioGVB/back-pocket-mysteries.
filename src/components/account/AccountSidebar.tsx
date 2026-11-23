@@ -133,8 +133,17 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
             ? `/${locale}${link.href}`
             : link.href;
 
+          const isMyMysteryRoute =
+            pathname.includes('/account/orders') ||
+            pathname.endsWith('/ready') ||
+            pathname.includes('/ready/');
+
           const isActive = link.exact
             ? pathname === `/${locale}${link.href}` || pathname === `/${locale}/account`
+            : link.href === '/account/orders'
+            ? isMyMysteryRoute
+            : link.href === '/mysteries'
+            ? pathname.includes('/mysteries') && !isMyMysteryRoute
             : pathname.includes(link.href);
 
           return (

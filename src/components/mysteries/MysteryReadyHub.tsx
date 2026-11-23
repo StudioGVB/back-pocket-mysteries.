@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { resolveDisplayAvatarUrl } from '@/utils/avatar';
+import { saveCustomerCastAction } from '@/app/actions/customer-mystery';
 
 export interface ReadyHubCharacter {
   id: string;
@@ -152,6 +153,8 @@ export function MysteryReadyHub({
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
   const [showQrModal, setShowQrModal] = useState(false);
 
+  const hasSyncedCastRef = useRef(false);
+
   // Load persisted host checklist & sent invite statuses from localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -164,6 +167,28 @@ export function MysteryReadyHub({
       // ignore storage errors
     }
   }, [mystery.id]);
+
+  // Automatically sync the active cast assignments to the cross-container Supabase carrier
+  // so that guest links (/play/[id]?select=1) always display the exact guest names and AI character portraits
+  useEffect(() => {
+    if (hasSyncedCastRef.current || !mystery?.id || !characters?.length) return;
+    const assignedPayload = characters.map((c) => {
+      const gId = assignments[c.id];
+      const guestObj = guests.find((g) => g.id === gId) || null;
+      return {
+        characterId: c.id,
+        guest: guestObj,
+      };
+    });
+    if (assignedPayload.some((p) => Boolean(p.guest?.name))) {
+      hasSyncedCastRef.current = true;
+      void saveCustomerCastAction(
+        mystery.id,
+        assignedPayload,
+        characters.map((c) => c.id)
+      );
+    }
+  }, [mystery.id, characters, guests, assignments]);
 
   const toggleSentChar = useCallback(
     (charId: string, forceTrue = false) => {

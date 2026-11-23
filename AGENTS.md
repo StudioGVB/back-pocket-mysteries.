@@ -39,3 +39,41 @@ Whenever the user asks to generate/queue a 2-week batch of blogs, socials, or ED
    - **Proactive Prompt Mandate:** Whenever a new Mystery Base Pack is created, finalized, or set to Live (`status === 'published'`), **always proactively prompt the user** to run the launch marketing for it (*"Now that `<Mystery Title>` is live, would you like me to run the launch marketing for it (IG/FB social card, 600-word LinkedIn launch post, and Friday Weekly EDM spotlight)?"*).
    - Every time a new Mystery Base Pack goes live, queue a draft IG/FB post (rendered via `/api/social-card/<mystery-slug>`), a 600–700 word LinkedIn launch post, and include the **New Mystery Base Pack Spotlight** section in that week's Friday EDM.
 <!-- END:marketing-automation-rules -->
+
+<!-- BEGIN:mystery-architecture-and-qa-rules -->
+# Mystery Base Pack Architecture, Gender-Flex Casting & Pre-Launch QA Rules
+
+Whenever creating, editing, hydrating, or stress-testing any Mystery Base Pack, strictly enforce these architectural standards:
+
+1. **Bidirectional Gender-Flex Casting & Hydration ("Default Gender First, Auto-Flex When Needed")**
+   - Every character role has a **Default Gender** (`male`, `female`, or `adaptable`) used to match same-gender guests first (`3M/3F`). However, if a party has an uneven or single-gender group (e.g. `4F/2M`, `6F Bachelorette`, `6M`), **any role can seamlessly flex to any guest gender**:
+     - **Canonical Role Token Preservation:** [`getBaseCharacterRoleTitle`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/src/utils/hydration.ts) preserves the canonical DB key (`{{The Sister-in-Law}}`, `{{The Husband}}`, `{{The Mistress}}`) for token lookup, while [`adaptRoleTitleForGuestGender`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/src/utils/hydration.ts) adapts user-facing display titles (`The Brother-in-Law`, `The Husband (Wife)`, `The Secret Lover`, etc.).
+     - **Dynamic Pronoun & Relationship Tokens:** Never hardcode third-person pronouns (`he/she/him/her/his`) or gendered family nouns (`brother/sister/husband/wife/brother-in-law/sister-in-law`) when referring to another character in bios, motives, relationships, act bullets, or clues. Always use dynamic tokens resolved by [`hydrateTextWithCharacters`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/src/utils/hydration.ts):
+       - `{{Role_he}}`, `{{Role_him}}`, `{{Role_his}}`, `{{Role_himself}}`
+       - `{{Role_sibling}}` (`brother` / `sister`)
+       - `{{Role_spouse}}` (`husband` / `wife`)
+       - `{{Role_inlaw}}` (`brother-in-law` / `sister-in-law`)
+     - **Bidirectional Outfit & AI Costume Portrait Adaptation:** [`adaptOutfitForGuestGender`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/src/utils/hydration.ts) (called inside [`getCharacterOutfitDescription`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/src/app/actions/generator.ts)) automatically adapts feminine dresses/gowns/heels/lipstick to tailored masculine equivalents when a male guest is cast, and masculine suits/tuxedos/ties to chic feminine equivalents when a female guest is cast.
+
+2. **4-Tier Spice Level Rubric (SFW Roleplay Boundary vs. Dialogue Explicitness)**
+   - **`clean` (`1.0 – 3.4 / 10` • ✨ Safe For Work & Family):** Full high-stakes adult murder mystery — **death, murder weapons, revenge, greed, financial blackmail, sabotage, and poisoned/spiked drinks are all allowed and expected**. Strictly enforces **ZERO romantic love-affair / cheating roleplay** between players (so co-workers or family members never have to roleplay lovers) and **100% clean dialogue (0 swearing/cussing)**.
+   - **`mild` (`3.5 – 5.5 / 10` • 🌶️ Romantic Affairs • Clean Dialogue / No Cussing):** Adds **romantic betrayal, secret love affairs, cheating spouses, and jealous exes** alongside murder and blackmail (great for friend groups, couples, and dinner parties), while keeping the **dialogue 100% clean and PG-13 (ZERO swearing/cussing, ZERO bitch slaps/catfights, ZERO sex tapes — capped at `<= 4.8 / 10`)**.
+   - **`spicy` (`5.6 – 8.2 / 10` • 🌶️🌶️ Cussing, Bitch Slaps & Sex Tapes):** Triggered when character dialogue, chat logs, or voicemails include **cussing/swearing** (`bitch`, `shit`, `bullshit`, `asshole`, `slut`, `wtf`, `stfu`), **bitch slaps / catfights / throwing drinks in faces**, or **sex tapes / leaked nudes / OnlyFans / sugar daddies**.
+   - **`filthy` (`8.3 – 10.0 / 10` • 🔥🔥🔥 18+ Unfiltered After-Dark):** Triggered by heavy **F-bombs** (`fuck`, `motherfucker`), explicit sexual kinks/orgies/strippers, or hard drugs (`cocaine`, `snorting lines`).
+
+3. **5-Factor Difficulty (`Complexity Level`) Rubric (`Easy` | `Medium` | `Hard`)**
+   - Calibrated in [`src/lib/mystery-qa-store.ts`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/src/lib/mystery-qa-store.ts) across 5 signals:
+     1. **Conspiracy Structure (`plot_role === 'assistant'`):** `0 Assistants` (Lone-Wolf Killer, `+0.0 pts`) vs. `1 Assistant/Accomplice` (2-Person Conspiracy, `+1.4 pts`) vs. `2+ Assistants` (`+2.2 pts`).
+     2. **Red-Herring Subplot Entanglement:** `+0.9 pts` per overlapping decoy subplot arc (`is_fake: true` clues).
+     3. **Timeline Micro-Window Timestamp Precision:** Distinct `HH:MM AM/PM` clock timestamps players must align (`5+ timestamps` = `+1.0 pt`).
+     4. **Round 1 Misdirection Power:** `>= 75%` of early Round 1 table suspicion deflected onto decoys (`+0.8 pts`).
+     5. **Forensic Synthesis Load:** Total clue volume (`(totalClues / 16) * 1.4`) + Round 3 interlocking evidence count (`4+ R3 clues` = `+0.7 pts`).
+   - **Tier Boundaries:**
+     - **`easy` (`1.0 – 5.2 / 10`):** `1` Lone Killer (`0` assistants), `8–11` clues, `1` simple red herring, minimal timestamp math.
+     - **`medium` (`5.3 – 7.9 / 10`):** `1` Lone Killer (`0` assistants/accomplices — capped at `<= 7.7 / 10`), `12–16` clues, `2` entangled red-herring subplots, and multi-timestamp alibi cross-referencing.
+     - **`hard` (`8.0 – 10.0 / 10`):** Features **`1 Killer + 1+ Secret Assistant/Accomplice` (`plot_role === 'assistant'`)** (or `3+` red-herring subplots / `18+` clues).
+
+4. **Pre-Launch 4-Pack Stress-Test & 7-Box Certification Mandate**
+   - Before any Mystery Base Pack goes live, it must pass the **4-Pack Deep AI Critic & Multimodal Vision Stress-Test** (`/api/admin/mystery-qa-runner` & [`MysteryPreLaunchQaPanel.tsx`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/src/components/builder/MysteryPreLaunchQaPanel.tsx)) across `Test Pack #1 (3M/3F Real Friends)`, `Test Pack #2 (Diverse Traits, Glasses/Beards & Punctuation)`, `Test Pack #3 (Lookalike Suspects Visual Collision)`, and `Test Pack #4 (All-Female 6F Bachelorette Group)` with **0 token leaks**, **0 gender/pronoun conflicts**, **100% Round 3 killer solve rate**, and **synced AI-Calibrated Complexity & Spice tags**.
+<!-- END:mystery-architecture-and-qa-rules -->
+

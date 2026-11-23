@@ -567,13 +567,8 @@ export function PlayroomClient({
       return next;
     });
 
-    if (currentRound >= 5) {
-      setActiveTab('reveal');
-    } else if (currentRound >= 1) {
-      setActiveTab('clues');
-    } else {
-      setActiveTab('profile');
-    }
+    // Always open on the player's Character Sheet ('profile') first when they claim their role
+    setActiveTab('profile');
 
     try {
       const res = await claimCharacterInLobbyAction(mystery.id, charId, activeToken);
@@ -2365,9 +2360,12 @@ export function PlayroomClient({
                   👗 What to Wear &amp; Costume Inspiration
                 </h2>
               </div>
-              <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-wider">
-                3 Outfit Ideas Below
-              </span>
+              {prepCharPres.outfitReferenceImages && prepCharPres.outfitReferenceImages.length > 0 && (
+                <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-wider">
+                  {prepCharPres.outfitReferenceImages.slice(0, 3).length} Outfit{' '}
+                  {prepCharPres.outfitReferenceImages.slice(0, 3).length === 1 ? 'Photo' : 'Photos'} Below
+                </span>
+              )}
             </div>
 
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed bg-slate-950/70 border border-white/10 rounded-2xl p-4">
@@ -2696,28 +2694,22 @@ export function PlayroomClient({
                 <div
                   key={char.id}
                   onClick={() => {
-                    if (!isClaimingThis && !isClaimedByOther) {
+                    if (!isClaimingThis) {
                       handleSelectCharacterInLobby(char.id);
                     }
                   }}
                   role="button"
                   tabIndex={0}
                   onKeyDown={e => {
-                    if (
-                      (e.key === 'Enter' || e.key === ' ') &&
-                      !isClaimingThis &&
-                      !isClaimedByOther
-                    ) {
+                    if ((e.key === 'Enter' || e.key === ' ') && !isClaimingThis) {
                       e.preventDefault();
                       handleSelectCharacterInLobby(char.id);
                     }
                   }}
-                  className={`group rounded-2xl sm:rounded-3xl overflow-hidden text-left transition-all flex flex-col justify-between border relative ${
+                  className={`group rounded-2xl sm:rounded-3xl overflow-hidden text-left transition-all flex flex-col justify-between border relative cursor-pointer ${
                     isClaimedByMe
-                      ? 'bg-brand-pink/15 border-brand-pink shadow-[0_0_25px_rgba(254,4,198,0.25)] cursor-pointer'
-                      : isClaimedByOther
-                      ? 'bg-slate-900/40 border-white/10 opacity-70 cursor-not-allowed'
-                      : 'bg-slate-900/75 border-white/15 hover:border-brand-pink/70 hover:bg-slate-900 shadow-lg cursor-pointer'
+                      ? 'bg-brand-pink/15 border-brand-pink shadow-[0_0_25px_rgba(254,4,198,0.25)]'
+                      : 'bg-slate-900/75 border-white/15 hover:border-brand-pink/70 hover:bg-slate-900 shadow-lg'
                   }`}
                 >
                   {/* Character Portrait */}
@@ -2761,10 +2753,10 @@ export function PlayroomClient({
                           className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider shadow-md ${
                             isClaimedByMe
                               ? 'bg-emerald-500 text-slate-950'
-                              : 'bg-black/85 text-amber-300 border border-amber-400/40'
+                              : 'bg-black/85 text-emerald-300 border border-emerald-400/40'
                           }`}
                         >
-                          {isClaimedByMe ? '✓ Yours' : '🔒 Taken'}
+                          {isClaimedByMe ? '✓ Yours' : '✓ Joined'}
                         </span>
                       </div>
                     )}
@@ -2773,9 +2765,11 @@ export function PlayroomClient({
                   {/* Card Body */}
                   <div className="p-3 sm:p-4 flex flex-col justify-between gap-2 sm:gap-3 flex-grow">
                     <div className="space-y-1">
-                      <h3 className="text-xs sm:text-lg font-black text-white leading-snug group-hover:text-brand-pink transition-colors truncate">
-                        {charPres.roleTitle || archetype}
-                      </h3>
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                        <h3 className="text-xs sm:text-lg font-black text-white leading-snug group-hover:text-brand-pink transition-colors truncate">
+                          {guestName ? `${guestName} (${charPres.roleTitle || archetype})` : (charPres.roleTitle || archetype)}
+                        </h3>
+                      </div>
                       <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-2 leading-snug sm:leading-relaxed">
                         {charPres.shortBlurb}
                       </p>
@@ -2789,8 +2783,6 @@ export function PlayroomClient({
                         className={`w-full sm:w-auto text-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl shrink-0 ${
                           isClaimedByMe
                             ? 'bg-emerald-500 text-slate-950'
-                            : isClaimedByOther
-                            ? 'bg-white/5 text-slate-500'
                             : 'bg-brand-pink text-white group-hover:opacity-95'
                         }`}
                       >
@@ -2798,8 +2790,6 @@ export function PlayroomClient({
                           ? 'Opening...'
                           : isClaimedByMe
                           ? 'Enter →'
-                          : isClaimedByOther
-                          ? 'Claimed'
                           : 'Claim Role →'}
                       </span>
                     </div>

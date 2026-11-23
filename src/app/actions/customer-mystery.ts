@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
 import { getCharacterDisplayName, getCharacterRoleTitle, hydrateTextWithCharacters } from '@/utils/hydration';
-import { normalizePlotBeats } from '@/services/mysteries';
+import { getMysteryById, normalizePlotBeats } from '@/services/mysteries';
 import {
   cacheMysterySnapshot,
   getCachedMysterySnapshot,
@@ -14,6 +14,10 @@ import {
   updateCachedMysteryCharacters,
   StoredGuestReview,
   StoredDetectiveGuest,
+  LIVE_CARRIER_CLUE_TITLE,
+  isLiveCarrierClue,
+  syncLiveStateToSupabaseClueCarrier,
+  loadLiveStateFromSupabaseClueCarrier,
 } from '@/lib/live-session-store';
 import {
   checkAndFinalizeGenerationIfDue,
@@ -247,11 +251,17 @@ async function writeSessionToCarrier(
         .eq('id', carrierCharacter.id);
     }
   }
+
+  // 3. Always sync to the cross-container `public.clues` carrier row so Incognito guests & all Vercel lambdas stay in sync
+  await syncLiveStateToSupabaseClueCarrier(mysteryId, {
+    supabase,
+    session: updatedSession,
+  });
 }
 
 /**
  * Looks up a mystery by its 6-digit Kahoot PIN.
- * Checks both Supabase and the server-side live session cache so unauthenticated guests can join by PIN.
+ * Checks Supabase mysteries, the cross-container `public.clues` carrier rows, and local session cache.
  */
 export async function findMysteryByPinAction(pinInput: string): Promise<{
   mysteryId?: string;
@@ -263,8 +273,38 @@ export async function findMysteryByPinAction(pinInput: string): Promise<{
     return { error: 'Please enter a valid 6-digit Game PIN.' };
   }
 
-  // 1. Check Supabase mysteries first
   const supabase = await createClient();
+
+  // 1. Check cross-container live carrier rows in `public.clues` (accessible to anon guests too!)
+  try {
+    const { data: carriers } = await supabase
+      .from('clues')
+      .select('id, description')
+      .eq('title', LIVE_CARRIER_CLUE_TITLE);
+
+    for (const row of carriers || []) {
+      if (!row?.description) continue;
+      try {
+        const parsed = JSON.parse(row.description);
+        const targetId = parsed?.mysteryId;
+        if (!targetId) continue;
+        const derivedPin = await generatePinFromMysteryId(targetId);
+        const sessPin = parsed?.session?.pin;
+        if (sessPin === cleanPin || derivedPin === cleanPin) {
+          return {
+            mysteryId: targetId,
+            title: parsed?.title || 'Murder Mystery Party',
+          };
+        }
+      } catch {
+        // ignore malformed row
+      }
+    }
+  } catch {
+    // non-fatal
+  }
+
+  // 2. Check Supabase mysteries table
   const { data: mysteries } = await supabase
     .from('mysteries')
     .select('id, title, characters(id, is_victim, created_at, profile_data)')
@@ -280,7 +320,7 @@ export async function findMysteryByPinAction(pinInput: string): Promise<{
     }
   }
 
-  // 2. Check server-side cached mysteries (for unauthenticated guest browsers)
+  // 3. Check server-side cached mysteries
   const cachedMysteries = getAllCachedMysteries();
   for (const cm of cachedMysteries) {
     if (!cm?.id) continue;
@@ -288,6 +328,20 @@ export async function findMysteryByPinAction(pinInput: string): Promise<{
     const stored = getStoredGameSession(cm.id);
     if (stored?.pin === cleanPin || derivedPin === cleanPin) {
       return { mysteryId: cm.id, title: cm.title || 'Murder Mystery Party' };
+    }
+  }
+
+  // 4. Check well-known canonical mystery IDs by deterministic PIN
+  const KNOWN_IDS = [
+    { id: '61196e53-09c3-427f-8862-30151f2ca75b', title: 'Christmas Nightmare' },
+    { id: '616c3a73-5d81-40fa-afc8-e804733752e3', title: 'Christmas Nightmare' },
+    { id: '69b65a91-1cc2-4267-94a4-59297428af28', title: 'Love On The Rocks' },
+    { id: 'b944b8d9-f271-4d9e-9f31-717a53b8513f', title: "The Ringmaster's Last Bow" },
+  ];
+  for (const k of KNOWN_IDS) {
+    const derivedPin = await generatePinFromMysteryId(k.id);
+    if (derivedPin === cleanPin) {
+      return { mysteryId: k.id, title: k.title };
     }
   }
 
@@ -300,8 +354,8 @@ export async function findMysteryByPinAction(pinInput: string): Promise<{
  * Saves the customer's spoiler-free cast:
  * - Updates victim character if the host picked a guest for the victim role
  * - Updates each selected active suspect character with the assigned guest's profile data
- * - Marks unused optional characters as inactive for this session (`is_active_in_session: false`)
- * - Resets round to 0 (Lobby) and initializes the Kahoot PIN session
+ * - Preserves rendered AI character costume portraits (`standard_character_photo_url`)
+ * - Syncs cast & session to the cross-container `public.clues` carrier row so all guest phones & Incognito tabs get the exact cast names and photos
  */
 export async function saveCustomerCastAction(
   mysteryId: string,
@@ -337,9 +391,14 @@ export async function saveCustomerCastAction(
     .eq('mystery_id', mysteryId)
     .order('created_at', { ascending: true });
 
+  let resolvedMysteryObj: any = getCachedMysterySnapshot(mysteryId);
   if (!characters || characters.length === 0) {
-    const cachedMystery = getCachedMysterySnapshot(mysteryId);
-    characters = cachedMystery?.characters || null;
+    characters = resolvedMysteryObj?.characters || null;
+  }
+
+  if (!characters || characters.length === 0) {
+    resolvedMysteryObj = await getMysteryById(mysteryId);
+    characters = resolvedMysteryObj?.characters || null;
   }
 
   if (!characters || characters.length === 0) {
@@ -384,10 +443,6 @@ export async function saveCustomerCastAction(
     };
 
     if (isActive && assignedGuest) {
-      if (existingProfile.guest_id !== assignedGuest.id) {
-        delete nextProfile.standard_character_photo_url;
-        delete nextProfile.standard_character_photo_hash;
-      }
       let resolvedGuestAvatarUrl =
         assignedGuest.avatar_url ||
         (existingProfile.guest_id === assignedGuest.id ? existingProfile.avatar_url : '') ||
@@ -425,8 +480,6 @@ export async function saveCustomerCastAction(
       delete nextProfile.guest_id;
       delete nextProfile.guest_name;
       delete nextProfile.name;
-      delete nextProfile.standard_character_photo_url;
-      delete nextProfile.standard_character_photo_hash;
     }
 
     if (char.id === carrierId) {
@@ -447,15 +500,52 @@ export async function saveCustomerCastAction(
       .eq('id', char.id);
   }
 
+  // If this is a derived customer instance of a template mystery (e.g. Christmas Nightmare 61196e53-...),
+  // also update the template mystery's characters in Supabase by role title so both URLs stay in sync
+  const templateMysteryId =
+    resolvedMysteryObj?.template_mystery_id ||
+    existingStored?.templateMysteryId ||
+    null;
+
+  if (templateMysteryId && templateMysteryId !== mysteryId) {
+    try {
+      const { data: baseChars } = await supabase
+        .from('characters')
+        .select('id, name, profile_data')
+        .eq('mystery_id', templateMysteryId);
+
+      for (const bc of baseChars || []) {
+        const bcRole = getCharacterRoleTitle(bc).toLowerCase();
+        const matchUpdated = updatedCharObjects.find(
+          (uc) => getCharacterRoleTitle(uc).toLowerCase() === bcRole
+        );
+        if (matchUpdated?.profile_data) {
+          await supabase
+            .from('characters')
+            .update({
+              profile_data: {
+                ...((bc.profile_data as Record<string, any>) || {}),
+                ...((matchUpdated.profile_data as Record<string, any>) || {}),
+              },
+            })
+            .eq('id', bc.id);
+        }
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+
   // Ensure mystery starts in Lobby (Round 0)
   await supabase
     .from('mysteries')
     .update({ current_round: 0 })
     .eq('id', mysteryId);
 
-  // Sync server-side cache for unauthenticated guests
+  // Sync server-side cache and cross-container `public.clues` carrier for unauthenticated guests
   saveStoredGameSession(mysteryId, {
     mysteryId,
+    templateMysteryId: templateMysteryId || undefined,
     pin,
     hostUserId: user.id,
     currentRound: 0,
@@ -469,11 +559,34 @@ export async function saveCustomerCastAction(
   });
   updateCachedMysteryCharacters(mysteryId, updatedCharObjects, 0);
 
+  await syncLiveStateToSupabaseClueCarrier(mysteryId, {
+    supabase,
+    mystery: resolvedMysteryObj,
+    characters: updatedCharObjects,
+    session: {
+      mysteryId,
+      templateMysteryId: templateMysteryId || undefined,
+      pin,
+      hostUserId: user.id,
+      currentRound: 0,
+      activeCharacterIds,
+      claimedCharacters: {},
+      submissions: [],
+      sharedTheoryRounds: [],
+      revealMode: 'hidden',
+      reviews: sessionMeta.reviews,
+      updatedAt: sessionMeta.updatedAt,
+    },
+    templateMysteryId,
+  });
+
   // Pre-generate all audio clues in the background with the newly locked cast names & accents
-  // so that when players open the Playroom, every audio clue plays out loud immediately on click.
   void pregenerateAllAudioCluesForMystery(mysteryId, { forceRegenerate: true });
 
   revalidatePath(`/play/${mysteryId}`);
+  if (templateMysteryId) {
+    revalidatePath(`/play/${templateMysteryId}`);
+  }
   revalidatePath(`/builder/mysteries/${mysteryId}`, 'layout');
 
   return {
@@ -488,51 +601,64 @@ export async function saveCustomerCastAction(
  */
 export async function getGameSessionAction(mysteryId: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let { data: mystery } = (await supabase
-    .from('mysteries')
-    .select(`
-      id,
-      title,
-      current_round,
-      created_by,
-      characters (
-        *,
-        motives!motives_character_id_fkey (*)
-      ),
-      clues (
+  const [
+    {
+      data: { user },
+    },
+    { data: dbMystery },
+    liveCarrier,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('mysteries')
+      .select(`
         id,
-        evidence_status,
-        implication_type
-      ),
-      plot_beats (*)
-    `)
-    .eq('id', mysteryId)
-    .single()) as any;
+        title,
+        current_round,
+        created_by,
+        characters (
+          *,
+          motives!motives_character_id_fkey (*)
+        ),
+        clues (
+          id,
+          title,
+          round_number,
+          evidence_status,
+          implication_type
+        ),
+        plot_beats (*)
+      `)
+      .eq('id', mysteryId)
+      .single() as any,
+    loadLiveStateFromSupabaseClueCarrier(mysteryId, supabase),
+  ]);
 
+  let mystery = dbMystery;
   const cachedSnapshot = getCachedMysterySnapshot(mysteryId);
   if (!mystery) {
-    mystery = cachedSnapshot;
+    mystery = cachedSnapshot || (await getMysteryById(mysteryId));
   }
 
   if (!mystery) {
     return { error: 'Mystery not found' };
   }
 
-  const characters = mystery.characters || cachedSnapshot?.characters || [];
-  const mysteryClues: any[] =
+  const characters =
+    (Array.isArray(mystery.characters) && mystery.characters.length > 0
+      ? mystery.characters
+      : cachedSnapshot?.characters || liveCarrier?.characters) || [];
+  const mysteryClues: any[] = (
     Array.isArray(mystery.clues) && mystery.clues.length > 0
       ? mystery.clues
-      : cachedSnapshot?.clues || [];
+      : cachedSnapshot?.clues || []
+  ).filter((c: any) => !isLiveCarrierClue(c));
   const clueById = new Map<string, any>(mysteryClues.map((c: any) => [c.id, c]));
 
   const { session, carrierCharacter } = await readSessionFromCharacters(
     characters,
     mysteryId,
-    mystery.current_round
+    liveCarrier?.session?.currentRound ?? mystery.current_round
   );
   const storedSession = getStoredGameSession(mysteryId);
   const isAdmin = user ? await isUserAdmin(supabase, user) : false;

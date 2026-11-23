@@ -263,7 +263,10 @@ Context / Prompt: "${generationPrompt}"
 
 ${formatInstructions}
 
-CRITICAL NAMING RULE: NEVER invent fake person names or nicknames. Always preserve and use the exact bracketed character tokens (e.g., {{The Sister}}, {{The Ex}}, {{The Reality TV Queen}}) present in the title, beat, or prompt.
+CRITICAL NAMING & GENDER-FLEX TOKEN RULE:
+- NEVER invent fake person names or nicknames. Always preserve and use the exact bracketed character tokens (e.g., {{The Sister}}, {{The Ex}}, {{The Reality TV Queen}}) present in the title, beat, or prompt.
+- Whenever referring to ANY character in the third person (pronouns or family nouns), ALWAYS use dynamic gender-flex tokens instead of hardcoding "he/she/him/her/his/brother/sister/husband/wife":
+  • {{Role_he}}, {{Role_him}}, {{Role_his}}, {{Role_himself}}, {{Role_sibling}}, {{Role_spouse}}, {{Role_inlaw}}
 CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
 CRITICAL: Output ONLY the raw clue content itself following the format above. No markdown code fences, no introduction, no conversational filler.`;
 

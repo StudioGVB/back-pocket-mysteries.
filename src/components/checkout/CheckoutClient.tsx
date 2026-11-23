@@ -171,7 +171,7 @@ function InstantCheckoutForm({
             currency,
           })
           router.push(
-            `/${locale}/mysteries/${slug}/cast?checkout=success&payment_intent=${encodeURIComponent(
+            `/${locale}/account/orders?checkout=success&payment_intent=${encodeURIComponent(
               paymentIntent.id
             )}`
           )
@@ -229,7 +229,7 @@ function InstantCheckoutForm({
           currency,
         })
         router.push(
-          `/${locale}/mysteries/${slug}/cast?checkout=success&payment_intent=${encodeURIComponent(
+          `/${locale}/account/orders?checkout=success&payment_intent=${encodeURIComponent(
             result.paymentIntent.id
           )}`
         )
@@ -616,7 +616,7 @@ export default function CheckoutClient({
       currency: activeCurrency,
     })
     if (res.verified) {
-      router.push(`/${locale}/mysteries/${targetSlug}/cast?checkout=success`)
+      router.push(`/${locale}/account/orders?checkout=success`)
     } else {
       setIsSimulatingPayment(false)
       setPromoError(res.error || 'Payment verification failed.')
@@ -715,9 +715,9 @@ export default function CheckoutClient({
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">
                   🏷️ Promo or Gift Code
                 </label>
-                {discountAmount > 0 && discountLabel && (
+                {discountAmount > 0 && (appliedPromoCode || discountLabel) && (
                   <span className="text-[11px] font-black text-emerald-600">
-                    ✓ {discountLabel} (-{formatCurrency(discountAmount, activeCurrency, locale)})
+                    ✓ {appliedPromoCode ? `Code ${appliedPromoCode} applied` : discountLabel} (-{formatCurrency(discountAmount, activeCurrency, locale)})
                   </span>
                 )}
               </div>
@@ -999,9 +999,9 @@ export default function CheckoutClient({
               {promoError && (
                 <p className="text-[11px] font-bold text-red-400">{promoError}</p>
               )}
-              {discountAmount > 0 && discountLabel && (
+              {discountAmount > 0 && (appliedPromoCode || discountLabel) && (
                 <p className="text-[11px] font-bold text-emerald-400">
-                  ✓ {discountLabel} applied (-{formatCurrency(discountAmount, activeCurrency, locale)})
+                  ✓ {appliedPromoCode ? `Code ${appliedPromoCode}` : discountLabel} applied (-{formatCurrency(discountAmount, activeCurrency, locale)})
                 </p>
               )}
             </div>
@@ -1032,7 +1032,7 @@ export default function CheckoutClient({
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between items-center text-xs font-black text-brand-pink pt-2 border-t border-white/10">
-                  <span>🏷️ {discountLabel || 'Discount'}</span>
+                  <span>🏷️ {appliedPromoCode ? `Promo Code (${appliedPromoCode})` : (discountLabel || 'Discount')}</span>
                   <span>-{formatCurrency(discountAmount, activeCurrency, locale)}</span>
                 </div>
               )}

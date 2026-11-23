@@ -137,23 +137,26 @@ export async function generateAICharacterAction(mysteryId: string) {
     const existingTitles = characters.map((c: any) => getCharacterRoleTitle(c)).join(', ');
     const hasVictim = characters.some((c: any) => c.is_victim);
     const hasKiller = characters.some((c: any) => c.plot_role === 'killer');
+    const hasAssistant = characters.some((c: any) => c.plot_role === 'assistant');
+    const allowAssistant = String(mystery?.complexity || 'medium').toLowerCase() === 'hard' && !hasAssistant;
 
     const prompt = `
       You are generating a new character role for a murder mystery party game.
       Theme: ${mystery?.theme || 'General Mystery'}
+      Complexity: ${mystery?.complexity || 'medium'}
       
       Existing Character Roles: ${existingTitles || 'None yet'}
       
       RULES:
-      1. NEVER invent a fake human first/last name. Characters are defined strictly by their iconic Role Title (e.g. "The Star", "The Sister", "The Ex", "The Producer", "The Chief Stew"). Real friend names are tagged later.
+      1. NEVER invent a fake human first/last name. Characters are defined strictly by their iconic Role Title starting with "The " (e.g. "The Star", "The Sister", "The Ex", "The Producer", "The Chief Stew"). Real friend names are tagged later.
       2. Invent a unique, highly thematic 'title' based on the theme (e.g. "The Star", "The Sister", "The Ex", "The Superfan"). Do not reuse existing roles.
       3. Invent a 'prefix' that would appear before a guest's name if applicable (e.g. "Captain", "Doctor", "Detective"). If none makes sense, leave it as an empty string "".
       4. Assign a plot_role:
          - If there is no victim yet (${!hasVictim}), you MUST make them the 'victim'.
          - If there is a victim but no killer (${hasVictim && !hasKiller}), you MUST make them the 'killer'.
-         - Otherwise, pick 'innocent' or 'assistant'.
-      5. If they are the victim or killer, they MUST be mandatory (is_mandatory: true).
-      6. Assign a gender ('male', 'female', or 'adaptable').
+         - Otherwise, ${allowAssistant ? "pick 'assistant' (accomplice to the killer for this Hard mystery) or 'innocent'" : "you MUST make them 'innocent' (Easy & Medium mysteries use a Lone-Wolf Killer with 0 assistants)"}.
+      5. If they are the victim, killer, or assistant, they MUST be mandatory (is_mandatory: true).
+      6. Assign a default gender ('male', 'female', or 'adaptable'). Note: Even 'male' and 'female' roles auto-flex if cast with a guest of another gender.
     `;
 
     const result = await model.generateContent(prompt);
@@ -311,8 +314,18 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
     const characterRole = getCharacterRoleTitle(character);
     const roleStatus = character.is_victim ? 'The Victim' : (character.plot_role === 'killer' ? 'The Killer' : 'A Guest');
     const genderInstructions = isAdaptable 
-      ? "CRITICAL: This character is 'adaptable' (gender-neutral). You MUST use They/Them pronouns. Keep the bio completely gender-neutral. Provide TWO SETS of advice: one tailored for a male guest playing the role (presentation_male), and one for a female guest playing the role (presentation_female)."
-      : `CRITICAL: This character's gender is '${character.gender}'. Use appropriate pronouns and provide outfit/acting advice tailored to this gender.`;
+      ? "CRITICAL: This character is 'adaptable' (gender-neutral). You MUST use They/Them pronouns or dynamic tokens. Keep the bio completely gender-neutral. Provide TWO SETS of advice: one tailored for a male guest playing the role (presentation_male), and one for a female guest playing the role (presentation_female)."
+      : `CRITICAL: This character's default gender is '${character.gender}', but a guest of another gender may be cast into this role at party time. When referring to ANY character in the third person, ALWAYS use dynamic pronoun/relationship tokens (e.g., {{${characterRole}_he}}, {{${characterRole}_him}}, {{${characterRole}_his}}, {{${characterRole}_himself}}, {{${characterRole}_sibling}}, {{${characterRole}_spouse}}, {{${characterRole}_inlaw}}) instead of hardcoding 'he/she/him/her/his/brother/sister/husband/wife'.`;
+
+    const spiceTier = String(mystery?.spice_level || 'mild').toLowerCase();
+    const spiceInstruction =
+      spiceTier === 'clean'
+        ? "SPICE LEVEL: Clean (Safe For Work & Family). High-stakes murder & revenge motives are great, but include ZERO romantic love-affair/cheating roleplay and ZERO swearing/cussing."
+        : spiceTier === 'spicy'
+        ? "SPICE LEVEL: Spicy (18+ Scandal & Cussing). Juicy affairs, catfights, and cussing ('bitch', 'shit', 'asshole') are welcome."
+        : spiceTier === 'filthy'
+        ? "SPICE LEVEL: Filthy (18+ Unfiltered). Unfiltered after-dark drama, F-bombs, and wild chaos are welcome."
+        : "SPICE LEVEL: Mild (Romantic Drama, Clean PG-13 Dialogue). Romantic affairs, betrayal, and blackmail are welcome, but keep dialogue 100% clean with ZERO swearing/cussing, ZERO bitch slaps, and ZERO sex tapes.";
 
     const prompt = `
       You are an expert murder mystery party game designer writing a character dossier.
@@ -320,6 +333,7 @@ export async function generateCharacterProfileAIAction(mysteryId: string, charac
       Mystery Theme: ${mystery?.theme || 'General Mystery'}
       Character Role/Title: ${characterRole}
       Status: ${roleStatus}
+      ${spiceInstruction}
       
       ${genderInstructions}
       CRITICAL NAMING RULE: Do NOT invent any fake human first or last names! Address the player in second person ("You") or use the dynamic placeholder {{${characterRole}}}.

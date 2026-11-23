@@ -257,13 +257,20 @@ export function BrainstormWorksheetButton({
                             key={cp.value || 'blank'}
                             type="button"
                             onClick={() => setComplexity(cp.value)}
-                            className={`px-2 py-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+                            className={`px-2 py-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                               isSelected
                                 ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
                                 : 'border-slate-200 bg-slate-50 hover:border-slate-300 text-slate-700'
                             }`}
                           >
                             <span className="text-[10px] font-black leading-tight">{cp.label}</span>
+                            <span
+                              className={`text-[8px] mt-0.5 leading-tight ${
+                                isSelected ? 'text-white/80' : 'text-slate-400'
+                              }`}
+                            >
+                              {cp.sub}
+                            </span>
                           </button>
                         );
                       })}

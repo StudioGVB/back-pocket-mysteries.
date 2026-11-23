@@ -152,21 +152,27 @@ export async function generateRelationshipsAction(mysteryId: string, overwrite: 
         }
       });
   
+      const isCleanSfw = String(mystery?.spice_level || 'mild').toLowerCase() === 'clean';
+      const secretDynamicsRule = isCleanSfw
+        ? `3. **Safe For Work (CLEAN) Secret Dynamics**: Because this mystery is rated CLEAN (Safe For Work & Family), do NOT create any romantic affairs, "Secret Lovers", or cheating subplots between players (so co-workers or family members never have to roleplay an affair). Instead, inject high-stakes non-romantic drama: "Blackmailing", "Hidden Rivals", "Unpaid Debts", "Corporate Sabotage", "Inheritance Feud", "Professional Jealousy".`
+        : `3. **Secret Dynamics On Top**: On top of the logical foundations, inject juicy, dramatic, and secret dynamics to create conflict (e.g., "Secret Lovers", "Blackmailing", "Hidden Rivals", "Unpaid Debts", "Jealousy").`;
+
       const prompt = `
         You are an expert plot architect and relationship weaver for a murder mystery party game.
         Theme: ${mystery?.theme || 'General Mystery'}
+        Spice Level: ${mystery?.spice_level || 'mild'}
         
         I am providing a list of characters. You must return an array of compelling, dramatic relationships between them.
         
         CRITICAL RULES:
         1. **BE EXTREMELY METHODICAL**: Go character by character. For each character, evaluate their logical relationship to EVERY OTHER character based on their occupations, titles, and roles. 
         2. **Logical Foundation First**: Establish all obvious, expected connections first. If two characters logically work together, live together, or would interact based on their titles (e.g., "Captain" and "Ship's Doctor", or "Maid" and "Billionaire"), they MUST have a relationship line connecting them (e.g., "Coworkers", "Employer-Employee"). Do not ignore obvious professional or thematic ties.
-        3. **Secret Dynamics On Top**: On top of the logical foundations, inject juicy, dramatic, and secret "made up" dynamics to create conflict (e.g., "Secret Lovers", "Blackmailing", "Hidden Rivals", "Unpaid Debts", "Jealousy").
+        ${secretDynamicsRule}
         4. **Every ID is Sacred**: Use the EXACT character IDs provided. Do not invent or hallucinate IDs.
         5. **No Floaters**: EVERY single character in the list MUST be connected to at least one other character. Do not leave anyone isolated.
         ${!overwrite ? `6. **UPDATE MODE**: ONLY generate relationships that involve AT LEAST ONE character from the following list (who are currently missing relationships): ${charactersNeedingRelationships.map((c: any) => c.id).join(', ')}. Do not generate relationships between two characters who are NOT in this list.` : `6. **The Core Web**: Mandatory/Primary characters (is_mandatory: true) MUST be connected to at least 2 other characters to form a tight web. The VICTIM should be connected to almost everyone.`}
         7. **The Spokes (Crucial)**: If a character is NOT mandatory (e.g., is_mandatory = false), they act as a "dead-end spoke." They MUST ONLY connect to the Victim and/or ONE other major character. They MUST NOT have a wide web of connections. This ensures they can be removed from the game without breaking the plot.
-        8. **Naming Rule**: NEVER invent fake person names. In \`notes\`, refer to characters using their bracketed role title tokens (e.g., \`{{The Sister}}\`, \`{{The Ex}}\`).
+        8. **Naming & Gender-Flex Token Rule**: NEVER invent fake person names. In \`notes\`, refer to characters using their bracketed role title tokens (e.g., \`{{The Sister}}\`, \`{{The Ex}}\`) and dynamic pronoun/relationship tokens (\`{{The Sister_he}}\`, \`{{The Sister_him}}\`, \`{{The Sister_his}}\`, \`{{The Sister_sibling}}\`, \`{{The Sister_spouse}}\`).
         
         CHARACTERS JSON:
         ${JSON.stringify(castData, null, 2)}
@@ -306,9 +312,15 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
       }
     });
 
+    const isCleanSfw = String(mystery?.spice_level || 'mild').toLowerCase() === 'clean';
+    const motiveSpiceRule = isCleanSfw
+      ? "8. SAFE FOR WORK (CLEAN) MOTIVE RULE: Murder, revenge, greed, financial blackmail, sabotage, and fear of exposure are encouraged, but do NOT base motives on romantic love affairs or cheating spouses (safe for co-workers and family gatherings) and use 100% clean language (0 swearing)."
+      : "8. SPICE BOUNDARY: Keep motive notes aligned with the mystery's spice level (Clean/Mild = 0 cussing; Spicy/Filthy = unfiltered drama allowed).";
+
     const prompt = `
       You are writing murder motives for a mystery party game.
       Theme: ${mystery?.theme || 'General Mystery'}
+      Spice Level: ${mystery?.spice_level || 'mild'}
       Victim: {{${getCharacterRoleTitle(victim)}}}
 
       I am providing a list of characters and their relationship dynamics.
@@ -321,7 +333,8 @@ export async function generateMotivesAction(mysteryId: string, overwrite: boolea
       4. Use the Relationship Graph to inform the notes. If two people are "rivals", mention it in the notes.
       5. motive_type MUST be one of: 'revenge', 'greed', 'love', 'fear', 'justice', 'power'.
       6. Use EXACT IDs provided in the Characters JSON.
-      7. CRITICAL NAMING RULE: NEVER invent fake person names. Always refer to characters in \`notes\` using their bracketed role title tokens (e.g., \`{{The Sister}}\`, \`{{The Ex}}\`).
+      7. CRITICAL NAMING & GENDER-FLEX TOKEN RULE: NEVER invent fake person names. Always refer to characters in \`notes\` using their bracketed role title tokens (e.g., \`{{The Sister}}\`, \`{{The Ex}}\`) and dynamic third-person pronoun/relationship tokens (\`{{The Sister_he}}\`, \`{{The Sister_him}}\`, \`{{The Sister_his}}\`, \`{{The Sister_sibling}}\`, \`{{The Sister_spouse}}\`).
+      ${motiveSpiceRule}
       
       CHARACTERS JSON:
       ${JSON.stringify(castData, null, 2)}
