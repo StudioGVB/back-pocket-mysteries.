@@ -77,3 +77,15 @@ Whenever creating, editing, hydrating, or stress-testing any Mystery Base Pack, 
    - Before any Mystery Base Pack goes live, it must pass the **4-Pack Deep AI Critic & Multimodal Vision Stress-Test** (`/api/admin/mystery-qa-runner` & [`MysteryPreLaunchQaPanel.tsx`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/src/components/builder/MysteryPreLaunchQaPanel.tsx)) across `Test Pack #1 (3M/3F Real Friends)`, `Test Pack #2 (Diverse Traits, Glasses/Beards & Punctuation)`, `Test Pack #3 (Lookalike Suspects Visual Collision)`, and `Test Pack #4 (All-Female 6F Bachelorette Group)` with **0 token leaks**, **0 gender/pronoun conflicts**, **100% Round 3 killer solve rate**, and **synced AI-Calibrated Complexity & Spice tags**.
 <!-- END:mystery-architecture-and-qa-rules -->
 
+<!-- BEGIN:vercel-deploy-batching-rules -->
+# 30-Minute Vercel Deployment Batching & Quota Protection Rules
+
+1. **Batch Remote Pushes to Once Every 30 Minutes (`<= 48 deploys/day`):**
+   - Always commit code locally (`git add ... && git commit -m "..."`) and verify on `http://localhost:3033`.
+   - `.git/hooks/pre-push` enforces a **30-minute cooldown (1,800s)** between remote `git push origin main` calls so Vercel Hobby never hits the `100 deployments / 24h` (`api-deployments-free-per-day`) limit.
+   - If `.git/hooks/pre-push` reports that the 30-minute cooldown is active, do **not** bypass it unless the user explicitly asks to deploy live immediately (`FORCE_PUSH=1 git push origin main`).
+2. **Single Production Branch (`main` Only):**
+   - Never push to `v1-mvp-launch` (`git push origin main:v1-mvp-launch` is blocked by `.git/hooks/pre-push` and disabled in [`vercel.json`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/vercel.json)).
+<!-- END:vercel-deploy-batching-rules -->
+
+
