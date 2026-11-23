@@ -111,7 +111,8 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     mysteryId &&
     (mystery.title !== CHRISTMAS_NIGHTMARE_TITLE ||
       mystery.description !== CHRISTMAS_NIGHTMARE_DESCRIPTION ||
-      mystery.spice_level !== 'spicy' ||
+      mystery.spice_level !== 'mild' ||
+      mystery.complexity !== 'medium' ||
       needsImageUpgrade ||
       !hasCanonicalNames)
   ) {
@@ -125,7 +126,7 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         min_players: 6,
         max_players: 6,
         complexity: 'medium',
-        spice_level: 'spicy',
+        spice_level: 'mild',
         ...(needsImageUpgrade ? { image_url: canonicalChristmasImageUrl } : {}),
       })
       .eq('id', mysteryId)
@@ -139,7 +140,7 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
   mystery.min_players = 6;
   mystery.max_players = 6;
   mystery.complexity = 'medium';
-  mystery.spice_level = 'spicy';
+  mystery.spice_level = 'mild';
   if (needsImageUpgrade) {
     mystery.image_url = canonicalChristmasImageUrl;
   }

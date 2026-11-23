@@ -133,8 +133,13 @@ export function ensureRoleTitleHasThe(rawRole: string): string {
  * Returns the character's Role / Title (e.g. "The Star", "The Sister", "The Runner-Up").
  * Never returns a fake placeholder person name.
  */
-export function getCharacterRoleTitle(char: any): string {
+export function getBaseCharacterRoleTitle(char: any): string {
   if (!char) return 'The Suspect';
+  const orig = String(
+    char.originalRoleTitle || char.profile_data?.original_role_title || ''
+  ).trim();
+  if (orig) return ensureRoleTitleHasThe(orig);
+
   const parts = (char.name || '').split('|');
   const rawBase = (parts[0] || '').trim();
   const rawTitle = (parts[1] || '').trim();
@@ -148,6 +153,88 @@ export function getCharacterRoleTitle(char: any): string {
   }
 
   return char.is_victim ? 'The Victim' : 'The Suspect';
+}
+
+/**
+ * Bidirectionally adapts a gendered role title when a guest of a different gender is cast into the role.
+ * Preserves default role titles when the guest matches the role's default gender.
+ */
+export function adaptRoleTitleForGuestGender(
+  roleTitle: string,
+  guestGender?: string | null
+): string {
+  const cleanRole = (roleTitle || '').trim();
+  const g = String(guestGender || '').toLowerCase().trim();
+  const isFemale = g === 'female' || g === 'f' || g === 'woman';
+  const isMale = g === 'male' || g === 'm' || g === 'man';
+
+  if (isFemale) {
+    if (/^the husband$/i.test(cleanRole)) return 'The Host';
+    if (/^the brother-in-law$/i.test(cleanRole)) return 'The Sister-in-Law';
+    if (/^the brother$/i.test(cleanRole)) return 'The Sister';
+    if (/^the boyfriend$/i.test(cleanRole)) return 'The Girlfriend';
+  } else if (isMale) {
+    if (/^the wife$/i.test(cleanRole)) return 'The Spouse';
+    if (/^the sister-in-law$/i.test(cleanRole)) return 'The Brother-in-Law';
+    if (/^the sister$/i.test(cleanRole)) return 'The Brother';
+    if (/^the mistress$/i.test(cleanRole)) return 'The Secret Lover';
+    if (/^the girlfriend$/i.test(cleanRole)) return 'The Boyfriend';
+  }
+  return cleanRole;
+}
+
+/**
+ * Adapts a character's outfit description to match the assigned guest's gender
+ * so AI portrait & clue generation never dresses a male guest in a cocktail dress or vice versa.
+ */
+export function adaptOutfitForGuestGender(
+  outfit: string,
+  guestGender?: string | null
+): string {
+  if (!outfit) return '';
+  const g = String(guestGender || '').toLowerCase().trim();
+  const isFemale = g === 'female' || g === 'f' || g === 'woman';
+  const isMale = g === 'male' || g === 'm' || g === 'man';
+
+  let result = outfit;
+  if (isMale) {
+    result = result
+      .replace(
+        /\ban emerald green silk midi dress or velvet jumpsuit\b/gi,
+        'an emerald green velvet dinner jacket over a crisp dark dress shirt'
+      )
+      .replace(
+        /\ba shimmering silver sweater dress or satin blouse with tailored trousers\b/gi,
+        'a shimmering silver merino knit sweater layered over a charcoal dress shirt with tailored trousers'
+      )
+      .replace(
+        /\ba gold sequin or scarlet cocktail dress\b/gi,
+        'a tailored scarlet or gold-accented velvet evening jacket and dark dress trousers'
+      )
+      .replace(/\b(?:midi|cocktail|sweater|evening)\s+dress\b/gi, 'tailored evening jacket')
+      .replace(/\bsatin blouse\b/gi, 'satin dress shirt')
+      .replace(/\bstatement heels\b/gi, 'polished leather dress shoes')
+      .replace(/\band heels\b/gi, 'and polished dress shoes')
+      .replace(/\bdark berry lipstick\b/gi, 'sharp holiday grooming')
+      .replace(/\bbold holiday makeup\b/gi, 'sharp tailored holiday styling');
+  } else if (isFemale) {
+    if (/\b(?:blazer|turtleneck|sweater|trousers|chinos)\b/i.test(result) && !/\b(?:dress|gown|jumpsuit|blouse|feminine)\b/i.test(result)) {
+      result = `${result} (styled in a chic feminine evening silhouette)`;
+    }
+  }
+  return result;
+}
+
+export function getCharacterRoleTitle(char: any): string {
+  if (!char) return 'The Suspect';
+  const baseTitle = getBaseCharacterRoleTitle(char);
+  const profile = char.profile_data || {};
+  if (profile.keep_original_role_gender === true) {
+    return baseTitle;
+  }
+  const guestGender =
+    char?.assignedFriend?.gender || profile.gender || char?.gender || null;
+  return adaptRoleTitleForGuestGender(baseTitle, guestGender);
 }
 
 /**
@@ -228,7 +315,11 @@ export function getCharacterPronouns(char: any): {
   hes: string;
 } {
   const profile = char?.profile_data || {};
-  const rawGender = String(profile.gender || char?.gender || '').toLowerCase().trim();
+  const rawGender = String(
+    char?.assignedFriend?.gender || char?.gender || profile.gender || ''
+  )
+    .toLowerCase()
+    .trim();
   const isFemale =
     rawGender === 'female' ||
     rawGender === 'feminine' ||
@@ -421,7 +512,8 @@ function buildAiReplacementForCharacter(
   charToRefIdMap?: Map<string, number>
 ): string {
   const profile = char.profile_data || {};
-  const genderStr = char.gender || profile.gender || '';
+  const genderStr =
+    char?.assignedFriend?.gender || char.gender || profile.gender || '';
   const desc = getGuestPhysicalDescription(profile, genderStr);
 
   let outfit = profile.outfit_advice || '';
@@ -435,6 +527,7 @@ function buildAiReplacementForCharacter(
       outfit = pres.outfit_advice || '';
     }
   }
+  outfit = adaptOutfitForGuestGender(outfit, genderStr);
 
   let mergedDesc = desc;
   if (outfit) {
@@ -443,9 +536,11 @@ function buildAiReplacementForCharacter(
 
   const rawBase = (char.name || '').split('|')[0]?.trim();
   const roleTitle = getCharacterRoleTitle(char);
+  const baseRoleTitle = getBaseCharacterRoleTitle(char);
   const refId =
     (rawBase && charToRefIdMap?.get(rawBase)) ||
-    (roleTitle && charToRefIdMap?.get(roleTitle));
+    (roleTitle && charToRefIdMap?.get(roleTitle)) ||
+    (baseRoleTitle && charToRefIdMap?.get(baseRoleTitle));
 
   if (refId !== undefined) {
     return mergedDesc
@@ -481,6 +576,10 @@ export function hydrateTextWithCharacters(
       if (/_Him$/.test(token)) return 'Him';
       if (/_his$/.test(token)) return 'his';
       if (/_His$/.test(token)) return 'His';
+      if (/_sibling$/i.test(token)) return 'brother';
+      if (/_spouse$/i.test(token)) return 'husband';
+      if (/_inlaw$/i.test(token)) return 'brother-in-law';
+      if (/_himself$/i.test(token)) return 'himself';
       return token;
     });
   }
@@ -514,6 +613,7 @@ export function hydrateTextWithCharacters(
     const parts = (char.name || '').split('|');
     const rawBase = (parts[0] || '').trim();
     const roleTitle = getCharacterRoleTitle(char);
+    const baseRoleTitle = getBaseCharacterRoleTitle(char);
     const roleTitleWithoutThe = roleTitle.replace(/^The\s+/i, '').trim();
     const roleAlpha = roleTitleWithoutThe.match(/[A-Za-z]/);
     const roleInitial = roleAlpha ? roleAlpha[0].toUpperCase() : '?';
@@ -536,6 +636,14 @@ export function hydrateTextWithCharacters(
     }
     if (roleTitleWithoutThe && roleTitleWithoutThe.length > 2) {
       candidateKeys.add(roleTitleWithoutThe);
+    }
+    if (baseRoleTitle) {
+      candidateKeys.add(baseRoleTitle);
+      fullRoleTitlesForChar.add(baseRoleTitle);
+      const baseWithoutThe = baseRoleTitle.replace(/^the\s+/i, '').trim();
+      if (baseWithoutThe.length > 2) {
+        candidateKeys.add(baseWithoutThe);
+      }
     }
     if (rawBase) {
       candidateKeys.add(rawBase);
@@ -590,6 +698,8 @@ export function hydrateTextWithCharacters(
       tokenMap.set(`${lower}_hes`, pronouns.hes);
       tokenMap.set(`${lower}_sibling`, isFemaleChar ? 'sister' : 'brother');
       tokenMap.set(`${lower}_spouse`, isFemaleChar ? 'wife' : 'husband');
+      tokenMap.set(`${lower}_inlaw`, isFemaleChar ? 'sister-in-law' : 'brother-in-law');
+      tokenMap.set(`${lower}_himself`, isFemaleChar ? 'herself' : 'himself');
       handleMap.set(lower, toHandleSlug(displayName));
 
       // Register single-word or legacy placeholder names for unwrapped word-boundary replacement
@@ -691,19 +801,28 @@ export function hydrateTextWithCharacters(
     );
   }
 
-  // 2. Hydrate all explicit {{Token}} occurrences in a single pass
-  hydrated = hydrated.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (fullMatch, inner) => {
-    const cleanInner = String(inner).trim();
-    const lower = cleanInner.toLowerCase();
-    if (tokenMap.has(lower)) {
-      const val = tokenMap.get(lower)!;
-      if (/_(?:He|Him|His|Hes)$/.test(cleanInner) && val.length > 0) {
-        return val.charAt(0).toUpperCase() + val.slice(1);
+  // 2. Hydrate all explicit {{Token}} occurrences (up to 2 passes so nested tokens inside outfit_advice in 'ai' mode also resolve)
+  const resolveExplicitTokens = (input: string, usePlainNameForNested = false) =>
+    input.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (fullMatch, inner) => {
+      const cleanInner = String(inner).trim();
+      const lower = cleanInner.toLowerCase();
+      if (tokenMap.has(lower)) {
+        const val = tokenMap.get(lower)!;
+        if (/_(?:He|Him|His|Hes|Sibling|Spouse|Inlaw|Himself)$/.test(cleanInner) && val.length > 0) {
+          return val.charAt(0).toUpperCase() + val.slice(1);
+        }
+        if (usePlainNameForNested) {
+          return val.split(' (')[0] || val;
+        }
+        return val;
       }
-      return val;
-    }
-    return cleanInner;
-  });
+      return cleanInner;
+    });
+
+  hydrated = resolveExplicitTokens(hydrated, false);
+  if (hydrated.includes('{{')) {
+    hydrated = resolveExplicitTokens(hydrated, true);
+  }
 
   // 3. In 'print' or 'role' mode, also replace unwrapped aliases in a single pass
   if ((mode === 'print' || mode === 'role') && wordAliasMap.size > 0) {
@@ -782,7 +901,7 @@ export function tokenizeTextWithCharacterRoles(
   // Protect suffix tokens (e.g. {{The Ex_Initial}}, {{Dane_Initial}}, {{Gabby_his}}) before hydration
   const savedSuffixTokens: string[] = [];
   const protectedText = stripEmDashes(text).replace(
-    /\{\{\s*([^}]+?)(?:_|\s+)(Initial|he|him|his|hes)\s*\}\}/gi,
+    /\{\{\s*([^}]+?)(?:_|\s+)(Initial|he|him|his|hes|sibling|spouse|inlaw|himself)\s*\}\}/gi,
     (_, rawBase, suffix) => {
       const cleanBase = String(rawBase).trim();
       const canonicalRole = aliasToRole.get(cleanBase.toLowerCase()) || cleanBase;
@@ -798,9 +917,13 @@ export function tokenizeTextWithCharacterRoles(
   // 2. Wrap canonical Role Titles into {{Role Title}} tokens (longest role titles first)
   const roleMap = new Map<string, string>();
   charList.forEach((char) => {
-    const roleTitle = getCharacterRoleTitle(char);
+    const roleTitle = getBaseCharacterRoleTitle(char);
+    const adaptedTitle = getCharacterRoleTitle(char);
     if (roleTitle) {
       roleMap.set(roleTitle.toLowerCase(), roleTitle);
+    }
+    if (adaptedTitle) {
+      roleMap.set(adaptedTitle.toLowerCase(), roleTitle || adaptedTitle);
     }
   });
 
@@ -831,14 +954,20 @@ export function getCharacterCandidateKeys(char: any): string[] {
   const parts = (char.name || '').split('|');
   const rawBase = (parts[0] || '').trim();
   const roleTitle = getCharacterRoleTitle(char);
+  const baseRoleTitle = getBaseCharacterRoleTitle(char);
   const roleTitleWithoutThe = roleTitle.replace(/^The\s+/i, '').trim();
+  const baseRoleWithoutThe = baseRoleTitle.replace(/^The\s+/i, '').trim();
   const profile = char.profile_data || {};
   const guestName = String(profile.guest_name || profile.name || '').trim();
 
   const keys = new Set<string>();
   if (roleTitle) keys.add(roleTitle);
+  if (baseRoleTitle) keys.add(baseRoleTitle);
   if (roleTitleWithoutThe && roleTitleWithoutThe.length >= 3) {
     keys.add(roleTitleWithoutThe);
+  }
+  if (baseRoleWithoutThe && baseRoleWithoutThe.length >= 3) {
+    keys.add(baseRoleWithoutThe);
   }
   if (rawBase && rawBase.length >= 2) {
     keys.add(rawBase);

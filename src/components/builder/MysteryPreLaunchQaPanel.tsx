@@ -30,12 +30,13 @@ export function MysteryPreLaunchQaPanel({
     null
   );
   const [patchingFixId, setPatchingFixId] = useState<string | null>(null);
+  const [applyingCalibration, setApplyingCalibration] = useState<boolean>(false);
   const [mode, setMode] = useState<'smart' | 'full_visual'>('smart');
 
-  // Top-level Insights Tab ('pacing' | 'screentime' | 'timeline' | 'clues')
+  // Top-level Insights Tab ('checklist' | 'pacing' | 'screentime' | 'timeline' | 'clues')
   const [activeInsightTab, setActiveInsightTab] = useState<
-    'pacing' | 'screentime' | 'timeline' | 'clues'
-  >('pacing');
+    'checklist' | 'pacing' | 'screentime' | 'timeline' | 'clues'
+  >('checklist');
 
   // 4-Pack Filter & Selected Pack Inspector
   const [versionFilter, setVersionFilter] = useState<'all' | 'flagged' | 'canary'>('all');
@@ -242,6 +243,32 @@ export function MysteryPreLaunchQaPanel({
       setErrorMsg(err?.message || 'Failed to undo fix');
     } finally {
       setPatchingFixId(null);
+    }
+  };
+
+  const handleApplyCatalogCalibration = async () => {
+    if (applyingCalibration || isRunningBatch) return;
+    setApplyingCalibration(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch('/api/admin/mystery-qa-runner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mysteryId,
+          action: 'apply_catalog_calibration',
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.suite) {
+        throw new Error(json?.error || 'Failed to apply store calibration');
+      }
+      setSuite(json.suite);
+      notifyCertification(json.suite);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to apply store calibration');
+    } finally {
+      setApplyingCalibration(false);
     }
   };
 
@@ -652,6 +679,194 @@ export function MysteryPreLaunchQaPanel({
             )}
 
             {/* =====================================================================
+                2B. AI STORE CALIBRATION: SUGGESTED COMPLEXITY LEVEL & SPICE LEVEL
+            ====================================================================== */}
+            {review?.catalogCalibration && (
+              <div className="rounded-3xl bg-slate-900 text-white border-2 border-indigo-500/40 p-5 shadow-lg space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-[10px] font-black uppercase tracking-widest">
+                        🎯 AI Store Catalog Calibrator • Complexity &amp; Spice Rating
+                      </span>
+                      {review.catalogCalibration.appliedToMysteryDb && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
+                          ✓ Synced with Mystery DB
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black uppercase mt-1">
+                      Recommended Store Tags &amp; Audience Fit for &ldquo;{mysteryTitle}&rdquo;
+                    </h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={applyingCalibration || isRunningBatch}
+                    onClick={handleApplyCatalogCalibration}
+                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
+                      review.catalogCalibration.appliedToMysteryDb
+                        ? 'bg-slate-800 text-emerald-300 border border-emerald-500/40 hover:bg-slate-700'
+                        : 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md'
+                    }`}
+                  >
+                    {applyingCalibration
+                      ? 'Saving to Mystery DB…'
+                      : review.catalogCalibration.appliedToMysteryDb
+                      ? `✓ Store Tags Set (${review.catalogCalibration.suggestedComplexity.toUpperCase()} • ${review.catalogCalibration.suggestedSpiceLevel.toUpperCase()})`
+                      : `✨ Apply Suggested Complexity (${review.catalogCalibration.suggestedComplexity.toUpperCase()}) & Spice (${review.catalogCalibration.suggestedSpiceLevel.toUpperCase()}) to Mystery`}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Complexity Level Card */}
+                  <div className="rounded-2xl bg-slate-950 border border-slate-800 p-4 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">
+                        🧩 Suggested Complexity Level
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 text-xs font-black uppercase">
+                        {review.catalogCalibration.suggestedComplexity.toUpperCase()} ({review.catalogCalibration.complexityScoreOutOf10} / 10)
+                      </span>
+                    </div>
+
+                    <div className="text-sm font-black text-white">
+                      {review.catalogCalibration.complexityLabel}
+                    </div>
+
+                    <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-indigo-500"
+                        style={{
+                          width: `${Math.round(
+                            review.catalogCalibration.complexityScoreOutOf10 * 10
+                          )}%`,
+                        }}
+                      />
+                    </div>
+
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {review.catalogCalibration.complexityRationale}
+                    </p>
+
+                    <div className="grid grid-cols-4 gap-2 pt-1 text-center text-[11px]">
+                      <div className="rounded-lg bg-slate-900 border border-slate-800 py-1.5 px-2">
+                        <span className="text-[9px] text-slate-400 block uppercase">
+                          Accomplices
+                        </span>
+                        <strong className="text-indigo-300">
+                          {review.catalogCalibration.complexityMetrics.assistantCount ?? 0}{' '}
+                          {(review.catalogCalibration.complexityMetrics.assistantCount ?? 0) === 1
+                            ? 'Assistant'
+                            : 'Assistants'}
+                        </strong>
+                      </div>
+                      <div className="rounded-lg bg-slate-900 border border-slate-800 py-1.5 px-2">
+                        <span className="text-[9px] text-slate-400 block uppercase">
+                          Decoy Subplots
+                        </span>
+                        <strong className="text-white">
+                          {review.catalogCalibration.complexityMetrics.redHerringSubplotsCount} Arcs
+                        </strong>
+                      </div>
+                      <div className="rounded-lg bg-slate-900 border border-slate-800 py-1.5 px-2">
+                        <span className="text-[9px] text-slate-400 block uppercase">
+                          Timestamps
+                        </span>
+                        <strong className="text-white">
+                          {review.catalogCalibration.complexityMetrics.distinctTimestampsCount ?? 0} Windows
+                        </strong>
+                      </div>
+                      <div className="rounded-lg bg-slate-900 border border-slate-800 py-1.5 px-2">
+                        <span className="text-[9px] text-slate-400 block uppercase">
+                          Total Clues
+                        </span>
+                        <strong className="text-emerald-300">
+                          {review.catalogCalibration.complexityMetrics.totalClues} Clues
+                        </strong>
+                      </div>
+                    </div>
+
+                    {Array.isArray(review.catalogCalibration.complexityTriggersDetected) &&
+                      review.catalogCalibration.complexityTriggersDetected.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {review.catalogCalibration.complexityTriggersDetected.map(
+                            (trig, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300"
+                              >
+                                • {trig}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      )}
+                  </div>
+
+                  {/* Spice Level Card */}
+                  <div className="rounded-2xl bg-slate-950 border border-slate-800 p-4 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-rose-300">
+                        🌶️ Suggested Spice Level
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-lg bg-rose-500/20 border border-rose-400/40 text-rose-200 text-xs font-black uppercase">
+                        {review.catalogCalibration.suggestedSpiceLevel.toUpperCase()} ({review.catalogCalibration.spiceScoreOutOf10} / 10)
+                      </span>
+                    </div>
+
+                    <div className="text-sm font-black text-white">
+                      {review.catalogCalibration.spiceLabel}
+                    </div>
+
+                    <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-rose-500"
+                        style={{
+                          width: `${Math.round(
+                            review.catalogCalibration.spiceScoreOutOf10 * 10
+                          )}%`,
+                        }}
+                      />
+                    </div>
+
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {review.catalogCalibration.spiceRationale}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {review.catalogCalibration.spiceTriggersDetected.map(
+                        (trig, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300"
+                          >
+                            • {trig}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ideal Group Fit Strip */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    👥 Verified Group Compatibility:
+                  </span>
+                  {review.catalogCalibration.idealGroupBadges.map((badge, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase"
+                    >
+                      ✓ {badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* =====================================================================
                 3. EXECUTIVE STABILITY REVIEW & DEEP STORY AUDITS (ABOVE THE FOLD)
             ====================================================================== */}
             {review && (
@@ -666,24 +881,28 @@ export function MysteryPreLaunchQaPanel({
                     </h3>
                   </div>
 
-                  {/* 4-Tab Switcher for Deep Audits */}
+                  {/* 5-Tab Switcher for Deep Audits */}
                   <div className="inline-flex flex-wrap rounded-xl bg-slate-200/80 p-1 gap-1">
                     {[
                       {
+                        id: 'checklist' as const,
+                        label: `✅ 1. 7-Box Checklist & What To Change`,
+                      },
+                      {
                         id: 'pacing' as const,
-                        label: '📈 1. Pacing & Solve Curve',
+                        label: '📈 2. Pacing & Solve Curve',
                       },
                       {
                         id: 'screentime' as const,
-                        label: `⚖️ 2. Guest Screen-Time (${review.characterExposure.length} Roles)`,
+                        label: `⚖️ 3. Guest Screen-Time (${review.characterExposure.length} Roles)`,
                       },
                       {
                         id: 'timeline' as const,
-                        label: `🕰️ 3. Timeline Audit (${review.timelineAudit.contradictionsCount} Conflicts)`,
+                        label: `🕰️ 4. Timeline Audit (${review.timelineAudit.contradictionsCount} Conflicts)`,
                       },
                       {
                         id: 'clues' as const,
-                        label: `🔎 4. All ${review.clueDiagnostics.length} Clues Signal`,
+                        label: `🔎 5. All ${review.clueDiagnostics.length} Clues Signal`,
                       },
                     ].map((tab) => (
                       <button
@@ -701,6 +920,98 @@ export function MysteryPreLaunchQaPanel({
                     ))}
                   </div>
                 </div>
+
+                {/* TAB 0: 7-BOX PRE-LAUNCH CERTIFICATION CHECKLIST & WHAT WE SHOULD CHANGE */}
+                {activeInsightTab === 'checklist' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <div className="lg:col-span-7 space-y-2.5">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        ☑️ 7-Point Pre-Launch Quality Gate (Every Box Must Pass Before Live)
+                      </div>
+                      {(review.preLaunchChecklist || []).map((box) => (
+                        <div
+                          key={box.id}
+                          className={`rounded-xl p-3.5 border text-xs space-y-1 ${
+                            box.passed
+                              ? 'bg-white border-emerald-200'
+                              : 'bg-amber-50 border-amber-300'
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2 py-0.5 rounded font-black text-[10px] uppercase ${
+                                  box.passed
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-amber-500 text-slate-950'
+                                }`}
+                              >
+                                {box.passed ? `✓ Box #${box.boxNumber}` : `⚠️ Box #${box.boxNumber}`}
+                              </span>
+                              <span className="font-black text-slate-900">
+                                {box.title}
+                              </span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-[10px]">
+                              {box.metricBadge} ({box.scorePct}%)
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 leading-relaxed">
+                            {box.summary}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="lg:col-span-5 space-y-2.5">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        🛠️ What You Should Change / Actionable Recommendations
+                      </div>
+                      {(review.actionableRecommendations || []).map((rec) => (
+                        <div
+                          key={rec.id}
+                          className={`rounded-xl p-3.5 border text-xs space-y-1.5 ${
+                            rec.priority === 'must_fix'
+                              ? 'bg-rose-50 border-rose-300'
+                              : rec.priority === 'recommended'
+                              ? 'bg-amber-50/70 border-amber-300'
+                              : 'bg-emerald-50/60 border-emerald-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                                rec.priority === 'must_fix'
+                                  ? 'bg-rose-600 text-white'
+                                  : rec.priority === 'recommended'
+                                  ? 'bg-amber-500 text-slate-950'
+                                  : 'bg-emerald-600 text-white'
+                              }`}
+                            >
+                              {rec.priority === 'must_fix'
+                                ? '🛑 Must Fix'
+                                : rec.priority === 'recommended'
+                                ? '💡 Recommended'
+                                : '✓ Verified Ready'}
+                            </span>
+                            <span className="text-[9px] font-bold uppercase text-slate-400">
+                              {rec.category.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <div className="font-black text-slate-900">
+                            {rec.title}
+                          </div>
+                          <p className="text-[11px] text-slate-600 leading-relaxed">
+                            {rec.detail}
+                          </p>
+                          <div className="text-[11px] font-bold text-indigo-800 pt-0.5">
+                            👉 Action: {rec.suggestedAction}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* TAB 1: PACING, SOLVE CURVE & 4 PILLARS */}
                 {activeInsightTab === 'pacing' && (

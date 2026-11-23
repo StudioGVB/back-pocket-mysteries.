@@ -15,7 +15,12 @@ import {
 } from '@/utils/hydration';
 import { getStaticMockGuests } from '@/utils/mock-guests';
 import { inferClueFormat } from '@/utils/clue-format';
-import { getCachedMysterySnapshot, cacheMysterySnapshot } from '@/lib/live-session-store';
+import {
+  getCachedMysterySnapshot,
+  cacheMysterySnapshot,
+  updateMysteryGenerationInStore,
+} from '@/lib/live-session-store';
+import { generateAudioClueAction } from '@/app/actions/audio-generator';
 import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -601,7 +606,8 @@ export async function ensureStandardCharacterPhoto(
   char: any,
   mystery: any,
   supabase: any,
-  forceRegenerate = false
+  forceRegenerate = false,
+  qaCorrectionDirective?: string
 ): Promise<{
   photoUrl: string | null;
   identityHash: string;
@@ -666,7 +672,7 @@ export async function ensureStandardCharacterPhoto(
 
   const bioSnippet = profile.act_summary || profile.bio || '';
 
-  const standardPortraitPrompt = `Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (waist-up 3/4 studio character portrait) that will serve as the master visual identity reference for this character across all crime scene photos.
+  let standardPortraitPrompt = `Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (waist-up 3/4 studio character portrait) that will serve as the master visual identity reference for this character across all crime scene photos.
 
 CHARACTER ROLE: "${roleTitle}" (played by ${guestName}) in ${mysteryTheme}.
 ${bioSnippet ? `CHARACTER VIBE / PERSONA: ${bioSnippet}` : ''}
@@ -684,6 +690,10 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
 - Atmospheric softly lit studio backdrop with subtle ${mystery?.theme || 'cinematic'} tones so the character's face and costume details are crystal clear.
 - Shot on 85mm prime lens, f/2.8, photorealistic natural skin texture, 8k resolution.
 - CRITICAL: Absolutely NO text, NO labels, NO character sheets, NO multiple panels, NO borders, NO illustrations, NO 3D CGI.`;
+
+  if (qaCorrectionDirective && qaCorrectionDirective.trim()) {
+    standardPortraitPrompt += `\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${qaCorrectionDirective.trim()}`;
+  }
 
   console.log(`[STAGE 1: STANDARD CHAR PHOTO] Generating canonical reference photo for ${guestName} (${roleTitle})...`);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
@@ -773,7 +783,8 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
 
   // Upload to Supabase Storage (`character-images` bucket)
   const fileBuffer = Buffer.from(base64Image, 'base64');
-  const shortFileName = `${char.id}-${identityHash.slice(0, 12)}.jpg`;
+  const qaSuffix = qaCorrectionDirective ? `-${Date.now().toString(36)}` : '';
+  const shortFileName = `${char.id}-${identityHash.slice(0, 12)}${qaSuffix}.jpg`;
   const fileName = `standard-characters/${mystery?.id || 'global'}/${shortFileName}`;
   let finalPhotoUrl = `data:image/jpeg;base64,${base64Image}`;
 

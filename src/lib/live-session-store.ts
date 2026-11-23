@@ -47,6 +47,7 @@ export interface StoredGameSession {
   customerEmail?: string;
   customerName?: string;
   readyEmailSent?: boolean;
+  qaReport?: any;
   updatedAt: string;
 }
 
@@ -253,6 +254,7 @@ export function saveStoredGameSession(
     customerEmail: session.customerEmail ?? existing?.customerEmail,
     customerName: session.customerName ?? existing?.customerName,
     readyEmailSent: session.readyEmailSent ?? existing?.readyEmailSent,
+    qaReport: session.qaReport ?? existing?.qaReport,
     mysteryId,
     updatedAt: new Date().toISOString(),
   };
@@ -316,6 +318,7 @@ export function markMysteryPaidInStore(
     customerEmail: options?.customerEmail || existing?.customerEmail,
     customerName: options?.customerName || existing?.customerName,
     readyEmailSent: false,
+    qaReport: existing?.qaReport,
     updatedAt: nowIso,
   };
   writeSessionsFile(store);
@@ -335,13 +338,32 @@ export function updateMysteryGenerationInStore(
       | 'customerEmail'
       | 'customerName'
       | 'readyEmailSent'
+      | 'qaReport'
     >
   >
 ): StoredGameSession | null {
   if (!mysteryId) return null;
   const store = readSessionsFile();
   const existing = store.sessions[mysteryId];
-  if (!existing) return null;
+  if (!existing) {
+    if (updates.qaReport) {
+      store.sessions[mysteryId] = {
+        mysteryId,
+        pin: '482910',
+        currentRound: 0,
+        activeCharacterIds: [],
+        submissions: [],
+        sharedTheoryRounds: [],
+        revealMode: 'hidden',
+        reviews: [],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      writeSessionsFile(store);
+      return store.sessions[mysteryId];
+    }
+    return null;
+  }
   store.sessions[mysteryId] = {
     ...existing,
     ...updates,

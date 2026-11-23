@@ -77,19 +77,19 @@ export async function generateSubplotAction(mysteryId: string, characterId: stri
     let spiceLevelRule = "";
     switch(mystery.spice_level) {
       case 'clean':
-        spiceLevelRule = "SPICE LEVEL: Clean (PG). Tone is wholesome and family-friendly. Motives MUST be non-romantic. NO drugs, NO alcohol.";
+        spiceLevelRule = "SPICE LEVEL: Clean (Safe For Work & Family). Still a full high-stakes adult murder mystery with death, revenge, blackmail, greed, sabotage, or poison, ONLY with 100% clean dialogue (ZERO swearing/cussing) and ZERO romantic love-affair/cheating roleplay between players (safe for office co-workers and family gatherings).";
         break;
       case 'mild':
-        spiceLevelRule = "SPICE LEVEL: Mild (MA 15+). Tone is passionate. Mentions of drugs/alcohol are fine. Light sexual references okay, nothing graphic.";
+        spiceLevelRule = "SPICE LEVEL: Mild (Romantic Drama, Clean PG-13 Dialogue). Can include juicy romantic affairs, cheating spouses, secret lovers, blackmail, and spiked drinks, while keeping the dialogue 100% clean and straightforward (NO swearing/cussing, NO bitch slaps/catfights, NO sex tapes).";
         break;
       case 'spicy':
-        spiceLevelRule = "SPICE LEVEL: Spicy (R 18+). Tone is intense passion, scandalous. Heavy use of drugs/alcohol. Explicit adult themes.";
+        spiceLevelRule = "SPICE LEVEL: Spicy (18+ Scandal & Cussing). Dialogue and clues feature cussing/swearing (e.g. 'bitch', 'shit', 'asshole'), physical party drama (bitch slaps, catfights, throwing drinks), and scandalous secrets (sex tapes, leaked texts, sugar daddies).";
         break;
       case 'filthy':
-        spiceLevelRule = "SPICE LEVEL: Filthy (NC-17). Tone is completely over-the-top, unhinged, wild. Take it as far as safety filters allow. Wildly dramatic and OTT.";
+        spiceLevelRule = "SPICE LEVEL: Filthy (Unfiltered 18+ After-Dark). Tone is completely over-the-top, unhinged, wild. Heavy F-bombs, explicit adult kinks/strippers/orgies, and hard-partying chaos.";
         break;
       default:
-        spiceLevelRule = "SPICE LEVEL: Clean (PG). Keep it wholesome.";
+        spiceLevelRule = "SPICE LEVEL: Clean (Safe For Work & Family). High-stakes murder & revenge motives with 100% clean dialogue and no romantic affair roleplay.";
     }
 
     let assistantRule = "";

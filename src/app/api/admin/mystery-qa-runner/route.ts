@@ -111,6 +111,19 @@ export async function GET(req: NextRequest) {
         existing.performanceReview = buildPerformanceReviewFromRuns(mystery, existing.runs);
         saveMysteryQaSuite(existing);
       }
+    } else if (
+      existing.runs?.length > 0 &&
+      (!existing.performanceReview?.preLaunchChecklist ||
+        !existing.performanceReview?.catalogCalibration)
+    ) {
+      const mystery = await getMysteryById(mysteryId);
+      if (mystery) {
+        existing.performanceReview = buildPerformanceReviewFromRuns(
+          mystery,
+          existing.runs
+        );
+        saveMysteryQaSuite(existing);
+      }
     }
 
     return NextResponse.json({ suite: existing });
@@ -510,6 +523,54 @@ export async function POST(req: NextRequest) {
         runNumber: targetRun.runNumber,
         castAssignments: targetRun.castAssignments,
       });
+    }
+
+    // ACTION 5: Apply AI-Suggested Complexity Level & Spice Level to Mystery DB + Cache
+    if (action === 'apply_catalog_calibration') {
+      const currentReview =
+        suite.performanceReview ||
+        buildPerformanceReviewFromRuns(mystery, suite.runs);
+      const nextComplexity =
+        body?.complexity ||
+        currentReview.catalogCalibration?.suggestedComplexity ||
+        'medium';
+      const nextSpiceLevel =
+        body?.spiceLevel ||
+        currentReview.catalogCalibration?.suggestedSpiceLevel ||
+        'spicy';
+
+      try {
+        const supabase = await createClient();
+        await supabase
+          .from('mysteries')
+          .update({
+            complexity: nextComplexity,
+            spice_level: nextSpiceLevel,
+          })
+          .eq('id', mysteryId);
+      } catch {
+        // fallback to cache
+      }
+
+      try {
+        const cached = getCachedMysterySnapshot(mysteryId);
+        if (cached) {
+          cached.complexity = nextComplexity;
+          cached.spice_level = nextSpiceLevel;
+          cacheMysterySnapshot(mysteryId, cached);
+        }
+      } catch {
+        // ignore
+      }
+
+      mystery.complexity = nextComplexity;
+      mystery.spice_level = nextSpiceLevel;
+      suite.performanceReview = buildPerformanceReviewFromRuns(mystery, suite.runs);
+      if (suite.performanceReview?.catalogCalibration) {
+        suite.performanceReview.catalogCalibration.appliedToMysteryDb = true;
+      }
+      saveMysteryQaSuite(suite);
+      return NextResponse.json({ suite });
     }
 
     return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });

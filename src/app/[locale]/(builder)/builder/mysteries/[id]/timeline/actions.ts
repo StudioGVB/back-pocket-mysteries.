@@ -103,19 +103,19 @@ export async function generateNarrativePlotAction(mysteryId: string, userIdeas: 
     let spiceLevelRule = "";
     switch(mystery.spice_level) {
       case 'clean':
-        spiceLevelRule = "SPICE LEVEL: Clean (PG). Tone is wholesome and family-friendly. Relationships are co-workers, family, or platonic. Motives MUST be non-romantic (e.g. greed, professional jealousy). NO drugs, NO alcohol used as weapons. No gruesome details.";
+        spiceLevelRule = "SPICE LEVEL: Clean (Safe For Work & Family). Still a full high-stakes adult murder mystery with death, revenge, blackmail, greed, sabotage, or poison, ONLY with 100% clean dialogue (ZERO swearing/cussing) and ZERO romantic love-affair/cheating roleplay between players (safe for office co-workers and family gatherings).";
         break;
       case 'mild':
-        spiceLevelRule = "SPICE LEVEL: Mild (MA 15+). Tone is a bit cheeky, passionate. Relationships involve casual friend groups, flirtations, minor affairs. Motives can involve minor betrayals or covering up scandalous secrets. Mentions of drugs/alcohol are fine. Light sexual references okay, nothing graphic.";
+        spiceLevelRule = "SPICE LEVEL: Mild (Romantic Drama, Clean PG-13 Dialogue). Relationships and motives can involve secret affairs, cheating spouses, jealous exes, blackmail, and spiked drinks, while keeping the dialogue 100% clean and straightforward (NO swearing/cussing, NO bitch slaps/catfights, NO sex tapes).";
         break;
       case 'spicy':
-        spiceLevelRule = "SPICE LEVEL: Spicy (R 18+). Tone is intense passion, scandalous, mature. Relationships involve multiple affairs, toxic romances, blackmail over dirty secrets. Motives are lust, sexual jealousy, crimes of passion. Heavy use of drugs/alcohol. Explicit adult themes.";
+        spiceLevelRule = "SPICE LEVEL: Spicy (18+ Scandal & Cussing). Tone is intense, scandalous, and unfiltered. Dialogue and clues feature cussing/swearing (e.g. 'bitch', 'shit', 'asshole'), physical party drama (bitch slaps, catfights, throwing drinks), and scandalous secrets (sex tapes, leaked nudes, sugar daddies).";
         break;
       case 'filthy':
-        spiceLevelRule = "SPICE LEVEL: Filthy (NC-17). Tone is completely over-the-top, unhinged, wild, chaotic. Relationships involve threesomes, wild swinging, completely broken moral compasses. Motives are extreme depravity, drug-fueled paranoia, extreme sabotage. Take it as far as safety filters allow. Wildly dramatic and OTT.";
+        spiceLevelRule = "SPICE LEVEL: Filthy (Unfiltered 18+ After-Dark). Tone is completely over-the-top, unhinged, wild, chaotic. Heavy F-bombs, explicit sexual kinks/orgies/strippers, and hard-partying chaos.";
         break;
       default:
-        spiceLevelRule = "SPICE LEVEL: Clean (PG). Keep it wholesome.";
+        spiceLevelRule = "SPICE LEVEL: Clean (Safe For Work & Family). High-stakes murder & revenge motives with 100% clean dialogue and no romantic affair roleplay.";
     }
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;

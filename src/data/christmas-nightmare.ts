@@ -490,7 +490,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     internal_notes: '[FORMAT:audio] [CODE:R1-C2] Fake Arc Step 1 ({{The Wife}} + {{The Co-Worker}}) - Exposes that exes {{The Wife}} and {{The Co-Worker}} conspired to break into {{The Husband}}\'s study safe at 8:00 PM.',
     description:
       'Recording Duration: 22.4 Seconds (7:25 PM • Kitchen Patio):\n{{The Co-Worker}}: "{{The Husband_He}} brought the company audit folder to the house tonight. If {{The Husband_he}} hands that over on Monday, my career is finished."\n{{The Wife}}: "And if I try to leave {{The Husband_him}}, {{The Husband_his}} new prenup clause leaves me with nothing. We grew up on this street together, you promised you\'d protect me."\n{{The Co-Worker}}: "I will. Meet me by the hallway closet at 8PM. We get into {{The Husband_his}} study safe tonight."',
-    generation_prompt: 'A cinematic photograph of {{The Wife}} and {{The Co-Worker}} whispering together outside a glass patio door under warm holiday string lights. Raw unedited photograph, no evidence markers, no text.',
+    generation_prompt: 'A cinematic photograph of {{The Wife}} and {{The Co-Worker}} leaning in closely together outside a glass patio door under warm holiday string lights. Raw unedited photograph, no evidence markers, no text.',
   },
   {
     legacyId: '5ff23ebe-96f7-49d5-8222-84ca13a932f4',
@@ -534,7 +534,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R1-C5] Fake Arc Step 1 ({{The Mistress}} + {{The Bestie}}) - Exposes that co-workers {{The Mistress}} and {{The Bestie}} were both threatened by {{The Husband}} and plotted to wipe his phone.',
     description:
-      '🤫💼 (7:35 PM): {{The Husband_He}} just cornered me in the kitchen. Said {{The Husband_hes}} never leaving her, and if I make a scene tonight {{The Husband_hes}} telling my {{The Co-Worker_spouse}} AND reporting the missing money from our shared office department account.\nMe (7:36 PM): Are you kidding?! {{The Husband_He}} just threatened me too. Said if I don\'t end my secret fling tonight, {{The Husband_hes}} telling my older {{The Co-Worker_sibling}} everything.\n🤫💼 (7:37 PM): Everything {{The Husband_he}} has on us is on {{The Husband_his}} phone. Help me get it unlocked before dessert or we\'re both done.',
+      '🤫💼 (7:35 PM): {{The Husband_He}} just cornered me in the kitchen. Said {{The Husband_hes}} never leaving her, and if I make a scene tonight {{The Husband_hes}} telling my {{The Co-Worker_spouse}} AND reporting the missing money from our shared office department account.\nMe (7:36 PM): Are you kidding?! {{The Husband_He}} just threatened me too—and {{The Husband_hes}} supposed to be my best friend! Said if I don\'t end my secret fling tonight, {{The Husband_hes}} telling my older {{The Co-Worker_sibling}} everything.\n🤫💼 (7:37 PM): Everything {{The Husband_he}} has on us is on {{The Husband_his}} phone. Help me get it unlocked before dessert or we\'re both done.',
     generation_prompt: 'Two smartphones lying side by side on a marble bar counter next to cocktail napkins. (No text).',
   },
   {
@@ -567,7 +567,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111105-1bc1e4116176.jpg',
     internal_notes: '[FORMAT:physical_prop] [CODE:R2-C1] Fake Arc Step 2 ({{The Wife}} + {{The Co-Worker}}) - Visual photo showing {{The Wife}} and {{The Co-Worker}} beside the open upstairs study safe with the tan leather work gloves.',
     description: '',
-    generation_prompt: 'A dramatic low-light photograph inside a dark wood-paneled upstairs study showing {{The Co-Worker}} wearing tan insulated leather work gloves beside an open wall safe while {{The Wife}} stands beside the mahogany desk looking toward the doorway. (No text).',
+    generation_prompt: 'A dramatic low-light photograph inside a dark wood-paneled upstairs study showing {{The Co-Worker}} with tan insulated leather work gloves beside an open wall safe while {{The Wife}} stands beside the mahogany desk looking toward the doorway. (No text).',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111101',
@@ -615,7 +615,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     internal_notes: '[FORMAT:medical_rx] [CODE:R2-C4] Fake Arc Step 2 ({{The Mistress}} + {{The Bestie}}) - Visual bar photo + Rx label showing the two co-workers spiking the eggnog cup with fast-acting sleeping drops.',
     description:
       'Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)\nPrescribed to: [Torn] ... Co. Group Plan #B-04\nIssue date: Dec 18 (Found 8:08 PM • Kitchen Bar)\nRef: RX-409-12\nWARNING: 5 drops in warm/spiced alcohol induces 20-minute sleep onset (Sub-lethal dose).',
-    generation_prompt: 'A candid kitchen bar photograph showing {{The Mistress}} and {{The Bestie}} leaning closely over a marble bar counter holding a small amber glass dropper bottle above a crystal cup of spiced eggnog. (No text).',
+    generation_prompt: 'A candid kitchen bar photograph showing {{The Mistress}} and {{The Bestie}} leaning closely over a marble bar counter holding a small glass dropper bottle above a crystal cup of spiced eggnog. (No text).',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111103',
@@ -629,7 +629,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R2-C5] REAL / CANON (Beat 4) - Proves {{The Sister-in-Law}} left {{The Bestie}} alone in the pantry from 8:15 to 8:25 PM and asked him to lie for her alibi.',
     description:
-      'Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\nMe (8:27 PM): Of course I\'ll cover for you—if my older {{The Co-Worker_sibling}} or your older sister found out about us we\'d both be dead. Wait, why are your hands shaking?',
+      'Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\nMe (8:27 PM): Of course I\'ll cover for you—if my older {{The Co-Worker_sibling}} or your sister found out I was hooking up with the hostess\'s little sister, we\'d both be dead. Wait, why are your hands shaking?',
     generation_prompt: 'Two champagne flutes left behind on a marble pantry counter beside holiday ribbon and pine cones. (No text).',
   },
   {
@@ -661,10 +661,10 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 5,
     format: 'document',
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111109-6c6f2b97ac73.jpg',
-    internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19:12 PM (not the sedative drops or work gloves), and shows the broken "...ever Sisters" snowflake hairpin snagged inside the knotted light cord.',
+    internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19:12 PM (not the sedative drops or work gloves), and shows the "...ever Sisters" silver snowflake hairpin snagged inside the knotted light cord.',
     description:
-      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: DEATH AT 8:19:12 PM • 1ST FLOOR TREE CORNER\n• Cause of Death: 25-ft vintage Christmas light cord (Wall Outlet #1).\n• Toxicology: Zolpidem 0.04 mg/L (mild sedation only; non-fatal).\n• Cord Trace: Broken silver snowflake hairpin clasp ("...ever Sisters") snagged inside wire knot.',
-    generation_prompt: 'A macro forensic close-up photograph on a dark hardwood floor beside a Christmas tree showing a tangled, knotted cord of glowing red and green vintage Christmas tree lights with a broken metallic sterling silver snowflake hairpin (showing its snapped silver metal bobby-pin clasp) snagged right in the middle of the knotted wire. Raw unedited photo, NO text.',
+      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: DEATH AT 8:19:12 PM • 1ST FLOOR TREE CORNER\n• Cause of Death: 25-ft vintage Christmas light cord (Wall Outlet #1).\n• Toxicology: Zolpidem 0.04 mg/L (mild sedation only; non-fatal).\n• Cord Trace: Sterling silver snowflake hairpin ("...ever Sisters") snagged inside wire knot.',
+    generation_prompt: 'A macro forensic close-up photograph on a dark hardwood floor beside a Christmas tree showing a tangled, knotted cord of glowing red and green vintage Christmas tree lights with a metallic sterling silver snowflake hairpin snagged right in the middle of the knotted wire. Raw unedited photo, NO text.',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111107',

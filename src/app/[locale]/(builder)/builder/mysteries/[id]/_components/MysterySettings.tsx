@@ -145,21 +145,30 @@ export function MysterySettings({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Story Complexity (Independent of Price)
+            Story Complexity (Conspiracy & Alibi Depth)
           </label>
           <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-            {['easy', 'medium', 'hard'].map((level) => (
-              <label key={level} className="flex-1 cursor-pointer">
+            {[
+              { id: 'easy', label: 'Easy', sub: '1 Killer • 1 Subplot' },
+              { id: 'medium', label: 'Medium', sub: '1 Killer • Multi-Alibi' },
+              { id: 'hard', label: 'Hard', sub: 'Killer + Accomplice' },
+            ].map((tier) => (
+              <label key={tier.id} className="flex-1 cursor-pointer">
                 <input
                   type="radio"
                   name="complexity"
-                  value={level}
-                  checked={complexity === level}
-                  onChange={() => setComplexity(level)}
+                  value={tier.id}
+                  checked={complexity === tier.id}
+                  onChange={() => setComplexity(tier.id)}
                   className="peer hidden"
                 />
-                <div className="text-center py-2 text-xs font-bold uppercase tracking-wider text-slate-400 rounded-lg hover:text-slate-600 peer-checked:bg-slate-900 peer-checked:text-white transition-all">
-                  {level}
+                <div className="text-center py-1.5 px-1 rounded-lg text-slate-400 hover:text-slate-600 peer-checked:bg-slate-900 peer-checked:text-white transition-all">
+                  <div className="text-xs font-bold uppercase tracking-wider leading-tight">
+                    {tier.label}
+                  </div>
+                  <div className="text-[9px] font-medium opacity-80 leading-tight mt-0.5">
+                    {tier.sub}
+                  </div>
                 </div>
               </label>
             ))}
@@ -168,23 +177,33 @@ export function MysterySettings({
 
         <div className="space-y-2">
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Spice Level (Independent of Price)
+            Spice Level (Dialogue & Roleplay Boundaries)
           </label>
           <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-            {['clean', 'mild', 'spicy', 'filthy'].map((level) => (
-              <label key={level} className="flex-1 cursor-pointer">
+            {[
+              { id: 'clean', label: 'Clean', sub: 'SFW • No Affairs' },
+              { id: 'mild', label: 'Mild', sub: 'Affairs • No Cussing' },
+              { id: 'spicy', label: 'Spicy', sub: 'Cussing & Scandal' },
+              { id: 'filthy', label: 'Filthy', sub: '18+ Unfiltered' },
+            ].map((tier) => (
+              <label key={tier.id} className="flex-1 cursor-pointer">
                 <input
                   type="radio"
                   name="spice_level"
-                  value={level}
+                  value={tier.id}
                   defaultChecked={
-                    initialSpiceLevel === level ||
-                    (initialSpiceLevel === 'low' && level === 'clean')
+                    initialSpiceLevel === tier.id ||
+                    (initialSpiceLevel === 'low' && tier.id === 'clean')
                   }
                   className="peer hidden"
                 />
-                <div className="text-center py-2 text-xs font-bold uppercase tracking-wider text-slate-400 rounded-lg hover:text-brand-pink/50 peer-checked:bg-brand-pink peer-checked:text-white transition-all">
-                  {level}
+                <div className="text-center py-1.5 px-1 rounded-lg text-slate-400 hover:text-brand-pink/60 peer-checked:bg-brand-pink peer-checked:text-white transition-all">
+                  <div className="text-xs font-bold uppercase tracking-wider leading-tight">
+                    {tier.label}
+                  </div>
+                  <div className="text-[9px] font-medium opacity-80 leading-tight mt-0.5">
+                    {tier.sub}
+                  </div>
                 </div>
               </label>
             ))}
