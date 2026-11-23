@@ -100,6 +100,18 @@ const VALID_DISTINCTIVE_FEATURES = ['Freckles', 'Beauty Mark', 'Glasses'] as con
 
 export async function POST(req: NextRequest) {
   try {
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Please log into your account to scan guest traits.' },
+        { status: 401 }
+      );
+    }
+
     const apiKey =
       process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/utils/admin-auth';
 import {
   BrainstormComplexity,
   BrainstormPackageTier,
@@ -7,6 +8,11 @@ import {
 } from '@/utils/brainstorm-pdf';
 
 export async function GET(req: NextRequest) {
+  try {
+    await requireAdmin();
+  } catch {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  }
   const { searchParams } = new URL(req.url);
   const rawTier = (searchParams.get('tier') || 'basic').toLowerCase();
   const tier: BrainstormPackageTier =

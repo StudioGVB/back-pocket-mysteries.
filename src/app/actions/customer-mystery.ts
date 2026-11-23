@@ -15,6 +15,7 @@ import {
   StoredGuestReview,
   StoredDetectiveGuest,
   StoredPartyEventDetails,
+  StoredPendingHostTransfer,
   LIVE_CARRIER_CLUE_TITLE,
   isLiveCarrierClue,
   syncLiveStateToSupabaseClueCarrier,
@@ -26,6 +27,8 @@ import {
 } from '@/lib/background-mystery-generator';
 import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
 import { isUserAdmin } from '@/utils/admin-auth';
+import { sendHostOwnershipTransferInviteEmail } from '@/utils/purchase-notifications';
+import crypto from 'crypto';
 
 export interface RoundSubmission {
   id: string;
@@ -1471,4 +1474,317 @@ export async function finishMysteryGenerationNowAction(payload: {
 
   return res;
 }
+
+/**
+ * Step 1 of Accept-First Host Ownership Transfer:
+ * Creates a pending transfer token for the recipient email/name, persists it in the session + Supabase carrier,
+ * and sends the recipient an email invite. Ownership remains with the current host until the recipient logs in & accepts.
+ */
+export async function initiateHostTransferAction(payload: {
+  mysteryId: string;
+  mysteryTitle: string;
+  toEmail: string;
+  toName?: string;
+  locale?: string;
+}): Promise<{
+  success: boolean;
+  error?: string;
+  pendingTransfer?: StoredPendingHostTransfer;
+  claimUrl?: string;
+  emailSent?: boolean;
+}> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Please log in to transfer Host ownership.' };
+    }
+
+    const cleanToEmail = (payload.toEmail || '').trim().toLowerCase();
+    if (!cleanToEmail || !cleanToEmail.includes('@')) {
+      return { success: false, error: 'Please enter a valid email address for the new host.' };
+    }
+
+    const currentUserEmail = (user.email || '').trim().toLowerCase();
+    if (cleanToEmail === currentUserEmail) {
+      return { success: false, error: 'You are already the Host of this mystery.' };
+    }
+
+    await loadLiveStateFromSupabaseClueCarrier(payload.mysteryId, supabase);
+    let session = getStoredGameSession(payload.mysteryId);
+    const pin = await generatePinFromMysteryId(payload.mysteryId);
+
+    if (!session) {
+      session = {
+        mysteryId: payload.mysteryId,
+        hostUserId: user.id,
+        paidByUserId: user.id,
+        customerEmail: user.email || undefined,
+        pin,
+        currentRound: 0,
+        activeCharacterIds: [],
+        submissions: [],
+        sharedTheoryRounds: [],
+        revealMode: 'hidden',
+        reviews: [],
+        isPaid: true,
+        generationStatus: 'ready',
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    const fromName =
+      (user.user_metadata?.full_name as string) ||
+      session.customerName ||
+      user.email?.split('@')[0] ||
+      'Current Host';
+
+    const token = `ht_${crypto.randomBytes(12).toString('hex')}`;
+    const pendingTransfer: StoredPendingHostTransfer = {
+      token,
+      mysteryId: payload.mysteryId,
+      mysteryTitle: payload.mysteryTitle || 'Murder Mystery',
+      fromUserId: user.id,
+      fromEmail: user.email || '',
+      fromName,
+      toEmail: cleanToEmail,
+      toName: (payload.toName || '').trim() || cleanToEmail.split('@')[0],
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedSession = {
+      ...session,
+      hostUserId: session.hostUserId || user.id,
+      paidByUserId: session.paidByUserId || user.id,
+      isPaid: true,
+      pendingHostTransfer: pendingTransfer,
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveStoredGameSession(payload.mysteryId, updatedSession);
+    await syncLiveStateToSupabaseClueCarrier(payload.mysteryId, {
+      supabase,
+      session: updatedSession,
+    });
+
+    const locale = payload.locale || 'en';
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://backpocketmysteries.com').replace(/\/$/, '');
+    const claimUrl = `${siteUrl}/${locale}/account/orders?claimTransfer=${encodeURIComponent(token)}`;
+
+    const emailRes = await sendHostOwnershipTransferInviteEmail({
+      toEmail: cleanToEmail,
+      toName: pendingTransfer.toName,
+      fromName,
+      fromEmail: user.email || null,
+      mysteryId: payload.mysteryId,
+      mysteryTitle: pendingTransfer.mysteryTitle,
+      claimToken: token,
+      locale,
+    });
+
+    revalidatePath(`/[locale]/account/orders`, 'page');
+    return {
+      success: true,
+      pendingTransfer,
+      claimUrl,
+      emailSent: Boolean(emailRes.sent || emailRes.queuedInOutbox),
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to initiate host ownership transfer.',
+    };
+  }
+}
+
+/**
+ * Cancels an unaccepted pending Host ownership transfer so the current host keeps ownership.
+ */
+export async function cancelHostTransferAction(payload: {
+  mysteryId: string;
+  locale?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Authentication required.' };
+    }
+
+    await loadLiveStateFromSupabaseClueCarrier(payload.mysteryId, supabase);
+    const session = getStoredGameSession(payload.mysteryId);
+    if (!session) {
+      return { success: false, error: 'Mystery session not found.' };
+    }
+
+    const updatedSession = {
+      ...session,
+      pendingHostTransfer: null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveStoredGameSession(payload.mysteryId, updatedSession);
+    await syncLiveStateToSupabaseClueCarrier(payload.mysteryId, {
+      supabase,
+      session: updatedSession,
+    });
+
+    revalidatePath(`/[locale]/account/orders`, 'page');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to cancel transfer.' };
+  }
+}
+
+/**
+ * Step 2 of Accept-First Host Ownership Transfer:
+ * Called when the invited recipient logs in and clicks "Accept & Become Host".
+ * Atomically transfers ownership of the custom mystery instance to the new user and removes it from the previous host.
+ */
+export async function acceptHostTransferAction(payload: {
+  mysteryId: string;
+  token: string;
+  locale?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Please log in to accept Host ownership.' };
+    }
+
+    await loadLiveStateFromSupabaseClueCarrier(payload.mysteryId, supabase);
+    const session = getStoredGameSession(payload.mysteryId);
+    const pending = session?.pendingHostTransfer;
+
+    if (!session || !pending || pending.token !== payload.token) {
+      return {
+        success: false,
+        error: 'This Host transfer invite is no longer active or has already been claimed.',
+      };
+    }
+
+    const previousHostId = pending.fromUserId || session.hostUserId || session.paidByUserId || '';
+    const prevIds = Array.from(
+      new Set([
+        ...(session.previousHostUserIds || []),
+        ...(previousHostId && previousHostId !== user.id ? [previousHostId] : []),
+      ].filter((id) => id !== user.id))
+    );
+
+    const newOwnerName =
+      (user.user_metadata?.full_name as string) ||
+      pending.toName ||
+      user.email?.split('@')[0] ||
+      'Host';
+
+    const updatedSession = {
+      ...session,
+      isPaid: true,
+      hostUserId: user.id,
+      paidByUserId: user.id,
+      customerEmail: user.email || pending.toEmail,
+      customerName: newOwnerName,
+      pendingHostTransfer: null,
+      previousHostUserIds: prevIds,
+      transferHistory: [
+        ...(session.transferHistory || []),
+        {
+          fromUserId: previousHostId,
+          fromEmail: pending.fromEmail,
+          toUserId: user.id,
+          toEmail: user.email || pending.toEmail,
+          transferredAt: new Date().toISOString(),
+        },
+      ],
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveStoredGameSession(payload.mysteryId, updatedSession);
+
+    // Update cached mystery snapshot owner so the new host owns this exact isolated instance
+    const cachedMystery = getCachedMysterySnapshot(payload.mysteryId);
+    if (cachedMystery) {
+      cacheMysterySnapshot(payload.mysteryId, {
+        ...cachedMystery,
+        created_by: user.id,
+      });
+    }
+
+    await syncLiveStateToSupabaseClueCarrier(payload.mysteryId, {
+      supabase,
+      mystery: cachedMystery
+        ? { ...cachedMystery, created_by: user.id }
+        : undefined,
+      session: updatedSession,
+    });
+
+    // Best-effort update in Supabase orders table so DB queries reflect the new owner
+    try {
+      if (previousHostId) {
+        await supabase
+          .from('orders')
+          .update({ user_id: user.id } as any)
+          .eq('user_id', previousHostId)
+          .eq('mystery_id', payload.mysteryId);
+      }
+    } catch {
+      // non-fatal
+    }
+
+    revalidatePath(`/[locale]/account/orders`, 'page');
+    revalidatePath(`/[locale]/mysteries/${payload.mysteryId}/ready`, 'page');
+    return { success: true };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to accept Host ownership transfer.',
+    };
+  }
+}
+
+/**
+ * Declines an incoming Host ownership transfer invite so the original host retains ownership.
+ */
+export async function declineHostTransferAction(payload: {
+  mysteryId: string;
+  token: string;
+  locale?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    await loadLiveStateFromSupabaseClueCarrier(payload.mysteryId, supabase);
+    const session = getStoredGameSession(payload.mysteryId);
+    if (!session || session.pendingHostTransfer?.token !== payload.token) {
+      return { success: true };
+    }
+
+    const updatedSession = {
+      ...session,
+      pendingHostTransfer: null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveStoredGameSession(payload.mysteryId, updatedSession);
+    await syncLiveStateToSupabaseClueCarrier(payload.mysteryId, {
+      supabase,
+      session: updatedSession,
+    });
+
+    revalidatePath(`/[locale]/account/orders`, 'page');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to decline transfer.' };
+  }
+}
+
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/utils/admin-auth";
 import { ACTIVE_MYSTERIES } from "@/data/active-mysteries";
 import { loadMarketingStore, saveMarketingStore } from "@/lib/marketing-store";
 import { parseMysteryImageField } from "@/utils/moodboard";
@@ -84,6 +85,7 @@ ${hashtagLine}`;
 
 export async function POST(request: Request) {
   try {
+    await requireAdmin();
     const body = await request.json();
     const { mysteryId, scheduledAt } = body as {
       mysteryId: string;

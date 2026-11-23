@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/utils/admin-auth';
 import sitemap from '@/app/sitemap';
 
 const INDEXNOW_KEY = '8f4b2e9a1c7d3e6f5a0b8c9d2e1f4a3b';
@@ -14,6 +15,7 @@ export async function POST() {
 
 async function handleIndexNowPing() {
   try {
+    await requireAdmin();
     const entries = await sitemap();
     const urlList = entries.map((e) => e.url);
 

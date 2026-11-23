@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { loadMarketingStore } from "@/lib/marketing-store";
 import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/utils/admin-auth";
 
 /**
  * Cron endpoint (/api/cron/send-scheduled-edms) that checks for any EDM campaign
@@ -8,6 +9,12 @@ import { createClient } from "@/utils/supabase/server";
  */
 export async function GET(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const validCron = Boolean(process.env.CRON_SECRET && authHeader === process.env.CRON_SECRET);
+    if (!validCron) {
+      await requireAdmin();
+    }
+
     const nowIso = new Date().toISOString();
     const supabase = await createClient();
     const store = await loadMarketingStore();
@@ -33,7 +40,11 @@ export async function GET(request: Request) {
     for (const c of dueCampaigns) {
       const res = await fetch(`${origin}/api/admin/edm/send`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.CRON_SECRET ? { "x-cron-secret": process.env.CRON_SECRET } : {}),
+          ...(request.headers.get("cookie") ? { cookie: request.headers.get("cookie")! } : {}),
+        },
         body: JSON.stringify({ campaignId: c.id, mode: "production" }),
       });
       const json = await res.json();

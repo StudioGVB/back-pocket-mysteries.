@@ -15,6 +15,9 @@ import {
   getPaidMysteryIdsForUserInStore,
   getAllCachedMysteries,
   ensureIsolatedCustomerMysteryInstance,
+  getStoredGameSession,
+  loadLiveStateFromSupabaseClueCarrier,
+  isSessionTransferredAwayFromUser,
 } from '@/lib/live-session-store';
 import { checkAndFinalizeGenerationIfDue } from '@/lib/background-mystery-generator';
 import { getTierForPlayerCount } from '@/utils/localization';
@@ -121,9 +124,31 @@ export default async function CustomerMysteryCastPage({
     );
   }
 
+  if (isUuid) {
+    await loadLiveStateFromSupabaseClueCarrier(slug, supabase);
+  }
+  const directSlugSession = isUuid ? getStoredGameSession(slug) : null;
+  if (
+    directSlugSession &&
+    isSessionTransferredAwayFromUser(directSlugSession, user.id, user.email)
+  ) {
+    redirect(`/${locale}/account/orders`);
+  }
+
+  const isTransferredOwnerOfDirectSlug = Boolean(
+    directSlugSession &&
+      (directSlugSession.hostUserId === user.id ||
+        directSlugSession.paidByUserId === user.id ||
+        (user.email &&
+          directSlugSession.customerEmail &&
+          directSlugSession.customerEmail.trim().toLowerCase() ===
+            user.email.trim().toLowerCase()))
+  );
+
   const templateMysteryId = String(mystery.template_mystery_id || mystery.id);
   const needsIsolatedClone = Boolean(
     user &&
+      !isTransferredOwnerOfDirectSlug &&
       (!mystery.template_mystery_id ||
         String(mystery.id) === templateMysteryId ||
         mystery.created_by !== user.id)

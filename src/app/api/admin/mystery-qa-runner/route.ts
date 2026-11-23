@@ -3,6 +3,7 @@ import { getMysteryById } from '@/services/mysteries';
 import { getSubplotsByMysteryId } from '@/services/subplots';
 import { applyScreenerCastAssignmentAction } from '@/app/actions/generator';
 import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/utils/admin-auth';
 import {
   getCachedMysterySnapshot,
   cacheMysterySnapshot,
@@ -61,6 +62,7 @@ async function persistCluePatchToDbAndCache(
 
 export async function GET(req: NextRequest) {
   try {
+    await requireAdmin();
     const { searchParams } = new URL(req.url);
     const mysteryId = searchParams.get('mysteryId');
     const isCron = searchParams.get('cron') === '1';
@@ -138,6 +140,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await requireAdmin();
     const body = await req.json();
     const {
       mysteryId,

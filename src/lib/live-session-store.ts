@@ -42,6 +42,18 @@ export interface StoredPartyEventDetails {
   updatedAt?: string;
 }
 
+export interface StoredPendingHostTransfer {
+  token: string;
+  mysteryId: string;
+  mysteryTitle: string;
+  fromUserId: string;
+  fromEmail: string;
+  fromName: string;
+  toEmail: string;
+  toName: string;
+  createdAt: string;
+}
+
 export interface StoredGameSession {
   mysteryId: string;
   templateMysteryId?: string;
@@ -69,6 +81,15 @@ export interface StoredGameSession {
   customerEmail?: string;
   customerName?: string;
   readyEmailSent?: boolean;
+  pendingHostTransfer?: StoredPendingHostTransfer | null;
+  previousHostUserIds?: string[];
+  transferHistory?: Array<{
+    fromUserId: string;
+    fromEmail: string;
+    toUserId: string;
+    toEmail: string;
+    transferredAt: string;
+  }>;
   qaReport?: any;
   updatedAt: string;
 }
@@ -417,6 +438,31 @@ export function getAllPaidMysteryIdsInStore(): string[] {
     .map(s => s.mysteryId);
 }
 
+export function isSessionTransferredAwayFromUser(
+  session: StoredGameSession | null | undefined,
+  userId?: string | null,
+  userEmail?: string | null
+): boolean {
+  if (!session) return false;
+  const cleanEmail = (userEmail || '').trim().toLowerCase();
+  const activeOwnerId = session.hostUserId || session.paidByUserId || null;
+  const activeOwnerEmail = (session.customerEmail || '').trim().toLowerCase();
+
+  // If this user is currently the active owner, it is NOT transferred away from them
+  if (userId && activeOwnerId === userId) return false;
+  if (cleanEmail && activeOwnerEmail && activeOwnerEmail === cleanEmail) return false;
+
+  // If this user is in previousHostUserIds and is no longer the active owner, it was transferred away
+  if (
+    userId &&
+    Array.isArray(session.previousHostUserIds) &&
+    session.previousHostUserIds.includes(userId)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function getPaidMysteryIdsForUserInStore(
   userId: string,
   userEmail?: string | null
@@ -427,6 +473,11 @@ export function getPaidMysteryIdsForUserInStore(
   return Object.values(store.sessions)
     .filter(s => {
       if (!s || !s.isPaid) return false;
+      if (isSessionTransferredAwayFromUser(s, userId, userEmail)) return false;
+      if (userId && s.hostUserId && s.hostUserId !== userId) {
+        // Explicit hostUserId belongs to a different user now
+        return false;
+      }
       if (userId && s.paidByUserId && s.paidByUserId === userId) return true;
       if (userId && s.hostUserId && s.hostUserId === userId) return true;
       if (cleanEmail && s.customerEmail && s.customerEmail.trim().toLowerCase() === cleanEmail) {
@@ -435,6 +486,29 @@ export function getPaidMysteryIdsForUserInStore(
       return false;
     })
     .map(s => s.mysteryId);
+}
+
+export function getPendingHostTransfersForUserInStore(
+  userEmail?: string | null,
+  claimToken?: string | null
+): StoredPendingHostTransfer[] {
+  const cleanEmail = (userEmail || '').trim().toLowerCase();
+  const cleanToken = (claimToken || '').trim();
+  if (!cleanEmail && !cleanToken) return [];
+  const store = readSessionsFile();
+  const results: StoredPendingHostTransfer[] = [];
+  for (const s of Object.values(store.sessions)) {
+    const pt = s?.pendingHostTransfer;
+    if (!pt || !pt.token) continue;
+    const matchesToken = Boolean(cleanToken && pt.token === cleanToken);
+    const matchesEmail = Boolean(
+      cleanEmail && pt.toEmail && pt.toEmail.trim().toLowerCase() === cleanEmail
+    );
+    if (matchesToken || matchesEmail) {
+      results.push(pt);
+    }
+  }
+  return results;
 }
 
 export function updateCachedMysteryCharacters(

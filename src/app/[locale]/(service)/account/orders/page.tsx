@@ -9,11 +9,19 @@ import {
   getPaidMysteryIdsForUserInStore,
   getCachedMysterySnapshot,
   ensureIsolatedCustomerMysteryInstance,
-  cacheRelationshipsSnapshot,
+  getStoredGameSession,
+  saveStoredGameSession,
+  getPendingHostTransfersForUserInStore,
+  isSessionTransferredAwayFromUser,
+  StoredPendingHostTransfer,
+  LIVE_CARRIER_CLUE_TITLE,
 } from '@/lib/live-session-store';
+import { getCharacterRoleTitle } from '@/utils/hydration';
 import { checkAndFinalizeGenerationIfDue } from '@/lib/background-mystery-generator';
 import { confirmMysteryOrderAction } from '@/app/actions/stripe';
 import OrdersGeneratingPoller from '@/components/account/OrdersGeneratingPoller';
+import HostTransferModalButton from '@/components/account/HostTransferModalButton';
+import IncomingHostTransferBanner from '@/components/account/IncomingHostTransferBanner';
 
 export const unstable_instant = false;
 
@@ -29,6 +37,7 @@ export default async function OrdersPage({
     orderId?: string;
     session_id?: string;
     payment_intent?: string;
+    claimTransfer?: string;
   }>;
 }) {
   const { locale } = await params;
@@ -39,7 +48,10 @@ export default async function OrdersPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/${locale}/login?next=${encodeURIComponent(`/${locale}/account/orders`)}`);
+    const nextUrl = resolvedSearch?.claimTransfer
+      ? `/${locale}/account/orders?claimTransfer=${encodeURIComponent(resolvedSearch.claimTransfer)}`
+      : `/${locale}/account/orders`;
+    redirect(`/${locale}/login?next=${encodeURIComponent(nextUrl)}`);
   }
 
   if (
@@ -59,6 +71,40 @@ export default async function OrdersPage({
     }
   }
 
+  const cleanUserEmail = (user.email || '').trim().toLowerCase();
+
+  // 0. Sync cross-container live sessions & pending host transfers from Supabase `public.clues` carrier rows
+  try {
+    const { data: carrierRows } = await supabase
+      .from('clues')
+      .select('id, description')
+      .eq('title', LIVE_CARRIER_CLUE_TITLE);
+
+    for (const row of carrierRows || []) {
+      if (!row?.description) continue;
+      try {
+        const parsed = JSON.parse(row.description);
+        if (parsed?.mysteryId && parsed?.session) {
+          saveStoredGameSession(parsed.mysteryId, {
+            ...parsed.session,
+            mysteryId: parsed.mysteryId,
+          });
+        }
+      } catch {
+        // ignore malformed row
+      }
+    }
+  } catch {
+    // non-fatal
+  }
+
+  // Collect any incoming pending Host ownership transfers addressed to this user (by email or claimTransfer token)
+  const incomingTransfers: StoredPendingHostTransfer[] =
+    getPendingHostTransfersForUserInStore(
+      user.email,
+      resolvedSearch?.claimTransfer || null
+    ).filter((pt) => pt.fromUserId !== user.id);
+
   // 1. Collect unlocked mystery IDs strictly belonging to this user from local live-session store
   const unlockedMysteryIds = new Set<string>(
     getPaidMysteryIdsForUserInStore(user.id, user.email)
@@ -74,7 +120,10 @@ export default async function OrdersPage({
 
     for (const order of ordersData || []) {
       if (order.mystery_id) {
-        unlockedMysteryIds.add(order.mystery_id);
+        const sess = getStoredGameSession(order.mystery_id);
+        if (!isSessionTransferredAwayFromUser(sess, user.id, user.email)) {
+          unlockedMysteryIds.add(order.mystery_id);
+        }
       }
     }
   } catch {
@@ -97,11 +146,13 @@ export default async function OrdersPage({
       .select('mystery_id, profile_data')
       .in('mystery_id', ownedDbMysteryIds);
 
-    const cleanUserEmail = (user.email || '').trim().toLowerCase();
     for (const row of charRows || []) {
       const profileData = row.profile_data as Record<string, any> | null;
       const session = profileData?.__game_session;
       if (session?.isPaid === true) {
+        if (isSessionTransferredAwayFromUser(session, user.id, user.email)) {
+          continue;
+        }
         const matchesUserId = session.paidByUserId && session.paidByUserId === user.id;
         const matchesEmail =
           cleanUserEmail &&
@@ -111,6 +162,17 @@ export default async function OrdersPage({
           unlockedMysteryIds.add(row.mystery_id);
         }
       }
+    }
+  }
+
+  // Filter out any unlockedMysteryId whose live session was transferred away from this user
+  for (const candId of Array.from(unlockedMysteryIds)) {
+    const sess = getStoredGameSession(candId);
+    if (
+      isSessionTransferredAwayFromUser(sess, user.id, user.email) ||
+      (sess?.hostUserId && sess.hostUserId !== user.id)
+    ) {
+      unlockedMysteryIds.delete(candId);
     }
   }
 
@@ -126,6 +188,16 @@ export default async function OrdersPage({
       const cached = getCachedMysterySnapshot(unlockedId);
       if (cached && cached.id) {
         mysteryByIdMap.set(cached.id, cached);
+      } else {
+        const sess = getStoredGameSession(unlockedId);
+        const tplId = sess?.templateMysteryId || '61196e53-09c3-427f-8862-30151f2ca75b';
+        const baseMatch = (mysteriesData || []).find((m: any) => m.id === tplId);
+        mysteryByIdMap.set(unlockedId, {
+          ...(baseMatch || {}),
+          id: unlockedId,
+          template_mystery_id: tplId,
+          created_by: user.id,
+        });
       }
     }
   }
@@ -133,16 +205,33 @@ export default async function OrdersPage({
   const unlockedMysteries = Array.from(mysteryByIdMap.values());
 
   // Resolve each unlocked mystery to the customer's own isolated instance
-  // so no two customers share the same mystery instance ID, cast state, or Game PIN
+  // (or keep the exact instance ID if it was transferred to this user!)
   const isolatedMap = new Map<string, any>();
   for (const m of unlockedMysteries) {
+    const sess = getStoredGameSession(m.id);
+    const isTransferredToThisUser = Boolean(
+      sess &&
+        (sess.hostUserId === user.id ||
+          (cleanUserEmail &&
+            sess.customerEmail &&
+            sess.customerEmail.trim().toLowerCase() === cleanUserEmail)) &&
+        Array.isArray(sess.previousHostUserIds) &&
+        sess.previousHostUserIds.length > 0
+    );
+
     const [fullMystery, baseRels] = await Promise.all([
       getMysteryById(m.id),
       getRelationshipsByMysteryId(m.id),
     ]);
     const sourceMystery = fullMystery || m;
+    const isAlreadyIsolatedInstance = Boolean(
+      isTransferredToThisUser ||
+        (sourceMystery.template_mystery_id &&
+          String(sourceMystery.id) !== String(sourceMystery.template_mystery_id) &&
+          sourceMystery.created_by === user.id)
+    );
 
-    if (sourceMystery.created_by && sourceMystery.created_by === user.id) {
+    if (isAlreadyIsolatedInstance) {
       isolatedMap.set(sourceMystery.id, sourceMystery);
     } else {
       const instance = ensureIsolatedCustomerMysteryInstance(
@@ -150,6 +239,13 @@ export default async function OrdersPage({
         baseRels || [],
         user.id
       );
+      const instanceSess = getStoredGameSession(instance.instanceId);
+      if (
+        isSessionTransferredAwayFromUser(instanceSess, user.id, user.email) ||
+        (instanceSess?.hostUserId && instanceSess.hostUserId !== user.id)
+      ) {
+        continue;
+      }
       isolatedMap.set(instance.instanceId, instance.mystery);
     }
   }
@@ -157,6 +253,7 @@ export default async function OrdersPage({
   const stories = await Promise.all(
     Array.from(isolatedMap.values()).map(async (m: any) => {
       const pin = await generatePinFromMysteryId(m.id);
+      const session = getStoredGameSession(m.id);
       const generationState = await checkAndFinalizeGenerationIfDue({
         mysteryId: m.id,
         slug: m.id,
@@ -167,10 +264,26 @@ export default async function OrdersPage({
         locale,
       });
 
+      const castGuests = ((m.characters || []) as any[])
+        .map((c: any) => {
+          const guestName =
+            c?.profile_data?.guest_name || c?.profile_data?.name || '';
+          const roleTitle = getCharacterRoleTitle(c);
+          return guestName
+            ? { name: String(guestName).trim(), roleTitle }
+            : null;
+        })
+        .filter(
+          (g): g is { name: string; roleTitle: string } =>
+            Boolean(g && g.name.length > 0)
+        );
+
       return {
         ...m,
         pin,
         generationState,
+        castGuests,
+        pendingHostTransfer: session?.pendingHostTransfer || null,
       };
     })
   );
@@ -201,6 +314,11 @@ export default async function OrdersPage({
           </Link>
         </div>
       </div>
+
+      <IncomingHostTransferBanner
+        transfers={incomingTransfers}
+        locale={locale}
+      />
 
       <OrdersGeneratingPoller
         hasGeneratingStories={stories.some(
@@ -312,6 +430,13 @@ export default async function OrdersPage({
                         >
                           🚀 Start Game
                         </Link>
+                        <HostTransferModalButton
+                          mysteryId={story.id}
+                          mysteryTitle={story.title}
+                          locale={locale}
+                          castGuests={story.castGuests}
+                          initialPendingTransfer={story.pendingHostTransfer}
+                        />
                       </>
                     )}
                   </div>

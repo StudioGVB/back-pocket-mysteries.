@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from '@/utils/admin-auth';
 import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 
 export interface PackagePopularityItem {
@@ -31,7 +31,7 @@ export interface MysteryPerformanceItem {
 }
 
 export async function getMysteriesAndPackagesAnalytics() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const [
     { data: mysteriesData },
@@ -227,7 +227,7 @@ export async function getMysteriesAndPackagesAnalytics() {
 }
 
 export async function getGameplayAnalytics() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const [
     { data: mysteriesData },
@@ -443,7 +443,7 @@ export async function getGameplayAnalytics() {
 }
 
 export async function getConversionAndPromoAnalytics() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const [
     { data: leadsData },

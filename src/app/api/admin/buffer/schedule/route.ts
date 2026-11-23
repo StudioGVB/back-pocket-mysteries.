@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/utils/admin-auth";
 import { getBufferProfiles, createBufferUpdate } from "@/lib/buffer/client";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://backpocketmysteries.com";
 
 export async function POST(request: Request) {
   try {
+    await requireAdmin();
     const body = await request.json();
     const { postId, platform, scheduledAt, text, mediaUrl, linkUrl } = body;
 

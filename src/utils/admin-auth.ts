@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -31,21 +32,31 @@ export async function isUserAdmin(supabase: any, user: { id: string; email?: str
   }
 }
 
-/**
- * Server-side guard for Server Actions and API Routes.
- * Throws an error if the current session is not an authenticated Admin.
- */
-export async function requireAdmin() {
+const getCachedAdminSession = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    throw new Error('Unauthorized: Authentication required.');
+    return { supabase, user: null, isAdmin: false };
   }
 
   const isAdmin = await isUserAdmin(supabase, user);
+  return { supabase, user, isAdmin };
+});
+
+/**
+ * Server-side guard for Server Actions and API Routes.
+ * Throws an error if the current session is not an authenticated Admin.
+ */
+export async function requireAdmin() {
+  const { supabase, user, isAdmin } = await getCachedAdminSession();
+
+  if (!user) {
+    throw new Error('Unauthorized: Authentication required.');
+  }
+
   if (!isAdmin) {
     throw new Error('Forbidden: Admin privileges required.');
   }
@@ -58,16 +69,12 @@ export async function requireAdmin() {
  * Redirects unauthenticated users to `/login` and non-admin customers to `/account`.
  */
 export async function requireAdminOrRedirect(locale: string = 'en') {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user, isAdmin } = await getCachedAdminSession();
 
   if (!user) {
     redirect(`/${locale}/login`);
   }
 
-  const isAdmin = await isUserAdmin(supabase, user);
   if (!isAdmin) {
     redirect(`/${locale}/account`);
   }

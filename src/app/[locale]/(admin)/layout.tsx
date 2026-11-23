@@ -17,21 +17,8 @@ export const metadata: Metadata = {
   },
 };
 
-async function AdminAuthGuard({
-  params,
-  children,
-}: {
-  params: Promise<{ locale: string }>;
-  children: React.ReactNode;
-}) {
-  const { locale } = await params;
-  await requireAdminOrRedirect(locale || 'en');
-  return <>{children}</>;
-}
-
 export default function AdminLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
@@ -46,9 +33,7 @@ export default function AdminLayout({
       {/* Main Content */}
       <main className="flex-grow ml-64 p-8">
         <AdminHeader />
-        <Suspense fallback={<div className="h-96 animate-pulse bg-white/50 rounded-3xl" />}>
-          <AdminAuthGuard params={params}>{children}</AdminAuthGuard>
-        </Suspense>
+        {children}
       </main>
     </div>
   );

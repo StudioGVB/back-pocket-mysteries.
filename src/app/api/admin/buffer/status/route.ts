@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/utils/admin-auth";
 import { getBufferProfiles } from "@/lib/buffer/client";
 
 export async function GET() {
   try {
+    await requireAdmin();
     const hasToken = Boolean(
       process.env.BUFFER_ACCESS_TOKEN || process.env.NEXT_PUBLIC_BUFFER_ACCESS_TOKEN
     );

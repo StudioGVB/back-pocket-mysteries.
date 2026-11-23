@@ -1,5 +1,5 @@
 import { Database } from '@/types/database';
-import { getMysteries as getNormalizedMysteries } from '@/services/mysteries';
+import { ensureChristmasNightmareCanon, replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
 import { requireAdmin } from '@/utils/admin-auth';
 import {
   getAllStoredGameSessions,
@@ -11,8 +11,26 @@ type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
 
 export async function getMysteries() {
-  await requireAdmin();
-  return getNormalizedMysteries();
+  const { supabase } = await requireAdmin();
+  const { data, error } = (await supabase
+    .from('mysteries')
+    .select('id, title, theme, status, description, image_url, created_at, min_players, max_players, complexity, spice_level')
+    .order('created_at', { ascending: false })) as any;
+
+  if (error) {
+    console.error('Error fetching admin mysteries:', error);
+    return [];
+  }
+
+  return (data || []).map((m: any) => {
+    const upgraded = ensureChristmasNightmareCanon(m);
+    return {
+      ...upgraded,
+      description: upgraded.description
+        ? replaceLegacyNamesWithRoleTokens(upgraded.description).replace(/\{\{([A-Za-z0-9\s'._&-]+)\}\}/g, '$1')
+        : upgraded.description,
+    };
+  });
 }
 
 export async function createMystery(mystery: MysteryInsert) {
