@@ -44,3 +44,14 @@ next-env.d.ts
 .live-mystery-cache.json
 
 .gsc-config.json
+
+# Local QA stress-test & dev runtime logs (keep on disk, exclude from Git & Vercel)
+actions_log.txt
+public/exports/
+public/generated-clues/qa-pack*
+public/generated-avatars/qa-pack*
+data/ai-usage-logs.json
+data/purchase-notification-outbox.json
+data/sent-purchase-notifications.json
+data/mystery-qa-runs/*-pack*.json
+
