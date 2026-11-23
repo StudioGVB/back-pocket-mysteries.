@@ -1,4 +1,4 @@
-const BASE_URL = 'https://backpocketmysteries.com';
+const BASE_URL = 'https://mysteries.backpocketgames.com';
 const LOGO_WHITE_URL = `${BASE_URL}/logo-horizontal-white.png?v=5`;
 const EMAIL_FONT = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 

@@ -305,7 +305,7 @@ export interface CustomerMysteryEmailPayload {
   locale?: string;
 }
 
-const PUBLIC_BRAND_DOMAIN = 'https://backpocketmysteries.com';
+const PUBLIC_BRAND_DOMAIN = 'https://mysteries.backpocketgames.com';
 
 function resolvePublicMysteryCoverUrl(payload: CustomerMysteryEmailPayload): string {
   const cached = payload.mysteryId ? getCachedMysterySnapshot(payload.mysteryId) : null;
@@ -338,15 +338,28 @@ export async function sendCustomerGenerationStartedEmail(
   }
 
   const locale = payload.locale || 'en';
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : PUBLIC_BRAND_DOMAIN;
+  const siteUrl = PUBLIC_BRAND_DOMAIN;
   const myStoriesUrl = `${siteUrl}/${locale}/account/orders`;
   const greetingName = payload.customerName ? payload.customerName.split(' ')[0] : 'Detective';
   const coverPhotoUrl = resolvePublicMysteryCoverUrl(payload);
 
-  const subject = `☕ Your Cast Is Locked In, ${greetingName}! "${payload.mysteryTitle}" Is Brewing (~20 Mins) 🎉`;
+  const subject = `Your Cast Is Locked In, ${greetingName}: "${payload.mysteryTitle}" Is Being Built (~20 Mins)`;
+
+  const plainText = `Hi ${greetingName},
+
+Thank you for your order! Your custom cast for "${payload.mysteryTitle}" is officially locked in. Our studio is now generating your personalized character dossiers, outfit guides, caught-on-camera clue photos, and voice wiretaps.
+
+SAFE TO CLOSE YOUR BROWSER (~20 MINS)
+Your mystery package takes ~20 minutes to build and QA-verify. We will email you the moment your Pre-Party Host Hub and 6-digit Party PIN are unlocked.
+
+What Our Studio Is Building for You Right Now:
+1. Custom Character Portraits & Outfit Guides
+2. Caught-on-Camera Clue Photos & Voice Memos
+3. Pre-Delivery Quality Check & Ready Email
+
+Open My Mysteries: ${myStoriesUrl}
+
+Back Pocket Mysteries`;
 
   const html = buildBrandedEmailShell({
     preheader: `Your custom dossiers, clue photos, and 6-digit Game PIN for "${payload.mysteryTitle}" are being built right now (~20 mins)!`,
@@ -414,15 +427,25 @@ export async function sendCustomerGenerationStartedEmail(
     let res = await resend.emails.send({
       from: PRIMARY_FROM_EMAIL,
       to: email,
+      replyTo: ADMIN_NOTIFICATION_EMAIL,
       subject,
       html,
+      text: plainText,
+      headers: {
+        'X-Entity-Ref-ID': `bpm-started-${payload.mysteryId}`,
+      },
     });
     if (res.error) {
       res = await resend.emails.send({
         from: VERIFIED_FALLBACK_FROM,
         to: email,
+        replyTo: ADMIN_NOTIFICATION_EMAIL,
         subject,
         html,
+        text: plainText,
+        headers: {
+          'X-Entity-Ref-ID': `bpm-started-${payload.mysteryId}`,
+        },
       });
     }
     markAsSent(dedupeKey);
@@ -456,10 +479,7 @@ export async function sendCustomerMysteryReadyEmail(
   }
 
   const locale = payload.locale || 'en';
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : PUBLIC_BRAND_DOMAIN;
+  const siteUrl = PUBLIC_BRAND_DOMAIN;
   const targetSlug = payload.mysterySlug || payload.mysteryId;
   const myStoriesUrl = `${siteUrl}/${locale}/account/orders`;
   const readyHubUrl = `${siteUrl}/${locale}/account/orders/${targetSlug}`;
@@ -469,7 +489,22 @@ export async function sendCustomerMysteryReadyEmail(
     : 'Ready in Hub';
   const coverPhotoUrl = resolvePublicMysteryCoverUrl(payload);
 
-  const subject = `🎉 Pop the Champagne, ${greetingName}! "${payload.mysteryTitle}" Is Ready to Host 🥂`;
+  const subject = `Pop the Champagne, ${greetingName}: "${payload.mysteryTitle}" Is Ready to Host`;
+
+  const plainText = `Hi ${greetingName},
+
+Your custom character dossiers, outfit guides, caught-on-camera clue photos, and voice wiretaps for "${payload.mysteryTitle}" have passed our pre-delivery quality check and are officially unlocked inside your Pre-Party Host Hub!
+
+YOUR 6-DIGIT LIVE PARTY PIN: ${formattedPin}
+
+Your 3-Step Pre-Party Game Plan:
+1. Drop the Hype in Your Group Chat
+2. Send Each Suspect Their Character Link
+3. Check the Party Toolkit (Drinks & Playlist)
+
+Open Your Pre-Party Host Hub: ${readyHubUrl}
+
+Back Pocket Mysteries`;
 
   const html = buildBrandedEmailShell({
     preheader: `Your custom dossiers, crime-scene photos, voice wiretaps, and 6-digit Game PIN (${formattedPin}) for "${payload.mysteryTitle}" are unlocked!`,
@@ -538,15 +573,25 @@ export async function sendCustomerMysteryReadyEmail(
     let res = await resend.emails.send({
       from: PRIMARY_FROM_EMAIL,
       to: email,
+      replyTo: ADMIN_NOTIFICATION_EMAIL,
       subject,
       html,
+      text: plainText,
+      headers: {
+        'X-Entity-Ref-ID': `bpm-ready-${payload.mysteryId}`,
+      },
     });
     if (res.error) {
       res = await resend.emails.send({
         from: VERIFIED_FALLBACK_FROM,
         to: email,
+        replyTo: ADMIN_NOTIFICATION_EMAIL,
         subject,
         html,
+        text: plainText,
+        headers: {
+          'X-Entity-Ref-ID': `bpm-ready-${payload.mysteryId}`,
+        },
       });
     }
     markAsSent(dedupeKey);
