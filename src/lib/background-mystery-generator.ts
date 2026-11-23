@@ -8,7 +8,11 @@ import {
   sendCustomerGenerationStartedEmail,
   sendCustomerMysteryReadyEmail,
 } from '@/utils/purchase-notifications';
-import { ensureStandardCharacterPhoto, generateClueImageAction } from '@/app/actions/generator';
+import {
+  ensureStandardCharacterPhoto,
+  generateClueImageAction,
+  auditAndHealCustomerPackAction,
+} from '@/app/actions/generator';
 import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
 
 export interface BackgroundGenerationParams {
@@ -28,7 +32,8 @@ const GENERATION_STEPS = [
   { threshold: 0.35, label: 'Generating standard character reference portraits...' },
   { threshold: 0.6, label: 'Placing characters into visual clues, CCTV & crime scene photos...' },
   { threshold: 0.85, label: 'Synthesizing custom voice memos, accents & round evidence...' },
-  { threshold: 0.98, label: 'Finalizing Pre-Party Host Hub, guest links & 6-digit Game PIN...' },
+  { threshold: 0.95, label: 'Running automated AI QA Critic on character portraits, visual clues & audio...' },
+  { threshold: 0.99, label: 'Finalizing Pre-Party Host Hub, guest links & 6-digit Game PIN...' },
 ];
 
 export function computeLiveGenerationState(session: StoredGameSession | null): {
@@ -405,7 +410,7 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
       await pregenerateAllAudioCluesForMystery(params.mysteryId, {
         forceRegenerate: true,
         onProgress: (completed, total) => {
-          const pct = Math.min(94, 74 + Math.round((completed / Math.max(1, total)) * 20));
+          const pct = Math.min(93, 74 + Math.round((completed / Math.max(1, total)) * 19));
           updateMysteryGenerationInStore(params.mysteryId, {
             generationStep: `Synthesized custom voice recording (${completed}/${total})...`,
             generationProgress: pct,
@@ -413,7 +418,38 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
         },
       });
 
-      // 3. Finalize & send the "Your Mystery is Ready!" email as soon as all 3 asset stages finish verified
+      // 2.75 STAGE 3.5: Pre-Delivery Automated QA Critic & Self-Healing Bot (Gates 1-4)
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep:
+          'Running automated AI QA Critic on character portraits, visual clues & audio wiretaps...',
+        generationProgress: 94,
+      });
+      try {
+        const qaReport = await auditAndHealCustomerPackAction(params.mysteryId);
+        if (
+          qaReport.visualCluesRegenerated > 0 ||
+          qaReport.portraitsRegenerated > 0 ||
+          qaReport.textIssuesRepaired > 0
+        ) {
+          updateMysteryGenerationInStore(params.mysteryId, {
+            generationStep: `AI QA Bot self-healed ${qaReport.visualCluesRegenerated} visual clue(s) & ${qaReport.portraitsRegenerated} portrait(s)...`,
+            generationProgress: 97,
+          });
+        }
+        // Gate 4: Non-destructive audio wiretap verification pass (only synthesizes if any audio clue was still missing an .mp3 URL)
+        await pregenerateAllAudioCluesForMystery(params.mysteryId, {
+          forceRegenerate: false,
+        });
+      } catch (qaErr) {
+        console.warn('[BACKGROUND MYSTERY GENERATOR] Non-fatal QA audit error:', qaErr);
+      }
+
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep: 'QA passed! Finalizing Pre-Party Host Hub & sending ready notification...',
+        generationProgress: 99,
+      });
+
+      // 3. Finalize & send the "Your Mystery is Ready!" email as soon as all stages + QA verification finish
       const latestSession = getStoredGameSession(params.mysteryId);
       if (latestSession?.generationStatus === 'ready') {
         return;

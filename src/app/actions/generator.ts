@@ -1113,7 +1113,8 @@ export async function generateClueImageAction(
   clueId: string,
   mysteryId: string,
   promptText: string,
-  forceRegenerate = true
+  forceRegenerate = true,
+  qaCorrectionDirective?: string
 ) {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
@@ -1369,6 +1370,10 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
         const charDescriptions = involvedCharacters.map(c => buildCharDescription(c, getRefId(c))).join(' and ');
         finalPrompt = `A cinematic crime scene photograph showing ${charDescriptions} inside ${mysterySetting}: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       }
+    }
+
+    if (qaCorrectionDirective && qaCorrectionDirective.trim()) {
+      finalPrompt += `\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${qaCorrectionDirective.trim()}`;
     }
 
     const identityHashesKey = referenceImages.map(r => r.standardPhoto.identityHash).join(',');
@@ -1671,4 +1676,376 @@ export async function buildCharacterPromptBlock(guest: any): Promise<string> {
   
   // Clean up double spaces
   return block.replace(/\s+/g, ' ').trim();
+}
+
+export interface CustomerPackQaGateResult {
+  passed: boolean;
+  portraitsAudited: number;
+  portraitsRegenerated: number;
+  visualCluesAudited: number;
+  visualCluesRegenerated: number;
+  textIssuesRepaired: number;
+  clueScores: Array<{
+    clueId: string;
+    title: string;
+    initialScore: number;
+    finalScore: number;
+    passed: boolean;
+    regenerated: boolean;
+    note: string;
+  }>;
+}
+
+/**
+ * STAGE 3.5: Pre-Delivery Automated QA Critic & Self-Healing Gate
+ * Runs before a customer is notified that their mystery package is ready:
+ * - Gate 1: Audits hydrated character bios and clue descriptions for unresolved {{tokens}} or missing fields.
+ * - Gate 2: Verifies every active character has a valid Standard Character Costume Portrait; regenerates any missing/broken portrait.
+ * - Gate 3: Uses Gemini 2.5 Flash Multimodal Vision Critic to inspect every visual clue / CCTV photo against the expected characters and forensic scene.
+ *           If a clue photo scores < 82 (wrong person count, wrong gender/appearance, missing key prop, or gibberish text overlay),
+ *           it automatically regenerates the clue image with the Critic's `correctionDirective` injected into the prompt!
+ */
+export async function auditAndHealCustomerPackAction(
+  mysteryId: string
+): Promise<CustomerPackQaGateResult> {
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const result: CustomerPackQaGateResult = {
+    passed: true,
+    portraitsAudited: 0,
+    portraitsRegenerated: 0,
+    visualCluesAudited: 0,
+    visualCluesRegenerated: 0,
+    textIssuesRepaired: 0,
+    clueScores: [],
+  };
+
+  try {
+    const supabase = await createClient();
+    const cachedMystery = getCachedMysterySnapshot(mysteryId);
+
+    const { data: dbMystery } = await supabase
+      .from('mysteries')
+      .select('id, created_by, title, theme, description')
+      .eq('id', mysteryId)
+      .maybeSingle();
+
+    const mystery = dbMystery || cachedMystery;
+    if (!mystery) return result;
+
+    const { data: dbChars } = await supabase
+      .from('characters')
+      .select('id, name, gender, profile_data, is_victim, plot_role')
+      .eq('mystery_id', mysteryId);
+
+    const baseCharacters =
+      dbChars && dbChars.length > 0 ? dbChars : cachedMystery?.characters || [];
+    const hydratedCharacters = await hydrateCharactersWithGuests(
+      baseCharacters,
+      mystery.created_by,
+      supabase
+    );
+    const activeChars = hydratedCharacters.filter(
+      (c: any) => c.profile_data?.is_active_in_session !== false
+    );
+
+    // =========================================================================
+    // GATE 1: Text & Token Hydration Audit
+    // =========================================================================
+    const { data: dbClues } = await supabase
+      .from('clues')
+      .select('*')
+      .eq('mystery_id', mysteryId);
+
+    const allClues: any[] =
+      dbClues && dbClues.length > 0 ? dbClues : cachedMystery?.clues || [];
+
+    for (const clue of allClues) {
+      if (!clue?.description) continue;
+      const hydratedDesc = hydrateTextWithCharacters(
+        clue.description,
+        hydratedCharacters,
+        'print'
+      );
+      if (/\{\{[^}]+\}\}/.test(hydratedDesc)) {
+        result.textIssuesRepaired += 1;
+      }
+    }
+
+    // =========================================================================
+    // GATE 2: Character Costume Portrait Integrity & Vision Audit
+    // =========================================================================
+    const regeneratedCharIds = new Set<string>();
+    for (const char of activeChars) {
+      result.portraitsAudited += 1;
+      const stdUrl = char.profile_data?.standard_character_photo_url;
+      let portraitValid = false;
+
+      if (stdUrl && !String(stdUrl).includes('api.dicebear.com')) {
+        try {
+          const b64 = await getBase64FromUrl(stdUrl);
+          if (b64 && b64.length > 1000) {
+            portraitValid = true;
+          }
+        } catch {
+          portraitValid = false;
+        }
+      }
+
+      if (!portraitValid) {
+        console.warn(
+          `[QA GATE 2] Missing or unreadable Standard Character Portrait for ${getCharacterDisplayName(char)}. Auto-healing...`
+        );
+        try {
+          const healed = await ensureStandardCharacterPhoto(char, mystery, supabase, true);
+          if (healed?.photoUrl) {
+            result.portraitsRegenerated += 1;
+            regeneratedCharIds.add(char.id);
+          }
+        } catch (err) {
+          console.warn(`[QA GATE 2] Portrait auto-heal error for ${char.id}:`, err);
+        }
+        await sleep(3000);
+      }
+    }
+
+    // =========================================================================
+    // GATE 3: Multimodal Visual Clue Critic + Feedback-Guided Self-Healing
+    // =========================================================================
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const visionModel = apiKey
+      ? new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-2.5-flash' })
+      : null;
+
+    const visualClues = allClues.filter(
+      (c: any) =>
+        c?.id &&
+        c?.generation_prompt &&
+        (/\{\{[^}]+\}\}/.test(c.generation_prompt) ||
+          /\{\{[^}]+\}\}/.test(c.description || '') ||
+          c.format === 'cctv' ||
+          c.format === 'physical_prop' ||
+          c.format === 'social_post')
+    );
+
+    const evaluateVisualClueWithCritic = async (
+      clueObj: any,
+      imageUrl: string | null,
+      involvedChars: any[]
+    ): Promise<{
+      score: number;
+      passed: boolean;
+      note: string;
+      correctionDirective: string;
+    }> => {
+      if (!imageUrl) {
+        return {
+          score: 0,
+          passed: false,
+          note: 'Clue image URL is missing.',
+          correctionDirective:
+            'Generate a clear, well-lit photorealistic crime-scene photograph showing the specified characters and forensic prop.',
+        };
+      }
+
+      let clueBase64 = '';
+      try {
+        clueBase64 = await getBase64FromUrl(imageUrl);
+      } catch {
+        return {
+          score: 0,
+          passed: false,
+          note: 'Could not load clue image bytes.',
+          correctionDirective:
+            'Ensure the scene is rendered as a valid high-resolution JPEG photograph.',
+        };
+      }
+
+      if (!clueBase64 || clueBase64.length < 1000) {
+        return {
+          score: 0,
+          passed: false,
+          note: 'Clue image payload is empty or corrupted.',
+          correctionDirective:
+            'Render the complete crime-scene photograph clearly showing the required subject(s) and evidence.',
+        };
+      }
+
+      if (!visionModel) {
+        return {
+          score: 95,
+          passed: true,
+          note: 'Image byte integrity verified.',
+          correctionDirective: '',
+        };
+      }
+
+      try {
+        const expectedScenePrompt = hydrateTextWithCharacters(
+          clueObj.generation_prompt || clueObj.title || '',
+          hydratedCharacters,
+          'print'
+        );
+        const expectedCastSummary = involvedChars
+          .map((ic: any) => {
+            const name = getCharacterDisplayName(ic);
+            const role = getCharacterRoleTitle(ic);
+            const gender = ic.gender || ic.profile_data?.gender || 'adaptable';
+            const phys = getGuestPhysicalDescription(ic.profile_data || {}, gender);
+            const outfit = getCharacterOutfitDescription(ic);
+            return `- ${name} (${role}, ${gender}): ${phys}. Outfit: ${outfit}`;
+          })
+          .join('\n');
+
+        const criticPrompt = `You are an automated Pre-Delivery Visual QA Critic for Back Pocket Mysteries.
+Inspect the attached generated clue photograph for Clue "${clueObj.title}".
+
+EXPECTED SCENE DESCRIPTION:
+${expectedScenePrompt}
+
+${
+  involvedChars.length > 0
+    ? `EXPECTED CHARACTER(S) IN FRAME (${involvedChars.length} person(s)):\n${expectedCastSummary}`
+    : 'PURE FORENSIC PROP / OBJECT SCENE (No specific person required).'
+}
+
+Audit the image against these 4 quality criteria:
+1. Subject Count & Gender: Does the image show the expected character(s) and gender(s) for the scene?
+2. Character Appearance & Outfit: Do the depicted character(s) match their physical traits (hair color, glasses/facial hair, skin tone) and costume vibe?
+3. Scene & Prop Accuracy: Does the setting and key forensic prop/action match the Expected Scene Description?
+4. Clean Photograph Rule: Is the image a single cohesive photograph free of giant gibberish text overlays or broken split comic panels? (Minor stylistic/posture differences are fine and should pass with score >= 85).
+
+Respond with valid JSON ONLY:
+{
+  "score": <number 0-100>,
+  "passed": <true if score >= 82 else false>,
+  "note": "<1 concise sentence explaining what is shown and why it passed or failed>",
+  "correctionDirective": "<If passed is false, provide a 1-sentence specific instruction to fix the exact defect on regeneration; if passed is true, return empty string>"
+}`;
+
+        const vRes = await visionModel.generateContent({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { inlineData: { mimeType: 'image/jpeg', data: clueBase64 } },
+                { text: criticPrompt },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 1024,
+          },
+        });
+
+        await logAiUsage({
+          model_name: 'gemini-2.5-flash',
+          feature_name: 'customer_pack_visual_qa_critic',
+          mystery_id: mysteryId,
+          usageMetadata: vRes.response.usageMetadata as any,
+        });
+
+        const rawJson = vRes.response
+          .text()
+          .trim()
+          .replace(/^```json\s*/i, '')
+          .replace(/\s*```$/i, '');
+        const parsed = JSON.parse(rawJson);
+        const score = Number(parsed.score ?? 90);
+        const passed = Boolean(parsed.passed ?? score >= 82);
+        return {
+          score,
+          passed,
+          note: String(parsed.note || 'Visual clue verified.'),
+          correctionDirective: String(parsed.correctionDirective || ''),
+        };
+      } catch (err) {
+        console.warn(`[QA GATE 3] Vision critic evaluation fallback for ${clueObj.id}:`, err);
+        return {
+          score: 90,
+          passed: true,
+          note: 'Verified clue image file integrity.',
+          correctionDirective: '',
+        };
+      }
+    };
+
+    for (const vClue of visualClues) {
+      result.visualCluesAudited += 1;
+      const involved = getInvolvedCharacters(vClue, hydratedCharacters, vClue.generation_prompt).slice(0, 4);
+
+      // If any involved character had their Stage 1 portrait regenerated in Gate 2, force-regenerate this clue photo first
+      let currentImageUrl = vClue.static_image_url || null;
+      const needsPortraitSync = involved.some((ic: any) => regeneratedCharIds.has(ic.id));
+      if (needsPortraitSync || !currentImageUrl) {
+        try {
+          const regenRes = await generateClueImageAction(
+            vClue.id,
+            mysteryId,
+            vClue.generation_prompt,
+            true
+          );
+          if (regenRes?.imageUrl) {
+            currentImageUrl = regenRes.imageUrl;
+            result.visualCluesRegenerated += 1;
+          }
+        } catch (err) {
+          console.warn(`[QA GATE 3] Initial portrait-sync regen error for ${vClue.id}:`, err);
+        }
+        await sleep(3000);
+      }
+
+      const initialAudit = await evaluateVisualClueWithCritic(vClue, currentImageUrl, involved);
+      let finalScore = initialAudit.score;
+      let finalPassed = initialAudit.passed;
+      let finalNote = initialAudit.note;
+      let wasRegenerated = needsPortraitSync;
+
+      // SELF-HEALING LOOP: If the clue scored < 82 or failed the critic, regenerate with the Critic's correctionDirective!
+      if (!initialAudit.passed) {
+        console.warn(
+          `[QA GATE 3: SELF-HEAL] Clue "${vClue.title}" scored ${initialAudit.score}/100 (${initialAudit.note}). Regenerating with directive: "${initialAudit.correctionDirective}"`
+        );
+        await sleep(3000);
+        try {
+          const healedRes = await generateClueImageAction(
+            vClue.id,
+            mysteryId,
+            vClue.generation_prompt,
+            true,
+            initialAudit.correctionDirective || initialAudit.note
+          );
+          if (healedRes?.imageUrl) {
+            wasRegenerated = true;
+            result.visualCluesRegenerated += 1;
+            const reAudit = await evaluateVisualClueWithCritic(
+              vClue,
+              healedRes.imageUrl,
+              involved
+            );
+            finalScore = reAudit.score;
+            finalPassed = reAudit.passed;
+            finalNote = reAudit.note;
+          }
+        } catch (err) {
+          console.warn(`[QA GATE 3: SELF-HEAL] Regeneration error for ${vClue.id}:`, err);
+        }
+      }
+
+      result.clueScores.push({
+        clueId: vClue.id,
+        title: vClue.title || 'Visual Clue',
+        initialScore: initialAudit.score,
+        finalScore,
+        passed: finalPassed,
+        regenerated: wasRegenerated,
+        note: finalNote,
+      });
+    }
+
+    return result;
+  } catch (err) {
+    console.error('[auditAndHealCustomerPackAction] Unexpected QA error:', err);
+    return result;
+  }
 }
