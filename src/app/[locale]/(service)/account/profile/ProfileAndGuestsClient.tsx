@@ -23,6 +23,8 @@ export default function ProfileAndGuestsClient({
   locale
 }: ProfileAndGuestsClientProps) {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [liveProfile, setLiveProfile] = useState(profile);
+  const [liveUserName, setLiveUserName] = useState(user.name);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -46,8 +48,8 @@ export default function ProfileAndGuestsClient({
 
       {/* User's Profile Card (Hero) */}
       <ProfileCard 
-        user={user} 
-        profile={profile} 
+        user={{ ...user, name: liveUserName }} 
+        profile={liveProfile} 
         onEdit={() => setIsEditingProfile(true)} 
       />
 
@@ -62,9 +64,18 @@ export default function ProfileAndGuestsClient({
       {/* Edit Profile Modal */}
       {isEditingProfile && (
         <ProfileClient 
-          user={user} 
-          profile={profile} 
-          onClose={() => setIsEditingProfile(false)} 
+          user={{ ...user, name: liveUserName }} 
+          profile={liveProfile} 
+          onClose={() => setIsEditingProfile(false)}
+          onSaved={updated => {
+            if (updated.full_name) {
+              setLiveUserName(updated.full_name);
+            }
+            setLiveProfile((prev: any) => ({
+              ...(prev || {}),
+              ...updated,
+            }));
+          }}
         />
       )}
     </div>

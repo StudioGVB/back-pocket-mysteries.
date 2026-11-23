@@ -21,16 +21,18 @@ export default async function MysteryCharactersPage({
   const { data: { user } } = await supabase.auth.getUser();
 
   // Helper to construct avatar URLs from config
-  const avatarUrlHelper = (config: any) => {
-    if (!config) return null;
+  const avatarUrlHelper = (config: any, fallbackAiPhotoUrl?: string) => {
+    if (!config && !fallbackAiPhotoUrl) return null;
+    const aiPhotoUrl = config?.aiPhotoUrl || fallbackAiPhotoUrl;
     const params = new URLSearchParams({
-      seed: config.seed || 'player',
-      top: config.top || 'shortFlat',
-      topColor: config.hairColor || '282828',
-      hairColor: config.hairColor || '282828',
-      skinColor: config.skinColor || 'ffe0bd',
-      ...(config.facialHair ? { facialHair: config.facialHair } : {}),
-      ...(config.accent ? { accent: config.accent } : {}),
+      seed: config?.seed || 'player',
+      top: config?.top || 'straight01',
+      topColor: config?.hairColor || '282828',
+      hairColor: config?.hairColor || '282828',
+      skinColor: config?.skinColor || 'ffcd94',
+      ...(config?.facialHair ? { facialHair: config.facialHair } : {}),
+      ...(config?.accent ? { accent: config.accent } : {}),
+      ...(aiPhotoUrl ? { aiPhotoUrl } : {}),
       backgroundColor: 'transparent',
     });
     return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
@@ -127,7 +129,13 @@ export default async function MysteryCharactersPage({
       eye_color: hostProfile?.avatar_config?.eyeColor || 'Hazel',
       height: hostProfile?.avatar_config?.height || 'Average',
       avatar_url:
-        avatarUrlHelper(hostProfile?.avatar_config) ||
+        (String(hostProfile?.avatar_url || '').includes('aiPhotoUrl=')
+          ? hostProfile.avatar_url
+          : '') ||
+        avatarUrlHelper(
+          hostProfile?.avatar_config,
+          '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg'
+        ) ||
         getStaticMockGuests()[0]?.avatar_url ||
         '',
       traits:

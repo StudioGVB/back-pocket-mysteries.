@@ -18,6 +18,7 @@ interface CharacterCardProps {
 
 import { getCharacterColor } from '@/utils/colors';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { resolveDisplayAvatarUrl } from '@/utils/avatar';
 import {
   getCharacterDisplayName,
   getCharacterRoleTitle,
@@ -183,8 +184,12 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 overflow-hidden">
                 <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200/60 shrink-0">
-                  {profileData?.avatar_url ? (
-                    <img src={profileData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  {resolveDisplayAvatarUrl(profileData?.standard_character_photo_url || profileData?.avatar_url) ? (
+                    <img
+                      src={resolveDisplayAvatarUrl(profileData?.standard_character_photo_url || profileData?.avatar_url)}
+                      alt="Avatar"
+                      className="w-full h-full object-cover object-top"
+                    />
                   ) : (
                     <span className="text-sm">🎭</span>
                   )}

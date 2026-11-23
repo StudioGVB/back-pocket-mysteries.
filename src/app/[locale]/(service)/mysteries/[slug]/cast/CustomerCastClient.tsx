@@ -10,7 +10,7 @@ import PriceDisplay from '@/components/marketing/PriceDisplay';
 import { Locale } from '@/lib/i18n-config';
 import { getTierForPlayerCount, PLAYER_TIER_LIMITS } from '@/utils/localization';
 import { resolveDisplayAvatarUrl, buildAvatarUrl } from '@/utils/avatar';
-import { saveGuestAction } from '@/app/actions/guests';
+import { saveGuestAction, updateGuestAction } from '@/app/actions/guests';
 import { saveCustomerCastAction } from '@/app/actions/customer-mystery';
 import MysteryReadyHub from '@/components/mysteries/MysteryReadyHub';
 import MysteryGeneratingScreen from '@/components/mysteries/MysteryGeneratingScreen';
@@ -362,6 +362,7 @@ export default function CustomerCastClient({
   const router = useRouter();
   const [guests, setGuests] = useState<GuestItem[]>(initialGuests);
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [editingCastGuest, setEditingCastGuest] = useState<GuestItem | null>(null);
   const [isHostProfileModalOpen, setIsHostProfileModalOpen] = useState(false);
   const [liveHostProfile, setLiveHostProfile] = useState<any>(initialHostProfile);
   const [viewMode, setViewMode] = useState<'cast' | 'generating' | 'ready'>(
@@ -785,19 +786,51 @@ export default function CustomerCastClient({
     commitAssignment(victimCharacter.id, newGuestId);
   };
 
-  // Add a brand new guest on the fly
+  // Add a brand new guest or save physical/profile edits to an existing guest on the fly
   const handleSaveNewGuest = async (guestData: any) => {
-    const res = await saveGuestAction(guestData);
+    const payload = {
+      ...guestData,
+      avatar_url: guestData.avatarUrl || guestData.avatar_url,
+      eye_color: guestData.eyeColor || guestData.eye_color,
+    };
+
+    if (editingCastGuest) {
+      const res = await updateGuestAction(editingCastGuest.id, payload);
+      if (res.guest) {
+        const updatedItem: GuestItem = {
+          ...editingCastGuest,
+          id: res.guest.id,
+          name: res.guest.name,
+          gender: res.guest.gender || editingCastGuest.gender || 'adaptable',
+          accent: guestData.accent || editingCastGuest.accent,
+          eye_color: res.guest.eye_color || guestData.eyeColor || editingCastGuest.eye_color,
+          height: res.guest.height || guestData.height || editingCastGuest.height,
+          avatar_url: res.guest.avatar_url || payload.avatar_url || editingCastGuest.avatar_url,
+          traits: res.guest.traits || editingCastGuest.traits || [],
+          bio: res.guest.bio || editingCastGuest.bio || '',
+        };
+        setGuests(prev => prev.map(g => (g.id === editingCastGuest.id ? updatedItem : g)));
+      }
+      setEditingCastGuest(null);
+      return;
+    }
+
+    const res = await saveGuestAction(payload);
     if (res.guest) {
       const saved: GuestItem = {
         id: res.guest.id,
         name: res.guest.name,
         gender: res.guest.gender || 'adaptable',
-        avatar_url: res.guest.avatar_url || '',
+        accent: guestData.accent || 'Australian',
+        eye_color: res.guest.eye_color || guestData.eyeColor || '',
+        height: res.guest.height || guestData.height || '',
+        avatar_url: res.guest.avatar_url || payload.avatar_url || '',
         traits: res.guest.traits || [],
         bio: res.guest.bio || '',
       };
-      const updatedGuests = [saved, ...guests];
+      const hostObj = guests.find(g => g.isHost);
+      const nonHostGuests = guests.filter(g => !g.isHost);
+      const updatedGuests = hostObj ? [hostObj, saved, ...nonHostGuests] : [saved, ...guests];
       setGuests(updatedGuests);
 
       if (attendingGuestIds.length < maxRoles) {
@@ -1243,7 +1276,10 @@ export default function CustomerCastClient({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsGuestModalOpen(true)}
+                  onClick={() => {
+                    setEditingCastGuest(null);
+                    setIsGuestModalOpen(true);
+                  }}
                   className="px-4 py-2.5 rounded-xl border-2 border-dashed border-brand-pink/40 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink/5 transition-colors cursor-pointer"
                 >
                   + Add Guest
@@ -1365,10 +1401,17 @@ export default function CustomerCastClient({
               const isRandomSuspect = guest.id.startsWith('random-suspect-');
 
               return (
-                <button
+                <div
                   key={guest.id}
-                  type="button"
                   onClick={() => handleToggleGuestAttendance(guest.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleToggleGuestAttendance(guest.id);
+                    }
+                  }}
                   className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
                     isIn
                       ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
@@ -1402,16 +1445,36 @@ export default function CustomerCastClient({
                       {guest.accent ? ` • ${guest.accent}` : ''}
                     </p>
                   </div>
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
-                      isIn
-                        ? 'bg-brand-pink text-white'
-                        : 'bg-slate-100 text-slate-500 hover:bg-brand-pink/10 hover:text-brand-pink'
-                    }`}
-                  >
-                    {isIn ? 'IN' : 'OUT'}
-                  </span>
-                </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {!isRandomSuspect && !guest.isLinked && (
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (guest.isHost) {
+                            setIsHostProfileModalOpen(true);
+                          } else {
+                            setEditingCastGuest(guest);
+                            setIsGuestModalOpen(true);
+                          }
+                        }}
+                        title={`Edit ${guest.name}`}
+                        className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-brand-pink/15 text-slate-500 hover:text-brand-pink flex items-center justify-center text-xs transition-colors cursor-pointer"
+                      >
+                        ✎
+                      </button>
+                    )}
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
+                        isIn
+                          ? 'bg-brand-pink text-white'
+                          : 'bg-slate-100 text-slate-500 hover:bg-brand-pink/10 hover:text-brand-pink'
+                      }`}
+                    >
+                      {isIn ? 'IN' : 'OUT'}
+                    </span>
+                  </div>
+                </div>
               );
             })}
         </div>
@@ -1846,7 +1909,9 @@ export default function CustomerCastClient({
                   bio: updated.bio,
                   traits: updated.character_preferences || g.traits,
                   accent: updated.avatar_config?.accent || g.accent,
-                  avatar_url: buildAvatarUrl(updated.avatar_config, updated.full_name || g.name),
+                  avatar_url:
+                    updated.avatar_url ||
+                    buildAvatarUrl(updated.avatar_config, updated.full_name || g.name),
                 };
               })
             );
@@ -1856,8 +1921,12 @@ export default function CustomerCastClient({
 
       <GuestModal
         isOpen={isGuestModalOpen}
-        onClose={() => setIsGuestModalOpen(false)}
+        onClose={() => {
+          setIsGuestModalOpen(false);
+          setEditingCastGuest(null);
+        }}
         onSave={handleSaveNewGuest}
+        initialData={editingCastGuest}
       />
     </div>
   );

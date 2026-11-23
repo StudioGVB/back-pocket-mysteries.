@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { GuestModal } from '@/components/account/GuestModal';
 import { sendGuestInvitation, createShareableInviteLink, cancelInvitation, removeGuestConnection } from '@/app/actions/guest-invitations';
 import { saveGuestAction, updateGuestAction, removeGuestAction } from '@/app/actions/guests';
-import { buildAvatarUrl, extractAccentFromAvatarUrl } from '@/utils/avatar';
+import { buildAvatarUrl, extractAccentFromAvatarUrl, resolveDisplayAvatarUrl } from '@/utils/avatar';
 
 interface ManualGuest {
   id: string;
@@ -78,7 +78,9 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
   }, guest.name);
   
   const isDataUri = guest.avatar_url?.startsWith('data:image/');
-  const displayAvatar = isDataUri ? defaultAvatar : (guest.avatar_url || defaultAvatar);
+  const rawDisplayAvatar = isDataUri ? defaultAvatar : (guest.avatar_url || defaultAvatar);
+  const displayAvatar = resolveDisplayAvatarUrl(rawDisplayAvatar) || rawDisplayAvatar || '';
+  const isAiPhoto = Boolean(displayAvatar) && !displayAvatar.includes('api.dicebear.com');
   const accent = guest.accent || extractAccentFromAvatarUrl(guest.avatar_url);
 
   const handleCopyPendingLink = async () => {
@@ -120,7 +122,11 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
             {displayAvatar ? (
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={displayAvatar} alt={guest.name} className="w-[120%] h-[120%] object-cover mt-2" />
+                <img
+                  src={displayAvatar}
+                  alt={guest.name}
+                  className={isAiPhoto ? 'w-full h-full object-cover object-top' : 'w-[120%] h-[120%] object-cover mt-2'}
+                />
               </div>
             ) : (
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white border-2 border-white shadow-md" style={{ background: '#fe04c6' }}>
@@ -179,7 +185,8 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
 }
 
 function LinkedGuestCard({ guest, onUnlink }: { guest: LinkedGuest; onUnlink?: () => void }) {
-  const avatar = guest.profile?.avatar_config ? buildAvatarUrl(guest.profile.avatar_config, guest.name) : undefined;
+  const rawAvatar = guest.profile?.avatar_config ? buildAvatarUrl(guest.profile.avatar_config, guest.name) : undefined;
+  const avatar = resolveDisplayAvatarUrl(rawAvatar) || rawAvatar;
   const initials = guest.name.charAt(0).toUpperCase();
   return (
     <div className="relative group rounded-[2rem] p-[3px] flex flex-col">
@@ -197,7 +204,7 @@ function LinkedGuestCard({ guest, onUnlink }: { guest: LinkedGuest; onUnlink?: (
         {avatar ? (
           <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatar} alt={guest.name} className="w-full h-full object-cover scale-110" />
+            <img src={avatar} alt={guest.name} className="w-full h-full object-cover object-top" />
           </div>
         ) : (
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white border-2 border-white shadow-md flex-shrink-0" style={{ background: '#fe04c6' }}>

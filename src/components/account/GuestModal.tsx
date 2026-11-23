@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, KeyboardEvent } from 'react';
+import React, { useState, useMemo, KeyboardEvent } from 'react';
 import { AvatarBuilder, deriveDiceBearTop } from './AvatarBuilder';
 import {
   buildAvatarUrl,
@@ -9,6 +9,8 @@ import {
   GUEST_AGE_OPTIONS,
   extractAccentFromAvatarUrl,
   extractAgeFromAvatarUrl,
+  resolveDisplayAvatarUrl,
+  computeAvatarPhysicalSignature,
 } from '@/utils/avatar';
 import Image from 'next/image';
 import { generateRandomQuirk } from '@/app/actions/generator';
@@ -33,6 +35,7 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   const [accent, setAccent] = useState('Australian');
   const [ethnicity, setEthnicity] = useState('');
   const [isEthnicityDropdownOpen, setIsEthnicityDropdownOpen] = useState(false);
+  const [savedPhysicalSig, setSavedPhysicalSig] = useState('');
   
   const [quirks, setQuirks] = useState<string[]>([]);
   const [currentQuirk, setCurrentQuirk] = useState('');
@@ -105,14 +108,15 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
               hairTexture: ht || 'Straight',
               hairColor: url.searchParams.get('hairColor') || '282828',
               skinColor: url.searchParams.get('skinColor') || 'ffe0bd',
-              eyeColor: initialData.eye_color || 'Brown',
-              height: initialData.height || 'Average',
+              eyeColor: url.searchParams.get('eyeColor') || initialData.eye_color || 'Brown',
+              height: url.searchParams.get('height') || initialData.height || 'Average',
               facialHair: url.searchParams.get('facialHair') || undefined,
               accessories: url.searchParams.get('accessories') || undefined,
               build: url.searchParams.get('build') || undefined,
               distinctiveFeatures: url.searchParams.get('distinctiveFeatures') ? url.searchParams.get('distinctiveFeatures')!.split(',') : undefined,
               accent: url.searchParams.get('accent') || initialAccent,
               age: (url.searchParams.get('age') as any) || initialAge,
+              aiPhotoUrl: url.searchParams.get('aiPhotoUrl') || undefined,
             };
           } catch (e) {
             // Invalid URL, keep initialConfig
@@ -120,6 +124,16 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
         }
         
         setAvatarConfig(initialConfig);
+        setSavedPhysicalSig(
+          computeAvatarPhysicalSignature({
+            gender: initialData.gender || 'Unspecified',
+            age: initialAge,
+            ethnicity: initialData.ethnicity || '',
+            eyeColor: initialConfig.eyeColor,
+            height: initialConfig.height,
+            avatar_config: initialConfig,
+          })
+        );
       } else {
         // Reset
         setName('');
@@ -130,6 +144,7 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
         setEthnicity('');
         setQuirks([]);
         setBio('');
+        setSavedPhysicalSig('');
         setAvatarConfig({
           seed: 'Felix', top: 'shortFlat', hairLength: 'Short', hairTexture: 'Straight', hairColor: '282828', skinColor: 'ffe0bd', eyeColor: 'Brown', height: 'Average', accent: 'Australian', age: 'young',
         });
@@ -137,6 +152,21 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
       setActiveTab('basics');
     }
   }, [isOpen, initialData]);
+
+  const currentPhysicalSig = useMemo(
+    () =>
+      computeAvatarPhysicalSignature({
+        gender,
+        age,
+        ethnicity,
+        eyeColor: avatarConfig.eyeColor,
+        height: avatarConfig.height,
+        avatar_config: avatarConfig,
+      }),
+    [gender, age, ethnicity, avatarConfig]
+  );
+
+  const hasPhysicalChanges = !initialData || currentPhysicalSig !== savedPhysicalSig;
 
   if (!isOpen) return null;
 
@@ -158,8 +188,18 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
     }
   };
 
-  // DiceBear Avataaars API URL generator
-  const avatarUrl = buildAvatarUrl({ ...avatarConfig, accent, age }, name);
+  // DiceBear Avataaars API URL generator (preserves aiPhotoUrl only if physical traits are unchanged)
+  const avatarUrl = buildAvatarUrl(
+    {
+      ...avatarConfig,
+      accent,
+      age,
+      ethnicity,
+      aiPhotoUrl: hasPhysicalChanges ? undefined : avatarConfig.aiPhotoUrl,
+    },
+    name
+  );
+  const previewDisplayUrl = resolveDisplayAvatarUrl(avatarUrl) || avatarUrl;
 
   const handleAddQuirk = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currentQuirk.trim() !== '') {
@@ -269,13 +309,21 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
         {/* Mobile (< md) Compact Top Avatar Preview Header */}
         <div className="flex md:hidden items-center justify-between gap-3 px-4 py-3.5 bg-slate-50 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-13 h-13 rounded-full bg-white border-2 border-white shadow-md overflow-hidden flex items-center justify-center shrink-0">
+            <div className="w-13 h-13 rounded-full bg-white border-2 border-white shadow-md overflow-hidden flex items-center justify-center shrink-0 relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={avatarUrl}
+                src={previewDisplayUrl}
                 alt="Avatar preview"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-top"
               />
+              {isSaving && hasPhysicalChanges && (
+                <div className="absolute inset-0 bg-slate-900/70 flex items-center justify-center">
+                  <svg className="animate-spin h-4 w-4 text-brand-pink" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                </div>
+              )}
             </div>
             <div className="min-w-0">
               <h2 className="text-base font-black text-slate-900 truncate leading-tight">
@@ -304,14 +352,33 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
              <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
           </div>
           
-          <div className="w-56 h-56 lg:w-64 lg:h-64 relative mb-8 drop-shadow-xl bg-white rounded-full border-4 border-white shadow-brand-pink/10 shadow-2xl overflow-hidden flex items-center justify-center">
+          <div className="w-56 h-56 lg:w-64 lg:h-64 relative mb-5 drop-shadow-xl bg-white rounded-full border-4 border-white shadow-brand-pink/10 shadow-2xl overflow-hidden flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src={avatarUrl} 
+              src={previewDisplayUrl} 
               alt="Avatar preview" 
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover object-top" 
             />
+            {isSaving && hasPhysicalChanges && (
+              <div className="absolute inset-0 bg-slate-900/75 backdrop-blur-sm flex flex-col items-center justify-center px-4 text-center">
+                <svg className="animate-spin h-8 w-8 text-brand-pink mb-2" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+                <span className="text-[11px] font-black uppercase tracking-widest text-white">
+                  Generating AI Character Photo...
+                </span>
+              </div>
+            )}
           </div>
+
+          {hasPhysicalChanges && (
+            <span className="mb-3 px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-wider text-center">
+              {initialData
+                ? '✨ Physical Changes Detected - New AI Photo on Save'
+                : '✨ AI Character Photo Generated on Save'}
+            </span>
+          )}
           
           <div className="text-center w-full">
             <h2 className="text-3xl font-black text-slate-900 truncate px-4">{name || 'New Guest'}</h2>
@@ -633,7 +700,13 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
                 className="flex-1 sm:flex-initial px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-black text-xs sm:text-sm text-white transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
                 style={{ background: '#fe04c6', boxShadow: '0 8px 20px -8px rgba(254,4,198,0.5)' }}
               >
-                {isSaving ? 'Saving...' : 'Save Guest'}
+                {isSaving
+                  ? hasPhysicalChanges
+                    ? 'Generating AI Photo & Saving...'
+                    : 'Saving...'
+                  : hasPhysicalChanges && initialData
+                  ? '✨ Save & Regenerate AI Photo'
+                  : 'Save Guest'}
               </button>
             </div>
           </div>

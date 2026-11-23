@@ -257,7 +257,8 @@ export default async function CustomerMysteryCastPage({
     const hostEyeColor = hostProfile?.avatar_config?.eyeColor || (isGabriella ? 'Hazel' : '');
     const hostHeight = hostProfile?.avatar_config?.height || (isGabriella ? 'Average' : '');
 
-    const hostAvatarConfig = hostProfile?.avatar_config || {
+    const defaultGabriellaAiPhoto = '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg';
+    const hostAvatarConfig = {
       seed: resolvedHostName,
       top: 'straight01',
       hairLength: 'Long',
@@ -268,6 +269,10 @@ export default async function CustomerMysteryCastPage({
       height: hostHeight || 'Average',
       accessories: 'none',
       accent: 'Australian',
+      ...(hostProfile?.avatar_config || {}),
+      aiPhotoUrl:
+        hostProfile?.avatar_config?.aiPhotoUrl ||
+        (isGabriella ? defaultGabriellaAiPhoto : undefined),
     };
 
     let hostAvatarUrl =

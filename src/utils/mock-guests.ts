@@ -14,7 +14,14 @@ export interface MockGuest {
 }
 
 export function getStaticMockGuests(): MockGuest[] {
-  const avatarUrlHelper = (seed: string, top: string, hairColor: string, skinColor: string, facialHair?: string) => {
+  const avatarUrlHelper = (
+    seed: string,
+    top: string,
+    hairColor: string,
+    skinColor: string,
+    facialHair?: string,
+    aiPhotoUrl?: string
+  ) => {
     const params = new URLSearchParams({
       seed,
       top,
@@ -22,6 +29,7 @@ export function getStaticMockGuests(): MockGuest[] {
       hairColor: hairColor,
       skinColor,
       ...(facialHair ? { facialHair } : {}),
+      ...(aiPhotoUrl ? { aiPhotoUrl } : {}),
       backgroundColor: 'transparent',
     });
     return `https://api.dicebear.com/7.x/avataaars/svg?${params}`;
@@ -36,7 +44,14 @@ export function getStaticMockGuests(): MockGuest[] {
       gender: 'female',
       eye_color: 'Hazel',
       height: 'Average',
-      avatar_url: avatarUrlHelper('gabriella', 'straight01', '282828', 'ffcd94'),
+      avatar_url: avatarUrlHelper(
+        'gabriella',
+        'straight01',
+        '282828',
+        'ffcd94',
+        undefined,
+        '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg'
+      ),
       traits: ['Cryptographer', 'Observant', 'Earl Grey Lover'],
       bio: 'Gabriella, an amateur cryptographer and professional cat whisperer, claims she can decipher any coded message, especially after a strong cup of Earl Grey and a good snoop.',
     },

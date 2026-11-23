@@ -17,26 +17,26 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ user, profile, onEdit }: ProfileCardProps) {
+  const defaultHostAiPhoto = '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg';
   const rawAvatarUrl =
     profile?.avatar_url ||
-    (profile?.avatar_config
-      ? buildAvatarUrl(profile.avatar_config as AvatarConfig, user.name)
-      : buildAvatarUrl(
-          {
-            seed: user.name,
-            top: 'straight01',
-            hairColor: '282828',
-            skinColor: 'ffcd94',
-            accessories: 'none',
-          },
-          user.name
-        ));
-  const avatarUrl = resolveDisplayAvatarUrl(rawAvatarUrl) || rawAvatarUrl || '';
-  const isAiPhoto =
-    Boolean(profile?.avatar_config?.aiPhotoUrl) ||
-    String(profile?.avatar_url || '').includes('aiPhotoUrl=') ||
-    avatarUrl.startsWith('/generated-avatars/') ||
-    avatarUrl.includes('supabase.co/storage');
+    buildAvatarUrl(
+      {
+        seed: user.name,
+        top: 'straight01',
+        hairColor: '282828',
+        skinColor: 'ffcd94',
+        accessories: 'none',
+        ...(profile?.avatar_config || {}),
+        aiPhotoUrl: profile?.avatar_config?.aiPhotoUrl || defaultHostAiPhoto,
+      },
+      user.name
+    );
+  const resolved = resolveDisplayAvatarUrl(rawAvatarUrl) || rawAvatarUrl || '';
+  const avatarUrl = resolved.includes('api.dicebear.com')
+    ? profile?.avatar_config?.aiPhotoUrl || defaultHostAiPhoto
+    : resolved;
+  const isAiPhoto = !avatarUrl.includes('api.dicebear.com');
 
   return (
     <div className="bg-white border-2 border-brand-pink/20 p-5 sm:p-8 rounded-3xl sm:rounded-[2rem] shadow-xl shadow-brand-pink/5 relative overflow-hidden mb-8 sm:mb-10 group transition-all hover:border-brand-pink/40">

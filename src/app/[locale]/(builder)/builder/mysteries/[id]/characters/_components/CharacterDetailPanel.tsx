@@ -16,6 +16,7 @@ interface CharacterDetailPanelProps {
 
 import { RoleTitleInput } from './RoleTitleInput';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { resolveDisplayAvatarUrl } from '@/utils/avatar';
 import { getCharacterRoleTitle, getCharacterPrefix } from '@/utils/hydration';
 
 export function CharacterDetailPanel({ character, mysteryId, allCharacters, guests, onClose }: CharacterDetailPanelProps) {
@@ -142,8 +143,12 @@ export function CharacterDetailPanel({ character, mysteryId, allCharacters, gues
                   <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 relative">
                     <div className="flex items-center gap-4 overflow-hidden w-full sm:w-auto">
                       <div className="w-14 h-14 rounded-2xl bg-white overflow-hidden flex items-center justify-center border border-slate-200/60 shrink-0 shadow-sm">
-                        {profileData?.avatar_url ? (
-                          <img src={profileData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                        {resolveDisplayAvatarUrl(profileData?.standard_character_photo_url || profileData?.avatar_url) ? (
+                          <img
+                            src={resolveDisplayAvatarUrl(profileData?.standard_character_photo_url || profileData?.avatar_url)}
+                            alt="Avatar"
+                            className="w-full h-full object-cover object-top"
+                          />
                         ) : (
                           <span className="text-xl">🎭</span>
                         )}

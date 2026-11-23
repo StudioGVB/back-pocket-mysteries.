@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useMemo } from 'react';
 import { AvatarBuilder, deriveDiceBearTop } from '@/components/account/AvatarBuilder';
 import { PhotoTraitScanner, ScannedGuestTraits } from '@/components/account/PhotoTraitScanner';
@@ -551,9 +553,45 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
             </div>
           )}
         </div>
+      </div>
+        </div>
+
+        {/* Pinned Footer Actions */}
+        <div className="px-5 py-4 sm:px-8 sm:py-5 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50 flex-shrink-0">
+          <div className="text-xs font-bold text-slate-400 hidden sm:block">
+            {hasPhysicalChanges
+              ? '✨ Physical changes detected - saving will generate a new AI character photo'
+              : 'All physical traits & preferences sync across your mysteries'}
+          </div>
+          <div className="flex items-center justify-end gap-2.5 w-full sm:w-auto">
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+                className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl font-bold text-xs sm:text-sm text-slate-500 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => handleSave({ forcePhoto: hasPhysicalChanges, closeAfterSave: true })}
+              disabled={saving}
+              className="flex-1 sm:flex-initial px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-black text-xs sm:text-sm text-white transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 cursor-pointer"
+              style={{ background: '#fe04c6', boxShadow: '0 8px 20px -8px rgba(254,4,198,0.5)' }}
+            >
+              {saving
+                ? hasPhysicalChanges || regeneratingOnly
+                  ? 'Generating AI Photo & Saving...'
+                  : 'Saving...'
+                : hasPhysicalChanges
+                ? '✨ Save & Regenerate AI Photo'
+                : 'Save Profile'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
