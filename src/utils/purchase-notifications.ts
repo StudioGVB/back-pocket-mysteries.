@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { Resend } from 'resend';
 import { buildBrandedEmailShell } from '@/lib/branded-email-template';
+import { getEffectiveCoverUrl } from '@/utils/moodboard';
+import { getCachedMysterySnapshot } from '@/lib/live-session-store';
 
 export interface PurchaseNotificationPayload {
   dedupeKey?: string;
@@ -297,8 +299,29 @@ export interface CustomerMysteryEmailPayload {
   mysteryId: string;
   mysterySlug?: string | null;
   mysteryTitle: string;
+  mysteryImageUrl?: string | null;
+  mysteryTheme?: string | null;
   pin?: string | null;
   locale?: string;
+}
+
+const PUBLIC_BRAND_DOMAIN = 'https://backpocketmysteries.com';
+
+function resolvePublicMysteryCoverUrl(payload: CustomerMysteryEmailPayload): string {
+  const cached = payload.mysteryId ? getCachedMysterySnapshot(payload.mysteryId) : null;
+  const rawImg = payload.mysteryImageUrl || cached?.image_url || null;
+  const theme = payload.mysteryTheme || cached?.theme || null;
+  const cover = getEffectiveCoverUrl(rawImg, theme, payload.mysteryTitle);
+
+  if (cover && !cover.startsWith('data:')) {
+    if (cover.startsWith('http://') || cover.startsWith('https://')) {
+      return cover;
+    }
+    const cleanRel = cover.startsWith('/') ? cover : `/${cover}`;
+    return `${PUBLIC_BRAND_DOMAIN}${cleanRel}`;
+  }
+
+  return `${PUBLIC_BRAND_DOMAIN}/hero-mystery-playing.png`;
 }
 
 export async function sendCustomerGenerationStartedEmail(
@@ -316,32 +339,68 @@ export async function sendCustomerGenerationStartedEmail(
 
   const locale = payload.locale || 'en';
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    'http://localhost:3000';
+    process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')
+      ? process.env.NEXT_PUBLIC_SITE_URL
+      : PUBLIC_BRAND_DOMAIN;
   const myStoriesUrl = `${siteUrl}/${locale}/account/orders`;
   const greetingName = payload.customerName ? payload.customerName.split(' ')[0] : 'Detective';
+  const coverPhotoUrl = resolvePublicMysteryCoverUrl(payload);
 
-  const subject = `☕ We're Brewing Your Mystery Package! ("${payload.mysteryTitle}") - Ready in ~20 Mins`;
+  const subject = `☕ Grab a Coffee, ${greetingName}! We're Brewing "${payload.mysteryTitle}" (~20 Mins)`;
 
   const html = buildBrandedEmailShell({
-    preheader: `Your custom cast for "${payload.mysteryTitle}" is locked in — your mystery pack will be ready in ~20 minutes.`,
-    kicker: 'CUSTOM PACKAGE GENERATING (~20 MINS)',
-    headline: `Go Grab a Coffee, ${greetingName} — Your Case Is Being Built.`,
+    preheader: `Your custom cast for "${payload.mysteryTitle}" is locked in! Your mystery pack will be ready in ~20 minutes.`,
+    badgeText: '🎬 CAST LOCKED IN',
+    kicker: 'CUSTOM MYSTERY STUDIO • READY IN ~20 MINS',
+    headline: `Go Grab a Coffee, ${greetingName}! Your Crime Scene Is Being Built ☕🕵️‍♀️`,
+    heroImageUrl: coverPhotoUrl,
+    heroImageAlt: payload.mysteryTitle,
+    heroImageBadge: `🎭 YOUR MYSTERY PACK: ${payload.mysteryTitle.toUpperCase()}`,
+    heroImageCaption: `Starring your custom cast in "${payload.mysteryTitle}" - our AI detective studio is dressing your suspects and planting the clues right now!`,
     bodyHtml: `
-      <p style="margin:0 0 16px 0;color:#374151;">
-        Your cast for <strong style="color:#1e191c;">${payload.mysteryTitle}</strong> is locked in. Our story engine is now generating your personalized character dossiers, outfit guides, CCTV stills, and multi-speaker audio clues.
+      <p style="margin:0 0 18px 0;color:#374151;font-size:15px;">
+        Cue the dramatic music! Your cast for <strong style="color:#1e191c;">${payload.mysteryTitle}</strong> is officially locked in. Behind the scenes, our studio is tailoring every alibi, suspect portrait, and piece of forensic evidence around your lineup.
       </p>
-      <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #10b981;padding:20px 24px;border-radius:12px;margin-bottom:8px;">
+
+      <!-- FUN 4-STEP WHAT WE'RE COOKING UP CARD -->
+      <div style="background-color:#fdf2f8;border:2px solid #fbcfe8;border-radius:16px;padding:20px 22px;margin-bottom:20px;">
+        <p style="margin:0 0 12px 0;color:#fe04c6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;">
+          ✨ WHAT OUR DETECTIVE LAB IS COOKING UP RIGHT NOW
+        </p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-size:13px;color:#1e191c;">
+          <tr>
+            <td style="padding:7px 0;border-bottom:1px solid #fce7f3;">
+              <strong>🎭 1. Custom Character Costume Portraits:</strong> Styling every suspect in their signature theme outfit.
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:7px 0;border-bottom:1px solid #fce7f3;">
+              <strong>📸 2. Crime-Scene &amp; CCTV Stills:</strong> Placing your cast directly into caught-on-camera evidence photos.
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:7px 0;border-bottom:1px solid #fce7f3;">
+              <strong>🎙️ 3. Multi-Accent Voice Wiretaps:</strong> Recording dramatic leaked audio clues &amp; alibis.
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:7px 0 0 0;">
+              <strong>🛡️ 4. Pre-Delivery Quality Check:</strong> Running our 4-Gate QA inspection so every clue arrives spotless.
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #10b981;padding:20px 24px;border-radius:14px;margin-bottom:8px;">
         <p style="margin:0 0 6px 0;color:#34d399;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1.8px;">
-          ✓ SAFE TO CLOSE YOUR BROWSER
+          ✓ SAFE TO CLOSE YOUR BROWSER (~20 MINS)
         </p>
         <p style="margin:0;color:#d4d4d8;font-size:13px;line-height:1.65;">
-          Your complete package will be ready in <strong>~20 minutes</strong>. You can safely close your browser while our servers build everything in the background. We will email you the moment it is ready, and it will be waiting for you inside <strong>My Mysteries</strong>.
+          Your complete package takes <strong>~20 minutes</strong> to build and QA-verify. Feel free to close your browser and go grab a coffee or pour a drink! We will email you the exact moment your pack is unlocked in <strong>My Mysteries</strong>.
         </p>
       </div>
     `,
-    ctaText: 'Open My Mysteries →',
+    ctaText: 'Peek at My Mysteries →',
     ctaUrl: myStoriesUrl,
   });
 
@@ -407,59 +466,76 @@ export async function sendCustomerMysteryReadyEmail(
 
   const locale = payload.locale || 'en';
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    'https://backpocketmysteries.com';
+    process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')
+      ? process.env.NEXT_PUBLIC_SITE_URL
+      : PUBLIC_BRAND_DOMAIN;
   const targetSlug = payload.mysterySlug || payload.mysteryId;
   const myStoriesUrl = `${siteUrl}/${locale}/account/orders`;
-  const readyHubUrl = `${siteUrl}/${locale}/mysteries/${targetSlug}/ready`;
+  const readyHubUrl = `${siteUrl}/${locale}/account/orders/${targetSlug}`;
   const greetingName = payload.customerName ? payload.customerName.split(' ')[0] : 'Host';
   const formattedPin = payload.pin
     ? `${payload.pin.slice(0, 3)} ${payload.pin.slice(3)}`
     : 'Ready in Hub';
+  const coverPhotoUrl = resolvePublicMysteryCoverUrl(payload);
 
-  const subject = `🎉 Your Murder Mystery Package is Ready! - "${payload.mysteryTitle}"`;
+  const subject = `🎉 Pop the Champagne, ${greetingName}! "${payload.mysteryTitle}" Is Ready to Host 🥂🕵️‍♀️`;
 
   const html = buildBrandedEmailShell({
-    preheader: `Your custom dossiers, clues, and 6-digit Game PIN (${formattedPin}) for "${payload.mysteryTitle}" are ready!`,
-    kicker: 'CASE FILE COMPLETE • READY TO HOST',
-    headline: `${greetingName}, "${payload.mysteryTitle}" Is Ready to Play.`,
+    preheader: `Your custom dossiers, crime-scene photos, voice wiretaps, and 6-digit Game PIN (${formattedPin}) for "${payload.mysteryTitle}" are QA-verified and unlocked!`,
+    badgeText: '🛡️ 100% QA-VERIFIED',
+    kicker: 'CASE FILE COMPLETE • READY FOR PARTY NIGHT',
+    headline: `It's Showtime, ${greetingName}! "${payload.mysteryTitle}" Is Unlocked 🎉`,
+    heroImageUrl: coverPhotoUrl,
+    heroImageAlt: payload.mysteryTitle,
+    heroImageBadge: `🥂 READY TO HOST: ${payload.mysteryTitle.toUpperCase()}`,
+    heroImageCaption: `Every character portrait, crime-scene photo, and voice recording has passed our 4-Gate Quality Check and is waiting in your Pre-Party Host Hub.`,
     bodyHtml: `
-      <p style="margin:0 0 20px 0;color:#374151;">
-        Your custom character dossiers, outfit guides, visual evidence, and 6-digit Live Game PIN are ready inside your Pre-Party Ready Hub.
+      <p style="margin:0 0 20px 0;color:#374151;font-size:15px;">
+        Your custom character dossiers, outfit guides, caught-on-camera clue photos, and voice wiretaps for <strong style="color:#1e191c;">${payload.mysteryTitle}</strong> are officially ready! Here is your secret 6-digit Party PIN for game night:
       </p>
-      <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;padding:22px;border-radius:12px;margin-bottom:24px;text-align:center;">
-        <p style="margin:0 0 6px 0;color:#fe04c6;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">
-          6-DIGIT LIVE GAME PIN
+
+      <!-- VIP 6-DIGIT GAME PIN TICKET -->
+      <div style="background-color:#141115;border:2px solid #fe04c6;padding:24px;border-radius:16px;margin-bottom:24px;text-align:center;">
+        <span style="display:inline-block;background-color:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#34d399;font-size:10px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:10px;">
+          🛡️ 100% QA-TESTED BEFORE DELIVERY
+        </span>
+        <p style="margin:0 0 6px 0;color:#fe04c6;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2.2px;">
+          🎟️ YOUR 6-DIGIT LIVE PARTY PIN
         </p>
-        <p style="margin:0;color:#ffffff;font-size:28px;font-family:monospace;font-weight:900;letter-spacing:4px;">
+        <p style="margin:0;color:#ffffff;font-size:34px;font-family:monospace;font-weight:900;letter-spacing:5px;">
           ${formattedPin}
         </p>
+        <p style="margin:8px 0 0 0;color:#a1a1aa;font-size:12px;">
+          Zero app downloads or guest logins needed on party night!
+        </p>
       </div>
-      <h3 style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:#1e191c;margin:0 0 12px 0;">
-        Waiting Inside Your Ready Hub
+
+      <h3 style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.4px;color:#fe04c6;margin:0 0 12px 0;">
+        🥂 Your 3-Step Pre-Party Game Plan
       </h3>
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.6;">
-            <strong style="color:#1e191c;">01 · 1-Click Group Chat Character Link:</strong> Drop one link into your group chat so guests can view their character bio and outfit brief.
+          <td style="padding:12px 14px;background-color:#fdf2f8;border-radius:12px;color:#374151;font-size:13.5px;line-height:1.55;">
+            <strong style="color:#1e191c;">💬 01 · Drop the Hype in Your Group Chat:</strong> Copy the ready-to-send teaser message inside your Host Hub to get everyone buzzing about their costumes.
           </td>
         </tr>
+        <tr><td style="height:8px;"></td></tr>
         <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.6;">
-            <strong style="color:#1e191c;">02 · Individual Character Invites:</strong> Public character outlines, dress code, and pre-party instructions.
+          <td style="padding:12px 14px;background-color:#f4f4f5;border-radius:12px;color:#374151;font-size:13.5px;line-height:1.55;">
+            <strong style="color:#1e191c;">👗 02 · Send Each Suspect Their Character Link:</strong> Every guest gets their spoiler-free character blurb and outfit guide in one tap.
           </td>
         </tr>
+        <tr><td style="height:8px;"></td></tr>
         <tr>
-          <td style="padding:10px 0;color:#374151;font-size:14px;line-height:1.6;">
-            <strong style="color:#1e191c;">03 · Spoiler-Free Host Run Sheet:</strong> Everything you need before guests arrive, without spoiling who did it.
+          <td style="padding:12px 14px;background-color:#f4f4f5;border-radius:12px;color:#374151;font-size:13.5px;line-height:1.55;">
+            <strong style="color:#1e191c;">🍸 03 · Check the Party Toolkit (Drinks &amp; Playlist):</strong> Cue up the themed Spotify playlist, dim the lights, and let the accusations fly!
           </td>
         </tr>
       </table>
     `,
-    ctaText: 'Open Your Pre-Party Ready Hub →',
+    ctaText: 'Open Your Pre-Party Host Hub →',
     ctaUrl: readyHubUrl,
-    secondaryCtaText: 'Or view all your mysteries in My Stories →',
+    secondaryCtaText: 'Or view all your mysteries in My Mysteries (Stories) →',
     secondaryCtaUrl: myStoriesUrl,
   });
 
