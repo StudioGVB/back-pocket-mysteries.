@@ -346,55 +346,50 @@ export async function sendCustomerGenerationStartedEmail(
   const greetingName = payload.customerName ? payload.customerName.split(' ')[0] : 'Detective';
   const coverPhotoUrl = resolvePublicMysteryCoverUrl(payload);
 
-  const subject = `☕ Grab a Coffee, ${greetingName}! We're Brewing "${payload.mysteryTitle}" (~20 Mins)`;
+  const subject = `☕ Payment Confirmed, ${greetingName}! We're Building "${payload.mysteryTitle}" (~20 Mins)`;
 
   const html = buildBrandedEmailShell({
-    preheader: `Your custom cast for "${payload.mysteryTitle}" is locked in! Your mystery pack will be ready in ~20 minutes.`,
-    badgeText: 'CASE FILE BRIEFING',
-    kicker: 'CUSTOM MYSTERY STUDIO • READY IN ~20 MINS',
-    headline: `Go Grab a Coffee, ${greetingName}! Your Crime Scene Is Being Built ☕`,
+    preheader: `We've received your payment! Your custom mystery package for "${payload.mysteryTitle}" is generating now and we will email you in ~20 minutes as soon as it's ready.`,
+    badgeText: 'PAYMENT CONFIRMED',
+    kicker: 'PAYMENT RECEIVED • GENERATING YOUR PACK (~20 MINS)',
+    headline: `We've Received Your Payment, ${greetingName}! "${payload.mysteryTitle}" Is Generating ☕`,
     heroImageUrl: coverPhotoUrl,
     heroImageAlt: payload.mysteryTitle,
     bodyHtml: `
       <p style="margin:0 0 14px 0;font-size:16px;color:#1e191c;">Hi <strong>${greetingName}</strong>,</p>
-      <p style="margin:0 0 20px 0;color:#374151;font-size:15px;line-height:1.7;">
-        Cue the dramatic music! Your cast for <strong style="color:#1e191c;">${payload.mysteryTitle}</strong> is officially locked in. Behind the scenes, our studio is tailoring every alibi, suspect portrait, and piece of forensic evidence around your lineup.
+      <p style="margin:0 0 22px 0;color:#374151;font-size:15px;line-height:1.7;">
+        We've received your payment and your custom cast for <strong style="color:#1e191c;">${payload.mysteryTitle}</strong> is officially locked in! Our studio is now generating your personalized mystery package in the background, and we will email you shortly as soon as it is ready to play.
       </p>
 
-      <!-- EDM-STYLE FEATURED MYSTERY SPOTLIGHT BOX -->
-      <div style="background-color:#fdf2f8;border:2px solid #fe04c6;border-radius:12px;padding:22px;margin-bottom:22px;">
-        <span style="background-color:#fe04c6;color:#ffffff;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:999px;display:inline-block;margin-bottom:10px;">
-          ✨ NOW BUILDING: ${payload.mysteryTitle.toUpperCase()}
+      <!-- EDM-STYLE FEATURED STATUS CARD (MATCHING READY EMAIL) -->
+      <div style="background-color:#fdf2f8;border:2px solid #fe04c6;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;">
+        <span style="background-color:#fe04c6;color:#ffffff;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:3px 12px;border-radius:999px;display:inline-block;margin-bottom:10px;">
+          ✨ SAFE TO CLOSE YOUR BROWSER
         </span>
-        <h3 style="font-size:18px;font-weight:800;color:#1e191c;margin:0 0 10px 0;">
-          What Our Detective Lab Is Cooking Up Right Now
-        </h3>
-        <ul style="margin:0;padding-left:20px;color:#1e191c;font-size:14px;line-height:1.7;">
-          <li style="margin-bottom:6px;">
-            <strong style="color:#fe04c6;">Custom Costume Portraits:</strong> Styling every suspect in their signature theme outfit.
-          </li>
-          <li style="margin-bottom:6px;">
-            <strong style="color:#fe04c6;">Crime-Scene &amp; CCTV Stills:</strong> Placing your cast directly into caught-on-camera evidence photos.
-          </li>
-          <li style="margin-bottom:6px;">
-            <strong style="color:#fe04c6;">Multi-Accent Voice Wiretaps:</strong> Recording dramatic leaked audio clues &amp; alibis.
-          </li>
-          <li style="margin-bottom:0;">
-            <strong style="color:#fe04c6;">Pre-Delivery Quality Check:</strong> Every portrait, photo, and voice memo is QA-tested before reaching you.
-          </li>
-        </ul>
+        <p style="margin:0;color:#1e191c;font-size:26px;font-weight:900;letter-spacing:-0.4px;">
+          Ready in ~20 Minutes ☕
+        </p>
+        <p style="margin:8px 0 0 0;color:#4b5563;font-size:13px;font-weight:600;">
+          Go grab a coffee • We will email you the moment your pack is unlocked!
+        </p>
       </div>
 
-      <div style="background-color:#1e191c;border-left:4px solid #fe04c6;padding:18px 22px;border-radius:12px;margin-bottom:8px;">
-        <p style="margin:0 0 4px 0;color:#fe04c6;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;">
-          ✓ SAFE TO CLOSE YOUR BROWSER (~20 MINS)
-        </p>
-        <p style="margin:0;color:#e4e4e7;font-size:13.5px;line-height:1.6;">
-          Your complete package takes <strong>~20 minutes</strong> to build and verify. Feel free to close your browser and go grab a coffee! We will email you the exact moment your pack is unlocked in <strong>My Mysteries</strong>.
-        </p>
-      </div>
+      <h3 style="font-size:15px;font-weight:800;color:#1e191c;margin:0 0 10px 0;">
+        🕵️‍♀️ What Our Studio Is Building for You Right Now
+      </h3>
+      <ul style="margin:0 0 8px 0;padding-left:20px;color:#1e191c;font-size:14.5px;line-height:1.7;">
+        <li style="margin-bottom:8px;">
+          <strong style="color:#fe04c6;">1. Custom Costume Portraits &amp; Dossiers:</strong> Dressing every suspect in their signature theme outfit and weaving their names into the plot.
+        </li>
+        <li style="margin-bottom:8px;">
+          <strong style="color:#fe04c6;">2. Crime-Scene Photos &amp; Voice Wiretaps:</strong> Placing your cast into caught-on-camera CCTV stills and multi-accent audio recordings.
+        </li>
+        <li style="margin-bottom:0;">
+          <strong style="color:#fe04c6;">3. 100% Pre-Delivery QA Check:</strong> Every character portrait, photo, and voice memo is QA-tested for accuracy before we send your ready email.
+        </li>
+      </ul>
     `,
-    ctaText: 'Open My Mysteries →',
+    ctaText: 'View Progress in My Mysteries →',
     ctaUrl: myStoriesUrl,
   });
 
