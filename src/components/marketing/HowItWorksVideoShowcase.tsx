@@ -11,8 +11,8 @@ export default function HowItWorksVideoShowcase() {
 
   const videoSrc =
     format === '16:9'
-      ? '/videos/back-pocket-mysteries-how-it-works-16x9.mp4?v=2'
-      : '/videos/back-pocket-mysteries-how-it-works-9x16.mp4?v=2';
+      ? '/videos/back-pocket-mysteries-how-it-works-16x9.mp4?v=3'
+      : '/videos/back-pocket-mysteries-how-it-works-9x16.mp4?v=3';
 
   const handleTogglePlay = () => {
     const v = videoRef.current;
@@ -45,10 +45,10 @@ export default function HowItWorksVideoShowcase() {
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-[0.2em]">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            30-Sec Video Walkthrough
+            45-Sec Video Walkthrough
           </span>
           <p className="text-xs sm:text-sm font-black uppercase tracking-wider text-brand-dark">
-            Watch the 6-Step Flow (With Voiceover & Music)
+            Watch the 6 Steps + Custom Clue Engine Breakdown
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export default function HowItWorksVideoShowcase() {
           </div>
 
           <a
-            href="/videos/back-pocket-mysteries-how-it-works-16x9.mp4?v=2"
+            href="/videos/back-pocket-mysteries-how-it-works-16x9.mp4?v=3"
             download="back-pocket-mysteries-how-it-works-16x9.mp4"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border-2 border-brand-dark text-brand-dark hover:bg-brand-dark hover:text-white text-[11px] font-black uppercase tracking-wider transition-colors"
           >
@@ -91,7 +91,7 @@ export default function HowItWorksVideoShowcase() {
           </a>
 
           <a
-            href="/videos/back-pocket-mysteries-how-it-works-9x16.mp4?v=2"
+            href="/videos/back-pocket-mysteries-how-it-works-9x16.mp4?v=3"
             download="back-pocket-mysteries-how-it-works-9x16.mp4"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border-2 border-brand-dark text-brand-dark hover:bg-brand-dark hover:text-white text-[11px] font-black uppercase tracking-wider transition-colors"
           >
@@ -125,14 +125,14 @@ export default function HowItWorksVideoShowcase() {
           <button
             type="button"
             onClick={handleTogglePlay}
-            aria-label="Play 30-second walkthrough video"
+            aria-label="Play 45-second walkthrough video"
             className="absolute inset-0 flex flex-col items-center justify-center bg-brand-dark/35 hover:bg-brand-dark/20 transition-colors group cursor-pointer"
           >
             <div className="w-20 h-20 rounded-full bg-brand-pink text-white border-4 border-white shadow-[6px_6px_0px_#120914] flex items-center justify-center group-hover:scale-105 transition-transform">
               <Play className="w-8 h-8 fill-current ml-1" />
             </div>
             <span className="mt-3 px-4 py-1.5 rounded-full bg-brand-dark text-white border border-white/20 text-[11px] font-black uppercase tracking-[0.2em] shadow-lg">
-              Click to Watch Walkthrough (0:28)
+              Click to Watch Walkthrough (0:45)
             </span>
           </button>
         )}

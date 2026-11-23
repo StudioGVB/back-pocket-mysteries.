@@ -17,16 +17,18 @@ if (fs.existsSync('.env.local')) {
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY?.trim();
 // Upbeat Young British Female Social Media Voice ("Lucy - Charming, Upbeat and Kind")
 const VOICE_ID = 'Gv42yFG3G6CHLsU5y8g6';
-const VO_DIR = 'public/videos/vo-uk';
+const VO_DIR = 'public/videos/vo-uk-v3';
 
 export const SCENES = [
   {
     id: 0,
-    stepNum: 'INTRO',
+    key: 'intro',
+    stepTracker: 0,
+    dark: true,
     kicker: 'HUMAN-CRAFTED · AI-TAILORED IN ~20 MINS',
     titleLine1: 'FROM YOUR GROUP CHAT',
     titleLine2: 'TO CRIME SCENE.',
-    subtitle: 'How Back Pocket Mysteries works — start to party night in 6 fast steps.',
+    subtitle: 'How Back Pocket Mysteries turns your real friends into the suspects & clues.',
     voText: 'Turn your group chat into a full-blown crime scene! Here is how it works in six fast steps.',
     captions: [
       ['TURN YOUR GROUP CHAT', 'INTO A FULL-BLOWN CRIME SCENE!'],
@@ -35,20 +37,24 @@ export const SCENES = [
   },
   {
     id: 1,
-    stepNum: '01',
+    key: 'step1',
+    stepTracker: 1,
+    dark: false,
     kicker: 'STEP 01 · BEFORE THE PARTY',
     titleLine1: 'CREATE YOUR',
-    titleLine2: 'GUESTS.',
-    subtitle: 'Add your mates’ names, photos, accents & funniest inside jokes.',
-    voText: 'Step one! Add your mates, snap a quick photo, and drop in their funniest inside jokes!',
+    titleLine2: 'GUEST LIST.',
+    subtitle: 'Add your mates’ names, hair, outfits, accents & funniest inside jokes.',
+    voText: 'Step one! Add your mates, their look or a quick photo, their accent, and their funniest inside jokes!',
     captions: [
-      ['STEP 1: ADD YOUR MATES', '& SNAP A QUICK PHOTO'],
+      ['STEP 1: ADD YOUR MATES', 'THEIR LOOK, ACCENT & PHOTO'],
       ['PLUS THEIR FUNNIEST', 'INSIDE JOKES!'],
     ],
   },
   {
     id: 2,
-    stepNum: '02',
+    key: 'step2',
+    stepTracker: 2,
+    dark: false,
     kicker: 'STEP 02 · CHOOSE THE VIBE',
     titleLine1: 'PICK YOUR',
     titleLine2: 'MYSTERY THEME.',
@@ -61,12 +67,14 @@ export const SCENES = [
   },
   {
     id: 3,
-    stepNum: '03',
+    key: 'step3',
+    stepTracker: 3,
+    dark: false,
     kicker: 'STEP 03 · CAST THE PARTY',
     titleLine1: 'ASSIGN YOUR',
     titleLine2: 'CAST.',
     subtitle: 'Drag & drop or 1-Click AI Match. Every role auto-flexes to any gender.',
-    voText: 'Step three! Cast your friends or let AI match them! Every role auto-flexes to any gender.',
+    voText: 'Step three! Cast your friends or let AI match them! Every role auto-flexes to any guest gender.',
     captions: [
       ['STEP 3: CAST YOUR FRIENDS', 'OR LET AI MATCH THEM!'],
       ['EVERY ROLE AUTO-FLEXES', 'TO ANY GUEST GENDER'],
@@ -74,46 +82,84 @@ export const SCENES = [
   },
   {
     id: 4,
-    stepNum: '04',
-    kicker: 'STEP 04 · CUSTOM CLUE ENGINE',
-    titleLine1: 'GENERATE CUSTOM',
-    titleLine2: 'CLUES (~20 MINS).',
-    subtitle: 'Custom crime-scene photos, leaked text threads & AI voice wiretaps.',
-    voText: 'Step four! Hit generate! In twenty minutes you get custom crime-scene photos, leaked texts, and voice wiretaps!',
+    key: 'step4_photos',
+    stepTracker: 4,
+    dark: true,
+    kicker: 'STEP 04 · CLUE TYPE #1 · LOOKALIKE CRIME PHOTOS',
+    titleLine1: 'CLUES RENDERED TO',
+    titleLine2: 'LOOK LIKE YOUR GUESTS.',
+    subtitle: 'Our engine generates crime-scene & CCTV photos matching each guest’s exact hair, outfit, glasses & accessories!',
+    voText: 'Step four: Hit generate! First, our engine renders custom crime-scene photos that actually look like your real guests, matching their exact hair, outfits, and accessories!',
     captions: [
-      ['STEP 4: HIT GENERATE!', 'READY IN ~20 MINUTES'],
-      ['CUSTOM CRIME PHOTOS, LEAKED TEXTS', '& AI VOICE WIRETAPS!'],
+      ['STEP 4 · CLUE TYPE #1:', 'LOOKALIKE CRIME-SCENE PHOTOS!'],
+      ['RENDERS YOUR REAL GUESTS’ HAIR', 'OUTFITS & GLASSES IN THE CLUES!'],
     ],
   },
   {
     id: 5,
-    stepNum: '05',
+    key: 'step4_texts',
+    stepTracker: 4,
+    dark: false,
+    kicker: 'STEP 04 · CLUE TYPE #2 · LEAKED TEXTS & FORENSICS',
+    titleLine1: 'LEAKED TEXTS &',
+    titleLine2: 'FORENSIC EVIDENCE.',
+    subtitle: 'iMessage threads, receipts & physical evidence featuring your friends’ real names, outfits & inside jokes.',
+    voText: 'Second: leaked text threads, forensic reports, and physical evidence, weaving your mates’ real names, outfits, and inside jokes straight into the alibis!',
+    captions: [
+      ['CLUE TYPE #2 · LEAKED TEXTS', '& FORENSIC LAB EVIDENCE'],
+      ['YOUR MATES’ REAL NAMES & JOKES', 'WOVEN STRAIGHT INTO THE ALIBIS!'],
+    ],
+  },
+  {
+    id: 6,
+    key: 'step4_audio',
+    stepTracker: 4,
+    dark: true,
+    kicker: 'STEP 04 · CLUE TYPE #3 · AI VOICE WIRETAPS',
+    titleLine1: 'INTERCEPTED VOICE',
+    titleLine2: 'WIRETAPS & VOICEMAILS.',
+    subtitle: 'Secret audio recordings generated in each friend’s accent — ready to play out loud during the investigation!',
+    voText: 'And third: intercepted voice wiretaps and secret voicemails, generated in each friend’s accent and played straight from their phones!',
+    captions: [
+      ['CLUE TYPE #3 · AI VOICE WIRETAPS', '& INTERCEPTED VOICEMAILS'],
+      ['GENERATED IN EACH FRIEND’S ACCENT', '& PLAYED ON THEIR PHONES!'],
+    ],
+  },
+  {
+    id: 7,
+    key: 'step5',
+    stepTracker: 5,
+    dark: false,
     kicker: 'STEP 05 · BUILD THE HYPE',
     titleLine1: 'INVITE YOUR',
     titleLine2: 'FRIENDS.',
-    subtitle: 'Drop 1 link in the group chat so everyone gets their role & outfit guide.',
-    voText: 'Step five! Drop one link in the group chat so everyone gets their character and outfit guide!',
+    subtitle: 'Drop 1 link in the group chat so everyone gets their character blurb & outfit guide.',
+    voText: 'Step five! Drop one link in the group chat so everyone gets their character and outfit guide before the night!',
     captions: [
       ['STEP 5: DROP 1 LINK', 'INTO THE GROUP CHAT'],
       ['EVERYONE GETS THEIR ROLE', '& WHAT-TO-WEAR GUIDE!'],
     ],
   },
   {
-    id: 6,
-    stepNum: '06',
+    id: 8,
+    key: 'step6',
+    stepTracker: 6,
+    dark: true,
     kicker: 'STEP 06 · PARTY NIGHT',
     titleLine1: 'LAUNCH LIVE',
     titleLine2: 'GAME MODE.',
     subtitle: 'Live clues & voting on phones — plus extra mates join free as Detectives!',
     voText: 'Step six! Launch Live Game Mode! Everyone gets clues and votes on their phones, plus extra mates join free as Detectives!',
     captions: [
-      ['STEP 6: LAUNCH LIVE GAME MODE!', 'CLUES & VOTING ON PHONES'],
+      ['STEP 6: LAUNCH LIVE GAME MODE!', 'LIVE CLUES & VOTING ON PHONES'],
       ['MORE THAN 6 GUESTS?', 'EXTRA MATES JOIN AS DETECTIVES!'],
     ],
   },
   {
-    id: 7,
-    stepNum: 'OUTRO',
+    id: 9,
+    key: 'outro',
+    stepTracker: 6,
+    dark: true,
     kicker: 'READY IN ~20 MINUTES · FROM £15 / $19',
     titleLine1: 'PUT YOUR FRIENDS IN',
     titleLine2: 'THE CRIME SCENE.',
@@ -121,7 +167,7 @@ export const SCENES = [
     voText: 'Put your friends in the crime scene today at Back Pocket Mysteries dot com!',
     captions: [
       ['PUT YOUR FRIENDS', 'IN THE CRIME SCENE!'],
-      ['BACKPOCKETMYSTERIES.COM', 'START YOUR PARTY →'],
+      ['BACKPOCKETMYSTERIES.COM', 'BUILD YOUR MYSTERY →'],
     ],
   },
 ];
@@ -133,7 +179,7 @@ async function ensureBritishVoiceovers() {
     if (fs.existsSync(outMp3) && fs.statSync(outMp3).size > 2000) {
       continue;
     }
-    console.log(`🎙️ Synthesizing energetic British VO for Scene ${scene.id}...`);
+    console.log(`🎙️ Synthesizing energetic British VO for Scene ${scene.id} (${scene.key})...`);
     const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
       method: 'POST',
       headers: {
@@ -187,8 +233,20 @@ async function renderPromoVideo({ width, height, aspect, outFilename }) {
       'public/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-b130e47b4cee2149a7aad02dfc972e91.jpg',
       'image/jpeg'
     ),
+    // Real generated crime-scene clue photos matching Sarah (emerald velvet dress) & Chloe (curly red hair + gold sequins)!
+    clueSarahFireplace: fileToDataUri(
+      'public/generated-clues/a1111111-1111-4111-8111-111111111107-5a3adbbd85bd.jpg',
+      'image/jpeg'
+    ),
+    clueChloeDrink: fileToDataUri(
+      'public/generated-clues/a1111111-1111-4111-8111-111111111106-45fd5371bedd.jpg',
+      'image/jpeg'
+    ),
+    clueHairpin: fileToDataUri(
+      'public/generated-clues/a1111111-1111-4111-8111-111111111109-6c6f2b97ac73.jpg',
+      'image/jpeg'
+    ),
     cover: fileToDataUri('public/moodboard/lotr/main-promo-murder.jpg', 'image/jpeg'),
-    cctv: fileToDataUri('public/moodboard/lotr/caught-on-camera.jpg', 'image/jpeg'),
     cocktail: fileToDataUri('public/moodboard/lotr/cocktail-hour.jpg', 'image/jpeg'),
   };
 
@@ -232,7 +290,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
   const b64Video = await page.evaluate(async () => {
     await document.fonts.ready;
 
-    // 1. Load images
     const imgs = {};
     for (const [k, src] of Object.entries(window.ASSETS)) {
       const img = new Image();
@@ -244,11 +301,9 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       imgs[k] = img;
     }
 
-    // 2. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffers
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
     const audioDest = audioCtx.createMediaStreamDestination();
 
-    // Master compressor so both VO and upbeat funk backing track sound loud, punchy & broadcast-ready
     const masterComp = audioCtx.createDynamicsCompressor();
     masterComp.threshold.value = -16;
     masterComp.knee.value = 12;
@@ -288,7 +343,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       voBuffers.push(trimAudioBuffer(decoded));
     }
 
-    // Playback rate 1.05x for extra snappy British commercial energy + tight 0.14s gap
     const VO_RATE = 1.05;
     const sceneTimeline = [];
     let cursor = 0;
@@ -307,14 +361,12 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
     }
     const totalDuration = cursor + 0.25;
 
-    // Pre-build a white noise buffer for snare, hi-hats & transition whooshes
     const noiseBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
     const noiseData = noiseBuf.getChannelData(0);
     for (let i = 0; i < noiseData.length; i++) {
       noiseData[i] = Math.random() * 2 - 1;
     }
 
-    // 3. Setup Canvas & Helper Drawing Primitives
     const canvas = document.getElementById('stage');
     const ctx = canvas.getContext('2d');
     const W = window.CONFIG.width;
@@ -401,19 +453,17 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         sceneTimeline.find((s) => elapsed >= s.start && elapsed < s.end) ||
         sceneTimeline[sceneTimeline.length - 1];
       const localT = Math.max(0, elapsed - active.start);
-      // Fast kinetic entrance (0.28s) + 128 BPM beat pulse!
       const p = clamp(localT / 0.28);
       const enter = easeOutCubic(p);
       const pop = easeOutBack(clamp(localT / 0.34));
       const beatPulse = Math.sin(elapsed * Math.PI * 2 * (128 / 60)) * 4;
-      const sIdx = active.scene.id;
-      const isDarkScene = sIdx === 0 || sIdx === 6 || sIdx === 7;
+      const sKey = active.scene.key;
+      const stepTracker = active.scene.stepTracker;
+      const isDarkScene = active.scene.dark;
 
-      // Background
       ctx.fillStyle = isDarkScene ? '#120914' : '#ffffff';
       ctx.fillRect(0, 0, W, H);
 
-      // Subtle dot grid texture
       ctx.fillStyle = isDarkScene ? 'rgba(255,255,255,0.045)' : 'rgba(18,9,20,0.045)';
       const stepGrid = 44;
       for (let gx = 24; gx < W; gx += stepGrid) {
@@ -423,7 +473,7 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       }
 
       // Top Brand Header Bar
-      const padX = isVert ? 64 : 110;
+      const padX = isVert ? 64 : 104;
       const topY = isVert ? 78 : 64;
       ctx.save();
       ctx.font = '900 26px Inter';
@@ -436,8 +486,8 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       // Step Tracker Pills (01 - 06) on Top Right
       const pillStartX = isVert ? W - padX - 6 * 54 : W - padX - 6 * 64;
       for (let step = 1; step <= 6; step++) {
-        const isCurrentStep = sIdx === step;
-        const isPastStep = sIdx > step;
+        const isCurrentStep = stepTracker === step;
+        const isPastStep = stepTracker > step;
         const px = pillStartX + (step - 1) * (isVert ? 54 : 64);
         const py = topY - 24;
         ctx.fillStyle = isCurrentStep
@@ -464,17 +514,16 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       ctx.textAlign = 'left';
       ctx.restore();
 
-      // Layout coordinates for Copy + Visual Collage
       const copyX = padX;
-      const copyY = isVert ? 195 : 230;
-      const copyMaxW = isVert ? W - padX * 2 : W * 0.43;
+      const copyY = isVert ? 190 : 225;
+      const copyMaxW = isVert ? W - padX * 2 : W * 0.42;
 
-      // Draw Kicker Pill
+      // Kicker Pill
       ctx.save();
       ctx.globalAlpha = enter;
       ctx.translate(0, (1 - enter) * 28);
 
-      ctx.font = '900 16px Inter';
+      ctx.font = '900 15px Inter';
       const kickerText = active.scene.kicker;
       const kw = ctx.measureText(kickerText).width + 36;
       ctx.fillStyle = isDarkScene ? '#fe04c6' : '#120914';
@@ -483,8 +532,8 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       ctx.fillStyle = '#ffffff';
       ctx.fillText(kickerText, copyX + 18, copyY - 10);
 
-      // Headline Line 1 & Line 2 (Italic Pink)
-      const titleSize = isVert ? 74 : sIdx === 0 || sIdx === 7 ? 74 : 70;
+      // Headline Line 1 & Line 2
+      const titleSize = isVert ? 68 : sKey.startsWith('step4_') ? 60 : 68;
       ctx.font = '900 ' + titleSize + 'px Inter';
       ctx.fillStyle = isDarkScene ? '#ffffff' : '#120914';
       ctx.fillText(active.scene.titleLine1, copyX, copyY + titleSize + 14);
@@ -494,52 +543,52 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       ctx.fillText(active.scene.titleLine2, copyX, copyY + titleSize * 2 + 22);
 
       // Subtitle
-      ctx.font = '600 ' + (isVert ? 27 : 24) + 'px Inter';
+      ctx.font = '600 ' + (isVert ? 26 : 23) + 'px Inter';
       ctx.fillStyle = isDarkScene ? 'rgba(255,255,255,0.84)' : '#52525b';
       wrapText(
         active.scene.subtitle,
         copyX,
-        copyY + titleSize * 2 + (isVert ? 72 : 66),
+        copyY + titleSize * 2 + (isVert ? 68 : 62),
         copyMaxW,
-        isVert ? 36 : 34
+        isVert ? 35 : 33
       );
       ctx.restore();
 
-      // Visual Stage Region (Right side on 16:9, Middle-Bottom on 9:16)
-      const vx = isVert ? padX : W * 0.52;
-      const vy = isVert ? 625 : 175;
+      // Visual Stage Region
+      const vx = isVert ? padX : W * 0.50;
+      const vy = isVert ? 605 : 160;
       const vw = isVert ? W - padX * 2 : W - vx - padX;
-      const vh = isVert ? 880 : 620;
+      const vh = isVert ? 900 : 640;
 
       ctx.save();
 
-      // SCENE 0 & SCENE 1: 3 Tilted Guest Polaroid Cards
-      if (sIdx === 0 || sIdx === 1) {
+      // INTRO & STEP 1: 3 Tilted Guest Polaroid Cards
+      if (sKey === 'intro' || sKey === 'step1') {
         const cards = [
           {
             name: 'SARAH',
-            trait: '“Always 15m late holding an espresso martini”',
+            trait: '“Emerald velvet dress · Always 15m late with an espresso martini”',
             img: imgs.sarah,
             rot: -0.06,
             delay: 0.0,
           },
           {
             name: 'JASON',
-            trait: '“Knows everyone’s office gossip”',
+            trait: '“Burgundy blazer · Knows everyone’s office gossip”',
             img: imgs.jason,
             rot: 0.03,
             delay: 0.07,
           },
           {
             name: 'CHLOE',
-            trait: '“Still brings up the 2023 Ibiza trip”',
+            trait: '“Curly red hair · Gold sequins · Ibiza 2023”',
             img: imgs.chloe,
             rot: 0.06,
             delay: 0.14,
           },
         ];
         const cardW = isVert ? (vw - 36) / 3 : (vw - 44) / 3;
-        const cardH = cardW * 1.46;
+        const cardH = cardW * 1.48;
         cards.forEach((c, idx) => {
           const cp = easeOutBack(clamp((localT - c.delay) / 0.32));
           const cx = vx + idx * (cardW + 18);
@@ -563,21 +612,21 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
           ctx.strokeStyle = '#120914';
           ctx.stroke();
 
-          const imgH = cardH * 0.68;
+          const imgH = cardH * 0.66;
           drawCoverImage(c.img, -cardW / 2 + 14, -cardH / 2 + 14, cardW - 28, imgH, 16);
 
           ctx.fillStyle = '#120914';
           ctx.font = '900 20px Inter';
-          ctx.fillText(c.name, -cardW / 2 + 16, -cardH / 2 + imgH + 42);
+          ctx.fillText(c.name, -cardW / 2 + 16, -cardH / 2 + imgH + 40);
           ctx.fillStyle = '#64748b';
-          ctx.font = '600 13px Inter';
-          wrapText(c.trait, -cardW / 2 + 16, -cardH / 2 + imgH + 64, cardW - 32, 17);
+          ctx.font = '600 12px Inter';
+          wrapText(c.trait, -cardW / 2 + 16, -cardH / 2 + imgH + 60, cardW - 32, 16);
           ctx.restore();
         });
       }
 
-      // SCENE 2: Theme Poster Card + 4 Spice Level Pills
-      if (sIdx === 2) {
+      // STEP 2: Theme Poster Card + 4 Spice Level Pills
+      if (sKey === 'step2') {
         const cardW = vw;
         const cardH = isVert ? 510 : 420;
         const cy = vy + (vh - cardH) / 2 - 20 + (1 - pop) * 45 + beatPulse;
@@ -605,8 +654,8 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         });
       }
 
-      // SCENE 3: Assign Your Cast Stack
-      if (sIdx === 3) {
+      // STEP 3: Assign Your Cast Stack
+      if (sKey === 'step3') {
         const cardW = vw;
         const cardH = isVert ? 520 : 460;
         const cy = vy + (vh - cardH) / 2 + beatPulse * 0.6;
@@ -645,44 +694,245 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         });
       }
 
-      // SCENE 4: Generate Custom Clues (CCTV + Overlapping Leaked Text Bubble)
-      if (sIdx === 4) {
-        const cardW = vw;
-        const cctvH = isVert ? 400 : 345;
-        const cy = vy + 28 + beatPulse * 0.6;
-        drawNeoCard(vx, cy, cardW, cctvH, 30, '#120914', '#120914', '#120914', 12, -0.02 * pop);
-        drawCoverImage(imgs.cctv, vx + 10, cy + 10, cardW - 20, cctvH - 20, 22);
+      // =====================================================================
+      // STEP 4A: CLUE TYPE #1 · GUEST PROFILE -> LOOKALIKE CRIME-SCENE PHOTO!
+      // =====================================================================
+      if (sKey === 'step4_photos') {
+        const pairs = [
+          {
+            guestName: 'GUEST: SARAH',
+            traits: 'Dark hair · Emerald velvet dress · Gold earrings',
+            guestImg: imgs.sarah,
+            clueTitle: 'GENERATED CLUE PHOTO #1 · FIREPLACE',
+            clueSub: 'Sarah caught burning secret documents with Jason!',
+            clueImg: imgs.clueSarahFireplace,
+            delay: 0.0,
+          },
+          {
+            guestName: 'GUEST: CHLOE',
+            traits: 'Curly red hair · Gold sequin dress · Berry lips',
+            guestImg: imgs.chloe,
+            clueTitle: 'GENERATED CLUE PHOTO #2 · BAR CCTV',
+            clueSub: 'Chloe caught spiking the eggnog glass at 8:14 PM!',
+            clueImg: imgs.clueChloeDrink,
+            delay: 0.14,
+          },
+        ];
 
-        ctx.fillStyle = 'rgba(18,9,20,0.88)';
-        roundRect(vx + 28, cy + 28, 290, 44, 12);
-        ctx.fill();
-        ctx.fillStyle = '#fe04c6';
-        ctx.font = '900 16px monospace';
-        ctx.fillText('● REC · CAM 02 · 19:55:14', vx + 44, cy + 56);
+        const rowH = isVert ? 360 : 275;
+        const gapY = isVert ? 34 : 26;
+        const startY = vy + (vh - (rowH * 2 + gapY)) / 2;
 
-        const msgP = easeOutBack(clamp((localT - 0.1) / 0.3));
-        const mx = vx + 36;
-        const my = cy + cctvH - 52 + (1 - msgP) * 45;
-        const mw = cardW - 44;
-        const mh = 180;
-        drawNeoCard(mx, my, mw, mh, 26, '#ffffff', '#120914', '#fe04c6', 12, 0.015 * msgP);
+        pairs.forEach((pair, idx) => {
+          const rp = easeOutBack(clamp((localT - pair.delay) / 0.34));
+          const ry = startY + idx * (rowH + gapY) + (1 - rp) * 45 + beatPulse * (idx === 0 ? 0.6 : -0.6);
+
+          // Left Card: Guest Profile Card
+          const leftW = vw * 0.36;
+          drawNeoCard(vx, ry, leftW, rowH, 24, '#ffffff', '#120914', '#fe04c6', 8, -0.015);
+          drawCoverImage(pair.guestImg, vx + 14, ry + 14, leftW - 28, rowH - 86, 16);
+          ctx.fillStyle = '#120914';
+          ctx.font = '900 17px Inter';
+          ctx.fillText(pair.guestName, vx + 16, ry + rowH - 44);
+          ctx.fillStyle = '#fe04c6';
+          ctx.font = '700 12px Inter';
+          wrapText(pair.traits, vx + 16, ry + rowH - 24, leftW - 28, 15);
+
+          // Right Card: Rendered Lookalike Crime-Scene Photo
+          const rightX = vx + vw * 0.42;
+          const rightW = vw * 0.58;
+          drawNeoCard(rightX, ry, rightW, rowH, 24, '#1b1020', '#ffffff', '#fe04c6', 10, 0.01);
+          drawCoverImage(pair.clueImg, rightX + 12, ry + 12, rightW - 24, rowH - 82, 16);
+
+          // REC / AI Match Badge on Clue Photo
+          ctx.fillStyle = '#fe04c6';
+          roundRect(rightX + 24, ry + 24, 215, 32, 16);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '900 12px Inter';
+          ctx.fillText('✓ 100% GUEST LOOKALIKE', rightX + 38, ry + 45);
+
+          ctx.fillStyle = '#fe04c6';
+          ctx.font = '900 14px Inter';
+          ctx.fillText(pair.clueTitle, rightX + 18, ry + rowH - 42);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '700 15px Inter';
+          ctx.fillText(pair.clueSub, rightX + 18, ry + rowH - 18);
+
+          // Center Arrow Pill connecting Guest -> Crime Clue
+          const arrowX = vx + vw * 0.39;
+          const arrowY = ry + rowH / 2;
+          ctx.fillStyle = '#fe04c6';
+          ctx.beginPath();
+          ctx.arc(arrowX, arrowY, 24, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '900 22px Inter';
+          ctx.textAlign = 'center';
+          ctx.fillText('→', arrowX, arrowY + 8);
+          ctx.textAlign = 'left';
+        });
+      }
+
+      // =====================================================================
+      // STEP 4B: CLUE TYPE #2 · LEAKED TEXT THREADS & FORENSIC PHYSICAL CLUES
+      // =====================================================================
+      if (sKey === 'step4_texts') {
+        // Top Card: Leaked iMessage Thread with real guest avatars, names & inside jokes
+        const chatH = isVert ? 420 : 320;
+        const chatY = vy + 10 + beatPulse * 0.5;
+        drawNeoCard(vx, chatY, vw, chatH, 28, '#120914', '#120914', '#fe04c6', 12, -0.01 * pop);
 
         ctx.fillStyle = '#fe04c6';
         ctx.font = '900 15px Inter';
-        ctx.fillText('LEAKED TEXT THREAD · 7:32 PM  ·  + AI VOICE WIRETAPS', mx + 28, my + 42);
+        ctx.fillText('CLUE #04 · LEAKED GROUP CHAT THREAD (7:32 PM)', vx + 28, chatY + 40);
+
+        // Message 1: Sarah
+        drawCoverImage(imgs.sarah, vx + 28, chatY + 62, 64, 64, 32);
+        drawNeoCard(vx + 108, chatY + 58, vw - 140, isVert ? 128 : 96, 20, '#ffffff', null, null, 0, 0);
+        ctx.fillStyle = '#fe04c6';
+        ctx.font = '900 14px Inter';
+        ctx.fillText('SARAH (THE SISTER-IN-LAW) · 7:32 PM', vx + 128, chatY + 86);
         ctx.fillStyle = '#120914';
-        ctx.font = '800 22px Inter';
+        ctx.font = '700 18px Inter';
         wrapText(
-          '“Meet me by the coat closet before dinner. Someone left a printed bank transfer in Luke’s coat pocket...”',
-          mx + 28,
-          my + 84,
-          mw - 56,
-          31
+          '“Meet me by the fireplace before dinner. I grabbed the offshore transfer out of Luke’s wall safe!”',
+          vx + 128,
+          chatY + 114,
+          vw - 176,
+          24
+        );
+
+        // Message 2: Jason (referencing Sarah's silver snowflake hairpin!)
+        const m2Y = chatY + (isVert ? 210 : 172);
+        drawCoverImage(imgs.jason, vx + 28, m2Y + 6, 64, 64, 32);
+        drawNeoCard(vx + 108, m2Y, vw - 140, isVert ? 136 : 104, 20, '#fe04c6', null, null, 0, 0);
+        ctx.fillStyle = '#120914';
+        ctx.font = '900 14px Inter';
+        ctx.fillText('JASON (THE CO-WORKER) · 7:33 PM', vx + 128, m2Y + 28);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 18px Inter';
+        wrapText(
+          '“Are you mad?! Burn it fast—and don’t lose your silver snowflake hairpin like you did in Ibiza 👀”',
+          vx + 128,
+          m2Y + 56,
+          vw - 176,
+          24
+        );
+
+        // Bottom Card: Physical Forensic Evidence Match (The Silver Snowflake Hairpin!)
+        const forP = easeOutBack(clamp((localT - 0.14) / 0.34));
+        const forY = chatY + chatH + 26 + (1 - forP) * 40;
+        const forH = isVert ? 330 : 235;
+        drawNeoCard(vx, forY, vw, forH, 28, '#ffffff', '#120914', '#120914', 12, 0.01 * forP);
+
+        drawCoverImage(imgs.clueHairpin, vx + 18, forY + 18, isVert ? 270 : 210, forH - 36, 18);
+
+        const fx = vx + (isVert ? 310 : 248);
+        ctx.fillStyle = '#fe04c6';
+        roundRect(fx, forY + 24, 290, 34, 17);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 13px Inter';
+        ctx.fillText('FORENSIC EVIDENCE #07 · CRIME SCENE', fx + 18, forY + 46);
+
+        ctx.fillStyle = '#120914';
+        ctx.font = '900 26px Inter';
+        ctx.fillText('DROPPED SNOWFLAKE HAIRPIN', fx, forY + 92);
+
+        ctx.fillStyle = '#52525b';
+        ctx.font = '600 18px Inter';
+        wrapText(
+          'Found tangled in the fairy lights by the breaker box—matching the exact accessory on Sarah’s character invite!',
+          fx,
+          forY + 126,
+          vw - (isVert ? 336 : 272),
+          26
         );
       }
 
-      // SCENE 5: Pre-Party Character Invite Card
-      if (sIdx === 5) {
+      // =====================================================================
+      // STEP 4C: CLUE TYPE #3 · AI VOICE WIRETAPS & VOICEMAILS (ANIMATED WAVEFORM)
+      // =====================================================================
+      if (sKey === 'step4_audio') {
+        const cardW = vw;
+        const cardH = isVert ? 540 : 460;
+        const cy = vy + (vh - cardH) / 2 + beatPulse * 0.6;
+        drawNeoCard(vx, cy, cardW, cardH, 32, '#ffffff', '#120914', '#fe04c6', 14, -0.01 * pop);
+
+        // Header Bar inside Audio Wiretap Card
+        ctx.fillStyle = '#120914';
+        roundRect(vx + 28, cy + 28, cardW - 56, 76, 22);
+        ctx.fill();
+
+        ctx.fillStyle = '#fe04c6';
+        ctx.beginPath();
+        ctx.arc(vx + 64, cy + 66, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 18px Inter';
+        ctx.fillText('INTERCEPTED VOICEMAIL WIRETAP · ROUND 2 AUDIO CLUE', vx + 92, cy + 72);
+
+        // Speaker Avatar + Accent Badge
+        drawCoverImage(imgs.sarah, vx + 32, cy + 126, 110, 110, 24);
+        ctx.fillStyle = '#fe04c6';
+        ctx.font = '900 15px Inter';
+        ctx.fillText('SYNTHESIZED IN GUEST’S ACCENT · BRITISH (EN-GB)', vx + 164, cy + 154);
+        ctx.fillStyle = '#120914';
+        ctx.font = '900 30px Inter';
+        ctx.fillText('SPEAKER: SARAH (THE SISTER-IN-LAW)', vx + 164, cy + 194);
+        ctx.fillStyle = '#64748b';
+        ctx.font = '700 16px Inter';
+        ctx.fillText('Recorded at 8:19 PM · Played out loud from guests’ phones', vx + 164, cy + 224);
+
+        // Animated 32-Bar Hot-Pink Audio Waveform Box
+        const waveX = vx + 32;
+        const waveY = cy + 256;
+        const waveW = cardW - 64;
+        const waveH = 88;
+        ctx.fillStyle = '#120914';
+        roundRect(waveX, waveY, waveW, waveH, 20);
+        ctx.fill();
+
+        const numBars = 34;
+        const barGap = (waveW - 140) / numBars;
+        for (let b = 0; b < numBars; b++) {
+          const anim =
+            0.3 +
+            0.7 *
+              Math.abs(
+                Math.sin(elapsed * 14 + b * 0.45) * Math.cos(elapsed * 9 - b * 0.3)
+              );
+          const bh = Math.max(12, anim * (waveH - 26));
+          const bx = waveX + 30 + b * barGap;
+          const by = waveY + (waveH - bh) / 2;
+          ctx.fillStyle = b / numBars < (localT / active.duration) ? '#fe04c6' : 'rgba(255,255,255,0.28)';
+          roundRect(bx, by, 7, bh, 3.5);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 16px monospace';
+        ctx.fillText('0:14', waveX + waveW - 84, waveY + 50);
+
+        // Live Voice Transcript Quote at bottom of card
+        ctx.fillStyle = '#120914';
+        ctx.font = 'italic 800 21px Inter';
+        wrapText(
+          '“If anyone asks where I was when the lights went out, tell them I was making espresso martinis in the kitchen—do NOT mention the safe!”',
+          vx + 36,
+          cy + 382,
+          cardW - 72,
+          29
+        );
+      }
+
+      // STEP 5: Pre-Party Character Invite Card
+      if (sKey === 'step5') {
         const cardW = vw;
         const cardH = isVert ? 460 : 400;
         const cy = vy + (vh - cardH) / 2 + beatPulse * 0.7;
@@ -701,7 +951,7 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         ctx.fillStyle = 'rgba(255,255,255,0.84)';
         ctx.font = '600 21px Inter';
         wrapText(
-          'What to Wear: Sleek winter chic — an emerald silk dress or tailored velvet blazer, silver snowflake hairpin, and dark berry lipstick.',
+          'What to Wear: Sleek winter chic — an emerald velvet dress, gold statement earrings, and a silver snowflake hairpin.',
           vx + 190,
           cy + 148,
           cardW - 224,
@@ -718,8 +968,8 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         ctx.textAlign = 'left';
       }
 
-      // SCENE 6: Launch Live Game Mode + Extra Guest Detective Sarah
-      if (sIdx === 6) {
+      // STEP 6: Launch Live Game Mode + Extra Guest Detective Sarah
+      if (sKey === 'step6') {
         const cardW = vw;
         const cardH = isVert ? 480 : 420;
         const cy = vy + (vh - cardH) / 2 + beatPulse * 0.7;
@@ -763,8 +1013,8 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         );
       }
 
-      // SCENE 7: Outro Finale Card
-      if (sIdx === 7) {
+      // OUTRO: Finale Card
+      if (sKey === 'outro') {
         const cardW = vw;
         const cardH = isVert ? 440 : 380;
         const cy = vy + (vh - cardH) / 2 + beatPulse * 0.7;
@@ -784,7 +1034,7 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       ctx.restore();
 
       // =======================================================================
-      // DYNAMIC 2-LINE SYNCED NEO-BRUTALIST CAPTIONS (NEVER TRUNCATES OR OVERFLOWS)
+      // DYNAMIC 2-LINE SYNCED NEO-BRUTALIST CAPTIONS
       // =======================================================================
       const captions = active.scene.captions || [['BACK POCKET MYSTERIES', 'HOW IT WORKS']];
       const chunkIdx = localT < active.duration * 0.52 ? 0 : Math.min(1, captions.length - 1);
@@ -793,21 +1043,19 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       const [capLine1, capLine2] = captions[chunkIdx];
 
       ctx.save();
-      const capFontSize = isVert ? 32 : 28;
+      const capFontSize = isVert ? 31 : 27;
       ctx.font = '900 ' + capFontSize + 'px Inter';
       const w1 = ctx.measureText(capLine1).width;
       const w2 = ctx.measureText(capLine2).width;
       const boxW = Math.min(W - padX * 2, Math.max(w1, w2) + (isVert ? 88 : 96));
-      const boxH = isVert ? 114 : 98;
+      const boxH = isVert ? 112 : 96;
       const boxX = (W - boxW) / 2;
-      const boxY = H - (isVert ? 205 : 138) + (1 - chunkPop) * 14;
+      const boxY = H - (isVert ? 200 : 134) + (1 - chunkPop) * 14;
 
-      // Hard offset shadow
       ctx.fillStyle = '#fe04c6';
       roundRect(boxX + 7, boxY + 7, boxW, boxH, 24);
       ctx.fill();
 
-      // Dark Ink Caption Body
       ctx.fillStyle = '#120914';
       roundRect(boxX, boxY, boxW, boxH, 24);
       ctx.fill();
@@ -817,14 +1065,13 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
 
       ctx.textAlign = 'center';
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(capLine1, W / 2, boxY + (isVert ? 46 : 40));
+      ctx.fillText(capLine1, W / 2, boxY + (isVert ? 45 : 39));
 
       ctx.fillStyle = '#fe04c6';
       ctx.font = 'italic 900 ' + capFontSize + 'px Inter';
-      ctx.fillText(capLine2, W / 2, boxY + (isVert ? 88 : 78));
+      ctx.fillText(capLine2, W / 2, boxY + (isVert ? 86 : 76));
       ctx.textAlign = 'left';
 
-      // Progress Bar at very bottom edge
       const prog = clamp(elapsed / totalDuration);
       ctx.fillStyle = '#fe04c6';
       ctx.fillRect(0, H - 12, W * prog, 12);
@@ -835,7 +1082,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
     drawFrame(0);
     await audioCtx.resume();
 
-    // Continuous ultra-quiet carrier node so audioDest stream never stalls
     const carrierOsc = audioCtx.createOscillator();
     const carrierGain = audioCtx.createGain();
     carrierGain.gain.value = 0.0001;
@@ -845,7 +1091,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
 
     const t0 = audioCtx.currentTime + 0.06;
 
-    // Schedule Fast-Paced British VO Clips + Scene Transition Whoosh/Pop SFX
     for (const item of sceneTimeline) {
       const src = audioCtx.createBufferSource();
       src.buffer = item.voBuffer;
@@ -856,7 +1101,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       voGain.connect(masterComp);
       src.start(t0 + item.start + 0.04);
 
-      // Punchy Pop + Rising Chord Chime on every scene transition
       const popOsc = audioCtx.createOscillator();
       const popGain = audioCtx.createGain();
       popOsc.type = 'sine';
@@ -870,15 +1114,12 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       popOsc.stop(t0 + item.start + 0.15);
     }
 
-    // =========================================================================
-    // UPBEAT 128 BPM POP-FUNK GROOVE ENGINE (AUDIBLE, ENERGETIC BACKING TRACK)
-    // =========================================================================
+    // UPBEAT 128 BPM POP-FUNK GROOVE ENGINE
     const bpm = 128;
-    const beatDur = 60 / bpm; // 0.46875s per beat
-    const step16Dur = beatDur / 4; // 16th-note grid
+    const beatDur = 60 / bpm;
+    const step16Dur = beatDur / 4;
     const total16Steps = Math.ceil(totalDuration / step16Dur);
 
-    // Funky minor-pentatonic bass riff in A minor (A2, A2, C3, D3, E3, G3)
     const bassPattern = [
       110.0, 0, 110.0, 220.0,
       130.81, 0, 146.83, 164.81,
@@ -886,7 +1127,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       164.81, 146.83, 130.81, 146.83,
     ];
 
-    // Upbeat synth chord progression (Am7 -> Cmaj7 -> Dm7 -> E7)
     const chords = [
       [440.0, 523.25, 659.25],
       [523.25, 659.25, 783.99],
@@ -899,7 +1139,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
       const stepInBar = step % 16;
       const barIdx = Math.floor(step / 16);
 
-      // 1. Punchy 4-on-the-floor Kick Drum (steps 0, 4, 8, 12)
       if (stepInBar % 4 === 0) {
         const kickOsc = audioCtx.createOscillator();
         const kickGain = audioCtx.createGain();
@@ -914,7 +1153,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         kickOsc.stop(st + 0.19);
       }
 
-      // 2. Crisp Backbeat Snare / Clap (steps 4 and 12)
       if (stepInBar === 4 || stepInBar === 12) {
         const snareNoise = audioCtx.createBufferSource();
         snareNoise.buffer = noiseBuf;
@@ -932,7 +1170,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         snareNoise.stop(st + 0.14);
       }
 
-      // 3. Driving 16th-Note Hi-Hats (accent on off-beats 2, 6, 10, 14)
       if (stepInBar % 2 === 0 || stepInBar % 4 === 3) {
         const isOffbeat = stepInBar % 4 === 2;
         const hatNoise = audioCtx.createBufferSource();
@@ -950,7 +1187,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         hatNoise.stop(st + 0.09);
       }
 
-      // 4. Funky Synth Bassline
       const bassFreq = bassPattern[stepInBar];
       if (bassFreq > 0) {
         const bassOsc = audioCtx.createOscillator();
@@ -970,7 +1206,6 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
         bassOsc.stop(st + step16Dur * 0.92);
       }
 
-      // 5. Off-Beat Pop-Disco Synth Chord Stabs (steps 2, 6, 10, 14)
       if (stepInBar % 4 === 2) {
         const chord = chords[barIdx % chords.length];
         for (const freq of chord) {

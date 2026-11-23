@@ -265,59 +265,147 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
             </div>
 
             {/* ---------------------------------------------------------------
-                STEP 04: GENERATE YOUR CUSTOM MYSTERY & CLUES
+                STEP 04: GENERATE YOUR CUSTOM MYSTERY & CLUES (GUEST -> CLUE BREAKDOWN)
             ---------------------------------------------------------------- */}
             <div className="relative grid lg:grid-cols-12 gap-10 lg:gap-16 items-center group">
               <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-brand-dark text-white border-4 border-white shadow-lg items-center justify-center font-black text-xs z-10 group-hover:bg-brand-pink transition-colors">
                 04
               </div>
 
-              {/* Left Visual Collage: Layered CCTV Photo + Intercepted Chat Bubble */}
-              <div className="lg:col-span-5 order-2 lg:order-1">
-                <div className="relative pt-2 pb-8">
-                  {/* Base CCTV Evidence Frame */}
-                  <div className="rounded-3xl overflow-hidden border-2 border-brand-dark bg-brand-dark shadow-[8px_8px_0px_#120914] -rotate-2 group-hover:-rotate-1 transition-transform">
-                    <div className="relative h-48">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/moodboard/lotr/caught-on-camera.jpg"
-                        alt="Custom CCTV Clue"
-                        className="w-full h-full object-cover opacity-90"
-                      />
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/80 text-brand-pink font-mono text-[10px] font-bold">
-                        ● REC · CAM 02 · 19:55:14
+              {/* Left Visual Collage: Guest Profile -> Lookalike Crime-Scene Photo + Leaked Text + Voice Wiretap */}
+              <div className="lg:col-span-5 order-2 lg:order-1 space-y-4">
+                {/* Pair 1: Guest Sarah -> Lookalike Crime-Scene Photo */}
+                <div className="bg-brand-dark text-white rounded-3xl p-3.5 border-2 border-brand-dark shadow-[8px_8px_0px_#fe04c6] -rotate-1 group-hover:rotate-0 transition-transform">
+                  <div className="flex items-center justify-between px-1 mb-2.5">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                      Clue Type #1 · Guest-Lookalike Crime Photos
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-wider">
+                      ✓ 100% Appearance Match
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-12 gap-2.5 items-center">
+                    <div className="col-span-4 bg-white text-brand-dark rounded-2xl p-2 border border-gray-200">
+                      <div className="aspect-[4/5] rounded-xl overflow-hidden mb-1.5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/generated-avatars/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-6224c730c6c6.jpg"
+                          alt="Guest Sarah"
+                          className="w-full h-full object-cover object-top"
+                        />
+                      </div>
+                      <p className="text-[10px] font-black uppercase">Guest: Sarah</p>
+                      <p className="text-[9px] text-brand-pink font-bold leading-tight">
+                        Emerald velvet · Gold earrings
+                      </p>
+                    </div>
+
+                    <div className="col-span-1 flex justify-center">
+                      <span className="w-7 h-7 rounded-full bg-brand-pink text-white font-black text-xs flex items-center justify-center shadow-md">
+                        →
+                      </span>
+                    </div>
+
+                    <div className="col-span-7 relative rounded-2xl overflow-hidden border border-white/15 bg-black">
+                      <div className="aspect-[4/3]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/generated-clues/a1111111-1111-4111-8111-111111111107-5a3adbbd85bd.jpg"
+                          alt="Sarah Rendered Into Fireplace Crime Clue"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="p-2 bg-black/85">
+                        <p className="text-[10px] font-black uppercase text-brand-pink">
+                          Rendered Crime-Scene Clue #04
+                        </p>
+                        <p className="text-[10px] font-semibold text-white/90 leading-tight">
+                          Sarah caught burning documents by the fireplace in her exact emerald dress!
+                        </p>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Overlapping iMessage Chat Card */}
-                  <div className="relative -mt-12 ml-6 sm:ml-10 bg-white rounded-2xl p-4 border-2 border-brand-dark shadow-[6px_6px_0px_#fe04c6] rotate-1 group-hover:rotate-0 transition-transform">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-brand-pink">
-                        Leaked Text Thread · 7:32 PM
-                      </span>
-                      <span className="text-[10px] font-bold text-gray-400">+ Voice Wiretaps</span>
-                    </div>
+                {/* Overlapping Leaked Text + Physical Forensic + AI Voice Wiretap Card */}
+                <div className="bg-white rounded-3xl p-4 border-2 border-brand-dark shadow-[8px_8px_0px_#120914] rotate-1 group-hover:rotate-0 transition-transform space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-brand-pink">
+                      Clue Type #2 · Leaked Texts &amp; Physical Forensics
+                    </span>
+                    <span className="text-[10px] font-black uppercase text-brand-dark">7:32 PM</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-2.5 border border-gray-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/generated-clues/a1111111-1111-4111-8111-111111111109-6c6f2b97ac73.jpg"
+                      alt="Dropped Snowflake Hairpin Clue"
+                      className="w-14 h-14 rounded-xl object-cover shrink-0 border border-gray-300"
+                    />
                     <p className="text-xs font-bold text-brand-dark leading-snug">
-                      &ldquo;Meet me by the coat closet before dinner. Someone left a bank transfer in Luke&apos;s coat pocket...&rdquo;
+                      &ldquo;Burn the offshore transfer fast—and don&apos;t drop your silver snowflake hairpin like you did in Ibiza 👀&rdquo;
                     </p>
+                  </div>
+
+                  {/* Clue Type #3: AI Voice Wiretap Strip */}
+                  <div className="flex items-center justify-between bg-brand-dark text-white rounded-2xl px-3.5 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-brand-pink animate-pulse" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-brand-pink">
+                          Clue Type #3 · AI Voice Wiretap (0:14)
+                        </p>
+                        <p className="text-[11px] font-bold text-white">
+                          Synthesized in Sarah&apos;s British Accent
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
+                      ▶ Audio Clue
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="hidden lg:block lg:col-span-2 order-2" />
 
-              {/* Right Copy */}
+              {/* Right Copy: 3 Clue Type Breakdown */}
               <div className="lg:col-span-5 order-1 lg:order-3 space-y-4">
                 <span className="inline-block text-[11px] font-black uppercase tracking-[0.22em] text-brand-pink">
-                  Step 04 · Ready in ~20 Minutes
+                  Step 04 · Custom Clue Engine (~20 Mins)
                 </span>
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.98]">
-                  Generate Custom <span className="text-brand-pink italic">Clues.</span>
+                  Clues Rendered To <span className="text-brand-pink italic">Look Like Your Guests.</span>
                 </h2>
                 <p className="text-base text-gray-500 font-semibold leading-relaxed">
-                  Our engine builds your entire mystery around your cast—generating custom costume portraits, crime-scene CCTV photos with your friends&apos; faces, leaked text threads, and regional-accent audio wiretaps.
+                  Hit generate and our engine builds multi-sensory evidence tailored directly to your guest list:
                 </p>
+                <div className="space-y-2.5 pt-1">
+                  {[
+                    {
+                      tag: '01 · Lookalike Photos',
+                      text: 'Crime-scene & CCTV photos rendered to match each guest’s hair, glasses, beard & outfit.',
+                    },
+                    {
+                      tag: '02 · Texts & Forensics',
+                      text: 'Leaked iMessage threads, bank transfers & physical evidence weaving in their real names & inside jokes.',
+                    },
+                    {
+                      tag: '03 · AI Voice Wiretaps',
+                      text: 'Intercepted voicemails generated in each friend’s accent and played out loud on their phones.',
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.tag}
+                      className="p-3 rounded-2xl bg-[#f8f7fa] border border-gray-200 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3"
+                    >
+                      <span className="px-2.5 py-1 rounded-full bg-brand-dark text-white text-[10px] font-black uppercase tracking-wider shrink-0">
+                        {item.tag}
+                      </span>
+                      <p className="text-xs font-bold text-gray-600 leading-snug">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
