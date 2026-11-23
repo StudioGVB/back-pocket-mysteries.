@@ -228,8 +228,24 @@ export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[
     }
   }
 
-  // 2. Merge from Resend Cloud Audience (serverless-safe cloud persistence)
-  const resendContacts = await fetchResendAudienceContacts();
+  // 2 & 3. Fetch Resend Cloud Audience and Supabase `leads` table concurrently
+  const [resendContacts, supabaseRows] = await Promise.all([
+    fetchResendAudienceContacts(),
+    (async (): Promise<any[]> => {
+      try {
+        const supabase = await createClient();
+        const { data, error } = await (supabase as any)
+          .from('leads')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (!error && Array.isArray(data)) return data;
+      } catch {
+        // Table may not be migrated yet
+      }
+      return [];
+    })(),
+  ]);
+
   for (const contact of resendContacts) {
     const emailKey = contact.email.toLowerCase().trim();
     const existing = byEmail.get(emailKey);
@@ -251,37 +267,24 @@ export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[
     });
   }
 
-  // 3. Merge from Supabase `leads` table if present
-  try {
-    const supabase = await createClient();
-    const { data, error } = await (supabase as any)
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: true });
-
-    if (!error && Array.isArray(data)) {
-      for (const row of data) {
-        if (!row.email) continue;
-        const emailKey = String(row.email).toLowerCase().trim();
-        const existing = byEmail.get(emailKey);
-        byEmail.set(emailKey, {
-          id: existing?.id || String(row.id || crypto.randomUUID()),
-          email: emailKey,
-          full_name: row.full_name ?? existing?.full_name ?? null,
-          source: row.source || existing?.source || 'website',
-          vip_rank: existing?.vip_rank || Number(row.vip_rank) || 0,
-          qualifies_for_free_mystery:
-            existing?.qualifies_for_free_mystery ??
-            Boolean(row.qualifies_for_free_mystery),
-          free_mystery_code: existing?.free_mystery_code || row.free_mystery_code || null,
-          code_sent_at: existing?.code_sent_at || row.code_sent_at || null,
-          marketing_consent: row.marketing_consent !== false,
-          created_at: row.created_at || existing?.created_at || new Date().toISOString(),
-        });
-      }
-    }
-  } catch {
-    // Table may not be migrated yet
+  for (const row of supabaseRows) {
+    if (!row.email) continue;
+    const emailKey = String(row.email).toLowerCase().trim();
+    const existing = byEmail.get(emailKey);
+    byEmail.set(emailKey, {
+      id: existing?.id || String(row.id || crypto.randomUUID()),
+      email: emailKey,
+      full_name: row.full_name ?? existing?.full_name ?? null,
+      source: row.source || existing?.source || 'website',
+      vip_rank: existing?.vip_rank || Number(row.vip_rank) || 0,
+      qualifies_for_free_mystery:
+        existing?.qualifies_for_free_mystery ??
+        Boolean(row.qualifies_for_free_mystery),
+      free_mystery_code: existing?.free_mystery_code || row.free_mystery_code || null,
+      code_sent_at: existing?.code_sent_at || row.code_sent_at || null,
+      marketing_consent: row.marketing_consent !== false,
+      created_at: row.created_at || existing?.created_at || new Date().toISOString(),
+    });
   }
 
   // Sort oldest-first to assign accurate 1..N VIP ranks (#1 -> #50)

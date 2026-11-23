@@ -8,19 +8,21 @@ import {
 
 const POPUP_DISMISSED_KEY = 'bpm_first50_popup_dismissed';
 const LEAD_JOINED_KEY = 'bpm_first50_lead_joined';
+const STATUS_CACHE_KEY = 'bpm_first50_status_cache';
 
-export default function First50WaitlistBanner() {
-  const [status, setStatus] = useState<{
-    totalLeads: number;
-    vipCap: number;
-    spotsRemaining: number;
-    isFirst50Open: boolean;
-  }>({
-    totalLeads: 0,
-    vipCap: 50,
-    spotsRemaining: 50,
-    isFirst50Open: true,
-  });
+type WaitlistStatus = {
+  totalLeads: number;
+  vipCap: number;
+  spotsRemaining: number;
+  isFirst50Open: boolean;
+};
+
+export default function First50WaitlistBanner({
+  initialStatus = null,
+}: {
+  initialStatus?: WaitlistStatus | null;
+} = {}) {
+  const [status, setStatus] = useState<WaitlistStatus | null>(initialStatus);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
@@ -50,10 +52,36 @@ export default function First50WaitlistBanner() {
       setHasJoined(true);
     }
 
+    // Hydrate last known real count immediately from localStorage so repeat page views have zero delay
+    if (typeof window !== 'undefined' && !initialStatus) {
+      try {
+        const cachedRaw = window.localStorage.getItem(STATUS_CACHE_KEY);
+        if (cachedRaw) {
+          const parsed = JSON.parse(cachedRaw) as WaitlistStatus;
+          if (
+            parsed &&
+            typeof parsed.spotsRemaining === 'number' &&
+            typeof parsed.vipCap === 'number'
+          ) {
+            setStatus(parsed);
+          }
+        }
+      } catch {
+        // ignore invalid cache
+      }
+    }
+
     getLaunchWaitlistStatusAction()
       .then((res) => {
         if (!mounted) return;
         setStatus(res);
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify(res));
+          } catch {
+            // ignore storage quota errors
+          }
+        }
       })
       .catch(() => {
         // ignore
@@ -73,7 +101,7 @@ export default function First50WaitlistBanner() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [initialStatus]);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -99,10 +127,12 @@ export default function First50WaitlistBanner() {
         'first_50_vip_modal'
       );
       if (res.success) {
-        const rank = res.vipRank || status.totalLeads + 1;
-        const qualifies = res.qualifiesForFreeMystery ?? rank <= 50;
+        const currentTotal = status?.totalLeads ?? 0;
+        const vipCap = status?.vipCap ?? 50;
+        const rank = res.vipRank || currentTotal + 1;
+        const qualifies = res.qualifiesForFreeMystery ?? rank <= vipCap;
         const remaining =
-          res.spotsRemaining ?? Math.max(0, 50 - rank);
+          res.spotsRemaining ?? Math.max(0, vipCap - rank);
 
         setResultInfo({
           vipRank: rank,
@@ -110,15 +140,21 @@ export default function First50WaitlistBanner() {
           spotsRemaining: remaining,
           alreadyRegistered: res.alreadyRegistered,
         });
-        setStatus((prev) => ({
-          ...prev,
-          totalLeads: Math.max(prev.totalLeads, rank),
+        const nextStatus: WaitlistStatus = {
+          vipCap,
+          totalLeads: Math.max(currentTotal, rank),
           spotsRemaining: remaining,
           isFirst50Open: remaining > 0,
-        }));
+        };
+        setStatus(nextStatus);
         setHasJoined(true);
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(LEAD_JOINED_KEY, 'true');
+          try {
+            window.localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify(nextStatus));
+          } catch {
+            // ignore
+          }
         }
       } else {
         setError(res.error || 'Could not join waitlist. Please try again.');
@@ -130,10 +166,13 @@ export default function First50WaitlistBanner() {
     }
   };
 
-  const progressPercent = Math.min(
-    100,
-    Math.max(0, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
-  );
+  const isFirst50Open = status ? status.isFirst50Open : true;
+  const progressPercent = status
+    ? Math.min(
+        100,
+        Math.max(0, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
+      )
+    : 0;
 
   return (
     <>
@@ -146,15 +185,22 @@ export default function First50WaitlistBanner() {
           </span>
 
           <p className="text-xs font-bold text-slate-200">
-            {status.isFirst50Open ? (
+            {isFirst50Open ? (
               <>
                 First <strong className="text-white font-black">50 email sign-ups</strong> before launch get a{' '}
                 <span className="text-brand-pink font-black underline decoration-brand-pink/50">
                   FREE Custom Murder Mystery
-                </span>{' '}
-                <span className="text-slate-400 font-semibold">
-                  ({status.spotsRemaining} of {status.vipCap} spots left!)
                 </span>
+                {status ? (
+                  <span className="text-slate-400 font-semibold ml-1 animate-in fade-in duration-200">
+                    ({status.spotsRemaining} of {status.vipCap} spots left!)
+                  </span>
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="inline-block w-28 h-3.5 rounded-full bg-white/10 animate-pulse align-middle ml-1.5"
+                  />
+                )}
               </>
             ) : (
               <>
@@ -251,12 +297,23 @@ export default function First50WaitlistBanner() {
                   {/* Live Spots Counter Bar */}
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
                     <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider">
-                      <span className="text-brand-pink">
-                        🔥 {status.spotsRemaining} of {status.vipCap} Free Spots Left
-                      </span>
-                      <span className="text-slate-400">
-                        {status.vipCap - status.spotsRemaining}/{status.vipCap} Claimed
-                      </span>
+                      {status ? (
+                        <>
+                          <span className="text-brand-pink">
+                            🔥 {status.spotsRemaining} of {status.vipCap} Free Spots Left
+                          </span>
+                          <span className="text-slate-400">
+                            {status.vipCap - status.spotsRemaining}/{status.vipCap} Claimed
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-brand-pink">
+                            🔥 Checking Live VIP Spots...
+                          </span>
+                          <span className="inline-block w-16 h-3.5 rounded-full bg-white/10 animate-pulse" />
+                        </>
+                      )}
                     </div>
                     <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
                       <div
@@ -296,7 +353,7 @@ export default function First50WaitlistBanner() {
                     >
                       {submitting
                         ? 'Locking In Your Spot...'
-                        : status.isFirst50Open
+                        : isFirst50Open
                         ? 'Claim My Free Mystery Spot →'
                         : 'Join the VIP Waitlist →'}
                     </button>
