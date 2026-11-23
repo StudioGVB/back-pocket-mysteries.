@@ -122,7 +122,12 @@ export default async function CustomerMysteryCastPage({
   }
 
   const templateMysteryId = String(mystery.template_mystery_id || mystery.id);
-  const needsIsolatedClone = Boolean(user && mystery.created_by !== user.id);
+  const needsIsolatedClone = Boolean(
+    user &&
+      (!mystery.template_mystery_id ||
+        String(mystery.id) === templateMysteryId ||
+        mystery.created_by !== user.id)
+  );
 
   // 2. Load user's guest roster, admin status, paid orders, and (only if cloning) template relationships in parallel
   const [
