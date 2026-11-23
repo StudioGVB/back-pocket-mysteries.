@@ -19,7 +19,6 @@ import {
 import { checkAndFinalizeGenerationIfDue } from '@/lib/background-mystery-generator';
 import { getTierForPlayerCount } from '@/utils/localization';
 import { getCleanCharacterPresentation } from '@/utils/character-display';
-import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
 import { isUserAdmin } from '@/utils/admin-auth';
 import CustomerCastClient from './CustomerCastClient';
 
@@ -60,7 +59,19 @@ export default async function CustomerMysteryCastPage({
   const { locale, slug } = await params;
   const resolvedSearch = await searchParams;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+
+  // 1. Fetch authenticated user and mystery concurrently to cut initial latency in half
+  const [
+    {
+      data: { user },
+    },
+    initialMysteryLookup,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    isUuid ? getMysteryById(slug) : getPublishedMysteryByIdOrSlug(slug),
+  ]);
 
   // Host must be logged into their account to cast and start the game
   if (!user) {
@@ -72,19 +83,9 @@ export default async function CustomerMysteryCastPage({
     );
   }
 
-  // 1. Resolve mystery by UUID or slug (loads full mystery snapshot into cache as well)
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
-  let mystery: any = isUuid
-    ? await getMysteryById(slug)
-    : await getPublishedMysteryByIdOrSlug(slug);
-
+  let mystery: any = initialMysteryLookup;
   if (!mystery) {
     mystery = await getPublishedMysteryByIdOrSlug(slug);
-  }
-
-  if (mystery?.id && (!mystery.clues || !mystery.plot_beats)) {
-    const fullMystery = await getMysteryById(mystery.id);
-    if (fullMystery) mystery = fullMystery;
   }
 
   // Fallback to the latest published or draft mystery in DB if a static showcase slug is clicked
@@ -120,13 +121,48 @@ export default async function CustomerMysteryCastPage({
     );
   }
 
-  // Ensure relationships snapshot is also warmed in disk cache so unauthenticated guests can open the copyable link immediately
   const templateMysteryId = String(mystery.template_mystery_id || mystery.id);
-  const templateRelationships = await getRelationshipsByMysteryId(templateMysteryId);
+  const needsIsolatedClone = Boolean(user && mystery.created_by !== user.id);
 
-  // If this mystery is a shared template not created by this user, provision an isolated per-customer instance
-  // so every signup has their own private cast, unique 6-digit Game PIN, and isolated round state.
-  if (user && mystery.created_by !== user.id) {
+  // 2. Load user's guest roster, admin status, paid orders, and (only if cloning) template relationships in parallel
+  const [
+    { data: hostProfileRaw },
+    { data: manualGuests },
+    { data: connections },
+    templateRelationships,
+    isAdmin,
+    { data: paidOrder },
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+    supabase.from('guests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    (supabase as any)
+      .from('guest_connections')
+      .select(`
+        id,
+        guest_user_id,
+        profiles!guest_user_id (
+          bio,
+          location,
+          pronouns,
+          avatar_config,
+          dietary_needs,
+          character_preferences
+        )
+      `)
+      .eq('host_user_id', user.id),
+    needsIsolatedClone ? getRelationshipsByMysteryId(templateMysteryId) : Promise.resolve([]),
+    isUserAdmin(supabase, user),
+    supabase
+      .from('orders')
+      .select('id')
+      .eq('user_id', user.id)
+      .in('mystery_id', Array.from(new Set([String(mystery.id), templateMysteryId])))
+      .eq('status', 'succeeded')
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (needsIsolatedClone) {
     const isolated = ensureIsolatedCustomerMysteryInstance(
       mystery,
       templateRelationships,
@@ -135,32 +171,11 @@ export default async function CustomerMysteryCastPage({
     mystery = isolated.mystery;
   }
 
-  // 2. Load user's guest roster (host profile #1 + manual + linked)
   let guests: any[] = [];
   let hostProfileForClient: any = null;
   let resolvedHostName = 'Gabriella Blyth';
 
   if (user) {
-    const [{ data: hostProfileRaw }, { data: manualGuests }, { data: connections }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
-      supabase.from('guests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-      (supabase as any)
-        .from('guest_connections')
-        .select(`
-          id,
-          guest_user_id,
-          profiles!guest_user_id (
-            bio,
-            location,
-            pronouns,
-            avatar_config,
-            dietary_needs,
-            character_preferences
-          )
-        `)
-        .eq('host_user_id', user.id),
-    ]);
-
     const hostProfile = hostProfileRaw as any;
     hostProfileForClient = hostProfile;
 
@@ -209,42 +224,34 @@ export default async function CustomerMysteryCastPage({
       }
     }
 
-    const hydratedManualGuests = await Promise.all(
-      (manualGuests || []).map(async (mg: any) => {
-        let avatarUrl = mg.avatar_url || '';
-        if (!avatarUrl.includes('aiPhotoUrl=')) {
-          const cachedUrl = cachedAvatarByGuestId.get(mg.id);
-          if (cachedUrl) {
-            avatarUrl = cachedUrl;
-            await supabase
-              .from('guests')
-              .update({ avatar_url: cachedUrl })
-              .eq('id', mg.id)
-              .eq('user_id', user.id);
-          } else {
-            try {
-              const aiRes = await generateGuestAvatarAction(mg.id, mg);
-              if (aiRes?.publicUrl) avatarUrl = aiRes.publicUrl;
-            } catch {
-              // ignore
-            }
-          }
+    // Never block SSR page load on Gemini AI image generation; use existing or cached avatar URLs immediately
+    const hydratedManualGuests = (manualGuests || []).map((mg: any) => {
+      let avatarUrl = mg.avatar_url || '';
+      if (!avatarUrl.includes('aiPhotoUrl=')) {
+        const cachedUrl = cachedAvatarByGuestId.get(mg.id);
+        if (cachedUrl) {
+          avatarUrl = cachedUrl;
+          void supabase
+            .from('guests')
+            .update({ avatar_url: cachedUrl })
+            .eq('id', mg.id)
+            .eq('user_id', user.id);
         }
-        return {
-          id: mg.id,
-          name: mg.name,
-          gender: mg.gender || 'adaptable',
-          accent: mg.accent || extractAccentFromAvatarUrl(avatarUrl) || 'Australian',
-          eye_color: mg.eye_color || '',
-          height: mg.height || '',
-          avatar_url: avatarUrl,
-          traits: mg.traits || [],
-          bio: mg.bio || '',
-          isLinked: false,
-          isHost: false,
-        };
-      })
-    );
+      }
+      return {
+        id: mg.id,
+        name: mg.name,
+        gender: mg.gender || 'adaptable',
+        accent: mg.accent || extractAccentFromAvatarUrl(avatarUrl) || 'Australian',
+        eye_color: mg.eye_color || '',
+        height: mg.height || '',
+        avatar_url: avatarUrl,
+        traits: mg.traits || [],
+        bio: mg.bio || '',
+        isLinked: false,
+        isHost: false,
+      };
+    });
 
     const hostId = hostProfile?.id || user.id;
     const hostGender = hostProfile?.pronouns?.toLowerCase().includes('she')
@@ -289,37 +296,6 @@ export default async function CustomerMysteryCastPage({
         cachedAvatarByGuestId.get('mock-guest-gabriella');
       if (cachedHostUrl) {
         hostAvatarUrl = cachedHostUrl;
-      } else {
-        try {
-          const aiRes = await generateGuestAvatarAction(
-            hostId,
-            {
-              id: hostId,
-              name: resolvedHostName,
-              gender: hostGender,
-              eye_color: hostEyeColor || 'Hazel',
-              height: hostHeight || 'Average',
-              avatar_config: hostAvatarConfig,
-              avatar_url: hostAvatarUrl,
-            },
-            { isHostProfile: true }
-          );
-          if (aiRes?.publicUrl) {
-            hostAvatarUrl = aiRes.publicUrl;
-          }
-          if (aiRes?.aiPhotoUrl) {
-            hostProfileForClient = {
-              ...(hostProfileForClient || {}),
-              avatar_url: hostAvatarUrl,
-              avatar_config: {
-                ...hostAvatarConfig,
-                aiPhotoUrl: aiRes.aiPhotoUrl,
-              },
-            };
-          }
-        } catch {
-          // ignore
-        }
       }
     }
 
@@ -427,12 +403,12 @@ export default async function CustomerMysteryCastPage({
     verifiedFromRedirect = Boolean(confirmRes.verified);
   }
 
-  const isAdmin = await isUserAdmin(supabase, user);
   const userPaidStoreIds = new Set(getPaidMysteryIdsForUserInStore(user.id, user.email));
   const cleanUserEmail = (user.email || '').trim().toLowerCase();
 
-  let initialIsPaid =
+  const initialIsPaid =
     isAdmin ||
+    Boolean(paidOrder) ||
     verifiedFromRedirect ||
     userPaidStoreIds.has(mystery.id) ||
     userPaidStoreIds.has(templateMysteryId) ||
@@ -450,21 +426,6 @@ export default async function CustomerMysteryCastPage({
       }
       return false;
     });
-
-  if (!initialIsPaid && user) {
-    const { data: paidOrder } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('user_id', user.id)
-      .in('mystery_id', Array.from(new Set([mystery.id, templateMysteryId])))
-      .eq('status', 'succeeded')
-      .limit(1)
-      .maybeSingle();
-
-    if (paidOrder) {
-      initialIsPaid = true;
-    }
-  }
 
   const justCheckedOut = checkoutParam && initialIsPaid;
   const isEditMode = resolvedSearch?.edit === '1' || resolvedSearch?.edit === 'true';

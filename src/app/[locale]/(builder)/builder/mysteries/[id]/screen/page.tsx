@@ -51,11 +51,16 @@ export default async function ScreenMysteryPackPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const [mystery, relationships, subplots] = await Promise.all([
+  const [
+    {
+      data: { user },
+    },
+    mystery,
+    relationships,
+    subplots,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
     getMysteryById(id),
     getRelationshipsByMysteryId(id),
     getSubplotsByMysteryId(id),
@@ -74,19 +79,7 @@ export default async function ScreenMysteryPackPage({
       .order('created_at', { ascending: false });
 
     for (const g of dbGuests || []) {
-      let currentAvatarUrl = g.avatar_url || '';
-
-      // If this friend (e.g. Charley) doesn't have an AI studio headshot yet, generate it now!
-      if (!hasValidAiHeadshot(currentAvatarUrl)) {
-        try {
-          const genRes = await generateGuestAvatarAction(g.id, g);
-          if (genRes?.publicUrl) {
-            currentAvatarUrl = genRes.publicUrl;
-          }
-        } catch (err) {
-          console.warn(`Could not auto-generate AI headshot for ${g.name}:`, err);
-        }
-      }
+      const currentAvatarUrl = g.avatar_url || '';
 
       const key = String(g.id || g.name).toLowerCase();
       const rawGender = String(g.gender || 'adaptable').toLowerCase();
