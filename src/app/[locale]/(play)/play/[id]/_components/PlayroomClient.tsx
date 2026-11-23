@@ -2303,6 +2303,34 @@ export function PlayroomClient({
           </div>
         </div>
 
+        {/* Mobile & Tablet Horizontal Stage Progress Strip (< 1024px) */}
+        <div className="flex lg:hidden items-center gap-1 overflow-x-auto no-scrollbar px-3 py-1.5 border-t border-white/5 bg-slate-950/90">
+          {stageTimelineSteps.map(st => {
+            const isCurrent = currentRound === st.r;
+            const isPast = currentRound > st.r;
+            return (
+              <button
+                key={st.r}
+                type="button"
+                disabled={!isHostMode}
+                onClick={() => {
+                  if (isHostMode) handleHostSetRound(st.r);
+                }}
+                title={isHostMode ? `Jump to ${st.label}` : st.label}
+                className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider shrink-0 transition-all ${
+                  isCurrent
+                    ? 'bg-brand-pink text-white shadow'
+                    : isPast
+                    ? 'text-emerald-400 bg-emerald-500/10'
+                    : 'text-slate-500 bg-white/[0.03]'
+                } ${isHostMode ? 'cursor-pointer' : 'cursor-default'}`}
+              >
+                {isPast ? `✓ ${st.short}` : st.short}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Row 2: Clean Desktop Tab Bar */}
         <div className="hidden sm:block border-t border-white/5 bg-slate-950/80">
           <div className="max-w-5xl mx-auto w-full px-3 sm:px-5 py-1.5 flex items-center justify-between gap-2">
@@ -2376,23 +2404,23 @@ export function PlayroomClient({
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-grow max-w-5xl mx-auto w-full px-3 sm:px-5 py-4 space-y-4">
+      <main className="flex-grow max-w-5xl mx-auto w-full px-3 sm:px-5 py-3 sm:py-4 space-y-3 sm:space-y-4">
         {/* =====================================================================
             INLINE HOST COMMAND STRIP (FOR HOST) OR SLIM STAGE PILL (FOR GUESTS)
         ====================================================================== */}
         {isHostMode ? (
-          <div className="rounded-2xl bg-slate-900/90 border border-amber-400/35 p-3.5 sm:p-4 space-y-3 shadow-lg">
+          <div className="rounded-2xl bg-slate-900/90 border border-amber-400/35 p-3 sm:p-4 space-y-2.5 shadow-lg">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-widest">
-                  🎛️ Host MC Bar • {stageGuidance.badge}
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
+                  🎛️ {stageGuidance.badge}
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-white/10 text-slate-300 text-[10px] font-bold">
-                  ⏱️ {stageGuidance.timerLabel}
+                <span className="px-2 py-0.5 rounded-full bg-white/10 text-slate-300 text-[9px] sm:text-[10px] font-bold">
+                  {stageGuidance.timerLabel}
                 </span>
                 {unlockedClueRound >= 1 && unlockedClueRound <= maxClueRound && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[10px] font-black">
-                    🗳️ {currentRoundSubmissions.length}/{suspectCharacters.length} Votes In
+                  <span className="px-2 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[9px] sm:text-[10px] font-black">
+                    🗳️ {currentRoundSubmissions.length}/{suspectCharacters.length} Votes
                   </span>
                 )}
               </div>
@@ -2404,15 +2432,13 @@ export function PlayroomClient({
                     <button
                       type="button"
                       onClick={() => handleHostToggleShareRound(activeVotingRound)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      className={`px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                         isCurrentRoundSharedWithGuests
                           ? 'bg-emerald-500 text-slate-950'
                           : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
                     >
-                      {isCurrentRoundSharedWithGuests
-                        ? '✓ Tally Shared to Phones'
-                        : '📢 Share Vote Tally'}
+                      {isCurrentRoundSharedWithGuests ? '✓ Tally Shared' : '📢 Share Tally'}
                     </button>
                   )}
 
@@ -2426,34 +2452,34 @@ export function PlayroomClient({
                           : 'shared_with_guests'
                       )
                     }
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                       revealMode === 'shared_with_guests'
                         ? 'bg-emerald-500 text-slate-950'
                         : 'bg-brand-pink text-white'
                     }`}
                   >
                     {revealMode === 'shared_with_guests'
-                      ? '✓ Solution Shared to Phones'
-                      : '📲 Push Solution to All Phones'}
+                      ? '✓ Solution Shared'
+                      : '📲 Push Solution'}
                   </button>
                 )}
 
                 <button
                   type="button"
                   onClick={() => setShowHostScriptStrip(prev => !prev)}
-                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-amber-200 text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                  className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-amber-200 text-[9px] sm:text-[10px] font-black uppercase tracking-wider cursor-pointer"
                 >
-                  {showHostScriptStrip ? 'Hide Script ▲' : '📢 Read-Aloud Script ▼'}
+                  {showHostScriptStrip ? 'Hide Script ▲' : '📢 MC Script ▼'}
                 </button>
               </div>
             </div>
 
             {showHostScriptStrip ? (
-              <div className="rounded-xl bg-slate-950/90 border border-amber-400/30 p-3 space-y-1">
-                <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+              <div className="rounded-xl bg-slate-950/90 border border-amber-400/30 p-2.5 sm:p-3 space-y-1">
+                <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-300">
                   📢 Read Out Loud to the Room (Spoiler-Free MC Script):
                 </div>
-                <p className="text-xs sm:text-sm font-bold text-amber-50 italic leading-relaxed">
+                <p className="text-xs sm:text-sm font-bold text-amber-50 italic leading-snug sm:leading-relaxed">
                   {stageGuidance.hostScript}
                 </p>
               </div>
@@ -2469,7 +2495,7 @@ export function PlayroomClient({
                     <button
                       type="button"
                       onClick={() => setActiveTab('clues')}
-                      className="px-3 py-1 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider cursor-pointer"
                     >
                       {isGuessStep
                         ? `Go to Vote ${unlockedClueRound} →`
@@ -2481,9 +2507,9 @@ export function PlayroomClient({
           </div>
         ) : (
           /* Compact 1-Line Stage Objective Bar for Guests */
-          <div className="rounded-2xl bg-slate-900/70 border border-white/10 px-4 py-3 flex flex-wrap items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest shrink-0">
+          <div className="rounded-2xl bg-slate-900/70 border border-white/10 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="px-2 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest shrink-0">
                 {stageGuidance.badge}
               </span>
               <span className="text-xs font-bold text-white truncate">
@@ -2496,11 +2522,11 @@ export function PlayroomClient({
                 <button
                   type="button"
                   onClick={() => setActiveTab('clues')}
-                  className="px-3 py-1 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
                 >
                   {isGuessStep
-                    ? `Vote Round ${unlockedClueRound} →`
-                    : `View Round ${unlockedClueRound} Clues →`}
+                    ? `Vote R${unlockedClueRound} →`
+                    : `R${unlockedClueRound} Clues →`}
                 </button>
               )}
           </div>
@@ -2518,9 +2544,9 @@ export function PlayroomClient({
             );
 
           return (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              {/* 1. COMPACT CHARACTER HERO CARD */}
-              <div className="bg-slate-900/80 border border-white/15 rounded-3xl p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 shadow-xl">
+            <div className="space-y-3.5 sm:space-y-4 animate-in fade-in duration-200">
+              {/* 1. COMPACT CHARACTER HERO CARD (HORIZONTAL ON MOBILE & DESKTOP) */}
+              <div className="bg-slate-900/80 border border-white/15 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 flex flex-row items-start gap-3.5 sm:gap-5 shadow-xl">
                 <div
                   onClick={() => {
                     if (heroPortraitUrl) {
@@ -2531,7 +2557,7 @@ export function PlayroomClient({
                       });
                     }
                   }}
-                  className="w-32 h-40 sm:w-36 sm:h-44 rounded-2xl overflow-hidden border-2 border-brand-pink/50 bg-slate-950 shrink-0 relative group cursor-pointer shadow-lg"
+                  className="w-20 h-24 sm:w-36 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden border-2 border-brand-pink/50 bg-slate-950 shrink-0 relative group cursor-pointer shadow-lg"
                 >
                   {heroPortraitUrl ? (
                     <>
@@ -2541,34 +2567,34 @@ export function PlayroomClient({
                         alt={charPres.roleTitle}
                         className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                       />
-                      <span className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full bg-black/75 text-white text-[9px] font-black uppercase">
-                        🔍 Zoom
+                      <span className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 px-1.5 sm:px-2 py-0.5 rounded-full bg-black/75 text-white text-[8px] sm:text-[9px] font-black uppercase">
+                        🔍
                       </span>
                     </>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl">
+                    <div className="w-full h-full flex items-center justify-center text-3xl sm:text-4xl">
                       🕵️
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-2.5 text-center sm:text-left flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
+                <div className="space-y-1.5 sm:space-y-2.5 text-left flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
                       {charPres.isVictim ? '💀 Story Catalyst / Victim' : '🕵️ Suspect Cheat-Sheet'}
                     </span>
                     {charPres.guestName && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
-                        👤 Played by {charPres.guestName}
+                      <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
+                        👤 {charPres.guestName}
                       </span>
                     )}
                   </div>
 
-                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight leading-tight">
                     {charPres.roleTitle}
                   </h2>
 
-                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-200 leading-snug sm:leading-relaxed">
                     {charPres.shortBlurb}
                   </p>
                 </div>
@@ -3155,69 +3181,98 @@ export function PlayroomClient({
             )}
 
             {/* 2. SINGLE UNIFIED EVIDENCE TOOLBAR (ROUNDS + TAG FILTER + SWIPE/GRID TOGGLE) */}
-            <div className="bg-slate-900/70 border border-white/10 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5">
-              {/* Left: Round Pills */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                {availableClueRounds.map(rNum => {
-                  const isUnlocked = unlockedClueRound >= rNum;
-                  const isSelected = selectedClueRoundFilter === rNum;
-                  const unreadInRound = isUnlocked ? getUnreadCountForRound(rNum) : 0;
+            <div className="bg-slate-900/70 border border-white/10 rounded-2xl p-2.5 sm:p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+              {/* Top Row on Mobile / Left on Desktop: Round Pills + Mobile View Toggle */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                  {availableClueRounds.map(rNum => {
+                    const isUnlocked = unlockedClueRound >= rNum;
+                    const isSelected = selectedClueRoundFilter === rNum;
+                    const unreadInRound = isUnlocked ? getUnreadCountForRound(rNum) : 0;
 
-                  return (
+                    return (
+                      <button
+                        key={rNum}
+                        type="button"
+                        disabled={!isUnlocked}
+                        onClick={() => {
+                          setStickyClueId(null);
+                          setSelectedClueRoundFilter(rNum);
+                          setClueSlideIndex(0);
+                        }}
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                          !isUnlocked
+                            ? 'bg-slate-950/50 text-slate-600 border border-white/5 cursor-not-allowed'
+                            : isSelected
+                            ? 'bg-brand-pink text-white shadow'
+                            : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+                        }`}
+                      >
+                        <span>{isUnlocked ? `Round ${rNum}` : `🔒 R${rNum}`}</span>
+                        {unreadInRound > 0 && (
+                          <span
+                            className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
+                              isSelected ? 'bg-white text-brand-pink' : 'bg-brand-pink text-white'
+                            }`}
+                          >
+                            {unreadInRound}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+
+                  {unlockedClueRound >= 2 && (
                     <button
-                      key={rNum}
                       type="button"
-                      disabled={!isUnlocked}
                       onClick={() => {
                         setStickyClueId(null);
-                        setSelectedClueRoundFilter(rNum);
+                        setSelectedClueRoundFilter('all');
                         setClueSlideIndex(0);
                       }}
-                      className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
-                        !isUnlocked
-                          ? 'bg-slate-950/50 text-slate-600 border border-white/5 cursor-not-allowed'
-                          : isSelected
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+                        selectedClueRoundFilter === 'all'
                           ? 'bg-brand-pink text-white shadow'
                           : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
                       }`}
                     >
-                      <span>{isUnlocked ? `Round ${rNum}` : `🔒 R${rNum}`}</span>
-                      {unreadInRound > 0 && (
-                        <span
-                          className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
-                            isSelected ? 'bg-white text-brand-pink' : 'bg-brand-pink text-white'
-                          }`}
-                        >
-                          {unreadInRound}
-                        </span>
-                      )}
+                      All ({clues.filter(c => (c.round_number || 1) <= Math.min(maxClueRound, unlockedClueRound)).length})
                     </button>
-                  );
-                })}
+                  )}
+                </div>
 
-                {unlockedClueRound >= 2 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStickyClueId(null);
-                      setSelectedClueRoundFilter('all');
-                      setClueSlideIndex(0);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      selectedClueRoundFilter === 'all'
-                        ? 'bg-brand-pink text-white shadow'
-                        : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
-                    }`}
-                  >
-                    All ({clues.filter(c => (c.round_number || 1) <= Math.min(maxClueRound, unlockedClueRound)).length})
-                  </button>
+                {unlockedClueRound >= 1 && (
+                  <div className="inline-flex lg:hidden rounded-xl bg-slate-950 border border-white/10 p-0.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setClueViewMode('swipe')}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        clueViewMode === 'swipe'
+                          ? 'bg-brand-pink text-white'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      🃏 Card
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClueViewMode('grid')}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        clueViewMode === 'grid'
+                          ? 'bg-brand-pink text-white'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      📋 Grid
+                    </button>
+                  </div>
                 )}
               </div>
 
-              {/* Right: Tag Filter Pills + Swipe/Grid View Toggle */}
+              {/* Row 2 on Mobile / Right on Desktop: Single-Line Tag Filter Pills + Desktop View Toggle */}
               {unlockedClueRound >= 1 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex flex-wrap items-center gap-1">
+                <div className="flex items-center justify-between lg:justify-end gap-2">
+                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                     {(
                       [
                         { id: 'all', label: 'All' },
@@ -3240,7 +3295,7 @@ export function PlayroomClient({
                             setClueTagFilter(opt.id);
                             setClueSlideIndex(0);
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
                             clueTagFilter === opt.id
                               ? 'bg-amber-400 text-slate-950'
                               : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
@@ -3252,7 +3307,7 @@ export function PlayroomClient({
                     })}
                   </div>
 
-                  <div className="inline-flex rounded-xl bg-slate-950 border border-white/10 p-0.5">
+                  <div className="hidden lg:inline-flex rounded-xl bg-slate-950 border border-white/10 p-0.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => setClueViewMode('swipe')}
