@@ -3169,22 +3169,17 @@ export function PlayroomClient({
 
                     <div className="absolute inset-x-0 bottom-0 h-16 sm:h-24 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
 
-                    {/* Top Overlay: Assigned Guest Name + Role Pill */}
-                    <div className="absolute top-2 inset-x-2 sm:top-3 sm:inset-x-3 flex items-center justify-between gap-1.5 z-10">
-                      {guestName ? (
-                        <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-brand-pink text-white text-[10px] sm:text-xs font-black uppercase tracking-wider max-w-[68%] truncate shadow-lg">
-                          👤 {guestName}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-200">
-                          Open
+                    {/* Top Overlay: Character Type Pill on Left, Victim/Claimed Status on Right */}
+                    <div className="absolute top-2.5 inset-x-2.5 sm:top-3 sm:inset-x-3 flex items-center justify-between gap-1.5 z-10">
+                      <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-slate-950/85 backdrop-blur-md border border-white/15 text-white text-[10px] sm:text-xs font-bold tracking-wide max-w-[72%] truncate shadow-sm">
+                        {charPres.roleTitle || archetype || name}
+                      </span>
+
+                      {char.is_victim && (
+                        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-brand-pink text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-sm">
+                          The Victim
                         </span>
                       )}
-
-                      <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white shrink-0">
-                        {char.is_victim ? '💀 Victim' : '🕵️'}
-                        <span className="hidden sm:inline">{char.is_victim ? '' : ' Suspect'}</span>
-                      </span>
                     </div>
 
                     {(isClaimedByMe || isClaimedByOther) && (
@@ -3202,14 +3197,19 @@ export function PlayroomClient({
                     )}
                   </div>
 
-                  {/* Card Body */}
+                  {/* Card Body: Guest Name as Main Header */}
                   <div className="p-3 sm:p-4 flex flex-col justify-between gap-2 sm:gap-3 flex-grow">
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center justify-between gap-1.5">
-                        <h3 className="text-xs sm:text-lg font-black text-white leading-snug group-hover:text-brand-pink transition-colors truncate">
-                          {guestName ? `${guestName} (${charPres.roleTitle || archetype})` : (charPres.roleTitle || archetype)}
+                        <h3 className="text-sm sm:text-xl font-black text-white leading-snug group-hover:text-brand-pink transition-colors truncate">
+                          {guestName || charPres.roleTitle || archetype}
                         </h3>
                       </div>
+                      {guestName && (
+                        <p className="text-[11px] font-semibold text-brand-pink truncate">
+                          Playing {charPres.roleTitle || archetype}
+                        </p>
+                      )}
                       <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-2 leading-snug sm:leading-relaxed">
                         {charPres.shortBlurb}
                       </p>

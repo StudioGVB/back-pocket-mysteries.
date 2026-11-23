@@ -974,37 +974,41 @@ export function MysteryReadyHub({
 
                       <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent pointer-events-none" />
 
-                      {/* Top Badges */}
+                      {/* Top Badges: Character Type Pill on Left, Status on Right */}
                       <div className="absolute top-3 inset-x-3 flex items-center justify-between gap-2 z-10">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${
+                          className={`px-3 py-1 rounded-full text-[11px] font-bold tracking-wide shadow-sm truncate max-w-[70%] ${
                             char.is_victim
                               ? 'bg-brand-pink text-white'
                               : 'bg-slate-900/85 text-white border border-white/15 backdrop-blur-md'
                           }`}
                         >
-                          {char.is_victim ? '💀 Victim' : '🕵️ Suspect'}
+                          {displayRoleTitle}
                         </span>
 
                         {isConfirmedReady ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-sm">
-                            ✋ Ready ✓
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-sm shrink-0">
+                            ✓ Ready
                           </span>
                         ) : isSent ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-sm">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-sm shrink-0">
                             ✓ Sent
+                          </span>
+                        ) : char.is_victim ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-900/85 text-white border border-white/15 backdrop-blur-md shrink-0">
+                            Victim
                           </span>
                         ) : null}
                       </div>
 
-                      {/* Bottom Guest Name + Role Title */}
+                      {/* Bottom Main Header: Guest Name */}
                       <div className="absolute bottom-3 inset-x-4 z-10">
-                        <p className="text-xs font-black uppercase tracking-wider text-brand-pink truncate">
-                          {guest ? guest.name : 'Unassigned'}
-                        </p>
-                        <h3 className="text-xl font-black text-white tracking-tight leading-tight truncate">
-                          {displayRoleTitle}
+                        <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight truncate">
+                          {guest ? guest.name : displayRoleTitle}
                         </h3>
+                        <p className="text-xs font-semibold text-slate-300 truncate">
+                          {guest ? `Playing ${displayRoleTitle}` : 'Unassigned Role'}
+                        </p>
                       </div>
                     </div>
 
