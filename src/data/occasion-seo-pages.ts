@@ -35,13 +35,13 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     subtitle:
       'Ditch the cringey plastic sashes and awkward icebreakers. Cast the Bride-to-Be and your whole hen party into a hilarious, drama-filled Reality TV or VIP Gala murder mystery personalized with your group’s actual inside jokes.',
     metaTitle:
-      'Hen Party & Bachelorette Murder Mystery Games (Printable & Custom) | Back Pocket Mysteries',
+      'Hen Party & Bachelorette Murder Mystery Games (100% Online & Custom) | Back Pocket Mysteries',
     metaDescription:
       'Looking for the ultimate hen do or bachelorette murder mystery party game? Personalize characters with the bride’s inside jokes, leaked group chats, and audio clues in ~20 minutes.',
     keywords: [
       'hen party murder mystery game',
       'bachelorette murder mystery party',
-      'hen do murder mystery game printable',
+      'hen do murder mystery game online',
       'girls night murder mystery game',
       'bachelorette party games at home',
       'all female murder mystery game',
@@ -49,7 +49,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     ],
     recommendedThemeSlug: 'death-on-arrival',
     groupSizeLabel: 'Up to 16 Hens / Bridesmaids',
-    prepTimeLabel: 'Ready to Print or Play on Phones in ~20 Mins',
+    prepTimeLabel: 'Ready to Play on Phones in ~20 Mins',
     whyTitle: 'Why a Custom Murder Mystery is the #1 Hen Do & Bachelorette Icebreaker',
     whyParagraphs: [
       'The hardest part of any hen weekend or bachelorette party is getting different friend groups—school friends, work friends, sisters, and cousins—laughing together without awkward small talk.',
@@ -67,9 +67,9 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
           'Cast the Bride-to-Be as the glamorous centre of every scandal, while the Maid of Honour can play along spoiler-free without knowing who the killer is.',
       },
       {
-        title: 'Airbnb & Living Room Friendly',
+        title: 'Airbnb & Living Room Friendly (Zero Printing)',
         description:
-          'Print the character booklets before you travel or cast the interactive Playroom + voice-acted Inspector audio clues straight to the Airbnb TV and guests’ phones.',
+          'No need to pack paper folders—guests join the interactive Playroom + voice-acted Inspector audio clues straight from their phones via a 6-digit Game PIN.',
       },
     ],
     faqs: [
@@ -81,7 +81,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       {
         question: 'Does the Maid of Honour or organizer get spoiled on who the killer is?',
         answer:
-          'No! Our Spoiler-Free Host Mode lets the organizer play as a full suspect alongside the bride and bridesmaids. The digital Playroom and sealed reveal pack keep the murderer hidden until the final vote.',
+          'No! Our Spoiler-Free Host Mode lets the organizer play as a full suspect alongside the bride and bridesmaids. The digital Playroom keeps the murderer hidden until the final vote.',
       },
       {
         question: 'What if someone drops out last-minute before the hen weekend?',
@@ -102,7 +102,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     metaTitle:
       'Birthday Murder Mystery Party Games for Adults (30th, 40th, 50th) | Back Pocket Mysteries',
     metaDescription:
-      'Host an unforgettable adult birthday murder mystery party at home. Custom character booklets, inside jokes, printable clues, and interactive audio briefings for up to 16 guests.',
+      'Host an unforgettable adult birthday murder mystery party at home. Custom character dossiers, inside jokes, digital CCTV & chat clues, and interactive audio briefings for up to 16 guests.',
     keywords: [
       'birthday murder mystery party game',
       '30th birthday murder mystery party',
@@ -113,7 +113,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     ],
     recommendedThemeSlug: 'death-on-arrival',
     groupSizeLabel: 'Up to 16 Birthday Guests',
-    prepTimeLabel: 'Custom Digital Pack + Printable PDFs in ~20 Mins',
+    prepTimeLabel: '100% Online Custom Pack Ready in ~20 Mins',
     whyTitle: 'Roast the Birthday Star with a Mystery Built Around Their Friends',
     whyParagraphs: [
       'Milestone birthdays deserve more than sitting around a table scrolling through phones. A custom murder mystery gives everyone a costume prompt, a secret motive, and an excuse to accuse their best friends of murder over cocktails.',
@@ -157,14 +157,14 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     title: 'Murder Mystery Dinner Party',
     titleHighlight: 'Games for Adults',
     subtitle:
-      'Host a killer dinner party tonight with zero theatre-kid awkwardness. Modern, sharp, personalised murder mystery kits with printable evidence, leaked text messages, and voice-acted Inspector briefings.',
+      'Host a killer dinner party tonight with zero theatre-kid awkwardness. Modern, sharp, personalised murder mystery kits with CCTV evidence, leaked text messages, and voice-acted Inspector briefings.',
     metaTitle:
-      'Murder Mystery Dinner Party Games for Adults (Printable & Digital) | Back Pocket Mysteries',
+      'Murder Mystery Dinner Party Games for Adults (100% Online & Personalised) | Back Pocket Mysteries',
     metaDescription:
-      'Host a modern murder mystery dinner party for adults at home. Personalised characters, printable evidence, voice-acted audio clues, and spoiler-free host mode.',
+      'Host a modern murder mystery dinner party for adults at home. Personalised characters, interactive mobile evidence, voice-acted audio clues, and spoiler-free host mode.',
     keywords: [
       'murder mystery dinner party games for adults',
-      'printable murder mystery dinner party game',
+      'online murder mystery dinner party game',
       'dinner party murder mystery kit',
       'murder mystery games for adults at home',
       'modern murder mystery party game',
@@ -176,13 +176,13 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     whyTitle: 'Designed for Modern Adult Dinner Parties (Not Cheesy 1990s Board Games)',
     whyParagraphs: [
       'Most downloadable murder mystery games feel like dusty 40-page scripts written in 1998 where guests have to read awkward paragraphs word-for-word. Back Pocket Mysteries replaces stiff script-reading with natural conversation objectives, juicy secrets, and visual crime-scene evidence.',
-      'Between courses, guests scan QR codes or open the live Playroom to hear voice-acted Inspector updates, inspect forensic reports, and grill each other across the dinner table.',
+      'Between courses, guests open the live Playroom on their phones to hear voice-acted Inspector updates, inspect forensic reports, and grill each other across the dinner table.',
     ],
     highlights: [
       {
         title: '3 Rounds Timed to Your Courses',
         description:
-          'Round 1 pairs with starters/aperitifs, Round 2 unfolds over the main course as new physical and audio evidence drops, and Round 3 wraps up over dessert with final accusations.',
+          'Round 1 pairs with starters/aperitifs, Round 2 unfolds over the main course as new visual and audio evidence drops, and Round 3 wraps up over dessert with final accusations.',
       },
       {
         title: 'Choose Your Spice & Tone Level',
@@ -190,9 +190,9 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
           'From clean family-friendly whodunnits to messy, scandalous adult drama with blackmail, secret flings, and sharp banter.',
       },
       {
-        title: 'Print-at-Home or Paperless Mobile Mode',
+        title: '100% Paperless Mobile Playroom',
         description:
-          'Love tactile crime scene folders? Print our formatted PDF dossiers. Prefer zero printing? Guests can view their booklets and clues right on their phones via a 6-digit Game PIN.',
+          'Zero printing or envelope stuffing required—guests view their custom character dossiers, CCTV stills, and clues right on their phones via a 6-digit Game PIN.',
       },
     ],
     faqs: [
@@ -204,7 +204,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       {
         question: 'How much preparation does the dinner party host need to do?',
         answer:
-          'About 15–30 minutes total. You enter your guest list, send one-click digital invites so friends know their costume vibe, and either print the PDF pack or launch the digital Playroom on party night.',
+          'About 15–20 minutes total. You enter your guest list, send one-click digital invites so friends know their costume vibe, and launch the live 6-digit PIN Playroom on party night.',
       },
     ],
   },

@@ -1,0 +1,398 @@
+[
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "Your Cast Is Locked In, Gabriella: \"Christmas Nightmare\" Is Being Built (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-clean-1795451844001",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20944-f629-7acb-bf62-324293bde168",
+    "createdAt": "2026-11-23T16:37:24.183Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "Your Cast Is Locked In, Gabriella: \"Christmas Nightmare\" Is Being Built (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-clean-1795451843756",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20944-f55c-7ad5-8399-b656f59a9d8b",
+    "createdAt": "2026-11-23T16:37:24.000Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "☕ Your Cast Is Locked In, Gabriella! \"Christmas Nightmare\" Is Brewing (~20 Mins) 🎉",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-brewing-1795451430625",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a2093e-a76a-7179-9386-439f4aedc5e5",
+    "createdAt": "2026-11-23T16:30:30.810Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "☕ Your Cast Is Locked In, Gabriella! \"Christmas Nightmare\" Is Brewing (~20 Mins) 🎉",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-brewing-1795451430385",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a2093e-a6ab-7c37-a2dd-473d1fb4cf5f",
+    "createdAt": "2026-11-23T16:30:30.625Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "☕ Payment Confirmed, Gabriella! We're Building \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-payment-1795451181004",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a2093a-d84c-72c7-aad5-516d2f472c04",
+    "createdAt": "2026-11-23T16:26:21.173Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "☕ Payment Confirmed, Gabriella! We're Building \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-payment-1795451180797",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a2093a-d792-7d3f-a2d2-d08c10031315",
+    "createdAt": "2026-11-23T16:26:21.002Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "🎉 Pop the Champagne, Gabriella! \"Christmas Nightmare\" Is Ready to Host 🥂",
+    "type": "customer_mystery_ready",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-widescreen-1795451073071",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20939-330d-7a2f-a162-c5efe9a079bb",
+    "createdAt": "2026-11-23T16:24:33.428Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "☕ Grab a Coffee, Gabriella! We're Brewing \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-widescreen-1795451073071",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20939-3288-7ded-8ff7-99e9f52fc1ab",
+    "createdAt": "2026-11-23T16:24:33.202Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "🎉 Pop the Champagne, Gabriella! \"Christmas Nightmare\" Is Ready to Host 🥂",
+    "type": "customer_mystery_ready",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-widescreen-1795451072656",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20939-3208-7216-b3cf-62f11bb3e6cf",
+    "createdAt": "2026-11-23T16:24:33.071Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "☕ Grab a Coffee, Gabriella! We're Brewing \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-widescreen-1795451072656",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20939-3155-7937-bdc6-e77cdf0a509b",
+    "createdAt": "2026-11-23T16:24:32.902Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "🎉 Pop the Champagne, Gabriella! \"Christmas Nightmare\" Is Ready to Host 🥂",
+    "type": "customer_mystery_ready",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-v5-1795450884046",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20936-50ad-784b-942e-82b1c25c4862",
+    "createdAt": "2026-11-23T16:21:24.310Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "☕ Grab a Coffee, Gabriella! We're Brewing \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-v5-1795450884046",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20936-5030-795a-b987-cecc4d0a0d36",
+    "createdAt": "2026-11-23T16:21:24.182Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "🎉 Pop the Champagne, Gabriella! \"Christmas Nightmare\" Is Ready to Host 🥂",
+    "type": "customer_mystery_ready",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-v5-1795450882769",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20936-4f9b-7d66-93f6-918c3e0fa485",
+    "createdAt": "2026-11-23T16:21:24.046Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "☕ Grab a Coffee, Gabriella! We're Brewing \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-v5-1795450882769",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20936-4b85-785d-99eb-1ff828d8b5ef",
+    "createdAt": "2026-11-23T16:21:23.864Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "🎉 Pop the Champagne, Gabriella! \"Christmas Nightmare\" Is Ready to Host 🥂",
+    "type": "customer_mystery_ready",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-edm-1795450543826",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20931-268e-792e-a380-453ed72e05c3",
+    "createdAt": "2026-11-23T16:15:45.846Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "☕ Grab a Coffee, Gabriella! We're Brewing \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-edm-1795450543826",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20931-1f35-7cc4-8193-ef7729a65b1b",
+    "createdAt": "2026-11-23T16:15:45.703Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "🎉 Pop the Champagne, Gabriella! \"Christmas Nightmare\" Is Ready to Host 🥂",
+    "type": "customer_mystery_ready",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-edm-1795450541666",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20931-1ea8-7e43-827e-51fb8f75610a",
+    "createdAt": "2026-11-23T16:15:43.826Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "☕ Grab a Coffee, Gabriella! We're Brewing \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-edm-1795450541666",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20931-171e-774f-91ab-e79b1185b959",
+    "createdAt": "2026-11-23T16:15:43.656Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "🎉 Pop the Champagne, Gabriella! \"Christmas Nightmare\" Is Ready to Host 🥂🕵️‍♀️",
+    "type": "customer_mystery_ready",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-preview-1795450026290",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20929-3a00-7b36-bbe5-847942359df6",
+    "createdAt": "2026-11-23T16:07:06.570Z"
+  },
+  {
+    "to": "gabriellablyth@me.com",
+    "subject": "☕ Grab a Coffee, Gabriella! We're Brewing \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "gabriellablyth@me.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-preview-1795450026290",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20929-3972-717e-89ed-5066ccc7da6e",
+    "createdAt": "2026-11-23T16:07:06.423Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "🎉 Pop the Champagne, Gabriella! \"Christmas Nightmare\" Is Ready to Host 🥂🕵️‍♀️",
+    "type": "customer_mystery_ready",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-preview-1795450024987",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20929-38ee-71e2-8021-eaa2eb7c0a07",
+    "createdAt": "2026-11-23T16:07:06.290Z"
+  },
+  {
+    "to": "Hello@backpocketgames.com",
+    "subject": "☕ Grab a Coffee, Gabriella! We're Brewing \"Christmas Nightmare\" (~20 Mins)",
+    "type": "customer_generation_started",
+    "payload": {
+      "customerEmail": "Hello@backpocketgames.com",
+      "customerName": "Gabriella Blyth",
+      "mysteryId": "christmas-nightmare-preview-1795450024987",
+      "mysterySlug": "christmas-nightmare",
+      "mysteryTitle": "Christmas Nightmare",
+      "mysteryTheme": "Holiday Dinner Party",
+      "pin": "482910",
+      "locale": "en"
+    },
+    "status": "sent",
+    "id": "01a20929-34c8-7525-a682-b1da467e07c5",
+    "createdAt": "2026-11-23T16:07:06.106Z"
+  }
+]

@@ -121,6 +121,8 @@ export function PlayroomClient({
   // Pre-Party "First Glance" Mode (Character Intro, What to Wear + 3 Outfit Photos & What to Bring)
   // vs. Live Game Night "Playing Now" Portal (Secret Cheat-Sheet, Connections, Round 1+ Clues & Voting)
   const [isPrepMode, setIsPrepMode] = useState<boolean>(initialPrepMode);
+  const [prepTab, setPrepTab] = useState<'invite' | 'guests' | 'bring'>('invite');
+  const [prepSheetTab, setPrepSheetTab] = useState<'character' | 'details' | 'guests'>('character');
 
   // Host-only mode (hides Console & Next buttons from regular guest phones)
   const [isHostMode, setIsHostMode] = useState<boolean>(() =>
@@ -2234,398 +2236,499 @@ export function PlayroomClient({
         ];
 
   // ============================================================================
-  // 0. PRE-PARTY "FIRST GLANCE" PORTAL (SENT BEFORE PARTY NIGHT: WHO YOU ARE, WHAT TO WEAR & BRING)
-  //    Completely separate from the Live Game Night ("Playing Now" / Round 1) Portal!
+  // 0. PRE-PARTY INVITATION & GUEST PORTAL (?prep=1)
+  //    Clean, editorial invitation layout with tabs (Invitation | Guest List | What to Bring)
   // ============================================================================
   if (isPrepMode) {
     const resolvedWhatToBring =
       partyDetails?.whatToBringItems && partyDetails.whatToBringItems.length > 0
         ? partyDetails.whatToBringItems
         : [
-            '📱 Charged phone or device (50%+ battery)',
-            '👗 Your character outfit & costume vibe',
+            'Charged phone or device (50%+ battery)',
+            'Your character outfit & costume vibe',
           ];
 
-    const hasCustomPartyDetails = Boolean(
-      partyDetails?.partyDate ||
-        partyDetails?.arrivalTime ||
-        partyDetails?.location ||
-        partyDetails?.foodAndDrinkVibe ||
-        partyDetails?.hostNotes
+    const formattedPartyDate = partyDetails?.partyDate
+      ? formatPartyDateDisplay(partyDetails.partyDate)
+      : 'Date TBA';
+    const arrivalTimeDisplay = partyDetails?.arrivalTime || '7:00 PM';
+    const locationDisplay = partyDetails?.location || 'Host Residence';
+    const foodVibeDisplay = partyDetails?.foodAndDrinkVibe
+      ? getFoodVibeDisplay(partyDetails.foodAndDrinkVibe).replace(/^[^\w]+/, '')
+      : 'Cocktails & Finger Food';
+    const checkedBringCount = resolvedWhatToBring.filter(i => guestBringChecked.includes(i)).length;
+
+    const renderGuestCardsGrid = (currentCharId?: string) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {activeCharacters.map(char => {
+          const { name, archetype, guestName } = parseCharacter(char);
+          const charPres = getCleanCharacterPresentation(char, characters, { mode: 'generic' });
+          const roleTitle = charPres.roleTitle || archetype || name;
+          const mainDisplayName = guestName || roleTitle;
+          const charAvatarUrl = resolveDisplayAvatarUrl(
+            charPres.characterPhotoUrl || char.profile_data?.avatar_url || char.image_url
+          );
+          const isPrepConfirmed = Boolean(prepConfirmedCharacters[char.id]);
+          const isCurrent = currentCharId === char.id;
+
+          return (
+            <div
+              key={char.id}
+              onClick={() => {
+                handleSelectCharacterInLobby(char.id);
+                setPrepSheetTab('character');
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectCharacterInLobby(char.id);
+                  setPrepSheetTab('character');
+                }
+              }}
+              className={`group rounded-2xl overflow-hidden text-left transition-all flex flex-col justify-between border cursor-pointer ${
+                isCurrent
+                  ? 'bg-slate-900 border-brand-pink shadow-lg'
+                  : 'bg-slate-900/70 border-white/10 hover:border-white/25 hover:bg-slate-900 shadow-md'
+              }`}
+            >
+              <div className="relative w-full h-56 sm:h-64 bg-slate-950 overflow-hidden border-b border-white/10">
+                {charAvatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={charAvatarUrl}
+                    alt={mainDisplayName}
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-5xl bg-slate-950 text-slate-500">
+                    {char.is_victim ? '💀' : '🕵️'}
+                  </div>
+                )}
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent pointer-events-none" />
+
+                {/* Top Pills: Character Type / Role Title Pill on Left, Victim/Ready Status on Right */}
+                <div className="absolute top-3 inset-x-3 flex items-center justify-between gap-2 z-10">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-950/85 backdrop-blur-md border border-white/15 text-white text-[11px] font-bold tracking-wide max-w-[72%] truncate shadow-sm">
+                    {roleTitle}
+                  </span>
+
+                  {isPrepConfirmed ? (
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shrink-0 shadow-sm">
+                      ✓ Ready
+                    </span>
+                  ) : char.is_victim ? (
+                    <span className="px-2.5 py-1 rounded-full bg-brand-pink text-white text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-sm">
+                      The Victim
+                    </span>
+                  ) : null}
+                </div>
+
+                {/* Bottom Overlay on Portrait: Guest Name as Main Header */}
+                <div className="absolute bottom-3 inset-x-3.5 z-10">
+                  <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight truncate group-hover:text-brand-pink transition-colors">
+                    {mainDisplayName}
+                  </h3>
+                  {guestName && (
+                    <p className="text-xs font-semibold text-slate-300 truncate">
+                      Playing {roleTitle}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 flex flex-col justify-between gap-3 flex-grow">
+                <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                  {charPres.shortBlurb}
+                </p>
+
+                <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-medium text-slate-400 truncate">
+                    Character &amp; Outfit Guide
+                  </span>
+                  <span className="text-xs font-bold text-brand-pink group-hover:translate-x-0.5 transition-transform shrink-0">
+                    Open →
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     );
 
-    const renderPrepPartyDetailsCard = (roleLabel?: string) => (
-      <section className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-amber-400/35 p-5 sm:p-6 shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3.5">
+    const renderWhatToBringSection = () => (
+      <div className="rounded-2xl bg-slate-900/70 border border-white/10 p-5 sm:p-7 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">
-              📅 Official Party Invitation &amp; Event Details
-            </span>
-            <h2 className="text-lg sm:text-xl font-black text-white">
-              When &amp; Where to Arrive for {mystery.title}
-            </h2>
+            <h3 className="text-lg sm:text-xl font-black text-white">
+              What to Bring
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Tap items below to check them off as you get ready for the party.
+            </p>
           </div>
-
-          {/* 1-Tap Add to Calendar Buttons */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <a
-              href={buildGoogleCalendarUrl(roleLabel)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-black uppercase tracking-wider transition-all shadow cursor-pointer"
-            >
-              📆 Add to Google Calendar
-            </a>
-            <button
-              type="button"
-              onClick={() => handleDownloadIcsCalendar(roleLabel)}
-              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
-            >
-              📅 Apple / Outlook (.ics)
-            </button>
-          </div>
+          <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300 text-xs font-bold">
+            {checkedBringCount} of {resolvedWhatToBring.length} packed
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-amber-300 block">
-              📅 Party Date
-            </span>
-            <p className="text-xs sm:text-sm font-black text-white">
-              {partyDetails?.partyDate
-                ? formatPartyDateDisplay(partyDetails.partyDate)
-                : 'Check with your host'}
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-brand-pink block">
-              🥂 Arrival &amp; Start Time
-            </span>
-            <p className="text-xs sm:text-sm font-black text-white">
-              Arrive: {partyDetails?.arrivalTime || '7:00 PM'}
-            </p>
-            {partyDetails?.gameStartTime && (
-              <p className="text-[11px] font-bold text-slate-300">
-                🔪 Mystery starts: {partyDetails.gameStartTime}
-              </p>
-            )}
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300 block">
-              📍 Location / Address
-            </span>
-            <p className="text-xs sm:text-sm font-black text-white">
-              {partyDetails?.location || 'Host Residence'}
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-sky-300 block">
-              🍽️ Food &amp; Drink Vibe
-            </span>
-            <p className="text-xs sm:text-sm font-black text-white">
-              {partyDetails?.foodAndDrinkVibe
-                ? getFoodVibeDisplay(partyDetails.foodAndDrinkVibe)
-                : '🥂 Cocktails & Finger Food / Grazing'}
-            </p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {resolvedWhatToBring.map((item, idx) => {
+            const isChecked = guestBringChecked.includes(item);
+            return (
+              <button
+                key={`${item}-${idx}`}
+                type="button"
+                onClick={() => handleToggleGuestBringItem(item)}
+                className={`p-3.5 rounded-xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
+                  isChecked
+                    ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
+                    : 'bg-white/[0.03] border-white/10 hover:border-white/25 text-slate-200'
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-black shrink-0 border transition-colors ${
+                    isChecked
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                      : 'bg-transparent text-transparent border-white/25'
+                  }`}
+                >
+                  ✓
+                </span>
+                <span
+                  className={`text-xs sm:text-sm font-semibold leading-snug ${
+                    isChecked ? 'line-through text-slate-400' : 'text-white'
+                  }`}
+                >
+                  {item}
+                </span>
+              </button>
+            );
+          })}
         </div>
-
-        {partyDetails?.hostNotes && (
-          <div className="p-3.5 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-start gap-2.5">
-            <span className="text-base shrink-0">📝</span>
-            <div className="text-xs text-amber-100 leading-relaxed">
-              <strong className="text-amber-300 uppercase tracking-wider text-[10px] mr-1.5">
-                Host Note:
-              </strong>
-              {partyDetails.hostNotes}
-            </div>
-          </div>
-        )}
-      </section>
+      </div>
     );
 
     if (!selectedChar) {
+      const attendingNames = activeCharacters
+        .map(c => parseCharacter(c).guestName || getCleanCharacterPresentation(c, characters, { mode: 'generic' }).roleTitle)
+        .filter(Boolean);
+
       return (
-        <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans antialiased">
+        <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans antialiased pb-16">
           {renderPhotoLightboxModal()}
 
-          {/* Pre-Party First Glance Top Header */}
-          <header className="relative border-b border-white/10 bg-slate-950/95 sticky top-0 z-30 backdrop-blur-md">
-            {mysteryCoverUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={mysteryCoverUrl}
-                alt={mystery.title}
-                className="absolute inset-0 w-full h-full object-cover opacity-10 blur-[2px] pointer-events-none"
-              />
-            )}
-            <div className="relative z-10 max-w-6xl mx-auto px-3.5 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div className="flex items-center justify-between sm:justify-start gap-2.5 min-w-0">
-                <div className="flex items-center gap-2 min-w-0">
-                  {initialIsHost && (
-                    <Link
-                      href={`/${locale}/builder/mysteries/${mystery.id.split('__u_')[0]}`}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all"
-                    >
-                      ← Back to Host Hub
-                    </Link>
-                  )}
-                  <h1 className="text-sm sm:text-lg font-black uppercase tracking-tight text-white truncate">
-                    {mystery.title}
-                  </h1>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-wider shrink-0">
-                  📩 Pre-Party First Glance
+          {/* Minimal Top Bar */}
+          <header className="border-b border-white/10 bg-[#090d16]/90 sticky top-0 z-30 backdrop-blur-md">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                {initialIsHost && (
+                  <Link
+                    href={`/${locale}/account/orders/${mystery.id}`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold shrink-0 transition-colors"
+                  >
+                    ← Back to Host Hub
+                  </Link>
+                )}
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400 truncate">
+                  {mystery.title}
                 </span>
               </div>
 
-              {initialIsHost && (
-                <div className="flex items-center justify-end gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
+                {initialIsHost ? (
                   <button
                     type="button"
                     onClick={() => handleTogglePrepMode(false)}
-                    className="px-3.5 py-1.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors cursor-pointer"
                   >
-                    🕹️ Host: Switch to &ldquo;Playing Now&rdquo; Live Game Portal →
+                    Open Game Night Portal →
                   </button>
-                </div>
-              )}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePrepMode(false)}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    At the party? Enter Live Game →
+                  </button>
+                )}
+              </div>
             </div>
           </header>
 
-          <div className="flex-grow max-w-6xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
-            {initialIsHost && (
-              <div className="rounded-2xl bg-emerald-950/50 border border-emerald-400/40 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 block">
-                    👀 Host Preview • Pre-Party Guest Portal (Zero Spoilers, No Clues)
+          <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
+            {/* Editorial Invitation Hero Card */}
+            <div className="rounded-3xl bg-slate-900/75 border border-white/10 overflow-hidden shadow-2xl">
+              <div className="relative p-6 sm:p-10 text-center space-y-4 border-b border-white/10">
+                {mysteryCoverUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={mysteryCoverUrl}
+                    alt={mystery.title}
+                    className="absolute inset-0 w-full h-full object-cover opacity-15 blur-[2px] pointer-events-none"
+                  />
+                )}
+                <div className="relative z-10 space-y-3 max-w-2xl mx-auto">
+                  <span className="inline-block text-[11px] font-bold uppercase tracking-[0.22em] text-brand-pink">
+                    You&apos;re Invited • Murder Mystery Party
                   </span>
-                  <p className="text-xs text-slate-200 leading-relaxed">
-                    This is the <strong>Pre-Party &ldquo;First Glance&rdquo; Portal</strong> your guests see when you send out character links before the event. They can view your party date/time, their character intro, 3 outfit photos, and what to bring without unlocking Round 1 clues or live game controls.
+                  <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+                    {mystery.title}
+                  </h1>
+                  <p className="text-xs sm:text-sm font-medium text-slate-300">
+                    {formattedPartyDate} &nbsp;•&nbsp; Arrive at {arrivalTimeDisplay} &nbsp;•&nbsp; {locationDisplay}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleTogglePrepMode(false)}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
-                >
-                  Open Live Game Portal →
-                </button>
               </div>
-            )}
 
-            {/* Pre-Party Welcome Hero Card */}
-            <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-brand-pink/35 p-5 sm:p-7 shadow-xl space-y-2.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
-                  👗 Pre-Party Character &amp; Outfit Guide
-                </span>
-                <span className="px-3 py-1 rounded-full bg-white/10 text-slate-200 text-[10px] font-black uppercase tracking-widest">
-                  🔒 Live Round 1 Game Locked Until Party Night
-                </span>
+              {/* Clean 3-Tab Navigation Bar */}
+              <div className="bg-slate-950/60 px-3 sm:px-6 py-2.5 flex items-center justify-center gap-2 border-b border-white/10">
+                {[
+                  { id: 'invite' as const, label: 'Invitation' },
+                  { id: 'guests' as const, label: `Guest List & Roles (${activeCharacters.length})` },
+                  { id: 'bring' as const, label: `What to Bring (${resolvedWhatToBring.length})` },
+                ].map(tab => {
+                  const active = prepTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setPrepTab(tab.id)}
+                      className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                        active
+                          ? 'bg-white text-slate-950 shadow-sm'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Find Your Name Below for Your First Glance Sheet: Who You Are, What to Wear &amp; What to Bring
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
-                Tap your character card below to read your pre-party character outline, browse your <strong>3 costume &amp; outfit reference photos</strong>, check off what to bring, and confirm you&apos;re ready for party night.
-              </p>
-            </div>
 
-            {/* Party Event Details Banner on Directory */}
-            {renderPrepPartyDetailsCard()}
-
-            {/* Cast Grid for Pre-Party First Glance */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
-              {activeCharacters.map(char => {
-                const { name, archetype, guestName } = parseCharacter(char);
-                const charPres = getCleanCharacterPresentation(char, characters, { mode: 'generic' });
-                const charAvatarUrl = resolveDisplayAvatarUrl(
-                  charPres.characterPhotoUrl || char.profile_data?.avatar_url || char.image_url
-                );
-                const isPrepConfirmed = Boolean(prepConfirmedCharacters[char.id]);
-
-                return (
-                  <div
-                    key={char.id}
-                    onClick={() => handleSelectCharacterInLobby(char.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleSelectCharacterInLobby(char.id);
-                      }
-                    }}
-                    className="group rounded-2xl sm:rounded-3xl overflow-hidden text-left transition-all flex flex-col justify-between border bg-slate-900/75 border-white/15 hover:border-brand-pink/70 hover:bg-slate-900 shadow-lg cursor-pointer"
-                  >
-                    <div className="relative w-full h-44 sm:h-72 bg-slate-950 overflow-hidden border-b border-white/10">
-                      {charAvatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={charAvatarUrl}
-                          alt={name}
-                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl sm:text-6xl bg-gradient-to-br from-slate-900 to-slate-950">
-                          {char.is_victim ? '💀' : '🕵️'}
-                        </div>
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 h-16 sm:h-24 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
-
-                      <div className="absolute top-2 inset-x-2 sm:top-3 sm:inset-x-3 flex items-center justify-between gap-1.5 z-10">
-                        {guestName ? (
-                          <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-brand-pink text-white text-[10px] sm:text-xs font-black uppercase tracking-wider max-w-[68%] truncate shadow-lg">
-                            👤 {guestName}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-200">
-                            Cast Role
-                          </span>
-                        )}
-
-                        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white shrink-0">
-                          {char.is_victim ? '💀 Victim' : '🕵️'}
-                          <span className="hidden sm:inline">{char.is_victim ? '' : ' Suspect'}</span>
-                        </span>
-                      </div>
-
-                      {isPrepConfirmed && (
-                        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-10">
-                          <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950 text-[9px] sm:text-[10px] font-black uppercase tracking-wider shadow-md">
-                            ✋ Ready ✓
-                          </span>
-                        </div>
-                      )}
+              {/* TAB 1: THE INVITATION */}
+              {prepTab === 'invite' && (
+                <div className="p-6 sm:p-8 space-y-6">
+                  {/* 2x2 Clean Event Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col justify-between gap-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Date
+                      </span>
+                      <p className="text-base font-bold text-white">
+                        {formattedPartyDate}
+                      </p>
                     </div>
 
-                    <div className="p-3 sm:p-4 flex flex-col justify-between gap-2 sm:gap-3 flex-grow">
-                      <div className="space-y-1">
-                        <h3 className="text-xs sm:text-lg font-black text-white leading-snug group-hover:text-brand-pink transition-colors truncate">
-                          {charPres.roleTitle || archetype}
-                        </h3>
-                        <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-2 leading-snug sm:leading-relaxed">
-                          {charPres.shortBlurb}
-                        </p>
-                      </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col justify-between gap-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Time
+                      </span>
+                      <p className="text-base font-bold text-white">
+                        Arrive {arrivalTimeDisplay}
+                        {partyDetails?.gameStartTime ? (
+                          <span className="text-xs font-medium text-slate-400 ml-2">
+                            (Mystery starts {partyDetails.gameStartTime})
+                          </span>
+                        ) : null}
+                      </p>
+                    </div>
 
-                      <div className="pt-2 sm:pt-2.5 border-t border-white/10 flex items-center justify-between gap-1.5">
-                        <span className="hidden sm:inline text-[11px] font-bold text-slate-400 truncate">
-                          {guestName ? `For ${guestName}` : 'Pre-Party Sheet'}
-                        </span>
-                        <span className="w-full sm:w-auto text-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl shrink-0 bg-brand-pink text-white group-hover:opacity-95">
-                          👗 First Glance &amp; Outfit →
-                        </span>
-                      </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col justify-between gap-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Location
+                      </span>
+                      <p className="text-base font-bold text-white">
+                        {locationDisplay}
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col justify-between gap-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Food &amp; Drinks
+                      </span>
+                      <p className="text-base font-bold text-white">
+                        {foodVibeDisplay}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+
+                  {partyDetails?.hostNotes && (
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+                        Note from Your Host
+                      </span>
+                      <p className="text-sm text-slate-200 leading-relaxed">
+                        {partyDetails.hostNotes}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Attending Preview + CTA to Guest List */}
+                  <div className="p-5 rounded-2xl bg-slate-950/70 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="flex -space-x-2.5 overflow-hidden shrink-0">
+                        {activeCharacters.slice(0, 5).map(char => {
+                          const charPres = getCleanCharacterPresentation(char, characters, { mode: 'generic' });
+                          const url = resolveDisplayAvatarUrl(
+                            charPres.characterPhotoUrl || char.profile_data?.avatar_url || char.image_url
+                          );
+                          return (
+                            <div
+                              key={char.id}
+                              className="w-10 h-10 rounded-full border-2 border-slate-950 bg-slate-800 overflow-hidden shrink-0"
+                            >
+                              {url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={url} alt="" className="w-full h-full object-cover object-top" />
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-white truncate">
+                          {attendingNames.slice(0, 3).join(', ')}
+                          {attendingNames.length > 3 ? ` + ${attendingNames.length - 3} more` : ''}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Tap Guest List to find your name, character role &amp; outfit guide
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setPrepTab('guests')}
+                      className="px-5 py-3 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer shadow-md"
+                    >
+                      View Guest List &amp; Your Role →
+                    </button>
+                  </div>
+
+                  {/* Subtle Calendar Links Footer */}
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 text-xs text-slate-400">
+                    <span>Add this party to your calendar:</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a
+                        href={buildGoogleCalendarUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-semibold transition-colors"
+                      >
+                        + Google Calendar
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadIcsCalendar()}
+                        className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        + Apple / Outlook (.ics)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: GUEST LIST & ROLES */}
+              {prepTab === 'guests' && (
+                <div className="p-6 sm:p-8 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold text-white">
+                        Guest List &amp; Character Assignments
+                      </h2>
+                      <p className="text-xs text-slate-400">
+                        Tap your name below to view your character outline, costume guide &amp; 3 outfit reference photos.
+                      </p>
+                    </div>
+                  </div>
+                  {renderGuestCardsGrid()}
+                </div>
+              )}
+
+              {/* TAB 3: WHAT TO BRING */}
+              {prepTab === 'bring' && (
+                <div className="p-6 sm:p-8 space-y-5">
+                  {renderWhatToBringSection()}
+                </div>
+              )}
             </div>
-          </div>
+          </main>
         </div>
       );
     }
 
-    // Selected Character's Dedicated Pre-Party "First Glance" Sheet
+    // Selected Character's Dedicated Pre-Party Sheet (?prep=1&char=...)
     const prepCharPres = getCleanCharacterPresentation(selectedChar, characters, { mode: 'print' });
     const prepPortraitUrl =
       prepCharPres.characterPhotoUrl ||
       resolveDisplayAvatarUrl(selectedChar.profile_data?.avatar_url || selectedChar.image_url);
     const isThisCharConfirmed = Boolean(prepConfirmedCharacters[selectedChar.id]);
-    const checkedBringCount = resolvedWhatToBring.filter(i => guestBringChecked.includes(i)).length;
+    const mainGuestTitle = prepCharPres.guestName || prepCharPres.roleTitle;
 
     return (
-      <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans antialiased pb-12">
+      <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans antialiased pb-16">
         {renderPhotoLightboxModal()}
 
-        {/* Sticky Top Header for Pre-Party First Glance Sheet */}
-        <header className="bg-slate-950/95 border-b border-white/10 sticky top-0 z-40 backdrop-blur-md">
-          <div className="max-w-4xl mx-auto w-full px-3.5 sm:px-6 py-3 flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2 min-w-0">
+        {/* Minimal Top Header */}
+        <header className="bg-[#090d16]/90 border-b border-white/10 sticky top-0 z-40 backdrop-blur-md">
+          <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
               <button
                 type="button"
-                onClick={handleSwitchCharacter}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer"
+                onClick={() => {
+                  handleSwitchCharacter();
+                  setPrepTab('guests');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white border border-white/10 text-xs font-semibold shrink-0 transition-colors cursor-pointer"
               >
-                ← All Cast
+                ← Back to Invite &amp; Guest List
               </button>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-wider truncate">
-                📩 Pre-Party First Glance Sheet
+              <span className="text-xs font-semibold text-slate-400 truncate hidden sm:inline">
+                {mystery.title}
               </span>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              {initialIsHost && (
-                <button
-                  type="button"
-                  onClick={() => handleTogglePrepMode(false)}
-                  className="px-3 py-1.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-[10px] font-black uppercase tracking-wider shadow cursor-pointer"
-                >
-                  🕹️ Switch to Live Game Portal →
-                </button>
-              )}
-            </div>
-          </div>
-        </header>
-
-        <main className="max-w-4xl mx-auto w-full px-3.5 sm:px-6 py-5 sm:py-7 space-y-5">
-          {initialIsHost && (
-            <div className="rounded-2xl bg-emerald-950/50 border border-emerald-400/40 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 block">
-                  👀 Host Preview • Pre-Party &ldquo;First Glance&rdquo; Character Sheet
-                </span>
-                <p className="text-xs text-slate-200 leading-relaxed">
-                  Guests who open their invite link before the event see this exact pre-party briefing (Party Date &amp; Time, Who They Are, What to Wear with 3 outfit options, How to Act &amp; Your Custom What to Bring Checklist) without any Round 1 clues or live game spoilers.
-                </p>
-              </div>
+            {initialIsHost && (
               <button
                 type="button"
                 onClick={() => handleTogglePrepMode(false)}
-                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold cursor-pointer"
               >
-                Open Live Game Portal →
+                Open Game Night Portal →
               </button>
-            </div>
-          )}
+            )}
+          </div>
+        </header>
 
-          {/* 0. PARTY EVENT DETAILS & 1-TAP ADD TO CALENDAR BANNER */}
-          {renderPrepPartyDetailsCard(prepCharPres.roleTitle)}
-
-          {/* 1. HERO CHARACTER IDENTITY & "FIRST GLANCE: WHO YOU ARE" */}
-          <section className="rounded-3xl bg-slate-900/85 border border-white/15 p-5 sm:p-7 shadow-2xl space-y-5">
-            <div className="flex flex-col sm:flex-row items-start gap-5">
+        <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
+          {/* Character Invite Card with Tabs */}
+          <div className="rounded-3xl bg-slate-900/75 border border-white/10 overflow-hidden shadow-2xl">
+            {/* Top Identity Banner: Guest Name as Main Header, Character Role as Pill */}
+            <div className="p-6 sm:p-8 border-b border-white/10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
               <div
                 onClick={() => {
                   if (prepPortraitUrl) {
                     setLightboxPhoto({
                       url: prepPortraitUrl,
-                      title: prepCharPres.roleTitle,
-                      subtitle: prepCharPres.guestName
-                        ? `Played by ${prepCharPres.guestName}`
-                        : undefined,
+                      title: mainGuestTitle,
+                      subtitle: prepCharPres.roleTitle,
                     });
                   }
                 }}
-                className="w-32 h-40 sm:w-44 sm:h-56 rounded-2xl overflow-hidden border-2 border-brand-pink/60 bg-slate-950 shrink-0 relative group cursor-pointer shadow-xl mx-auto sm:mx-0"
+                className="w-32 h-40 sm:w-40 sm:h-52 rounded-2xl overflow-hidden border border-white/15 bg-slate-950 shrink-0 relative group cursor-pointer shadow-lg"
               >
                 {prepPortraitUrl ? (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={prepPortraitUrl}
-                      alt={prepCharPres.roleTitle}
-                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/75 text-white text-[9px] font-black uppercase">
-                      🔍 Tap to Zoom
-                    </span>
-                  </>
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={prepPortraitUrl}
+                    alt={mainGuestTitle}
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-5xl">
                     🕵️
@@ -2633,300 +2736,240 @@ export function PlayroomClient({
                 )}
               </div>
 
-              <div className="space-y-3 flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
-                    {prepCharPres.isVictim ? '💀 Story Catalyst / Victim Role' : '🕵️ Official Suspect Role'}
+              <div className="space-y-3 flex-1 min-w-0 text-center sm:text-left">
+                {/* Pills: Character Type Pill + Victim/Suspect status */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-brand-pink text-white shadow-xs">
+                    {prepCharPres.roleTitle}
                   </span>
-                  {prepCharPres.guestName && (
-                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                      👤 Cast: {prepCharPres.guestName}
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-slate-300">
+                    {prepCharPres.isVictim ? 'The Victim' : 'Suspect Role'}
+                  </span>
+                  {isThisCharConfirmed && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-slate-950">
+                      ✓ Ready for Party Night
                     </span>
                   )}
-                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 text-slate-300">
-                    {mystery.title}
-                  </span>
                 </div>
 
-                <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-                  {prepCharPres.roleTitle}
-                </h1>
+                {/* Main Heading: Guest Name */}
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                    {mainGuestTitle}
+                  </h1>
+                  <p className="text-xs sm:text-sm font-medium text-slate-400 mt-1">
+                    {formattedPartyDate} &nbsp;•&nbsp; Arrive at {arrivalTimeDisplay} &nbsp;•&nbsp; {locationDisplay}
+                  </p>
+                </div>
 
-                <div className="space-y-2.5 pt-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
-                    📖 First Glance: Who You Are
-                  </span>
+                {/* First Glance Summary */}
+                <div className="pt-1 space-y-2 text-xs sm:text-sm text-slate-200 leading-relaxed text-left">
                   {prepCharPres.blurbParagraphs && prepCharPres.blurbParagraphs.length > 0 ? (
-                    <div className="space-y-2.5 text-xs sm:text-sm text-slate-200 leading-relaxed">
-                      {prepCharPres.blurbParagraphs.map((para, idx) => (
-                        <p key={idx}>{para}</p>
-                      ))}
-                    </div>
+                    prepCharPres.blurbParagraphs.map((para, idx) => <p key={idx}>{para}</p>)
                   ) : (
-                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-                      {prepCharPres.shortBlurb}
-                    </p>
+                    <p>{prepCharPres.shortBlurb}</p>
                   )}
                 </div>
               </div>
             </div>
-          </section>
 
-          {/* 2. WHAT TO WEAR & 3 OUTFIT REFERENCE PHOTOS (FRONT & CENTER!) */}
-          <section className="rounded-3xl bg-slate-900/80 border border-emerald-500/35 p-5 sm:p-7 shadow-xl space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
-                  Step 1 Before Party Night • Plan Your Look
-                </span>
-                <h2 className="text-lg sm:text-2xl font-black text-white">
-                  👗 What to Wear &amp; Costume Inspiration
-                </h2>
-              </div>
-              {prepCharPres.outfitReferenceImages && prepCharPres.outfitReferenceImages.length > 0 && (
-                <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-wider">
-                  {prepCharPres.outfitReferenceImages.slice(0, 3).length} Outfit{' '}
-                  {prepCharPres.outfitReferenceImages.slice(0, 3).length === 1 ? 'Photo' : 'Photos'} Below
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed bg-slate-950/70 border border-white/10 rounded-2xl p-4">
-              {prepCharPres.outfitAdvice}
-            </p>
-
-            {prepCharPres.outfitReferenceImages && prepCharPres.outfitReferenceImages.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
-                  📸 Tap Any Outfit Reference Photo to Enlarge:
-                </span>
-                <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                  {prepCharPres.outfitReferenceImages.slice(0, 3).map((refUrl, optIdx) => (
-                    <div
-                      key={optIdx}
-                      onClick={() =>
-                        setLightboxPhoto({
-                          url: refUrl,
-                          title: `${prepCharPres.roleTitle} - Outfit Option ${optIdx + 1}`,
-                        })
-                      }
-                      className="rounded-2xl overflow-hidden border border-white/15 bg-slate-950 cursor-pointer group/img shadow-lg flex flex-col"
-                    >
-                      <div className="aspect-[3/4] w-full overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={refUrl}
-                          alt={`Outfit Option ${optIdx + 1}`}
-                          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-emerald-300 bg-slate-900 border-t border-white/10">
-                        Outfit Option {optIdx + 1} 🔍
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* 3. YOUR CHARACTER VIBE & HOW TO ACT */}
-          {(prepCharPres.actSummary || prepCharPres.actBullets.length > 0) && (
-            <section className="rounded-3xl bg-slate-900/75 border border-brand-pink/30 p-5 sm:p-7 shadow-xl space-y-3.5">
-              <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
-                    Step 2 • Get Into Character
-                  </span>
-                  <h2 className="text-lg sm:text-xl font-black text-white">
-                    🎭 Your Character Vibe &amp; How to Act
-                  </h2>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-brand-pink/15 text-brand-pink text-[10px] font-black uppercase">
-                  Roleplay Cues
-                </span>
-              </div>
-
-              {prepCharPres.actSummary && (
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-                  {prepCharPres.actSummary}
-                </p>
-              )}
-
-              {prepCharPres.actBullets.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  {prepCharPres.actBullets.map((bullet, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 flex items-start gap-2.5 text-xs sm:text-sm text-slate-200 leading-snug"
-                    >
-                      <span className="text-brand-pink font-black shrink-0">✦</span>
-                      <span>{bullet}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* 4. INTERACTIVE "WHAT TO BRING TO THE PARTY" CHECKLIST (LIVE SYNCED FROM HOST HUB) */}
-          <section className="rounded-3xl bg-slate-900/75 border border-sky-400/35 p-5 sm:p-7 shadow-xl space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-sky-400 block">
-                  Step 3 • Party Night Essentials (Tap to Check Off)
-                </span>
-                <h2 className="text-lg sm:text-xl font-black text-white">
-                  🎒 What to Bring to the Party
-                </h2>
-              </div>
-              <span className="px-3 py-1 rounded-full bg-sky-400/15 border border-sky-400/30 text-sky-300 text-[10px] font-black uppercase tracking-wider">
-                {checkedBringCount} / {resolvedWhatToBring.length} Checked
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {resolvedWhatToBring.map((item, idx) => {
-                const isChecked = guestBringChecked.includes(item);
+            {/* Clean Sub-Tabs on the Guest's Sheet */}
+            <div className="bg-slate-950/60 px-3 sm:px-6 py-2.5 flex items-center justify-center sm:justify-start gap-2 border-b border-white/10">
+              {[
+                { id: 'character' as const, label: 'Outfit & Character Guide' },
+                { id: 'details' as const, label: 'Party Details & What to Bring' },
+                { id: 'guests' as const, label: `Guest List (${activeCharacters.length})` },
+              ].map(tab => {
+                const active = prepSheetTab === tab.id;
                 return (
                   <button
-                    key={`${item}-${idx}`}
+                    key={tab.id}
                     type="button"
-                    onClick={() => handleToggleGuestBringItem(item)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
-                      isChecked
-                        ? 'bg-emerald-950/40 border-emerald-400/50 text-emerald-200'
-                        : 'bg-slate-950/80 border-white/10 hover:border-sky-400/50 text-slate-200'
+                    onClick={() => setPrepSheetTab(tab.id)}
+                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      active
+                        ? 'bg-white text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <span
-                      className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs font-black shrink-0 border transition-colors ${
-                        isChecked
-                          ? 'bg-emerald-500 text-slate-950 border-emerald-400'
-                          : 'bg-slate-900 text-transparent border-white/25'
-                      }`}
-                    >
-                      ✓
-                    </span>
-                    <span
-                      className={`text-xs sm:text-sm font-bold leading-snug ${
-                        isChecked ? 'line-through text-emerald-300/80' : 'text-white'
-                      }`}
-                    >
-                      {item}
-                    </span>
+                    {tab.label}
                   </button>
                 );
               })}
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 block">
-                  🎟️ Party Night Game PIN (No Login or App Needed)
-                </span>
-                <p className="text-xs text-slate-300">
-                  Save this PIN for party night when your host unlocks the Live Game Portal.
-                </p>
-              </div>
-              <div className="text-2xl font-black font-mono tracking-widest text-white shrink-0">
-                {pin.slice(0, 3)} {pin.slice(3)}
-              </div>
-            </div>
-          </section>
+            <div className="p-6 sm:p-8 space-y-6">
+              {prepSheetTab === 'character' && (
+                <>
+                  {/* What to Wear & 3 Outfit Reference Photos */}
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-white">
+                        What to Wear
+                      </h2>
+                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mt-1">
+                        {prepCharPres.outfitAdvice}
+                      </p>
+                    </div>
 
-          {/* 4B. 1-TAP GUEST CONFIRMATION ("I'VE READ MY ROLE & OUTFIT - I'M READY!") */}
-          <section
-            className={`rounded-3xl border-2 p-5 sm:p-6 text-center space-y-3 shadow-xl transition-all ${
-              isThisCharConfirmed
-                ? 'bg-emerald-950/40 border-emerald-400/50'
-                : 'bg-gradient-to-r from-slate-900 via-pink-950/30 to-slate-900 border-brand-pink/50'
-            }`}
-          >
-            {isThisCharConfirmed ? (
-              <div className="space-y-1.5">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-widest">
-                  ✋ Confirmed Ready for Party Night ✓
-                </span>
-                <h3 className="text-base sm:text-lg font-black text-white">
-                  You&apos;re All Set{prepCharPres.guestName ? `, ${prepCharPres.guestName}` : ''}!
-                </h3>
-                <p className="text-xs text-slate-300 max-w-lg mx-auto">
-                  Your host has been notified that you&apos;ve reviewed your character outline, costume guide, and what to bring.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
-                    Step 4 • Quick 1-Tap Host Check-In
-                  </span>
-                  <h3 className="text-base sm:text-xl font-black text-white">
-                    Let Your Host Know You&apos;ve Read Your Character &amp; Outfit Guide!
-                  </h3>
-                  <p className="text-xs text-slate-300 max-w-lg mx-auto">
-                    Tap below to mark your role as read on your host&apos;s Pre-Party Dashboard.
-                  </p>
+                    {prepCharPres.outfitReferenceImages && prepCharPres.outfitReferenceImages.length > 0 && (
+                      <div className="grid grid-cols-3 gap-3 sm:gap-4 pt-1">
+                        {prepCharPres.outfitReferenceImages.slice(0, 3).map((refUrl, optIdx) => (
+                          <div
+                            key={optIdx}
+                            onClick={() =>
+                              setLightboxPhoto({
+                                url: refUrl,
+                                title: `${mainGuestTitle} (${prepCharPres.roleTitle}) - Look ${optIdx + 1}`,
+                              })
+                            }
+                            className="rounded-2xl overflow-hidden border border-white/10 bg-slate-950 cursor-pointer group/img shadow-md flex flex-col"
+                          >
+                            <div className="aspect-[3/4] w-full overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={refUrl}
+                                alt={`Look ${optIdx + 1}`}
+                                className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                              />
+                            </div>
+                            <div className="py-2 text-center text-[11px] font-semibold text-slate-300 bg-slate-900/90 border-t border-white/10">
+                              Look {optIdx + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* How to Act */}
+                  {(prepCharPres.actSummary || prepCharPres.actBullets.length > 0) && (
+                    <div className="pt-5 border-t border-white/10 space-y-3">
+                      <h2 className="text-lg font-bold text-white">
+                        How to Play {prepCharPres.roleTitle}
+                      </h2>
+                      {prepCharPres.actSummary && (
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                          {prepCharPres.actSummary}
+                        </p>
+                      )}
+                      {prepCharPres.actBullets.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {prepCharPres.actBullets.map((bullet, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-start gap-2.5 text-xs sm:text-sm text-slate-200 leading-snug"
+                            >
+                              <span className="text-brand-pink font-bold shrink-0">•</span>
+                              <span>{bullet}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Confirm Ready CTA */}
+                  <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-white">
+                        {isThisCharConfirmed
+                          ? `You're confirmed ready for party night${prepCharPres.guestName ? `, ${prepCharPres.guestName}` : ''}!`
+                          : 'Let your host know you have read your role & outfit guide'}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {isThisCharConfirmed
+                          ? 'Your host can see that you have reviewed your character sheet.'
+                          : 'Round 1 clues remain locked until everyone arrives at the party.'}
+                      </p>
+                    </div>
+
+                    {!isThisCharConfirmed && (
+                      <button
+                        type="button"
+                        disabled={isConfirmingPrepRead}
+                        onClick={() =>
+                          void handleConfirmPrepRead(
+                            selectedChar.id,
+                            prepCharPres.guestName || undefined
+                          )
+                        }
+                        className="px-5 py-3 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer shrink-0"
+                      >
+                        {isConfirmingPrepRead ? 'Confirming...' : "I've Read My Role & Outfit ✓"}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {prepSheetTab === 'details' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Date
+                      </span>
+                      <p className="text-base font-bold text-white mt-0.5">{formattedPartyDate}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Time
+                      </span>
+                      <p className="text-base font-bold text-white mt-0.5">
+                        Arrive {arrivalTimeDisplay}
+                        {partyDetails?.gameStartTime ? ` (Starts ${partyDetails.gameStartTime})` : ''}
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Location
+                      </span>
+                      <p className="text-base font-bold text-white mt-0.5">{locationDisplay}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Food &amp; Drinks
+                      </span>
+                      <p className="text-base font-bold text-white mt-0.5">{foodVibeDisplay}</p>
+                    </div>
+                  </div>
+
+                  {renderWhatToBringSection()}
+
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 text-xs text-slate-400">
+                    <span>Add to your calendar:</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a
+                        href={buildGoogleCalendarUrl(prepCharPres.roleTitle)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-semibold"
+                      >
+                        + Google Calendar
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadIcsCalendar(prepCharPres.roleTitle)}
+                        className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-semibold cursor-pointer"
+                      >
+                        + Apple / Outlook (.ics)
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  disabled={isConfirmingPrepRead}
-                  onClick={() =>
-                    void handleConfirmPrepRead(
-                      selectedChar.id,
-                      prepCharPres.guestName || undefined
-                    )
-                  }
-                  className="px-6 py-3.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-xl transition-all cursor-pointer"
-                >
-                  {isConfirmingPrepRead
-                    ? 'Confirming...'
-                    : "✋ Confirm I've Read My Role & Outfit - I'm Ready!"}
-                </button>
-              </div>
-            )}
-          </section>
+              )}
 
-          {/* 5. SEPARATION FROM "PLAYING NOW" / LIVE ROUND 1 PORTAL */}
-          {currentRound >= 1 ? (
-            <section className="rounded-3xl bg-gradient-to-r from-brand-pink/25 via-rose-500/20 to-amber-500/20 border-2 border-brand-pink p-5 sm:p-6 text-center space-y-3 shadow-2xl">
-              <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
-                🚨 Party Night is Live Now • Round {unlockedClueRound} Unlocked
-              </span>
-              <h3 className="text-lg sm:text-xl font-black text-white">
-                Your Host Has Started the Live Investigation!
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-200 max-w-xl mx-auto">
-                Tap below to enter the <strong>&ldquo;Playing Now&rdquo; Live Game Portal</strong> to view your Secret Party-Night Cheat-Sheet, Round {unlockedClueRound} Clues, and Suspect Voting.
-              </p>
-              <button
-                type="button"
-                onClick={() => handleTogglePrepMode(false)}
-                className="px-6 py-3.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-widest shadow-xl cursor-pointer"
-              >
-                🕹️ Enter &ldquo;Playing Now&rdquo; Live Game Portal →
-              </button>
-            </section>
-          ) : (
-            <section className="rounded-3xl bg-slate-900/50 border border-white/10 p-5 sm:p-6 text-center space-y-2.5">
-              <div className="text-2xl">🔒</div>
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-white">
-                &ldquo;Playing Now&rdquo; Live Game Portal &amp; Round 1 Clues Are Locked Until Party Night
-              </h3>
-              <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
-                You&apos;re all set for now! Nothing else is revealed before the event so nobody can peek ahead at Round 1 evidence. When you arrive at the party, your host will launch the Live Game Portal.
-              </p>
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleTogglePrepMode(false)}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
-                >
-                  Already arrived at the party? Enter Live Arrival Lobby →
-                </button>
-              </div>
-            </section>
-          )}
+              {prepSheetTab === 'guests' && (
+                <div className="space-y-4">
+                  <p className="text-xs text-slate-400">
+                    Everyone attending {mystery.title} and their character assignments:
+                  </p>
+                  {renderGuestCardsGrid(selectedChar.id)}
+                </div>
+              )}
+            </div>
+          </div>
         </main>
       </div>
     );

@@ -111,7 +111,7 @@ export const competitors: Competitor[] = [
       'No personalisation for your specific guests',
       'Geographically limited to certain cities',
     ],
-    verdict: 'If you have a $2,000 event budget, The Dinner Detective is impressive. For everyone else, Back Pocket Mysteries delivers a fully personalised mystery from $19 (£15) that your group runs themselves with a live mobile lobby and printable kit.',
+    verdict: 'If you have a $2,000 event budget, The Dinner Detective is impressive. For everyone else, Back Pocket Mysteries delivers a fully personalised mystery from $19 (£15) that your group runs themselves in a 100% online live mobile lobby.',
     rating: 4,
   },
   {

@@ -84,7 +84,7 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "what-to-expect",
       type: "text",
       data: {
-        content: `<h3 style='font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#1e191c;margin:0 0 14px 0;'>Inside Your Complimentary Mystery Pack:</h3><table role='presentation' width='100%' cellspacing='0' cellpadding='0' border='0'><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>01 · Your Friends Cast in the Story (4–16 Players):</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.</td></tr><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>02 · Spoiler-Free Host Mode:</strong> Run the rounds from your phone via a 6-digit Game PIN lobby without ever seeing the killer—so you play as a full suspect.</td></tr><tr><td style='padding:10px 0;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>03 · Ready in ~30 Mins (Mobile Lobby + Print-Ready PDFs):</strong> Play live on phones via your 6-digit Game PIN or print the formatted suspect booklets and evidence cards at home.</td></tr></table>`,
+        content: `<h3 style='font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#1e191c;margin:0 0 14px 0;'>Inside Your Complimentary Mystery Pack:</h3><table role='presentation' width='100%' cellspacing='0' cellpadding='0' border='0'><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>01 · Your Friends Cast in the Story (4–16 Players):</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.</td></tr><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>02 · Spoiler-Free Host Mode:</strong> Run the rounds from your phone via a 6-digit Game PIN lobby without ever seeing the killer—so you play as a full suspect.</td></tr><tr><td style='padding:10px 0;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>03 · Ready in ~20 Mins (100% Online Mobile Lobby):</strong> Play live on phones, tablets, or laptops via your 6-digit Game PIN — zero printing or paper envelopes required.</td></tr></table>`,
         fontSize: 14,
         textAlign: "left",
         textColor: "#1e191c",
@@ -122,7 +122,7 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "footer-text",
       type: "text",
       data: {
-        content: `<div style='margin-bottom:12px;'><img src='${LOGO_WHITE_URL}' width='145' alt='Back Pocket Mysteries' style='display:block;margin:0 auto;max-width:145px;height:auto;' /></div><p style='margin:0 0 12px 0;font-size:12px;color:#a1a1aa;line-height:1.6;max-width:420px;display:inline-block;'>Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 30 minutes.</p><p style='margin:0;font-size:11px;color:#71717a;'>© 2026 Back Pocket Mysteries · <a href='https://backpocketmysteries.com/en' style='color:#fe04c6;text-decoration:none;'>backpocketmysteries.com</a></p>`,
+        content: `<div style='margin-bottom:12px;'><img src='${LOGO_WHITE_URL}' width='145' alt='Back Pocket Mysteries' style='display:block;margin:0 auto;max-width:145px;height:auto;' /></div><p style='margin:0 0 12px 0;font-size:12px;color:#a1a1aa;line-height:1.6;max-width:420px;display:inline-block;'>Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 20 minutes.</p><p style='margin:0;font-size:11px;color:#71717a;'>© 2026 Back Pocket Mysteries · <a href='https://backpocketmysteries.com/en' style='color:#fe04c6;text-decoration:none;'>backpocketmysteries.com</a></p>`,
         fontSize: 12,
         textAlign: "center",
         textColor: "#a1a1aa",
@@ -194,7 +194,7 @@ export function buildVipWelcomeEmailHtml(params: VipWelcomeEmailParams = {}): st
       </tr>
       <tr>
         <td style="padding:12px 0;color:#374151;font-size:14px;line-height:1.65;">
-          <strong style="color:#1e191c;">03 · Ready in ~30 Mins (Mobile Lobby + Print-Ready PDFs):</strong> Play live on phones via your 6-digit Game PIN or print the formatted suspect booklets and evidence cards at home.
+          <strong style="color:#1e191c;">03 · Ready in ~20 Mins (100% Online Mobile Lobby):</strong> Play live on phones, tablets, or laptops via your 6-digit Game PIN — zero printing or paper envelopes required.
         </td>
       </tr>
     </table>

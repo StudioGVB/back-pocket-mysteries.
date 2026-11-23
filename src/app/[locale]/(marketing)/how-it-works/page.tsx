@@ -5,6 +5,7 @@ import { getDictionary } from '@/lib/get-dictionary';
 import { Locale } from '@/lib/i18n-config';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import InteractivePackPreview from '@/components/marketing/InteractivePackPreview';
+import HowItWorksVideoShowcase from '@/components/marketing/HowItWorksVideoShowcase';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -29,7 +30,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
   return (
     <div className="bg-white overflow-hidden">
       {/* =====================================================================
-          HERO HEADER
+          HERO HEADER + PROMOTIONAL VIDEO SHOWCASE
       ===================================================================== */}
       <div className="relative pt-10 pb-14 lg:pt-16 lg:pb-20 border-b border-gray-200 bg-white">
         <div className="container mx-auto px-6 max-w-6xl">
@@ -51,6 +52,8 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
               </p>
             </div>
           </div>
+
+          <HowItWorksVideoShowcase />
         </div>
       </div>
 
@@ -563,13 +566,13 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
           <div className="grid lg:grid-cols-12 gap-12 items-start">
             <div className="lg:col-span-5 space-y-4">
               <span className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink block">
-                Digital + Print Included
+                100% Online • Zero Printing Required
               </span>
               <h2 className="text-4xl sm:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.95]">
                 Everything Inside <span className="text-brand-pink italic">Your Pack.</span>
               </h2>
               <p className="text-base text-gray-500 font-semibold leading-relaxed">
-                Every mystery includes both our live interactive Playroom and formatted PDF booklets you can print at home.
+                Every mystery runs 100% online inside our live interactive Mobile &amp; Web Playroom — no printing or paper envelopes required.
               </p>
               <div className="pt-4">
                 <Link

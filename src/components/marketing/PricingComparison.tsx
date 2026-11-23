@@ -12,7 +12,7 @@ export default function PricingComparison() {
       category: 'Party Scale & Story Web',
       items: [
         { name: 'Players Included (Party or Case-File Mode)', basic: '1–6 Players', premium: '1–10 Players', grand: '1–16 Players' },
-        { name: 'Custom Character Booklets Generated', basic: '6 Roles', premium: 'Up to 10 Roles', grand: 'Up to 16 Roles' },
+        { name: 'Custom Character Dossiers Generated', basic: '6 Roles', premium: 'Up to 10 Roles', grand: 'Up to 16 Roles' },
         { name: 'Cast Modes (All Friends, Hybrid, or 100% Fictional)', basic: true, premium: true, grand: true },
         { name: 'Relationship Web & Subplots', basic: 'Core Suspect Web', premium: 'Expanded Alliances & Subplots', grand: 'Full-House Multi-Faction Web' },
       ]
@@ -25,7 +25,7 @@ export default function PricingComparison() {
         { name: 'Interactive Chat, Visual CCTV & Audio Wiretap Clues', basic: true, premium: true, grand: true },
         { name: 'Kahoot-Style Live Lobby & 6-Digit PIN', basic: true, premium: true, grand: true },
         { name: 'Spoiler-Free Host Mode (Host Plays as a Suspect)', basic: true, premium: true, grand: true },
-        { name: 'Print Booklets or Play 100% Digitally on Phones', basic: true, premium: true, grand: true },
+        { name: 'Play 100% Online on Phones, Tablets & Laptops (Zero Printing)', basic: true, premium: true, grand: true },
         { name: 'Ready in ~20 Minutes (Lifetime Access)', basic: true, premium: true, grand: true },
       ]
     },

@@ -11,9 +11,9 @@ export async function generateMetadata(props: {
   const { locale } = await props.params;
   const canonicalUrl = `https://backpocketmysteries.com/${locale}/free-murder-mystery-game`;
   const title =
-    'Free Custom Murder Mystery Game (First 50 VIP Giveaway) | Printable & Digital Party Kit';
+    'Free Custom Murder Mystery Game (First 50 VIP Giveaway) | 100% Online Digital Party Kit';
   const description =
-    'Claim a 100% FREE Custom Murder Mystery Game Pack (worth up to £45 / $55 for 4–16 players). Human-written murder mystery plots personalised around your actual friends by AI. Printable PDF booklets + live mobile Playroom, spoiler-free for the host.';
+    'Claim a 100% FREE Custom Murder Mystery Game Pack (worth up to £45 / $55 for 4–16 players). Human-written murder mystery plots personalised around your actual friends by AI. Live mobile Playroom (6-digit PIN), spoiler-free for the host.';
 
   return {
     title,
@@ -22,11 +22,11 @@ export async function generateMetadata(props: {
       'free custom murder mystery',
       'free custom murder mystery game',
       'free murder mystery game',
-      'free printable murder mystery game',
+      'free online murder mystery game',
       'free murder mystery game for adults',
       'free murder mystery party kit',
       'custom murder mystery game free',
-      'printable murder mystery dinner party game',
+      'digital murder mystery dinner party game',
       'free murder mystery game 6 players',
       'free murder mystery game 8 players',
       'free murder mystery game 10 players',
@@ -100,9 +100,9 @@ const HOW_IT_WORKS_STEPS = [
   {
     step: '04',
     badge: 'Spoiler-Free for the Host',
-    title: 'Host Live on Phones or Print at Home',
+    title: 'Host 100% Online Live on Phones',
     description:
-      'In ~30 minutes your custom game pack is ready with personalised suspect dossiers, visual & audio clues, printable PDFs, and a live mobile Playroom (6-digit PIN + QR code) so even you can play without knowing the killer.',
+      'In ~20 minutes your custom game pack is ready with personalised suspect dossiers, visual & audio clues, and a 100% online live mobile Playroom (6-digit PIN + QR code) so even you can play without knowing the killer.',
   },
 ];
 
@@ -143,11 +143,11 @@ const PRIZE_INCLUSIONS = [
       'Guided round-by-round host announcements and an automated final reveal mean the host never sees the killer ahead of time.',
   },
   {
-    icon: '🖨️',
-    title: 'Print-Ready PDF Party Kit',
-    valueTag: 'Home or Office Printer Friendly',
+    icon: '💬',
+    title: '1-Click Guest Invites & Host Transfer',
+    valueTag: 'Zero Printing Required',
     description:
-      'Prefer paper? Download formatted suspect booklets, printable evidence cards, and character invitation links ready in 5 minutes.',
+      'Share spoiler-free character invite links via WhatsApp or text before party night, or transfer host ownership to another guest with 1 click.',
   },
 ];
 
@@ -164,7 +164,7 @@ const PLAYER_COUNT_GUIDES = [
     tier: 'Premium Tier (Included Free)',
     idealFor: 'Classic Dinner Party Tables & Birthday Dinners',
     summary:
-      'The sweet spot for dinner table murder mysteries: adds secondary alibis, secret alliances, and physical + digital forensic evidence.',
+      'The sweet spot for dinner table murder mysteries: adds secondary alibis, secret alliances, and digital forensic evidence.',
   },
   {
     players: '8–12 Players',
@@ -208,8 +208,8 @@ const COMPARISON_ROWS = [
     boxedKit: '✕ Rigid headcount (usually 6 or 8 exact)',
   },
   {
-    feature: 'Format: Printable PDFs + Live Mobile Playroom',
-    bpm: '✓ Both included (6-digit PIN + QR + Print Kit)',
+    feature: 'Format: 100% Online Live Mobile Playroom',
+    bpm: '✓ Instant 6-digit PIN + QR Join (Zero Printing)',
     genericFree: '✕ Plain text PDF wall of text',
     boxedKit: '✕ Paper slips only',
   },
@@ -233,8 +233,8 @@ export default async function FreeMurderMysteryGamePage(props: {
       text: 'The first 50 people who join the Back Pocket Mysteries pre-launch VIP email list receive a single-use 100%-off promo code on launch day good for one complete custom murder mystery party pack (worth up to £45 / $55 USD for 4 to 16 players).',
     },
     {
-      name: 'Is this a full free printable murder mystery game for adults or just a sample?',
-      text: 'It is a 100% complete, full-tier custom murder mystery game pack—never a sample or teaser. Your Founding Host voucher unlocks every round of clues, all custom character booklets, audio briefings, printable PDFs, the live mobile Playroom, and the final killer reveal.',
+      name: 'Is this a full free murder mystery game for adults or just a sample?',
+      text: 'It is a 100% complete, full-tier custom murder mystery game pack—never a sample or teaser. Your Founding Host voucher unlocks every round of clues, all custom character dossiers, audio briefings, the 100% online live mobile Playroom, and the final killer reveal.',
     },
     {
       name: 'How do I know if I made the First 50?',
@@ -250,7 +250,7 @@ export default async function FreeMurderMysteryGamePage(props: {
     },
     {
       name: 'How does the custom AI + human-authored murder mystery builder work?',
-      text: 'Every Mystery Base Pack is written by a human mystery author so the crime timeline, motives, alibis, and forensic deductions are airtight. When you enter your friends’ names, jobs, and harmless inside jokes, our AI engine weaves them into the character dossiers and evidence in about 30 minutes.',
+      text: 'Every Mystery Base Pack is written by a human mystery author so the crime timeline, motives, alibis, and forensic deductions are airtight. When you enter your friends’ names, jobs, and harmless inside jokes, our AI engine weaves them into the character dossiers and evidence in about 20 minutes.',
     },
     {
       name: 'Can the host play without knowing who the murderer is?',
@@ -286,7 +286,7 @@ export default async function FreeMurderMysteryGamePage(props: {
         '@type': 'Product',
         name: 'Free Custom Murder Mystery Game Pack (First 50 Founding Host Giveaway)',
         description:
-          'Complete custom murder mystery party game kit for 4 to 16 players. Human-authored mystery plot personalised around your friends by AI, with printable PDF dossiers and a live mobile Playroom.',
+          'Complete custom murder mystery party game kit for 4 to 16 players. Human-authored mystery plot personalised around your friends by AI, with a 100% online live mobile Playroom.',
         image: ['https://backpocketmysteries.com/og-image.png'],
         brand: {
           '@type': 'Brand',
@@ -408,7 +408,7 @@ export default async function FreeMurderMysteryGamePage(props: {
                   ✓ Valid for 4–16 Players (Up to Grand Tier)
                 </span>
                 <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-brand-dark text-[11px] font-black uppercase tracking-wider">
-                  ✓ Printable PDF + Mobile App Included
+                  ✓ 100% Online Live Mobile Playroom
                 </span>
                 <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-brand-dark text-[11px] font-black uppercase tracking-wider">
                   ✓ No Credit Card Required
@@ -450,10 +450,10 @@ export default async function FreeMurderMysteryGamePage(props: {
                   </span>
                   <div>
                     <h2 className="text-xs font-black uppercase tracking-wider text-brand-dark">
-                      Live Mobile Playroom + Printable PDFs
+                      100% Online Live Mobile Playroom
                     </h2>
                     <p className="text-xs text-gray-500 font-medium mt-1">
-                      Join via a 6-digit Game PIN or QR code on guest phones, or print the formatted suspect booklets and evidence cards at home.
+                      Join via a 6-digit Game PIN or QR code on guest phones to view custom dossiers, CCTV photos, and audio wiretaps — zero printing required.
                     </p>
                   </div>
                 </div>

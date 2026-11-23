@@ -331,17 +331,18 @@ BEGIN
 END;
 $$;
 
--- 10. Strict RLS on `public.clues` (Allow Playroom guests to view clues for published mysteries; block non-owner mutations)
+-- 10. Strict RLS on `public.clues` (Allow Playroom guests to view clues for published mysteries & isolated live party carrier rows; block non-owner mutations on real game clues)
 DO $$
 BEGIN
   IF to_regclass('public.clues') IS NOT NULL THEN
     EXECUTE $sql$
-      CREATE POLICY "Anyone can view clues for published mysteries or owner/admin views all"
+      CREATE POLICY "Anyone can view clues for published mysteries or isolated live session carrier"
         ON public.clues
         FOR SELECT
         TO anon, authenticated
         USING (
           public.is_admin()
+          OR (round_number = 99 AND title = '__BPM_LIVE_CAST_AND_SESSION__')
           OR EXISTS (
             SELECT 1
             FROM public.mysteries m
@@ -350,27 +351,65 @@ BEGIN
           )
         );
 
-      CREATE POLICY "Only mystery owner or admin can mutate clues"
+      CREATE POLICY "Only mystery owner or admin can mutate real game clues"
         ON public.clues
         FOR ALL
         TO authenticated
         USING (
-          public.is_admin()
-          OR EXISTS (
-            SELECT 1
-            FROM public.mysteries m
-            WHERE m.id = clues.mystery_id
-              AND m.created_by = auth.uid()
+          round_number <> 99
+          AND (
+            public.is_admin()
+            OR EXISTS (
+              SELECT 1
+              FROM public.mysteries m
+              WHERE m.id = clues.mystery_id
+                AND m.created_by = auth.uid()
+            )
           )
         )
         WITH CHECK (
-          public.is_admin()
-          OR EXISTS (
-            SELECT 1
-            FROM public.mysteries m
-            WHERE m.id = clues.mystery_id
-              AND m.created_by = auth.uid()
+          round_number <> 99
+          AND (
+            public.is_admin()
+            OR EXISTS (
+              SELECT 1
+              FROM public.mysteries m
+              WHERE m.id = clues.mystery_id
+                AND m.created_by = auth.uid()
+            )
           )
+        );
+
+      CREATE POLICY "Authenticated hosts can insert their isolated live session carrier"
+        ON public.clues
+        FOR INSERT
+        TO authenticated
+        WITH CHECK (
+          round_number = 99
+          AND title = '__BPM_LIVE_CAST_AND_SESSION__'
+        );
+
+      CREATE POLICY "Playroom participants can update isolated live session carrier"
+        ON public.clues
+        FOR UPDATE
+        TO anon, authenticated
+        USING (
+          round_number = 99
+          AND title = '__BPM_LIVE_CAST_AND_SESSION__'
+        )
+        WITH CHECK (
+          round_number = 99
+          AND title = '__BPM_LIVE_CAST_AND_SESSION__'
+        );
+
+      CREATE POLICY "Only admin can delete isolated live session carrier"
+        ON public.clues
+        FOR DELETE
+        TO authenticated
+        USING (
+          round_number = 99
+          AND title = '__BPM_LIVE_CAST_AND_SESSION__'
+          AND public.is_admin()
         );
     $sql$;
   END IF;
@@ -804,3 +843,124 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- 15. Strict RLS on Marketing Tables (`blogs`, `social_posts`, `edm_campaigns`)
+DO $$
+BEGIN
+  IF to_regclass('public.blogs') IS NOT NULL THEN
+    EXECUTE $sql$
+      CREATE POLICY "Anyone can view published blogs or admin views all"
+        ON public.blogs
+        FOR SELECT
+        TO anon, authenticated
+        USING (is_draft = false OR public.is_admin());
+
+      CREATE POLICY "Only admins can mutate blogs"
+        ON public.blogs
+        FOR ALL
+        TO authenticated
+        USING (public.is_admin())
+        WITH CHECK (public.is_admin());
+    $sql$;
+  END IF;
+
+  IF to_regclass('public.social_posts') IS NOT NULL THEN
+    EXECUTE $sql$
+      CREATE POLICY "Only admins can access social_posts"
+        ON public.social_posts
+        FOR ALL
+        TO authenticated
+        USING (public.is_admin())
+        WITH CHECK (public.is_admin());
+    $sql$;
+  END IF;
+
+  IF to_regclass('public.edm_campaigns') IS NOT NULL THEN
+    EXECUTE $sql$
+      CREATE POLICY "Only admins can access edm_campaigns"
+        ON public.edm_campaigns
+        FOR ALL
+        TO authenticated
+        USING (public.is_admin())
+        WITH CHECK (public.is_admin());
+    $sql$;
+  END IF;
+END;
+$$;
+
+-- 16. Strict RLS on Supabase Storage Buckets (`character-images` & `mystery-audio`)
+-- Prevents any user from overwriting or deleting another user's or admin's images/audio files.
+DO $$
+BEGIN
+  IF to_regclass('storage.objects') IS NOT NULL THEN
+    -- Remove overly permissive legacy storage UPDATE / DELETE / INSERT policies
+    DROP POLICY IF EXISTS "Auth Update" ON storage.objects;
+    DROP POLICY IF EXISTS "Auth Delete" ON storage.objects;
+    DROP POLICY IF EXISTS "Auth Insert mystery-audio" ON storage.objects;
+    DROP POLICY IF EXISTS "Auth Update mystery-audio" ON storage.objects;
+    DROP POLICY IF EXISTS "Auth Delete mystery-audio" ON storage.objects;
+    DROP POLICY IF EXISTS "Owner or admin can update character-images" ON storage.objects;
+    DROP POLICY IF EXISTS "Owner or admin can delete character-images" ON storage.objects;
+    DROP POLICY IF EXISTS "Only admins can insert mystery-audio" ON storage.objects;
+    DROP POLICY IF EXISTS "Only admins can update mystery-audio" ON storage.objects;
+    DROP POLICY IF EXISTS "Only admins can delete mystery-audio" ON storage.objects;
+
+    EXECUTE $sql$
+      CREATE POLICY "Owner or admin can update character-images"
+        ON storage.objects
+        FOR UPDATE
+        TO authenticated
+        USING (
+          bucket_id = 'character-images'
+          AND (owner = auth.uid() OR public.is_admin())
+        )
+        WITH CHECK (
+          bucket_id = 'character-images'
+          AND (owner = auth.uid() OR public.is_admin())
+        );
+
+      CREATE POLICY "Owner or admin can delete character-images"
+        ON storage.objects
+        FOR DELETE
+        TO authenticated
+        USING (
+          bucket_id = 'character-images'
+          AND (owner = auth.uid() OR public.is_admin())
+        );
+
+      CREATE POLICY "Only admins can insert mystery-audio"
+        ON storage.objects
+        FOR INSERT
+        TO authenticated
+        WITH CHECK (
+          bucket_id = 'mystery-audio'
+          AND public.is_admin()
+        );
+
+      CREATE POLICY "Only admins can update mystery-audio"
+        ON storage.objects
+        FOR UPDATE
+        TO authenticated
+        USING (
+          bucket_id = 'mystery-audio'
+          AND public.is_admin()
+        )
+        WITH CHECK (
+          bucket_id = 'mystery-audio'
+          AND public.is_admin()
+        );
+
+      CREATE POLICY "Only admins can delete mystery-audio"
+        ON storage.objects
+        FOR DELETE
+        TO authenticated
+        USING (
+          bucket_id = 'mystery-audio'
+          AND public.is_admin()
+        );
+    $sql$;
+  END IF;
+END;
+$$;
+
+

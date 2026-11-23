@@ -61,7 +61,7 @@ export default async function GeneratingPage(props: {
           </div>
           <div className="flex items-center gap-4 opacity-50">
             <div className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700"></div>
-            <span className="text-sm font-bold text-slate-500">Packaging printable PDF</span>
+            <span className="text-sm font-bold text-slate-500">Launching live mobile playroom</span>
           </div>
         </div>
 

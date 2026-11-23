@@ -467,7 +467,7 @@ function SplitLight({ bgSrc, title, category, stat, ctaText, logoColorSrc, logoW
               ? sub
               : stat
               ? `${stat.value} ${stat.label}`
-              : "Step-by-step hosting blueprint & printable party kit guide."}
+              : "Step-by-step hosting blueprint & custom party kit guide."}
           </div>
         )}
         <div style={{ display: "flex", flex: 1 }} />

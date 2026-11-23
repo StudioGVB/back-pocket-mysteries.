@@ -28,7 +28,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
       'bachelorette murder mystery game',
       'hen party murder mystery kit',
       'personalized murder mystery dinner party',
-      'printable murder mystery kit',
+      'online murder mystery kit',
     ],
     openGraph: {
       title,

@@ -17,7 +17,7 @@ export const faqsData: FAQ[] = [
   {
     category: "What We Do",
     q: "What is Back Pocket Mysteries?",
-    a: "We create personalized murder mystery party packs powered by human-crafted storylines and AI customization. Unlike generic kits with pre-set fictional names, our engine casts your real guests (or a hybrid/fictional cast) into iconic archetypes, weaving their real names, relationships, and inside jokes into a complete printable & live mobile mystery experience in ~20 minutes."
+    a: "We create personalized murder mystery party packs powered by human-crafted storylines and AI customization. Unlike generic kits with pre-set fictional names, our engine casts your real guests (or a hybrid/fictional cast) into iconic archetypes, weaving their real names, relationships, and inside jokes into a 100% online live mobile mystery experience in ~20 minutes."
   },
   {
     category: "What We Do",
@@ -228,7 +228,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Customization",
     q: "Can you make it a surprise party mystery?",
-    a: "Yes! You can cast your guests privately in your account and hand out the character envelopes or share the 6-digit Game PIN right when the party starts."
+    a: "Yes! You can cast your guests privately in your account and share their character links or the 6-digit Game PIN right when the party starts."
   },
   {
     category: "Customization",
@@ -292,7 +292,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Customization",
     q: "Can I swap or reassign characters to different guests before the party starts?",
-    a: "Yes! You can reassign guests to any character on your Manage Cast page anytime before Round 1 begins. You can also send updated digital invite links or print-ready character sheets straight from your dashboard."
+    a: "Yes! You can reassign guests to any character on your Manage Cast page anytime before Round 1 begins, and send updated digital invite links straight from your Host Hub."
   },
   {
     category: "Delivery & Setup",

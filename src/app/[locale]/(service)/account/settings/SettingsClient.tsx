@@ -1075,8 +1075,8 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
 
             <div className="pt-2 border-t border-slate-100 space-y-4">
               <Toggle
-                label="Large-Print PDF Character Booklets"
-                description="Generate printable PDFs with larger 14pt body text for easier reading in dim party lighting."
+                label="Large-Text Mobile Character Dossiers"
+                description="Display digital character dossiers with larger 14pt body text for easier reading in dim party lighting."
                 checked={largePrintPdf}
                 onChange={setLargePrintPdf}
               />

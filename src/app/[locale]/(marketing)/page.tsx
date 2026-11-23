@@ -8,6 +8,7 @@ import PriceDisplay from '@/components/marketing/PriceDisplay';
 import HeroImageCarousel from '@/components/marketing/HeroImageCarousel';
 import LightsOut from '@/components/marketing/LightsOut';
 import InteractivePackPreview from '@/components/marketing/InteractivePackPreview';
+import HowItWorksVideoShowcase from '@/components/marketing/HowItWorksVideoShowcase';
 import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -16,14 +17,14 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   const dict = await getDictionary(locale as Locale);
   
   return {
-    title: 'Custom Murder Mystery Party Games for Adults (Printable & Digital) | Back Pocket Mysteries',
+    title: 'Custom Murder Mystery Party Games for Adults (100% Online & Personalised) | Back Pocket Mysteries',
     description:
-      'Host a custom murder mystery party built around your actual friends. Personalised character booklets, inside jokes, printable evidence, and voice-acted audio clues ready in ~30 minutes for 4–16 players.',
+      'Host a custom murder mystery party built around your actual friends. Personalised character dossiers, inside jokes, CCTV & text evidence, and voice-acted audio clues ready in ~20 minutes for 4–16 players.',
     keywords: [
       'murder mystery party game',
       'custom murder mystery game',
       'murder mystery dinner party games for adults',
-      'printable murder mystery game',
+      'online murder mystery party game',
       'hen party murder mystery game',
       'bachelorette murder mystery party',
       'birthday murder mystery party',
@@ -58,7 +59,7 @@ export default async function HomePage(props: {
       '@type': 'Product',
       name: 'Back Pocket Custom Murder Mystery Party Game Pack',
       description:
-        'Personalised murder mystery dinner party kit for 4 to 16 players, tailored to your real friends with printable character booklets, crime scene evidence, and interactive audio briefings.',
+        'Personalised murder mystery dinner party kit for 4 to 16 players, tailored to your real friends with custom digital character dossiers, crime scene evidence, and interactive audio briefings.',
       brand: {
         '@type': 'Brand',
         name: 'Back Pocket Mysteries',
@@ -444,6 +445,8 @@ export default async function HomePage(props: {
               </div>
             ))}
           </div>
+
+          <HowItWorksVideoShowcase />
         </div>
       </section>
 

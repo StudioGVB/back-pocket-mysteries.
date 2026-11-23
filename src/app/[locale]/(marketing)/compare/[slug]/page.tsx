@@ -116,7 +116,7 @@ export default async function CompetitorComparisonPage(props: { params: Promise<
                 <ul className="list-disc pl-6 space-y-2 font-bold text-brand-dark">
                   <li>Cast all real friends, a Hybrid mix of friends + fictional suspects, or a 100% fictional cast.</li>
                   <li>Inside jokes, quirks, and custom portraits are woven directly into the dossiers and visual clues.</li>
-                  <li>Includes a Kahoot-style Live Mobile Lobby (6-digit Game PIN) with leaked group-chat texts &amp; audio wiretaps alongside printable PDF booklets.</li>
+                  <li>Includes a 100% online Kahoot-style Live Mobile Lobby (6-digit Game PIN) with leaked group-chat texts, CCTV stills &amp; audio wiretaps on every guest&apos;s phone.</li>
                   <li>Spoiler-Free Host Mode lets the host play along as a full suspect, ready in ~20 minutes.</li>
                 </ul>
               </div>
