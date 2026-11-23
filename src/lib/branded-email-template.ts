@@ -84,10 +84,12 @@ export function buildBrandedEmailShell(options: BrandedEmailShellOptions): strin
 
           ${
             options.heroImageUrl
-              ? `<!-- 3. FULL-WIDTH 600PX MYSTERY PACKAGE PHOTO -->
+              ? `<!-- 3. FULL-WIDTH 600x230 WIDESCREEN MYSTERY PACKAGE BANNER -->
           <tr>
             <td style="padding:0;background-color:#141115;line-height:0;font-size:0;">
-              <img src="${options.heroImageUrl}" width="600" alt="${(options.heroImageAlt || 'Mystery Package Cover').replace(/"/g, '&quot;')}" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
+              <div style="width:100%;max-width:600px;max-height:230px;overflow:hidden;">
+                <img src="${options.heroImageUrl}" width="600" height="230" alt="${(options.heroImageAlt || 'Mystery Package Cover').replace(/"/g, '&quot;')}" style="display:block;width:100%;max-width:600px;height:230px;max-height:230px;object-fit:cover;object-position:center 38%;border:0;" />
+              </div>
             </td>
           </tr>`
               : ''
