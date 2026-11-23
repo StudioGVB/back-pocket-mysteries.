@@ -3,7 +3,14 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
-import { getCharacterDisplayName, getCharacterRoleTitle, hydrateTextWithCharacters } from '@/utils/hydration';
+import {
+  getCharacterDisplayName,
+  getCharacterRoleTitle,
+  hydrateTextWithCharacters,
+  adaptOutfitForGuestGender,
+  adaptBioForGuestGender,
+  adaptOutfitReferenceImagesForGuestGender,
+} from '@/utils/hydration';
 import { getMysteryById, normalizePlotBeats } from '@/services/mysteries';
 import {
   cacheMysterySnapshot,
@@ -506,10 +513,11 @@ export async function saveCustomerCastAction(
           console.error('Auto AI avatar generation during saveCustomerCastAction failed:', aiErr);
         }
       }
+      const resolvedGender = assignedGuest.gender || char.gender || 'adaptable';
       nextProfile.guest_id = assignedGuest.id;
       nextProfile.guest_name = assignedGuest.name;
       nextProfile.name = assignedGuest.name;
-      nextProfile.gender = assignedGuest.gender || char.gender || 'adaptable';
+      nextProfile.gender = resolvedGender;
       nextProfile.accent =
         assignedGuest.accent ||
         extractAccentFromAvatarUrl(resolvedGuestAvatarUrl) ||
@@ -521,6 +529,46 @@ export async function saveCustomerCastAction(
       nextProfile.traits = assignedGuest.traits || [];
       nextProfile.guest_bio = assignedGuest.bio || '';
       nextProfile.is_linked = Boolean(assignedGuest.isLinked);
+
+      // Immediately adapt outfit_advice, outfit_reference_images, act_summary, act_bullets, and bio to match the cast guest's gender
+      if (typeof nextProfile.outfit_advice === 'string' && nextProfile.outfit_advice.trim()) {
+        nextProfile.outfit_advice = adaptOutfitForGuestGender(
+          nextProfile.outfit_advice,
+          resolvedGender
+        );
+      }
+      if (
+        typeof nextProfile.outfit_description === 'string' &&
+        nextProfile.outfit_description.trim()
+      ) {
+        nextProfile.outfit_description = adaptOutfitForGuestGender(
+          nextProfile.outfit_description,
+          resolvedGender
+        );
+      }
+      if (
+        Array.isArray(nextProfile.outfit_reference_images) &&
+        nextProfile.outfit_reference_images.length > 0
+      ) {
+        nextProfile.outfit_reference_images = adaptOutfitReferenceImagesForGuestGender(
+          nextProfile.outfit_reference_images,
+          resolvedGender
+        );
+      }
+      if (typeof nextProfile.act_summary === 'string' && nextProfile.act_summary.trim()) {
+        nextProfile.act_summary = adaptBioForGuestGender(
+          nextProfile.act_summary,
+          resolvedGender
+        );
+      }
+      if (Array.isArray(nextProfile.act_bullets) && nextProfile.act_bullets.length > 0) {
+        nextProfile.act_bullets = nextProfile.act_bullets.map((b: any) =>
+          typeof b === 'string' ? adaptBioForGuestGender(b, resolvedGender) : b
+        );
+      }
+      if (typeof nextProfile.bio === 'string' && nextProfile.bio.trim()) {
+        nextProfile.bio = adaptBioForGuestGender(nextProfile.bio, resolvedGender);
+      }
     } else {
       delete nextProfile.guest_id;
       delete nextProfile.guest_name;
@@ -534,14 +582,17 @@ export async function saveCustomerCastAction(
       };
     }
 
+    const updatedCharGender = nextProfile.gender || char.gender || 'adaptable';
+
     updatedCharObjects.push({
       ...char,
+      gender: updatedCharGender,
       profile_data: nextProfile,
     });
 
     await supabase
       .from('characters')
-      .update({ profile_data: nextProfile })
+      .update({ gender: updatedCharGender, profile_data: nextProfile })
       .eq('id', char.id);
   }
 

@@ -11,6 +11,8 @@ import {
   getCharacterCandidateKeys,
   findInvolvedCharactersInText,
   adaptOutfitForGuestGender,
+  adaptBioForGuestGender,
+  adaptOutfitReferenceImagesForGuestGender,
   stripEmDashes,
 } from '@/utils/hydration';
 import { getStaticMockGuests } from '@/utils/mock-guests';
@@ -443,8 +445,8 @@ function getCharacterOutfitDescription(char: any): string {
   const profile = char?.profile_data || {};
   const genderStr = (
     char?.assignedFriend?.gender ||
-    char?.gender ||
     profile.gender ||
+    char?.gender ||
     ''
   ).toLowerCase();
   let outfit = profile.outfit_advice || '';
@@ -488,7 +490,7 @@ function getDeterministicFacialStructure(seedSource: string) {
 
 function computeCharacterIdentityHash(char: any, mystery?: any): string {
   const profile = char?.profile_data || {};
-  const genderStr = char?.gender || profile.gender || '';
+  const genderStr = char?.assignedFriend?.gender || profile.gender || char?.gender || '';
   const physicalDesc = getGuestPhysicalDescription(profile, genderStr);
   const outfit = getCharacterOutfitDescription(char);
   const roleTitle = getCharacterRoleTitle(char);
@@ -575,12 +577,14 @@ async function hydrateCharactersWithGuests(characters: any[], hostId: string | n
     const guest = guestId ? guestMap.get(guestId) : null;
 
     if (guest) {
+      const resolvedGender = guest.gender || rawProfile.gender || char.gender;
       return {
         ...char,
         raw_profile_data: rawProfile,
-        gender: guest.gender || char.gender || rawProfile.gender,
+        gender: resolvedGender,
         profile_data: {
           ...rawProfile,
+          gender: resolvedGender,
           avatar_url: guest.avatar_url || rawProfile.avatar_url,
           eye_color: guest.eye_color || rawProfile.eye_color,
           height: guest.height || rawProfile.height,
@@ -593,8 +597,10 @@ async function hydrateCharactersWithGuests(characters: any[], hostId: string | n
       };
     }
 
+    const fallbackGender = rawProfile.gender || char.gender;
     return {
       ...char,
+      gender: fallbackGender,
       raw_profile_data: rawProfile,
     };
   });
@@ -619,7 +625,7 @@ export async function ensureStandardCharacterPhoto(
 }> {
   const profile = char.profile_data || {};
   const rawProfile = char.raw_profile_data || profile;
-  const genderStr = char.gender || profile.gender || 'unspecified';
+  const genderStr = char?.assignedFriend?.gender || profile.gender || char.gender || 'unspecified';
   const physicalDesc = getGuestPhysicalDescription(profile, genderStr);
   const outfit = getCharacterOutfitDescription(char);
   const identityHash = computeCharacterIdentityHash(char, mystery);
@@ -1098,7 +1104,7 @@ function buildCharDescription(char: any, refId?: number): string {
   const profile = char.profile_data || {};
   const guestName = getCharacterDisplayName(char);
   const roleTitle = getCharacterRoleTitle(char);
-  const genderStr = char.gender || profile.gender || '';
+  const genderStr = char?.assignedFriend?.gender || profile.gender || char.gender || '';
 
   const desc = getGuestPhysicalDescription(profile, genderStr);
   const outfit = getCharacterOutfitDescription(char);
@@ -1806,8 +1812,105 @@ export async function auditAndHealCustomerPackAction(
       : null;
 
     // =========================================================================
-    // GATE 1: Text Token Scrub + Cross-Clue Pronoun & Solvability Sanity Check
+    // GATE 1: Character Gender-Flex Outfit/Bio Self-Healing + Clue Token/Pronoun Check
     // =========================================================================
+    // 1A. Audit & Self-Heal every active character's outfit_advice, outfit_reference_images, act_summary, act_bullets, and bio for their cast guest's gender
+    for (const c of activeChars) {
+      const rawProf = (c.raw_profile_data || c.profile_data || {}) as Record<string, any>;
+      const mergedProf = (c.profile_data || {}) as Record<string, any>;
+      const rawG = String(
+        c?.assignedFriend?.gender || mergedProf.gender || rawProf.gender || c.gender || ''
+      )
+        .toLowerCase()
+        .trim();
+
+      const effectiveGender: 'male' | 'female' | 'adaptable' =
+        rawG === 'female' || rawG === 'f' || rawG === 'woman' || rawG === 'feminine'
+          ? 'female'
+          : rawG === 'male' || rawG === 'm' || rawG === 'man' || rawG === 'masculine'
+          ? 'male'
+          : 'adaptable';
+
+      if (effectiveGender === 'adaptable') continue;
+
+      let charHealed = false;
+      const nextProf: Record<string, any> = { ...rawProf, ...mergedProf, gender: effectiveGender };
+
+      if (typeof nextProf.outfit_advice === 'string' && nextProf.outfit_advice.trim()) {
+        const adaptedOutfit = adaptOutfitForGuestGender(nextProf.outfit_advice, effectiveGender);
+        if (adaptedOutfit !== nextProf.outfit_advice) {
+          nextProf.outfit_advice = adaptedOutfit;
+          charHealed = true;
+        }
+      }
+
+      if (typeof nextProf.outfit_description === 'string' && nextProf.outfit_description.trim()) {
+        const adaptedOutfitDesc = adaptOutfitForGuestGender(
+          nextProf.outfit_description,
+          effectiveGender
+        );
+        if (adaptedOutfitDesc !== nextProf.outfit_description) {
+          nextProf.outfit_description = adaptedOutfitDesc;
+          charHealed = true;
+        }
+      }
+
+      if (
+        Array.isArray(nextProf.outfit_reference_images) &&
+        nextProf.outfit_reference_images.length > 0
+      ) {
+        const adaptedRefImgs = adaptOutfitReferenceImagesForGuestGender(
+          nextProf.outfit_reference_images,
+          effectiveGender
+        );
+        if (JSON.stringify(adaptedRefImgs) !== JSON.stringify(nextProf.outfit_reference_images)) {
+          nextProf.outfit_reference_images = adaptedRefImgs;
+          charHealed = true;
+        }
+      }
+
+      if (typeof nextProf.act_summary === 'string' && nextProf.act_summary.trim()) {
+        const adaptedAct = adaptBioForGuestGender(nextProf.act_summary, effectiveGender);
+        if (adaptedAct !== nextProf.act_summary) {
+          nextProf.act_summary = adaptedAct;
+          charHealed = true;
+        }
+      }
+
+      if (Array.isArray(nextProf.act_bullets) && nextProf.act_bullets.length > 0) {
+        const adaptedBullets = nextProf.act_bullets.map((b: any) =>
+          typeof b === 'string' ? adaptBioForGuestGender(b, effectiveGender) : b
+        );
+        if (JSON.stringify(adaptedBullets) !== JSON.stringify(nextProf.act_bullets)) {
+          nextProf.act_bullets = adaptedBullets;
+          charHealed = true;
+        }
+      }
+
+      if (typeof nextProf.bio === 'string' && nextProf.bio.trim()) {
+        const adaptedBio = adaptBioForGuestGender(nextProf.bio, effectiveGender);
+        if (adaptedBio !== nextProf.bio) {
+          nextProf.bio = adaptedBio;
+          charHealed = true;
+        }
+      }
+
+      if (c.gender !== effectiveGender || rawProf.gender !== effectiveGender) {
+        charHealed = true;
+      }
+
+      if (charHealed) {
+        c.gender = effectiveGender;
+        c.profile_data = nextProf;
+        c.raw_profile_data = nextProf;
+        await supabase
+          .from('characters')
+          .update({ gender: effectiveGender, profile_data: nextProf })
+          .eq('id', c.id);
+        result.textIssuesRepaired += 1;
+      }
+    }
+
     const { data: dbClues } = await supabase
       .from('clues')
       .select('*')
@@ -1834,7 +1937,7 @@ export async function auditAndHealCustomerPackAction(
           .map((c: any) => {
             const displayName = getCharacterDisplayName(c);
             const roleTitle = getCharacterRoleTitle(c);
-            const gender = c.gender || c.profile_data?.gender || 'unspecified';
+            const gender = c.profile_data?.gender || c.gender || 'unspecified';
             const plotRole = c.is_victim
               ? 'VICTIM'
               : c.plot_role === 'murderer' || c.profile_data?.is_murderer
@@ -1987,7 +2090,7 @@ Respond with valid JSON ONLY:
       try {
         const displayName = getCharacterDisplayName(charObj);
         const roleTitle = getCharacterRoleTitle(charObj);
-        const gender = charObj.gender || charObj.profile_data?.gender || 'unspecified';
+        const gender = charObj.profile_data?.gender || charObj.gender || 'unspecified';
         const phys = getGuestPhysicalDescription(charObj.profile_data || {}, gender);
         const outfit = getCharacterOutfitDescription(charObj);
         const guestSelfieUrl = extractAiPhotoUrl(charObj.profile_data?.avatar_url);
@@ -2256,7 +2359,7 @@ Respond with valid JSON ONLY:
           .map((ic: any) => {
             const name = getCharacterDisplayName(ic);
             const role = getCharacterRoleTitle(ic);
-            const gender = ic.gender || ic.profile_data?.gender || 'adaptable';
+            const gender = ic.profile_data?.gender || ic.gender || 'adaptable';
             const phys = getGuestPhysicalDescription(ic.profile_data || {}, gender);
             const outfit = getCharacterOutfitDescription(ic);
             return `- ${name} (${role}, ${gender}): ${phys}. Outfit: ${outfit}`;

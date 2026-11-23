@@ -471,7 +471,7 @@ export function getCharacterPronouns(char: any): {
 } {
   const profile = char?.profile_data || {};
   const rawGender = String(
-    char?.assignedFriend?.gender || char?.gender || profile.gender || ''
+    char?.assignedFriend?.gender || profile.gender || char?.gender || ''
   )
     .toLowerCase()
     .trim();
@@ -668,7 +668,7 @@ function buildAiReplacementForCharacter(
 ): string {
   const profile = char.profile_data || {};
   const genderStr =
-    char?.assignedFriend?.gender || char.gender || profile.gender || '';
+    char?.assignedFriend?.gender || profile.gender || char.gender || '';
   const desc = getGuestPhysicalDescription(profile, genderStr);
 
   let outfit = profile.outfit_advice || '';
