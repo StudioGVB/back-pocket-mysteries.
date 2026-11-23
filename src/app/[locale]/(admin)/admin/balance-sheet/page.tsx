@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import Link from 'next/link';
 import { getBalanceSheetReportAction } from '@/app/actions/balance-sheet';
 import { BalanceSheetClient } from '@/components/admin/BalanceSheetClient';
 
@@ -9,10 +10,29 @@ export default async function AdminBalanceSheetPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
+
   return (
-    <Suspense fallback={<BalanceSheetSkeleton />}>
-      <BalanceSheetContent />
-    </Suspense>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
+        <Link
+          href={`/${locale}/admin/balance-sheet`}
+          className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-brand-dark text-white shadow-sm"
+        >
+          Balance Sheet &amp; P&amp;L
+        </Link>
+        <Link
+          href={`/${locale}/admin/costs`}
+          className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-gray-500 hover:text-brand-dark hover:bg-gray-50"
+        >
+          AI Costs &amp; Billing
+        </Link>
+      </div>
+
+      <Suspense fallback={<BalanceSheetSkeleton />}>
+        <BalanceSheetContent />
+      </Suspense>
+    </div>
   );
 }
 

@@ -1,17 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { BrainstormWorksheetButton } from '@/components/builder/BrainstormWorksheetModal';
-
-interface SubNavItem {
-  label: string;
-  href: string;
-  exact?: boolean;
-  matchPrefixes?: string[];
-}
 
 interface NavItem {
   id: string;
@@ -20,7 +12,6 @@ interface NavItem {
   exact?: boolean;
   matchPrefixes?: string[];
   icon: React.ReactNode;
-  children?: SubNavItem[];
 }
 
 export function AdminSidebar() {
@@ -30,22 +21,7 @@ export function AdminSidebar() {
   // Normalize locale prefix (e.g. /en/admin/... -> /admin/...)
   const cleanPath = pathname.replace(/^\/(en|fr)(?=\/admin)/, '');
 
-  const isSubActive = (sub: SubNavItem) => {
-    if (sub.exact) {
-      return cleanPath === sub.href;
-    }
-    if (sub.matchPrefixes && sub.matchPrefixes.length > 0) {
-      return sub.matchPrefixes.some(
-        (prefix) => cleanPath === prefix || cleanPath.startsWith(`${prefix}/`)
-      );
-    }
-    return cleanPath === sub.href || cleanPath.startsWith(`${sub.href}/`);
-  };
-
-  const isParentActive = (item: NavItem) => {
-    if (item.children && item.children.length > 0) {
-      return item.children.some((sub) => isSubActive(sub));
-    }
+  const isItemActive = (item: NavItem) => {
     if (item.exact) {
       return cleanPath === item.href;
     }
@@ -57,16 +33,17 @@ export function AdminSidebar() {
     return cleanPath === item.href || cleanPath.startsWith(`${item.href}/`);
   };
 
-  const studioItems: NavItem[] = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      href: '/admin',
-      exact: true,
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="15" rx="1"/></svg>
-      ),
-    },
+  const dashboardItem: NavItem = {
+    id: 'dashboard',
+    label: 'Dashboard',
+    href: '/admin',
+    exact: true,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="15" rx="1"/></svg>
+    ),
+  };
+
+  const basesItems: NavItem[] = [
     {
       id: 'mysteries',
       label: 'Mystery Bases',
@@ -78,286 +55,170 @@ export function AdminSidebar() {
     },
   ];
 
+  const ordersItems: NavItem[] = [
+    {
+      id: 'transactions',
+      label: 'Transactions',
+      href: '/admin/transactions',
+      matchPrefixes: ['/admin/transactions'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      ),
+    },
+    {
+      id: 'discounts',
+      label: 'Promo & Discount',
+      href: '/admin/discounts',
+      matchPrefixes: ['/admin/discounts'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      ),
+    },
+  ];
+
   const customerItems: NavItem[] = [
     {
       id: 'customers',
-      label: 'Customers & Leads',
+      label: 'Customers',
       href: '/admin/users',
+      matchPrefixes: ['/admin/users'],
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       ),
-      children: [
-        {
-          label: 'Customers & Hosts',
-          href: '/admin/users',
-          matchPrefixes: ['/admin/users'],
-        },
-        {
-          label: 'Newsletter & VIP Leads',
-          href: '/admin/leads',
-          matchPrefixes: ['/admin/leads'],
-        },
-      ],
     },
     {
-      id: 'support',
-      label: 'Support & Reviews',
-      href: '/admin/tickets',
+      id: 'leads',
+      label: 'Leads',
+      href: '/admin/leads',
+      matchPrefixes: ['/admin/leads'],
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
       ),
-      children: [
-        {
-          label: 'Support & Tickets',
-          href: '/admin/tickets',
-          matchPrefixes: ['/admin/tickets'],
-        },
-        {
-          label: 'Enquiries',
-          href: '/admin/enquiries',
-          matchPrefixes: ['/admin/enquiries'],
-        },
-        {
-          label: 'Reviews',
-          href: '/admin/reviews',
-          matchPrefixes: ['/admin/reviews'],
-        },
-      ],
+    },
+    {
+      id: 'enquiries',
+      label: 'Enquiries',
+      href: '/admin/enquiries',
+      matchPrefixes: ['/admin/enquiries'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      ),
+    },
+    {
+      id: 'reviews',
+      label: 'Reviews',
+      href: '/admin/reviews',
+      matchPrefixes: ['/admin/reviews'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      ),
     },
   ];
 
   const marketingItems: NavItem[] = [
     {
-      id: 'marketing',
-      label: 'Marketing Hub',
+      id: 'calendar',
+      label: 'Campaign Calendar',
       href: '/admin/social',
+      exact: true,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
       ),
-      children: [
-        {
-          label: 'Campaign Calendar',
-          href: '/admin/social',
-          exact: true,
-        },
-        {
-          label: 'Blog Posts',
-          href: '/admin/blog',
-          matchPrefixes: ['/admin/blog'],
-        },
-        {
-          label: 'LinkedIn Queue',
-          href: '/admin/social/linkedin',
-          matchPrefixes: ['/admin/social/linkedin'],
-        },
-        {
-          label: 'IG & FB Queue',
-          href: '/admin/social/instagram-facebook',
-          matchPrefixes: ['/admin/social/instagram-facebook'],
-        },
-        {
-          label: 'EDM Campaigns',
-          href: '/admin/edm',
-          matchPrefixes: ['/admin/edm'],
-        },
-        {
-          label: 'Promo & Discount Codes',
-          href: '/admin/discounts',
-          matchPrefixes: ['/admin/discounts'],
-        },
-      ],
+    },
+    {
+      id: 'blog',
+      label: 'Blog Posts',
+      href: '/admin/blog',
+      matchPrefixes: ['/admin/blog'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+      ),
+    },
+    {
+      id: 'linkedin',
+      label: 'LinkedIn Queue',
+      href: '/admin/social/linkedin',
+      matchPrefixes: ['/admin/social/linkedin'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+      ),
+    },
+    {
+      id: 'ig_fb',
+      label: 'IG & FB Queue',
+      href: '/admin/social/instagram-facebook',
+      matchPrefixes: ['/admin/social/instagram-facebook'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+      ),
+    },
+    {
+      id: 'edm',
+      label: 'EDM Campaigns',
+      href: '/admin/edm',
+      matchPrefixes: ['/admin/edm'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      ),
     },
   ];
 
-  const financeAndOpsItems: NavItem[] = [
+  const analyticsItems: NavItem[] = [
     {
-      id: 'orders',
-      label: 'Orders & QA Inspector',
-      href: '/admin/transactions',
-      matchPrefixes: ['/admin/transactions'],
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-      ),
-    },
-    {
-      id: 'finance',
-      label: 'Finance & AI Spend',
-      href: '/admin/balance-sheet',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      ),
-      children: [
-        {
-          label: 'Balance Sheet',
-          href: '/admin/balance-sheet',
-          matchPrefixes: ['/admin/balance-sheet'],
-        },
-        {
-          label: 'AI Costs',
-          href: '/admin/costs',
-          matchPrefixes: ['/admin/costs'],
-        },
-      ],
-    },
-    {
-      id: 'analytics_settings',
-      label: 'Analytics & Settings',
+      id: 'analytics_seo',
+      label: 'Analytics & SEO',
       href: '/admin/analytics',
+      matchPrefixes: ['/admin/analytics'],
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       ),
-      children: [
-        {
-          label: 'Analytics & SEO',
-          href: '/admin/analytics',
-          matchPrefixes: ['/admin/analytics'],
-        },
-        {
-          label: 'Super Admins',
-          href: '/admin/admins',
-          matchPrefixes: ['/admin/admins'],
-        },
-        {
-          label: 'Settings',
-          href: '/admin/settings',
-          matchPrefixes: ['/admin/settings'],
-        },
-      ],
+    },
+    {
+      id: 'ai_balance_sheet',
+      label: 'AI / Balance Sheet',
+      href: '/admin/balance-sheet',
+      matchPrefixes: ['/admin/balance-sheet', '/admin/costs'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+      ),
     },
   ];
 
-  const allCollapsibleItems = [
-    ...customerItems,
-    ...marketingItems,
-    ...financeAndOpsItems,
-  ].filter((item) => item.children && item.children.length > 0);
+  const isSettingsActive =
+    cleanPath === '/admin/settings' ||
+    cleanPath.startsWith('/admin/settings/') ||
+    cleanPath === '/admin/admins' ||
+    cleanPath.startsWith('/admin/admins/');
 
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    for (const item of allCollapsibleItems) {
-      if (isParentActive(item)) {
-        initial[item.id] = true;
-      }
-    }
-    return initial;
-  });
-
-  // Automatically expand a side-menu group whenever the user navigates to one of its child routes
-  useEffect(() => {
-    setOpenGroups((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      for (const item of allCollapsibleItems) {
-        if (isParentActive(item) && !next[item.id]) {
-          next[item.id] = true;
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cleanPath]);
-
-  const toggleGroup = (id: string) => {
-    setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const isTicketsActive =
+    cleanPath === '/admin/tickets' || cleanPath.startsWith('/admin/tickets/');
 
   const sectionTitleClass =
     'px-3.5 text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1.5';
 
-  const renderSection = (title: string, items: NavItem[], extra?: React.ReactNode) => (
+  const renderNavItem = (item: NavItem) => {
+    const active = isItemActive(item);
+    return (
+      <li key={item.id}>
+        <Link
+          href={`${localePrefix}${item.href}`}
+          className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all text-[13px] font-bold ${
+            active
+              ? 'bg-brand-pink text-white shadow-md shadow-brand-pink/25'
+              : 'text-slate-300 hover:bg-white/10 hover:text-white'
+          }`}
+        >
+          <span className="shrink-0">{item.icon}</span>
+          <span className="truncate">{item.label}</span>
+        </Link>
+      </li>
+    );
+  };
+
+  const renderSection = (title: string, items: NavItem[]) => (
     <div>
       <h3 className={sectionTitleClass}>{title}</h3>
-      <ul className="space-y-1">
-        {items.map((item) => {
-          const hasChildren = Boolean(item.children && item.children.length > 0);
-          const activeParent = isParentActive(item);
-          const isOpen = Boolean(openGroups[item.id]);
-
-          if (!hasChildren) {
-            return (
-              <li key={item.id}>
-                <Link
-                  href={`${localePrefix}${item.href}`}
-                  className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all text-[13px] font-bold ${
-                    activeParent
-                      ? 'bg-brand-pink text-white shadow-md shadow-brand-pink/25'
-                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  <span className="shrink-0">{item.icon}</span>
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              </li>
-            );
-          }
-
-          return (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => toggleGroup(item.id)}
-                className={`w-full flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl transition-all text-[13px] font-bold cursor-pointer ${
-                  activeParent
-                    ? 'bg-white/12 text-white'
-                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`shrink-0 ${activeParent ? 'text-brand-pink' : ''}`}>
-                    {item.icon}
-                  </span>
-                  <span className="truncate">{item.label}</span>
-                </div>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={`shrink-0 text-slate-400 transition-transform duration-200 ${
-                    isOpen ? 'rotate-180 text-white' : ''
-                  }`}
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-
-              {isOpen && item.children && (
-                <ul className="mt-1 ml-5 pl-3 border-l border-white/15 space-y-0.5">
-                  {item.children.map((sub) => {
-                    const subActive = isSubActive(sub);
-                    return (
-                      <li key={sub.href}>
-                        <Link
-                          href={`${localePrefix}${sub.href}`}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all ${
-                            subActive
-                              ? 'bg-brand-pink text-white shadow-sm shadow-brand-pink/25'
-                              : 'text-slate-400 hover:text-white hover:bg-white/5'
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                              subActive ? 'bg-white' : 'bg-slate-600'
-                            }`}
-                          />
-                          <span className="truncate">{sub.label}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-        {extra}
-      </ul>
+      <ul className="space-y-1">{items.map(renderNavItem)}</ul>
     </div>
   );
 
@@ -380,28 +241,66 @@ export function AdminSidebar() {
 
       <nav className="flex-grow px-3 py-4 overflow-y-auto custom-scrollbar">
         <div className="space-y-4 pb-4">
-          {renderSection(
-            'Studio & Mysteries',
-            studioItems,
-            <li>
-              <BrainstormWorksheetButton variant="sidebar-item" />
-            </li>
-          )}
-          {renderSection('Customers & Support', customerItems)}
+          {/* Standalone Dashboard at Top (No Section Header) */}
+          <ul className="space-y-1">{renderNavItem(dashboardItem)}</ul>
+
+          {renderSection('Bases', basesItems)}
+          {renderSection('Orders', ordersItems)}
+          {renderSection('Customers', customerItems)}
           {renderSection('Marketing Suite', marketingItems)}
-          {renderSection('Finance & Operations', financeAndOpsItems)}
+          {renderSection('Analytics', analyticsItems)}
         </div>
       </nav>
 
+      {/* Bottom 3 Side-by-Side Icon Buttons: Settings (incl. Super Admins), Guest Portal, Ticketing */}
       <div className="p-3 border-t border-white/10 bg-black/20">
-        <Link
-          href={`${localePrefix}/account/orders`}
-          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl hover:bg-white/10 transition-colors text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-white"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          Customer Portal
-        </Link>
+        <div className="grid grid-cols-3 gap-2">
+          <Link
+            href={`${localePrefix}/admin/settings`}
+            title="Settings & Super Admins"
+            aria-label="Settings & Super Admins"
+            className={`flex items-center justify-center h-10 rounded-xl border transition-all ${
+              isSettingsActive
+                ? 'bg-brand-pink border-brand-pink text-white shadow-md shadow-brand-pink/25'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </Link>
+
+          <Link
+            href={`${localePrefix}/account/orders`}
+            title="Guest Portal"
+            aria-label="Guest Portal"
+            className="flex items-center justify-center h-10 rounded-xl border bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-all"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </Link>
+
+          <Link
+            href={`${localePrefix}/admin/tickets`}
+            title="Support & Ticketing"
+            aria-label="Support & Ticketing"
+            className={`flex items-center justify-center h-10 rounded-xl border transition-all ${
+              isTicketsActive
+                ? 'bg-brand-pink border-brand-pink text-white shadow-md shadow-brand-pink/25'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </Link>
+        </div>
       </div>
     </aside>
   );
 }
+

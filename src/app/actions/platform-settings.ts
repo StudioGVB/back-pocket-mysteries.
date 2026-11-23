@@ -146,20 +146,21 @@ export async function savePlatformSettingsAction(
     const nextSettings: PlatformSettings = {
       ...current,
       ...updates,
-      basePackPriceUsd: Number(updates.basePackPriceUsd ?? current.basePackPriceUsd) || 19,
-      customBuilderPriceUsd:
-        Number(updates.customBuilderPriceUsd ?? current.customBuilderPriceUsd) || 35,
-      bespokePartyPriceUsd:
-        Number(updates.bespokePartyPriceUsd ?? current.bespokePartyPriceUsd) || 99,
+      basicTierPriceGbp: Number(updates.basicTierPriceGbp ?? current.basicTierPriceGbp) || 15,
+      premiumTierPriceGbp:
+        Number(updates.premiumTierPriceGbp ?? current.premiumTierPriceGbp) || 20,
+      grandTierPriceGbp: Number(updates.grandTierPriceGbp ?? current.grandTierPriceGbp) || 25,
+      unlimitedPassPriceGbp:
+        Number(updates.unlimitedPassPriceGbp ?? current.unlimitedPassPriceGbp) || 30,
       first50VipCap: Math.max(1, Number(updates.first50VipCap ?? current.first50VipCap) || 50),
       ticketSlaHours: Math.max(1, Number(updates.ticketSlaHours ?? current.ticketSlaHours) || 48),
       maxPortraitRegensPerCustomer: Math.max(
         1,
         Number(updates.maxPortraitRegensPerCustomer ?? current.maxPortraitRegensPerCustomer) || 5
       ),
-      monthlyAiBudgetAlertUsd: Math.max(
+      monthlyAiBudgetAlertGbp: Math.max(
         1,
-        Number(updates.monthlyAiBudgetAlertUsd ?? current.monthlyAiBudgetAlertUsd) || 50
+        Number(updates.monthlyAiBudgetAlertGbp ?? current.monthlyAiBudgetAlertGbp) || 40
       ),
       minRound3SolveRatePercent: Math.min(
         100,

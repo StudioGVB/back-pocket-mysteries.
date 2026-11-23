@@ -31,8 +31,12 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <main className="flex-grow ml-64 p-8">
-        <AdminHeader />
-        {children}
+        <Suspense fallback={<div className="h-16" />}>
+          <AdminHeader />
+        </Suspense>
+        <Suspense fallback={<div className="py-12" />}>
+          {children}
+        </Suspense>
       </main>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import Link from 'next/link';
 import { getAdminStats, getAiCosts, getLiveAiProviderStatus } from '../admin-data';
 
 export const unstable_instant = false;
@@ -60,9 +61,30 @@ function ImageSvgIcon({ className = 'w-3 h-3' }: { className?: string }) {
   );
 }
 
-export default async function CostsPage() {
+export default async function CostsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
+        <Link
+          href={`/${locale}/admin/balance-sheet`}
+          className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-gray-500 hover:text-brand-dark hover:bg-gray-50"
+        >
+          Balance Sheet &amp; P&amp;L
+        </Link>
+        <Link
+          href={`/${locale}/admin/costs`}
+          className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-brand-dark text-white shadow-sm"
+        >
+          AI Costs &amp; Billing
+        </Link>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">AI Cost Tracking</h1>

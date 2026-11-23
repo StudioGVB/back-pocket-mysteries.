@@ -1,10 +1,11 @@
-export type SupportedCurrency = 'USD' | 'AUD' | 'GBP' | 'EUR' | 'CAD';
+export type SupportedCurrency = 'GBP' | 'USD' | 'AUD' | 'EUR' | 'CAD';
 
 export interface PlatformSettings {
-  // 1. Storefront, Pricing & Announcements
-  basePackPriceUsd: number;
-  customBuilderPriceUsd: number;
-  bespokePartyPriceUsd: number;
+  // 1. Storefront, Pricing (GBP) & Announcements
+  basicTierPriceGbp: number;
+  premiumTierPriceGbp: number;
+  grandTierPriceGbp: number;
+  unlimitedPassPriceGbp: number;
   defaultCurrency: SupportedCurrency;
   first50WaitlistEnabled: boolean;
   first50VipCap: number;
@@ -33,7 +34,7 @@ export interface PlatformSettings {
   elevenLabsAudioEnabled: boolean;
   defaultNarratorVoiceStyle: string;
   maxPortraitRegensPerCustomer: number;
-  monthlyAiBudgetAlertUsd: number;
+  monthlyAiBudgetAlertGbp: number;
   requirePreLaunchQaCertification: boolean;
   minRound3SolveRatePercent: number;
 
@@ -80,16 +81,17 @@ export interface IntegrationHealthReport {
 }
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
-  // 1. Storefront, Pricing & Announcements
-  basePackPriceUsd: 19,
-  customBuilderPriceUsd: 35,
-  bespokePartyPriceUsd: 99,
-  defaultCurrency: 'USD',
+  // 1. Storefront, Pricing (GBP) & Announcements
+  basicTierPriceGbp: 15,
+  premiumTierPriceGbp: 20,
+  grandTierPriceGbp: 25,
+  unlimitedPassPriceGbp: 30,
+  defaultCurrency: 'GBP',
   first50WaitlistEnabled: true,
   first50VipCap: 50,
   announcementBannerEnabled: false,
   announcementBannerText:
-    '🎉 Hosting a dinner party soon? Get instant access to interactive murder mystery packs from $19!',
+    '🎉 Hosting a dinner party soon? Get instant access to interactive murder mystery packs from £15!',
   announcementBannerCtaLabel: 'Browse Mystery Packs →',
   announcementBannerCtaHref: '/en/themes',
   checkoutPaused: false,
@@ -114,7 +116,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   elevenLabsAudioEnabled: true,
   defaultNarratorVoiceStyle: 'Dramatic Detective Narrator',
   maxPortraitRegensPerCustomer: 5,
-  monthlyAiBudgetAlertUsd: 50,
+  monthlyAiBudgetAlertGbp: 40,
   requirePreLaunchQaCertification: true,
   minRound3SolveRatePercent: 100,
 
@@ -126,7 +128,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   linkedInMinWords: 600,
   linkedInMaxWords: 700,
   maxInstagramHashtags: 5,
-  defaultBlogToBuyCta: 'Host an interactive Back Pocket Mystery from $19 (~$2.50 per guest)',
+  defaultBlogToBuyCta: 'Host an interactive Back Pocket Mystery from £15 (~£2.00 per guest)',
   defaultEdmUtmCampaign: 'friday_weekly_digest',
 
   // 5. SEO, Metadata & Social Profiles
