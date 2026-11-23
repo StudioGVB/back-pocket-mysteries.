@@ -343,10 +343,13 @@ export default async function HomePage(props: {
       <InteractivePackPreview locale={locale} />
 
       {/* How It Works - High-Level 6-Step Flow */}
-      <section className="py-20 lg:py-28 bg-white">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-20 lg:py-28 bg-gradient-to-b from-white via-brand-gray/60 to-white relative overflow-hidden">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[850px] h-[400px] bg-gradient-to-tr from-brand-pink/10 via-brand-blue/10 to-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="container mx-auto px-6 max-w-6xl relative z-10">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink text-[11px] font-black uppercase tracking-[0.2em] mb-4">
+              <span className="w-2 h-2 rounded-full bg-brand-pink animate-ping" />
               How It Works · Start to Party Night
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-4 uppercase tracking-tight">
@@ -364,57 +367,107 @@ export default async function HomePage(props: {
                 tag: 'Before the Party',
                 title: 'Create Your Guests',
                 desc: 'Add your friends’ names, appearances (or snap a quick photo), accents, and real-life inside jokes so the mystery feels built for your crowd.',
+                numBg: 'bg-brand-pink text-white shadow-lg shadow-brand-pink/30',
+                tagBg: 'bg-brand-pink/10 text-brand-pink',
+                topBar: 'from-brand-pink via-fuchsia-500 to-rose-500',
+                isDark: false,
               },
               {
                 num: '02',
                 tag: 'Choose the Vibe',
                 title: 'Pick Your Theme',
                 desc: 'Choose a human-written mystery storyline, difficulty, and spice level — from work-friendly Clean mysteries to Spicy reality-TV drama.',
+                numBg: 'bg-brand-blue text-white shadow-lg shadow-brand-blue/30',
+                tagBg: 'bg-brand-blue/10 text-brand-blue',
+                topBar: 'from-brand-blue via-indigo-500 to-sky-400',
+                isDark: false,
               },
               {
                 num: '03',
                 tag: 'Match Your Crew',
                 title: 'Assign Your Cast',
                 desc: 'Match your friends to iconic character roles (or auto-cast them in 1 click). Smaller group? Use Hybrid Mode or a 100% Fictional Cast!',
+                numBg: 'bg-purple-600 text-white shadow-lg shadow-purple-600/30',
+                tagBg: 'bg-purple-100 text-purple-700',
+                topBar: 'from-purple-600 via-fuchsia-500 to-brand-pink',
+                isDark: false,
               },
               {
                 num: '04',
                 tag: 'Ready in ~20 Mins',
                 title: 'Generate Custom Clues',
                 desc: 'Our engine builds your pack with clues tailored to your specific guests — custom portraits, crime-scene CCTV photos, leaked DMs & voice wiretaps.',
+                numBg: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30',
+                tagBg: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                topBar: 'from-emerald-400 via-teal-500 to-cyan-500',
+                isDark: false,
               },
               {
                 num: '05',
                 tag: 'Build the Hype',
                 title: 'Send Character Invites',
                 desc: 'Send your friends their character outline and outfit & dress code guide before the night via a 1-click group chat link so everyone arrives in character.',
+                numBg: 'bg-amber-500 text-white shadow-lg shadow-amber-500/30',
+                tagBg: 'bg-amber-50 text-amber-700 border border-amber-200',
+                topBar: 'from-amber-400 via-orange-500 to-brand-pink',
+                isDark: false,
               },
               {
                 num: '06',
-                tag: 'Party Night',
+                tag: 'Party Night Finale',
                 title: 'Launch Live Game Mode',
                 desc: 'Open the Playroom on your laptop when everyone arrives. Guests join via QR code on their phones to get live clues & vote (and extra friends join as Detective [Name]!).',
+                numBg: 'bg-brand-pink text-white shadow-lg shadow-brand-pink/40',
+                tagBg: 'bg-brand-pink text-white',
+                topBar: 'from-brand-pink via-purple-500 to-amber-400',
+                isDark: true,
               },
-            ].map((step) => (
+            ].map((step, idx) => (
               <div
                 key={step.num}
-                className="card-branded p-8 border-2 border-gray-100 hover:border-brand-pink transition-all flex flex-col justify-between group"
+                className={`group rounded-[2.25rem] overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl flex flex-col justify-between ${
+                  step.isDark
+                    ? 'bg-brand-dark text-white border-2 border-brand-pink shadow-[0_20px_45px_-15px_rgba(254,4,198,0.35)]'
+                    : 'bg-white text-brand-dark border-2 border-gray-100 hover:border-brand-pink shadow-xl'
+                }`}
               >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-5xl font-black text-gray-100 group-hover:text-brand-pink/25 transition-colors leading-none">
-                      {step.num}
-                    </span>
-                    <span className="px-3.5 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
-                      {step.tag}
-                    </span>
+                <div className={`h-2 w-full bg-gradient-to-r ${step.topBar}`} />
+                <div className="p-8 space-y-5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-12 h-12 rounded-2xl font-black text-lg flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 ${step.numBg}`}
+                        >
+                          {step.num}
+                        </span>
+                        {idx < 5 && (
+                          <span className="text-xs font-black text-gray-300 group-hover:text-brand-pink group-hover:translate-x-1 transition-all">
+                            →
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={`px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${step.tagBg}`}
+                      >
+                        {step.tag}
+                      </span>
+                    </div>
+                    <h3
+                      className={`text-2xl font-black uppercase tracking-tight ${
+                        step.isDark ? 'text-white' : 'text-brand-dark'
+                      }`}
+                    >
+                      {step.title}
+                    </h3>
+                    <p
+                      className={`text-sm font-semibold leading-relaxed ${
+                        step.isDark ? 'text-gray-300' : 'text-gray-500'
+                      }`}
+                    >
+                      {step.desc}
+                    </p>
                   </div>
-                  <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 font-semibold leading-relaxed">
-                    {step.desc}
-                  </p>
                 </div>
               </div>
             ))}
@@ -423,10 +476,10 @@ export default async function HomePage(props: {
           <div className="text-center mt-14">
             <Link
               href={`/${locale}/how-it-works`}
-              className="inline-flex items-center gap-3 text-brand-pink font-black uppercase tracking-widest text-sm hover:gap-5 transition-all"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-brand-pink text-white font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-xl hover:-translate-y-1"
             >
               {dict.home.steps.cta}
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </Link>
