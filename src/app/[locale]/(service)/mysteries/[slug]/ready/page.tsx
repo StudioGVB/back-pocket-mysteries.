@@ -1,29 +1,20 @@
-import React from 'react';
-import CustomerMysteryCastPage from '../cast/page';
+import { redirect } from 'next/navigation';
 
 export const unstable_instant = false;
 
-export default async function CustomerMysteryReadyPage({
+export default async function CustomerMysteryReadyRedirectPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
-  searchParams: Promise<{
-    checkout?: string;
-    orderId?: string;
-    payment_intent?: string;
-    session_id?: string;
-    view?: string;
-  }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  const { locale, slug } = await params;
   const resolvedSearch = await searchParams;
-  return (
-    <CustomerMysteryCastPage
-      params={params}
-      searchParams={Promise.resolve({
-        ...resolvedSearch,
-        view: resolvedSearch?.view || 'ready',
-      })}
-    />
-  );
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(resolvedSearch || {})) {
+    if (v) query.set(k, v);
+  }
+  const qs = query.toString();
+  redirect(`/${locale}/account/orders/${slug}${qs ? `?${qs}` : ''}`);
 }

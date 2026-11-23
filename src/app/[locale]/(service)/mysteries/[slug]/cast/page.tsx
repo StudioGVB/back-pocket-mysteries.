@@ -410,6 +410,7 @@ export default async function CustomerMysteryCastPage({
       tier,
     });
     verifiedFromRedirect = Boolean(confirmRes.verified);
+    redirect(`/${locale}/account/orders`);
   }
 
   const userPaidStoreIds = new Set(getPaidMysteryIdsForUserInStore(user.id, user.email));

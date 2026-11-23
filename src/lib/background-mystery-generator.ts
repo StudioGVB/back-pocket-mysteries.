@@ -33,7 +33,7 @@ const GENERATION_STEPS = [
   { threshold: 0.6, label: 'Placing characters into visual clues, CCTV & crime scene photos...' },
   { threshold: 0.85, label: 'Synthesizing custom voice memos, accents & round evidence...' },
   { threshold: 0.95, label: 'Running automated AI QA Critic on character portraits, visual clues & audio...' },
-  { threshold: 0.99, label: 'Finalizing Pre-Party Host Hub, guest links & 6-digit Game PIN...' },
+  { threshold: 0.99, label: 'Finalizing Pre-Party Host Hub, character dossiers & guest invite links...' },
 ];
 
 export function computeLiveGenerationState(session: StoredGameSession | null): {

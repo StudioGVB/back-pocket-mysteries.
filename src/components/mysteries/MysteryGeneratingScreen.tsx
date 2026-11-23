@@ -337,7 +337,7 @@ export default function MysteryGeneratingScreen({
             {status === 'ready' ? (
               <>
                 <Link
-                  href={`/${locale}/mysteries/${slug}/ready`}
+                  href={`/${locale}/account/orders/${mysteryId || slug}`}
                   className="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white text-center transition-all shadow-xl hover:opacity-95"
                   style={{
                     background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
