@@ -17,6 +17,7 @@ import {
   saveDiscountAction,
   toggleDiscountActiveAction,
   deleteDiscountAction,
+  generateBatchSingleUseCodesAction,
 } from '@/app/actions/discounts';
 
 interface DiscountsManagerClientProps {
@@ -383,6 +384,30 @@ export default function DiscountsManagerClient({
     );
   };
 
+  const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
+
+  const dailyRotatingRecord = useMemo(
+    () => discounts.find((d) => d.id === 'bpmfree100-master-pass'),
+    [discounts]
+  );
+
+  const handleGenerateBatchVipCodes = async (count = 10) => {
+    setIsGeneratingBatch(true);
+    try {
+      const res = await generateBatchSingleUseCodesAction({
+        count,
+        discountPercent: 100,
+        prefix: 'VIP100',
+        batchLabel: 'Single-Use VIP 100% Off Pass',
+      });
+      if (res.success && res.discounts) {
+        setDiscounts((prev) => [...res.discounts!, ...prev]);
+      }
+    } finally {
+      setIsGeneratingBatch(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -416,6 +441,53 @@ export default function DiscountsManagerClient({
           </svg>
           Create Discount
         </button>
+      </div>
+
+      {/* Anti-Honey Protection: Daily Rotating 100% Off Master Pass + Single-Use Custom VIP Batch Generator */}
+      <div className="bg-[#070b13] text-white rounded-3xl p-6 sm:p-7 border border-white/10 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="space-y-2 max-w-2xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+              🛡️ Honey-Proof Protection Active
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+              Auto-Rotates Daily at 00:00 UTC
+            </span>
+          </div>
+          <h2 className="text-xl font-black tracking-tight text-white">
+            Today&apos;s Daily Rotating 100%-Off Master Pass:{' '}
+            <span className="font-mono text-brand-pink">
+              {dailyRotatingRecord?.code || 'BPM100-ACTIVE'}
+            </span>
+          </h2>
+          <p className="text-xs text-slate-300 font-medium leading-relaxed">
+            Your 100%-off admin/testing code automatically rotates every 24 hours so coupon extensions like Honey can never leak a permanent free code. For your <strong>First 50 VIP Signups</strong>, each subscriber receives a unique, single-use (1 redemption max), email-locked <code className="text-emerald-400 font-mono">VIP50-XX-XXXX</code> code in <strong>Newsletter &amp; VIP Leads</strong>.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {dailyRotatingRecord?.code && (
+            <button
+              type="button"
+              onClick={() => handleCopyCode(dailyRotatingRecord.code!, 'daily-master-100')}
+              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+            >
+              {copiedCodeId === 'daily-master-100'
+                ? '✓ Copied Today’s Code!'
+                : `📋 Copy ${dailyRotatingRecord.code}`}
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={isGeneratingBatch}
+            onClick={() => handleGenerateBatchVipCodes(10)}
+            className="px-5 py-3 rounded-2xl bg-brand-pink hover:opacity-95 disabled:opacity-50 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg cursor-pointer"
+          >
+            {isGeneratingBatch
+              ? 'Generating 10 Unique Codes...'
+              : '⚡ Generate 10 Single-Use 100% VIP Codes'}
+          </button>
+        </div>
       </div>
 
       {/* Summary Stats Cards */}

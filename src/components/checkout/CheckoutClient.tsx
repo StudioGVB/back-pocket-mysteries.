@@ -51,10 +51,11 @@ const STRIPE_ELEMENT_OPTIONS = {
 
 function InstantCheckoutForm({
   mysteryId,
-   mysteryTitle,
+  mysteryTitle,
   slug,
   locale,
   orderId,
+  promoCode,
   tier,
   currency,
   totalCost,
@@ -69,6 +70,7 @@ function InstantCheckoutForm({
   slug: string
   locale: Locale
   orderId?: string
+  promoCode?: string
   tier: PriceTierKey
   currency: string
   totalCost: number
@@ -163,6 +165,7 @@ function InstantCheckoutForm({
             slug,
             orderId: resolvedOrderId || orderId,
             paymentIntentId: paymentIntent.id,
+            promoCode,
             tier,
             amount: totalCost,
             currency,
@@ -183,7 +186,7 @@ function InstantCheckoutForm({
     return () => {
       mounted = false
     }
-  }, [stripe, currency, totalCost, mysteryTitle, mysteryId, slug, locale, orderId, tier, ensureClientSecret, router])
+  }, [stripe, currency, totalCost, mysteryTitle, mysteryId, slug, locale, orderId, promoCode, tier, ensureClientSecret, router])
 
   const handleCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -220,6 +223,7 @@ function InstantCheckoutForm({
           slug,
           orderId: resolvedOrderId || orderId,
           paymentIntentId: result.paymentIntent.id,
+          promoCode,
           tier,
           amount: totalCost,
           currency,
@@ -717,9 +721,15 @@ export default function CheckoutClient({
                   </span>
                 )}
               </div>
-              <form onSubmit={handleApplyPromo} className="flex items-center gap-2">
+              <form onSubmit={handleApplyPromo} autoComplete="off" className="flex items-center gap-2">
                 <input
                   type="text"
+                  name="bpm_v_token"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
+                  spellCheck={false}
                   value={promoInput}
                   onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
                   placeholder="Enter promo or gift code"
@@ -776,6 +786,7 @@ export default function CheckoutClient({
                   slug={targetSlug}
                   locale={locale}
                   orderId={orderId}
+                  promoCode={appliedPromoCode}
                   tier={activeTier}
                   currency={activeCurrency}
                   totalCost={totalCost}
@@ -953,9 +964,15 @@ export default function CheckoutClient({
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Promo or Gift Code
               </label>
-              <form onSubmit={handleApplyPromo} className="flex items-center gap-2">
+              <form onSubmit={handleApplyPromo} autoComplete="off" className="flex items-center gap-2">
                 <input
                   type="text"
+                  name="bpm_v_token_summary"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
+                  spellCheck={false}
                   value={promoInput}
                   onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
                   placeholder="Enter promo or gift code"

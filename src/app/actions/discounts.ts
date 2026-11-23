@@ -2,6 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
 import {
@@ -22,6 +23,44 @@ interface DiscountStoreData {
 const STORE_FILENAME = '.discounts-store.json';
 const STORAGE_DISCOUNTS_PATH = 'system/discounts-store.json';
 
+/**
+ * Generates a deterministic, cryptographic 100%-Off code that rotates automatically every day at 00:00 UTC.
+ * Example format: "BPM100-7F9A2C"
+ * Because it rotates every 24 hours, even if a browser extension like Honey scrapes it during a test,
+ * the scraped code automatically expires at midnight UTC.
+ */
+function computeDailyRotating100CodeForDate(date: Date = new Date()): string {
+  const yyyy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const dateKey = `${yyyy}-${mm}-${dd}`;
+  const secret =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.STRIPE_SECRET_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    'bpm-daily-rotating-master-secret-2026';
+  const digest = crypto
+    .createHmac('sha256', secret)
+    .update(`bpm-daily-100-off:${dateKey}`)
+    .digest('hex')
+    .toUpperCase()
+    .slice(0, 6);
+  return `BPM100-${digest}`;
+}
+
+function getUtcDayBounds(date: Date = new Date()): { startIso: string; endIso: string } {
+  const start = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0)
+  );
+  const end = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999)
+  );
+  return {
+    startIso: start.toISOString(),
+    endIso: end.toISOString(),
+  };
+}
+
 function getStorePath(): string {
   const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), STORE_FILENAME);
   try {
@@ -35,67 +74,32 @@ function getStorePath(): string {
 function getDefaultSeedDiscounts(): Record<string, DiscountRecord> {
   const now = new Date();
   const start = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const { startIso: todayStart, endIso: todayEnd } = getUtcDayBounds(now);
+  const todayRotatingCode = computeDailyRotating100CodeForDate(now);
+
   return {
-    'founders50-vip-100': {
-      id: 'founders50-vip-100',
-      name: 'First 50 VIP Founding Host Pass (100% Off)',
-      code: 'FOUNDERS50',
-      auto_apply: false,
-      discount_type: 'percentage',
-      discount_value: 100,
-      applies_to: 'all',
-      target_packages: [],
-      target_mysteries: [],
-      starts_at: start,
-      ends_at: null,
-      usage_limit: 'max_uses',
-      max_uses: 50,
-      times_used: 0,
-      is_active: true,
-      created_at: start,
-      updated_at: start,
-    },
     'bpmfree100-master-pass': {
       id: 'bpmfree100-master-pass',
-      name: 'Founder & Builder 100% Off Master Pass',
-      code: 'BPMFREE100',
+      name: 'Daily Rotating 100% Off Master Pass (Auto-Rotates at 00:00 UTC)',
+      code: todayRotatingCode,
       auto_apply: false,
       discount_type: 'percentage',
       discount_value: 100,
       applies_to: 'all',
       target_packages: [],
       target_mysteries: [],
-      starts_at: start,
-      ends_at: null,
+      starts_at: todayStart,
+      ends_at: todayEnd,
       usage_limit: 'unlimited',
       max_uses: null,
       times_used: 0,
       is_active: true,
       created_at: start,
-      updated_at: start,
-    },
-    'early20-default-seed': {
-      id: 'early20-default-seed',
-      name: 'Early Bird Newsletter Welcome',
-      code: 'EARLY20-MOCK',
-      auto_apply: false,
-      discount_type: 'percentage',
-      discount_value: 20,
-      applies_to: 'all',
-      target_packages: [],
-      target_mysteries: [],
-      starts_at: start,
-      ends_at: null,
-      usage_limit: 'one_per_customer',
-      max_uses: null,
-      times_used: 0,
-      is_active: true,
-      created_at: start,
-      updated_at: start,
+      updated_at: now.toISOString(),
     },
     'early20-clean-seed': {
       id: 'early20-clean-seed',
-      name: 'Early Bird 20% Off',
+      name: 'Early Bird 20% Off (Limit 1 Per Customer)',
       code: 'EARLY20',
       auto_apply: false,
       discount_type: 'percentage',
@@ -122,9 +126,21 @@ function readLocalStore(): DiscountStoreData {
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(raw);
+      const mergedDiscounts: Record<string, DiscountRecord> = {
+        ...seeds,
+        ...(parsed.discounts || {}),
+      };
+      // Retire old static multi-use 100%-off codes ('founders50-vip-100' / static 'BPMFREE100')
+      // and always keep 'bpmfree100-master-pass' synced to today's daily rotating code
+      delete mergedDiscounts['founders50-vip-100'];
+      mergedDiscounts['bpmfree100-master-pass'] = {
+        ...seeds['bpmfree100-master-pass'],
+        times_used: mergedDiscounts['bpmfree100-master-pass']?.times_used || 0,
+        is_active: mergedDiscounts['bpmfree100-master-pass']?.is_active ?? true,
+      };
       return {
         initialized: Boolean(parsed.initialized),
-        discounts: { ...seeds, ...(parsed.discounts || {}) },
+        discounts: mergedDiscounts,
         deletedIds: Array.isArray(parsed.deletedIds) ? parsed.deletedIds : [],
       };
     }
@@ -580,13 +596,54 @@ export async function validatePromoCodeAction(params: {
     return { valid: true, discount: virtualDiscount };
   }
 
-  // 2. Check standard Discounts Store
+  // 2. Check Daily Rotating 100%-Off Master Pass (today's UTC code + 2-hour midnight UTC grace window)
+  const now = new Date();
+  const todayRotatingCode = computeDailyRotating100CodeForDate(now);
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const yesterdayRotatingCode = computeDailyRotating100CodeForDate(yesterday);
+  const isGraceYesterday = now.getUTCHours() < 2 && cleanCode === yesterdayRotatingCode;
+
+  if (
+    cleanCode === 'BPMFREE100' ||
+    cleanCode === 'FOUNDERS50' ||
+    (cleanCode.startsWith('BPM100-') && cleanCode !== todayRotatingCode && !isGraceYesterday)
+  ) {
+    return {
+      valid: false,
+      error:
+        'This 100%-off code has rotated or expired. Please use your personal single-use VIP code or today\'s active rotating code.',
+    };
+  }
+
+  // 3. Check standard Discounts Store
   const all = await loadAllDiscountsInternal();
   let match = all.find((d) => d.code && d.code.toUpperCase() === cleanCode);
 
-  // 2B. If not in local/storage discounts store yet (e.g. cold serverless instance on Vercel)
-  // and code starts with VIP50-, verify directly against the First 50 VIP Leads store / Resend Cloud Audience!
-  if (!match && cleanCode.startsWith('VIP50-')) {
+  if (!match && (cleanCode === todayRotatingCode || isGraceYesterday)) {
+    const { startIso, endIso } = getUtcDayBounds(now);
+    match = {
+      id: 'bpmfree100-master-pass',
+      name: 'Daily Rotating 100% Off Master Pass',
+      code: cleanCode,
+      auto_apply: false,
+      discount_type: 'percentage',
+      discount_value: 100,
+      applies_to: 'all',
+      target_packages: [],
+      target_mysteries: [],
+      starts_at: startIso,
+      ends_at: endIso,
+      usage_limit: 'unlimited',
+      max_uses: null,
+      times_used: 0,
+      is_active: true,
+      created_at: startIso,
+      updated_at: now.toISOString(),
+    };
+  }
+
+  // 3B. Verify First 50 VIP codes (`VIP50-XX-XXXX`): single-use (`max_uses: 1`) + locked to the VIP subscriber's email
+  if (cleanCode.startsWith('VIP50-')) {
     try {
       const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
       const allLeads = await getAllMarketingLeadsAction();
@@ -594,26 +651,51 @@ export async function validatePromoCodeAction(params: {
         (l) => l.free_mystery_code && l.free_mystery_code.toUpperCase() === cleanCode
       );
       if (leadWithCode) {
-        const nowIso = new Date().toISOString();
-        match = {
-          id: `vip50-${leadWithCode.vip_rank}`,
-          name: `First 50 VIP Free Mystery (#${leadWithCode.vip_rank} - ${leadWithCode.full_name || leadWithCode.email})`,
-          code: cleanCode,
-          auto_apply: false,
-          discount_type: 'percentage',
-          discount_value: 100,
-          applies_to: 'all',
-          target_packages: [],
-          target_mysteries: [],
-          starts_at: leadWithCode.created_at || nowIso,
-          ends_at: null,
-          usage_limit: 'max_uses',
-          max_uses: 1,
-          times_used: 0,
-          is_active: true,
-          created_at: leadWithCode.created_at || nowIso,
-          updated_at: nowIso,
-        };
+        const cleanCurrentEmail = (currentUserEmail || '').trim().toLowerCase();
+        const isAdminTester =
+          cleanCurrentEmail === 'hello@studiogvb.com' ||
+          cleanCurrentEmail === 'hello@backpocketgames.com';
+        if (
+          cleanCurrentEmail &&
+          !isAdminTester &&
+          leadWithCode.email &&
+          cleanCurrentEmail !== leadWithCode.email.trim().toLowerCase()
+        ) {
+          return {
+            valid: false,
+            error: `This single-use VIP Founding Host code is locked to the email address that claimed VIP Spot #${leadWithCode.vip_rank}.`,
+          };
+        }
+
+        if (!match) {
+          const nowIso = new Date().toISOString();
+          match = {
+            id: `vip50-${leadWithCode.vip_rank}`,
+            name: `First 50 VIP Free Mystery (#${leadWithCode.vip_rank} - ${leadWithCode.full_name || leadWithCode.email})`,
+            code: cleanCode,
+            auto_apply: false,
+            discount_type: 'percentage',
+            discount_value: 100,
+            applies_to: 'all',
+            target_packages: [],
+            target_mysteries: [],
+            starts_at: leadWithCode.created_at || nowIso,
+            ends_at: null,
+            usage_limit: 'max_uses',
+            max_uses: 1,
+            times_used: 0,
+            is_active: true,
+            created_at: leadWithCode.created_at || nowIso,
+            updated_at: nowIso,
+          };
+        } else {
+          // Force strict single-use on all VIP50 codes even if edited
+          match = {
+            ...match,
+            usage_limit: 'max_uses',
+            max_uses: 1,
+          };
+        }
       }
     } catch {
       // ignore
@@ -641,7 +723,7 @@ export async function validatePromoCodeAction(params: {
     return { valid: false, error: 'This discount code has expired.' };
   }
 
-  // 3. Enforce per-customer & max_uses anti-abuse limits
+  // 4. Enforce per-customer & max_uses anti-abuse limits
   const usageCheck = await checkPromoUsageAbuse({
     code: cleanCode,
     usageLimit: match.usage_limit,
@@ -670,4 +752,80 @@ export async function validatePromoCodeAction(params: {
 
   return { valid: true, discount: match };
 }
+
+/**
+ * Admin Action: Generates a batch of unique, single-use (`max_uses: 1`) custom codes
+ * (e.g. for VIPs, creators, or giveaways) so codes can never be spammed or shared on Honey.
+ */
+export async function generateBatchSingleUseCodesAction(params: {
+  count: number;
+  discountPercent?: number;
+  prefix?: string;
+  batchLabel?: string;
+}): Promise<{
+  success: boolean;
+  codes?: string[];
+  discounts?: DiscountRecord[];
+  error?: string;
+}> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
+  const count = Math.min(50, Math.max(1, Number(params.count) || 10));
+  const discountValue = Math.min(100, Math.max(5, Number(params.discountPercent) || 100));
+  const cleanPrefix =
+    (params.prefix || 'VIP')
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 8) || 'VIP';
+  const batchLabel = (params.batchLabel || `${discountValue}% Off Single-Use VIP Pass`).trim();
+
+  const local = readLocalStore();
+  const nowIso = new Date().toISOString();
+  const createdDiscounts: DiscountRecord[] = [];
+  const createdCodes: string[] = [];
+
+  for (let i = 1; i <= count; i++) {
+    const randHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const numTag = String(i).padStart(2, '0');
+    const uniqueCode = `${cleanPrefix}-${numTag}-${randHex}`;
+    const id = `single-${Date.now()}-${i}-${randHex.toLowerCase()}`;
+
+    const rec: DiscountRecord = {
+      id,
+      name: `${batchLabel} (#${numTag})`,
+      code: uniqueCode,
+      auto_apply: false,
+      discount_type: 'percentage',
+      discount_value: discountValue,
+      applies_to: 'all',
+      target_packages: [],
+      target_mysteries: [],
+      starts_at: nowIso,
+      ends_at: null,
+      usage_limit: 'max_uses',
+      max_uses: 1,
+      times_used: 0,
+      is_active: true,
+      created_at: nowIso,
+      updated_at: nowIso,
+    };
+
+    local.discounts[id] = rec;
+    createdDiscounts.push(rec);
+    createdCodes.push(uniqueCode);
+  }
+
+  writeLocalStore(local);
+  await syncDiscountsStoreToStorage(local);
+  revalidatePath('/', 'layout');
+
+  return {
+    success: true,
+    codes: createdCodes,
+    discounts: createdDiscounts,
+  };
+}
+
 
