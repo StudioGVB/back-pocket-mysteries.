@@ -168,10 +168,19 @@ async function ProfileContent({
     profile: c.profiles,
   }));
 
+  const resolvedHostName =
+    profile?.full_name?.trim() ||
+    user.user_metadata?.full_name?.trim() ||
+    (user.id === '4903bd39-e54f-42e4-b679-2af5d128bb8f' ||
+    String(user.email || '').toLowerCase().includes('studiogvb') ||
+    String(user.email || '').toLowerCase().includes('gabriella')
+      ? 'Gabriella Blyth'
+      : user.email?.split('@')[0] || 'Gabriella Blyth');
+
   return (
     <ProfileAndGuestsClient
       user={{
-        name: user.user_metadata?.full_name ?? '',
+        name: resolvedHostName,
         email: user.email ?? '',
       }}
       profile={profile ?? null}

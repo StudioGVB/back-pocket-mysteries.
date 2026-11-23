@@ -950,7 +950,7 @@ export async function generateStandardCharacterPhotoAction(
       ? {
           ...dbCharData,
           profile_data: {
-            ...(dbCharData.profile_data || {}),
+            ...((dbCharData.profile_data as Record<string, any>) || {}),
             ...(cachedChar?.profile_data || {}),
           },
         }

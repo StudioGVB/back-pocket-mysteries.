@@ -248,7 +248,7 @@ export function CharacterCard({ character, mysteryId, allCharacters, guests }: C
                   const isCastElsewhere = allCharacters.some(c => c.id !== character.id && (c.profile_data as any)?.guest_id === g.id);
                   return (
                     <option key={g.id} value={g.id}>
-                      {g.name} ({g.gender}){isCastElsewhere ? ' [Busy]' : ''}
+                      {g.isHost ? `👑 ${g.name} [Host]` : g.name} ({g.gender}){isCastElsewhere ? ' [Busy]' : ''}
                     </option>
                   );
                 })}

@@ -4,11 +4,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GuestModal } from '@/components/account/GuestModal';
+import ProfileClient from '@/app/[locale]/(service)/account/profile/ProfileClient';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import { Locale } from '@/lib/i18n-config';
 import { getTierForPlayerCount, PLAYER_TIER_LIMITS } from '@/utils/localization';
-import { resolveDisplayAvatarUrl } from '@/utils/avatar';
+import { resolveDisplayAvatarUrl, buildAvatarUrl } from '@/utils/avatar';
 import { saveGuestAction } from '@/app/actions/guests';
 import { saveCustomerCastAction } from '@/app/actions/customer-mystery';
 import MysteryReadyHub from '@/components/mysteries/MysteryReadyHub';
@@ -25,6 +26,7 @@ interface GuestItem {
   traits?: string[];
   bio?: string;
   isLinked?: boolean;
+  isHost?: boolean;
 }
 
 interface CharacterItem {
@@ -72,6 +74,8 @@ interface CustomerCastClientProps {
   } | null;
   tier?: 'basic' | 'premium' | 'grand';
   initialViewMode?: 'cast' | 'generating' | 'ready';
+  hostProfile?: any;
+  hostUser?: { name: string; email: string };
 }
 
 function normalizeGender(g?: string | null): 'male' | 'female' | 'adaptable' {
@@ -141,10 +145,14 @@ export default function CustomerCastClient({
   initialGenerationState = null,
   tier = 'basic',
   initialViewMode = 'cast',
+  hostProfile: initialHostProfile = null,
+  hostUser = { name: 'Gabriella Blyth', email: '' },
 }: CustomerCastClientProps) {
   const router = useRouter();
   const [guests, setGuests] = useState<GuestItem[]>(initialGuests);
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [isHostProfileModalOpen, setIsHostProfileModalOpen] = useState(false);
+  const [liveHostProfile, setLiveHostProfile] = useState<any>(initialHostProfile);
   const [viewMode, setViewMode] = useState<'cast' | 'generating' | 'ready'>(
     initialViewMode
   );
@@ -161,16 +169,22 @@ export default function CustomerCastClient({
   const [playMode, setPlayMode] = useState<'party' | 'casefile'>('party');
 
   // 1. Attending Guests / Selected Profiles (In or Out, minimum 5 characters for the story)
+  // Ensure the Host is included at the front by default
   const [attendingGuestIds, setAttendingGuestIds] = useState<string[]>(() => {
-    // Check if characters already have assigned guests
+    const hostGuest = initialGuests.find(g => g.isHost);
     const preAssignedIds = characters
       .map(c => c.initialGuestId)
       .filter((id): id is string => Boolean(id) && initialGuests.some(g => g.id === id));
 
     if (preAssignedIds.length >= minRoles) {
-      return Array.from(new Set(preAssignedIds)).slice(0, maxRoles);
+      const uniqueAssigned = Array.from(new Set(preAssignedIds));
+      if (hostGuest && !uniqueAssigned.includes(hostGuest.id)) {
+        return [hostGuest.id, ...uniqueAssigned.slice(0, maxRoles - 1)];
+      }
+      return uniqueAssigned.slice(0, maxRoles);
     }
-    return initialGuests.slice(0, Math.min(initialGuests.length, Math.max(minRoles, 6), maxRoles)).map(g => g.id);
+    const defaultCount = Math.min(initialGuests.length, Math.max(minRoles, 6), maxRoles);
+    return initialGuests.slice(0, defaultCount).map(g => g.id);
   });
 
   // Identify Victim character vs all other characters
@@ -203,42 +217,55 @@ export default function CustomerCastClient({
     return shuffleArray(combined, 1);
   }, [nonVictimCharacters, attendingGuestIds.length]);
 
-  // Assignments map: characterId -> guestId
+  // Assignments map: characterId -> guestId (strictly synced with attendingGuestIds)
   const [assignments, setAssignments] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     const usedGuests = new Set<string>();
+    const attendingSet = new Set(attendingGuestIds);
 
-    // First honor any existing assignments
+    // 1. Honor existing assignments that are in attendingGuestIds
     for (const c of characters) {
-      if (c.initialGuestId && initialGuests.some(g => g.id === c.initialGuestId)) {
+      if (
+        c.initialGuestId &&
+        attendingSet.has(c.initialGuestId) &&
+        !usedGuests.has(c.initialGuestId)
+      ) {
         map[c.id] = c.initialGuestId;
         usedGuests.add(c.initialGuestId);
       }
     }
 
-    // If none assigned, run initial smart sort
-    if (Object.keys(map).length === 0 && initialGuests.length > 0 && victimCharacter) {
-      const pool = initialGuests.slice(0, Math.min(initialGuests.length, maxRoles));
-      const available = [...pool];
+    // 2. Fill any remaining active characters with unassigned attending guests (such as the Host)
+    const remainingAttending = initialGuests.filter(
+      g => attendingSet.has(g.id) && !usedGuests.has(g.id)
+    );
 
-      // Match victim gender first if possible
-      const vGender = normalizeGender(victimCharacter.gender);
-      let vIdx =
-        vGender !== 'adaptable'
-          ? available.findIndex(g => normalizeGender(g.gender) === vGender)
-          : 0;
-      if (vIdx === -1) vIdx = 0;
-      if (available[vIdx]) {
-        map[victimCharacter.id] = available[vIdx].id;
-        available.splice(vIdx, 1);
+    if (remainingAttending.length > 0 && victimCharacter) {
+      const available = [...remainingAttending];
+
+      if (!map[victimCharacter.id] && available.length > 0) {
+        const vGender = normalizeGender(victimCharacter.gender);
+        let vIdx =
+          vGender !== 'adaptable'
+            ? available.findIndex(g => normalizeGender(g.gender) === vGender)
+            : 0;
+        if (vIdx === -1) vIdx = 0;
+        if (available[vIdx]) {
+          map[victimCharacter.id] = available[vIdx].id;
+          available.splice(vIdx, 1);
+        }
       }
 
-      // Match remaining suspects
       const mandatoryPool = nonVictimCharacters.filter(c => c.is_mandatory);
       const optionalPool = nonVictimCharacters.filter(c => !c.is_mandatory);
-      const activePool = [...mandatoryPool, ...optionalPool].slice(0, available.length);
+      const targetSuspectCount = Math.max(
+        0,
+        Math.min(attendingGuestIds.length - 1, nonVictimCharacters.length)
+      );
+      const activePool = [...mandatoryPool, ...optionalPool].slice(0, targetSuspectCount);
 
       for (const char of activePool) {
+        if (map[char.id] || available.length === 0) continue;
         const cGender = normalizeGender(char.gender);
         let idx =
           cGender !== 'adaptable'
@@ -285,7 +312,7 @@ export default function CustomerCastClient({
     [guests, attendingGuestIds]
   );
 
-  // Toggle a guest In or Out
+  // Toggle a guest In or Out (if at maxRoles and clicking an OUT guest, swap out the last selected non-host guest)
   const handleToggleGuestAttendance = (guestId: string) => {
     setLockedSession(null);
     setAttendingGuestIds(prev => {
@@ -296,9 +323,16 @@ export default function CustomerCastClient({
         nextIds = prev.filter(id => id !== guestId);
       } else {
         if (prev.length >= maxRoles) {
-          return prev; // At character limit
+          const hostObj = guests.find(g => g.isHost);
+          const removableIds = prev.filter(id => id !== hostObj?.id);
+          const idToDrop =
+            removableIds.length > 0
+              ? removableIds[removableIds.length - 1]
+              : prev[prev.length - 1];
+          nextIds = [...prev.filter(id => id !== idToDrop), guestId];
+        } else {
+          nextIds = [...prev, guestId];
         }
-        nextIds = [...prev, guestId];
       }
 
       // Reconcile assignments with the updated attending guest list
@@ -380,22 +414,43 @@ export default function CustomerCastClient({
     reconcileAssignments(attendingGuests, nextSeed);
   };
 
-  // Assign a guest to a character (with swap logic if that guest was already assigned elsewhere)
+  // Assign a guest to a character (with swap logic if that guest was already assigned elsewhere, and auto-add if they were OUT)
   const commitAssignment = (characterId: string, newGuestId: string) => {
     setLockedSession(null);
+    const previousGuestOnTarget = assignments[characterId];
+
+    if (newGuestId && !attendingGuestIds.includes(newGuestId)) {
+      setAttendingGuestIds(prev => {
+        if (prev.includes(newGuestId)) return prev;
+        if (prev.length >= maxRoles) {
+          const dropId =
+            previousGuestOnTarget && prev.includes(previousGuestOnTarget)
+              ? previousGuestOnTarget
+              : prev[prev.length - 1];
+          return [...prev.filter(id => id !== dropId), newGuestId];
+        }
+        return [...prev, newGuestId];
+      });
+    }
+
     setAssignments(prev => {
       const next = { ...prev };
-      const previousGuestOnTarget = next[characterId];
+      const prevGuest = next[characterId];
 
       // Find if newGuestId is already assigned to another active character
       const otherCharId = Object.keys(next).find(
         cId => cId !== characterId && next[cId] === newGuestId
       );
 
+      if (!newGuestId) {
+        delete next[characterId];
+        return next;
+      }
+
       next[characterId] = newGuestId;
       if (otherCharId) {
-        if (previousGuestOnTarget) {
-          next[otherCharId] = previousGuestOnTarget;
+        if (prevGuest) {
+          next[otherCharId] = prevGuest;
         } else {
           delete next[otherCharId];
         }
@@ -740,6 +795,13 @@ export default function CustomerCastClient({
             )}
             <button
               type="button"
+              onClick={() => setIsHostProfileModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-brand-pink/10 border border-brand-pink/30 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-colors cursor-pointer"
+            >
+              👑 View / Edit Host Profile
+            </button>
+            <button
+              type="button"
               onClick={() => setIsGuestModalOpen(true)}
               className="px-4 py-2.5 rounded-xl border-2 border-dashed border-brand-pink/40 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink/5 transition-colors cursor-pointer"
             >
@@ -747,6 +809,86 @@ export default function CustomerCastClient({
             </button>
           </div>
         </div>
+
+        {/* Dedicated Host Profile Spotlight Banner */}
+        {(() => {
+          const hostGuest = guests.find(g => g.isHost);
+          if (!hostGuest) return null;
+          const isHostIn = attendingGuestIds.includes(hostGuest.id);
+          const hostAvatar = resolveDisplayAvatarUrl(hostGuest.avatar_url);
+          const hostGenderBadge = formatGenderLabel(hostGuest.gender);
+          const assignedCharId = Object.keys(assignments).find(
+            cId => assignments[cId] === hostGuest.id
+          );
+          const assignedChar = characters.find(c => c.id === assignedCharId);
+
+          return (
+            <div className="p-5 sm:p-6 rounded-3xl border-2 border-brand-pink/30 bg-gradient-to-r from-brand-pink/5 via-white to-brand-pink/5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-start sm:items-center gap-4 min-w-0">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border-2 border-brand-pink/40 shadow-md">
+                  {hostAvatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={hostAvatar}
+                      alt={hostGuest.name}
+                      className="w-full h-full object-cover object-top"
+                    />
+                  ) : (
+                    <span className="text-3xl">👑</span>
+                  )}
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                      👑 Host Profile (You)
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-wider">
+                      {hostGenderBadge.shortLabel}
+                    </span>
+                    {assignedChar && isHostIn && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-wider">
+                        🎭 Cast as {assignedChar.roleTitle}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 truncate">
+                    {hostGuest.name}
+                  </h3>
+                  {hostGuest.bio ? (
+                    <p className="text-xs text-slate-600 font-medium line-clamp-2 max-w-2xl">
+                      {hostGuest.bio}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">
+                      Click &ldquo;View / Edit Host Profile&rdquo; to customize your bio, pronouns, and avatar.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsHostProfileModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-brand-pink text-slate-700 hover:text-brand-pink text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+                >
+                  ✎ View / Edit Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleGuestAttendance(hostGuest.id)}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer shadow-sm ${
+                    isHostIn
+                      ? 'bg-brand-pink text-white hover:opacity-95'
+                      : 'bg-slate-900 text-white hover:bg-brand-pink'
+                  }`}
+                >
+                  {isHostIn ? '✓ Playing Tonight (IN)' : '+ Add Host to Cast (IN)'}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {attendingGuestIds.length < minRoles && (
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -759,7 +901,6 @@ export default function CustomerCastClient({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
           {guests.map(guest => {
             const isIn = attendingGuestIds.includes(guest.id);
-            const isDisabled = !isIn && attendingGuestIds.length >= maxRoles;
             const gBadge = formatGenderLabel(guest.gender);
             const guestAvatar = resolveDisplayAvatarUrl(guest.avatar_url);
 
@@ -767,14 +908,11 @@ export default function CustomerCastClient({
               <button
                 key={guest.id}
                 type="button"
-                disabled={isDisabled}
                 onClick={() => handleToggleGuestAttendance(guest.id)}
-                className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 ${
+                className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
                   isIn
                     ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
-                    : isDisabled
-                    ? 'border-slate-100 bg-slate-50 opacity-40 cursor-not-allowed'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                    : 'border-slate-200 hover:border-brand-pink/50 bg-white'
                 }`}
               >
                 <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
@@ -782,11 +920,18 @@ export default function CustomerCastClient({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={guestAvatar} alt={guest.name} className="w-full h-full object-cover object-top" />
                   ) : (
-                    <span className="text-2xl">👤</span>
+                    <span className="text-2xl">{guest.isHost ? '👑' : '👤'}</span>
                   )}
                 </div>
                 <div className="min-w-0 flex-grow">
-                  <p className="text-sm font-black text-slate-900 truncate">{guest.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-black text-slate-900 truncate">{guest.name}</p>
+                    {guest.isHost && (
+                      <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[8px] font-black uppercase tracking-wider shrink-0">
+                        Host
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     {gBadge.shortLabel}
                   </p>
@@ -795,7 +940,7 @@ export default function CustomerCastClient({
                   className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
                     isIn
                       ? 'bg-brand-pink text-white'
-                      : 'bg-slate-100 text-slate-400'
+                      : 'bg-slate-100 text-slate-500 hover:bg-brand-pink/10 hover:text-brand-pink'
                   }`}
                 >
                   {isIn ? 'IN' : 'OUT'}
@@ -892,15 +1037,18 @@ export default function CustomerCastClient({
                 <option value="" disabled>
                   Select guest for Victim...
                 </option>
-                {attendingGuests.map(g => {
+                {guests.map(g => {
                   const gNorm = normalizeGender(g.gender);
                   const vNorm = normalizeGender(victimCharacter.gender);
                   const isMismatch =
                     (vNorm === 'male' || vNorm === 'female') && gNorm !== vNorm;
+                  const isAttending = attendingGuestIds.includes(g.id);
                   return (
                     <option key={g.id} value={g.id}>
-                      {g.name} ({formatGenderLabel(g.gender).shortLabel}
-                      {isMismatch ? ' ⚠️ Gender Mismatch' : ''})
+                      {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
+                      {formatGenderLabel(g.gender).shortLabel}
+                      {isMismatch ? ' ⚠️ Gender Mismatch' : ''}
+                      {!isAttending ? ' • Tap to Add' : ''})
                     </option>
                   );
                 })}
@@ -993,7 +1141,7 @@ export default function CustomerCastClient({
                         </span>
                         {assignedGuest && (
                           <span className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-black bg-brand-pink text-white shadow-md truncate max-w-[140px] sm:max-w-[200px]">
-                            👤 {assignedGuest.name}
+                            {assignedGuest.isHost ? '👑' : '👤'} {assignedGuest.name}
                           </span>
                         )}
                       </div>
@@ -1067,11 +1215,16 @@ export default function CustomerCastClient({
                           className="flex-grow min-w-0 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-black text-slate-900 hover:border-slate-300 focus:outline-none focus:border-brand-pink cursor-pointer"
                         >
                           <option value="">Unassigned</option>
-                          {attendingGuests.map(g => (
-                            <option key={g.id} value={g.id}>
-                              {g.name} ({formatGenderLabel(g.gender).shortLabel})
-                            </option>
-                          ))}
+                          {guests.map(g => {
+                            const isAttending = attendingGuestIds.includes(g.id);
+                            return (
+                              <option key={g.id} value={g.id}>
+                                {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
+                                {formatGenderLabel(g.gender).shortLabel}
+                                {!isAttending ? ' • Tap to Add' : ''})
+                              </option>
+                            );
+                          })}
                         </CustomSelect>
                       </div>
                     </div>
@@ -1187,6 +1340,40 @@ export default function CustomerCastClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* INLINE HOST PROFILE VIEWER & EDITOR MODAL */}
+      {isHostProfileModalOpen && (
+        <ProfileClient
+          user={{
+            name: guests.find(g => g.isHost)?.name || hostUser.name || 'Gabriella Blyth',
+            email: hostUser.email || customerEmail || '',
+          }}
+          profile={liveHostProfile}
+          onClose={() => setIsHostProfileModalOpen(false)}
+          onSaved={updated => {
+            setLiveHostProfile((prev: any) => ({ ...(prev || {}), ...updated }));
+            setGuests(prev =>
+              prev.map(g => {
+                if (!g.isHost) return g;
+                const nextGender = updated.pronouns?.toLowerCase().includes('she')
+                  ? 'female'
+                  : updated.pronouns?.toLowerCase().includes('he')
+                  ? 'male'
+                  : g.gender;
+                return {
+                  ...g,
+                  name: updated.full_name || g.name,
+                  gender: nextGender,
+                  bio: updated.bio,
+                  traits: updated.character_preferences || g.traits,
+                  accent: updated.avatar_config?.accent || g.accent,
+                  avatar_url: buildAvatarUrl(updated.avatar_config, updated.full_name || g.name),
+                };
+              })
+            );
+          }}
+        />
       )}
 
       <GuestModal

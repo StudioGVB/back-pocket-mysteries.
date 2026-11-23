@@ -642,9 +642,12 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
           };
         } else {
           // D. Check host profile (either active user or Gabriella's mock profile ID)
-          const targetProfileId = guestId === '4903bd39-e54f-42e4-b679-2af5d128bb8f'
-            ? '4903bd39-e54f-42e4-b679-2af5d128bb8f'
-            : (user && guestId === user.id ? user.id : null);
+          const targetProfileId =
+            guestId === '4903bd39-e54f-42e4-b679-2af5d128bb8f'
+              ? '4903bd39-e54f-42e4-b679-2af5d128bb8f'
+              : user && guestId === user.id
+              ? user.id
+              : null;
 
           if (targetProfileId) {
             const { data: profileRaw } = await supabase
@@ -654,21 +657,34 @@ export async function assignGuestToCharacterAction(mysteryId: string, characterI
               .maybeSingle();
 
             const profile = profileRaw as any;
+            const fallbackGabriella = getStaticMockGuests()[0];
 
-            if (profile) {
-              guest = {
-                id: profile.id,
-                name: profile.full_name || 'Gabriella Blyth',
-                gender: profile.pronouns?.toLowerCase().includes('she') ? 'female' : profile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
-                accent: profile.avatar_config?.accent || 'Australian',
-                eye_color: profile.avatar_config?.eyeColor || 'Hazel',
-                height: profile.avatar_config?.height || 'Average',
-                avatar_url: avatarUrlHelper(profile.avatar_config) || '',
-                traits: profile.character_preferences || [],
-                bio: profile.bio || '',
-                isLinked: false
-              };
-            }
+            guest = {
+              id: profile?.id || targetProfileId,
+              name:
+                profile?.full_name?.trim() ||
+                user?.user_metadata?.full_name?.trim() ||
+                'Gabriella Blyth',
+              gender: profile?.pronouns?.toLowerCase().includes('she')
+                ? 'female'
+                : profile?.pronouns?.toLowerCase().includes('he')
+                ? 'male'
+                : 'female',
+              accent: profile?.avatar_config?.accent || 'Australian',
+              eye_color: profile?.avatar_config?.eyeColor || 'Hazel',
+              height: profile?.avatar_config?.height || 'Average',
+              avatar_url:
+                avatarUrlHelper(profile?.avatar_config) ||
+                fallbackGabriella?.avatar_url ||
+                '',
+              traits:
+                Array.isArray(profile?.character_preferences) &&
+                profile.character_preferences.length > 0
+                  ? profile.character_preferences
+                  : fallbackGabriella?.traits || [],
+              bio: profile?.bio || fallbackGabriella?.bio || '',
+              isLinked: false,
+            };
           }
 
           if (!guest) {
@@ -875,66 +891,73 @@ export async function autoAssignGuestsAction(mysteryId: string) {
     }))
   ];
 
-  if (hostProfile) {
-    guests.push({
-      id: hostProfile.id,
-      name: hostProfile.full_name || 'Gabriella Blyth',
-      gender: hostProfile.pronouns?.toLowerCase().includes('she') ? 'female' : hostProfile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
-      accent: hostProfile.avatar_config?.accent || 'Australian',
-      eye_color: hostProfile.avatar_config?.eyeColor || 'Hazel',
-      height: hostProfile.avatar_config?.height || 'Average',
-      avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
-      traits: hostProfile.character_preferences || [],
-      bio: hostProfile.bio || '',
-      isLinked: false
-    });
-  }
+  const fallbackGabriella = getStaticMockGuests()[0];
+  const resolvedHostName =
+    hostProfile?.full_name?.trim() ||
+    user?.user_metadata?.full_name?.trim() ||
+    'Gabriella Blyth';
+
+  const hostGuest = {
+    id: hostProfile?.id || user.id,
+    name: resolvedHostName,
+    gender: hostProfile?.pronouns?.toLowerCase().includes('she')
+      ? 'female'
+      : hostProfile?.pronouns?.toLowerCase().includes('he')
+      ? 'male'
+      : 'female',
+    accent: hostProfile?.avatar_config?.accent || 'Australian',
+    eye_color: hostProfile?.avatar_config?.eyeColor || 'Hazel',
+    height: hostProfile?.avatar_config?.height || 'Average',
+    avatar_url:
+      avatarUrlHelper(hostProfile?.avatar_config) ||
+      fallbackGabriella?.avatar_url ||
+      '',
+    traits:
+      Array.isArray(hostProfile?.character_preferences) &&
+      hostProfile.character_preferences.length > 0
+        ? hostProfile.character_preferences
+        : fallbackGabriella?.traits || [],
+    bio: hostProfile?.bio || fallbackGabriella?.bio || '',
+    isLinked: false,
+  };
+
+  // Deduplicate and put Host FIRST so Auto-Cast always includes the Host
+  const dedupedOthers = guests.filter(
+    (g: any) =>
+      g.id !== hostGuest.id &&
+      String(g.name || '').trim().toLowerCase() !== resolvedHostName.toLowerCase()
+  );
+  guests.length = 0;
+  guests.push(hostGuest, ...dedupedOthers);
 
   const hasActiveRoster = (manualGuests && manualGuests.length > 0) || (connections && connections.length > 0);
 
   if (!hasActiveRoster) {
     // First try via security definer RPC
     const { data: rpcGuests } = await (supabase as any).rpc('get_mock_guests');
-    
-    // Also fetch Gabriella's own profile to append as the 12th guest ("plus me is 12")
-    const { data: gvbProfileRaw } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', '4903bd39-e54f-42e4-b679-2af5d128bb8f')
-      .maybeSingle();
-
-    const gvbProfile = gvbProfileRaw as any;
 
     if (rpcGuests && (rpcGuests as any).length > 0) {
-      let mappedGuests = (rpcGuests as any).map((rg: any) => ({
-        id: rg.id,
-        name: rg.name,
-        gender: rg.gender || 'adaptable',
-        accent: rg.accent || extractAccentFromAvatarUrl(rg.avatar_url) || 'Australian',
-        eye_color: rg.eye_color || '',
-        height: rg.height || '',
-        avatar_url: rg.avatar_url || '',
-        traits: rg.traits || [],
-        bio: rg.bio || '',
-        isLinked: false
-      }));
+      const mappedGuests = (rpcGuests as any)
+        .filter(
+          (rg: any) =>
+            rg.id !== hostGuest.id &&
+            String(rg.name || '').trim().toLowerCase() !== resolvedHostName.toLowerCase()
+        )
+        .map((rg: any) => ({
+          id: rg.id,
+          name: rg.name,
+          gender: rg.gender || 'adaptable',
+          accent: rg.accent || extractAccentFromAvatarUrl(rg.avatar_url) || 'Australian',
+          eye_color: rg.eye_color || '',
+          height: rg.height || '',
+          avatar_url: rg.avatar_url || '',
+          traits: rg.traits || [],
+          bio: rg.bio || '',
+          isLinked: false,
+        }));
 
-      if (gvbProfile) {
-        mappedGuests.push({
-          id: gvbProfile.id,
-          name: gvbProfile.full_name || 'Gabriella Blyth',
-          gender: gvbProfile.pronouns?.toLowerCase().includes('she') ? 'female' : 'male',
-          accent: gvbProfile.avatar_config?.accent || 'Australian',
-          eye_color: gvbProfile.avatar_config?.eyeColor || 'Hazel',
-          height: gvbProfile.avatar_config?.height || 'Average',
-          avatar_url: avatarUrlHelper(gvbProfile.avatar_config) || '',
-          traits: gvbProfile.character_preferences || [],
-          bio: gvbProfile.bio || '',
-          isLinked: false
-        });
-      }
       guests.length = 0;
-      guests.push(...mappedGuests);
+      guests.push(hostGuest, ...mappedGuests);
     } else {
       // Fall back to static mock guests
       const staticMockGuests = getStaticMockGuests().map((sg: any) => ({
@@ -947,7 +970,7 @@ export async function autoAssignGuestsAction(mysteryId: string) {
         avatar_url: sg.avatar_url,
         traits: sg.traits,
         bio: sg.bio,
-        isLinked: false
+        isLinked: false,
       }));
       guests.length = 0;
       guests.push(...staticMockGuests);

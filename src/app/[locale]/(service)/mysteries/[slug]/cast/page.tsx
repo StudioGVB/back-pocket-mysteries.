@@ -8,7 +8,7 @@ import {
   replacePlaceholderNamesWithRoles,
 } from '@/services/mysteries';
 import { getRelationshipsByMysteryId } from '@/services/relationships';
-import { extractAccentFromAvatarUrl } from '@/utils/avatar';
+import { extractAccentFromAvatarUrl, buildAvatarUrl } from '@/utils/avatar';
 import { generatePinFromMysteryId } from '@/app/actions/customer-mystery';
 import { confirmMysteryOrderAction } from '@/app/actions/stripe';
 import {
@@ -135,23 +135,11 @@ export default async function CustomerMysteryCastPage({
     mystery = isolated.mystery;
   }
 
-  // 2. Load user's guest roster (manual + linked + host profile)
-  const avatarUrlHelper = (config: any) => {
-    if (!config) return '';
-    const search = new URLSearchParams({
-      seed: config.seed || 'player',
-      top: config.top || 'shortFlat',
-      topColor: config.hairColor || '282828',
-      hairColor: config.hairColor || '282828',
-      skinColor: config.skinColor || 'ffe0bd',
-      ...(config.facialHair ? { facialHair: config.facialHair } : {}),
-      ...(config.accent ? { accent: config.accent } : {}),
-      backgroundColor: 'transparent',
-    });
-    return `https://api.dicebear.com/7.x/avataaars/svg?${search}`;
-  };
-
+  // 2. Load user's guest roster (host profile #1 + manual + linked)
   let guests: any[] = [];
+  let hostProfileForClient: any = null;
+  let resolvedHostName = 'Gabriella Blyth';
+
   if (user) {
     const [{ data: hostProfileRaw }, { data: manualGuests }, { data: connections }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
@@ -174,6 +162,23 @@ export default async function CustomerMysteryCastPage({
     ]);
 
     const hostProfile = hostProfileRaw as any;
+    hostProfileForClient = hostProfile;
+
+    const isGabriella =
+      user.id === '4903bd39-e54f-42e4-b679-2af5d128bb8f' ||
+      String(user.email || '').toLowerCase().includes('studiogvb') ||
+      String(user.email || '').toLowerCase().includes('gabriella');
+
+    resolvedHostName =
+      hostProfile?.full_name?.trim() ||
+      user.user_metadata?.full_name?.trim() ||
+      (isGabriella
+        ? 'Gabriella Blyth'
+        : user.email
+            ?.split('@')[0]
+            ?.replace(/[._-]+/g, ' ')
+            ?.replace(/\b\w/g, (c: string) => c.toUpperCase()) || 'Gabriella Blyth');
+
     const linkedGuestIds = (connections ?? []).map((c: any) => c.guest_user_id);
     const linkedGuestNames: Record<string, string> = {};
     if (linkedGuestIds.length > 0) {
@@ -186,19 +191,20 @@ export default async function CustomerMysteryCastPage({
       });
     }
 
-    const manualGuestIdSet = new Set((manualGuests || []).map((mg: any) => String(mg.id)));
     const cachedMysteries = getAllCachedMysteries();
     const cachedAvatarByGuestId = new Map<string, string>();
     for (const m of Object.values(cachedMysteries || {})) {
-      if ((m as any)?.created_by && (m as any).created_by !== user.id) continue;
       for (const c of (m as any)?.characters || []) {
         const pd = c.profile_data || {};
+        if (pd.guest_id && String(pd.avatar_url || '').includes('aiPhotoUrl=')) {
+          cachedAvatarByGuestId.set(String(pd.guest_id), pd.avatar_url);
+        }
         if (
-          pd.guest_id &&
-          manualGuestIdSet.has(String(pd.guest_id)) &&
+          pd.guest_name &&
+          String(pd.guest_name).toLowerCase() === resolvedHostName.toLowerCase() &&
           String(pd.avatar_url || '').includes('aiPhotoUrl=')
         ) {
-          cachedAvatarByGuestId.set(pd.guest_id, pd.avatar_url);
+          cachedAvatarByGuestId.set(user.id, pd.avatar_url);
         }
       }
     }
@@ -235,12 +241,68 @@ export default async function CustomerMysteryCastPage({
           traits: mg.traits || [],
           bio: mg.bio || '',
           isLinked: false,
+          isHost: false,
         };
       })
     );
 
-    const fetchedGuests = [
-      ...hydratedManualGuests,
+    const hostAvatarConfig = hostProfile?.avatar_config || {
+      seed: resolvedHostName,
+      top: 'straight01',
+      hairLength: 'Long',
+      hairTexture: 'Straight',
+      hairColor: '282828',
+      skinColor: 'ffcd94',
+      accessories: 'none',
+      accent: 'Australian',
+    };
+    let hostAvatarUrl = buildAvatarUrl(hostAvatarConfig, resolvedHostName) || '';
+    if (!hostAvatarUrl.includes('aiPhotoUrl=')) {
+      const cachedHostUrl =
+        cachedAvatarByGuestId.get(user.id) ||
+        cachedAvatarByGuestId.get('4903bd39-e54f-42e4-b679-2af5d128bb8f') ||
+        cachedAvatarByGuestId.get('mock-guest-gabriella');
+      if (cachedHostUrl) {
+        hostAvatarUrl = cachedHostUrl;
+      }
+    }
+
+    const hostGuest = {
+      id: hostProfile?.id || user.id,
+      name: resolvedHostName,
+      gender: hostProfile?.pronouns?.toLowerCase().includes('she')
+        ? 'female'
+        : hostProfile?.pronouns?.toLowerCase().includes('he')
+        ? 'male'
+        : isGabriella
+        ? 'female'
+        : 'adaptable',
+      accent: hostProfile?.avatar_config?.accent || 'Australian',
+      eye_color: hostProfile?.avatar_config?.eyeColor || (isGabriella ? 'Hazel' : ''),
+      height: hostProfile?.avatar_config?.height || (isGabriella ? 'Average' : ''),
+      avatar_url: hostAvatarUrl,
+      traits:
+        Array.isArray(hostProfile?.character_preferences) &&
+        hostProfile.character_preferences.length > 0
+          ? hostProfile.character_preferences
+          : isGabriella
+          ? ['Cryptographer', 'Observant', 'Earl Grey Lover']
+          : [],
+      bio:
+        hostProfile?.bio ||
+        (isGabriella
+          ? 'Gabriella, an amateur cryptographer and professional cat whisperer, claims she can decipher any coded message, especially after a strong cup of Earl Grey and a good snoop.'
+          : ''),
+      isLinked: false,
+      isHost: true,
+    };
+
+    const otherGuests = [
+      ...hydratedManualGuests.filter(
+        (mg: any) =>
+          mg.id !== hostGuest.id &&
+          String(mg.name || '').trim().toLowerCase() !== resolvedHostName.toLowerCase()
+      ),
       ...(connections || []).map((c: any) => ({
         id: c.guest_user_id,
         name: linkedGuestNames[c.guest_user_id] || 'Linked Guest',
@@ -253,47 +315,18 @@ export default async function CustomerMysteryCastPage({
         accent: c.profiles?.avatar_config?.accent || 'Australian',
         eye_color: '',
         height: '',
-        avatar_url: avatarUrlHelper(c.profiles?.avatar_config) || '',
+        avatar_url: c.profiles?.avatar_config
+          ? buildAvatarUrl(c.profiles.avatar_config, linkedGuestNames[c.guest_user_id] || 'Guest')
+          : '',
         traits: c.profiles?.character_preferences || [],
         bio: c.profiles?.bio || '',
         isLinked: true,
+        isHost: false,
       })),
     ];
 
-    if (hostProfile) {
-      fetchedGuests.push({
-        id: hostProfile.id,
-        name: hostProfile.full_name || user.user_metadata?.full_name || 'Host (You)',
-        gender: hostProfile.pronouns?.toLowerCase().includes('she')
-          ? 'female'
-          : hostProfile.pronouns?.toLowerCase().includes('he')
-          ? 'male'
-          : 'adaptable',
-        accent: hostProfile.avatar_config?.accent || 'Australian',
-        eye_color: hostProfile.avatar_config?.eyeColor || '',
-        height: hostProfile.avatar_config?.height || '',
-        avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
-        traits: hostProfile.character_preferences || [],
-        bio: hostProfile.bio || '',
-        isLinked: false,
-      });
-    } else {
-      // Even if profiles row hasn't been customized yet, include the logged-in user as Host (You)
-      fetchedGuests.push({
-        id: user.id,
-        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Host (You)',
-        gender: 'adaptable',
-        accent: 'Australian',
-        eye_color: '',
-        height: '',
-        avatar_url: '',
-        traits: [],
-        bio: '',
-        isLinked: false,
-      });
-    }
-
-    guests = fetchedGuests;
+    // Place the Host Profile FIRST (#1) so the host is always visible at the top and auto-selected
+    guests = [hostGuest, ...otherGuests];
   }
 
   const ownedGuestIds = new Set(guests.map((g: any) => g.id));
@@ -428,6 +461,8 @@ export default async function CustomerMysteryCastPage({
       initialGenerationState={generationState}
       tier={tier}
       initialViewMode={initialViewMode}
+      hostProfile={hostProfileForClient}
+      hostUser={{ name: resolvedHostName, email: user?.email || '' }}
     />
   );
 }

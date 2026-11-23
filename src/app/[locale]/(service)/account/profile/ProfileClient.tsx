@@ -28,6 +28,7 @@ const DEFAULT_AVATAR: AvatarConfig = {
 interface ProfileClientProps {
   user: { name: string; email: string };
   profile: {
+    full_name?: string | null;
     bio?: string | null;
     location?: string | null;
     pronouns?: string | null;
@@ -37,9 +38,22 @@ interface ProfileClientProps {
     fun_facts?: string | null;
   } | null;
   onClose?: () => void;
+  onSaved?: (updated: {
+    full_name: string;
+    bio: string;
+    location: string;
+    pronouns: string;
+    fun_facts: string;
+    dietary_needs: string[];
+    character_preferences: string[];
+    avatar_config: AvatarConfig;
+  }) => void;
 }
 
-export default function ProfileClient({ user, profile, onClose }: ProfileClientProps) {
+export default function ProfileClient({ user, profile, onClose, onSaved }: ProfileClientProps) {
+  const [fullName, setFullName] = useState(
+    profile?.full_name?.trim() || user.name?.trim() || 'Gabriella Blyth'
+  );
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [location, setLocation] = useState(profile?.location ?? '');
   const [pronouns, setPronouns] = useState(profile?.pronouns ?? '');
@@ -81,7 +95,9 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
   const handleSave = async () => {
     setSaving(true);
     setError('');
+    const cleanName = fullName.trim() || user.name || 'Gabriella Blyth';
     const result = await saveProfileAction({
+      full_name: cleanName,
       bio, location, pronouns, fun_facts: funFacts,
       dietary_needs: dietary,
       character_preferences: charPrefs,
@@ -89,7 +105,20 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
     });
     setSaving(false);
     if (result.error) { setError(result.error); }
-    else { setSaved(true); setTimeout(() => setSaved(false), 3000); }
+    else {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      onSaved?.({
+        full_name: cleanName,
+        bio,
+        location,
+        pronouns,
+        fun_facts: funFacts,
+        dietary_needs: dietary,
+        character_preferences: charPrefs,
+        avatar_config: avatarConfig,
+      });
+    }
   };
 
   const isInitialMount = useRef(true);
@@ -103,12 +132,12 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
     }, 1000);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bio, location, pronouns, funFacts, dietary, charPrefs, avatarConfig]);
+  }, [fullName, bio, location, pronouns, funFacts, dietary, charPrefs, avatarConfig]);
 
   const handleGenerateBio = async () => {
     setIsGeneratingBio(true);
     try {
-      const generated = await generateProfileBioAction(user.name);
+      const generated = await generateProfileBioAction(fullName || user.name);
       setBio(generated);
     } catch (e) {
       console.error(e);
@@ -120,7 +149,7 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
   const handleGenerateFunFact = async () => {
     setIsGeneratingFunFact(true);
     try {
-      const generated = await generateProfileFunFactAction(user.name);
+      const generated = await generateProfileFunFactAction(fullName || user.name);
       setFunFacts(generated);
     } catch (e) {
       console.error(e);
@@ -186,7 +215,7 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
             </button>
           </div>
           <div className="min-w-0">
-            <p className="font-black text-slate-900 text-base sm:text-lg truncate">{user.name || 'Your Name'}</p>
+            <p className="font-black text-slate-900 text-base sm:text-lg truncate">{fullName || user.name || 'Your Name'}</p>
             <p className="text-xs sm:text-sm text-slate-400 font-medium truncate">{user.email}</p>
             <p className="text-xs font-bold text-slate-400 mt-1 truncate">
               {[pronouns, avatarConfig.accent ? `🎙️ ${avatarConfig.accent}` : null].filter(Boolean).join(' · ')}
@@ -222,27 +251,37 @@ export default function ProfileClient({ user, profile, onClose }: ProfileClientP
               {/* Basic */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Your Full Name (Host)</label>
+                  <input
+                    className={inputClass}
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    placeholder="Gabriella Blyth"
+                  />
+                </div>
+                <div>
                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Location</label>
                   <input className={inputClass} value={location} onChange={e => setLocation(e.target.value)} placeholder="London, UK" />
                 </div>
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Pronouns</label>
-                  <div className="flex flex-wrap gap-2">
-                    {PRONOUNS.map(p => (
-                      <button
-                        key={p}
-                        onClick={() => setPronouns(p === pronouns ? '' : p)}
-                        className="px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all"
-                        style={{
-                          borderColor: pronouns === p ? '#fe04c6' : '#e2e8f0',
-                          color: pronouns === p ? '#fe04c6' : '#94a3b8',
-                          background: pronouns === p ? 'rgba(254,4,198,0.05)' : '#fff',
-                        }}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Pronouns</label>
+                <div className="flex flex-wrap gap-2">
+                  {PRONOUNS.map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setPronouns(p === pronouns ? '' : p)}
+                      className="px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all"
+                      style={{
+                        borderColor: pronouns === p ? '#fe04c6' : '#e2e8f0',
+                        color: pronouns === p ? '#fe04c6' : '#94a3b8',
+                        background: pronouns === p ? 'rgba(254,4,198,0.05)' : '#fff',
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
                 </div>
               </div>
 

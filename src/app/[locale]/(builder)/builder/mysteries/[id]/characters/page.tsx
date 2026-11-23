@@ -110,68 +110,79 @@ export default async function MysteryCharactersPage({
       }))
     ];
 
-    if (hostProfile) {
-      fetchedGuests.push({
-        id: hostProfile.id,
-        name: hostProfile.full_name || 'Gabriella Blyth',
-        gender: hostProfile.pronouns?.toLowerCase().includes('she') ? 'female' : hostProfile.pronouns?.toLowerCase().includes('he') ? 'male' : 'adaptable',
-        accent: hostProfile.avatar_config?.accent || 'Australian',
-        eye_color: hostProfile.avatar_config?.eyeColor || 'Hazel',
-        height: hostProfile.avatar_config?.height || 'Average',
-        avatar_url: avatarUrlHelper(hostProfile.avatar_config) || '',
-        traits: hostProfile.character_preferences || [],
-        bio: hostProfile.bio || '',
-        isLinked: false
-      });
-    }
+    const resolvedHostName =
+      hostProfile?.full_name?.trim() ||
+      user.user_metadata?.full_name?.trim() ||
+      'Gabriella Blyth';
 
-    const hasActiveRoster = (manualGuests && manualGuests.length > 0) || (connections && connections.length > 0);
+    const hostGuest = {
+      id: hostProfile?.id || user.id,
+      name: resolvedHostName,
+      gender: hostProfile?.pronouns?.toLowerCase().includes('she')
+        ? 'female'
+        : hostProfile?.pronouns?.toLowerCase().includes('he')
+        ? 'male'
+        : 'female',
+      accent: hostProfile?.avatar_config?.accent || 'Australian',
+      eye_color: hostProfile?.avatar_config?.eyeColor || 'Hazel',
+      height: hostProfile?.avatar_config?.height || 'Average',
+      avatar_url:
+        avatarUrlHelper(hostProfile?.avatar_config) ||
+        getStaticMockGuests()[0]?.avatar_url ||
+        '',
+      traits:
+        Array.isArray(hostProfile?.character_preferences) &&
+        hostProfile.character_preferences.length > 0
+          ? hostProfile.character_preferences
+          : ['Cryptographer', 'Observant', 'Earl Grey Lover'],
+      bio:
+        hostProfile?.bio ||
+        'Gabriella, an amateur cryptographer and professional cat whisperer, claims she can decipher any coded message, especially after a strong cup of Earl Grey and a good snoop.',
+      isLinked: false,
+      isHost: true,
+    };
+
+    const filteredFetched = fetchedGuests.filter(
+      (fg: any) =>
+        fg.id !== hostGuest.id &&
+        String(fg.name || '').trim().toLowerCase() !== resolvedHostName.toLowerCase()
+    );
+
+    const hasActiveRoster =
+      (manualGuests && manualGuests.length > 0) || (connections && connections.length > 0);
 
     if (hasActiveRoster) {
-      guests = fetchedGuests;
+      guests = [hostGuest, ...filteredFetched];
     } else {
       // User has no guests: fallback to hello@studiogvb.com mock roster
       // First try via security definer RPC
       const { data: rpcGuests } = await supabase.rpc('get_mock_guests');
-      
-      // Also fetch Gabriella's own profile to append as the 12th guest ("plus me is 12")
-      const { data: gvbProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', '4903bd39-e54f-42e4-b679-2af5d128bb8f')
-        .maybeSingle();
 
       if (rpcGuests && rpcGuests.length > 0) {
-        guests = rpcGuests.map((rg: any) => ({
-          id: rg.id,
-          name: rg.name,
-          gender: rg.gender || 'adaptable',
-          accent: rg.accent || extractAccentFromAvatarUrl(rg.avatar_url) || 'Australian',
-          eye_color: rg.eye_color || '',
-          height: rg.height || '',
-          avatar_url: rg.avatar_url || '',
-          traits: rg.traits || [],
-          bio: rg.bio || '',
-          isLinked: false
-        }));
+        const mappedRpc = rpcGuests
+          .filter(
+            (rg: any) =>
+              rg.id !== hostGuest.id &&
+              String(rg.name || '').trim().toLowerCase() !== resolvedHostName.toLowerCase()
+          )
+          .map((rg: any) => ({
+            id: rg.id,
+            name: rg.name,
+            gender: rg.gender || 'adaptable',
+            accent: rg.accent || extractAccentFromAvatarUrl(rg.avatar_url) || 'Australian',
+            eye_color: rg.eye_color || '',
+            height: rg.height || '',
+            avatar_url: rg.avatar_url || '',
+            traits: rg.traits || [],
+            bio: rg.bio || '',
+            isLinked: false,
+            isHost: false,
+          }));
 
-        if (gvbProfile) {
-          guests.push({
-            id: gvbProfile.id,
-            name: gvbProfile.full_name || 'Gabriella Blyth',
-            gender: gvbProfile.pronouns?.toLowerCase().includes('she') ? 'female' : 'male',
-            accent: gvbProfile.avatar_config?.accent || 'Australian',
-            eye_color: gvbProfile.avatar_config?.eyeColor || 'Hazel',
-            height: gvbProfile.avatar_config?.height || 'Average',
-            avatar_url: avatarUrlHelper(gvbProfile.avatar_config) || '',
-            traits: gvbProfile.character_preferences || [],
-            bio: gvbProfile.bio || '',
-            isLinked: false
-          });
-        }
+        guests = [hostGuest, ...mappedRpc];
       } else {
         // Absolute fallback: load static high-quality mock roster in code
-        guests = getStaticMockGuests().map((sg: any) => ({
+        guests = getStaticMockGuests().map((sg: any, idx: number) => ({
           id: sg.id,
           name: sg.name,
           gender: sg.gender,
@@ -181,7 +192,8 @@ export default async function MysteryCharactersPage({
           avatar_url: sg.avatar_url,
           traits: sg.traits,
           bio: sg.bio,
-          isLinked: false
+          isLinked: false,
+          isHost: idx === 0,
         }));
       }
     }
@@ -284,6 +296,61 @@ export default async function MysteryCharactersPage({
             </Link>
           </div>
         )}
+
+        {/* Host Profile Spotlight in Builder */}
+        {(() => {
+          const hostGuest = guests.find((g: any) => g.isHost);
+          if (!hostGuest) return null;
+          const assignedChar = characters.find(
+            (c: any) => (c.profile_data as any)?.guest_id === hostGuest.id
+          );
+          return (
+            <div className="p-5 rounded-3xl border border-brand-pink/30 bg-brand-pink/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-white border-2 border-brand-pink/40 shrink-0 flex items-center justify-center shadow-xs">
+                  {hostGuest.avatar_url ? (
+                    <img
+                      src={hostGuest.avatar_url}
+                      alt={hostGuest.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl">👑</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
+                      👑 Host Profile (You)
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      {hostGuest.gender}
+                    </span>
+                    {assignedChar && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase tracking-wider">
+                        ✓ Cast as {assignedChar.name}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-base font-black text-slate-900 truncate mt-0.5">
+                    {hostGuest.name}
+                  </h3>
+                  {hostGuest.bio && (
+                    <p className="text-xs text-slate-600 font-medium line-clamp-1">
+                      {hostGuest.bio}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Link
+                href={`/${locale}/account/profile`}
+                className="shrink-0 px-4 py-2 rounded-xl bg-white hover:bg-brand-pink hover:text-white text-slate-700 border border-slate-200 text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                ✎ View / Edit My Profile →
+              </Link>
+            </div>
+          );
+        })()}
 
         {/* Guest Casting Toolbar */}
         {guests.length > 0 && (
