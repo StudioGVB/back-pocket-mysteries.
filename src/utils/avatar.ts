@@ -194,17 +194,87 @@ export function buildAvatarUrl(
   return url;
 }
 
+const LEGACY_CLONE_AVATAR_REPLACEMENTS: Array<{ match: string; replacement: string }> = [
+  {
+    match: 'f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-4cfdc19783654b536827888c21c53c64',
+    replacement: '/generated-avatars/f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-distinct.jpg',
+  },
+  {
+    match: 'f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-e7ccc710ba2d6101b69b2e15e238f50a5',
+    replacement: '/generated-avatars/f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-distinct.jpg',
+  },
+  {
+    match: '5d0e09e5-4575-42a8-8713-da6972dfe8b3-f7fa2bd491d9d7943443c7a15be6ab3007ebe170abdc4bae6d80c58d7f105471',
+    replacement: '/generated-avatars/5d0e09e5-4575-42a8-8713-da6972dfe8b3-distinct.jpg',
+  },
+  {
+    match: 'e800e385-9f2a-4e02-b937-85c45e63b00d-52c1e1b699baad0c2d50b0c4694fdfde',
+    replacement: '/generated-avatars/e800e385-9f2a-4e02-b937-85c45e63b00d-distinct.jpg',
+  },
+  {
+    match: '4903bd39-e54f-42e4-b679-2af5d128bb8f-b130e47b4cee2149a7aad02dfc972e91',
+    replacement: '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg',
+  },
+];
+
+export function upgradeLegacyCloneAvatarUrl(guest: {
+  id?: string | null;
+  name?: string | null;
+  avatar_url?: string | null;
+}): string {
+  const rawUrl = String(guest.avatar_url || '');
+  if (!rawUrl) return rawUrl;
+
+  for (const rule of LEGACY_CLONE_AVATAR_REPLACEMENTS) {
+    if (rawUrl.includes(rule.match)) {
+      try {
+        const parsed = new URL(rawUrl);
+        parsed.searchParams.set('aiPhotoUrl', rule.replacement);
+        return parsed.toString();
+      } catch {
+        return rule.replacement;
+      }
+    }
+  }
+
+  const cleanName = String(guest.name || '').trim().toLowerCase();
+  if (cleanName === 'vic' && !rawUrl.includes('vic-distinct.jpg')) {
+    try {
+      const parsed = new URL(rawUrl);
+      parsed.searchParams.set('aiPhotoUrl', '/generated-avatars/vic-distinct.jpg');
+      return parsed.toString();
+    } catch {
+      return '/generated-avatars/vic-distinct.jpg';
+    }
+  }
+
+  return rawUrl;
+}
+
 /**
  * Extracts the embedded `aiPhotoUrl` query parameter from a DiceBear avatar URL if present,
  * otherwise returns the original avatar URL (rewriting retired 8.x/avataaars to 7.x/avataaars).
  */
 export function resolveDisplayAvatarUrl(avatarUrl?: string | null): string {
   if (!avatarUrl) return '';
+  for (const rule of LEGACY_CLONE_AVATAR_REPLACEMENTS) {
+    if (avatarUrl.includes(rule.match)) {
+      return rule.replacement;
+    }
+  }
+  if (avatarUrl.includes('seed=Vic&') && !avatarUrl.includes('vic-distinct.jpg')) {
+    return '/generated-avatars/vic-distinct.jpg';
+  }
   if (avatarUrl.startsWith('data:') || avatarUrl.startsWith('/')) return avatarUrl;
   try {
     const parsed = new URL(avatarUrl);
     const aiPhoto = parsed.searchParams.get('aiPhotoUrl');
-    if (aiPhoto) return aiPhoto;
+    if (aiPhoto) {
+      for (const rule of LEGACY_CLONE_AVATAR_REPLACEMENTS) {
+        if (aiPhoto.includes(rule.match)) return rule.replacement;
+      }
+      return aiPhoto;
+    }
   } catch {
     if (avatarUrl.includes('aiPhotoUrl=')) {
       const match = avatarUrl.match(/[?&]aiPhotoUrl=([^&]+)/);

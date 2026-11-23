@@ -225,18 +225,27 @@ export default async function CustomerMysteryCastPage({
     }
 
     // Never block SSR page load on Gemini AI image generation; use existing or cached avatar URLs immediately
+    const { upgradeLegacyCloneAvatarUrl } = await import('@/utils/avatar');
     const hydratedManualGuests = (manualGuests || []).map((mg: any) => {
       let avatarUrl = mg.avatar_url || '';
       if (!avatarUrl.includes('aiPhotoUrl=')) {
         const cachedUrl = cachedAvatarByGuestId.get(mg.id);
         if (cachedUrl) {
           avatarUrl = cachedUrl;
-          void supabase
-            .from('guests')
-            .update({ avatar_url: cachedUrl })
-            .eq('id', mg.id)
-            .eq('user_id', user.id);
         }
+      }
+      const upgradedUrl = upgradeLegacyCloneAvatarUrl({
+        id: mg.id,
+        name: mg.name,
+        avatar_url: avatarUrl,
+      });
+      if (upgradedUrl && upgradedUrl !== mg.avatar_url) {
+        avatarUrl = upgradedUrl;
+        void supabase
+          .from('guests')
+          .update({ avatar_url: upgradedUrl })
+          .eq('id', mg.id)
+          .eq('user_id', user.id);
       }
       return {
         id: mg.id,

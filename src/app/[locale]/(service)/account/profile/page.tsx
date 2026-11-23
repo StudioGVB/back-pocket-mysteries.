@@ -105,18 +105,28 @@ async function ProfileContent({
     }
   }
 
+  const { upgradeLegacyCloneAvatarUrl } = await import('@/utils/avatar');
   const manualGuests = await Promise.all(
     (rawManualGuests || []).map(async (mg: any) => {
-      if (!String(mg.avatar_url || '').includes('aiPhotoUrl=')) {
+      let avatarUrl = String(mg.avatar_url || '');
+      if (!avatarUrl.includes('aiPhotoUrl=')) {
         const cachedUrl = cachedAvatarByGuestId.get(mg.id);
         if (cachedUrl) {
-          await supabase
-            .from('guests')
-            .update({ avatar_url: cachedUrl })
-            .eq('id', mg.id)
-            .eq('user_id', user.id);
-          return { ...mg, avatar_url: cachedUrl };
+          avatarUrl = cachedUrl;
         }
+      }
+      const upgradedUrl = upgradeLegacyCloneAvatarUrl({
+        id: mg.id,
+        name: mg.name,
+        avatar_url: avatarUrl,
+      });
+      if (upgradedUrl && upgradedUrl !== mg.avatar_url) {
+        await supabase
+          .from('guests')
+          .update({ avatar_url: upgradedUrl })
+          .eq('id', mg.id)
+          .eq('user_id', user.id);
+        return { ...mg, avatar_url: upgradedUrl };
       }
       return mg;
     })
