@@ -246,6 +246,17 @@ export default async function CustomerMysteryCastPage({
       })
     );
 
+    const hostId = hostProfile?.id || user.id;
+    const hostGender = hostProfile?.pronouns?.toLowerCase().includes('she')
+      ? 'female'
+      : hostProfile?.pronouns?.toLowerCase().includes('he')
+      ? 'male'
+      : isGabriella
+      ? 'female'
+      : 'adaptable';
+    const hostEyeColor = hostProfile?.avatar_config?.eyeColor || (isGabriella ? 'Hazel' : '');
+    const hostHeight = hostProfile?.avatar_config?.height || (isGabriella ? 'Average' : '');
+
     const hostAvatarConfig = hostProfile?.avatar_config || {
       seed: resolvedHostName,
       top: 'straight01',
@@ -253,10 +264,19 @@ export default async function CustomerMysteryCastPage({
       hairTexture: 'Straight',
       hairColor: '282828',
       skinColor: 'ffcd94',
+      eyeColor: hostEyeColor || 'Hazel',
+      height: hostHeight || 'Average',
       accessories: 'none',
       accent: 'Australian',
     };
-    let hostAvatarUrl = buildAvatarUrl(hostAvatarConfig, resolvedHostName) || '';
+
+    let hostAvatarUrl =
+      (String(hostProfile?.avatar_url || '').includes('aiPhotoUrl=')
+        ? hostProfile.avatar_url
+        : '') ||
+      buildAvatarUrl(hostAvatarConfig, resolvedHostName) ||
+      '';
+
     if (!hostAvatarUrl.includes('aiPhotoUrl=')) {
       const cachedHostUrl =
         cachedAvatarByGuestId.get(user.id) ||
@@ -264,22 +284,47 @@ export default async function CustomerMysteryCastPage({
         cachedAvatarByGuestId.get('mock-guest-gabriella');
       if (cachedHostUrl) {
         hostAvatarUrl = cachedHostUrl;
+      } else {
+        try {
+          const aiRes = await generateGuestAvatarAction(
+            hostId,
+            {
+              id: hostId,
+              name: resolvedHostName,
+              gender: hostGender,
+              eye_color: hostEyeColor || 'Hazel',
+              height: hostHeight || 'Average',
+              avatar_config: hostAvatarConfig,
+              avatar_url: hostAvatarUrl,
+            },
+            { isHostProfile: true }
+          );
+          if (aiRes?.publicUrl) {
+            hostAvatarUrl = aiRes.publicUrl;
+          }
+          if (aiRes?.aiPhotoUrl) {
+            hostProfileForClient = {
+              ...(hostProfileForClient || {}),
+              avatar_url: hostAvatarUrl,
+              avatar_config: {
+                ...hostAvatarConfig,
+                aiPhotoUrl: aiRes.aiPhotoUrl,
+              },
+            };
+          }
+        } catch {
+          // ignore
+        }
       }
     }
 
     const hostGuest = {
-      id: hostProfile?.id || user.id,
+      id: hostId,
       name: resolvedHostName,
-      gender: hostProfile?.pronouns?.toLowerCase().includes('she')
-        ? 'female'
-        : hostProfile?.pronouns?.toLowerCase().includes('he')
-        ? 'male'
-        : isGabriella
-        ? 'female'
-        : 'adaptable',
+      gender: hostGender,
       accent: hostProfile?.avatar_config?.accent || 'Australian',
-      eye_color: hostProfile?.avatar_config?.eyeColor || (isGabriella ? 'Hazel' : ''),
-      height: hostProfile?.avatar_config?.height || (isGabriella ? 'Average' : ''),
+      eye_color: hostEyeColor,
+      height: hostHeight,
       avatar_url: hostAvatarUrl,
       traits:
         Array.isArray(hostProfile?.character_preferences) &&

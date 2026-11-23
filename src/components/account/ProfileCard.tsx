@@ -1,9 +1,10 @@
 import React from 'react';
-import { buildAvatarUrl, AvatarConfig } from '@/utils/avatar';
+import { buildAvatarUrl, resolveDisplayAvatarUrl, AvatarConfig } from '@/utils/avatar';
 
 interface ProfileCardProps {
   user: { name: string; email: string };
   profile: {
+    avatar_url?: string | null;
     bio?: string | null;
     location?: string | null;
     pronouns?: string | null;
@@ -16,15 +17,26 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ user, profile, onEdit }: ProfileCardProps) {
-  const avatarUrl = profile?.avatar_config 
-    ? buildAvatarUrl(profile.avatar_config as AvatarConfig, user.name) 
-    : buildAvatarUrl({
-        seed: user.name,
-        top: 'shortFlat',
-        hairColor: '282828',
-        skinColor: 'ffe0bd',
-        accessories: 'none'
-      }, user.name);
+  const rawAvatarUrl =
+    profile?.avatar_url ||
+    (profile?.avatar_config
+      ? buildAvatarUrl(profile.avatar_config as AvatarConfig, user.name)
+      : buildAvatarUrl(
+          {
+            seed: user.name,
+            top: 'straight01',
+            hairColor: '282828',
+            skinColor: 'ffcd94',
+            accessories: 'none',
+          },
+          user.name
+        ));
+  const avatarUrl = resolveDisplayAvatarUrl(rawAvatarUrl) || rawAvatarUrl || '';
+  const isAiPhoto =
+    Boolean(profile?.avatar_config?.aiPhotoUrl) ||
+    String(profile?.avatar_url || '').includes('aiPhotoUrl=') ||
+    avatarUrl.startsWith('/generated-avatars/') ||
+    avatarUrl.includes('supabase.co/storage');
 
   return (
     <div className="bg-white border-2 border-brand-pink/20 p-5 sm:p-8 rounded-3xl sm:rounded-[2rem] shadow-xl shadow-brand-pink/5 relative overflow-hidden mb-8 sm:mb-10 group transition-all hover:border-brand-pink/40">
@@ -35,7 +47,15 @@ export function ProfileCard({ user, profile, onEdit }: ProfileCardProps) {
         <div className="flex items-center gap-4 md:block w-full md:w-auto">
           <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-white rounded-2xl sm:rounded-3xl flex items-center justify-center overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatarUrl} alt={user.name} className="w-[120%] h-[120%] object-cover mt-3 sm:mt-4" />
+            <img
+              src={avatarUrl}
+              alt={user.name}
+              className={
+                isAiPhoto
+                  ? 'w-full h-full object-cover object-top'
+                  : 'w-[120%] h-[120%] object-cover mt-3 sm:mt-4'
+              }
+            />
           </div>
           <div className="md:hidden min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">

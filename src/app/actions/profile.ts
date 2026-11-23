@@ -2,6 +2,12 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
+import {
+  buildAvatarUrl,
+  computeAvatarPhysicalSignature,
+  stripAiPhotoFromAvatarUrl,
+} from '@/utils/avatar';
+import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
 
 function inferFallbackHostName(user: any): string {
   const metaName = user?.user_metadata?.full_name?.trim();
@@ -25,6 +31,13 @@ function inferFallbackHostName(user: any): string {
   return 'Gabriella Blyth';
 }
 
+function pronounsToGender(pronouns?: string | null): string {
+  const p = String(pronouns || '').toLowerCase();
+  if (p.includes('she')) return 'female';
+  if (p.includes('he')) return 'male';
+  return 'female';
+}
+
 export async function saveProfileAction(data: {
   full_name?: string;
   bio?: string;
@@ -34,6 +47,7 @@ export async function saveProfileAction(data: {
   dietary_needs?: string[];
   character_preferences?: string[];
   fun_facts?: string;
+  forceRegeneratePhoto?: boolean;
 }) {
   const supabase = await createClient();
   const {
@@ -44,7 +58,7 @@ export async function saveProfileAction(data: {
 
   const { data: existingProfile } = await (supabase as any)
     .from('profiles')
-    .select('full_name')
+    .select('*')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -53,15 +67,99 @@ export async function saveProfileAction(data: {
     existingProfile?.full_name?.trim() ||
     inferFallbackHostName(user);
 
+  const resolvedPronouns =
+    data.pronouns !== undefined ? data.pronouns : existingProfile?.pronouns || 'She/Her';
+  const resolvedGender = pronounsToGender(resolvedPronouns);
+
+  const prevConfig = (existingProfile?.avatar_config || {}) as Record<string, any>;
+  const incomingConfig = (data.avatar_config || prevConfig || {}) as Record<string, any>;
+
+  const prevSig =
+    prevConfig.aiPhotoSig ||
+    computeAvatarPhysicalSignature(prevConfig as any, {
+      gender: pronounsToGender(existingProfile?.pronouns),
+      eyeColor: prevConfig.eyeColor,
+      height: prevConfig.height,
+      ethnicity: prevConfig.ethnicity,
+    });
+
+  const nextSig = computeAvatarPhysicalSignature(incomingConfig as any, {
+    gender: resolvedGender,
+    eyeColor: incomingConfig.eyeColor,
+    height: incomingConfig.height,
+    ethnicity: incomingConfig.ethnicity,
+  });
+
+  const hasExistingAiPhoto = Boolean(
+    incomingConfig.aiPhotoUrl ||
+      prevConfig.aiPhotoUrl ||
+      String(existingProfile?.avatar_url || '').includes('aiPhotoUrl=')
+  );
+  const physicalChanged = prevSig !== nextSig;
+  const shouldRegeneratePhoto =
+    Boolean(data.forceRegeneratePhoto) || !hasExistingAiPhoto || physicalChanged;
+
+  const mergedConfig: Record<string, any> = {
+    ...prevConfig,
+    ...incomingConfig,
+    aiPhotoSig: nextSig,
+  };
+
+  if (shouldRegeneratePhoto) {
+    delete mergedConfig.aiPhotoUrl;
+  }
+
+  let baseAvatarUrl =
+    buildAvatarUrl(mergedConfig, resolvedFullName, {
+      includeAiPhoto: !shouldRegeneratePhoto,
+    }) || '';
+
+  let finalAiPhotoUrl: string | undefined = mergedConfig.aiPhotoUrl;
+
+  if (shouldRegeneratePhoto) {
+    try {
+      const strippedUrl = stripAiPhotoFromAvatarUrl(baseAvatarUrl);
+      const aiRes = await generateGuestAvatarAction(
+        user.id,
+        {
+          id: user.id,
+          name: resolvedFullName,
+          gender: resolvedGender,
+          pronouns: resolvedPronouns,
+          eye_color: mergedConfig.eyeColor || 'Hazel',
+          height: mergedConfig.height || 'Average',
+          ethnicity: mergedConfig.ethnicity || '',
+          age: mergedConfig.age || 'young',
+          avatar_config: mergedConfig,
+          avatar_url: strippedUrl,
+        },
+        {
+          forceRegenerate: physicalChanged || Boolean(data.forceRegeneratePhoto),
+          isHostProfile: true,
+        }
+      );
+      if (aiRes?.publicUrl) {
+        baseAvatarUrl = aiRes.publicUrl;
+      }
+      if (aiRes?.aiPhotoUrl) {
+        finalAiPhotoUrl = aiRes.aiPhotoUrl;
+        mergedConfig.aiPhotoUrl = aiRes.aiPhotoUrl;
+      }
+    } catch (aiErr) {
+      console.error('Host profile AI photo generation failed:', aiErr);
+    }
+  }
+
   const safePayload: Record<string, unknown> = {
     id: user.id,
     email: user.email,
     full_name: resolvedFullName,
+    avatar_config: mergedConfig,
+    avatar_url: baseAvatarUrl,
   };
   if (data.bio !== undefined) safePayload.bio = data.bio;
   if (data.location !== undefined) safePayload.location = data.location;
   if (data.pronouns !== undefined) safePayload.pronouns = data.pronouns;
-  if (data.avatar_config !== undefined) safePayload.avatar_config = data.avatar_config;
   if (data.dietary_needs !== undefined) safePayload.dietary_needs = data.dietary_needs;
   if (data.character_preferences !== undefined)
     safePayload.character_preferences = data.character_preferences;
@@ -77,7 +175,14 @@ export async function saveProfileAction(data: {
   revalidatePath('/en/mysteries', 'layout');
   revalidatePath('/en/builder', 'layout');
 
-  return { success: true, full_name: resolvedFullName };
+  return {
+    success: true,
+    full_name: resolvedFullName,
+    avatar_url: baseAvatarUrl,
+    aiPhotoUrl: finalAiPhotoUrl,
+    avatar_config: mergedConfig,
+    regeneratedPhoto: shouldRegeneratePhoto,
+  };
 }
 
 export async function getProfileAction() {

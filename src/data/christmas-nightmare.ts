@@ -60,7 +60,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Red',
-      bio: '{{The Husband}} grew up on the same street as the rest of the group and went to high school with everyone at tonight\'s Christmas dinner. He has been married to {{The Wife}} for five years, is siblings-in-law with {{The Sister-in-Law}}, has been best friends with {{The Bestie}} since high school, and works at the same company as {{The Co-Worker}}.',
+      bio: '{{The Husband}} grew up on the same street as the rest of the group and went to high school with everyone at tonight\'s Christmas dinner. {{The Husband_He}} has been married to {{The Wife}} for five years, is siblings-in-law with {{The Sister-in-Law}}, has been best friends with {{The Bestie}} since high school, and works at the same company as {{The Co-Worker}}.',
       outfit_advice: 'Sharp holiday host attire: a tailored velvet blazer or cashmere turtleneck in deep crimson or forest green, dark tailored trousers, and a luxury dress watch.',
       outfit_reference_images: [
         '/outfits/christmas/husband-1.jpg',
@@ -70,7 +70,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       act_bullets: [
         'Toast loudly to growing up on the same street and keeping the old high school crew together.',
         'Keep up a polished holiday host front alongside your wife of five years, {{The Wife}}.',
-        'Treat your childhood neighbour, {{The Bestie}}, like your lifelong right-hand man.',
+        'Treat your childhood neighbour, {{The Bestie}}, like your lifelong right-hand confidant.',
         'Talk work and office politics with {{The Co-Worker}}, who works at the same firm as you.',
       ],
       traits: ['Charismatic', 'Commanding', 'Ambitious', 'Smooth'],
@@ -89,7 +89,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Emerald Green',
-      bio: '{{The Wife}} grew up next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}) alongside her younger sister, {{The Sister-in-Law}}. She has been married to {{The Husband}} for five years after dating since high school. She also dated {{The Co-Worker}} back in high school and used to be best friends with {{The Mistress}} when they were teenagers.',
+      bio: '{{The Wife}} grew up next door to the two neighbour siblings ({{The Co-Worker}} and {{The Bestie}}) alongside her younger sister, {{The Sister-in-Law}}—and tonight both sisters are wearing their matching "Forever Sisters" sterling silver snowflake hairpins. She has been married to {{The Husband}} for five years after dating since high school, briefly dated {{The Co-Worker}} in high school, and used to be best friends with {{The Mistress}} when they were teenagers.',
       outfit_advice: 'Effortlessly glamorous holiday hostess: an emerald green silk midi dress or velvet jumpsuit, a matching sterling silver snowflake hairpin (a childhood sisters\' set shared with {{The Sister-in-Law}}), gold statement earrings, and heels.',
       outfit_reference_images: [
         '/outfits/christmas/wife-1.jpg',
@@ -99,8 +99,8 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       act_bullets: [
         'Stay close with your younger sister, {{The Sister-in-Law}}, who you grew up sharing everything with (including your matching silver snowflake hairpins).',
         'Keep things polite and composed around your old high school best friend, {{The Mistress}}.',
-        'Reminisce about growing up next door to the two neighbour brothers, {{The Co-Worker}} and {{The Bestie}}.',
-        'Keep the holiday dinner moving smoothly alongside your husband of five years, {{The Husband}}.',
+        'Reminisce about growing up next door to the two neighbour siblings, {{The Co-Worker}} and {{The Bestie}}.',
+        'Keep the holiday dinner moving smoothly alongside your spouse of five years, {{The Husband}}.',
       ],
       traits: ['Poised', 'Guarded', 'Graceful', 'Observant'],
     },
@@ -118,7 +118,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Silver',
-      bio: '{{The Sister-in-Law}} is {{The Wife}}\'s younger sister and grew up next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}). She went to high school with {{The Husband}} and {{The Mistress}}, and over the last few years she and {{The Mistress}} have become close best friends.',
+      bio: '{{The Sister-in-Law}} is {{The Wife}}\'s fiercely loyal younger sister (wearing her half of their matching "Forever Sisters" sterling silver snowflake hairpins tonight) and grew up next door to the two neighbour siblings ({{The Co-Worker}} and {{The Bestie}}). She went to high school with {{The Husband}} and {{The Mistress}}, and over the last few years she and {{The Mistress}} have become close best friends.',
       outfit_advice: 'Sleek winter chic: a shimmering silver sweater dress or satin blouse with tailored trousers, a matching sterling silver snowflake hairpin (identical to your sister {{The Wife}}\'s), layered silver jewelry, and dark berry lipstick.',
       outfit_reference_images: [
         '/outfits/christmas/sister-1.jpg',
@@ -128,7 +128,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       act_bullets: [
         'Always have your older sister {{The Wife}}\'s back during family holiday dinners.',
         'Chat and catch up with your current best friend, {{The Mistress}}.',
-        'Banter with the two brothers you grew up next door to, {{The Co-Worker}} and {{The Bestie}}.',
+        'Banter with the two neighbour siblings you grew up next door to, {{The Co-Worker}} and {{The Bestie}}.',
         'If anyone asks where you were around 8:15–8:25 PM, insist you were in the kitchen pantry corridor the entire time fetching extra holiday drinks with {{The Bestie}}.',
       ],
       traits: ['Loyal', 'Sharp-Witted', 'Protective', 'Observant'],
@@ -153,7 +153,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Gold',
-      bio: '{{The Mistress}} went to high school with the whole group and has been married to {{The Co-Worker}} for three years. She works at the same company as her brother-in-law, {{The Bestie}}. Back in high school she was best friends with {{The Wife}}, and today she is close best friends with {{The Sister-in-Law}}.',
+      bio: '{{The Mistress}} went to high school with the whole group and has been married to {{The Co-Worker}} for three years. She works in the exact same company department as her in-law and office colleague, {{The Bestie}}. Back in high school she was best friends with {{The Wife}}, and today she is close best friends with {{The Sister-in-Law}}.',
       outfit_advice: 'Show-stopping holiday glamour: a gold sequin or scarlet cocktail dress, statement heels, and bold holiday makeup.',
       outfit_reference_images: [
         '/outfits/christmas/mistress-1.jpg',
@@ -161,10 +161,10 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheMistress&eyebrows=default&eyes=default&mouth=smile&clothesColor=b45309&backgroundColor=transparent&top=straight02&hairColor=d6b370&skinColor=ffe0bd',
       act_summary: 'Act like the glamorous, outgoing socialite of the friend group who loves holiday parties and knows everyone from high school and the office.',
       act_bullets: [
-        'Be affectionate with your husband of three years, {{The Co-Worker}}.',
+        'Be affectionate with your spouse of three years, {{The Co-Worker}}.',
         'Gossip and laugh with your current best friend, {{The Sister-in-Law}}.',
-        'Reminisce about high school days with your old best friend, {{The Wife}}, and her husband, {{The Husband}}.',
-        'Talk work life with your brother-in-law and office colleague, {{The Bestie}}.',
+        'Reminisce about high school days with your old best friend, {{The Wife}}, and her spouse, {{The Husband}}.',
+        'Talk work life with your in-law and office colleague, {{The Bestie}}.',
       ],
       traits: ['Glamorous', 'Outgoing', 'Charming', 'Social'],
     },
@@ -172,7 +172,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       legacyId: '1206a2e2-169b-489b-a99d-ffe72f2f07b0',
       motive_type: 'fear',
       strength: 'high',
-      notes: 'Terrified that her secret affair with {{The Husband}} and missing office funds would be exposed to her husband ({{The Co-Worker}}), her old bestie ({{The Wife}}), and her current bestie ({{The Sister-in-Law}}).',
+      notes: 'Terrified that her secret affair with {{The Husband}} and missing office funds would be exposed to her spouse ({{The Co-Worker}}), her old bestie ({{The Wife}}), and her current bestie ({{The Sister-in-Law}}).',
     },
   },
   {
@@ -188,18 +188,18 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Charcoal',
-      bio: '{{The Co-Worker}} grew up right next door to the two sisters ({{The Wife}} and {{The Sister-in-Law}}) alongside his brother, {{The Bestie}}. He has been married to {{The Mistress}} for three years, works at the same company as {{The Husband}}, and briefly dated {{The Wife}} back when they were in high school.',
+      bio: '{{The Co-Worker}} grew up right next door to the two sisters ({{The Wife}} and {{The Sister-in-Law}}) alongside {{The Co-Worker_his}} younger {{The Bestie_sibling}}, {{The Bestie}}. {{The Co-Worker_He}} has been married to {{The Mistress}} for three years, works at the same company as {{The Husband}}, and briefly dated {{The Wife}} back when they were in high school.',
       outfit_advice: 'Sleek smart-casual holiday attire: a charcoal blazer over a dark merino knit sweater, tailored trousers, and a whiskey glass in hand.',
       outfit_reference_images: [
         '/outfits/christmas/coworker-1.jpg',
       ],
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheCoWorker&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e293b&backgroundColor=transparent&top=shortCurly&hairColor=282828&skinColor=ffe0bd',
-      act_summary: 'Be the observant, level-headed older neighbour brother who grew up next door to the sisters and works at the same company as {{The Husband}}.',
+      act_summary: 'Be the observant, level-headed older neighbour sibling who grew up next door to the sisters and works at the same company as {{The Husband}}.',
       act_bullets: [
         'Chat about work with {{The Husband}}, since the two of you work in the same department.',
         'Share childhood street memories with the sisters you grew up next door to, {{The Wife}} and {{The Sister-in-Law}}.',
         'Enjoy the Christmas party alongside your wife of three years, {{The Mistress}}.',
-        'Joke around with your younger brother, {{The Bestie}}.',
+        'Joke around with your younger {{The Bestie_sibling}}, {{The Bestie}}.',
       ],
       traits: ['Observant', 'Loyal', 'Composed', 'Grounded'],
     },
@@ -207,7 +207,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       legacyId: '2c10d4fa-76ef-47cd-b051-2aa157f2b9c4',
       motive_type: 'revenge',
       strength: 'high',
-      notes: 'Works together with {{The Husband}} (who threatened to ruin him with company audit files), harbors protective feelings for his ex ({{The Wife}}), and is married to {{The Mistress}}.',
+      notes: 'Works together with {{The Husband}} (who threatened to ruin {{The Co-Worker_him}} with company audit files), harbors protective feelings for {{The Co-Worker_his}} ex ({{The Wife}}), and is married to {{The Mistress}}.',
     },
   },
   {
@@ -223,7 +223,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Navy Blue',
-      bio: '{{The Bestie}} grew up next door to {{The Wife}} and {{The Sister-in-Law}} alongside his older brother, {{The Co-Worker}}. He has been {{The Husband}}\'s best friend since high school and works in the same office as his sister-in-law, {{The Mistress}}.',
+      bio: '{{The Bestie}} grew up next door to {{The Wife}} and {{The Sister-in-Law}} alongside {{The Bestie_his}} older {{The Co-Worker_sibling}}, {{The Co-Worker}}. {{The Bestie_He}} has been {{The Husband}}\'s best friend since high school and works in the exact same office department as {{The Bestie_his}} sister-in-law, {{The Mistress}}.',
       outfit_advice: 'Classic, disarming holiday style: a navy cable-knit sweater layered over a crisp Oxford shirt, dark chinos, and an easygoing smile.',
       outfit_reference_images: [
         '/outfits/christmas/bestie-1.jpg',
@@ -489,8 +489,8 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     voice_region: 'en-AU',
     internal_notes: '[FORMAT:audio] [CODE:R1-C2] Fake Arc Step 1 ({{The Wife}} + {{The Co-Worker}}) - Exposes that exes {{The Wife}} and {{The Co-Worker}} conspired to break into {{The Husband}}\'s study safe at 8:00 PM.',
     description:
-      'Recording Duration: 22.4 Seconds (7:25 PM • Kitchen Patio):\nMale Voice: "He brought the company audit folder to the house tonight. If he hands that over on Monday, my career is finished."\nFemale Voice: "And if I try to leave him, his new prenup clause leaves me with nothing. We grew up on this street together, you promised you\'d protect me."\nMale Voice: "I will. Meet me by the hallway closet at 8PM. We get into his study safe tonight."',
-    generation_prompt: 'A cinematic photograph of {{The Wife}} and {{The Co-Worker}} whispering together outside a frost-covered glass patio door under warm holiday string lights. (No text).',
+      'Recording Duration: 22.4 Seconds (7:25 PM • Kitchen Patio):\n{{The Co-Worker}}: "{{The Husband_He}} brought the company audit folder to the house tonight. If {{The Husband_he}} hands that over on Monday, my career is finished."\n{{The Wife}}: "And if I try to leave {{The Husband_him}}, {{The Husband_his}} new prenup clause leaves me with nothing. We grew up on this street together, you promised you\'d protect me."\n{{The Co-Worker}}: "I will. Meet me by the hallway closet at 8PM. We get into {{The Husband_his}} study safe tonight."',
+    generation_prompt: 'A cinematic photograph of {{The Wife}} and {{The Co-Worker}} whispering together outside a glass patio door under warm holiday string lights. Raw unedited photograph, no evidence markers, no text.',
   },
   {
     legacyId: '5ff23ebe-96f7-49d5-8222-84ca13a932f4',
@@ -518,9 +518,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 2,
     format: 'physical_prop',
     static_image_url: '/generated-clues/17ed93b2-803b-4fa4-964c-3a5800c6bad8-6aed0c43dde6.jpg',
-    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C4] REAL / CANON (Beat 2) - Visual photo showing the heavy leather work gloves on the top shelf and the vintage red-and-green Christmas tree lights on the middle shelf of the utility closet.',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C4] REAL / CANON (Beat 2) - Visual photo showing the tan leather work gloves on the top shelf and the vintage red-and-green Christmas tree lights on the middle shelf of the utility closet.',
     description: '',
-    generation_prompt: 'A clear, well-lit close-up photograph of an open wooden hallway utility closet with two prominent shelves: heavy tan-brown insulated leather work gloves on the top shelf, and an open storage box overflowing with a tangled coil of glowing red and green vintage Christmas tree lights on the middle shelf. (No text).',
+    generation_prompt: 'A clear, well-lit close-up photograph of an open wooden hallway utility closet with two prominent shelves: tan insulated leather work gloves on the top shelf, and an open storage box overflowing with a tangled coil of glowing red and green vintage Christmas tree lights on the middle shelf. (No text).',
   },
   {
     legacyId: '57288d71-e579-48ed-8e09-40251d2b67b7',
@@ -534,7 +534,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R1-C5] Fake Arc Step 1 ({{The Mistress}} + {{The Bestie}}) - Exposes that co-workers {{The Mistress}} and {{The Bestie}} were both threatened by {{The Husband}} and plotted to wipe his phone.',
     description:
-      '🤫💼 (7:35 PM): He just cornered me in the kitchen. Said he\'s never leaving her, and if I make a scene tonight he\'s telling my husband AND reporting the missing money from our work account.\nMe (7:36 PM): Are you kidding?! He just threatened me too. Said if I don\'t end my little secret tonight, he\'s telling my brother everything.\n🤫💼 (7:37 PM): Everything he has on us is on his phone. Help me get it unlocked before dessert or we\'re both done.',
+      '🤫💼 (7:35 PM): {{The Husband_He}} just cornered me in the kitchen. Said {{The Husband_hes}} never leaving her, and if I make a scene tonight {{The Husband_hes}} telling my {{The Co-Worker_spouse}} AND reporting the missing money from our shared office department account.\nMe (7:36 PM): Are you kidding?! {{The Husband_He}} just threatened me too. Said if I don\'t end my secret fling tonight, {{The Husband_hes}} telling my older {{The Co-Worker_sibling}} everything.\n🤫💼 (7:37 PM): Everything {{The Husband_he}} has on us is on {{The Husband_his}} phone. Help me get it unlocked before dessert or we\'re both done.',
     generation_prompt: 'Two smartphones lying side by side on a marble bar counter next to cocktail napkins. (No text).',
   },
   {
@@ -565,9 +565,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: null,
     format: 'physical_prop',
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111105-1bc1e4116176.jpg',
-    internal_notes: '[FORMAT:physical_prop] [CODE:R2-C1] Fake Arc Step 2 ({{The Wife}} + {{The Co-Worker}}) - Visual photo showing {{The Wife}} and {{The Co-Worker}} beside the open upstairs study safe with the leather work glove.',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R2-C1] Fake Arc Step 2 ({{The Wife}} + {{The Co-Worker}}) - Visual photo showing {{The Wife}} and {{The Co-Worker}} beside the open upstairs study safe with the tan leather work gloves.',
     description: '',
-    generation_prompt: 'A dramatic low-light photograph inside a dark wood-paneled upstairs study showing {{The Co-Worker}} holding a leather work glove beside an open wall safe while {{The Wife}} stands beside the mahogany desk looking toward the doorway. (No text).',
+    generation_prompt: 'A dramatic low-light photograph inside a dark wood-paneled upstairs study showing {{The Co-Worker}} wearing tan insulated leather work gloves beside an open wall safe while {{The Wife}} stands beside the mahogany desk looking toward the doorway. (No text).',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111101',
@@ -583,7 +583,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     voice_region: 'en-AU',
     internal_notes: '[FORMAT:audio] [CODE:R2-C2] REAL / CANON (Beat 3) - Captures the explosive marital fight between {{The Husband}} and {{The Wife}}, overheard outside the door at 8:12 PM.',
     description:
-      'Recording Duration: 19.2 Seconds (8:12 PM • Upstairs Master Hallway):\n{{The Wife}}: "Why are you doing this to me?! Everyone downstairs knows our marriage is a lie! Just let me go!"\n{{The Husband}}: "You\'re never leaving me. You\'ll fix your makeup, come downstairs, and play the grateful wife, or I\'ll ruin your whole family."\n[Sound of footsteps retreating from the door and a hushed voice in the hallway: "He\'s never going to let her be happy..."]',
+      'Recording Duration: 19.2 Seconds (8:12 PM • Upstairs Master Hallway):\n{{The Wife}}: "Why are you doing this to me?! Everyone downstairs knows our marriage is a lie! Just let me go!"\n{{The Husband}}: "You\'re never leaving me. You\'ll fix your makeup, come downstairs, and play the grateful wife, or I\'ll ruin your whole family."\n[Sound of footsteps retreating from the door and a hushed voice in the hallway: "{{The Husband_Hes}} never going to let her be happy..."]',
     generation_prompt: 'A dimly lit upstairs hallway with warm light spilling from underneath a closed wooden door and festive garland on the banister. (No text).',
   },
   {
@@ -598,7 +598,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'handwritten_note',
     internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C3] REAL / CANON (Beat 3) - Written right after overhearing the marital fight; ambiguous enough to sound like a childhood neighbour or sibling.',
     description:
-      'Recovered: Torn in half inside the upstairs bathroom bin (8:14 PM)\n"...heard him through the bedroom door just now. First the coat closet, and now he swears she\'ll never leave this marriage free. Twenty years on this street and he still thinks he owns us. Not after tonight."',
+      'Recovered: Torn in half inside the upstairs bathroom bin (8:14 PM)\n"...heard {{The Husband_him}} through the bedroom door just now. First the coat closet, and now {{The Husband_he}} swears she\'ll never leave this marriage free. Twenty years on this street and {{The Husband_he}} still thinks {{The Husband_he}} owns us. Not after tonight."',
     generation_prompt: 'A torn cream-colored holiday place card with gold trim resting beside a sink in a candlelit bathroom. (No text).',
   },
   {
@@ -629,7 +629,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R2-C5] REAL / CANON (Beat 4) - Proves {{The Sister-in-Law}} left {{The Bestie}} alone in the pantry from 8:15 to 8:25 PM and asked him to lie for her alibi.',
     description:
-      'Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\nMe (8:27 PM): Of course I\'ll cover for you, if my brother found out about us we\'d be dead. Wait, why are your hands shaking?',
+      'Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\nMe (8:27 PM): Of course I\'ll cover for you—if my older {{The Co-Worker_sibling}} or your older sister found out about us we\'d both be dead. Wait, why are your hands shaking?',
     generation_prompt: 'Two champagne flutes left behind on a marble pantry counter beside holiday ribbon and pine cones. (No text).',
   },
   {
@@ -643,10 +643,10 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 2,
     format: 'cctv',
     static_image_url: '/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-0eefa60444a8.jpg',
-    internal_notes: '[FORMAT:cctv] [CODE:R2-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV showing {{The Sister-in-Law}} carrying the Christmas tree lights out of the storage closet and {{The Co-Worker}} wearing the leather work gloves at the 2F breaker panel.',
+    internal_notes: '[FORMAT:cctv] [CODE:R2-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV showing {{The Sister-in-Law}} carrying the Christmas tree lights out of the storage closet and {{The Co-Worker}} wearing the tan leather work gloves at the 2F breaker panel.',
     description:
       'Header: CAM 01 • HALLWAY STORAGE & 2F STUDY BREAKER\nTimestamp: 7:52 PM - 8:03 PM',
-    generation_prompt: 'An overhead security camera still in a dimly lit holiday hallway showing {{The Sister-in-Law}} stepping out of the open storage closet holding a tangled coil of red and green Christmas tree lights while {{The Co-Worker}} wears tan leather work gloves at the open wall breaker panel. (No text).',
+    generation_prompt: 'A high-angle interior hallway photograph in a dimly lit holiday hallway showing {{The Sister-in-Law}} stepping out of the open storage closet holding a tangled coil of red and green Christmas tree lights while {{The Co-Worker}} wears tan insulated leather work gloves at the open wall breaker panel. Raw unedited photo, NO camera HUD, NO timestamp text, NO numbers.',
   },
 
   // ── ROUND 3 (4 Clues: 2 Step-3 Alibi/Hole Clues + 2 Final Beat 4-5 Resolution Clues, Shuffled) ──
@@ -664,7 +664,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19:12 PM (not the sedative drops or work gloves), and shows the broken "...ever Sisters" snowflake hairpin snagged inside the knotted light cord.',
     description:
       'LAB: FORENSIC CRIME SCENE UNIT\nTIME: DEATH AT 8:19:12 PM • 1ST FLOOR TREE CORNER\n• Cause of Death: 25-ft vintage Christmas light cord (Wall Outlet #1).\n• Toxicology: Zolpidem 0.04 mg/L (mild sedation only; non-fatal).\n• Cord Trace: Broken silver snowflake hairpin clasp ("...ever Sisters") snagged inside wire knot.',
-    generation_prompt: 'A dramatic forensic close-up photograph on a dark hardwood floor beside a Christmas tree showing a tangled, knotted cord of glowing red and green vintage Christmas tree lights with a broken sterling silver snowflake hairpin snagged right in the middle of the knotted wire. (No text).',
+    generation_prompt: 'A macro forensic close-up photograph on a dark hardwood floor beside a Christmas tree showing a tangled, knotted cord of glowing red and green vintage Christmas tree lights with a broken metallic sterling silver snowflake hairpin (showing its snapped silver metal bobby-pin clasp) snagged right in the middle of the knotted wire. Raw unedited photo, NO text.',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111107',
@@ -694,7 +694,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111110-2de9619b65ec.jpg',
     internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Visual Polaroid photo of {{The Sister-in-Law}} and {{The Wife}} + cryptic handwritten message on the back that requires cross-referencing the 8:19 PM study alibi and pantry chat.',
     description:
-      'Recovered: Written on back of Polaroid inside coat pocket near pantry\n"We grew up on this street together, and I meant it when I promised you wouldn\'t be trapped in this marriage another year. After what I heard him say to you upstairs at 8:12 PM, I knew there was only one way you\'d ever be happy and free."',
+      'Recovered: Written on back of Polaroid inside coat pocket near pantry\n"We grew up on this street together, and I meant it when I promised you wouldn\'t be trapped in this marriage another year. After what I heard {{The Husband_him}} say to you upstairs at 8:12 PM, I knew there was only one way you\'d ever be happy and free."',
     generation_prompt: 'A warm candid instant Polaroid photograph of {{The Sister-in-Law}} and {{The Wife}} hugging closely in front of a glowing Christmas tree at the holiday party. (No text).',
   },
   {
@@ -711,7 +711,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     internal_notes: '[FORMAT:cctv] [CODE:R3-C4] Fake Arc Step 3 & Fatal Hole ({{The Mistress}} + {{The Bestie}}) - Visual CCTV still proving {{The Husband}} was still alive on the sofa at 8:16:10 PM when {{The Mistress}} slipped out with his unlocked phone to the dining table.',
     description:
       'Header: CAM 02 • LIVING ROOM DOOR (8:16 PM) -> DINING TABLE (8:17-8:22 PM)\nTimestamp: 8:16:10 PM - 8:22:00 PM',
-    generation_prompt: 'An overhead security camera still showing {{The Mistress}} slipping out of a living room doorway holding a glowing smartphone while {{The Husband}} is visible in the background slouched but alive on the sofa. (No text).',
+    generation_prompt: 'A high-angle interior living room photograph showing {{The Mistress}} slipping out of a living room doorway holding a glowing smartphone while {{The Husband}} is visible in the background slouched but alive on a long Chesterfield sofa. Raw unedited photo, NO camera HUD, NO timestamp text, NO numbers.',
   },
 ];
 

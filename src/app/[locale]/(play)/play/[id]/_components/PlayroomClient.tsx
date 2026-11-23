@@ -1874,62 +1874,59 @@ export function PlayroomClient({
               className="absolute inset-0 w-full h-full object-cover opacity-10 blur-[2px] pointer-events-none"
             />
           )}
-          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <Link
-                href={
-                  initialIsHost
-                    ? `/${locale}/builder/mysteries/${mystery.id.split('__u_')[0]}`
-                    : `/${locale}/account/orders`
-                }
-                title="Exit Playroom"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
-                </svg>
-                <span>Exit</span>
-              </Link>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-black uppercase tracking-tight text-white truncate">
-                    {mystery.title}
-                  </h1>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/15 px-2.5 py-0.5 rounded-full border border-amber-400/30 font-mono shrink-0">
-                    PIN {pin.slice(0, 3)} {pin.slice(3)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 truncate">
-                  Tap your assigned character below to enter your live dossier
-                </p>
+          <div className="relative z-10 max-w-6xl mx-auto px-3.5 sm:px-6 py-2.5 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center justify-between sm:justify-start gap-2.5 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <Link
+                  href={
+                    initialIsHost
+                      ? `/${locale}/builder/mysteries/${mystery.id.split('__u_')[0]}`
+                      : `/${locale}/account/orders`
+                  }
+                  title="Exit Playroom"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span>Exit</span>
+                </Link>
+                <h1 className="text-sm sm:text-lg font-black uppercase tracking-tight text-white truncate">
+                  {mystery.title}
+                </h1>
               </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/15 px-2.5 py-0.5 rounded-full border border-amber-400/30 font-mono shrink-0">
+                PIN {pin.slice(0, 3)} {pin.slice(3)}
+              </span>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsQrModalOpen(true)}
-                className="min-h-[36px] text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all cursor-pointer"
-              >
-                📷 QR &amp; PIN
-              </button>
-              <button
-                type="button"
-                onClick={() => handleShareOrCopyGuestLink(false)}
-                className={`min-h-[36px] text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                  copiedGuestLink
-                    ? 'bg-emerald-500 text-slate-950 border-emerald-400'
-                    : 'bg-white/5 text-slate-200 border-white/15 hover:border-brand-pink/50'
-                }`}
-              >
-                {copiedGuestLink ? '✓ Link Copied' : '📋 Copy Link'}
-              </button>
+            <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="min-h-[34px] text-[10px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all cursor-pointer"
+                >
+                  📷 QR &amp; PIN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShareOrCopyGuestLink(false)}
+                  className={`min-h-[34px] text-[10px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                    copiedGuestLink
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                      : 'bg-white/5 text-slate-200 border-white/15 hover:border-brand-pink/50'
+                  }`}
+                >
+                  {copiedGuestLink ? '✓ Copied' : '📋 Copy Link'}
+                </button>
+              </div>
               {isHostMode && (
                 <button
                   type="button"
                   disabled={isRefreshingSession || !nextStepInfo.canAdvance}
                   onClick={() => handleHostNextStep(false)}
-                  className="min-h-[36px] text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl bg-brand-pink text-white hover:opacity-95 transition-all shadow disabled:opacity-40 cursor-pointer"
+                  className="min-h-[34px] text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl bg-brand-pink text-white hover:opacity-95 transition-all shadow disabled:opacity-40 cursor-pointer"
                 >
                   {isRefreshingSession ? '⏳...' : nextStepInfo.label}
                 </button>
@@ -1939,18 +1936,32 @@ export function PlayroomClient({
         </header>
 
         {/* Character Selection Grid */}
-        <div className="flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 py-5 space-y-5">
+        <div className="flex-grow max-w-6xl mx-auto w-full px-3 sm:px-6 py-3.5 sm:py-5 space-y-3.5 sm:space-y-5">
           {/* Single Compact Welcome Bar */}
-          <div className="rounded-2xl bg-slate-900/80 border border-white/10 px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="px-2.5 py-1 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+          <div className="rounded-2xl bg-slate-900/80 border border-white/10 px-3.5 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2">
+              <span className="px-2.5 py-1 rounded-lg bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest shrink-0">
                 🎭 Choose Your Character
               </span>
-              <span className="text-xs sm:text-sm font-bold text-slate-200">
+              <div className="flex items-center gap-1.5 sm:hidden">
+                <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-emerald-400">
+                  👥 {claimedCount}/{activeCharacters.length} Joined
+                </span>
+                {isHostMode && claimedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleHostResetClaims}
+                    className="px-2 py-0.5 rounded-lg bg-white/5 text-[9px] font-black uppercase text-amber-300 border border-amber-400/30 cursor-pointer"
+                  >
+                    🔓 Reset
+                  </button>
+                )}
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-200 w-full sm:w-auto">
                 Find your name below and tap your card to unlock your secrets, connections &amp; live clue deck.
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
               <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-emerald-400">
                 👥 {claimedCount}/{activeCharacters.length} Joined
               </span>
@@ -1972,7 +1983,7 @@ export function PlayroomClient({
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
             {activeCharacters.map(char => {
               const { name, archetype, guestName } = parseCharacter(char);
               const charPres = getCleanCharacterPresentation(char, characters, { mode: 'generic' });
@@ -2008,7 +2019,7 @@ export function PlayroomClient({
                       handleSelectCharacterInLobby(char.id);
                     }
                   }}
-                  className={`group rounded-3xl overflow-hidden text-left transition-all flex flex-col justify-between border relative ${
+                  className={`group rounded-2xl sm:rounded-3xl overflow-hidden text-left transition-all flex flex-col justify-between border relative ${
                     isClaimedByMe
                       ? 'bg-brand-pink/15 border-brand-pink shadow-[0_0_25px_rgba(254,4,198,0.25)] cursor-pointer'
                       : isClaimedByOther
@@ -2017,7 +2028,7 @@ export function PlayroomClient({
                   }`}
                 >
                   {/* Character Portrait */}
-                  <div className="relative w-full aspect-[4/5] sm:h-72 bg-slate-950 overflow-hidden border-b border-white/10">
+                  <div className="relative w-full h-44 sm:h-72 bg-slate-950 overflow-hidden border-b border-white/10">
                     {charAvatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -2026,62 +2037,63 @@ export function PlayroomClient({
                         className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-6xl bg-gradient-to-br from-slate-900 to-slate-950">
+                      <div className="w-full h-full flex items-center justify-center text-4xl sm:text-6xl bg-gradient-to-br from-slate-900 to-slate-950">
                         {char.is_victim ? '💀' : '🕵️'}
                       </div>
                     )}
 
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-16 sm:h-24 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
 
                     {/* Top Overlay: Assigned Guest Name + Role Pill */}
-                    <div className="absolute top-3 inset-x-3 flex items-center justify-between gap-2 z-10">
+                    <div className="absolute top-2 inset-x-2 sm:top-3 sm:inset-x-3 flex items-center justify-between gap-1.5 z-10">
                       {guestName ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-pink text-white text-xs font-black uppercase tracking-wider max-w-[70%] truncate shadow-lg">
+                        <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-brand-pink text-white text-[10px] sm:text-xs font-black uppercase tracking-wider max-w-[68%] truncate shadow-lg">
                           👤 {guestName}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[10px] font-bold uppercase tracking-wider text-slate-200">
-                          Open Role
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-200">
+                          Open
                         </span>
                       )}
 
-                      <span className="px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[10px] font-black uppercase tracking-wider text-white shrink-0">
-                        {char.is_victim ? '💀 Victim' : '🕵️ Suspect'}
+                      <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white shrink-0">
+                        {char.is_victim ? '💀 Victim' : '🕵️'}
+                        <span className="hidden sm:inline">{char.is_victim ? '' : ' Suspect'}</span>
                       </span>
                     </div>
 
                     {(isClaimedByMe || isClaimedByOther) && (
-                      <div className="absolute bottom-3 right-3 z-10">
+                      <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-10">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md ${
+                          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider shadow-md ${
                             isClaimedByMe
                               ? 'bg-emerald-500 text-slate-950'
                               : 'bg-black/85 text-amber-300 border border-amber-400/40'
                           }`}
                         >
-                          {isClaimedByMe ? '✓ Claimed by You' : '🔒 Taken'}
+                          {isClaimedByMe ? '✓ Yours' : '🔒 Taken'}
                         </span>
                       </div>
                     )}
                   </div>
 
                   {/* Card Body */}
-                  <div className="p-4 flex flex-col justify-between gap-3 flex-grow">
+                  <div className="p-3 sm:p-4 flex flex-col justify-between gap-2 sm:gap-3 flex-grow">
                     <div className="space-y-1">
-                      <h3 className="text-base sm:text-lg font-black text-white leading-snug group-hover:text-brand-pink transition-colors">
+                      <h3 className="text-xs sm:text-lg font-black text-white leading-snug group-hover:text-brand-pink transition-colors truncate">
                         {charPres.roleTitle || archetype}
                       </h3>
-                      <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-2 leading-snug sm:leading-relaxed">
                         {charPres.shortBlurb}
                       </p>
                     </div>
 
-                    <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-slate-400">
+                    <div className="pt-2 sm:pt-2.5 border-t border-white/10 flex items-center justify-between gap-1.5">
+                      <span className="hidden sm:inline text-[11px] font-bold text-slate-400 truncate">
                         {guestName ? `For ${guestName}` : 'Tap to claim'}
                       </span>
                       <span
-                        className={`text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl shrink-0 ${
+                        className={`w-full sm:w-auto text-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl shrink-0 ${
                           isClaimedByMe
                             ? 'bg-emerald-500 text-slate-950'
                             : isClaimedByOther
@@ -2092,7 +2104,7 @@ export function PlayroomClient({
                         {isClaimingThis
                           ? 'Opening...'
                           : isClaimedByMe
-                          ? 'Enter Dossier →'
+                          ? 'Enter →'
                           : isClaimedByOther
                           ? 'Claimed'
                           : 'Claim Role →'}

@@ -1,9 +1,13 @@
-'use client';
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AvatarBuilder, deriveDiceBearTop } from '@/components/account/AvatarBuilder';
 import { PhotoTraitScanner, ScannedGuestTraits } from '@/components/account/PhotoTraitScanner';
-import { buildAvatarUrl, AvatarConfig, GUEST_ACCENT_OPTIONS } from '@/utils/avatar';
+import {
+  buildAvatarUrl,
+  AvatarConfig,
+  GUEST_ACCENT_OPTIONS,
+  resolveDisplayAvatarUrl,
+  computeAvatarPhysicalSignature,
+} from '@/utils/avatar';
 import { saveProfileAction } from '@/app/actions/profile';
 import { generateProfileBioAction, generateProfileFunFactAction } from '@/app/actions/generator';
 
@@ -15,14 +19,18 @@ const DIETARY_OPTIONS = [
 const PRONOUNS = ['He/Him', 'She/Her', 'They/Them', 'He/They', 'She/They', 'Any'];
 
 const DEFAULT_AVATAR: AvatarConfig = {
-  seed: 'player',
-  top: 'shortFlat',
-  hairLength: 'Short',
+  seed: 'Gabriella Blyth',
+  top: 'straight01',
+  hairLength: 'Long',
   hairTexture: 'Straight',
   hairColor: '282828',
-  skinColor: 'ffe0bd',
+  skinColor: 'ffcd94',
+  eyeColor: 'Hazel',
+  height: 'Average',
+  build: 'Curvy',
   accessories: 'none',
   accent: 'Australian',
+  aiPhotoUrl: '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg',
 };
 
 interface ProfileClientProps {
@@ -32,6 +40,7 @@ interface ProfileClientProps {
     bio?: string | null;
     location?: string | null;
     pronouns?: string | null;
+    avatar_url?: string | null;
     avatar_config?: AvatarConfig | null;
     dietary_needs?: string[] | null;
     character_preferences?: string[] | null;
@@ -47,6 +56,7 @@ interface ProfileClientProps {
     dietary_needs: string[];
     character_preferences: string[];
     avatar_config: AvatarConfig;
+    avatar_url?: string;
   }) => void;
 }
 
@@ -56,11 +66,54 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
   );
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [location, setLocation] = useState(profile?.location ?? '');
-  const [pronouns, setPronouns] = useState(profile?.pronouns ?? '');
+  const [pronouns, setPronouns] = useState(profile?.pronouns ?? 'She/Her');
   const [funFacts, setFunFacts] = useState(profile?.fun_facts ?? '');
   const [dietary, setDietary] = useState<string[]>(profile?.dietary_needs ?? []);
-  const [charPrefs, setCharPrefs] = useState<string[]>(profile?.character_preferences ?? []);
-  const [gender, setGender] = useState<'Masculine' | 'Feminine'>('Feminine');
+  const [charPrefs] = useState<string[]>(profile?.character_preferences ?? []);
+  const [gender, setGender] = useState<'Masculine' | 'Feminine'>(() =>
+    profile?.pronouns?.toLowerCase().includes('he/him') ? 'Masculine' : 'Feminine'
+  );
+
+  const initialMergedAvatar: AvatarConfig = useMemo(() => {
+    const raw = (profile?.avatar_config as AvatarConfig) ?? DEFAULT_AVATAR;
+    const extractedAiFromUrl = resolveDisplayAvatarUrl(profile?.avatar_url);
+    const hasRealAiUrl =
+      raw.aiPhotoUrl ||
+      (extractedAiFromUrl && !extractedAiFromUrl.includes('api.dicebear.com')
+        ? extractedAiFromUrl
+        : undefined) ||
+      DEFAULT_AVATAR.aiPhotoUrl;
+    return {
+      ...DEFAULT_AVATAR,
+      ...raw,
+      aiPhotoUrl: hasRealAiUrl,
+    };
+  }, [profile]);
+
+  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(initialMergedAvatar);
+  const [savedPhysicalSig, setSavedPhysicalSig] = useState<string>(() =>
+    computeAvatarPhysicalSignature({
+      gender:
+        profile?.pronouns?.toLowerCase().includes('he/him')
+          ? 'male'
+          : 'female',
+      avatar_config: initialMergedAvatar,
+    })
+  );
+
+  const currentPhysicalSig = useMemo(
+    () =>
+      computeAvatarPhysicalSignature({
+        gender:
+          gender === 'Masculine' || pronouns.toLowerCase().includes('he/him')
+            ? 'male'
+            : 'female',
+        avatar_config: avatarConfig,
+      }),
+    [gender, pronouns, avatarConfig]
+  );
+
+  const hasPhysicalChanges = currentPhysicalSig !== savedPhysicalSig;
 
   const handleGenderChange = (g: 'Masculine' | 'Feminine') => {
     setGender(g);
@@ -77,14 +130,12 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
       };
     });
   };
-  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
-    (profile?.avatar_config as AvatarConfig) ?? DEFAULT_AVATAR
-  );
+
   const [activeTab, setActiveTab] = useState<'info' | 'avatar'>('info');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [isGeneratingBio, setIsGeneratingBio] = useState(false);
   const [isGeneratingFunFact, setIsGeneratingFunFact] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [regeneratingOnly, setRegeneratingOnly] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
@@ -92,20 +143,45 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
     setArr(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val]);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (opts?: { forcePhoto?: boolean; closeAfterSave?: boolean }) => {
+    const shouldForcePhoto = Boolean(opts?.forcePhoto || hasPhysicalChanges || !avatarConfig.aiPhotoUrl);
+    if (opts?.forcePhoto) {
+      setRegeneratingOnly(true);
+    }
     setSaving(true);
     setError('');
     const cleanName = fullName.trim() || user.name || 'Gabriella Blyth';
     const result = await saveProfileAction({
       full_name: cleanName,
-      bio, location, pronouns, fun_facts: funFacts,
+      bio,
+      location,
+      pronouns,
+      fun_facts: funFacts,
       dietary_needs: dietary,
       character_preferences: charPrefs,
       avatar_config: avatarConfig as unknown as Record<string, unknown>,
+      forceRegeneratePhoto: shouldForcePhoto,
     });
     setSaving(false);
-    if (result.error) { setError(result.error); }
-    else {
+    setRegeneratingOnly(false);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      const updatedConfig: AvatarConfig = (result.avatar_config as AvatarConfig) || {
+        ...avatarConfig,
+        ...(result.aiPhotoUrl ? { aiPhotoUrl: result.aiPhotoUrl } : {}),
+      };
+      setAvatarConfig(updatedConfig);
+      setSavedPhysicalSig(
+        computeAvatarPhysicalSignature({
+          gender:
+            gender === 'Masculine' || pronouns.toLowerCase().includes('he/him')
+              ? 'male'
+              : 'female',
+          avatar_config: updatedConfig,
+        })
+      );
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
       onSaved?.({
@@ -116,23 +192,14 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
         fun_facts: funFacts,
         dietary_needs: dietary,
         character_preferences: charPrefs,
-        avatar_config: avatarConfig,
+        avatar_config: updatedConfig,
+        avatar_url: result.avatar_url || buildAvatarUrl(updatedConfig, cleanName),
       });
+      if (opts?.closeAfterSave && onClose) {
+        onClose();
+      }
     }
   };
-
-  const isInitialMount = useRef(true);
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    const timeout = setTimeout(() => {
-      handleSave();
-    }, 1000);
-    return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fullName, bio, location, pronouns, funFacts, dietary, charPrefs, avatarConfig]);
 
   const handleGenerateBio = async () => {
     setIsGeneratingBio(true);
@@ -159,6 +226,9 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
   };
 
   const inputClass = "w-full px-5 py-3.5 bg-white border-2 border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/10 transition-all";
+  const resolvedPreviewSrc = resolveDisplayAvatarUrl(
+    buildAvatarUrl(avatarConfig, fullName || user.name)
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -168,7 +238,7 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
         <div className="px-5 py-4 sm:p-8 sm:pb-6 border-b border-slate-100 flex items-center justify-between bg-white z-10 flex-shrink-0">
           <div>
             <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">Edit My Profile</h2>
-            <p className="text-xs sm:text-sm font-bold text-slate-400">Update your avatar and personal preferences</p>
+            <p className="text-xs sm:text-sm font-bold text-slate-400">Update your physical traits &amp; preferences - saving physical changes regenerates your AI character photo</p>
           </div>
           {onClose && (
             <button onClick={onClose} className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full flex items-center justify-center transition-colors shrink-0">
@@ -183,8 +253,27 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
 
           {/* Save Status Banner */}
           <div className="mb-4 sm:mb-6 flex items-center gap-3">
-            {saving && <span className="text-xs font-bold text-slate-400 flex items-center gap-2"><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>Saving changes...</span>}
-            {saved && <span className="text-xs font-bold text-brand-pink">Changes saved!</span>}
+            {saving && (
+              <span className="text-xs font-bold text-brand-pink flex items-center gap-2">
+                <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+                {hasPhysicalChanges || regeneratingOnly
+                  ? 'Regenerating your AI character headshot & saving profile...'
+                  : 'Saving changes...'}
+              </span>
+            )}
+            {saved && !saving && (
+              <span className="text-xs font-bold text-emerald-600">
+                ✓ Profile saved &amp; AI character photo synced!
+              </span>
+            )}
+            {hasPhysicalChanges && !saving && (
+              <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                ✨ Physical traits modified - click Save Profile below to regenerate your AI photo
+              </span>
+            )}
             {error && <span className="text-xs font-bold text-red-500">{error}</span>}
           </div>
 
@@ -196,31 +285,60 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
 
       {/* Avatar Preview + Tab switch */}
       <div className="bg-white rounded-3xl sm:rounded-[2rem] border border-slate-100 overflow-hidden mb-6 sm:mb-8">
-        <div className="p-4 sm:p-8 flex items-center gap-4 sm:gap-6 border-b border-slate-50">
-          <div className="relative flex-shrink-0">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={buildAvatarUrl(avatarConfig, user.name)}
-                alt="Your avatar"
-                className="w-full h-full object-cover scale-110"
-              />
+        <div className="p-4 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 border-b border-slate-50">
+          <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+            <div className="relative flex-shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-brand-pink/30 shadow-md" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={resolvedPreviewSrc}
+                  alt="Your AI character avatar"
+                  className="w-full h-full object-cover object-top"
+                />
+                {saving && (hasPhysicalChanges || regeneratingOnly) && (
+                  <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl">
+                    <svg className="animate-spin h-6 w-6 text-brand-pink mb-1" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-white">AI Photo</span>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('avatar')}
+                className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-lg cursor-pointer"
+                style={{ background: '#fe04c6' }}
+                title="Customize physical traits"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
             </div>
-            <button
-              onClick={() => setActiveTab('avatar')}
-              className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-lg"
-              style={{ background: '#fe04c6' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="font-black text-slate-900 text-base sm:text-lg truncate">{fullName || user.name || 'Your Name'}</p>
+                <span className="px-2 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink text-[9px] font-black uppercase tracking-widest shrink-0">
+                  👑 Host
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-400 font-medium truncate">{user.email}</p>
+              <p className="text-xs font-bold text-slate-400 mt-1 truncate">
+                {[pronouns, avatarConfig.accent ? `🎙️ ${avatarConfig.accent}` : null].filter(Boolean).join(' · ')}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="font-black text-slate-900 text-base sm:text-lg truncate">{fullName || user.name || 'Your Name'}</p>
-            <p className="text-xs sm:text-sm text-slate-400 font-medium truncate">{user.email}</p>
-            <p className="text-xs font-bold text-slate-400 mt-1 truncate">
-              {[pronouns, avatarConfig.accent ? `🎙️ ${avatarConfig.accent}` : null].filter(Boolean).join(' · ')}
-            </p>
-          </div>
+
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => handleSave({ forcePhoto: true, closeAfterSave: false })}
+            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-brand-pink text-white text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50 shrink-0 cursor-pointer self-start sm:self-center"
+          >
+            {saving && (hasPhysicalChanges || regeneratingOnly)
+              ? '✨ Generating AI Photo...'
+              : '✨ Regenerate AI Photo'}
+          </button>
         </div>
 
         {/* Tabs */}

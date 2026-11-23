@@ -13,6 +13,9 @@ export type AvatarConfig = {
   distinctiveFeatures?: string[];
   accent?: string;
   age?: 'young' | 'middle_aged' | 'old' | string;
+  ethnicity?: string;
+  aiPhotoUrl?: string;
+  aiPhotoSig?: string;
 };
 
 export const GUEST_ACCENT_OPTIONS = [
@@ -55,23 +58,109 @@ export function extractAgeFromAvatarUrl(url?: string | null): 'young' | 'middle_
   return undefined;
 }
 
-export function buildAvatarUrl(config: AvatarConfig | any, name?: string): string | undefined {
+/**
+ * Computes a normalized physical signature from an AvatarConfig or DiceBear URL
+ * so we can detect when any physical attribute has changed and regenerate the AI photo.
+ */
+export function computeAvatarPhysicalSignature(
+  configOrUrl: AvatarConfig | string | null | undefined,
+  extra?: {
+    gender?: string | null;
+    eyeColor?: string | null;
+    height?: string | null;
+    ethnicity?: string | null;
+  }
+): string {
+  if (!configOrUrl) return '';
+  if (typeof configOrUrl === 'string') {
+    try {
+      const u = new URL(configOrUrl);
+      const p = u.searchParams;
+      return [
+        (extra?.gender || '').toLowerCase(),
+        (p.get('age') || 'young').toLowerCase(),
+        (extra?.ethnicity || p.get('ethnicity') || '').toLowerCase(),
+        (p.get('skinColor') || '').toLowerCase(),
+        (p.get('hairColor') || '').toLowerCase(),
+        (p.get('hairLength') || '').toLowerCase(),
+        (p.get('hairTexture') || '').toLowerCase(),
+        (p.get('top') || '').toLowerCase(),
+        (extra?.eyeColor || p.get('eyeColor') || '').toLowerCase(),
+        (p.get('facialHair') || '').toLowerCase(),
+        (p.get('build') || '').toLowerCase(),
+        (extra?.height || p.get('height') || '').toLowerCase(),
+        (p.get('accessories') || '').toLowerCase(),
+        (p.get('distinctiveFeatures') || '').toLowerCase(),
+      ].join('|');
+    } catch {
+      return configOrUrl;
+    }
+  }
+
+  const c = configOrUrl;
+  const feats = Array.isArray(c.distinctiveFeatures)
+    ? [...c.distinctiveFeatures].sort().join(',')
+    : '';
+  return [
+    (extra?.gender || '').toLowerCase(),
+    (c.age || 'young').toLowerCase(),
+    (extra?.ethnicity || c.ethnicity || '').toLowerCase(),
+    (c.skinColor || '').toLowerCase(),
+    (c.hairColor || '').toLowerCase(),
+    (c.hairLength || '').toLowerCase(),
+    (c.hairTexture || '').toLowerCase(),
+    (c.top || '').toLowerCase(),
+    (extra?.eyeColor || c.eyeColor || '').toLowerCase(),
+    (c.facialHair || '').toLowerCase(),
+    (c.build || '').toLowerCase(),
+    (extra?.height || c.height || '').toLowerCase(),
+    (c.accessories || '').toLowerCase(),
+    feats.toLowerCase(),
+  ].join('|');
+}
+
+export function stripAiPhotoFromAvatarUrl(url?: string | null): string {
+  if (!url) return '';
+  return url
+    .replace(/[?&]aiPhotoUrl=[^&]*/g, '')
+    .replace(/[?&]aiPhotoHash=[^&]*/g, '')
+    .replace(/[?&]aiPhotoSig=[^&]*/g, '');
+}
+
+export function buildAvatarUrl(
+  config: AvatarConfig | any,
+  name?: string,
+  options?: { includeAiPhoto?: boolean }
+): string | undefined {
   if (!config) return undefined;
   const isBald = config.top === 'none';
-  const hasGlasses = config.distinctiveFeatures?.includes('Glasses');
-  
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed)}` +
+  const hasGlasses =
+    config.accessories === 'prescription01' ||
+    config.distinctiveFeatures?.includes('Glasses');
+  const includeAiPhoto = options?.includeAiPhoto !== false;
+
+  let url =
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed || 'player')}` +
     `&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=transparent` +
-    `${isBald ? '&topProbability=0' : `&top=${config.top}`}` +
-    `&hairColor=${config.hairColor}&hatColor=${config.hairColor}&skinColor=${config.skinColor}` +
-    `&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${config.facialHair}&facialHairColor=${config.hairColor}` : ''}` +
+    `${isBald ? '&topProbability=0' : `&top=${config.top || 'shortFlat'}`}` +
+    `&hairColor=${config.hairColor || '282828'}&hatColor=${config.hairColor || '282828'}&skinColor=${config.skinColor || 'ffe0bd'}` +
+    `&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${config.facialHair}&facialHairColor=${config.hairColor || '282828'}` : ''}` +
     `&accessoriesProbability=${hasGlasses ? '100' : '0'}${hasGlasses ? `&accessories=prescription01` : ''}` +
     `${config.build ? `&build=${encodeURIComponent(config.build)}` : ''}` +
+    `${config.eyeColor ? `&eyeColor=${encodeURIComponent(config.eyeColor)}` : ''}` +
+    `${config.height ? `&height=${encodeURIComponent(config.height)}` : ''}` +
+    `${config.ethnicity ? `&ethnicity=${encodeURIComponent(config.ethnicity)}` : ''}` +
     `${config.distinctiveFeatures && config.distinctiveFeatures.length > 0 ? `&distinctiveFeatures=${encodeURIComponent(config.distinctiveFeatures.filter((f: string) => f !== 'Glasses').join(','))}` : ''}` +
     `${config.hairLength ? `&hairLength=${encodeURIComponent(config.hairLength)}` : ''}` +
     `${config.hairTexture ? `&hairTexture=${encodeURIComponent(config.hairTexture)}` : ''}` +
     `${config.accent ? `&accent=${encodeURIComponent(config.accent)}` : ''}` +
     `${config.age ? `&age=${encodeURIComponent(config.age)}` : ''}`;
+
+  if (includeAiPhoto && config.aiPhotoUrl) {
+    url += `&aiPhotoUrl=${encodeURIComponent(config.aiPhotoUrl)}`;
+  }
+
+  return url;
 }
 
 /**
@@ -99,5 +188,3 @@ export function resolveDisplayAvatarUrl(avatarUrl?: string | null): string {
   }
   return avatarUrl.replace('api.dicebear.com/8.x/avataaars', 'api.dicebear.com/7.x/avataaars');
 }
-
-

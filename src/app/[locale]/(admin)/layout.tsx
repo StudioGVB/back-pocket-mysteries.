@@ -38,7 +38,9 @@ export default function AdminLayout({
 }) {
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
+      <Suspense fallback={<aside className="w-64 bg-brand-dark text-white min-h-screen fixed left-0 top-0" />}>
+        <AdminSidebar />
+      </Suspense>
       <Toaster richColors position="top-right" />
 
       {/* Main Content */}

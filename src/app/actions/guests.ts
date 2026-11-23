@@ -4,7 +4,12 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/database';
 import { generateGuestAvatarAction } from '@/app/actions/ai-guests';
-import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
+import {
+  extractAccentFromAvatarUrl,
+  extractAgeFromAvatarUrl,
+  computeAvatarPhysicalSignature,
+  stripAiPhotoFromAvatarUrl,
+} from '@/utils/avatar';
 import { getAllCachedMysteries, updateCachedMysteryCharacters } from '@/lib/live-session-store';
 
 export async function saveGuestAction(guestData: {
@@ -28,17 +33,25 @@ export async function saveGuestAction(guestData: {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll() {}
-        }
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {},
+        },
       }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return { error: 'Not authenticated' };
     }
+
+    const rawAvatarUrl = stripAiPhotoFromAvatarUrl(
+      guestData.avatar_url ?? guestData.avatarUrl
+    );
 
     const insertPayload = {
       user_id: user.id,
@@ -48,7 +61,7 @@ export async function saveGuestAction(guestData: {
       eye_color: guestData.eye_color ?? guestData.eyeColor,
       height: guestData.height,
       ethnicity: guestData.ethnicity,
-      avatar_url: guestData.avatar_url ?? guestData.avatarUrl,
+      avatar_url: rawAvatarUrl,
       traits: guestData.traits ? guestData.traits.slice(0, 3) : undefined,
       bio: guestData.bio,
     };
@@ -64,11 +77,13 @@ export async function saveGuestAction(guestData: {
       return { error: error.message };
     }
 
-    // Automatically generate AI standard profile photo as soon as a guest is created
+    // Always generate AI standard profile photo when a character/guest is created
     let finalGuest = data;
-    if (data && !(data.avatar_url || '').includes('aiPhotoUrl=')) {
+    if (data) {
       try {
-        const aiRes = await generateGuestAvatarAction(data.id, data);
+        const aiRes = await generateGuestAvatarAction(data.id, data, {
+          forceRegenerate: true,
+        });
         if (aiRes?.publicUrl) {
           finalGuest = { ...data, avatar_url: aiRes.publicUrl };
         }
@@ -84,20 +99,24 @@ export async function saveGuestAction(guestData: {
   }
 }
 
-export async function updateGuestAction(id: string, guestData: {
-  name?: string;
-  email?: string;
-  gender?: string;
-  eye_color?: string;
-  eyeColor?: string;
-  height?: string;
-  ethnicity?: string;
-  avatar_url?: string;
-  avatarUrl?: string;
-  traits?: string[];
-  bio?: string;
-  [key: string]: any;
-}) {
+export async function updateGuestAction(
+  id: string,
+  guestData: {
+    name?: string;
+    email?: string;
+    gender?: string;
+    eye_color?: string;
+    eyeColor?: string;
+    height?: string;
+    ethnicity?: string;
+    avatar_url?: string;
+    avatarUrl?: string;
+    traits?: string[];
+    bio?: string;
+    forceRegeneratePhoto?: boolean;
+    [key: string]: any;
+  }
+) {
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient<Database>(
@@ -105,26 +124,66 @@ export async function updateGuestAction(id: string, guestData: {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll() {}
-        }
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {},
+        },
       }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return { error: 'Not authenticated' };
     }
 
+    // Fetch existing guest row to compare physical appearance before vs after
+    const { data: existingGuest } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const incomingEyeColor = guestData.eye_color ?? guestData.eyeColor;
+    const incomingRawUrl = guestData.avatar_url ?? guestData.avatarUrl ?? existingGuest?.avatar_url ?? '';
+
+    const prevSig = existingGuest
+      ? computeAvatarPhysicalSignature(existingGuest.avatar_url, {
+          gender: existingGuest.gender,
+          eyeColor: existingGuest.eye_color,
+          height: existingGuest.height,
+          ethnicity: existingGuest.ethnicity,
+        })
+      : '';
+
+    const nextSig = computeAvatarPhysicalSignature(incomingRawUrl, {
+      gender: guestData.gender ?? existingGuest?.gender,
+      eyeColor: incomingEyeColor ?? existingGuest?.eye_color,
+      height: guestData.height ?? existingGuest?.height,
+      ethnicity: guestData.ethnicity ?? existingGuest?.ethnicity,
+    });
+
+    const physicalChanged = prevSig !== nextSig;
+    const missingAiPhoto = !String(incomingRawUrl).includes('aiPhotoUrl=');
+    const shouldRegeneratePhoto =
+      Boolean(guestData.forceRegeneratePhoto) || physicalChanged || missingAiPhoto;
+
+    const cleanUrlForUpdate = shouldRegeneratePhoto
+      ? stripAiPhotoFromAvatarUrl(incomingRawUrl)
+      : incomingRawUrl;
+
     const updatePayload = {
       name: guestData.name,
       email: guestData.email,
       gender: guestData.gender,
-      eye_color: guestData.eye_color ?? guestData.eyeColor,
+      eye_color: incomingEyeColor,
       height: guestData.height,
       ethnicity: guestData.ethnicity,
-      avatar_url: guestData.avatar_url ?? guestData.avatarUrl,
+      avatar_url: cleanUrlForUpdate,
       traits: guestData.traits ? guestData.traits.slice(0, 3) : undefined,
       bio: guestData.bio,
     };
@@ -142,11 +201,13 @@ export async function updateGuestAction(id: string, guestData: {
       return { error: error.message };
     }
 
-    // Automatically generate AI standard profile photo if missing or appearance changed
+    // Automatically regenerate AI character photo whenever physical changes are saved or photo is missing
     let finalGuest = data;
-    if (data && !(data.avatar_url || '').includes('aiPhotoUrl=')) {
+    if (data && shouldRegeneratePhoto) {
       try {
-        const aiRes = await generateGuestAvatarAction(data.id, data);
+        const aiRes = await generateGuestAvatarAction(data.id, data, {
+          forceRegenerate: physicalChanged || Boolean(guestData.forceRegeneratePhoto),
+        });
         if (aiRes?.publicUrl) {
           finalGuest = { ...data, avatar_url: aiRes.publicUrl };
         }
@@ -159,13 +220,9 @@ export async function updateGuestAction(id: string, guestData: {
     try {
       const updatedUrl = finalGuest?.avatar_url || updatePayload.avatar_url || '';
       const resolvedAccent =
-        guestData.accent ||
-        extractAccentFromAvatarUrl(updatedUrl) ||
-        undefined;
+        guestData.accent || extractAccentFromAvatarUrl(updatedUrl) || undefined;
       const resolvedAge =
-        guestData.age ||
-        extractAgeFromAvatarUrl(updatedUrl) ||
-        undefined;
+        guestData.age || extractAgeFromAvatarUrl(updatedUrl) || undefined;
 
       const { data: userMysteries } = await supabase
         .from('mysteries')
@@ -187,7 +244,7 @@ export async function updateGuestAction(id: string, guestData: {
               pd.guest_name &&
               String(pd.guest_name).toLowerCase() === String(finalGuest.name).toLowerCase())
           ) {
-            const nextPd = {
+            const nextPd: Record<string, any> = {
               ...pd,
               guest_id: id,
               guest_name: finalGuest?.name || pd.guest_name,
@@ -197,6 +254,10 @@ export async function updateGuestAction(id: string, guestData: {
               ...(resolvedAge ? { age: resolvedAge } : {}),
               ...(finalGuest?.gender ? { gender: finalGuest.gender } : {}),
             };
+            if (shouldRegeneratePhoto) {
+              delete nextPd.standard_character_photo_url;
+              delete nextPd.standard_character_photo_hash;
+            }
             await supabase
               .from('characters')
               .update({ profile_data: nextPd })
@@ -223,18 +284,23 @@ export async function updateGuestAction(id: string, guestData: {
               String(pd.guest_name).toLowerCase() === String(finalGuest.name).toLowerCase())
           ) {
             changed = true;
+            const nextPd: Record<string, any> = {
+              ...pd,
+              guest_id: id,
+              guest_name: finalGuest?.name || pd.guest_name,
+              name: finalGuest?.name || pd.name,
+              avatar_url: updatedUrl || pd.avatar_url,
+              ...(resolvedAccent ? { accent: resolvedAccent } : {}),
+              ...(resolvedAge ? { age: resolvedAge } : {}),
+              ...(finalGuest?.gender ? { gender: finalGuest.gender } : {}),
+            };
+            if (shouldRegeneratePhoto) {
+              delete nextPd.standard_character_photo_url;
+              delete nextPd.standard_character_photo_hash;
+            }
             return {
               ...c,
-              profile_data: {
-                ...pd,
-                guest_id: id,
-                guest_name: finalGuest?.name || pd.guest_name,
-                name: finalGuest?.name || pd.name,
-                avatar_url: updatedUrl || pd.avatar_url,
-                ...(resolvedAccent ? { accent: resolvedAccent } : {}),
-                ...(resolvedAge ? { age: resolvedAge } : {}),
-                ...(finalGuest?.gender ? { gender: finalGuest.gender } : {}),
-              },
+              profile_data: nextPd,
             };
           }
           return c;
@@ -244,7 +310,7 @@ export async function updateGuestAction(id: string, guestData: {
         }
       }
     } catch (propErr) {
-      console.error('Error propagating guest accent update to characters:', propErr);
+      console.error('Error propagating guest update to characters:', propErr);
     }
 
     return { guest: finalGuest };
@@ -262,13 +328,17 @@ export async function removeGuestAction(id: string) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll() {}
-        }
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {},
+        },
       }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return { error: 'Not authenticated' };

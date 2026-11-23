@@ -545,6 +545,17 @@ export function hydrateTextWithCharacters(
     if (guestName && guestName.length >= 2) {
       candidateKeys.add(guestName);
     }
+    const originalRoleTitle = String(
+      char.originalRoleTitle || char.profile_data?.original_role_title || ''
+    ).trim();
+    if (originalRoleTitle) {
+      candidateKeys.add(originalRoleTitle);
+      fullRoleTitlesForChar.add(originalRoleTitle);
+      const origWithoutThe = originalRoleTitle.replace(/^the\s+/i, '').trim();
+      if (origWithoutThe.length > 2) {
+        candidateKeys.add(origWithoutThe);
+      }
+    }
 
     // Match if the character's role title matches any of our known DOA roles
     Object.entries(LEGACY_PLACEHOLDER_TO_ROLE).forEach(([legacyKey, mappedRole]) => {
@@ -569,6 +580,7 @@ export function hydrateTextWithCharacters(
 
     candidateKeys.forEach((key) => {
       const lower = key.toLowerCase();
+      const isFemaleChar = pronouns.he === 'she';
       tokenMap.set(lower, substitution);
       tokenMap.set(`${lower}_initial`, charInitial);
       tokenMap.set(`${lower} initial`, charInitial);
@@ -576,6 +588,8 @@ export function hydrateTextWithCharacters(
       tokenMap.set(`${lower}_him`, pronouns.him);
       tokenMap.set(`${lower}_his`, pronouns.his);
       tokenMap.set(`${lower}_hes`, pronouns.hes);
+      tokenMap.set(`${lower}_sibling`, isFemaleChar ? 'sister' : 'brother');
+      tokenMap.set(`${lower}_spouse`, isFemaleChar ? 'wife' : 'husband');
       handleMap.set(lower, toHandleSlug(displayName));
 
       // Register single-word or legacy placeholder names for unwrapped word-boundary replacement

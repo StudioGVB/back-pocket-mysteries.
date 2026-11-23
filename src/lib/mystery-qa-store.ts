@@ -661,24 +661,42 @@ async function runRealGeminiBlindCriticOnPack(
     const victim = hydratedChars.find((c) => c.is_victim);
 
     const castBlock = hydratedChars
-      .map(
-        (c) =>
-          `- ID="${c.id}" | Name="${c.displayName}" | Gender="${c.gender}" | Role="${
-            c.is_victim ? 'VICTIM' : 'SUSPECT'
-          }" | Bio: ${hydrateTextWithCharacters(c.profile_data?.bio || '', hydratedChars, 'print')}`
-      )
+      .map((c) => {
+        const hydratedBio = hydrateTextWithCharacters(
+          c.profile_data?.bio || '',
+          hydratedChars,
+          'print'
+        );
+        const hydratedOutfit = hydrateTextWithCharacters(
+          c.profile_data?.outfit_advice || c.profile_data?.suggested_outfit || '',
+          hydratedChars,
+          'print'
+        );
+        return `- ID="${c.id}" | Name="${c.displayName}" | Gender="${c.gender}" | Role="${
+          c.is_victim ? 'VICTIM' : 'SUSPECT'
+        }" | Bio: ${hydratedBio}${hydratedOutfit ? ` | Outfit & Accessories: ${hydratedOutfit}` : ''}`;
+      })
       .join('\n');
 
     const formatCluesForRound = (r: number) =>
       evaluatedClues
         .filter((ec) => ec.round === r)
-        .map(
-          (ec) =>
-            `  • [ClueId: ${ec.clueId}] [Format: ${ec.format}] Title: "${ec.hydratedTitle}"\n    Content: ${
-              ec.hydratedDescription ||
-              `[Visual Crime Scene Photo: ${ec.hydratedPrompt}]`
-            }`
-        )
+        .map((ec) => {
+          const lines = [
+            `  • [ClueId: ${ec.clueId}] [Format: ${ec.format}] Title: "${ec.hydratedTitle}"`,
+          ];
+          if (ec.hydratedDescription) {
+            lines.push(`    Text/Header on Card: ${ec.hydratedDescription}`);
+          }
+          if (ec.staticImageUrl || ec.hydratedPrompt) {
+            lines.push(
+              `    Visual Photo Shown on Card: ${
+                ec.visualCriticNote || ec.hydratedPrompt
+              }`
+            );
+          }
+          return lines.join('\n');
+        })
         .join('\n');
 
     const prompt = `You are a strict Pre-Launch Murder Mystery Critic & Blind-Detective Playtester auditing "${mystery.title}" for Scenario: "${spec.scenarioName}" (Persona: ${spec.persona}).
@@ -754,7 +772,8 @@ Respond with valid JSON ONLY matching this exact schema:
       .trim()
       .replace(/^```json\s*/i, '')
       .replace(/\s*```$/i, '');
-    const parsed = JSON.parse(rawText);
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
 
     const findSuspect = (id: string) =>
       suspects.find((s) => s.id === id) ||
@@ -1001,14 +1020,23 @@ PHOTOGRAPHY DIRECTIVES:
       characterPortraits[c.id] = portraitUrl;
     }
 
+    const adaptedRoleTitle =
+      candidate.gender === 'female' && /^the husband$/i.test(roleTitle)
+        ? 'The Host'
+        : candidate.gender === 'male' && /^the wife$/i.test(roleTitle)
+        ? 'The Spouse'
+        : roleTitle;
+
     hydratedChars.push({
       ...c,
-      name: `${candidate.name} | ${roleTitle}`,
-      displayRoleTitle: roleTitle,
-      displayName: `${candidate.name} (${roleTitle})`,
+      name: `${candidate.name} | ${adaptedRoleTitle}`,
+      originalRoleTitle: roleTitle,
+      displayRoleTitle: adaptedRoleTitle,
+      displayName: `${candidate.name} (${adaptedRoleTitle})`,
       gender: candidate.gender,
       profile_data: {
         ...(c.profile_data || {}),
+        original_role_title: roleTitle,
         guest_id: candidate.id,
         guest_name: candidate.name,
         avatar_url: portraitUrl,
@@ -1045,7 +1073,7 @@ PHOTOGRAPHY DIRECTIVES:
     // Identify which active characters are depicted in this visual clue
     const combinedRaw = `${rawTitle} ${rawDesc} ${rawPrompt} ${rawNotes}`.toLowerCase();
     const depictedChars = hydratedChars.filter((hc) => {
-      const rt = String(hc.displayRoleTitle || '').toLowerCase();
+      const rt = String(hc.originalRoleTitle || hc.displayRoleTitle || '').toLowerCase();
       return rt && combinedRaw.includes(rt);
     });
 
@@ -1056,7 +1084,7 @@ PHOTOGRAPHY DIRECTIVES:
         rawPrompt
       );
 
-    const clueShortId = String(clue.id).slice(0, 8);
+    const clueShortId = String(clue.id);
     const localClueRel = `/generated-clues/qa-pack${spec.runNumber}-${clueShortId}.jpg`;
     const localClueAbs = path.join(cluesDir, `qa-pack${spec.runNumber}-${clueShortId}.jpg`);
 
@@ -1097,14 +1125,14 @@ PHOTOGRAPHY DIRECTIVES:
             'print'
           );
 
-          const fullClueImgPrompt = `Create a photorealistic crime scene / evidence photograph for "${mystery.title}".
+          const fullClueImgPrompt = `Create a photorealistic unedited interior photograph for "${mystery.title}".
 SCENE DESCRIPTION:
 ${hydratedScenePrompt}
 
 STRICT CHARACTER VISUAL IDENTITIES IN THIS SCENE (EXACTLY ${depictedChars.length} PERSON(S)):
 ${charBlocks.join('\n')}
 - CRITICAL: Preserve the exact facial identity, hair color, glasses/beard, skin tone, and signature costume from the attached Reference Image(s).
-- Absolutely NO text overlays, NO watermarks, NO split panels.`;
+- STRICT NEGATIVE DIRECTIVE: Raw clean photograph ONLY — ABSOLUTELY NO text overlays, NO timestamps, NO dates, NO numbers, NO camera HUD, NO evidence markers, NO watermarks, NO split panels.`;
 
           const imgRes = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
@@ -1337,11 +1365,19 @@ export async function executeSingleQaRun(
       c.profile_data?.outfit_reference_images?.[0] ||
       null;
 
+    const adaptedRoleTitle =
+      candidate.gender === 'female' && /^the husband$/i.test(roleTitle)
+        ? 'The Host'
+        : candidate.gender === 'male' && /^the wife$/i.test(roleTitle)
+        ? 'The Spouse'
+        : roleTitle;
+
     const charObj = {
       ...c,
-      name: `${candidate.name} | ${roleTitle}`,
-      displayRoleTitle: roleTitle,
-      displayName: `${candidate.name} (${roleTitle})`,
+      name: `${candidate.name} | ${adaptedRoleTitle}`,
+      originalRoleTitle: roleTitle,
+      displayRoleTitle: adaptedRoleTitle,
+      displayName: `${candidate.name} (${adaptedRoleTitle})`,
       gender: candidate.gender,
       assignedFriend: {
         id: candidate.id,
@@ -1352,6 +1388,7 @@ export async function executeSingleQaRun(
       },
       profile_data: {
         ...(c.profile_data || {}),
+        original_role_title: roleTitle,
         guest_id: candidate.id,
         guest_name: candidate.name,
         avatar_url: customPortrait || candidate.avatar_url,
@@ -1462,7 +1499,7 @@ export async function executeSingleQaRun(
     const hydratedDescription = hydrate(rawDesc);
     const hydratedPrompt = hydrate(rawPrompt);
 
-    const clueShortId = String(clue.id).slice(0, 8);
+    const clueShortId = String(clue.id);
     const onDiskPackClueRel = `/generated-clues/qa-pack${spec.runNumber}-${clueShortId}.jpg`;
     const onDiskPackClueAbs = path.join(
       /*turbopackIgnore: true*/ process.cwd(),
