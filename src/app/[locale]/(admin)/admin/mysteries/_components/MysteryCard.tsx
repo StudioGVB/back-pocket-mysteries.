@@ -4,7 +4,7 @@ import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { archiveMysteryAction, unarchiveMysteryAction, deleteMysteryAction } from '../actions';
 import { formatDate } from '@/utils/date';
-import { parseMysteryImageField } from '@/utils/moodboard';
+import { getEffectiveCoverUrl, getEffectiveMoodboardPhotos } from '@/utils/moodboard';
 import { MoodboardStudio } from '@/components/admin/MoodboardStudio';
 import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 
@@ -31,10 +31,11 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(mystery.image_url);
   const [error, setError] = useState<string | null>(null);
 
-  const parsedImages = parseMysteryImageField(rawImageUrl);
+  const coverUrl = getEffectiveCoverUrl(rawImageUrl, mystery.theme, mystery.title);
+  const moodboardPhotos = getEffectiveMoodboardPhotos(rawImageUrl, mystery.theme, mystery.title);
   const isArchived = mystery.status === 'archived';
-  const hasImage = !!parsedImages.coverUrl;
-  const moodCount = parsedImages.moodboardPhotos.length;
+  const hasImage = !!coverUrl;
+  const moodCount = moodboardPhotos.length;
   const pkgInfo = getPackageInfoForMaxPlayers(mystery.max_players);
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -139,7 +140,7 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
           {hasImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img 
-              src={parsedImages.coverUrl!} 
+              src={coverUrl!} 
               alt={mystery.title}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />

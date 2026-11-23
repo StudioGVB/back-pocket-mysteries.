@@ -187,6 +187,30 @@ export async function getCustomerCrmData(targetUserId: string): Promise<Customer
   return loadCustomerCrmSync(targetUserId);
 }
 
+export async function getAllCustomerCrmData(): Promise<Record<string, CustomerCrmRecord>> {
+  await requireAdmin();
+  const all = readAllLocalCrmSync();
+  const out: Record<string, CustomerCrmRecord> = {};
+  for (const [uid, existing] of Object.entries(all)) {
+    const defaults = getDefaultCrmRecord(uid);
+    out[uid] = {
+      ...defaults,
+      ...existing,
+      membership: { ...defaults.membership, ...(existing?.membership || {}) },
+      aiQuota: { ...defaults.aiQuota, ...(existing?.aiQuota || {}) },
+      promos: Array.isArray(existing?.promos) ? existing.promos : [],
+      tags: Array.isArray(existing?.tags) ? existing.tags : [],
+      notes: Array.isArray(existing?.notes) ? existing.notes : [],
+      customOrders: Array.isArray(existing?.customOrders) ? existing.customOrders : [],
+      giftedMysteries: Array.isArray(existing?.giftedMysteries) ? existing.giftedMysteries : [],
+      revokedMysteryIds: Array.isArray(existing?.revokedMysteryIds) ? existing.revokedMysteryIds : [],
+      mysteryRoundOverrides: existing?.mysteryRoundOverrides || {},
+      orderOverrides: existing?.orderOverrides || {},
+    };
+  }
+  return out;
+}
+
 export async function adminUpdateProfile(
   targetUserId: string,
   data: {

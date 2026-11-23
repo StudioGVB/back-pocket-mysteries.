@@ -51,14 +51,15 @@ async function CustomerList({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const customers = await getCustomers();
   const supabase = await createClient();
-  const { getCustomerCrmData } = await import('@/app/actions/admin-users');
+  const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
 
-  // Fetch all orders & mysteries to count mysteries per customer accurately
-  const [{ data: allOrders }, { data: allMysteries }] = await Promise.all([
+  // Fetch customers, orders, mysteries & CRM records in parallel
+  const [customers, { data: allOrders }, { data: allMysteries }, crmMap] = await Promise.all([
+    getCustomers(),
     supabase.from('orders').select('user_id').eq('status', 'succeeded'),
     supabase.from('mysteries').select('created_by'),
+    getAllCustomerCrmData(),
   ]);
 
   const orderCounts = allOrders?.reduce((acc, order) => {
@@ -70,13 +71,6 @@ async function CustomerList({
     if (m.created_by) acc[m.created_by] = (acc[m.created_by] || 0) + 1;
     return acc;
   }, {} as Record<string, number>) || {};
-
-  const crmMap: Record<string, any> = {};
-  await Promise.all(
-    customers.map(async (u: any) => {
-      crmMap[u.id] = await getCustomerCrmData(u.id);
-    })
-  );
 
   return (
     <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">

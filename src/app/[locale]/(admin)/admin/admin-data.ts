@@ -3,36 +3,37 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import { cache } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { readLocalAiLogs, StoredAiUsageLog } from '@/utils/ai-logger';
 import { requireAdmin } from '@/utils/admin-auth';
 
-export async function getAdminStats(lastViewStr?: string) {
+export const getAdminStats = cache(async (lastViewStr?: string) => {
   const { supabase } = await requireAdmin();
 
-  // Get succeeded orders
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('amount, status')
-    .eq('status', 'succeeded');
+  const [ordersRes, usersCountRes, newUsersRes] = await Promise.all([
+    supabase
+      .from('orders')
+      .select('amount, status')
+      .eq('status', 'succeeded'),
+    supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true }),
+    lastViewStr
+      ? supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', lastViewStr)
+      : Promise.resolve({ count: 0 }),
+  ]);
 
-  // Get total unique users from orders
-  const { count: usersCount } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true });
+  const orders = ordersRes.data;
+  const usersCount = usersCountRes.count;
+  const newUsersCount = newUsersRes.count || 0;
 
   const totalRevenue = orders?.reduce((acc, order) => acc + (order.amount || 0), 0) || 0;
   const salesCount = orders?.length || 0;
   const avgOrderVal = salesCount > 0 ? totalRevenue / salesCount : 0;
-
-  let newUsersCount = 0;
-  if (lastViewStr) {
-    const { count: newUsers } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', lastViewStr);
-    newUsersCount = newUsers || 0;
-  }
 
   return {
     totalRevenue,
@@ -41,9 +42,9 @@ export async function getAdminStats(lastViewStr?: string) {
     newUsersCount,
     avgOrderVal,
   };
-}
+});
 
-export async function getRecentTransactions() {
+export const getRecentTransactions = cache(async () => {
   const { supabase } = await requireAdmin();
 
   const { data: orders, error } = await supabase
@@ -63,21 +64,26 @@ export async function getRecentTransactions() {
   const userIds = [...new Set(safeOrders.map(o => o.user_id).filter(Boolean))];
   const mysteryIds = [...new Set(safeOrders.map(o => o.mystery_id).filter(Boolean))];
 
+  const [profilesRes, mysteriesRes] = await Promise.all([
+    userIds.length > 0
+      ? supabase.from('profiles').select('id, full_name').in('id', userIds)
+      : Promise.resolve({ data: [] as any[] }),
+    mysteryIds.length > 0
+      ? supabase.from('mysteries').select('id, title').in('id', mysteryIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+
   let profilesMap: Record<string, string> = {};
-  if (userIds.length > 0) {
-    const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
-    if (profiles) profilesMap = profiles.reduce((acc, p) => ({...acc, [p.id]: p.full_name}), {});
+  if (profilesRes.data) {
+    profilesMap = profilesRes.data.reduce((acc: any, p: any) => ({ ...acc, [p.id]: p.full_name }), {});
   }
 
   let mysteriesMap: Record<string, string> = {};
-  if (mysteryIds.length > 0) {
-    const { data: mysteries } = await supabase.from('mysteries').select('id, title').in('id', mysteryIds);
-    if (mysteries && mysteries.length > 0) {
-      mysteriesMap = mysteries.reduce((acc, m) => ({...acc, [m.id]: m.title}), {});
-    } else {
-      const { data: bases } = await supabase.from('mystery_bases').select('id, title').in('id', mysteryIds);
-      if (bases) mysteriesMap = bases.reduce((acc, b) => ({...acc, [b.id]: b.title}), {});
-    }
+  if (mysteriesRes.data && mysteriesRes.data.length > 0) {
+    mysteriesMap = mysteriesRes.data.reduce((acc: any, m: any) => ({ ...acc, [m.id]: m.title }), {});
+  } else if (mysteryIds.length > 0) {
+    const { data: bases } = await supabase.from('mystery_bases').select('id, title').in('id', mysteryIds);
+    if (bases) mysteriesMap = bases.reduce((acc: any, b: any) => ({ ...acc, [b.id]: b.title }), {});
   }
 
   return safeOrders.map(o => ({
@@ -85,21 +91,21 @@ export async function getRecentTransactions() {
     profile: { full_name: profilesMap[o.user_id as string] || 'Unknown User' },
     mystery: { title: mysteriesMap[o.mystery_id as string] || 'Unknown Mystery' }
   }));
-}
+});
 
-export async function getTopMysteries() {
+export const getTopMysteries = cache(async () => {
   const { supabase } = await requireAdmin();
 
-  // Get sales counts per mystery
-  const { data: sales } = await supabase
-    .from('orders')
-    .select('mystery_id')
-    .eq('status', 'succeeded');
-
-  const { data: mysteries } = await supabase
-    .from('mysteries')
-    .select('id, title')
-    .eq('status', 'published');
+  const [{ data: sales }, { data: mysteries }] = await Promise.all([
+    supabase
+      .from('orders')
+      .select('mystery_id')
+      .eq('status', 'succeeded'),
+    supabase
+      .from('mysteries')
+      .select('id, title')
+      .eq('status', 'published'),
+  ]);
 
   // Aggregate sales
   const salesMap = sales?.reduce((acc, s) => {
@@ -111,7 +117,7 @@ export async function getTopMysteries() {
     name: m.title,
     sales: salesMap[m.id] || 0
   })).sort((a, b) => b.sales - a.sales).slice(0, 4) || [];
-}
+});
 
 export async function getLeads() {
   await requireAdmin();
@@ -119,7 +125,7 @@ export async function getLeads() {
   return getAllMarketingLeadsAction();
 }
 
-export async function getCustomers() {
+export const getCustomers = cache(async () => {
   const { supabase } = await requireAdmin();
 
   // Fetch all profiles without joining user_roles to avoid RLS/schema errors
@@ -133,7 +139,7 @@ export async function getCustomers() {
     return [];
   }
   return data || [];
-}
+});
 
 export async function getAdmins() {
   const { supabase, user } = await requireAdmin();
@@ -236,8 +242,15 @@ export async function getEnquiries() {
   return data || [];
 }
 
+let cachedProviderStatusResult: { timestamp: number; data: any } | null = null;
+const PROVIDER_STATUS_CACHE_TTL_MS = 60_000;
+
 export async function getLiveAiProviderStatus() {
   await requireAdmin();
+  if (cachedProviderStatusResult && Date.now() - cachedProviderStatusResult.timestamp < PROVIDER_STATUS_CACHE_TTL_MS) {
+    return cachedProviderStatusResult.data;
+  }
+
   const googleKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() || '';
   const elevenKey = process.env.ELEVENLABS_API_KEY?.trim() || '';
 
@@ -270,10 +283,12 @@ export async function getLiveAiProviderStatus() {
         googleStatus.error = 'Missing GOOGLE_GENERATIVE_AI_API_KEY';
         return;
       }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500);
       try {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models?key=${googleKey}`,
-          { cache: 'no-store' }
+          { signal: controller.signal, next: { revalidate: 120 } }
         );
         if (res.ok) {
           const data = await res.json();
@@ -284,6 +299,8 @@ export async function getLiveAiProviderStatus() {
         }
       } catch (e: any) {
         googleStatus.error = e?.message || 'Connection failed';
+      } finally {
+        clearTimeout(timeout);
       }
     })(),
     (async () => {
@@ -291,10 +308,13 @@ export async function getLiveAiProviderStatus() {
         elevenStatus.error = 'Missing ELEVENLABS_API_KEY';
         return;
       }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500);
       try {
         const res = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
           headers: { 'xi-api-key': elevenKey },
-          cache: 'no-store',
+          signal: controller.signal,
+          next: { revalidate: 120 },
         });
         if (res.ok) {
           const sub = await res.json();
@@ -310,15 +330,27 @@ export async function getLiveAiProviderStatus() {
         }
       } catch (e: any) {
         elevenStatus.error = e?.message || 'Connection failed';
+      } finally {
+        clearTimeout(timeout);
       }
     })(),
   ]);
 
-  return { googleStatus, elevenStatus };
+  const result = { googleStatus, elevenStatus };
+  cachedProviderStatusResult = { timestamp: Date.now(), data: result };
+  return result;
 }
+
+let cachedAiCostsResult: { timestamp: number; logs: StoredAiUsageLog[] } | null = null;
+const AI_COSTS_CACHE_TTL_MS = 60_000;
 
 export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
   const { supabase } = await requireAdmin();
+
+  if (cachedAiCostsResult && Date.now() - cachedAiCostsResult.timestamp < AI_COSTS_CACHE_TTL_MS) {
+    return cachedAiCostsResult.logs;
+  }
+
   const mergedMap = new Map<string, StoredAiUsageLog>();
 
   const addLog = (key: string, entry: StoredAiUsageLog) => {
@@ -327,126 +359,82 @@ export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
     }
   };
 
-  // 1. Read from local persistent JSON log file (`data/ai-usage-logs.json`)
-  const localLogs = await readLocalAiLogs();
+  // Run local file read, Supabase table read, root storage listing, and ElevenLabs history in parallel
+  const [localLogs, dbRes, rootStorageRes, elevenHistoryRes] = await Promise.all([
+    readLocalAiLogs(),
+    supabase
+      .from('ai_usage_logs')
+      .select('id, model_name, prompt_tokens, completion_tokens, cost_usd, feature_name, mystery_id, user_id, created_at')
+      .order('created_at', { ascending: false })
+      .limit(500)
+      .then((r: any) => r, () => ({ data: null, error: true })),
+    supabase.storage
+      .from('character-images')
+      .list('', { limit: 200 })
+      .then((r: any) => r, () => ({ data: null })),
+    (async () => {
+      const elevenKey = process.env.ELEVENLABS_API_KEY?.trim();
+      if (!elevenKey) return null;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500);
+      try {
+        const res = await fetch('https://api.elevenlabs.io/v1/history?page_size=100', {
+          headers: { 'xi-api-key': elevenKey },
+          signal: controller.signal,
+          next: { revalidate: 120 },
+        });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      } finally {
+        clearTimeout(timeout);
+      }
+    })(),
+  ]);
+
+  // 1. Local persistent JSON log file (`data/ai-usage-logs.json`)
   for (const log of localLogs) {
     addLog(`local:${log.id}`, log);
   }
 
-  // 2. Read from Supabase `ai_usage_logs` table (if RLS permits)
-  try {
-    const { data, error } = await supabase
-      .from('ai_usage_logs')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      for (const row of data as any[]) {
-        addLog(`db:${row.id}`, {
-          id: row.id,
-          model_name: row.model_name,
-          prompt_tokens: Number(row.prompt_tokens || 0),
-          completion_tokens: Number(row.completion_tokens || 0),
-          cost_usd: Number(row.cost_usd || 0),
-          feature_name: row.feature_name,
-          mystery_id: row.mystery_id || null,
-          user_id: row.user_id || null,
-          created_at: row.created_at,
-          source: 'logged',
-        });
-      }
+  // 2. Supabase `ai_usage_logs` table
+  if (!dbRes?.error && Array.isArray(dbRes?.data)) {
+    for (const row of dbRes.data) {
+      addLog(`db:${row.id}`, {
+        id: row.id,
+        model_name: row.model_name,
+        prompt_tokens: Number(row.prompt_tokens || 0),
+        completion_tokens: Number(row.completion_tokens || 0),
+        cost_usd: Number(row.cost_usd || 0),
+        feature_name: row.feature_name,
+        mystery_id: row.mystery_id || null,
+        user_id: row.user_id || null,
+        created_at: row.created_at,
+        source: 'logged',
+      });
     }
-  } catch (err) {
-    console.warn('Error fetching ai_usage_logs table:', err);
   }
 
-  // 3. Read synced logs from Supabase Storage (`character-images/system/ai-usage-logs.json`) if present
-  try {
-    const { data: storageBlob } = await supabase.storage
-      .from('character-images')
-      .download('system/ai-usage-logs.json');
-    if (storageBlob) {
-      const parsed = JSON.parse(await storageBlob.text());
-      if (Array.isArray(parsed)) {
-        for (const log of parsed) {
-          addLog(`local:${log.id}`, log);
-        }
-      }
+  // 3. Root-level generated guest avatars in Supabase Storage `character-images`
+  for (const item of rootStorageRes?.data || []) {
+    if (item.id && (item.name.endsWith('.jpg') || item.name.endsWith('.png') || item.name.endsWith('.webp'))) {
+      addLog(`storage-avatar:${item.name}`, {
+        id: `storage-${item.id}`,
+        model_name: 'gemini-2.5-flash-image',
+        prompt_tokens: 185,
+        completion_tokens: 1290,
+        cost_usd: 0.039,
+        feature_name: 'generate_guest_avatar',
+        mystery_id: null,
+        user_id: null,
+        created_at: item.created_at || new Date().toISOString(),
+        source: 'google_storage',
+      });
     }
-  } catch {}
-
-  // 4. Discover historical Google Gemini/Imagen generations in Supabase Storage `character-images` bucket
-  try {
-    const { data: rootFiles } = await supabase.storage
-      .from('character-images')
-      .list('', { limit: 200 });
-
-    for (const item of rootFiles || []) {
-      if (item.id && (item.name.endsWith('.jpg') || item.name.endsWith('.png') || item.name.endsWith('.webp'))) {
-        addLog(`storage-avatar:${item.name}`, {
-          id: `storage-${item.id}`,
-          model_name: 'gemini-2.5-flash-image',
-          prompt_tokens: 185,
-          completion_tokens: 1290,
-          cost_usd: 0.039,
-          feature_name: 'generate_guest_avatar',
-          mystery_id: null,
-          user_id: null,
-          created_at: item.created_at || new Date().toISOString(),
-          source: 'google_storage',
-        });
-      } else if (!item.id && item.name !== 'mystery-audio' && item.name !== 'system') {
-        const { data: subFiles } = await supabase.storage
-          .from('character-images')
-          .list(item.name, { limit: 100 });
-        for (const sub of subFiles || []) {
-          if (sub.id && (sub.name.endsWith('.png') || sub.name.endsWith('.jpg') || sub.name.endsWith('.webp'))) {
-            addLog(`storage-char:${item.name}/${sub.name}`, {
-              id: `storage-${sub.id || `${item.name}-${sub.name}`}`,
-              model_name: 'gemini-2.5-flash-image',
-              prompt_tokens: 210,
-              completion_tokens: 1290,
-              cost_usd: 0.039,
-              feature_name: 'generate_character_photo',
-              mystery_id: item.name.length === 36 ? item.name : null,
-              user_id: null,
-              created_at: sub.created_at || new Date().toISOString(),
-              source: 'google_storage',
-            });
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('Could not scan character-images storage for AI costs:', err);
   }
 
-  // 5. Discover generated Clue Images in `public.clues` (base64 inline images)
-  try {
-    const { data: cluesWithImg } = await supabase
-      .from('clues')
-      .select('id, title, mystery_id, static_image_url, updated_at, created_at')
-      .not('static_image_url', 'is', null);
-
-    for (const c of (cluesWithImg as any[]) || []) {
-      if (typeof c.static_image_url === 'string' && c.static_image_url.startsWith('data:image/')) {
-        addLog(`clue-img:${c.id}`, {
-          id: `clue-img-${c.id}`,
-          model_name: 'gemini-2.5-flash-image',
-          prompt_tokens: 320,
-          completion_tokens: 1290,
-          cost_usd: 0.039,
-          feature_name: `generate_clue_image (${c.title || 'Clue'})`,
-          mystery_id: c.mystery_id || null,
-          user_id: null,
-          created_at: c.updated_at || c.created_at || new Date().toISOString(),
-          source: 'google_storage',
-        });
-      }
-    }
-  } catch {}
-
-  // 6. Discover generated Moodboard & CCTV Clue images in `public/moodboard` and `public/clues`
+  // 4. Local generated Moodboard & Clue images in `public/moodboard` and `public/clues`
   const localAssetDirs: Array<{ dir: string; feature: string }> = [
     { dir: path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'moodboard', 'lotr'), feature: 'generate_moodboard_image' },
     { dir: path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'clues', 'doa'), feature: 'generate_clue_image' },
@@ -475,74 +463,63 @@ export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
     } catch {}
   }
 
-  // 7. Fetch live ElevenLabs generation history directly from ElevenLabs API
-  const elevenKey = process.env.ELEVENLABS_API_KEY?.trim();
-  if (elevenKey) {
-    try {
-      const res = await fetch('https://api.elevenlabs.io/v1/history?page_size=100', {
-        headers: { 'xi-api-key': elevenKey },
-        cache: 'no-store',
-      });
-      if (res.ok) {
-        const histData = await res.json();
-        const items: any[] = histData.history || [];
-        // Group consecutive ElevenLabs line syntheses within 45 seconds into logical audio clue generations
-        const groups: Array<{
-          id: string;
-          model: string;
-          chars: number;
-          lines: number;
-          dateUnix: number;
-        }> = [];
+  // 5. ElevenLabs synthesis history
+  if (elevenHistoryRes && Array.isArray(elevenHistoryRes.history)) {
+    const groups: Array<{
+      id: string;
+      model: string;
+      chars: number;
+      lines: number;
+      dateUnix: number;
+    }> = [];
 
-        for (const item of items) {
-          const chars = Math.max(
-            0,
-            (item.character_count_change_to || 0) - (item.character_count_change_from || 0)
-          );
-          const model = item.model_id || 'eleven_v3';
-          const dateUnix = item.date_unix || Math.floor(Date.now() / 1000);
-          const prev = groups[groups.length - 1];
+    for (const item of elevenHistoryRes.history) {
+      const chars = Math.max(
+        0,
+        (item.character_count_change_to || 0) - (item.character_count_change_from || 0)
+      );
+      const model = item.model_id || 'eleven_v3';
+      const dateUnix = item.date_unix || Math.floor(Date.now() / 1000);
+      const prev = groups[groups.length - 1];
 
-          if (prev && prev.model === model && Math.abs(prev.dateUnix - dateUnix) <= 45) {
-            prev.chars += chars;
-            prev.lines += 1;
-          } else {
-            groups.push({
-              id: item.history_item_id,
-              model,
-              chars,
-              lines: 1,
-              dateUnix,
-            });
-          }
-        }
-
-        for (const g of groups) {
-          const ratePer1k = g.model === 'eleven_turbo_v2_5' ? 0.15 : 0.30;
-          const cost = (g.chars / 1000) * ratePer1k;
-          addLog(`elevenlabs:${g.id}`, {
-            id: `el-${g.id}`,
-            model_name: `elevenlabs:${g.model}`,
-            prompt_tokens: g.chars,
-            completion_tokens: g.lines,
-            cost_usd: Number(cost.toFixed(6)),
-            feature_name: `generate_audio_clue (${g.lines} ${g.lines === 1 ? 'line' : 'lines'})`,
-            mystery_id: null,
-            user_id: null,
-            created_at: new Date(g.dateUnix * 1000).toISOString(),
-            source: 'elevenlabs_api',
-          });
-        }
+      if (prev && prev.model === model && Math.abs(prev.dateUnix - dateUnix) <= 45) {
+        prev.chars += chars;
+        prev.lines += 1;
+      } else {
+        groups.push({
+          id: item.history_item_id,
+          model,
+          chars,
+          lines: 1,
+          dateUnix,
+        });
       }
-    } catch (err) {
-      console.warn('Could not fetch live ElevenLabs history:', err);
+    }
+
+    for (const g of groups) {
+      const ratePer1k = g.model === 'eleven_turbo_v2_5' ? 0.15 : 0.30;
+      const cost = (g.chars / 1000) * ratePer1k;
+      addLog(`elevenlabs:${g.id}`, {
+        id: `el-${g.id}`,
+        model_name: `elevenlabs:${g.model}`,
+        prompt_tokens: g.chars,
+        completion_tokens: g.lines,
+        cost_usd: Number(cost.toFixed(6)),
+        feature_name: `generate_audio_clue (${g.lines} ${g.lines === 1 ? 'line' : 'lines'})`,
+        mystery_id: null,
+        user_id: null,
+        created_at: new Date(g.dateUnix * 1000).toISOString(),
+        source: 'elevenlabs_api',
+      });
     }
   }
 
-  return Array.from(mergedMap.values()).sort(
+  const sorted = Array.from(mergedMap.values()).sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
+
+  cachedAiCostsResult = { timestamp: Date.now(), logs: sorted };
+  return sorted;
 }
 
 // --- Customer Profile View Data ---
@@ -692,22 +669,21 @@ export async function getGiftableCatalogMysteries() {
 export async function getCustomerGuests(userId: string) {
   const { supabase } = await requireAdmin();
   
-  // Get manual guests
-  const { data: manualGuests } = await supabase
-    .from('guests')
-    .select('*')
-    .eq('user_id', userId);
-
-  // Get linked guests
-  const { data: linkedConnections } = await (supabase as any)
-    .from('guest_connections')
-    .select(`
-      id,
-      profiles!guest_user_id (
-        full_name, email, pronouns, avatar_url, avatar_config, character_preferences, bio
-      )
-    `)
-    .eq('host_user_id', userId);
+  const [{ data: manualGuests }, { data: linkedConnections }] = await Promise.all([
+    supabase
+      .from('guests')
+      .select('*')
+      .eq('user_id', userId),
+    (supabase as any)
+      .from('guest_connections')
+      .select(`
+        id,
+        profiles!guest_user_id (
+          full_name, email, pronouns, avatar_url, avatar_config, character_preferences, bio
+        )
+      `)
+      .eq('host_user_id', userId),
+  ]);
 
   return {
     manual: (manualGuests as any[]) || [],
@@ -717,13 +693,13 @@ export async function getCustomerGuests(userId: string) {
 
 export async function getCustomerAiUsage(userId: string) {
   const { supabase } = await requireAdmin();
-  const [allLogs, customerMysteries] = await Promise.all([
-    getAiCosts(),
+  const [localLogs, customerMysteries] = await Promise.all([
+    readLocalAiLogs(),
     supabase.from('mysteries').select('id').eq('created_by', userId),
   ]);
 
   const ownedMysteryIds = new Set((customerMysteries.data || []).map((m: any) => m.id));
-  const userLogs = allLogs.filter(
+  const userLogs = localLogs.filter(
     (log: any) =>
       log.user_id === userId || (log.mystery_id && ownedMysteryIds.has(log.mystery_id))
   );

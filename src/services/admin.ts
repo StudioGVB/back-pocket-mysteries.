@@ -109,25 +109,35 @@ export async function getTransactions() {
 
   // Also include any live paid or QA-audited mystery sessions from .live-game-sessions.json not yet in dbOrders
   const allLiveSessions = getAllStoredGameSessions();
-  for (const session of allLiveSessions) {
-    if (!session.mysteryId || seenMysteryIds.has(session.mysteryId)) continue;
-    if (!session.isPaid && !session.qaReport) continue;
+  const extraSessions = allLiveSessions.filter(
+    (s) => s.mysteryId && !seenMysteryIds.has(s.mysteryId) && (s.isPaid || s.qaReport)
+  );
 
-    const cachedMystery = getCachedMysterySnapshot(session.mysteryId);
-    let mysteryTitle = cachedMystery?.title || 'Custom Mystery Pack';
-    let mysterySlug = cachedMystery?.slug || session.mysteryId;
-
-    if (!cachedMystery) {
-      const { data: mRow } = (await supabase
-        .from('mysteries')
-        .select('id, title, theme')
-        .eq('id', session.mysteryId)
-        .maybeSingle()) as any;
-      if (mRow) {
-        mysteryTitle = mRow.title;
-        mysterySlug = mRow.id;
-      }
+  const missingDbMysteryIds: string[] = [];
+  for (const session of extraSessions) {
+    if (!getCachedMysterySnapshot(session.mysteryId)) {
+      missingDbMysteryIds.push(session.mysteryId);
     }
+  }
+
+  const dbMysteryTitlesMap = new Map<string, string>();
+  if (missingDbMysteryIds.length > 0) {
+    const { data: mRows } = (await supabase
+      .from('mysteries')
+      .select('id, title')
+      .in('id', missingDbMysteryIds)) as any;
+    for (const row of mRows || []) {
+      dbMysteryTitlesMap.set(row.id, row.title);
+    }
+  }
+
+  for (const session of extraSessions) {
+    const cachedMystery = getCachedMysterySnapshot(session.mysteryId);
+    const mysteryTitle =
+      cachedMystery?.title ||
+      dbMysteryTitlesMap.get(session.mysteryId) ||
+      'Custom Mystery Pack';
+    const mysterySlug = cachedMystery?.slug || session.mysteryId;
 
     enrichedOrders.push({
       id: session.orderId || session.mysteryId,

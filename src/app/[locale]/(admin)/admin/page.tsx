@@ -92,10 +92,10 @@ async function DashboardTransactions() {
       <div className="flex justify-between items-center mb-8">
         <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Recent Transactions</h3>
         <div className="flex items-center gap-4">
-          <Link href="/admin/balance-sheet" className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline">
+          <Link href="/en/admin/balance-sheet" className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline">
             Balance Sheet
           </Link>
-          <Link href="/admin/transactions" className="text-xs font-black text-brand-pink uppercase tracking-widest hover:underline">
+          <Link href="/en/admin/transactions" className="text-xs font-black text-brand-pink uppercase tracking-widest hover:underline">
             View All
           </Link>
         </div>
@@ -135,7 +135,7 @@ async function DashboardTopMysteries() {
     <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
       <div className="flex justify-between items-center mb-8">
         <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Top Mystery Bases</h3>
-        <button className="text-xs font-black text-brand-pink uppercase tracking-widest hover:underline">Manage All</button>
+        <Link href="/en/admin/mysteries" className="text-xs font-black text-brand-pink uppercase tracking-widest hover:underline">Manage All</Link>
       </div>
       <div className="space-y-6">
         {topMysteries.length > 0 ? (

@@ -16,6 +16,8 @@ interface NavItem {
 
 export function AdminSidebar() {
   const pathname = usePathname() || '';
+  const localeMatch = pathname.match(/^\/(en|fr)(?=\/|$)/);
+  const localePrefix = `/${localeMatch ? localeMatch[1] : 'en'}`;
   // Normalize locale prefix (e.g. /en/admin/... -> /admin/...)
   const cleanPath = pathname.replace(/^\/(en|fr)(?=\/admin)/, '');
 
@@ -198,7 +200,7 @@ export function AdminSidebar() {
       <ul className="space-y-0.5">
         {items.map((item) => (
           <li key={item.href}>
-            <Link href={item.href} className={getLinkClass(isActive(item))}>
+            <Link href={`${localePrefix}${item.href}`} className={getLinkClass(isActive(item))}>
               {item.icon}
               <span>{item.label}</span>
             </Link>
@@ -212,7 +214,7 @@ export function AdminSidebar() {
   return (
     <aside className="w-64 bg-brand-dark text-white flex flex-col fixed h-full z-30 border-r border-white/10">
       <div className="px-6 pt-5 pb-3 border-b border-white/5">
-        <Link href="/admin">
+        <Link href={`${localePrefix}/admin`}>
           <Image
             src="/logo-horizontal-white.png"
             alt="Back Pocket Mysteries Admin"
@@ -244,7 +246,7 @@ export function AdminSidebar() {
 
       <div className="p-3 border-t border-white/10 bg-black/20">
         <Link
-          href="/account/orders"
+          href={`${localePrefix}/account/orders`}
           className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-white"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
