@@ -60,7 +60,7 @@ export default function MysteriesCatalogClient({
         <div>
           <h1 className="text-4xl font-black text-slate-900 mb-2">Available Stories</h1>
           <p className="text-slate-500 font-medium text-lg">
-            Pick a theme and customize it for your crew, ready in ~30 minutes.
+            Pick a theme and customize it for your crew, ready in ~20 minutes.
           </p>
         </div>
 
@@ -159,7 +159,7 @@ export default function MysteriesCatalogClient({
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-80 group-hover:opacity-95 transition-opacity" />
                   <div className="absolute top-4 right-4 px-3 py-1 rounded-xl bg-emerald-50/95 backdrop-blur-sm text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm">
-                    Ready in ~30 Mins
+                    Ready in ~20 Mins
                   </div>
 
                   {/* Mini Mood Board Thumbnail Strip */}

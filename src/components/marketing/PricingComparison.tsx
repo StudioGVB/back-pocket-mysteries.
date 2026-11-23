@@ -2,42 +2,33 @@ import React from 'react'
 
 export default function PricingComparison() {
   const plans = [
-    { id: 'basic', name: 'Basic (4–6)' },
-    { id: 'premium', name: 'Premium (4–10)' },
-    { id: 'grand', name: 'Grand (4–16)' },
-    { id: 'subscribe', name: 'Unlimited' },
+    { id: 'basic', name: 'Basic (Up to 6)' },
+    { id: 'premium', name: 'Premium (Up to 10)' },
+    { id: 'grand', name: 'Grand (Up to 16)' },
   ]
 
   const features = [
     {
       category: 'Party Scale & Story Web',
       items: [
-        { name: 'Players Included', basic: '4–6 Players', premium: '4–10 Players', grand: '4–16 Players', subscribe: '4–16 Players' },
-        { name: 'Custom Character Booklets Generated', basic: 'Up to 6 Roles', premium: 'Up to 10 Roles', grand: 'Up to 16 Roles', subscribe: 'Up to 16 Roles' },
-        { name: 'Relationship Web & Subplots', basic: 'Core Suspect Web', premium: 'Expanded Alliances & Subplots', grand: 'Full-House Multi-Faction Web', subscribe: 'All Group Sizes' },
-        { name: 'Mysteries Included', basic: '1 Mystery Pack', premium: '1 Mystery Pack', grand: '1 Mystery Pack', subscribe: 'Unlimited / Mo' },
-        { name: 'Monthly Gift Pass (Gift a Mystery to a Friend)', basic: false, premium: false, grand: false, subscribe: '1 Free Gift / Mo' },
+        { name: 'Players Included (Party or Case-File Mode)', basic: '1–6 Players', premium: '1–10 Players', grand: '1–16 Players' },
+        { name: 'Custom Character Booklets Generated', basic: '6 Roles', premium: 'Up to 10 Roles', grand: 'Up to 16 Roles' },
+        { name: 'Cast Modes (All Friends, Hybrid, or 100% Fictional)', basic: true, premium: true, grand: true },
+        { name: 'Relationship Web & Subplots', basic: 'Core Suspect Web', premium: 'Expanded Alliances & Subplots', grand: 'Full-House Multi-Faction Web' },
       ]
     },
     {
-      category: 'Core Experience (Included on Every Tier)',
+      category: 'Core Experience (Included on Every Package)',
       items: [
-        { name: 'Complexity Levels (Easy, Medium, Hard)', basic: 'Included', premium: 'Included', grand: 'Included', subscribe: 'Included' },
-        { name: 'Spice Levels (Clean, Mild, Spicy, Filthy)', basic: 'Included', premium: 'Included', grand: 'Included', subscribe: 'Included' },
-        { name: 'Guest Names, Avatars & Quirks Woven In', basic: true, premium: true, grand: true, subscribe: true },
-        { name: 'Interactive Chat, Receipt & Audio Clues', basic: true, premium: true, grand: true, subscribe: true },
-        { name: 'Kahoot-Style Live Lobby & 6-Digit PIN', basic: true, premium: true, grand: true, subscribe: true },
-        { name: 'Spoiler-Free Host Mode', basic: true, premium: true, grand: true, subscribe: true },
-        { name: 'Print Booklets or Play 100% Digitally', basic: true, premium: true, grand: true, subscribe: true },
+        { name: '100% Human-Written Plot & Watertight Clue Logic', basic: true, premium: true, grand: true },
+        { name: 'Guest Names, Avatars & Quirks Woven In', basic: true, premium: true, grand: true },
+        { name: 'Interactive Chat, Visual CCTV & Audio Wiretap Clues', basic: true, premium: true, grand: true },
+        { name: 'Kahoot-Style Live Lobby & 6-Digit PIN', basic: true, premium: true, grand: true },
+        { name: 'Spoiler-Free Host Mode (Host Plays as a Suspect)', basic: true, premium: true, grand: true },
+        { name: 'Print Booklets or Play 100% Digitally on Phones', basic: true, premium: true, grand: true },
+        { name: 'Ready in ~20 Minutes (Lifetime Access)', basic: true, premium: true, grand: true },
       ]
     },
-    {
-      category: 'Licensing',
-      items: [
-        { name: 'Personal Party Use', basic: true, premium: true, grand: true, subscribe: true },
-        { name: 'Commercial Event & Venue Use', basic: false, premium: false, grand: false, subscribe: true },
-      ]
-    }
   ]
 
   const renderValue = (value: string | boolean) => {
@@ -62,17 +53,17 @@ export default function PricingComparison() {
         <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
           Compare <span className="text-brand-pink italic">Packages</span>
         </h2>
-        <p className="text-gray-400 font-bold text-lg">Same full-featured experience on every tier, only your group size changes the price.</p>
+        <p className="text-gray-400 font-bold text-lg">Same full-featured experience on every tier — only your character cast size changes the price.</p>
       </div>
 
       <div className="overflow-x-auto rounded-[2rem] border-2 border-gray-100 shadow-xl">
         <table className="w-full text-sm min-w-[600px]">
           <thead>
             <tr className="bg-brand-dark text-white">
-              <th className="py-6 px-8 text-left font-black uppercase tracking-widest text-[10px] w-1/3">Feature</th>
+              <th className="py-6 px-8 text-left font-black uppercase tracking-widest text-[10px] w-2/5">Feature</th>
               {plans.map(plan => (
                 <th key={plan.id} className="py-6 px-4 text-center font-black uppercase tracking-widest text-[10px]">
-                  <div className={plan.id === 'subscribe' ? 'text-white' : plan.id === 'premium' ? 'text-brand-pink' : 'text-gray-300'}>
+                  <div className={plan.id === 'premium' ? 'text-brand-pink' : 'text-gray-300'}>
                     {plan.name}
                   </div>
                 </th>
@@ -84,7 +75,7 @@ export default function PricingComparison() {
               <React.Fragment key={sIdx}>
                 {/* Category Header */}
                 <tr className="bg-brand-gray/50 border-y border-gray-100">
-                  <td colSpan={5} className="py-4 px-8 font-black uppercase tracking-[0.15em] text-[10px] text-gray-500">
+                  <td colSpan={4} className="py-4 px-8 font-black uppercase tracking-[0.15em] text-[10px] text-gray-500">
                     {section.category}
                   </td>
                 </tr>
@@ -94,8 +85,7 @@ export default function PricingComparison() {
                     <td className="py-5 px-8 font-bold text-gray-700 border-r border-gray-50">{item.name}</td>
                     <td className="py-5 px-4 text-center border-r border-gray-50">{renderValue(item.basic)}</td>
                     <td className="py-5 px-4 text-center border-r border-gray-50 bg-brand-pink/5">{renderValue(item.premium)}</td>
-                    <td className="py-5 px-4 text-center border-r border-gray-50">{renderValue(item.grand)}</td>
-                    <td className="py-5 px-4 text-center bg-brand-dark/5">{renderValue(item.subscribe)}</td>
+                    <td className="py-5 px-4 text-center">{renderValue(item.grand)}</td>
                   </tr>
                 ))}
               </React.Fragment>

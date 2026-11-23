@@ -37,7 +37,7 @@ export async function generateMetadata(props: {
   }
 
   const title = `${mystery.title} - ${mystery.theme} Murder Mystery Party Game | Back Pocket Mysteries`;
-  const description = `${mystery.shortDesc} Cast your real friends into 9 iconic roles, personalized with their names, avatars, and quirks in ~30 minutes.`;
+  const description = `${mystery.shortDesc} Cast your real friends into iconic roles, personalized with their names, avatars, and quirks in ~20 minutes.`;
   const ogImageUrl = `https://backpocketmysteries.com${mystery.coverUrl}`;
 
   return {

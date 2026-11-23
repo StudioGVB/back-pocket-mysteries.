@@ -185,7 +185,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                         </div>
                       </div>
                       <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest">
-                        Ready in ~30m
+                        Ready in ~20m
                       </span>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
@@ -194,7 +194,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                         <ul className="space-y-2 text-xs text-gray-300 font-semibold">
                           <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Join via 6-digit PIN or QR code</li>
                           <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Live Round 1–3 secret objectives</li>
-                          <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Group-chat &amp; audio wiretap clues</li>
+                          <li className="flex items-center gap-2"><span className="text-emerald-400 font-black">✓</span> Group-chat, CCTV &amp; audio wiretap clues</li>
                         </ul>
                       </div>
                       <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
@@ -213,7 +213,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
           ))}
         </div>
 
-        {/* Two Ways To Play: Theatrical Party vs Detective Case File */}
+        {/* Two Ways To Play: Dinner Party Roleplay vs Couch Detective Case File */}
         <div className="mt-28 lg:mt-36 p-8 sm:p-12 lg:p-16 bg-brand-dark text-white rounded-[2rem] lg:rounded-[3rem] shadow-2xl border-2 border-brand-pink/30">
           <div className="max-w-3xl mb-10">
             <span className="inline-block px-4 py-1.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest mb-4">
@@ -223,32 +223,32 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
               Host a Full-Cast Party - Or Solve It <span className="text-brand-pink italic">Like a Detective Case File</span>
             </h2>
             <p className="text-gray-300 font-medium text-base sm:text-lg leading-relaxed">
-              Every mystery story requires at least <strong>5 characters</strong> so the alibis, motives, and backstories tangle properly, but the player count in the room is purely for theatrics! You don&apos;t need to act out a character to get information.
+              Every mystery story features at least <strong>6 interlocking characters</strong> (1 Victim + 5 Suspects) so the alibis, motives, and backstories tangle properly — and our 4-Step Casting Wizard lets you cast <strong>All Real Friends</strong>, a <strong>Hybrid Mix (Friends + Fictional Strangers)</strong>, or a <strong>100% Fictional Cast</strong>!
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-3">
               <span className="text-xs font-black uppercase tracking-widest text-brand-pink block">
-                🎭 Option 1 • Theatrical Party Mode (5–16 Guests)
+                🎭 Option 1 • Dinner Party Roleplay (6–16 Players)
               </span>
               <h3 className="text-2xl font-black uppercase tracking-tight text-white">
-                1 Role Per Guest - Zero Random Side Characters
+                Everyone Plays a Character Around the Table
               </h3>
               <p className="text-sm text-gray-300 font-medium leading-relaxed">
-                Having friends over for a dinner party, birthday, or hen night? Select the exact number of guests attending (minimum 5). Every guest plays 1 suspect, and we never include unplayed side characters that nobody in the room is playing.
+                Having friends over for a dinner party, birthday, or hen night? Cast your guests into their own custom character roles with personalized outfit guides, secret alibis, and round-by-round talking points.
               </p>
             </div>
 
             <div className="bg-brand-pink/10 border border-brand-pink/30 rounded-3xl p-8 space-y-3">
               <span className="text-xs font-black uppercase tracking-widest text-brand-pink block">
-                📁 Option 2 • Detective Case-File Mode (Solo, Couple or 3–4 Friends)
+                🕵️‍♀️ Option 2 • Couch Detective / Case-File Mode (1–5 Players)
               </span>
               <h3 className="text-2xl font-black uppercase tracking-tight text-white">
                 Solve the Whole Package Together Over Wine
               </h3>
               <p className="text-sm text-gray-300 font-medium leading-relaxed">
-                Want to solve the mystery by yourself or on a date night? Simply select 5–9 characters for the story (cast your friends just for the hilarious personalized DMs!) and inspect all of their suspect booklets, group chats, and audio wiretaps together to deduce who did it.
+                Playing solo, on a date night, or with a small group? Cast your friends, a <strong>Hybrid mix of you + fictional suspects</strong>, or generate a <strong>100% Fictional Mystery Cast</strong> in one click — then inspect all suspect dossiers, group chats, CCTV photos, and audio wiretaps together to catch the killer!
               </p>
             </div>
           </div>

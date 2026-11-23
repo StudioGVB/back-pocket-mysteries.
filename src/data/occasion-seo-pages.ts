@@ -37,7 +37,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     metaTitle:
       'Hen Party & Bachelorette Murder Mystery Games (Printable & Custom) | Back Pocket Mysteries',
     metaDescription:
-      'Looking for the ultimate hen do or bachelorette murder mystery party game? Personalize characters with the bride’s inside jokes, leaked group chats, and audio clues in ~30 minutes.',
+      'Looking for the ultimate hen do or bachelorette murder mystery party game? Personalize characters with the bride’s inside jokes, leaked group chats, and audio clues in ~20 minutes.',
     keywords: [
       'hen party murder mystery game',
       'bachelorette murder mystery party',
@@ -48,8 +48,8 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       'love island murder mystery game',
     ],
     recommendedThemeSlug: 'death-on-arrival',
-    groupSizeLabel: '4 to 20+ Hens / Bridesmaids',
-    prepTimeLabel: 'Ready to Print or Play on Phones in ~30 Mins',
+    groupSizeLabel: 'Up to 16 Hens / Bridesmaids',
+    prepTimeLabel: 'Ready to Print or Play on Phones in ~20 Mins',
     whyTitle: 'Why a Custom Murder Mystery is the #1 Hen Do & Bachelorette Icebreaker',
     whyParagraphs: [
       'The hardest part of any hen weekend or bachelorette party is getting different friend groups—school friends, work friends, sisters, and cousins—laughing together without awkward small talk.',
@@ -86,7 +86,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       {
         question: 'What if someone drops out last-minute before the hen weekend?',
         answer:
-          'You can toggle guests in or out of your cast roster in seconds without breaking the plot—core clues and motives automatically rebalance around your active players.',
+          'You can swap guests or use Hybrid Mode to fill any empty slot with a Fictional Mystery Suspect in seconds without breaking the plot.',
       },
     ],
   },
@@ -102,7 +102,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     metaTitle:
       'Birthday Murder Mystery Party Games for Adults (30th, 40th, 50th) | Back Pocket Mysteries',
     metaDescription:
-      'Host an unforgettable adult birthday murder mystery party at home. Custom character booklets, inside jokes, printable clues, and interactive audio briefings for 4–20+ guests.',
+      'Host an unforgettable adult birthday murder mystery party at home. Custom character booklets, inside jokes, printable clues, and interactive audio briefings for up to 16 guests.',
     keywords: [
       'birthday murder mystery party game',
       '30th birthday murder mystery party',
@@ -112,8 +112,8 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       'murder mystery dinner party birthday',
     ],
     recommendedThemeSlug: 'death-on-arrival',
-    groupSizeLabel: '4 to 20+ Birthday Guests',
-    prepTimeLabel: 'Instant Digital Pack + Printable PDFs',
+    groupSizeLabel: 'Up to 16 Birthday Guests',
+    prepTimeLabel: 'Custom Digital Pack + Printable PDFs in ~20 Mins',
     whyTitle: 'Roast the Birthday Star with a Mystery Built Around Their Friends',
     whyParagraphs: [
       'Milestone birthdays deserve more than sitting around a table scrolling through phones. A custom murder mystery gives everyone a costume prompt, a secret motive, and an excuse to accuse their best friends of murder over cocktails.',
@@ -171,7 +171,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       'interactive murder mystery dinner party',
     ],
     recommendedThemeSlug: 'cirque-du-crime',
-    groupSizeLabel: '4 to 20+ Dinner Guests',
+    groupSizeLabel: 'Up to 16 Dinner Guests',
     prepTimeLabel: 'Zero-Prep Host Mode • 3 Guided Rounds',
     whyTitle: 'Designed for Modern Adult Dinner Parties (Not Cheesy 1990s Board Games)',
     whyParagraphs: [

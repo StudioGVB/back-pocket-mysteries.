@@ -15,7 +15,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
 
   const title = `Murder Mystery Party Themes & Storylines | Back Pocket Mysteries`;
   const description =
-    'Explore our active, human-crafted murder mystery party themes. Cast your real friends into iconic roles, personalized with their names, avatars, and quirks in ~30 minutes.';
+    'Explore our active, human-crafted murder mystery party themes. Cast your real friends into iconic roles, personalized with their names, avatars, and quirks in ~20 minutes.';
 
   return {
     title,
@@ -181,7 +181,7 @@ export default async function ThemesPage(props: {
                           💋 {mystery.category} • Active Release
                         </span>
                         <span className="px-3.5 py-1.5 bg-emerald-50/95 backdrop-blur-sm border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                          Ready in ~30 Mins
+                          Ready in ~20 Mins
                         </span>
                       </div>
                       <span className="px-3.5 py-1.5 bg-brand-dark/85 backdrop-blur-sm rounded-full text-[10px] font-black uppercase tracking-widest text-white">

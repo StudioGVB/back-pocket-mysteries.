@@ -108,16 +108,16 @@ export default async function CompetitorComparisonPage(props: { params: Promise<
               </h2>
               <div className="prose prose-lg text-gray-600 font-medium max-w-none">
                 <p className="mb-6">
-                  While {competitor.name} offers a standard "off the shelf" experience where every buyer receives the exact same story, <strong>Back Pocket Mysteries</strong> takes a completely different approach.
+                  While {competitor.name} offers a standard &ldquo;off the shelf&rdquo; experience where every buyer receives the exact same pre-named strangers, <strong>Back Pocket Mysteries</strong> combines human-crafted mystery architecture with AI personalisation.
                 </p>
                 <p className="mb-6">
-                  Using advanced AI, we generate a 100% unique murder mystery game built specifically around <em>your</em> guests. You simply input who is coming to your party, and our system writes a cohesive, thrilling mystery where your friends are the suspects. 
+                  Every plot, timeline, and clue chain is written by a human mystery writer for complex, watertight logic — then our AI engine tailors the character dossiers, visual CCTV evidence, and audio wiretaps around <em>your</em> cast in ~20 minutes.
                 </p>
                 <ul className="list-disc pl-6 space-y-2 font-bold text-brand-dark">
-                  <li>Your friends&apos; real names become the cast (no awkward pre-set stranger names).</li>
-                  <li>Inside jokes, quirks, and real-life relationships are woven directly into the motives and alibis.</li>
+                  <li>Cast all real friends, a Hybrid mix of friends + fictional suspects, or a 100% fictional cast.</li>
+                  <li>Inside jokes, quirks, and custom portraits are woven directly into the dossiers and visual clues.</li>
                   <li>Includes a Kahoot-style Live Mobile Lobby (6-digit Game PIN) with leaked group-chat texts &amp; audio wiretaps alongside printable PDF booklets.</li>
-                  <li>Spoiler-Free Host Mode lets the host play along as a full suspect, ready in ~30 minutes.</li>
+                  <li>Spoiler-Free Host Mode lets the host play along as a full suspect, ready in ~20 minutes.</li>
                 </ul>
               </div>
             </section>

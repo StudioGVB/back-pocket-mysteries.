@@ -113,8 +113,8 @@ export default async function OccasionSeoLandingPage(props: {
     offers: {
       '@type': 'AggregateOffer',
       priceCurrency: 'GBP',
-      lowPrice: '20.00',
-      highPrice: '45.00',
+      lowPrice: '15.00',
+      highPrice: '25.00',
       offerCount: '3',
       availability: 'https://schema.org/InStock',
     },

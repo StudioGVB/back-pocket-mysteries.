@@ -17,7 +17,7 @@
     "aboutUs": "About Us",
     "contact": "Contact",
     "footer": {
-      "desc": "Personalised murder mystery kits built for your crowd, ready in ~30 minutes. Part of Back Pocket Games.",
+      "desc": "Personalised murder mystery kits built for your crowd, ready in ~20 minutes. Part of Back Pocket Games.",
       "rights": "Back Pocket Games. All rights reserved.",
       "admin": "Admin Access"
     },
@@ -29,13 +29,13 @@
   },
   "home": {
     "hero": {
-      "badge": "Human-Written Mysteries • AI-Tailored to Your Guests in ~30 Mins",
+      "badge": "Human-Written Mysteries • AI-Tailored to Your Guests in ~20 Mins",
       "title": "Murder mystery, built around, your people.",
-      "subtitle": "Every plot, clue chain, and alibi is written by human mystery writers for watertight logic—then our AI engine builds your custom package around your friends' real names, traits, and inside jokes in ~30 minutes.",
+      "subtitle": "Every plot, clue chain, and alibi is written by human mystery writers for watertight logic—then our AI engine builds your custom package around your friends' real names, traits, and inside jokes in ~20 minutes.",
       "ctaPick": "Pick a Theme",
       "ctaHow": "How it Works",
       "priceLabel": "From {{price}}",
-      "readyBadge": "Ready in ~30 min"
+      "readyBadge": "Ready in ~20 min"
     },
     "why": {
       "title": "Human-written plots. AI-tailored to your friends.",
@@ -53,8 +53,8 @@
         },
         "instant": {
           "title": "Live Mobile Lobby + Print Kit",
-          "desc": "In ~30 minutes, your custom package is ready with a 6-digit Game PIN mobile lobby, Spoiler-Free Host Mode, and formatted print-ready PDF booklets.",
-          "badge": "Ready in ~30 Mins"
+          "desc": "In ~20 minutes, your custom package is ready with a 6-digit Game PIN mobile lobby, Spoiler-Free Host Mode, and formatted print-ready PDF booklets.",
+          "badge": "Ready in ~20 Mins"
         }
       }
     },
@@ -70,7 +70,7 @@
         "desc": "Enter your guests' names, personalities, and relationships so our AI engine can weave them into the human-written plot without breaking a single clue."
       },
       "step3": {
-        "title": "AI builds your custom package in ~30 mins",
+        "title": "AI builds your custom package in ~20 mins",
         "desc": "Your personalised suspect dossiers, custom evidence, print-ready PDFs, and 6-digit Game PIN lobby are compiled automatically."
       },
       "cta": "See the full process"
@@ -105,8 +105,8 @@
       }
     },
     "compare": {
-      "title": "Etsy takes weeks. We take 30 minutes.",
-      "subtitle": "Human-written mystery complexity combined with instant AI personalisation—without plot holes or a £150 price tag.",
+      "title": "Etsy takes weeks. We take 20 minutes.",
+      "subtitle": "Human-written mystery complexity combined with AI personalisation—without plot holes or a £150 price tag.",
       "table": {
         "feature": "Feature",
         "bpm": "Back Pocket Mysteries",
@@ -116,7 +116,7 @@
         "f2": "Guest names & inside jokes woven into the story",
         "f3": "Custom evidence & live mobile lobby",
         "f4": "Delivery time",
-        "f5": "Price (4–16 guests)",
+        "f5": "Price (up to 16 players)",
         "f6": "Spoiler-Free Host Mode"
       }
     },
@@ -128,7 +128,7 @@
   },
   "pricing": {
     "title": "One pack. Your whole night.",
-    "subtitle": "Priced flat by group size - $0 extra per-player fees. Choose a single mystery pack for your party or unlock Unlimited monthly access + 1 Free Monthly Gift Pass.",
+    "subtitle": "Priced flat by character cast size - $0 extra per-player fees and $0 subscriptions required. Play as a full-cast dinner party OR solve it solo, as a couple, or in a small group!",
     "mostPopular": "Most Popular",
     "event": "/ event",
     "bestFor": "Best for:",
@@ -139,63 +139,56 @@
     "tiers": {
       "basic": {
         "name": "Basic",
-        "tagline": "4–6 Players • Intimate Party.",
-        "desc": "Perfect for smaller dinner parties and game nights with 4 to 6 guests.",
+        "tagline": "Up to 6 Characters • 1–6 Players.",
+        "desc": "Perfect for intimate 6-guest dinner parties OR solo, duo, and small-group detective nights.",
         "cta": "Browse Mysteries",
-        "bestFor": "Intimate dinner parties (4–6 guests)"
+        "bestFor": "Intimate parties or solo/duo case files (1–6 players)"
       },
       "premium": {
         "name": "Premium",
-        "tagline": "4–10 Players • The Main Event.",
-        "desc": "Our most popular group size, ideal for birthdays, hens nights, and medium parties up to 10 guests.",
+        "tagline": "Up to 10 Characters • 1–10 Players.",
+        "desc": "Our most popular package, ideal for birthdays, hens nights, and dinner parties up to 10 guests.",
         "cta": "Browse Mysteries",
-        "bestFor": "Birthdays & hens nights (4–10 guests)"
+        "bestFor": "Birthdays & hens nights (up to 10 players)"
       },
       "grand": {
         "name": "Grand",
-        "tagline": "4–16 Players • Full House.",
+        "tagline": "Up to 16 Characters • 1–16 Players.",
         "desc": "Built for big celebrations, weekend getaways, and large groups of up to 16 suspects.",
         "cta": "Browse Mysteries",
-        "bestFor": "Large parties & getaways (4–16 guests)"
-      },
-      "subscribe": {
-        "name": "Unlimited",
-        "tagline": "Unlimited + 1 Monthly Gift Pass.",
-        "desc": "Unlock unlimited mystery events every month for up to 16 players, plus 1 Free Monthly Gift Pass to send any mystery to a friend.",
-        "cta": "Unlock Unlimited Pass",
-        "bestFor": "Hosts, regulars & event pros"
+        "bestFor": "Large parties & getaways (up to 16 players)"
       }
     }
   },
   "howItWorks": {
-    "title": "Human-written mysteries. AI-built for your group in ~30 minutes.",
-    "subtitle": "Every core mystery is written by a human writer so the clue logic, alibis, and twists are complex and watertight. Then our AI builds your personalised package—weaving your real guests into the character scripts, evidence, and live mobile lobby.",
+    "title": "Human-written mysteries, AI-built for your group in ~20 minutes.",
+    "subtitle": "Every core mystery is written by a human writer so the clue logic, alibis, and twists are complex and watertight. Then our AI builds your personalised package—weaving your real guests (or a hybrid/fictional cast) into the character scripts, evidence, and live mobile lobby.",
     "badge": "Human Plot + AI Personalisation",
     "steps": {
       "pick": {
         "title": "Pick a human-crafted mystery theme",
-        "desc": "Browse our active themes and pick the setting that matches your event energy. Every theme is written by a human mystery author with 3 structured rounds, interlocking alibis, and a dramatic final reveal.",
+        "desc": "Browse our active themes and pick the setting, cast size, and spice level that matches your event energy. Every theme is written by a human mystery author with 3 structured rounds, interlocking alibis, and a dramatic final reveal.",
         "bullets": [
           "100% human-written plot architecture & watertight clue chains",
-          "Configurable Spice Level (Mild PG-13, Spicy, or Extra Juicy)",
-          "Configurable Complexity (Light, Standard, or Complex)"
+          "Clear Difficulty & Spice ratings on every theme in our catalog",
+          "Play as a full-cast roleplay party OR a solo/couple detective case file"
         ]
       },
       "guests": {
-        "title": "AI casts your real guests into the plot",
-        "desc": "Add your guests' names, quirks, and relationships. Our AI engine adapts the human-written character dossiers around your actual friends—weaving in inside jokes and dynamics without ever altering the underlying clue logic.",
+        "title": "Cast real friends, fictional suspects, or a hybrid mix",
+        "desc": "Cast your real friends into every role, use a Hybrid mix of your friends + auto-filled fictional suspects, or generate a 100% fictional cast in one click. Our AI engine adapts the character dossiers and clues without ever altering the underlying clue logic.",
         "bullets": [
-          "Real guest names & traits woven into a human-written script",
+          "3 Cast Modes: All Friends, Hybrid (Friends + Fictional Strangers), or 100% Fictional",
           "Zero AI plot holes—every alibi and forensic timestamp stays airtight",
           "Spoiler-Free Host Mode so the host can play as a full suspect"
         ]
       },
       "download": {
         "title": "Launch your Live Lobby or print your kit",
-        "desc": "In ~30 minutes, your personalised murder mystery is ready inside your Host Dashboard. Share the 6-digit Game PIN for live mobile play or print the formatted PDF booklets at home.",
+        "desc": "In ~20 minutes, your personalised murder mystery is ready inside your Host Dashboard. Share the 6-digit Game PIN for live mobile play or print the formatted PDF booklets at home.",
         "bullets": [
           "Kahoot-style 6-digit Game PIN lobby for guest phones",
-          "Interactive group-chat texts & AI audio wiretap clues",
+          "Interactive group-chat texts, visual CCTV & AI audio wiretap clues",
           "Print-ready PDF Suspect Booklets & Host Guide",
           "Live Round 1–3 Host Controller"
         ]
@@ -309,7 +302,7 @@
   },
   "seoLanding": {
     "title": "Host a Custom Murder Mystery Party.",
-    "subtitle": "Get a fully personalized, print-ready & mobile-ready murder mystery game built around your actual guest list in ~30 minutes.",
+    "subtitle": "Get a fully personalized, print-ready & mobile-ready murder mystery game built around your actual guest list in ~20 minutes.",
     "seoDescription": "Host a custom murder mystery party personalized for your guests. We cast your real friends into iconic roles with custom evidence, audio wiretaps, and a live mobile lobby.",
     "whyCustomTitle": "Why choose a custom murder mystery?",
     "whyCustomDesc": "Generic boxed games force your friends to read stiff scripts for pre-named strangers. Our platform takes human-crafted mystery plots and adapts them entirely around your actual guest list, casting your friends' real names into iconic archetypes, weaving in their relationships and inside jokes, and delivering both printable booklets and a live Kahoot-style mobile lobby.",
@@ -318,8 +311,8 @@
       "f1Desc": "No pre-set stranger names, your actual guests become The Star, The Villain, The Ex, and more.",
       "f2": "Interactive Clues & Live Mobile Lobby",
       "f2Desc": "Leaked group-chat texts, audio wiretaps, and a 6-digit Game PIN lobby alongside printable PDF booklets.",
-      "f3": "Spoiler-Free Host Mode in ~30 Mins",
-      "f3Desc": "Play along as a full suspect without spoiling the killer's identity. Ready in ~30 minutes."
+      "f3": "Spoiler-Free Host Mode in ~20 Mins",
+      "f3Desc": "Play along as a full suspect without spoiling the killer's identity. Ready in ~20 minutes."
     },
     "ctaTitle": "Ready to host your custom party?",
     "ctaButton": "View Pricing"

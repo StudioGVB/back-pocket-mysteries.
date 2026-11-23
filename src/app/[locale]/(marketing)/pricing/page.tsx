@@ -36,79 +36,60 @@ export default async function PricingPage(props: {
     {
       id: 'basic' as const,
       name: 'Basic',
-      tagline: '5–6 SUSPECTS • SOLO/DUO CASE FILE OR SMALL PARTY.',
-      desc: 'Includes 5 to 6 interlocking suspect dossiers, play as an intimate 5–6 guest roleplay party OR solve the entire case file solo or as a duo!',
+      tagline: 'UP TO 6 CHARACTERS • 1–6 PLAYERS.',
+      desc: 'Includes 6 interlocking character dossiers — play as an intimate 6-guest dinner party OR solve it solo, as a couple, or in a small group!',
       features: [
-        '5–6 custom suspect roles & character booklets (minimum 5 so backstories tangle)',
-        'Play 2 Ways: 5–6 Guest Roleplay Party OR 1–4 Player Detective Case File',
-        'Zero unplayed side characters when hosting a party - 1 role per guest',
-        'Interactive clues (texts, receipts, CCTV, voice memos)',
+        '6 interlocking character roles & booklets (1 Victim + 5 Suspects)',
+        'Play 2 Ways: Dinner Party Roleplay OR Couch Detective / Case-File Mode',
+        '3 Cast Options: All Friends, Hybrid (Friends + Fictional Strangers), or 100% Fictional Cast',
+        'Interactive clues (texts, receipts, CCTV photos, voice memos)',
         'Guest names, avatars & real-life quirks woven into the story',
-        'Kahoot-style 6-digit Game PIN & Spoiler-free Host Mode',
+        'Kahoot-style 6-digit Game PIN & Spoiler-Free Host Mode',
         'Print character booklets or inspect the full case file on phones',
       ],
       cta: 'Browse Mysteries',
       featured: false,
-      bestFor: 'SOLO/COUPLE CASE FILES OR INTIMATE PARTIES (5–6 SUSPECTS)',
+      bestFor: 'SOLO/COUPLE CASE FILES OR INTIMATE PARTIES (1–6 PLAYERS)',
       billingPeriod: 'event' as const
     },
     {
       id: 'premium' as const,
       name: 'Premium',
-      tagline: '5–10 SUSPECTS • THE MAIN EVENT.',
-      desc: 'Our most popular package, ideal for birthdays, hens nights, and parties up to 10 guests (or an expanded 10-suspect detective case file).',
+      tagline: 'UP TO 10 CHARACTERS • 1–10 PLAYERS.',
+      desc: 'Our most popular package, ideal for birthdays, hens nights, and dinner parties up to 10 guests (or an expanded 10-suspect detective case file).',
       features: [
-        '5–10 custom suspect roles & character booklets',
+        'Up to 10 custom character roles & booklets',
         'Expanded relationship web, rival alliances & tangled side-plots',
-        'Play 2 Ways: 7–10 Guest Roleplay Party OR 1–4 Player Deep Case File',
-        'Interactive clues (group chats, audio wiretaps, forensics)',
-        'Guest names, avatars & real-life quirks woven into the story',
-        'Kahoot-style 6-digit Game PIN & Spoiler-free Host Mode',
+        'Play 2 Ways: Dinner Party Roleplay OR Couch Detective / Case-File Mode',
+        '3 Cast Options: All Friends, Hybrid (Friends + Fictional Strangers), or 100% Fictional Cast',
+        'Interactive clues (group chats, audio wiretaps, visual CCTV)',
+        'Kahoot-style 6-digit Game PIN & Spoiler-Free Host Mode',
         'Print character booklets or play 100% on phones',
       ],
       cta: 'Browse Mysteries',
       featured: true,
-      bestFor: 'BIRTHDAYS, HENS NIGHTS & DINNER PARTIES (UP TO 10 SUSPECTS)',
+      bestFor: 'BIRTHDAYS, HENS NIGHTS & DINNER PARTIES (UP TO 10 PLAYERS)',
       billingPeriod: 'event' as const
     },
     {
       id: 'grand' as const,
       name: 'Grand',
-      tagline: '5–16 SUSPECTS • FULL HOUSE.',
-      desc: 'Built for big celebrations, weekend getaways, and large groups of up to 16 suspects with zero filler roles.',
+      tagline: 'UP TO 16 CHARACTERS • 1–16 PLAYERS.',
+      desc: 'Built for big celebrations, weekend getaways, and large groups of up to 16 suspects with interlocking alibis.',
       features: [
-        '5–16 custom suspect roles & character booklets',
+        'Up to 16 custom character roles & booklets',
         'Full-house conflict graph, multi-faction subplots & red herrings',
-        'Every attending guest gets a tailored role, no unplayed side characters',
-        'Interactive clues (group chats, audio wiretaps, forensics)',
+        '3 Cast Options: All Friends, Hybrid (Friends + Fictional Strangers), or 100% Fictional Cast',
+        'Interactive clues (group chats, audio wiretaps, visual CCTV)',
         'Guest names, avatars & real-life quirks woven into the story',
-        'Kahoot-style 6-digit Game PIN & Spoiler-free Host Mode',
+        'Kahoot-style 6-digit Game PIN & Spoiler-Free Host Mode',
         'Print character booklets or play 100% on phones',
       ],
       cta: 'Browse Mysteries',
       featured: false,
-      bestFor: 'LARGE PARTIES & GETAWAYS (UP TO 16 SUSPECTS)',
+      bestFor: 'LARGE PARTIES & GETAWAYS (UP TO 16 PLAYERS)',
       billingPeriod: 'event' as const
     },
-    {
-      id: 'subscribe' as const,
-      name: 'Unlimited',
-      tagline: 'UNLIMITED + 1 MONTHLY GIFT PASS.',
-      desc: 'Unlock unlimited mystery events every month for up to 16 suspects (Party Mode or Solo/Duo Case-File Mode), plus 1 Free Monthly Gift Pass.',
-      features: [
-        'Unlimited mystery events every month',
-        '🎁 1 Free Monthly Gift Pass (gift any mystery to a friend)',
-        'All cast sizes included (5–16 suspects, play solo, duo, or full party)',
-        'Every complexity & spice level in the catalog',
-        'Guest names, avatars & quirks woven into every game',
-        'Kahoot-style live game lobbies & printable kits',
-        'Commercial event & venue use license',
-      ],
-      cta: 'Unlock Unlimited Pass',
-      featured: false,
-      bestFor: 'HOSTS, REGULARS & EVENT PROS',
-      billingPeriod: 'month' as const
-    }
   ];
 
   return (
@@ -144,7 +125,7 @@ export default async function PricingPage(props: {
           <p className="text-gray-400 font-bold text-sm max-w-2xl mx-auto leading-relaxed">
             For context: hiring a human to write a custom mystery costs $500+ and takes weeks. <br />
             A generic boxed kit costs $40–$80 and has zero personalization. <br />
-            We deliver a fully customized, film-quality experience, for your whole group, in ~30 minutes.
+            We deliver a human-written, AI-tailored experience for your whole group in ~20 minutes.
           </p>
         </div>
         

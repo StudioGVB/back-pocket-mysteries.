@@ -40,7 +40,7 @@ export default async function CustomMurderMysteryPage(props: {
       "@type": "AggregateOffer",
       "priceCurrency": "USD",
       "lowPrice": "19.00",
-      "highPrice": "29.00",
+      "highPrice": "33.00",
       "offerCount": "3"
     }
   };
