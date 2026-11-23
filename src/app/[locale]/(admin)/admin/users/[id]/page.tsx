@@ -11,7 +11,7 @@ import {
 } from '../../admin-data';
 import { getCustomerCrmData } from '@/app/actions/admin-users';
 import { CustomerDashboard } from './CustomerDashboard';
-import { buildAvatarUrl } from '@/utils/avatar';
+import { getUserDisplayAvatarUrl } from '@/utils/avatar';
 import { EditProfileButton } from './EditProfileButton';
 
 export const unstable_instant = false;
@@ -180,17 +180,12 @@ async function CustomerProfileContent({
         <div className="md:col-span-1 bg-brand-dark rounded-[32px] p-6 text-white relative overflow-hidden group shadow-xl">
           <EditProfileButton profile={profile} />
           <div className="relative z-10 flex flex-col items-center text-center">
-            {profile.avatar_url || profile.avatar_config ? (
-              <img 
-                src={profile.avatar_url || buildAvatarUrl(profile.avatar_config, profile.full_name || 'User')} 
-                alt={profile.full_name || 'User'}
-                className="w-20 h-20 rounded-full object-cover mb-4 border-2 border-brand-pink/30 shadow-[0_0_15px_rgba(254,4,198,0.3)] bg-white"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-brand-pink/20 text-brand-pink flex items-center justify-center text-3xl font-black uppercase mb-4 border-2 border-brand-pink/30 shadow-[0_0_15px_rgba(254,4,198,0.3)]">
-                {(profile.full_name || 'C')[0]}
-              </div>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={getUserDisplayAvatarUrl(profile)} 
+              alt={profile.full_name || 'User'}
+              className="w-20 h-20 rounded-full object-cover mb-4 border-2 border-brand-pink/30 shadow-[0_0_15px_rgba(254,4,198,0.3)] bg-white"
+            />
             <h3 className="text-xl font-black uppercase tracking-tight mb-1">{profile.full_name || 'Unknown'}</h3>
             <p className="text-brand-pink text-[10px] font-black uppercase tracking-widest mb-3">{profile.email}</p>
 

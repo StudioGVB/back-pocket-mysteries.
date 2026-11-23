@@ -5,6 +5,7 @@ import { getAnalyticsTimeseries } from '@/app/actions/admin-vercel';
 import { DashboardTrafficWidget } from '@/components/admin/DashboardTrafficWidget';
 import { cookies } from 'next/headers';
 import { DashboardTracker } from './DashboardTracker';
+import { getUserDisplayAvatarUrl } from '@/utils/avatar';
 
 export const unstable_instant = false;
 
@@ -105,9 +106,12 @@ async function DashboardTransactions() {
           transactions.map((tx: any, i: number) => (
             <div key={i} className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-black text-brand-dark text-[10px] uppercase">
-                  {(tx.profile?.full_name || 'Guest').split(' ').map((n: string) => n[0]).join('')}
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getUserDisplayAvatarUrl(tx.profile)}
+                  alt={tx.profile?.full_name || 'Guest'}
+                  className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-slate-100 shrink-0"
+                />
                 <div>
                   <p className="text-sm font-bold text-brand-dark">{tx.profile?.full_name || 'Anonymous Guest'}</p>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{tx.mystery?.title || 'Unknown Mystery'}</p>

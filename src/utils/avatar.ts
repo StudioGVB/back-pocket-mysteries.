@@ -289,3 +289,76 @@ export function resolveDisplayAvatarUrl(avatarUrl?: string | null): string {
   }
   return avatarUrl.replace('api.dicebear.com/8.x/avataaars', 'api.dicebear.com/7.x/avataaars');
 }
+
+const DETERMINISTIC_TOPS = [
+  'shortFlat',
+  'shortWaved',
+  'shortCurly',
+  'straight01',
+  'curly',
+  'bob',
+  'bun',
+  'dreads01',
+];
+
+const DETERMINISTIC_HAIR_COLORS = ['282828', '4a312c', '724133', 'b58143', 'd6b370', 'a55728'];
+const DETERMINISTIC_SKIN_COLORS = ['ffe0bd', 'ffcd94', 'eac086', 'd08b5b', 'ae5d29'];
+
+/**
+ * Resolves a customer or guest profile into a guaranteed display avatar URL:
+ * 1. Extracts any embedded `aiPhotoUrl` from `avatar_url` or `avatar_config.aiPhotoUrl`
+ * 2. Uses `avatar_url` or builds a DiceBear SVG from `avatar_config`
+ * 3. Falls back to a deterministic, attractive DiceBear avatar icon seeded by the user's name/ID
+ *    so no row ever falls back to a plain letter circle.
+ */
+export function getUserDisplayAvatarUrl(user: {
+  id?: string | null;
+  full_name?: string | null;
+  name?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  avatar_config?: Partial<AvatarConfig> | Record<string, any> | null;
+}): string {
+  const displayName =
+    String(user?.full_name || user?.name || user?.email || user?.id || 'Guest').trim() || 'Guest';
+
+  const configAiPhoto =
+    user?.avatar_config && typeof user.avatar_config === 'object'
+      ? (user.avatar_config as any).aiPhotoUrl
+      : undefined;
+
+  if (typeof configAiPhoto === 'string' && configAiPhoto.trim().length > 0) {
+    return resolveDisplayAvatarUrl(configAiPhoto.trim());
+  }
+
+  if (user?.avatar_url && String(user.avatar_url).trim().length > 0) {
+    const resolved = resolveDisplayAvatarUrl(user.avatar_url);
+    if (resolved) return resolved;
+  }
+
+  if (
+    user?.avatar_config &&
+    typeof user.avatar_config === 'object' &&
+    Object.keys(user.avatar_config).length > 0
+  ) {
+    const built = buildAvatarUrl(user.avatar_config, displayName);
+    if (built) return resolveDisplayAvatarUrl(built);
+  }
+
+  // Deterministic fallback DiceBear avatar so every customer/admin/transaction row has a real avatar icon
+  const seedStr = `${displayName}-${user?.id || ''}`;
+  let hash = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    hash = (hash * 31 + seedStr.charCodeAt(i)) >>> 0;
+  }
+  const top = DETERMINISTIC_TOPS[hash % DETERMINISTIC_TOPS.length];
+  const hairColor = DETERMINISTIC_HAIR_COLORS[(hash >> 3) % DETERMINISTIC_HAIR_COLORS.length];
+  const skinColor = DETERMINISTIC_SKIN_COLORS[(hash >> 6) % DETERMINISTIC_SKIN_COLORS.length];
+
+  return (
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seedStr)}` +
+    `&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=f1f5f9` +
+    `&top=${top}&hairColor=${hairColor}&skinColor=${skinColor}`
+  );
+}
+

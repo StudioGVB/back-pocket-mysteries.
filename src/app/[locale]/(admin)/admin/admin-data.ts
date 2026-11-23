@@ -66,16 +66,16 @@ export const getRecentTransactions = cache(async () => {
 
   const [profilesRes, mysteriesRes] = await Promise.all([
     userIds.length > 0
-      ? supabase.from('profiles').select('id, full_name').in('id', userIds)
+      ? supabase.from('profiles').select('id, full_name, avatar_url, avatar_config').in('id', userIds)
       : Promise.resolve({ data: [] as any[] }),
     mysteryIds.length > 0
       ? supabase.from('mysteries').select('id, title').in('id', mysteryIds)
       : Promise.resolve({ data: [] as any[] }),
   ]);
 
-  let profilesMap: Record<string, string> = {};
+  let profilesMap: Record<string, any> = {};
   if (profilesRes.data) {
-    profilesMap = profilesRes.data.reduce((acc: any, p: any) => ({ ...acc, [p.id]: p.full_name }), {});
+    profilesMap = profilesRes.data.reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
   }
 
   let mysteriesMap: Record<string, string> = {};
@@ -88,7 +88,7 @@ export const getRecentTransactions = cache(async () => {
 
   return safeOrders.map(o => ({
     ...o,
-    profile: { full_name: profilesMap[o.user_id as string] || 'Unknown User' },
+    profile: profilesMap[o.user_id as string] || { full_name: 'Unknown User' },
     mystery: { title: mysteriesMap[o.mystery_id as string] || 'Unknown Mystery' }
   }));
 });

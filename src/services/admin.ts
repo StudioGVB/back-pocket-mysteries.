@@ -120,7 +120,7 @@ export async function getTransactions() {
     .from('orders')
     .select(`
       *,
-      profiles:user_id (full_name, email),
+      profiles:user_id (id, full_name, email, avatar_url, avatar_config),
       mysteries:mystery_id (id, title, theme)
     `)
     .order('created_at', { ascending: false })) as any;

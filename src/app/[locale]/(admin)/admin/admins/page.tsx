@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { getAdmins } from '../admin-data';
 import { AdminInviteForm } from './AdminInviteForm';
+import { getUserDisplayAvatarUrl } from '@/utils/avatar';
 
 export const unstable_instant = false;
 
@@ -65,9 +66,12 @@ async function AdminList() {
               <tr key={admin.id} className="hover:bg-gray-50/30 transition-colors">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-brand-pink/10 text-brand-pink flex items-center justify-center text-xs font-black uppercase">
-                      {(admin.full_name || 'A')[0]}
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getUserDisplayAvatarUrl(admin)}
+                      alt={admin.full_name || 'Admin'}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-slate-100 shrink-0"
+                    />
                     <div>
                       <p className="text-sm font-black text-brand-dark tracking-tight">{admin.full_name || 'Admin User'}</p>
                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">ID: {admin.id.slice(0, 8)}...</p>

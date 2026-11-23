@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTransactions } from '@/services/admin';
 import { refundOrderAction } from './actions';
 import { formatDate } from '@/utils/date';
+import { getUserDisplayAvatarUrl } from '@/utils/avatar';
 
 export const unstable_instant = false;
 
@@ -78,23 +79,36 @@ async function AdminTransactionsList({ locale }: { locale: string }) {
                     )}
                   </td>
                   <td className="px-6 py-5">
-                    {item.user_id ? (
-                      <Link
-                        href={`/${locale}/admin/users/${item.user_id}`}
-                        className="text-sm font-bold text-brand-dark hover:text-brand-pink transition-colors"
-                      >
-                        {item.profiles?.full_name || 'Guest'}
-                      </Link>
-                    ) : (
-                      <p className="text-sm font-bold text-brand-dark">
-                        {item.profiles?.full_name || 'Guest'}
-                      </p>
-                    )}
-                    {item.profiles?.email && (
-                      <p className="text-[11px] text-gray-400 font-medium truncate max-w-[180px]">
-                        {item.profiles.email}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getUserDisplayAvatarUrl({
+                          id: item.user_id || item.id,
+                          ...item.profiles,
+                        })}
+                        alt={item.profiles?.full_name || 'Guest'}
+                        className="w-9 h-9 rounded-full object-cover border border-gray-200 bg-slate-100 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        {item.user_id ? (
+                          <Link
+                            href={`/${locale}/admin/users/${item.user_id}`}
+                            className="text-sm font-bold text-brand-dark hover:text-brand-pink transition-colors block truncate"
+                          >
+                            {item.profiles?.full_name || 'Guest'}
+                          </Link>
+                        ) : (
+                          <p className="text-sm font-bold text-brand-dark truncate">
+                            {item.profiles?.full_name || 'Guest'}
+                          </p>
+                        )}
+                        {item.profiles?.email && (
+                          <p className="text-[11px] text-gray-400 font-medium truncate max-w-[180px]">
+                            {item.profiles.email}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-5">
                     {mysteryId ? (

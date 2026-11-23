@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { getCustomers } from '../admin-data';
 import { createClient } from '@/utils/supabase/server';
-import { buildAvatarUrl } from '@/utils/avatar';
+import { getUserDisplayAvatarUrl } from '@/utils/avatar';
 import UserRowClient from './UserRowClient';
 
 export const unstable_instant = false;
@@ -95,17 +95,12 @@ async function CustomerList({
                 <UserRowClient key={user.id} user={user} locale={locale}>
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
-                      {user.avatar_url || user.avatar_config ? (
-                        <img 
-                          src={user.avatar_url || buildAvatarUrl(user.avatar_config, user.full_name || 'User')} 
-                          alt={user.full_name || 'User'}
-                          className="w-10 h-10 rounded-full object-cover border border-gray-100"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center text-xs font-black uppercase">
-                          {(user.full_name || 'U')[0]}
-                        </div>
-                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getUserDisplayAvatarUrl(user)}
+                        alt={user.full_name || 'User'}
+                        className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-slate-100 shrink-0"
+                      />
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-black text-brand-dark tracking-tight">{user.full_name || 'Anonymous User'}</p>
