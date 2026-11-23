@@ -588,6 +588,7 @@ export function PlayroomClient({
       prevRoundRef.current = currentRound;
 
       if (nextUnlockedRound >= 1 && nextUnlockedRound <= maxClueRound) {
+        setActiveTab('clues');
         setSelectedClueRoundFilter(nextUnlockedRound);
         if (!nextIsGuess && nextUnlockedRound > prevUnlockedRound) {
           setClueSlideIndex(0);

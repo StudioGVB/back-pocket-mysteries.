@@ -904,6 +904,9 @@ export async function updateHostGameControlAction(
 
   if (typeof updates.currentRound === 'number') {
     session.currentRound = updates.currentRound;
+    if (updates.currentRound >= 5 && !updates.revealMode) {
+      session.revealMode = 'shared_with_guests';
+    }
   }
 
   if (typeof updates.toggleShareRound === 'number') {
