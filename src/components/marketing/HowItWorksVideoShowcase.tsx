@@ -110,10 +110,10 @@ export default function HowItWorksVideoShowcase() {
         <video
           key={videoSrc}
           ref={videoRef}
-          src={videoSrc}
+          src={`${videoSrc}#t=0.5`}
           playsInline
           controls
-          preload="metadata"
+          preload="auto"
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}

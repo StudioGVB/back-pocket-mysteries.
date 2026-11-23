@@ -787,10 +787,10 @@ window.CONFIG = { width: ${width}, height: ${height}, isVertical: ${aspect === '
 
     const donePromise = new Promise((resolve) => {
       recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: mimeType });
+        const blob = new Blob(chunks, { type: 'video/mp4' });
         const reader = new FileReader();
         reader.onloadend = () => {
-          const base64 = reader.result.split(',')[1];
+          const base64 = reader.result.split(';base64,')[1];
           resolve(base64);
         };
         reader.readAsDataURL(blob);
