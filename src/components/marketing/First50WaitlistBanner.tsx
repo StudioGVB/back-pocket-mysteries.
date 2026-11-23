@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   getLaunchWaitlistStatusAction,
   submitEmailLead,
@@ -188,9 +189,12 @@ export default function First50WaitlistBanner({
             {isFirst50Open ? (
               <>
                 First <strong className="text-white font-black">50 email sign-ups</strong> before launch get a{' '}
-                <span className="text-brand-pink font-black underline decoration-brand-pink/50">
+                <Link
+                  href="/en/free-murder-mystery-game"
+                  className="text-brand-pink hover:text-white font-black underline decoration-brand-pink/50 transition-colors"
+                >
                   FREE Custom Murder Mystery
-                </span>
+                </Link>
                 {status ? (
                   <span className="text-slate-400 font-semibold ml-1 animate-in fade-in duration-200">
                     ({status.spotsRemaining} of {status.vipCap} spots left!)
@@ -209,13 +213,21 @@ export default function First50WaitlistBanner({
             )}
           </p>
 
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="px-3.5 py-1 rounded-full bg-white text-brand-dark hover:bg-brand-pink hover:text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer shrink-0"
-          >
-            {hasJoined ? 'View VIP Status →' : 'Claim Free Spot →'}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="px-3.5 py-1 rounded-full bg-white text-brand-dark hover:bg-brand-pink hover:text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer shrink-0"
+            >
+              {hasJoined ? 'View VIP Status →' : 'Claim Free Spot →'}
+            </button>
+            <Link
+              href="/en/free-murder-mystery-game"
+              className="hidden sm:inline-flex px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-widest transition-all"
+            >
+              How It Works
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -269,13 +281,20 @@ export default function First50WaitlistBanner({
                     )}
                   </p>
 
-                  <div className="pt-2">
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Link
+                      href="/en/free-murder-mystery-game"
+                      onClick={handleCloseModal}
+                      className="px-7 py-4 bg-brand-pink hover:bg-white hover:text-brand-dark text-white rounded-full text-xs font-black uppercase tracking-widest transition-all"
+                    >
+                      How the Giveaway Works →
+                    </Link>
                     <button
                       type="button"
                       onClick={handleCloseModal}
-                      className="px-8 py-4 bg-brand-pink hover:bg-white hover:text-brand-dark text-white rounded-full text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+                      className="px-6 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
                     >
-                      Explore Our Themes →
+                      Continue Browsing
                     </button>
                   </div>
                 </div>
@@ -359,9 +378,18 @@ export default function First50WaitlistBanner({
                     </button>
                   </form>
 
-                  <p className="text-[11px] text-slate-400 text-center font-medium">
-                    We&apos;ll email your free mystery code on launch day, plus weekly murder mystery tips &amp; blog updates. Unsubscribe anytime.
-                  </p>
+                  <div className="space-y-1.5 text-center">
+                    <p className="text-[11px] text-slate-400 font-medium">
+                      We&apos;ll email your free mystery code on launch day, plus weekly murder mystery tips &amp; blog updates. Unsubscribe anytime.
+                    </p>
+                    <Link
+                      href="/en/free-murder-mystery-game"
+                      onClick={handleCloseModal}
+                      className="inline-block text-[11px] font-black uppercase tracking-widest text-brand-pink hover:text-white underline decoration-brand-pink/50 transition-colors pt-1"
+                    >
+                      What&apos;s Included in the First 50 Giveaway? →
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>

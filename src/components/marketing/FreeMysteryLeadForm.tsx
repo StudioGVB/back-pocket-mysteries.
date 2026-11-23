@@ -7,13 +7,17 @@ import {
   submitEmailLead,
 } from '@/app/actions/marketing';
 
+const STATUS_CACHE_KEY = 'bpm_first50_status_cache';
+
+type WaitlistStatus = {
+  totalLeads: number;
+  vipCap: number;
+  spotsRemaining: number;
+  isFirst50Open: boolean;
+};
+
 export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
-  const [status, setStatus] = useState({
-    totalLeads: 0,
-    vipCap: 50,
-    spotsRemaining: 50,
-    isFirst50Open: true,
-  });
+  const [status, setStatus] = useState<WaitlistStatus | null>(null);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -27,9 +31,42 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
   } | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedRaw = window.localStorage.getItem(STATUS_CACHE_KEY);
+        if (cachedRaw) {
+          const parsed = JSON.parse(cachedRaw) as WaitlistStatus;
+          if (
+            parsed &&
+            typeof parsed.spotsRemaining === 'number' &&
+            typeof parsed.vipCap === 'number'
+          ) {
+            setStatus(parsed);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     getLaunchWaitlistStatusAction()
-      .then((res) => setStatus(res))
+      .then((res) => {
+        if (!mounted) return;
+        setStatus(res);
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify(res));
+          } catch {
+            // ignore
+          }
+        }
+      })
       .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,9 +86,11 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
         'seo_free_mystery_page'
       );
       if (res.success) {
-        const rank = res.vipRank || status.totalLeads + 1;
-        const qualifies = res.qualifiesForFreeMystery ?? rank <= 50;
-        const remaining = res.spotsRemaining ?? Math.max(0, 50 - rank);
+        const currentTotal = status?.totalLeads ?? 0;
+        const vipCap = status?.vipCap ?? 50;
+        const rank = res.vipRank || currentTotal + 1;
+        const qualifies = res.qualifiesForFreeMystery ?? rank <= vipCap;
+        const remaining = res.spotsRemaining ?? Math.max(0, vipCap - rank);
 
         setResultInfo({
           vipRank: rank,
@@ -59,14 +98,20 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
           spotsRemaining: remaining,
           alreadyRegistered: res.alreadyRegistered,
         });
-        setStatus((prev) => ({
-          ...prev,
-          totalLeads: Math.max(prev.totalLeads, rank),
+        const nextStatus: WaitlistStatus = {
+          vipCap,
+          totalLeads: Math.max(currentTotal, rank),
           spotsRemaining: remaining,
           isFirst50Open: remaining > 0,
-        }));
+        };
+        setStatus(nextStatus);
         if (typeof window !== 'undefined') {
           window.localStorage.setItem('bpm_first50_lead_joined', 'true');
+          try {
+            window.localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify(nextStatus));
+          } catch {
+            // ignore
+          }
         }
       } else {
         setError(res.error || 'Could not join waitlist. Please try again.');
@@ -78,10 +123,13 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
     }
   };
 
-  const progressPercent = Math.min(
-    100,
-    Math.max(0, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
-  );
+  const isFirst50Open = status ? status.isFirst50Open : true;
+  const progressPercent = status
+    ? Math.min(
+        100,
+        Math.max(0, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
+      )
+    : 0;
 
   if (resultInfo) {
     return (
@@ -149,12 +197,23 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
         {/* Live Spots Progress Bar */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
           <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider">
-            <span className="text-brand-pink">
-              🔥 {status.spotsRemaining} of {status.vipCap} Free Spots Remaining
-            </span>
-            <span className="text-slate-400">
-              {status.vipCap - status.spotsRemaining}/{status.vipCap} Claimed
-            </span>
+            {status ? (
+              <>
+                <span className="text-brand-pink">
+                  🔥 {status.spotsRemaining} of {status.vipCap} Free Spots Remaining
+                </span>
+                <span className="text-slate-400">
+                  {status.vipCap - status.spotsRemaining}/{status.vipCap} Claimed
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-brand-pink">
+                  🔥 Checking Live VIP Spots...
+                </span>
+                <span className="inline-block w-16 h-3.5 rounded-full bg-white/10 animate-pulse" />
+              </>
+            )}
           </div>
           <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
             <div
@@ -214,7 +273,7 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
           >
             {submitting
               ? 'Reserving Your VIP Spot...'
-              : status.isFirst50Open
+              : isFirst50Open
               ? 'Reserve My Free Mystery Spot →'
               : 'Join the VIP Launch List →'}
           </button>
