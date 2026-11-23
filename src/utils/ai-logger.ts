@@ -91,7 +91,7 @@ export const AI_PRICING: Record<
   },
 };
 
-const LOCAL_LOG_PATH = path.join(process.cwd(), 'data', 'ai-usage-logs.json');
+const LOCAL_LOG_PATH = path.join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'ai-usage-logs.json');
 const STORAGE_LOG_PATH = 'system/ai-usage-logs.json';
 
 export function calculateAiCost(data: AiUsageData): {

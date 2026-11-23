@@ -997,74 +997,12 @@ export async function generateTestPackVisualAssets(
     }
     usedGuestIds.add(candidate.id);
 
-    const charShortId = String(c.id).slice(0, 8);
-    const localPackPortraitRel = `/generated-avatars/qa-pack${spec.runNumber}-${charShortId}.jpg`;
-    const localPackPortraitAbs = path.join(avatarsDir, `qa-pack${spec.runNumber}-${charShortId}.jpg`);
-
-    let portraitUrl: string | null = null;
-
-    if (spec.runNumber === 1 && c.profile_data?.standard_character_photo_url) {
-      // Pack #1 uses the active Real Friends Stage 1 Character Costume Portraits
-      portraitUrl = c.profile_data.standard_character_photo_url;
-    } else if (!forceRegenerate && fs.existsSync(localPackPortraitAbs)) {
-      portraitUrl = localPackPortraitRel;
-    } else if (apiKey) {
-      // Generate Stage 1 Character Costume Portrait via gemini-2.5-flash-image
-      try {
-        const outfit =
-          c.profile_data?.suggested_outfit ||
-          c.profile_data?.outfit_description ||
-          'Festive formal Christmas evening party attire';
-        const refParts: any[] = [];
-        const guestHeadshotB64 = await readImageToBase64(candidate.avatar_url);
-        if (guestHeadshotB64) {
-          refParts.push({
-            inlineData: { mimeType: 'image/jpeg', data: guestHeadshotB64 },
-          });
-        }
-        const prompt = `Create a photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (waist-up 3/4 studio portrait) for "${roleTitle}" (played by ${candidate.name}) in "${mystery.title}".
-STRICT PHYSICAL APPEARANCE:
-- ${candidate.gender} adult, ${candidate.ethnicity}, ${candidate.hairColor} hair, ${candidate.eyeColor} eyes, ${candidate.height}, ${candidate.facialFeature}.
-${refParts.length > 0 ? '- CRITICAL: Reference Image #1 shows the guest headshot. Preserve the exact same person, facial structure, skin tone, hair, and facial features while dressing them in the character costume below.' : ''}
-SIGNATURE CHARACTER COSTUME:
-- ${outfit}
-PHOTOGRAPHY DIRECTIVES:
-- Waist-up portrait facing camera, clear unobstructed view of face and festive costume, warm cinematic holiday background, 85mm f/2.8 lens, photorealistic skin texture, NO text, NO borders.`;
-
-        const imgRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [...refParts, { text: prompt }] }],
-              generationConfig: { responseModalities: ['IMAGE'] },
-            }),
-          }
-        );
-        if (imgRes.ok) {
-          const imgJson = await imgRes.json();
-          const b64 = imgJson?.candidates?.[0]?.content?.parts?.find(
-            (p: any) => p.inlineData?.data
-          )?.inlineData?.data;
-          if (b64) {
-            fs.writeFileSync(localPackPortraitAbs, Buffer.from(b64, 'base64'));
-            portraitUrl = localPackPortraitRel;
-            visualGenerationCostUsd += 0.039;
-          }
-        }
-      } catch (err) {
-        console.warn(`[QA STAGE 1] Portrait generation fallback for ${candidate.name}:`, err);
-      }
-    }
-
-    if (!portraitUrl) {
-      portraitUrl =
-        c.profile_data?.standard_character_photo_url ||
-        candidate.avatar_url ||
-        c.profile_data?.outfit_reference_images?.[0] ||
-        null;
-    }
+    const portraitUrl: string | null =
+      (spec.runNumber === 1 && c.profile_data?.standard_character_photo_url) ||
+      candidate.avatar_url ||
+      c.profile_data?.standard_character_photo_url ||
+      c.profile_data?.outfit_reference_images?.[0] ||
+      null;
 
     if (portraitUrl) {
       characterPortraits[c.id] = portraitUrl;
@@ -1133,86 +1071,18 @@ PHOTOGRAPHY DIRECTIVES:
         rawPrompt
       );
 
-    const clueShortId = String(clue.id);
-    const localClueRel = `/generated-clues/qa-pack${spec.runNumber}-${clueShortId}.jpg`;
-    const localClueAbs = path.join(cluesDir, `qa-pack${spec.runNumber}-${clueShortId}.jpg`);
-
-    let finalClueImageUrl: string | null = clue.static_image_url || null;
-
-    if (spec.runNumber === 1 && clue.static_image_url) {
-      // Pack #1 already has the 8 freshly generated clue photos for Luke, Gabby, Elia, Kiri, Jason, Matt
-      finalClueImageUrl = clue.static_image_url;
-    } else if (!isPureObjectProp && depictedChars.length > 0) {
-      if (!forceRegenerate && fs.existsSync(localClueAbs)) {
-        finalClueImageUrl = localClueRel;
-      } else if (apiKey) {
-        try {
-          const refParts: any[] = [];
-          const charBlocks: string[] = [];
-          for (let i = 0; i < depictedChars.length; i++) {
-            const dc = depictedChars[i];
-            const pB64 = await readImageToBase64(
-              dc.profile_data?.standard_character_photo_url
-            );
-            if (pB64) {
-              refParts.push({
-                inlineData: { mimeType: 'image/jpeg', data: pB64 },
-              });
-            }
-            const outfit =
-              dc.profile_data?.suggested_outfit ||
-              dc.profile_data?.outfit_description ||
-              'Festive formal Christmas attire';
-            charBlocks.push(
-              `[Reference Image #${refParts.length}] ${dc.displayName}: ${dc.gender}, ${dc.profile_data?.ethnicity}, ${dc.profile_data?.hair_color} hair, ${dc.profile_data?.eye_color} eyes, ${dc.profile_data?.facial_feature}, wearing ${outfit}.`
-            );
-          }
-
-          const hydratedScenePrompt = hydrateTextWithCharacters(
-            rawPrompt,
-            hydratedChars,
-            'print'
-          );
-
-          const fullClueImgPrompt = `Create a photorealistic unedited interior photograph for "${mystery.title}".
-SCENE DESCRIPTION:
-${hydratedScenePrompt}
-
-STRICT CHARACTER VISUAL IDENTITIES IN THIS SCENE (EXACTLY ${depictedChars.length} PERSON(S)):
-${charBlocks.join('\n')}
-- CRITICAL: Preserve the exact facial identity, hair color, glasses/beard, skin tone, and signature costume from the attached Reference Image(s).
-- STRICT NEGATIVE DIRECTIVE: Raw clean photograph ONLY — ABSOLUTELY NO text overlays, NO timestamps, NO dates, NO numbers, NO camera HUD, NO evidence markers, NO watermarks, NO split panels.`;
-
-          const imgRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [...refParts, { text: fullClueImgPrompt }] }],
-                generationConfig: { responseModalities: ['IMAGE'] },
-              }),
-            }
-          );
-          if (imgRes.ok) {
-            const imgJson = await imgRes.json();
-            const b64 = imgJson?.candidates?.[0]?.content?.parts?.find(
-              (p: any) => p.inlineData?.data
-            )?.inlineData?.data;
-            if (b64) {
-              fs.writeFileSync(localClueAbs, Buffer.from(b64, 'base64'));
-              finalClueImageUrl = localClueRel;
-              visualGenerationCostUsd += 0.039;
-            }
-          }
-        } catch (err) {
-          console.warn(`[QA STAGE 2] Clue image generation fallback for ${clue.title}:`, err);
-        }
-      }
-    }
+    const finalClueImageUrl: string | null = clue.static_image_url || null;
 
     if (finalClueImageUrl) {
       clueImages[clue.id] = finalClueImageUrl;
+    }
+
+    // For Packs #2-#4, inherit Pack #1's visual critic result if already audited so we don't duplicate image files on disk
+    if (spec.runNumber > 1 && !visualCriticResults[clue.id]) {
+      const pack1Critics = loadCachedVisualCritics(String(mystery.id), 1);
+      if (pack1Critics[clue.id]) {
+        visualCriticResults[clue.id] = pack1Critics[clue.id];
+      }
     }
 
     // Stage 3: Run Multimodal Gemini Vision Critic on the generated clue photo

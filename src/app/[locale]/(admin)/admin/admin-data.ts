@@ -441,7 +441,7 @@ export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
   ];
   for (const { dir, feature } of localAssetDirs) {
     try {
-      const files = await fs.readdir(dir);
+      const files = await fs.readdir(/*turbopackIgnore: true*/ dir);
       for (const file of files) {
         if (file.endsWith('.jpg') || file.endsWith('.png') || file.endsWith('.webp')) {
           const stat = await fs.stat(path.join(/*turbopackIgnore: true*/ dir, file));
