@@ -1,5 +1,5 @@
 const BASE_URL = 'https://backpocketmysteries.com';
-const LOGO_COLOR_URL = `${BASE_URL}/logo-horizontal.png`;
+const LOGO_WHITE_URL = `${BASE_URL}/logo-horizontal-white.png?v=2`;
 const EMAIL_FONT = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 export interface BrandedEmailShellOptions {
@@ -20,13 +20,16 @@ export interface BrandedEmailShellOptions {
 }
 
 /**
- * Generates the signature Back Pocket Mysteries branded email HTML.
- * Includes the vibrant hot-pink & royal-blue official Back Pocket Games logo,
- * optional Mystery Package Cover Photo showcase, hot-pink accent rule, and branded footer.
+ * Generates the signature Back Pocket Mysteries EDM-style email HTML:
+ * 1. Dark top brand bar (#141115) with transparent white logo (logo-horizontal-white.png) & hot-pink bottom border
+ * 2. Dark hero headline section (#1e191c)
+ * 3. Optional full-width 600px Mystery Package Cover Photo row
+ * 4. Editorial white content body + pink CTA button
+ * 5. Dark footer (#141115) with transparent white logo sitting directly against the dark background
  */
 export function buildBrandedEmailShell(options: BrandedEmailShellOptions): string {
   const year = new Date().getFullYear();
-  const topBadge = options.badgeText || 'CASE FILE BRIEFING';
+  const topBadge = options.badgeText || 'THE MYSTERY GAZETTE';
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -41,22 +44,22 @@ export function buildBrandedEmailShell(options: BrandedEmailShellOptions): strin
       ? `<div style="display:none;font-size:1px;color:#f4f4f5;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${options.preheader}</div>`
       : ''
   }
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f4f5;padding:32px 12px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f4f5;padding:28px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 36px rgba(17,17,17,0.10);border:1px solid #e4e4e7;">
-          <!-- TOP BRAND BAR WITH OFFICIAL PINK & BLUE BACK POCKET GAMES LOGO -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(17,17,17,0.08);border:1px solid #e4e4e7;">
+          <!-- 1. TOP BRAND BAR WITH TRANSPARENT WHITE LOGO (EDM STYLE) -->
           <tr>
-            <td style="background-color:#ffffff;padding:24px 36px 20px 36px;border-bottom:4px solid #fe04c6;">
+            <td style="background-color:#141115;padding:24px 32px 20px 32px;border-bottom:4px solid #fe04c6;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td align="left" valign="middle">
                     <a href="${BASE_URL}/en" target="_blank" style="text-decoration:none;display:inline-block;">
-                      <img src="${LOGO_COLOR_URL}" width="190" alt="Back Pocket Games" style="display:block;border:0;max-width:190px;height:auto;font-family:${EMAIL_FONT};font-size:18px;font-weight:900;color:#fe04c6;" />
+                      <img src="${LOGO_WHITE_URL}" width="180" alt="Back Pocket Mysteries" style="display:block;border:0;max-width:180px;height:auto;" />
                     </a>
                   </td>
                   <td align="right" valign="middle">
-                    <span style="display:inline-block;background-color:#141115;border:1px solid #fe04c6;color:#fe04c6;font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:6px 12px;border-radius:999px;">
+                    <span style="display:inline-block;background-color:rgba(254,4,198,0.14);border:1px solid rgba(254,4,198,0.35);color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:5px 10px;border-radius:999px;">
                       ${topBadge}
                     </span>
                   </td>
@@ -65,59 +68,47 @@ export function buildBrandedEmailShell(options: BrandedEmailShellOptions): strin
             </td>
           </tr>
 
-          <!-- DARK HERO HEADLINE + OPTIONAL MYSTERY PACKAGE PHOTO CARD -->
+          <!-- 2. DARK HERO HEADLINE SECTION (EDM STYLE) -->
           <tr>
-            <td style="background-color:#141115;padding:32px 36px 34px 36px;">
+            <td style="background-color:#1e191c;padding:32px 32px 30px 32px;">
               ${
                 options.kicker
-                  ? `<p style="font-size:11px;font-weight:900;letter-spacing:2.2px;color:#fe04c6;text-transform:uppercase;margin:0 0 10px 0;">${options.kicker}</p>`
+                  ? `<p style="font-size:11px;font-weight:800;letter-spacing:2.2px;color:#fe04c6;text-transform:uppercase;margin:0 0 10px 0;">${options.kicker}</p>`
                   : ''
               }
-              <h1 style="font-size:27px;font-weight:900;color:#ffffff;margin:0;line-height:1.25;letter-spacing:-0.4px;">
+              <h1 style="font-size:26px;font-weight:900;color:#ffffff;margin:0;line-height:1.25;letter-spacing:-0.4px;">
                 ${options.headline}
               </h1>
-              ${
-                options.heroImageUrl
-                  ? `<div style="margin-top:24px;border-radius:16px;overflow:hidden;border:2px solid rgba(254,4,198,0.45);background-color:#1e191c;box-shadow:0 10px 25px rgba(0,0,0,0.45);">
-                      <img src="${options.heroImageUrl}" width="524" alt="${(options.heroImageAlt || 'Mystery Package Cover').replace(/"/g, '&quot;')}" style="display:block;width:100%;max-width:524px;height:auto;object-fit:cover;border:0;" />
-                      ${
-                        options.heroImageBadge || options.heroImageCaption
-                          ? `<div style="padding:14px 18px;background-color:#1e191c;border-top:1px solid rgba(255,255,255,0.08);">
-                              ${
-                                options.heroImageBadge
-                                  ? `<span style="display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:10px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:${options.heroImageCaption ? '6px' : '0'};">${options.heroImageBadge}</span>`
-                                  : ''
-                              }
-                              ${
-                                options.heroImageCaption
-                                  ? `<p style="margin:0;color:#e4e4e7;font-size:13px;font-weight:700;line-height:1.45;">${options.heroImageCaption}</p>`
-                                  : ''
-                              }
-                            </div>`
-                          : ''
-                      }
-                    </div>`
-                  : ''
-              }
             </td>
           </tr>
 
-          <!-- MAIN CONTENT -->
+          ${
+            options.heroImageUrl
+              ? `<!-- 3. FULL-WIDTH 600PX MYSTERY PACKAGE PHOTO -->
           <tr>
-            <td style="padding:36px 36px 24px 36px;color:#1e191c;font-size:15px;line-height:1.7;">
+            <td style="padding:0;background-color:#141115;line-height:0;font-size:0;">
+              <img src="${options.heroImageUrl}" width="600" alt="${(options.heroImageAlt || 'Mystery Package Cover').replace(/"/g, '&quot;')}" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
+            </td>
+          </tr>`
+              : ''
+          }
+
+          <!-- 4. MAIN EDITORIAL CONTENT -->
+          <tr>
+            <td style="padding:30px 32px 20px 32px;color:#1e191c;font-size:15px;line-height:1.7;">
               ${options.bodyHtml}
             </td>
           </tr>
 
           ${
             options.ctaText && options.ctaUrl
-              ? `<!-- PRIMARY CTA -->
+              ? `<!-- 5. PRIMARY CTA BUTTON -->
           <tr>
-            <td align="center" style="padding:4px 36px 34px 36px;">
+            <td align="center" style="padding:6px 32px 34px 32px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td align="center" style="background-color:#fe04c6;border-radius:999px;box-shadow:0 8px 20px rgba(254,4,198,0.35);">
-                    <a href="${options.ctaUrl}" target="_blank" style="display:inline-block;padding:16px 34px;color:#ffffff;font-family:${EMAIL_FONT};font-size:13px;font-weight:900;letter-spacing:1.4px;text-transform:uppercase;text-decoration:none;">
+                  <td align="center" style="background-color:#fe04c6;border-radius:999px;">
+                    <a href="${options.ctaUrl}" target="_blank" style="display:inline-block;padding:15px 32px;color:#ffffff;font-family:${EMAIL_FONT};font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;text-decoration:none;">
                       ${options.ctaText}
                     </a>
                   </td>
@@ -137,15 +128,13 @@ export function buildBrandedEmailShell(options: BrandedEmailShellOptions): strin
               : ''
           }
 
-          <!-- BRANDED SIGNATURE FOOTER -->
+          <!-- 6. BRANDED DARK FOOTER WITH TRANSPARENT WHITE LOGO -->
           <tr>
-            <td align="center" style="background-color:#141115;padding:32px 36px;border-top:3px solid #fe04c6;">
-              <div style="display:inline-block;background-color:#ffffff;padding:10px 18px;border-radius:12px;margin-bottom:14px;">
-                <a href="${BASE_URL}/en" target="_blank" style="text-decoration:none;display:inline-block;">
-                  <img src="${LOGO_COLOR_URL}" width="140" alt="Back Pocket Games" style="display:block;border:0;margin:0 auto;max-width:140px;height:auto;" />
-                </a>
-              </div>
-              <p style="margin:0 0 14px 0;font-size:12px;color:#d4d4d8;line-height:1.6;max-width:440px;">
+            <td align="center" style="background-color:#141115;padding:32px 32px;border-top:1px solid #27272a;">
+              <a href="${BASE_URL}/en" target="_blank" style="text-decoration:none;display:inline-block;margin-bottom:14px;">
+                <img src="${LOGO_WHITE_URL}" width="150" alt="Back Pocket Mysteries" style="display:block;border:0;margin:0 auto;max-width:150px;height:auto;" />
+              </a>
+              <p style="margin:0 0 14px 0;font-size:12px;color:#a1a1aa;line-height:1.6;max-width:440px;">
                 Custom-built murder mystery parties with personalized characters, crime-scene photos, and mobile voice wiretaps, ready to play in ~20 minutes.
               </p>
               <p style="margin:0 0 12px 0;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">
