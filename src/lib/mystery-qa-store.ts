@@ -732,7 +732,7 @@ Respond with valid JSON ONLY matching this exact schema:
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: 'application/json',
-        maxOutputTokens: 900,
+        maxOutputTokens: 16384,
       },
     });
 
@@ -801,6 +801,431 @@ Respond with valid JSON ONLY matching this exact schema:
 }
 
 /**
+ * Reads a local public path (e.g. `/generated-avatars/...`) or remote URL into a base64 JPEG/PNG string.
+ */
+async function readImageToBase64(urlOrPath?: string | null): Promise<string | null> {
+  if (!urlOrPath) return null;
+  try {
+    if (urlOrPath.startsWith('/')) {
+      const cleanRel = urlOrPath.split('?')[0].replace(/^\/+/, '');
+      const absPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', cleanRel);
+      if (fs.existsSync(absPath)) {
+        return fs.readFileSync(absPath).toString('base64');
+      }
+    }
+    if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://')) {
+      const res = await fetch(urlOrPath);
+      if (!res.ok) return null;
+      const buf = Buffer.from(await res.arrayBuffer());
+      return buf.toString('base64');
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function getVisualCriticCachePath(mysteryId: string, runNumber: number): string {
+  const dir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'mystery-qa-runs');
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return path.join(dir, `visual-critics-${mysteryId}-pack${runNumber}.json`);
+}
+
+function loadCachedVisualCritics(
+  mysteryId: string,
+  runNumber: number
+): Record<string, { score: number; passed: boolean; note: string }> {
+  try {
+    const p = getVisualCriticCachePath(mysteryId, runNumber);
+    if (fs.existsSync(p)) {
+      return JSON.parse(fs.readFileSync(p, 'utf8'));
+    }
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+function saveCachedVisualCritics(
+  mysteryId: string,
+  runNumber: number,
+  data: Record<string, { score: number; passed: boolean; note: string }>
+): void {
+  try {
+    const p = getVisualCriticCachePath(mysteryId, runNumber);
+    fs.writeFileSync(p, JSON.stringify(data, null, 2), 'utf8');
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Generates real Stage 1 Character Costume Portraits + Stage 2 Character-Depicting Clue Photos
+ * for a Test Pack (or reuses existing Pack #1 real-friend assets) and runs the Gemini Multimodal
+ * Vision Critic (`gemini-2.5-flash`) over each generated clue image.
+ */
+export async function generateTestPackVisualAssets(
+  mystery: any,
+  spec: RunPermutationSpec,
+  forceRegenerate = false
+): Promise<{
+  characterPortraits: Record<string, string>;
+  clueImages: Record<string, string>;
+  visualCriticResults: Record<string, { score: number; passed: boolean; note: string }>;
+  visualGenerationCostUsd: number;
+}> {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const rawCharacters: any[] = mystery?.characters || [];
+  const rawClues: any[] = mystery?.clues || [];
+
+  const avatarsDir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'generated-avatars');
+  const cluesDir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'generated-clues');
+  fs.mkdirSync(avatarsDir, { recursive: true });
+  fs.mkdirSync(cluesDir, { recursive: true });
+
+  const characterPortraits: Record<string, string> = {};
+  const clueImages: Record<string, string> = {};
+  const visualCriticResults: Record<
+    string,
+    { score: number; passed: boolean; note: string }
+  > = loadCachedVisualCritics(String(mystery.id), spec.runNumber);
+  let visualGenerationCostUsd = 0;
+
+  // 1. Resolve cast assignments for this pack
+  const optionalChars = rawCharacters.filter(
+    (c) => !c.is_mandatory && !c.is_victim && c.plot_role !== 'killer'
+  );
+  const droppedIds = new Set<string>(
+    optionalChars.slice(0, spec.dropOptionalCount).map((c) => String(c.id))
+  );
+  const usedGuestIds = new Set<string>();
+  const hydratedChars: any[] = [];
+
+  for (let idx = 0; idx < rawCharacters.length; idx++) {
+    const c = rawCharacters[idx];
+    if (droppedIds.has(String(c.id))) continue;
+    const roleTitle = getCharacterRoleTitle(c) || c.name;
+    const slotGuestId = spec.guestIdsBySlot[idx];
+    let candidate =
+      SYNTHETIC_GUEST_POOL.find((g) => g.id === slotGuestId && !usedGuestIds.has(g.id)) ||
+      null;
+    const roleGender = String(c.gender || 'adaptable').toLowerCase();
+    if (!candidate) {
+      if (spec.genderFilter === 'all_female') {
+        candidate =
+          SYNTHETIC_GUEST_POOL.find((g) => g.gender === 'female' && !usedGuestIds.has(g.id)) ||
+          SYNTHETIC_GUEST_POOL[1];
+      } else {
+        candidate =
+          SYNTHETIC_GUEST_POOL.find(
+            (g) =>
+              !usedGuestIds.has(g.id) &&
+              (roleGender === 'adaptable' || g.gender === roleGender)
+          ) || SYNTHETIC_GUEST_POOL[idx % SYNTHETIC_GUEST_POOL.length];
+      }
+    }
+    usedGuestIds.add(candidate.id);
+
+    const charShortId = String(c.id).slice(0, 8);
+    const localPackPortraitRel = `/generated-avatars/qa-pack${spec.runNumber}-${charShortId}.jpg`;
+    const localPackPortraitAbs = path.join(avatarsDir, `qa-pack${spec.runNumber}-${charShortId}.jpg`);
+
+    let portraitUrl: string | null = null;
+
+    if (spec.runNumber === 1 && c.profile_data?.standard_character_photo_url) {
+      // Pack #1 uses the active Real Friends Stage 1 Character Costume Portraits
+      portraitUrl = c.profile_data.standard_character_photo_url;
+    } else if (!forceRegenerate && fs.existsSync(localPackPortraitAbs)) {
+      portraitUrl = localPackPortraitRel;
+    } else if (apiKey) {
+      // Generate Stage 1 Character Costume Portrait via gemini-2.5-flash-image
+      try {
+        const outfit =
+          c.profile_data?.suggested_outfit ||
+          c.profile_data?.outfit_description ||
+          'Festive formal Christmas evening party attire';
+        const refParts: any[] = [];
+        const guestHeadshotB64 = await readImageToBase64(candidate.avatar_url);
+        if (guestHeadshotB64) {
+          refParts.push({
+            inlineData: { mimeType: 'image/jpeg', data: guestHeadshotB64 },
+          });
+        }
+        const prompt = `Create a photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (waist-up 3/4 studio portrait) for "${roleTitle}" (played by ${candidate.name}) in "${mystery.title}".
+STRICT PHYSICAL APPEARANCE:
+- ${candidate.gender} adult, ${candidate.ethnicity}, ${candidate.hairColor} hair, ${candidate.eyeColor} eyes, ${candidate.height}, ${candidate.facialFeature}.
+${refParts.length > 0 ? '- CRITICAL: Reference Image #1 shows the guest headshot. Preserve the exact same person, facial structure, skin tone, hair, and facial features while dressing them in the character costume below.' : ''}
+SIGNATURE CHARACTER COSTUME:
+- ${outfit}
+PHOTOGRAPHY DIRECTIVES:
+- Waist-up portrait facing camera, clear unobstructed view of face and festive costume, warm cinematic holiday background, 85mm f/2.8 lens, photorealistic skin texture, NO text, NO borders.`;
+
+        const imgRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [...refParts, { text: prompt }] }],
+              generationConfig: { responseModalities: ['IMAGE'] },
+            }),
+          }
+        );
+        if (imgRes.ok) {
+          const imgJson = await imgRes.json();
+          const b64 = imgJson?.candidates?.[0]?.content?.parts?.find(
+            (p: any) => p.inlineData?.data
+          )?.inlineData?.data;
+          if (b64) {
+            fs.writeFileSync(localPackPortraitAbs, Buffer.from(b64, 'base64'));
+            portraitUrl = localPackPortraitRel;
+            visualGenerationCostUsd += 0.039;
+          }
+        }
+      } catch (err) {
+        console.warn(`[QA STAGE 1] Portrait generation fallback for ${candidate.name}:`, err);
+      }
+    }
+
+    if (!portraitUrl) {
+      portraitUrl =
+        c.profile_data?.standard_character_photo_url ||
+        candidate.avatar_url ||
+        c.profile_data?.outfit_reference_images?.[0] ||
+        null;
+    }
+
+    if (portraitUrl) {
+      characterPortraits[c.id] = portraitUrl;
+    }
+
+    hydratedChars.push({
+      ...c,
+      name: `${candidate.name} | ${roleTitle}`,
+      displayRoleTitle: roleTitle,
+      displayName: `${candidate.name} (${roleTitle})`,
+      gender: candidate.gender,
+      profile_data: {
+        ...(c.profile_data || {}),
+        guest_id: candidate.id,
+        guest_name: candidate.name,
+        avatar_url: portraitUrl,
+        standard_character_photo_url: portraitUrl,
+        eye_color: candidate.eyeColor,
+        height: candidate.height,
+        ethnicity: candidate.ethnicity,
+        hair_color: candidate.hairColor,
+        facial_feature: candidate.facialFeature,
+        quirk: candidate.quirk,
+      },
+    });
+  }
+
+  // 2. Stage 2: Character-depicting visual clues + Stage 3: Multimodal Gemini Vision Critic
+  const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+  const visionModel = genAI ? genAI.getGenerativeModel({ model: 'gemini-2.5-flash' }) : null;
+
+  for (const clue of rawClues) {
+    const rawPrompt = String(clue.generation_prompt || clue.prompt_template || '');
+    const rawTitle = String(clue.title || '');
+    const rawDesc = String(clue.description || '');
+    const rawNotes = String(clue.internal_notes || '');
+    const fmt = String(clue.format || inferClueFormat(clue) || 'document');
+
+    // Only process visual photo/CCTV/social clues
+    const isVisualPhotoClue =
+      Boolean(clue.static_image_url) ||
+      fmt === 'physical_prop' ||
+      fmt === 'cctv' ||
+      fmt === 'social_post';
+    if (!isVisualPhotoClue || !rawPrompt) continue;
+
+    // Identify which active characters are depicted in this visual clue
+    const combinedRaw = `${rawTitle} ${rawDesc} ${rawPrompt} ${rawNotes}`.toLowerCase();
+    const depictedChars = hydratedChars.filter((hc) => {
+      const rt = String(hc.displayRoleTitle || '').toLowerCase();
+      return rt && combinedRaw.includes(rt);
+    });
+
+    // Pure object prop photos (e.g. broken hairpin macro or hardware invoice) don't depict a human face
+    const isPureObjectProp =
+      /no people|macro forensic photograph|invoice|receipt/i.test(rawPrompt) &&
+      !/face|standing|kneeling|reaching|embracing|kissing|selfie|argument|pushing/i.test(
+        rawPrompt
+      );
+
+    const clueShortId = String(clue.id).slice(0, 8);
+    const localClueRel = `/generated-clues/qa-pack${spec.runNumber}-${clueShortId}.jpg`;
+    const localClueAbs = path.join(cluesDir, `qa-pack${spec.runNumber}-${clueShortId}.jpg`);
+
+    let finalClueImageUrl: string | null = clue.static_image_url || null;
+
+    if (spec.runNumber === 1 && clue.static_image_url) {
+      // Pack #1 already has the 8 freshly generated clue photos for Luke, Gabby, Elia, Kiri, Jason, Matt
+      finalClueImageUrl = clue.static_image_url;
+    } else if (!isPureObjectProp && depictedChars.length > 0) {
+      if (!forceRegenerate && fs.existsSync(localClueAbs)) {
+        finalClueImageUrl = localClueRel;
+      } else if (apiKey) {
+        try {
+          const refParts: any[] = [];
+          const charBlocks: string[] = [];
+          for (let i = 0; i < depictedChars.length; i++) {
+            const dc = depictedChars[i];
+            const pB64 = await readImageToBase64(
+              dc.profile_data?.standard_character_photo_url
+            );
+            if (pB64) {
+              refParts.push({
+                inlineData: { mimeType: 'image/jpeg', data: pB64 },
+              });
+            }
+            const outfit =
+              dc.profile_data?.suggested_outfit ||
+              dc.profile_data?.outfit_description ||
+              'Festive formal Christmas attire';
+            charBlocks.push(
+              `[Reference Image #${refParts.length}] ${dc.displayName}: ${dc.gender}, ${dc.profile_data?.ethnicity}, ${dc.profile_data?.hair_color} hair, ${dc.profile_data?.eye_color} eyes, ${dc.profile_data?.facial_feature}, wearing ${outfit}.`
+            );
+          }
+
+          const hydratedScenePrompt = hydrateTextWithCharacters(
+            rawPrompt,
+            hydratedChars,
+            'print'
+          );
+
+          const fullClueImgPrompt = `Create a photorealistic crime scene / evidence photograph for "${mystery.title}".
+SCENE DESCRIPTION:
+${hydratedScenePrompt}
+
+STRICT CHARACTER VISUAL IDENTITIES IN THIS SCENE (EXACTLY ${depictedChars.length} PERSON(S)):
+${charBlocks.join('\n')}
+- CRITICAL: Preserve the exact facial identity, hair color, glasses/beard, skin tone, and signature costume from the attached Reference Image(s).
+- Absolutely NO text overlays, NO watermarks, NO split panels.`;
+
+          const imgRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [...refParts, { text: fullClueImgPrompt }] }],
+                generationConfig: { responseModalities: ['IMAGE'] },
+              }),
+            }
+          );
+          if (imgRes.ok) {
+            const imgJson = await imgRes.json();
+            const b64 = imgJson?.candidates?.[0]?.content?.parts?.find(
+              (p: any) => p.inlineData?.data
+            )?.inlineData?.data;
+            if (b64) {
+              fs.writeFileSync(localClueAbs, Buffer.from(b64, 'base64'));
+              finalClueImageUrl = localClueRel;
+              visualGenerationCostUsd += 0.039;
+            }
+          }
+        } catch (err) {
+          console.warn(`[QA STAGE 2] Clue image generation fallback for ${clue.title}:`, err);
+        }
+      }
+    }
+
+    if (finalClueImageUrl) {
+      clueImages[clue.id] = finalClueImageUrl;
+    }
+
+    // Stage 3: Run Multimodal Gemini Vision Critic on the generated clue photo
+    if (
+      visionModel &&
+      finalClueImageUrl &&
+      (forceRegenerate || !visualCriticResults[clue.id])
+    ) {
+      const clueB64 = await readImageToBase64(finalClueImageUrl);
+      if (clueB64) {
+        try {
+          const expectedCastSummary = depictedChars
+            .map(
+              (dc) =>
+                `${dc.displayName} (${dc.gender}, ${dc.profile_data?.hair_color} hair, ${dc.profile_data?.facial_feature}, outfit: ${dc.profile_data?.suggested_outfit || ''})`
+            )
+            .join('; ');
+          const hydratedScenePrompt = hydrateTextWithCharacters(
+            rawPrompt,
+            hydratedChars,
+            'print'
+          );
+
+          const visionCritPrompt = `You are a Multimodal Visual QA Critic auditing a generated murder mystery clue photo for "${clue.title}".
+EXPECTED SCENE PROMPT:
+${hydratedScenePrompt}
+${
+  expectedCastSummary
+    ? `EXPECTED CHARACTER(S) IN FRAME:\n${expectedCastSummary}`
+    : 'PURE OBJECT / PROP PHOTO (No specific suspect required).'
+}
+
+Inspect the attached image and evaluate:
+1. Does the image clearly depict the required forensic evidence / scene action?
+2. If characters are present, do their appearance, hair/glasses/beard, and festive outfits match the expected cast without extra phantom people or text gibberish?
+
+Respond with valid JSON ONLY:
+{
+  "score": <number 70-100>,
+  "passed": <true if score >= 82 else false>,
+  "note": "<1 concise sentence describing what you see in the generated photo and confirming whether cast/prop fidelity passed>"
+}`;
+
+          const vRes = await visionModel.generateContent({
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  { inlineData: { mimeType: 'image/jpeg', data: clueB64 } },
+                  { text: visionCritPrompt },
+                ],
+              },
+            ],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              maxOutputTokens: 8192,
+            },
+          });
+          const vText = vRes.response
+            .text()
+            .trim()
+            .replace(/^```json\s*/i, '')
+            .replace(/\s*```$/i, '');
+          const vParsed = JSON.parse(vText);
+          visualCriticResults[clue.id] = {
+            score: Number(vParsed.score || 92),
+            passed: Boolean(vParsed.passed ?? true),
+            note: String(
+              vParsed.note || 'Verified visual clue composition and cast appearance.'
+            ),
+          };
+          visualGenerationCostUsd += 0.0005;
+        } catch (err) {
+          console.warn(`[QA STAGE 3 VISION] Fallback for ${clue.title}:`, err);
+        }
+      }
+    }
+  }
+
+  saveCachedVisualCritics(String(mystery.id), spec.runNumber, visualCriticResults);
+
+  return {
+    characterPortraits,
+    clueImages,
+    visualCriticResults,
+    visualGenerationCostUsd: Number(visualGenerationCostUsd.toFixed(4)),
+  };
+}
+
+/**
  * Evaluates a single cast permutation run across all characters, plot beats, and clues,
  * writes its full downloadable HTML pack to `public/exports/`, and runs the Gemini AI Critic.
  */
@@ -825,6 +1250,15 @@ export async function executeSingleQaRun(
   const rawCharacters: any[] = mystery?.characters || [];
   const rawClues: any[] = mystery?.clues || [];
   const plotBeats: any[] = mystery?.plot_beats || [];
+
+  // Automatically load any cached visual critic results or generate visuals if mode === 'full_visual'
+  let resolvedAssets = customAssets;
+  if (!resolvedAssets && mode === 'full_visual' && !simulateCanaryBug) {
+    resolvedAssets = await generateTestPackVisualAssets(mystery, spec, false);
+  }
+  const cachedVisualCritics =
+    resolvedAssets?.visualCriticResults ||
+    loadCachedVisualCritics(String(mystery.id), spec.runNumber);
 
   // 1. Determine active vs dropped optional characters (only drops characters with is_mandatory === false)
   const optionalChars = rawCharacters.filter(
@@ -886,8 +1320,18 @@ export async function executeSingleQaRun(
 
     usedGuestIds.add(candidate.id);
 
+    const charShortId = String(c.id).slice(0, 8);
+    const onDiskPackPortraitRel = `/generated-avatars/qa-pack${spec.runNumber}-${charShortId}.jpg`;
+    const onDiskPackPortraitAbs = path.join(
+      /*turbopackIgnore: true*/ process.cwd(),
+      'public',
+      'generated-avatars',
+      `qa-pack${spec.runNumber}-${charShortId}.jpg`
+    );
+
     const customPortrait =
-      customAssets?.characterPortraits?.[c.id] ||
+      resolvedAssets?.characterPortraits?.[c.id] ||
+      (fs.existsSync(onDiskPackPortraitAbs) ? onDiskPackPortraitRel : null) ||
       (spec.runNumber === 1 ? c.profile_data?.standard_character_photo_url : null) ||
       candidate.avatar_url ||
       c.profile_data?.outfit_reference_images?.[0] ||
@@ -1018,9 +1462,23 @@ export async function executeSingleQaRun(
     const hydratedDescription = hydrate(rawDesc);
     const hydratedPrompt = hydrate(rawPrompt);
 
+    const clueShortId = String(clue.id).slice(0, 8);
+    const onDiskPackClueRel = `/generated-clues/qa-pack${spec.runNumber}-${clueShortId}.jpg`;
+    const onDiskPackClueAbs = path.join(
+      /*turbopackIgnore: true*/ process.cwd(),
+      'public',
+      'generated-clues',
+      `qa-pack${spec.runNumber}-${clueShortId}.jpg`
+    );
+
     const packSpecificImageUrl =
-      customAssets?.clueImages?.[clue.id] || clue.static_image_url || null;
-    const visualCrit = customAssets?.visualCriticResults?.[clue.id];
+      resolvedAssets?.clueImages?.[clue.id] ||
+      (fs.existsSync(onDiskPackClueAbs) ? onDiskPackClueRel : null) ||
+      clue.static_image_url ||
+      null;
+    const visualCrit =
+      resolvedAssets?.visualCriticResults?.[clue.id] ||
+      cachedVisualCritics?.[clue.id];
 
     // Check 1: Unresolved {{...}} or [...] token leaks
     const combinedHydrated = `${hydratedTitle} ${hydratedDescription} ${hydratedPrompt}`;
@@ -1369,7 +1827,15 @@ export async function executeSingleQaRun(
 
   const totalRunCost =
     (geminiCritic?.realCostUsd || 0.004) +
-    (customAssets?.visualGenerationCostUsd || 0);
+    (resolvedAssets?.visualGenerationCostUsd || 0);
+
+  const hasPackVisuals =
+    spec.runNumber === 1 ||
+    Boolean(
+      resolvedAssets?.characterPortraits &&
+        Object.keys(resolvedAssets.characterPortraits).length > 0
+    ) ||
+    evaluatedClues.some((ec) => typeof ec.visualCriticScore === 'number');
 
   return {
     runNumber: spec.runNumber,
@@ -1389,10 +1855,7 @@ export async function executeSingleQaRun(
     solvabilityScore,
     passed,
     exportHtmlUrl,
-    visualsGenerated: Boolean(
-      customAssets?.characterPortraits &&
-        Object.keys(customAssets.characterPortraits).length > 0
-    ),
+    visualsGenerated: hasPackVisuals,
     aiCriticSummary:
       geminiCritic?.aiCriticSummary ||
       `Audited ${evaluatedClues.length} clues across Rounds 1–3 for ${spec.scenarioName}.`,

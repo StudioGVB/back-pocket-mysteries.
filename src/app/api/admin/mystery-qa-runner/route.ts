@@ -15,8 +15,11 @@ import {
   loadMysteryQaSuite,
   saveMysteryQaSuite,
   executeSingleQaRun,
+  generateTestPackVisualAssets,
   buildPerformanceReviewFromRuns,
 } from '@/lib/mystery-qa-store';
+
+const TOTAL_PLANNED_PACKS = TWENTY_RUN_PERMUTATIONS.length; // 4 Deep Pre-Launch Test Packs
 
 async function persistCluePatchToDbAndCache(
   mysteryId: string,
@@ -71,8 +74,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ suite: null });
     }
 
-    // If invoked by cron trigger while running_scale, automatically advance the next batch
-    if (isCron && existing.status === 'running_scale' && existing.completedRunsCount < 20) {
+    // If invoked by cron trigger while running_scale, automatically advance the remaining packs
+    if (
+      isCron &&
+      existing.status === 'running_scale' &&
+      existing.completedRunsCount < TOTAL_PLANNED_PACKS
+    ) {
       const [mystery, subplots] = await Promise.all([
         getMysteryById(mysteryId),
         getSubplotsByMysteryId(mysteryId),
@@ -82,7 +89,7 @@ export async function GET(req: NextRequest) {
           existing.fixSuggestions.filter((f) => f.applied).map((f) => f.id)
         );
         const startIdx = existing.completedRunsCount;
-        const specsToRun = TWENTY_RUN_PERMUTATIONS.slice(startIdx, startIdx + 5);
+        const specsToRun = TWENTY_RUN_PERMUTATIONS.slice(startIdx, TOTAL_PLANNED_PACKS);
         for (const spec of specsToRun) {
           const runRes = await executeSingleQaRun(
             mystery,
@@ -98,7 +105,7 @@ export async function GET(req: NextRequest) {
             (existing.totalCostUsd + runRes.costUsd).toFixed(4)
           );
         }
-        if (existing.completedRunsCount >= 20) {
+        if (existing.completedRunsCount >= TOTAL_PLANNED_PACKS) {
           existing.status = 'completed';
         }
         existing.performanceReview = buildPerformanceReviewFromRuns(mystery, existing.runs);
@@ -124,9 +131,10 @@ export async function POST(req: NextRequest) {
       action = 'start',
       mode = 'smart',
       simulateCanaryFailure = false,
-      batchSize = 6,
+      batchSize = 4,
       fixId,
       runNumber,
+      forceRegenerate = false,
     } = body || {};
 
     if (!mysteryId) {
@@ -142,14 +150,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Mystery not found' }, { status: 404 });
     }
 
-    // ACTION 1: Start a fresh 20-Run Pre-Launch QA Job (Executes Canary Runs #1-#3 first)
+    // ACTION 1: Start a fresh 4-Pack Deep Pre-Launch QA & AI Critic Job
     if (action === 'start') {
-      const budgetCapUsd = mode === 'full_visual' ? 10.0 : 2.0;
-      const canarySpecs = TWENTY_RUN_PERMUTATIONS.slice(0, 3);
-      const canaryRuns: QaSingleRunResult[] = [];
+      const budgetCapUsd = mode === 'full_visual' ? 3.0 : 0.5;
+      // If simulating Canary failure, run Pack #1 first to trip the circuit breaker before Packs #2-#4
+      const initialSpecs = simulateCanaryFailure
+        ? TWENTY_RUN_PERMUTATIONS.slice(0, 1)
+        : TWENTY_RUN_PERMUTATIONS;
+      const runs: QaSingleRunResult[] = [];
       let totalCostUsd = 0;
 
-      for (const spec of canarySpecs) {
+      for (const spec of initialSpecs) {
         const res = await executeSingleQaRun(
           mystery,
           subplots || [],
@@ -158,16 +169,16 @@ export async function POST(req: NextRequest) {
           new Set(),
           Boolean(simulateCanaryFailure)
         );
-        canaryRuns.push(res);
+        runs.push(res);
         totalCostUsd = Number((totalCostUsd + res.costUsd).toFixed(4));
       }
 
       const canaryAvgHealth = Math.round(
-        canaryRuns.reduce((acc, r) => acc + r.healthScore, 0) / canaryRuns.length
+        runs.reduce((acc, r) => acc + r.healthScore, 0) / Math.max(1, runs.length)
       );
-      const anyCanaryFailed = canaryRuns.some(
-        (r) => !r.passed || r.healthScore < 85
-      );
+      const anyCanaryFailed =
+        Boolean(simulateCanaryFailure) ||
+        runs.some((r) => !r.passed && r.issues.some((i) => i.severity === 'critical'));
 
       const fixSuggestions: QaFixSuggestion[] = [];
 
@@ -188,7 +199,7 @@ export async function POST(req: NextRequest) {
             'Round 3 Alibi Clue: 2F Upstairs Study Fireplace (8:18 PM - 8:21 PM)',
           fieldToPatch: 'description',
           issueSummary:
-            'Circuit Breaker Triggered after Run #3: Unresolved placeholder token {{The Neighbour}} and ambiguous 8:19 PM study lock timing prevented the Blind-Detective Solver from clearing the primary decoy pair.',
+            'Circuit Breaker Triggered on Test Pack #1: Unresolved placeholder token {{The Neighbour}} and ambiguous 8:19 PM study lock timing prevented the Blind-Detective Solver from clearing the primary decoy pair.',
           currentText:
             r3FakeClue?.description ||
             '2F Upstairs Study Fireplace • (8:18 PM - 8:21 PM) [Unresolved Token: {{The Neighbour}}]',
@@ -217,7 +228,7 @@ export async function POST(req: NextRequest) {
           targetTitle: `R${hardcodedGenderClue.round_number || 1} • ${hardcodedGenderClue.title}`,
           fieldToPatch: 'description',
           issueSummary:
-            'Gender-Flexibility Improvement Spotted on Version #2 (All-Female Bachelorette Cast) & Version #4 (All-Male Cast): Audio transcript hardcodes "Male Voice:" and "Female Voice:" instead of dynamic character tokens.',
+            'Gender-Flexibility Improvement Spotted on Test Pack #4 (All-Female Bachelorette Group): Audio transcript hardcodes "Male Voice:" and "Female Voice:" instead of dynamic character tokens.',
           currentText: origDesc,
           suggestedText: upgradedDesc,
           previousText: origDesc,
@@ -226,33 +237,38 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      const perRunScaleCost = mode === 'full_visual' ? 0.36 : 0.045;
-      const estimatedSavedUsd = Number((17 * perRunScaleCost).toFixed(2));
+      const perRunScaleCost = mode === 'full_visual' ? 0.55 : 0.015;
+      const savedRunsCount = anyCanaryFailed ? TOTAL_PLANNED_PACKS - runs.length : 0;
+      const estimatedSavedUsd = Number((savedRunsCount * perRunScaleCost).toFixed(2));
 
       const initialState: MysteryQaSuiteState = {
         mysteryId,
         mysteryTitle: mystery.title || 'Mystery Pack',
         mode,
-        status: anyCanaryFailed ? 'paused_circuit_breaker' : 'running_scale',
-        totalPlannedRuns: 20,
-        completedRunsCount: canaryRuns.length,
+        status: anyCanaryFailed
+          ? 'paused_circuit_breaker'
+          : runs.length >= TOTAL_PLANNED_PACKS
+          ? 'completed'
+          : 'running_scale',
+        totalPlannedRuns: TOTAL_PLANNED_PACKS,
+        completedRunsCount: runs.length,
         totalCostUsd,
         budgetCapUsd,
         startedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         circuitBreaker: {
-          evaluatedAtRun: 3,
+          evaluatedAtRun: 1,
           triggered: anyCanaryFailed,
           reason: anyCanaryFailed
-            ? `Paused automatically after Canary Run #3 (Avg Health: ${canaryAvgHealth}% < 85% threshold) to protect your AI credits. Fix the flagged Round 3 alibi & token leak below before running versions #4–#20.`
+            ? `Paused automatically after Canary Test Pack #1 (Health: ${canaryAvgHealth}%) to protect your AI credits. Fix the flagged Round 3 alibi & token leak below before running Test Packs #2–#4.`
             : null,
           canaryAvgHealth,
-          savedRunsCount: anyCanaryFailed ? 17 : 0,
-          estimatedSavedUsd: anyCanaryFailed ? estimatedSavedUsd : 0,
+          savedRunsCount,
+          estimatedSavedUsd,
         },
         fixSuggestions,
-        runs: canaryRuns,
-        performanceReview: buildPerformanceReviewFromRuns(mystery, canaryRuns),
+        runs,
+        performanceReview: buildPerformanceReviewFromRuns(mystery, runs),
       };
 
       saveMysteryQaSuite(initialState);
@@ -266,6 +282,47 @@ export async function POST(req: NextRequest) {
         { error: 'No active QA suite found. Click Start first.' },
         { status: 404 }
       );
+    }
+
+    // ACTION 1B: Generate / Refresh Real Stage 1 + Stage 2 Photos & Multimodal Vision Audit for a Test Pack (#1..#4)
+    if (action === 'generate_pack_visuals') {
+      const targetSpec =
+        TWENTY_RUN_PERMUTATIONS.find((s) => s.runNumber === Number(runNumber)) ||
+        TWENTY_RUN_PERMUTATIONS[0];
+      const appliedIds = new Set(
+        suite.fixSuggestions.filter((f) => f.applied).map((f) => f.id)
+      );
+
+      const customAssets = await generateTestPackVisualAssets(
+        mystery,
+        targetSpec,
+        Boolean(forceRegenerate)
+      );
+      const updatedRun = await executeSingleQaRun(
+        mystery,
+        subplots || [],
+        targetSpec,
+        'full_visual',
+        appliedIds,
+        false,
+        customAssets
+      );
+
+      const existingIdx = suite.runs.findIndex(
+        (r) => r.runNumber === targetSpec.runNumber
+      );
+      if (existingIdx >= 0) {
+        suite.runs[existingIdx] = updatedRun;
+      } else {
+        suite.runs.push(updatedRun);
+      }
+      suite.completedRunsCount = suite.runs.length;
+      suite.totalCostUsd = Number(
+        (suite.totalCostUsd + updatedRun.costUsd).toFixed(4)
+      );
+      suite.performanceReview = buildPerformanceReviewFromRuns(mystery, suite.runs);
+      saveMysteryQaSuite(suite);
+      return NextResponse.json({ suite, updatedRun });
     }
 
     // ACTION 2: Apply Suggested Fix (Patches Real Clue in DB + Cache) & Resume / Re-Audit
@@ -294,13 +351,9 @@ export async function POST(req: NextRequest) {
         suite.fixSuggestions.filter((f) => f.applied).map((f) => f.id)
       );
 
-      // Re-evaluate all currently completed runs with the patched clue text
-      const specsToRefresh = TWENTY_RUN_PERMUTATIONS.slice(
-        0,
-        Math.max(3, suite.completedRunsCount)
-      );
+      // Re-evaluate all 4 test packs with the patched clue text
       const refreshedRuns: QaSingleRunResult[] = [];
-      for (const spec of specsToRefresh) {
+      for (const spec of TWENTY_RUN_PERMUTATIONS) {
         const res = await executeSingleQaRun(
           mystery,
           subplots || [],
@@ -314,19 +367,14 @@ export async function POST(req: NextRequest) {
 
       suite.runs = refreshedRuns;
       suite.completedRunsCount = refreshedRuns.length;
+      suite.totalPlannedRuns = TOTAL_PLANNED_PACKS;
       suite.circuitBreaker.triggered = false;
       suite.circuitBreaker.reason = null;
       suite.circuitBreaker.canaryAvgHealth = Math.round(
-        refreshedRuns
-          .slice(0, 3)
-          .reduce((acc, r) => acc + r.healthScore, 0) / 3
+        refreshedRuns.reduce((acc, r) => acc + r.healthScore, 0) /
+          Math.max(1, refreshedRuns.length)
       );
-
-      if (suite.completedRunsCount < 20) {
-        suite.status = 'running_scale';
-      } else {
-        suite.status = 'completed';
-      }
+      suite.status = 'completed';
 
       suite.performanceReview = buildPerformanceReviewFromRuns(mystery, suite.runs);
       saveMysteryQaSuite(suite);
@@ -382,9 +430,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ suite });
     }
 
-    // ACTION 3: Run Next Batch of Scale Permutations (Runs #4 -> #20)
+    // ACTION 3: Run Remaining Test Packs (#2 -> #4)
     if (action === 'run_next_batch') {
-      if (suite.completedRunsCount >= 20) {
+      if (suite.completedRunsCount >= TOTAL_PLANNED_PACKS) {
         suite.status = 'completed';
         suite.performanceReview = buildPerformanceReviewFromRuns(mystery, suite.runs);
         saveMysteryQaSuite(suite);
@@ -397,7 +445,7 @@ export async function POST(req: NextRequest) {
       const startIdx = suite.completedRunsCount;
       const nextSpecs = TWENTY_RUN_PERMUTATIONS.slice(
         startIdx,
-        Math.min(20, startIdx + Number(batchSize || 6))
+        Math.min(TOTAL_PLANNED_PACKS, startIdx + Number(batchSize || 4))
       );
 
       for (const spec of nextSpecs) {
@@ -416,7 +464,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (suite.completedRunsCount >= 20) {
+      if (suite.completedRunsCount >= TOTAL_PLANNED_PACKS) {
         suite.status = 'completed';
       } else {
         suite.status = 'running_scale';
@@ -427,12 +475,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ suite });
     }
 
-    // ACTION 4: Load a specific Version (#1-#20) into the Screener Cast Cache
+    // ACTION 4: Load a specific Test Pack (#1-#4) into the Screener Cast Cache
     if (action === 'load_version_cast') {
       const targetRun = suite.runs.find((r) => r.runNumber === Number(runNumber));
       if (!targetRun) {
         return NextResponse.json(
-          { error: `Version #${runNumber} not found` },
+          { error: `Test Pack #${runNumber} not found` },
           { status: 404 }
         );
       }
@@ -445,8 +493,8 @@ export async function POST(req: NextRequest) {
             id: ca.guest!.id,
             name: ca.guest!.name,
             gender: ca.guest!.gender,
-            avatar_url: ca.guest!.avatar_url,
-            photoUrl: ca.guest!.avatar_url,
+            avatar_url: ca.portraitUrl || ca.guest!.avatar_url,
+            photoUrl: ca.portraitUrl || ca.guest!.avatar_url,
             eye_color: ca.guest!.eyeColor,
             height: ca.guest!.height,
             ethnicity: ca.guest!.ethnicity,

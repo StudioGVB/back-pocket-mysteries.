@@ -26,6 +26,9 @@ export function MysteryPreLaunchQaPanel({
   const [suite, setSuite] = useState<MysteryQaSuiteState | null>(null);
   const [loadingInitial, setLoadingInitial] = useState<boolean>(true);
   const [isRunningBatch, setIsRunningBatch] = useState<boolean>(false);
+  const [generatingVisualsForPack, setGeneratingVisualsForPack] = useState<number | null>(
+    null
+  );
   const [patchingFixId, setPatchingFixId] = useState<string | null>(null);
   const [mode, setMode] = useState<'smart' | 'full_visual'>('smart');
 
@@ -34,9 +37,9 @@ export function MysteryPreLaunchQaPanel({
     'pacing' | 'screentime' | 'timeline' | 'clues'
   >('pacing');
 
-  // Compact 20-Version Strip Filter & Selected Version Inspector
+  // 4-Pack Filter & Selected Pack Inspector
   const [versionFilter, setVersionFilter] = useState<'all' | 'flagged' | 'canary'>('all');
-  const [selectedRunNumber, setSelectedRunNumber] = useState<number | null>(null);
+  const [selectedRunNumber, setSelectedRunNumber] = useState<number | null>(1);
   const [inspectorRoundFilter, setInspectorRoundFilter] = useState<'all' | 1 | 2 | 3>('all');
   const [inspectorViewMode, setInspectorViewMode] = useState<'visual_cards' | 'compact_audit'>(
     'visual_cards'
@@ -87,7 +90,7 @@ export function MysteryPreLaunchQaPanel({
       while (
         latest &&
         latest.status === 'running_scale' &&
-        latest.completedRunsCount < 20
+        latest.completedRunsCount < (latest.totalPlannedRuns || 4)
       ) {
         const res = await fetch('/api/admin/mystery-qa-runner', {
           method: 'POST',
@@ -95,12 +98,12 @@ export function MysteryPreLaunchQaPanel({
           body: JSON.stringify({
             mysteryId,
             action: 'run_next_batch',
-            batchSize: 6,
+            batchSize: 4,
           }),
         });
         const json = await res.json();
         if (!res.ok || !json?.suite) {
-          throw new Error(json?.error || 'Failed while running scale batch');
+          throw new Error(json?.error || 'Failed while running remaining test packs');
         }
         latest = json.suite;
         setSuite(latest);
@@ -128,7 +131,7 @@ export function MysteryPreLaunchQaPanel({
       });
       const json = await res.json();
       if (!res.ok || !json?.suite) {
-        throw new Error(json?.error || 'Failed to start 20x QA suite');
+        throw new Error(json?.error || 'Failed to start 4-Pack Deep QA Critic suite');
       }
 
       const afterCanary: MysteryQaSuiteState = json.suite;
@@ -142,6 +145,39 @@ export function MysteryPreLaunchQaPanel({
       setErrorMsg(err?.message || 'Error running pre-launch QA suite');
     } finally {
       setIsRunningBatch(false);
+    }
+  };
+
+  const handleGeneratePackVisuals = async (
+    runNumber: number,
+    forceRegenerate = false
+  ) => {
+    if (isRunningBatch || generatingVisualsForPack !== null) return;
+    setGeneratingVisualsForPack(runNumber);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch('/api/admin/mystery-qa-runner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mysteryId,
+          action: 'generate_pack_visuals',
+          runNumber,
+          forceRegenerate,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.suite) {
+        throw new Error(json?.error || `Failed to generate visuals for Pack #${runNumber}`);
+      }
+      setSuite(json.suite);
+      setSelectedRunNumber(runNumber);
+      notifyCertification(json.suite);
+    } catch (err: any) {
+      setErrorMsg(err?.message || `Failed to generate visuals for Pack #${runNumber}`);
+    } finally {
+      setGeneratingVisualsForPack(null);
     }
   };
 
@@ -240,18 +276,20 @@ export function MysteryPreLaunchQaPanel({
         `/${locale}/builder/mysteries/${mysteryId}/screen?qaVersion=${run.runNumber}`
       );
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Could not load version in Screener');
+      setErrorMsg(err?.message || 'Could not load test pack in Screener');
     } finally {
       setOpeningInScreener(false);
     }
   };
 
   const selectedRun: QaSingleRunResult | null =
-    suite?.runs.find((r) => r.runNumber === selectedRunNumber) || null;
+    suite?.runs.find((r) => r.runNumber === selectedRunNumber) ||
+    suite?.runs[0] ||
+    null;
   const review = suite?.performanceReview || null;
 
   const filteredRuns = (suite?.runs || []).filter((r) => {
-    if (versionFilter === 'canary') return r.runNumber <= 3;
+    if (versionFilter === 'canary') return r.runNumber === 1;
     if (versionFilter === 'flagged') {
       return !r.passed || !r.blindDetective.r3Correct || r.issues.length > 0;
     }
@@ -262,7 +300,7 @@ export function MysteryPreLaunchQaPanel({
     (r) => !r.passed || !r.blindDetective.r3Correct || r.issues.length > 0
   ).length;
 
-  // Build ClueRenderer-compatible characters array for the currently selected Version
+  // Build ClueRenderer-compatible characters array for the currently selected Test Pack
   const selectedVersionCharacters = React.useMemo(() => {
     if (!selectedRun) return [];
     return selectedRun.castAssignments
@@ -278,8 +316,9 @@ export function MysteryPreLaunchQaPanel({
         profile_data: {
           guest_id: ca.guest!.id,
           guest_name: ca.guest!.name,
-          avatar_url: ca.guest!.avatar_url,
-          friend_photo_url: ca.guest!.avatar_url,
+          avatar_url: ca.portraitUrl || ca.guest!.avatar_url,
+          friend_photo_url: ca.portraitUrl || ca.guest!.avatar_url,
+          standard_character_photo_url: ca.portraitUrl || ca.guest!.avatar_url,
           eye_color: ca.guest!.eyeColor,
           height: ca.guest!.height,
           ethnicity: ca.guest!.ethnicity,
@@ -295,7 +334,7 @@ export function MysteryPreLaunchQaPanel({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-black uppercase tracking-widest">
-              🧪 Pre-Launch 20× Automated Stress-Test &amp; Circuit Breaker
+              🧪 Pre-Launch 4-Pack Deep AI Critic &amp; Full Visual Stress-Test
             </span>
             {suite?.status === 'completed' &&
               review?.certificationStatus === 'certified' && (
@@ -305,15 +344,15 @@ export function MysteryPreLaunchQaPanel({
               )}
             {suite?.status === 'paused_circuit_breaker' && (
               <span className="px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest animate-pulse">
-                ⏸️ Paused at Run #3 (Circuit Breaker Protected Credits)
+                ⏸️ Paused at Pack #1 (Circuit Breaker Protected Credits)
               </span>
             )}
           </div>
           <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight">
-            20-Cast Stability Generator &amp; Performance Review — &ldquo;{mysteryTitle}&rdquo;
+            4-Pack Deep AI Critic &amp; Visual Stress-Test — &ldquo;{mysteryTitle}&rdquo;
           </h2>
           <p className="text-xs text-slate-400 max-w-2xl">
-            Tests 20 cast combinations, gender flips, player counts, screen-time fairness, and timeline logic. Pauses after Run #3 with 1-click DB fixes if any issues are detected.
+            Generates 4 distinct full mystery packs (Real Friends, Diverse Physical Anchors &amp; Punctuation, Lookalike Suspects, and All-Female Bachelorette/Min-Player), runs a real Gemini Blind-Detective &amp; Multimodal Vision Critic, and flags any customer-facing issues.
           </p>
         </div>
 
@@ -329,7 +368,7 @@ export function MysteryPreLaunchQaPanel({
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              🛡️ Smart QA (~$0.46)
+              🧠 AI Story + Cached Visuals
             </button>
             <button
               type="button"
@@ -341,7 +380,7 @@ export function MysteryPreLaunchQaPanel({
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              🔥 Full Visual (~$7.20)
+              🎨 Full Visual + Vision Critic
             </button>
           </div>
 
@@ -351,7 +390,7 @@ export function MysteryPreLaunchQaPanel({
             onClick={() => handleStartStressTest(true)}
             className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/30 text-xs font-black uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
           >
-            🛑 Test 3-Run Pause
+            🛑 Test Canary Pause
           </button>
 
           <button
@@ -361,10 +400,10 @@ export function MysteryPreLaunchQaPanel({
             className="px-5 py-2.5 rounded-xl bg-brand-pink hover:bg-pink-500 text-white text-xs font-black uppercase tracking-widest shadow-lg transition-all cursor-pointer disabled:opacity-50"
           >
             {isRunningBatch
-              ? `Running (${suite?.completedRunsCount || 0}/20)…`
+              ? `Running AI Critic (${suite?.completedRunsCount || 0}/${suite?.totalPlannedRuns || 4})…`
               : suite?.status === 'completed'
-              ? '🔄 Re-Run 20× Stress Test'
-              : '🚀 Run 20× Pre-Launch Test'}
+              ? '🔄 Re-Run 4-Pack Deep AI Critic'
+              : '🚀 Run 4-Pack Deep AI Critic'}
           </button>
         </div>
       </div>
@@ -378,16 +417,16 @@ export function MysteryPreLaunchQaPanel({
 
         {loadingInitial ? (
           <div className="py-10 text-center text-xs font-bold text-slate-400 animate-pulse">
-            Loading Pre-Launch QA telemetry…
+            Loading Pre-Launch 4-Pack AI Critic telemetry…
           </div>
         ) : !suite ? (
           <div className="rounded-2xl bg-slate-50 border border-dashed border-slate-300 p-8 text-center space-y-3">
             <div className="text-3xl">🧪</div>
             <h3 className="text-base font-black uppercase text-slate-900">
-              No 20× Pre-Launch Stress Test Run Yet
+              No 4-Pack Deep AI Critic Run Yet
             </h3>
             <p className="text-xs text-slate-500 max-w-lg mx-auto leading-relaxed">
-              Click <strong>🚀 Run 20× Pre-Launch Test</strong> above to generate 20 different cast permutations (Canary Runs #1–#3 first, followed by Scale Runs #4–#20) and receive your full Mystery Stability &amp; Performance Review.
+              Click <strong>🚀 Run 4-Pack Deep AI Critic</strong> above to generate 4 distinct test packs with different casts, run the Gemini Blind-Detective &amp; Multimodal Vision Critic, and download full HTML packs for each cast.
             </p>
           </div>
         ) : (
@@ -981,16 +1020,16 @@ export function MysteryPreLaunchQaPanel({
             )}
 
             {/* =====================================================================
-                4. COMPACT 20-VERSION STATUS STRIP (CLICK ANY PILL TO OPEN LIVE INSPECTOR)
+                4. 4-PACK DEEP TEST CARDS (WITH DOWNLOAD FULL PACK .HTML & VISION CRITIC)
             ====================================================================== */}
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700">
-                    🔍 20 Generated Cast Versions
+                    🔍 4 Deep Pre-Launch Test Packs (Real Casts + AI Critic + Downloadable HTML)
                   </span>
                   <h3 className="text-base font-black uppercase text-slate-900">
-                    Click Any Version (#1–#{suite.completedRunsCount}) to Inspect Live Visual Clue Cards
+                    Click Any Test Pack (#1–#{suite.completedRunsCount}) to Inspect Clues, AI Critic Findings &amp; Generated Photos
                   </h3>
                 </div>
 
@@ -1004,7 +1043,7 @@ export function MysteryPreLaunchQaPanel({
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    All ({suite.runs.length})
+                    All Packs ({suite.runs.length})
                   </button>
                   <button
                     type="button"
@@ -1015,89 +1054,203 @@ export function MysteryPreLaunchQaPanel({
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    ⚠️ With Warnings / Wrong R3 Vote ({flaggedRunsCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVersionFilter('canary')}
-                    className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase cursor-pointer ${
-                      versionFilter === 'canary'
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Canary #1–#3
+                    ⚠️ With Flagged Warnings ({flaggedRunsCount})
                   </button>
                 </div>
               </div>
 
-              {/* Compact 20-Pill Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+              {/* 4-Pack Detailed Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredRuns.map((run) => {
-                  const isSelected = selectedRunNumber === run.runNumber;
+                  const isSelected = selectedRun?.runNumber === run.runNumber;
                   const hasWarning =
                     run.issues.length > 0 || !run.blindDetective.r3Correct;
+                  const isGeneratingThisPack =
+                    generatingVisualsForPack === run.runNumber;
+
                   return (
-                    <button
+                    <div
                       key={run.id}
-                      type="button"
-                      onClick={() =>
-                        setSelectedRunNumber(isSelected ? null : run.runNumber)
-                      }
-                      className={`text-left rounded-xl px-3 py-2.5 border transition-all cursor-pointer ${
+                      onClick={() => setSelectedRunNumber(run.runNumber)}
+                      className={`rounded-2xl p-4 border-2 transition-all cursor-pointer space-y-3 ${
                         isSelected
-                          ? 'bg-slate-900 text-white border-slate-900 ring-2 ring-brand-pink shadow-md'
+                          ? 'bg-slate-900 text-white border-brand-pink ring-2 ring-brand-pink/30 shadow-lg'
                           : !run.passed
-                          ? 'bg-rose-50 border-rose-300 hover:bg-rose-100/70'
+                          ? 'bg-rose-50/80 border-rose-300 hover:border-rose-400'
                           : hasWarning
-                          ? 'bg-amber-50/70 border-amber-300 hover:bg-amber-100/60'
-                          : 'bg-white border-slate-200 hover:bg-slate-50'
+                          ? 'bg-amber-50/60 border-amber-300 hover:border-amber-400'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span
-                          className={`text-[11px] font-black uppercase ${
-                            isSelected ? 'text-brand-pink' : 'text-slate-900'
-                          }`}
-                        >
-                          #{run.runNumber}{' '}
-                          {run.scenarioName
-                            .replace(/^(Canary|Run)\s*#\d+\s*•\s*/i, '')
-                            .split(' (')[0]
-                            .slice(0, 18)}
-                        </span>
-                        <span
-                          className={`text-[11px] font-black shrink-0 ${
-                            isSelected
-                              ? 'text-emerald-300'
-                              : !run.passed
-                              ? 'text-rose-700'
-                              : hasWarning
-                              ? 'text-amber-700'
-                              : 'text-emerald-700'
-                          }`}
-                        >
-                          {run.healthScore}%{' '}
-                          {!run.passed ? '🛑' : hasWarning ? '⚠️' : '✅'}
-                        </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                isSelected
+                                  ? 'bg-brand-pink text-white'
+                                  : 'bg-slate-900 text-white'
+                              }`}
+                            >
+                              Pack #{run.runNumber}
+                            </span>
+                            {run.visualsGenerated && (
+                              <span
+                                className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                                  isSelected
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                                    : 'bg-emerald-100 text-emerald-800'
+                                }`}
+                              >
+                                🎨 Real Photos &amp; Vision Audited
+                              </span>
+                            )}
+                          </div>
+                          <h4
+                            className={`text-xs sm:text-sm font-black uppercase leading-snug pt-0.5 ${
+                              isSelected ? 'text-white' : 'text-slate-900'
+                            }`}
+                          >
+                            {run.scenarioName.replace(/^Test Pack #\d+\s*•\s*/i, '')}
+                          </h4>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div
+                            className={`text-lg font-black ${
+                              isSelected
+                                ? 'text-emerald-300'
+                                : !run.passed
+                                ? 'text-rose-700'
+                                : hasWarning
+                                ? 'text-amber-700'
+                                : 'text-emerald-700'
+                            }`}
+                          >
+                            {run.healthScore}%{' '}
+                            {!run.passed ? '🛑' : hasWarning ? '⚠️' : '✅'}
+                          </div>
+                          <div
+                            className={`text-[9px] font-bold uppercase ${
+                              isSelected ? 'text-slate-400' : 'text-slate-500'
+                            }`}
+                          >
+                            R3 Solve: {run.blindDetective.r3ConfidencePct}%
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Cast Portrait Strip */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {run.castAssignments
+                          .filter((ca) => !ca.isDroppedOptional && ca.guest)
+                          .map((ca) => (
+                            <div
+                              key={ca.characterId}
+                              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] ${
+                                isSelected
+                                  ? 'bg-slate-950 border-slate-800 text-slate-200'
+                                  : 'bg-slate-50 border-slate-200 text-slate-700'
+                              }`}
+                            >
+                              {(ca.portraitUrl || ca.guest?.avatar_url) && (
+                                <img
+                                  src={ca.portraitUrl || ca.guest?.avatar_url}
+                                  alt={ca.guest?.name || ca.roleTitle}
+                                  className="w-5 h-5 rounded-full object-cover object-top border border-white/20"
+                                />
+                              )}
+                              <span className="font-black">{ca.guest?.name}</span>
+                              <span
+                                className={
+                                  isSelected ? 'text-slate-400' : 'text-slate-400'
+                                }
+                              >
+                                ({ca.roleTitle.replace(/^The\s+/i, '')})
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+
+                      {/* AI Critic Verdict */}
+                      {run.aiCriticSummary && (
+                        <p
+                          className={`text-[11px] leading-relaxed line-clamp-2 ${
+                            isSelected ? 'text-slate-300' : 'text-slate-600'
+                          }`}
+                        >
+                          <strong
+                            className={
+                              isSelected ? 'text-amber-300' : 'text-slate-900'
+                            }
+                          >
+                            🤖 AI Critic:
+                          </strong>{' '}
+                          {run.aiCriticSummary}
+                        </p>
+                      )}
+
+                      {/* Action Footer per Pack */}
                       <div
-                        className={`text-[10px] truncate mt-0.5 ${
-                          isSelected ? 'text-slate-300' : 'text-slate-500'
-                        }`}
+                        className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/20"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {run.activePlayerCount}p • R3:{' '}
-                        {run.blindDetective.r3GuessName.split(' (')[0]}{' '}
-                        {run.blindDetective.r3Correct ? '🔪' : '❌'}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {run.exportHtmlUrl && (
+                            <a
+                              href={run.exportHtmlUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                isSelected
+                                  ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
+                                  : 'bg-slate-900 text-white hover:bg-slate-800'
+                              }`}
+                            >
+                              📥 View Full Pack #{run.runNumber} (.HTML) ↗
+                            </a>
+                          )}
+
+                          <button
+                            type="button"
+                            disabled={
+                              isRunningBatch || generatingVisualsForPack !== null
+                            }
+                            onClick={() =>
+                              handleGeneratePackVisuals(run.runNumber, false)
+                            }
+                            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer disabled:opacity-50 ${
+                              isSelected
+                                ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 hover:bg-amber-400/30'
+                                : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'
+                            }`}
+                          >
+                            {isGeneratingThisPack
+                              ? `🎨 Generating Photos & Vision Audit…`
+                              : run.visualsGenerated
+                              ? '🔍 Re-Run AI Vision Critic'
+                              : '🎨 Generate Real Photos & Vision Audit'}
+                          </button>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-black uppercase ${
+                            isSelected ? 'text-brand-pink' : 'text-indigo-700'
+                          }`}
+                        >
+                          {run.issues.length > 0
+                            ? `⚠️ ${run.issues.length} Flagged`
+                            : '✓ 0 Critical Issues'}
+                        </span>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             </div>
 
             {/* =====================================================================
-                5. LIVE VISUAL VERSION INSPECTOR (RENDERS ACTUAL CLUERENDERER CARDS!)
+                5. LIVE VISUAL TEST PACK INSPECTOR (RENDERS ACTUAL CLUERENDERER CARDS!)
             ====================================================================== */}
             {selectedRun && (
               <div className="rounded-3xl bg-slate-900 text-white border-2 border-brand-pink p-6 shadow-2xl space-y-5 animate-in fade-in duration-200">
@@ -1105,12 +1258,12 @@ export function MysteryPreLaunchQaPanel({
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
-                        Version #{selectedRun.runNumber} of {suite.completedRunsCount}
+                        Test Pack #{selectedRun.runNumber} of {suite.completedRunsCount}
                       </span>
                       <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 text-[10px] font-bold">
-                        {selectedRun.activePlayerCount} Active Players • Health: {selectedRun.healthScore}%
+                        {selectedRun.activePlayerCount} Active Players • Health: {selectedRun.healthScore}% • Visual Score: {selectedRun.visualPromptScore}%
                       </span>
-                      {/* Prev / Next Version Quick Switcher */}
+                      {/* Prev / Next Pack Quick Switcher */}
                       <div className="inline-flex items-center gap-1 ml-1">
                         <button
                           type="button"
@@ -1123,7 +1276,7 @@ export function MysteryPreLaunchQaPanel({
                           }
                           className="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-black uppercase cursor-pointer"
                         >
-                          ◀ Prev Version
+                          ◀ Prev Pack
                         </button>
                         <button
                           type="button"
@@ -1136,7 +1289,7 @@ export function MysteryPreLaunchQaPanel({
                           }
                           className="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-black uppercase cursor-pointer"
                         >
-                          Next Version ▶
+                          Next Pack ▶
                         </button>
                       </div>
                     </div>
@@ -1146,6 +1299,17 @@ export function MysteryPreLaunchQaPanel({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {selectedRun.exportHtmlUrl && (
+                      <a
+                        href={selectedRun.exportHtmlUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md"
+                      >
+                        📥 View / Download Full Pack #{selectedRun.runNumber} (.HTML) ↗
+                      </a>
+                    )}
+
                     {/* Toggle Visual Cards vs Compact Audit */}
                     <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800">
                       <button
@@ -1180,39 +1344,50 @@ export function MysteryPreLaunchQaPanel({
                     >
                       {openingInScreener
                         ? 'Loading…'
-                        : `🕵️ Open Version #${selectedRun.runNumber} in Screen Pack ↗`}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRunNumber(null)}
-                      className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black uppercase cursor-pointer"
-                    >
-                      ✕
+                        : `🕵️ Open Pack #${selectedRun.runNumber} in Screen Pack ↗`}
                     </button>
                   </div>
                 </div>
 
-                {/* Flagged Warnings on This Specific Version (if any) */}
+                {/* AI Critic Summary & Flagged Warnings on This Specific Pack */}
+                {selectedRun.aiCriticSummary && (
+                  <div className="rounded-2xl bg-slate-950 border border-slate-800 p-4 space-y-2">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                      🤖 Gemini AI Critic Evaluation — Pack #{selectedRun.runNumber}
+                    </div>
+                    <p className="text-xs text-slate-200 leading-relaxed">
+                      {selectedRun.aiCriticSummary}
+                    </p>
+                  </div>
+                )}
+
                 {selectedRun.issues.length > 0 && (
-                  <div className="rounded-2xl bg-amber-950/50 border border-amber-400/40 p-3.5 space-y-1.5">
+                  <div className="rounded-2xl bg-amber-950/50 border border-amber-400/40 p-3.5 space-y-2">
                     <div className="text-[10px] font-black uppercase tracking-wider text-amber-300">
-                      ⚠️ Warnings Flagged on Version #{selectedRun.runNumber} ({selectedRun.issues.length})
+                      ⚠️ Issues &amp; Recommendations Flagged on Test Pack #{selectedRun.runNumber} ({selectedRun.issues.length})
                     </div>
                     {selectedRun.issues.map((iss, idx) => (
-                      <div key={idx} className="text-xs text-amber-100">
-                        • <strong>{iss.targetTitle}:</strong> {iss.message}
+                      <div key={idx} className="text-xs text-amber-100 space-y-0.5">
+                        <div>
+                          • <strong>[{iss.code}] {iss.targetTitle}:</strong> {iss.message}
+                        </div>
+                        {iss.suggestedFix && (
+                          <div className="text-[11px] text-emerald-300 pl-3">
+                            💡 Suggested Fix: {iss.suggestedFix}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* 1. Assigned Cast Strip + AI Blind-Detective Verdict */}
+                {/* 1. Assigned Cast Strip (With Real Costume Portraits) + AI Blind-Detective Verdict */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                  <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     {selectedRun.castAssignments.map((ca) => (
                       <div
                         key={ca.characterId}
-                        className={`rounded-xl p-2.5 border text-xs ${
+                        className={`rounded-xl p-2.5 border text-xs flex items-center gap-2.5 ${
                           ca.isDroppedOptional
                             ? 'bg-slate-950/40 border-slate-800 text-slate-500'
                             : ca.plotRole === 'killer'
@@ -1220,32 +1395,47 @@ export function MysteryPreLaunchQaPanel({
                             : 'bg-slate-950/90 border-slate-800'
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-black text-white truncate">
-                            {ca.isDroppedOptional
-                              ? `${ca.roleTitle} (Dropped)`
-                              : `${ca.guest?.name}`}
-                          </span>
-                          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-white/10 text-slate-300 shrink-0">
-                            {ca.plotRole === 'killer'
-                              ? '🔪 Killer'
-                              : ca.isVictim
-                              ? '💀 Victim'
-                              : ca.guest?.gender}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate mt-0.5">
-                          {ca.roleTitle} • {ca.guest?.hairColor} hair
+                        {!ca.isDroppedOptional &&
+                          (ca.portraitUrl || ca.guest?.avatar_url) && (
+                            <img
+                              src={ca.portraitUrl || ca.guest?.avatar_url}
+                              alt={ca.guest?.name || ca.roleTitle}
+                              className="w-11 h-11 rounded-xl object-cover object-top border border-white/20 shrink-0"
+                            />
+                          )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-black text-white truncate">
+                              {ca.isDroppedOptional
+                                ? `${ca.roleTitle} (Dropped)`
+                                : `${ca.guest?.name}`}
+                            </span>
+                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-white/10 text-slate-300 shrink-0">
+                              {ca.plotRole === 'killer'
+                                ? '🔪 Killer'
+                                : ca.isVictim
+                                ? '💀 Victim'
+                                : ca.guest?.gender}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                            {ca.roleTitle} • {ca.guest?.hairColor} hair
+                          </div>
+                          {ca.guest?.facialFeature && (
+                            <div className="text-[9px] text-slate-500 truncate">
+                              {ca.guest.facialFeature}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="lg:col-span-5 rounded-xl bg-slate-950 border border-slate-800 p-3.5 space-y-2">
+                  <div className="lg:col-span-5 rounded-xl bg-slate-950 border border-slate-800 p-3.5 space-y-2.5">
                     <div className="flex items-center justify-between text-[10px] font-black uppercase text-amber-400">
                       <span>AI Blind-Detective ({selectedRun.blindDetective.persona})</span>
                       <span className="text-emerald-400">
-                        Tags: {selectedRun.blindDetective.clueTagAccuracyPct}%
+                        Confidence: {selectedRun.blindDetective.r3ConfidencePct}%
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-[11px]">
@@ -1253,14 +1443,14 @@ export function MysteryPreLaunchQaPanel({
                         <span className="text-[9px] text-slate-400 block uppercase">R1 Pick</span>
                         <strong className="text-white truncate block">
                           {selectedRun.blindDetective.r1GuessName.split(' (')[0]}{' '}
-                          {selectedRun.blindDetective.r1Correct ? '✅' : '❌'}
+                          {selectedRun.blindDetective.r1Correct ? '⚠️' : '🎭'}
                         </strong>
                       </div>
                       <div className="rounded-lg bg-slate-900 p-2 border border-slate-800">
                         <span className="text-[9px] text-slate-400 block uppercase">R2 Pick</span>
                         <strong className="text-white truncate block">
                           {selectedRun.blindDetective.r2GuessName.split(' (')[0]}{' '}
-                          {selectedRun.blindDetective.r2Correct ? '✅' : '❌'}
+                          {selectedRun.blindDetective.r2Correct ? '🔎' : '🎭'}
                         </strong>
                       </div>
                       <div className="rounded-lg bg-slate-900 p-2 border border-slate-800">
@@ -1271,6 +1461,10 @@ export function MysteryPreLaunchQaPanel({
                         </strong>
                       </div>
                     </div>
+                    <p className="text-[11px] text-slate-300 leading-snug">
+                      <strong className="text-emerald-400">R3 Deduction:</strong>{' '}
+                      {selectedRun.blindDetective.r3Reasoning}
+                    </p>
                   </div>
                 </div>
 
@@ -1279,8 +1473,8 @@ export function MysteryPreLaunchQaPanel({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                       {inspectorViewMode === 'visual_cards'
-                        ? `🎨 Live Rendered Clue Cards for Version #${selectedRun.runNumber}`
-                        : `📋 Hydrated Clue Text Audit for Version #${selectedRun.runNumber}`}
+                        ? `🎨 Live Rendered Clue Cards for Test Pack #${selectedRun.runNumber}`
+                        : `📋 Hydrated Clue Text Audit for Test Pack #${selectedRun.runNumber}`}
                     </span>
                     <div className="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800">
                       {(['all', 1, 2, 3] as const).map((rf) => (
@@ -1357,6 +1551,21 @@ export function MysteryPreLaunchQaPanel({
                               characters={selectedVersionCharacters}
                               showImage={true}
                             />
+
+                            {ec.visualCriticNote && (
+                              <div
+                                className={`rounded-xl px-3 py-2 text-[11px] border ${
+                                  ec.visualCriticPassed === false
+                                    ? 'bg-amber-50 border-amber-300 text-amber-900'
+                                    : 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                                }`}
+                              >
+                                <strong>
+                                  👁️ AI Vision Critic ({ec.visualCriticScore ?? 92}%):
+                                </strong>{' '}
+                                {ec.visualCriticNote}
+                              </div>
+                            )}
 
                             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px]">
                               <span className="text-slate-600">
