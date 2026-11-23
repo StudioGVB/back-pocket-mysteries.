@@ -420,31 +420,96 @@ export default async function HomePage(props: {
         </div>
       </section>
 
-      {/* How It Works - Quick Preview */}
+      {/* How It Works & How to Play - Setup + Party Night Flow */}
       <section className="py-16 lg:py-24 bg-white">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16 lg:mb-20">
-              <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-14 lg:mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-[0.2em]">
+                How It Works &amp; How to Play
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-4 uppercase tracking-tight">
                 {dict.home.steps.title.split('is')[0]} is <span className="text-brand-pink italic">sorted</span> {dict.home.steps.title.split('sorted')[1]}
               </h2>
               <p className="text-gray-400 font-black uppercase tracking-[0.15em] text-xs">{dict.home.steps.subtitle}</p>
             </div>
+
             <div className="space-y-6">
               {[dict.home.steps.step1, dict.home.steps.step2, dict.home.steps.step3].map((step, i) => (
-                <div key={i} className="card-branded p-8 md:p-10 lg:p-14 flex flex-col sm:flex-row gap-6 lg:gap-10 items-start group hover:border-brand-pink">
+                <div key={i} className="card-branded p-8 md:p-10 lg:p-12 flex flex-col sm:flex-row gap-6 lg:gap-10 items-start group hover:border-brand-pink">
                   <span className="text-6xl lg:text-8xl font-black text-gray-100 leading-none group-hover:text-brand-pink/20 transition-colors shrink-0">0{i+1}</span>
                   <div>
                     <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-3">{step.title}</h3>
-                    <p className="text-gray-500 font-semibold text-lg leading-relaxed">{step.desc}</p>
+                    <p className="text-gray-500 font-semibold text-base sm:text-lg leading-relaxed">{step.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="text-center mt-16">
-              <Link href={`/${locale}/how-it-works`} className="inline-flex items-center gap-3 text-brand-pink font-black uppercase tracking-widest text-sm hover:gap-5 transition-all">
-                {dict.home.steps.cta}
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            {/* Party Night Flow: Host on Laptop + Guests on Phones */}
+            <div className="mt-10 rounded-[2.5rem] bg-slate-900 text-white p-7 sm:p-10 border border-slate-800 shadow-2xl space-y-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-5">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
+                    🎉 On Party Night • Recommended Setup
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
+                    Host on a <span className="text-brand-pink italic">Laptop.</span> Guests on Their <span className="text-brand-pink italic">Phones.</span>
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1">
+                    Only the Host sees the 8-stage controller and decides when each round&apos;s clues and voting unlock — while guest phones stay super clean and simple.
+                  </p>
+                </div>
+                <span className="px-3.5 py-1.5 rounded-full bg-sky-400/15 border border-sky-400/30 text-sky-300 text-[10px] font-black uppercase tracking-widest shrink-0 self-start md:self-auto">
+                  🕵️ + Unlimited Extra Guest Detectives
+                </span>
+              </div>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  {
+                    stage: 'Stage 0 • Mingle',
+                    title: '1. Scan QR & Claim Role',
+                    desc: 'Guests tap their character card in the Lobby (or join as “Detective [Name]” if you have more than 6 guests!) and mingle with icebreakers.',
+                  },
+                  {
+                    stage: 'Rounds 1–3 • Clues',
+                    title: '2. Host Unlocks Clues',
+                    desc: 'When you unlock a round on your laptop, leaked iMessage texts, CCTV stills, and voice wiretaps drop onto every guest’s phone.',
+                  },
+                  {
+                    stage: 'Host-Gated • Voting',
+                    title: '3. Host Opens Voting',
+                    desc: 'You decide when voting opens for each round. Suspects & Guest Detectives lock in their vote while you watch the live vote counter.',
+                  },
+                  {
+                    stage: 'Stage 7 • Final Reveal',
+                    title: '4. Confession & Scores',
+                    desc: 'With 1 tap, unlock the Killer’s Confession, Crime Timeline solution, and Combined Detective Leaderboard on every phone!',
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2"
+                  >
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink text-[9px] font-black uppercase tracking-wider">
+                      {item.stage}
+                    </span>
+                    <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-center mt-12">
+              <Link href={`/${locale}/how-it-works`} className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-brand-pink text-white font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-lg">
+                {dict.home.steps.cta} &amp; Interactive Walkthrough
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </Link>
