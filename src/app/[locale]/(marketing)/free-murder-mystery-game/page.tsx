@@ -3,39 +3,68 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import FreeMysteryLeadForm from '@/components/marketing/FreeMysteryLeadForm';
 import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
+import { OCCASION_SEO_PAGES } from '@/data/occasion-seo-pages';
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  await props.params;
+  const { locale } = await props.params;
+  const canonicalUrl = `https://backpocketmysteries.com/${locale}/free-murder-mystery-game`;
   const title =
-    'First 50 Founding Host Giveaway — Free Custom Murder Mystery Game | Back Pocket Mysteries';
+    'Free Custom Murder Mystery Game (First 50 VIP Giveaway) | Printable & Digital Party Kit';
   const description =
-    'How the Back Pocket Mysteries First 50 Launch Giveaway works: be one of the first 50 hosts on our VIP list to claim a 100% FREE custom murder mystery party pack (worth up to £45 / $55) built around your friends.';
+    'Claim a 100% FREE Custom Murder Mystery Game Pack (worth up to £45 / $55 for 4–16 players). Human-written murder mystery plots personalised around your actual friends by AI. Printable PDF booklets + live mobile Playroom, spoiler-free for the host.';
 
   return {
     title,
     description,
     keywords: [
+      'free custom murder mystery',
+      'free custom murder mystery game',
       'free murder mystery game',
-      'first 50 launch giveaway',
       'free printable murder mystery game',
-      'free murder mystery party kit',
       'free murder mystery game for adults',
+      'free murder mystery party kit',
       'custom murder mystery game free',
       'printable murder mystery dinner party game',
+      'free murder mystery game 6 players',
+      'free murder mystery game 8 players',
+      'free murder mystery game 10 players',
+      'free murder mystery game 12 players',
+      'free murder mystery script for adults',
+      'AI murder mystery generator free',
       'murder mystery party giveaway',
+      'spoiler free murder mystery game for host',
     ],
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-snippet': -1,
+        'max-image-preview': 'large',
+        'max-video-preview': -1,
+      },
+    },
     alternates: {
-      canonical: `https://backpocketmysteries.com/en/free-murder-mystery-game`,
+      canonical: canonicalUrl,
     },
     openGraph: {
       title,
       description,
-      url: `https://backpocketmysteries.com/en/free-murder-mystery-game`,
+      url: canonicalUrl,
       siteName: 'Back Pocket Mysteries',
       type: 'website',
-      images: [{ url: '/og-image.png' }],
+      locale: 'en_GB',
+      images: [
+        {
+          url: '/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'Free Custom Murder Mystery Game — First 50 VIP Founding Host Giveaway | Back Pocket Mysteries',
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
@@ -122,62 +151,195 @@ const PRIZE_INCLUSIONS = [
   },
 ];
 
+const PLAYER_COUNT_GUIDES = [
+  {
+    players: '4–6 Players',
+    tier: 'Basic Tier (Included Free)',
+    idealFor: 'Intimate Dinner Parties, Double Dates & Flatmate Nights',
+    summary:
+      'Every guest is a core suspect with deep interlocking motives, zero filler roles, and tight table-wide interrogation across 3 rounds of evidence.',
+  },
+  {
+    players: '6–8 Players',
+    tier: 'Premium Tier (Included Free)',
+    idealFor: 'Classic Dinner Party Tables & Birthday Dinners',
+    summary:
+      'The sweet spot for dinner table murder mysteries: adds secondary alibis, secret alliances, and physical + digital forensic evidence.',
+  },
+  {
+    players: '8–12 Players',
+    tier: 'Premium / Grand Tier (Included Free)',
+    idealFor: 'House Parties, Hen & Stag Nights, Milestone Birthdays',
+    summary:
+      'Expands the suspect pool with rival factions, side-room gossip prompts, and chronological timeline gaps for energetic mingling.',
+  },
+  {
+    players: '12–16 Players',
+    tier: 'Grand Tier (Included Free)',
+    idealFor: 'Large House Parties, Holiday Events & Team Socials',
+    summary:
+      'Our full 16-suspect ensemble cast with live Room Cast directory, QR party join, and automated detective superlative awards at the end of the night.',
+  },
+];
+
+const COMPARISON_ROWS = [
+  {
+    feature: 'Customised to Your Real Friends & Inside Jokes',
+    bpm: '✓ Built around your guests’ names, jobs & quirks',
+    genericFree: '✕ Generic fixed stock characters only',
+    boxedKit: '✕ Fixed pre-printed characters',
+  },
+  {
+    feature: 'Complete Game & Killer Reveal Included Free',
+    bpm: '✓ Full 3-round game + final reveal (First 50 VIP)',
+    genericFree: '✕ Often a 4-page teaser with paywalled ending',
+    boxedKit: '✓ Included (Costs £25–£50+)',
+  },
+  {
+    feature: 'Host Can Play Without Knowing the Murderer',
+    bpm: '✓ 100% spoiler-free guided Host Mode',
+    genericFree: '✕ Host must read the solution to run the game',
+    boxedKit: '✕ Often spoils the killer in the host manual',
+  },
+  {
+    feature: 'Dynamic Player Count (4 to 16 Players)',
+    bpm: '✓ Scales to your exact headcount (4–16 guests)',
+    genericFree: '✕ Breaks if 1 guest cancels last minute',
+    boxedKit: '✕ Rigid headcount (usually 6 or 8 exact)',
+  },
+  {
+    feature: 'Format: Printable PDFs + Live Mobile Playroom',
+    bpm: '✓ Both included (6-digit PIN + QR + Print Kit)',
+    genericFree: '✕ Plain text PDF wall of text',
+    boxedKit: '✕ Paper slips only',
+  },
+  {
+    feature: 'Multimedia Clues (CCTV, Forensics & Voice Audio)',
+    bpm: '✓ Illustrated clues + Inspector voice briefings',
+    genericFree: '✕ Text-only clue descriptions',
+    boxedKit: '✕ Basic paper cards',
+  },
+];
+
 export default async function FreeMurderMysteryGamePage(props: {
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await props.params;
+  const pageUrl = `https://backpocketmysteries.com/${locale}/free-murder-mystery-game`;
 
-  const faqSchema = {
+  const faqEntries = [
+    {
+      name: 'How do I get a free custom murder mystery game?',
+      text: 'The first 50 people who join the Back Pocket Mysteries pre-launch VIP email list receive a single-use 100%-off promo code on launch day good for one complete custom murder mystery party pack (worth up to £45 / $55 USD for 4 to 16 players).',
+    },
+    {
+      name: 'Is this a full free printable murder mystery game for adults or just a sample?',
+      text: 'It is a 100% complete, full-tier custom murder mystery game pack—never a sample or teaser. Your Founding Host voucher unlocks every round of clues, all custom character booklets, audio briefings, printable PDFs, the live mobile Playroom, and the final killer reveal.',
+    },
+    {
+      name: 'How do I know if I made the First 50?',
+      text: 'The moment you submit your first name and email, our live counter locks in your chronological VIP Rank (#1 through #50) and displays your exact Spot number on screen and in your instant welcome email. Re-entering your email anytime shows your existing spot without creating a duplicate.',
+    },
+    {
+      name: 'Do I need to know my party date or guest list right now?',
+      text: 'No! Claiming your spot today simply reserves your 100%-off Founding Host voucher code. Once we email your code on launch day, you can redeem it whenever you are ready to host and enter your guests’ names, traits, and inside jokes at that time.',
+    },
+    {
+      name: 'Can I use the free code for a 6-player, 8-player, 10-player, or 16-player murder mystery?',
+      text: 'Yes. Your First 50 Founding Host code works on any group size tier from 4 to 16 players—including Basic (4–6 players), Premium (4–10 players), and Grand (4–16 players)—and dynamically adapts the suspect cast to your exact headcount.',
+    },
+    {
+      name: 'How does the custom AI + human-authored murder mystery builder work?',
+      text: 'Every Mystery Base Pack is written by a human mystery author so the crime timeline, motives, alibis, and forensic deductions are airtight. When you enter your friends’ names, jobs, and harmless inside jokes, our AI engine weaves them into the character dossiers and evidence in about 30 minutes.',
+    },
+    {
+      name: 'Can the host play without knowing who the murderer is?',
+      text: 'Yes! Every Back Pocket Mystery is 100% spoiler-free for the host. Our interactive Playroom and voice-acted Inspector audio briefings guide each round and reveal the killer at the end so the host can play as a full suspect.',
+    },
+    {
+      name: 'What happens if I sign up after the first 50 free spots are claimed?',
+      text: 'Anyone who registers at Spot #51 or later is automatically added to our VIP Launch Waitlist and receives our biggest early-bird launch discount code plus priority access on launch day.',
+    },
+  ];
+
+  const jsonLdGraph = {
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: [
+    '@graph': [
       {
-        '@type': 'Question',
-        name: 'What is the First 50 Founding Host Launch Giveaway?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'To celebrate the launch of Back Pocket Mysteries, the first 50 people who join our pre-launch VIP email list receive a 100%-off promo code on launch day good for one complete custom murder mystery party pack (worth up to £45 / $55 USD for up to 16 players).',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: `https://backpocketmysteries.com/${locale}`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Free Custom Murder Mystery Game (First 50 Giveaway)',
+            item: pageUrl,
+          },
+        ],
+      },
+      {
+        '@type': 'Product',
+        name: 'Free Custom Murder Mystery Game Pack (First 50 Founding Host Giveaway)',
+        description:
+          'Complete custom murder mystery party game kit for 4 to 16 players. Human-authored mystery plot personalised around your friends by AI, with printable PDF dossiers and a live mobile Playroom.',
+        image: ['https://backpocketmysteries.com/og-image.png'],
+        brand: {
+          '@type': 'Brand',
+          name: 'Back Pocket Mysteries',
+        },
+        category: 'Party Games / Murder Mystery Games',
+        audience: {
+          '@type': 'PeopleAudience',
+          suggestedMinAge: 16,
+        },
+        offers: {
+          '@type': 'Offer',
+          url: pageUrl,
+          priceCurrency: 'USD',
+          price: '0.00',
+          availability: 'https://schema.org/LimitedAvailability',
+          eligibleQuantity: {
+            '@type': 'QuantitativeValue',
+            value: 50,
+            unitText: 'Founding Host VIP Spots',
+          },
+          description:
+            '100% Free Custom Murder Mystery Game Pack voucher (up to £45 / $55 USD retail value) for the first 50 pre-launch VIP email sign-ups.',
         },
       },
       {
-        '@type': 'Question',
-        name: 'How do I know if I made the First 50?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'The moment you submit your name and email, the confirmation card on screen and your instant welcome email display your exact timestamped VIP Spot number (e.g., Spot #49 of 50). If you already signed up, entering the same email again will display your existing spot number without creating a duplicate.',
+        '@type': 'HowTo',
+        name: 'How to Claim & Host a Free Custom Murder Mystery Party',
+        description:
+          'Follow these 4 steps to claim one of the first 50 Founding Host spots and host a custom murder mystery dinner party built around your friends.',
+        totalTime: 'PT30M',
+        estimatedCost: {
+          '@type': 'MonetaryAmount',
+          currency: 'USD',
+          value: '0',
         },
+        step: HOW_IT_WORKS_STEPS.map((s, index) => ({
+          '@type': 'HowToStep',
+          position: index + 1,
+          name: s.title,
+          text: s.description,
+        })),
       },
       {
-        '@type': 'Question',
-        name: 'Do I need to know my party date or guest list right now?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'No! Claiming your spot today simply locks in your 100%-off Founding Host voucher code. Once we email your code on launch day, you can redeem it whenever you are ready to host and enter your guests’ names and inside jokes at that time.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'What is included in the free murder mystery party kit?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Your free custom murder mystery pack includes personalised character booklets tailored to your guests, printable and digital crime scene clues, AI-generated suspect portraits, voice-acted audio evidence briefings, and our interactive mobile Playroom so even the host can play spoiler-free.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'How many players does the free code cover?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Your First 50 Founding Host voucher works on any group size tier from 4 to 16 players—including Basic (4–6 players), Premium (4–10 players), and Grand (4–16 players).',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'What happens if I sign up after the first 50 spots are taken?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Anyone who joins at Spot #51 or later is automatically added to our VIP Launch Waitlist and receives our largest early-bird launch discount code plus priority access on launch day.',
-        },
+        '@type': 'FAQPage',
+        mainEntity: faqEntries.map((q) => ({
+          '@type': 'Question',
+          name: q.name,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: q.text,
+          },
+        })),
       },
     ],
   };
@@ -186,13 +348,39 @@ export default async function FreeMurderMysteryGamePage(props: {
     <div className="bg-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
       />
 
-      {/* Hero + Lead Capture Section */}
+      {/* Semantic Breadcrumb Bar */}
+      <nav
+        aria-label="Breadcrumb"
+        className="bg-slate-50 border-b border-gray-100 py-3"
+      >
+        <div className="container mx-auto px-6 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-gray-500">
+          <ol className="flex items-center gap-2">
+            <li>
+              <Link
+                href={`/${locale}`}
+                className="hover:text-brand-pink transition-colors"
+              >
+                Home
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li className="text-brand-dark font-black">
+              Free Custom Murder Mystery Game (First 50 VIP Giveaway)
+            </li>
+          </ol>
+          <span className="text-[11px] font-black uppercase tracking-wider text-brand-pink">
+            🔥 Limited Pre-Launch Founding Host Offer
+          </span>
+        </div>
+      </nav>
+
+      {/* Hero + Lead Capture Section (Above the Fold for Google Ads & SEO) */}
       <section
         id="claim-spot"
-        className="relative py-14 lg:py-24 overflow-hidden bg-gradient-to-b from-slate-50 to-white border-b border-gray-100"
+        className="relative py-12 lg:py-20 overflow-hidden bg-gradient-to-b from-slate-50 to-white border-b border-gray-100"
       >
         <div className="container mx-auto px-6">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
@@ -203,22 +391,24 @@ export default async function FreeMurderMysteryGamePage(props: {
               </div>
 
               <h1 className="text-4xl sm:text-5xl xl:text-6xl font-black tracking-tighter text-brand-dark uppercase leading-[0.98]">
-                First 50 Hosts Get a{' '}
-                <span className="text-brand-pink italic">Free</span> Custom Murder Mystery Pack
+                Get a <span className="text-brand-pink italic">Free Custom Murder Mystery</span> Game Pack
               </h1>
 
               <p className="text-lg sm:text-xl text-gray-600 font-medium leading-relaxed max-w-2xl">
-                Every mystery at <strong className="text-brand-dark">Back Pocket Mysteries</strong> is architected by a human author for watertight clue logic—then custom-built around your actual friends by our AI engine. To celebrate our upcoming launch, our{' '}
-                <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete custom game pack (up to £45 / $55 value for 4–16 players) <strong className="text-brand-dark">100% free</strong>.
+                Looking for a <strong className="text-brand-dark">free custom murder mystery game</strong> for your next dinner party? Every mystery at <strong className="text-brand-dark">Back Pocket Mysteries</strong> is written by a human author for watertight clue logic—then personalised around your actual friends by our AI engine. To celebrate our launch, the{' '}
+                <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete custom murder mystery party kit (worth up to £45 / $55 for 4–16 players) <strong className="text-brand-dark">100% free</strong>.
               </p>
 
               {/* Quick Value Pills */}
               <div className="flex flex-wrap gap-2.5 pt-1">
                 <span className="px-3.5 py-1.5 rounded-full bg-brand-dark text-white text-[11px] font-black uppercase tracking-wider">
-                  ✓ 100% Free Game Pack Voucher
+                  ✓ 100% Free Custom Game Pack Voucher
                 </span>
                 <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-brand-dark text-[11px] font-black uppercase tracking-wider">
                   ✓ Valid for 4–16 Players (Up to Grand Tier)
+                </span>
+                <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-brand-dark text-[11px] font-black uppercase tracking-wider">
+                  ✓ Printable PDF + Mobile App Included
                 </span>
                 <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-brand-dark text-[11px] font-black uppercase tracking-wider">
                   ✓ No Credit Card Required
@@ -231,9 +421,9 @@ export default async function FreeMurderMysteryGamePage(props: {
                     1
                   </span>
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    <h2 className="text-xs font-black uppercase tracking-wider text-brand-dark">
                       Human-Written Plot + AI Personalised
-                    </h3>
+                    </h2>
                     <p className="text-xs text-gray-500 font-medium mt-1">
                       Human authors architect the plot, twists, and clue logic; AI weaves your guests&apos; names, traits, and inside jokes into the dossiers and evidence.
                     </p>
@@ -245,9 +435,9 @@ export default async function FreeMurderMysteryGamePage(props: {
                     2
                   </span>
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    <h2 className="text-xs font-black uppercase tracking-wider text-brand-dark">
                       Spoiler-Free for the Host
-                    </h3>
+                    </h2>
                     <p className="text-xs text-gray-500 font-medium mt-1">
                       Play as a full suspect at your own dinner party without ever spoiling who the killer is.
                     </p>
@@ -259,9 +449,9 @@ export default async function FreeMurderMysteryGamePage(props: {
                     3
                   </span>
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    <h2 className="text-xs font-black uppercase tracking-wider text-brand-dark">
                       Live Mobile Playroom + Printable PDFs
-                    </h3>
+                    </h2>
                     <p className="text-xs text-gray-500 font-medium mt-1">
                       Join via a 6-digit Game PIN or QR code on guest phones, or print the formatted suspect booklets and evidence cards at home.
                     </p>
@@ -273,9 +463,9 @@ export default async function FreeMurderMysteryGamePage(props: {
                     4
                   </span>
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    <h2 className="text-xs font-black uppercase tracking-wider text-brand-dark">
                       Lock In Now, Host Whenever You Want
-                    </h3>
+                    </h2>
                     <p className="text-xs text-gray-500 font-medium mt-1">
                       Reserve your spot in 10 seconds today—you don&apos;t need your guest list or party date ready until you redeem your launch code.
                     </p>
@@ -300,10 +490,10 @@ export default async function FreeMurderMysteryGamePage(props: {
               Simple, Transparent &amp; Instant
             </p>
             <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight">
-              How the First 50 Launch Giveaway Works
+              How the First 50 Free Murder Mystery Giveaway Works
             </h2>
             <p className="text-sm sm:text-base text-slate-300 font-medium leading-relaxed">
-              No raffles, no social media tagging hoops, and no credit card required. If you are one of the first 50 people to register your email, your free custom mystery pack is guaranteed.
+              No raffles, no social media tagging hoops, and no credit card required. If you are one of the first 50 people to register your email, your free custom murder mystery party pack is guaranteed.
             </p>
           </div>
 
@@ -343,10 +533,10 @@ export default async function FreeMurderMysteryGamePage(props: {
               Full Commercial Game Pack • Zero Restrictions
             </p>
             <h2 className="text-3xl sm:text-5xl font-black text-brand-dark uppercase tracking-tight">
-              What Your Free Founding Host Code Unlocks
+              What&apos;s Included in Your Free Custom Murder Mystery Kit?
             </h2>
             <p className="text-gray-500 font-medium max-w-2xl mx-auto">
-              Unlike free sample scripts that cut out half the suspects, our First 50 VIP Founding Hosts receive a full-tier custom mystery game pack (worth up to £45 / $55 USD).
+              Unlike free sample scripts that cut out half the suspects or hide the solution behind a paywall, our First 50 VIP Founding Hosts receive a full-tier custom mystery game pack (worth up to £45 / $55 USD).
             </p>
           </div>
 
@@ -368,6 +558,101 @@ export default async function FreeMurderMysteryGamePage(props: {
                   </h3>
                   <p className="text-sm text-gray-600 leading-relaxed font-medium">
                     {item.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Comparison Table: Free Custom Pack vs Generic Free PDF Scripts vs Boxed Kits */}
+      <section className="py-20 bg-slate-50 border-y border-gray-100">
+        <div className="container mx-auto px-6 max-w-6xl space-y-10">
+          <div className="text-center space-y-3 max-w-3xl mx-auto">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-brand-pink">
+              Not Another Generic PDF Sample
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight">
+              How Our Free Custom Murder Mystery Compares to Generic Free Scripts
+            </h2>
+            <p className="text-sm text-gray-500 font-medium leading-relaxed">
+              Most &ldquo;free murder mystery games&rdquo; online are outdated text PDFs with rigid character counts that spoil the ending for the host. Here is why our First 50 Founding Host Pack is in a different league:
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-[2rem] border border-gray-200 bg-white shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-brand-dark text-white text-xs font-black uppercase tracking-wider">
+                  <th className="py-5 px-6">Party Feature</th>
+                  <th className="py-5 px-6 text-brand-pink bg-white/5">
+                    Back Pocket Mysteries (First 50 Free Pack)
+                  </th>
+                  <th className="py-5 px-6 text-slate-400">
+                    Generic &ldquo;Free&rdquo; PDF Scripts Online
+                  </th>
+                  <th className="py-5 px-6 text-slate-400">
+                    Store-Bought Boxed Kits
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-xs sm:text-sm font-medium">
+                {COMPARISON_ROWS.map((row) => (
+                  <tr key={row.feature} className="hover:bg-slate-50/80">
+                    <td className="py-4 px-6 font-black text-brand-dark">
+                      {row.feature}
+                    </td>
+                    <td className="py-4 px-6 font-bold text-brand-dark bg-brand-pink/5">
+                      {row.bpm}
+                    </td>
+                    <td className="py-4 px-6 text-gray-500">
+                      {row.genericFree}
+                    </td>
+                    <td className="py-4 px-6 text-gray-500">
+                      {row.boxedKit}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Player Count Guide (Long-Tail SEO: 4-6, 6-8, 8-12, 12-16 Players) */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6 max-w-6xl space-y-12">
+          <div className="text-center space-y-3 max-w-3xl mx-auto">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-brand-pink">
+              Flexible Headcount • 4 to 16 Suspects
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight">
+              Free Custom Murder Mystery Games for Any Group Size (4–16 Players)
+            </h2>
+            <p className="text-sm text-gray-500 font-medium leading-relaxed">
+              Whether you are searching for a <strong className="text-brand-dark">free murder mystery game for 6 players</strong> around a small dining table or a <strong className="text-brand-dark">16-player house party mystery</strong>, your First 50 Founding Host voucher scales to your exact guest list:
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {PLAYER_COUNT_GUIDES.map((g) => (
+              <div
+                key={g.players}
+                className="rounded-[2rem] bg-slate-50 border border-slate-100 p-7 flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-2.5">
+                  <span className="inline-block px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                    {g.tier}
+                  </span>
+                  <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">
+                    {g.players}
+                  </h3>
+                  <p className="text-xs font-black uppercase tracking-wider text-brand-pink">
+                    {g.idealFor}
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed">
+                    {g.summary}
                   </p>
                 </div>
               </div>
@@ -493,14 +778,14 @@ export default async function FreeMurderMysteryGamePage(props: {
                 Choose Any Setting
               </p>
               <h2 className="text-3xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight">
-                Themes Eligible for Your Free Mystery Code
+                Themes Eligible for Your Free Custom Murder Mystery Code
               </h2>
             </div>
             <Link
               href={`/${locale}/themes`}
               className="text-xs font-black uppercase tracking-widest text-brand-pink hover:underline"
             >
-              View All Themes →
+              View All Mystery Themes →
             </Link>
           </div>
 
@@ -532,6 +817,42 @@ export default async function FreeMurderMysteryGamePage(props: {
               </div>
             ))}
           </div>
+
+          {/* Internal SEO Cluster Links (Occasions & Related Pages) */}
+          <div className="pt-6 border-t border-gray-200/70 space-y-3">
+            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+              Popular Occasions for Your Free Custom Murder Mystery Party:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/${locale}/custom-murder-mystery`}
+                className="px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-xs font-bold text-brand-dark hover:border-brand-pink hover:text-brand-pink transition-colors"
+              >
+                Custom Murder Mystery Builder
+              </Link>
+              <Link
+                href={`/${locale}/how-it-works`}
+                className="px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-xs font-bold text-brand-dark hover:border-brand-pink hover:text-brand-pink transition-colors"
+              >
+                How Back Pocket Mysteries Works
+              </Link>
+              <Link
+                href={`/${locale}/pricing`}
+                className="px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-xs font-bold text-brand-dark hover:border-brand-pink hover:text-brand-pink transition-colors"
+              >
+                Group Size Tiers &amp; Pricing
+              </Link>
+              {OCCASION_SEO_PAGES.slice(0, 5).map((occ) => (
+                <Link
+                  key={occ.slug}
+                  href={`/${locale}/occasions/${occ.slug}`}
+                  className="px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-xs font-bold text-brand-dark hover:border-brand-pink hover:text-brand-pink transition-colors"
+                >
+                  {occ.navLabel}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -540,15 +861,15 @@ export default async function FreeMurderMysteryGamePage(props: {
         <div className="container mx-auto px-6 max-w-4xl space-y-10">
           <div className="text-center space-y-3">
             <h2 className="text-3xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight">
-              First 50 Giveaway — Frequently Asked Questions
+              Free Custom Murder Mystery — Frequently Asked Questions
             </h2>
             <p className="text-sm text-gray-500 font-medium">
-              Everything you need to know about claiming and redeeming your free custom murder mystery pack.
+              Everything you need to know about claiming and redeeming your First 50 free custom murder mystery game pack.
             </p>
           </div>
 
           <div className="space-y-4">
-            {faqSchema.mainEntity.map((faq, idx) => (
+            {faqEntries.map((faq, idx) => (
               <div
                 key={idx}
                 className="p-6 sm:p-8 rounded-3xl bg-slate-50 border border-slate-100 space-y-2"
@@ -557,7 +878,7 @@ export default async function FreeMurderMysteryGamePage(props: {
                   {faq.name}
                 </h3>
                 <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                  {faq.acceptedAnswer.text}
+                  {faq.text}
                 </p>
               </div>
             ))}

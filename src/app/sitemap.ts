@@ -36,11 +36,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Add static paths
   staticPaths.forEach((path) => {
     locales.forEach((locale) => {
+      const priority =
+        path === ''
+          ? 1.0
+          : path === '/free-murder-mystery-game' || path === '/custom-murder-mystery'
+          ? 0.95
+          : 0.85
       sitemapEntries.push({
         url: `${baseUrl}/${locale}${path}`,
         lastModified,
         changeFrequency,
-        priority: path === '' ? 1.0 : 0.85
+        priority
       })
     })
   })
