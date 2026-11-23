@@ -481,13 +481,7 @@ export default function CheckoutClient({
     initialPaymentIntent?.promoError ?? null
   )
 
-  // Sync activeCurrency if the server prop changes (e.g. via CurrencySwitcher in header)
-  useEffect(() => {
-    if (initialCurrency && initialCurrency !== activeCurrency) {
-      setActiveCurrency(initialCurrency)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialCurrency])
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false)
 
   const activeTier: PriceTierKey = initialTier
   const subtotalCost = getRegionalPrice(initialTier, activeCurrency)
@@ -500,37 +494,35 @@ export default function CheckoutClient({
     orderId?: string
     mode: 'stripe' | 'test_simulation'
   }> | null>(null)
-  const skippedInitialFetchRef = useRef(Boolean(initialPaymentIntent?.clientSecret))
 
-  useEffect(() => {
-    if (skippedInitialFetchRef.current) {
-      skippedInitialFetchRef.current = false
-      return
-    }
+  const refreshPaymentIntent = async (opts?: {
+    currencyOverride?: string
+    promoOverride?: string | undefined
+  }) => {
+    const nextCurrency = opts?.currencyOverride ?? activeCurrency
+    const nextPromo =
+      opts && 'promoOverride' in opts ? opts.promoOverride : appliedPromoCode
 
-    let active = true
     const promise = createPaymentIntentAction({
       tier: activeTier,
       locale,
-      currency: activeCurrency,
+      currency: nextCurrency,
       mysteryId,
       slug: targetSlug,
       mysteryTitle,
       guests,
-      promoCode: appliedPromoCode,
+      promoCode: nextPromo,
       skipTierLookup: true,
     })
       .then((res) => {
         const resultMode: 'stripe' | 'test_simulation' =
           res.mode === 'stripe' && res.clientSecret ? 'stripe' : 'test_simulation'
-        if (active) {
-          setOrderId(res.orderId)
-          setDiscountAmount(res.discountAmount || 0)
-          setDiscountLabel(res.discountLabel || null)
-          setPromoError(res.promoError || null)
-          setClientSecret(res.clientSecret || null)
-          setCheckoutMode(resultMode)
-        }
+        setOrderId(res.orderId)
+        setDiscountAmount(res.discountAmount || 0)
+        setDiscountLabel(res.discountLabel || null)
+        setPromoError(res.promoError || null)
+        setClientSecret(res.clientSecret || null)
+        setCheckoutMode(resultMode)
         return {
           clientSecret: res.clientSecret || null,
           orderId: res.orderId,
@@ -539,9 +531,7 @@ export default function CheckoutClient({
       })
       .catch((err) => {
         console.error(err)
-        if (active) {
-          setCheckoutMode('test_simulation')
-        }
+        setCheckoutMode('test_simulation')
         return {
           clientSecret: null,
           orderId: undefined,
@@ -550,11 +540,26 @@ export default function CheckoutClient({
       })
 
     pendingIntentPromiseRef.current = promise
+    return await promise
+  }
 
-    return () => {
-      active = false
+  // Only fetch on mount if initialPaymentIntent was not pre-loaded on the server
+  useEffect(() => {
+    if (!initialPaymentIntent) {
+      refreshPaymentIntent()
     }
-  }, [activeTier, locale, activeCurrency, mysteryId, targetSlug, mysteryTitle, guests, appliedPromoCode])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Sync activeCurrency if the server prop changes (e.g. via CurrencySwitcher in header)
+  useEffect(() => {
+    if (initialCurrency && initialCurrency !== activeCurrency) {
+      setActiveCurrency(initialCurrency)
+      setClientSecret(null)
+      refreshPaymentIntent({ currencyOverride: initialCurrency })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCurrency])
 
   const ensureClientSecret = async (): Promise<{
     clientSecret: string | null
@@ -567,41 +572,32 @@ export default function CheckoutClient({
     if (pendingIntentPromiseRef.current) {
       return await pendingIntentPromiseRef.current
     }
-    const res = await createPaymentIntentAction({
-      tier: activeTier,
-      locale,
-      currency: activeCurrency,
-      mysteryId,
-      slug: targetSlug,
-      mysteryTitle,
-      guests,
-      promoCode: appliedPromoCode,
-      skipTierLookup: true,
-    })
-    const resultMode: 'stripe' | 'test_simulation' =
-      res.mode === 'stripe' && res.clientSecret ? 'stripe' : 'test_simulation'
-    setOrderId(res.orderId)
-    setClientSecret(res.clientSecret || null)
-    setCheckoutMode(resultMode)
-    return {
-      clientSecret: res.clientSecret || null,
-      orderId: res.orderId,
-      mode: resultMode,
-    }
+    return await refreshPaymentIntent()
   }
 
-  const handleApplyPromo = (e: React.FormEvent) => {
+  const handleApplyPromo = async (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanCode = promoInput.trim().toUpperCase()
+    if (!cleanCode) {
+      setPromoError('Please enter a promo or gift code.')
+      return
+    }
     setPromoError(null)
     setClientSecret(null)
-    setAppliedPromoCode(promoInput.trim() || undefined)
+    setAppliedPromoCode(cleanCode)
+    setIsApplyingPromo(true)
+    await refreshPaymentIntent({ promoOverride: cleanCode })
+    setIsApplyingPromo(false)
   }
 
-  const handleClearPromo = () => {
+  const handleClearPromo = async () => {
     setPromoInput('')
     setPromoError(null)
     setClientSecret(null)
     setAppliedPromoCode(undefined)
+    setIsApplyingPromo(true)
+    await refreshPaymentIntent({ promoOverride: undefined })
+    setIsApplyingPromo(false)
   }
 
   const executeSimulationUnlock = async () => {
@@ -740,9 +736,10 @@ export default function CheckoutClient({
                 ) : (
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-brand-pink text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                    disabled={isApplyingPromo}
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-brand-pink disabled:opacity-50 text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
                   >
-                    Apply
+                    {isApplyingPromo ? 'Applying...' : 'Apply'}
                   </button>
                 )}
               </form>
@@ -975,9 +972,10 @@ export default function CheckoutClient({
                 ) : (
                   <button
                     type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-brand-pink hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                    disabled={isApplyingPromo}
+                    className="px-4 py-2.5 rounded-xl bg-brand-pink hover:opacity-90 disabled:opacity-50 text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
                   >
-                    Apply
+                    {isApplyingPromo ? 'Applying...' : 'Apply'}
                   </button>
                 )}
               </form>

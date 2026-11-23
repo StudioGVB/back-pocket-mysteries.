@@ -13,7 +13,7 @@ export const unstable_instant = false;
 
 export default async function CheckoutPage(props: {
   params: Promise<{ locale: Locale; id: string }>
-  searchParams: Promise<{ slug?: string; guests?: string }>
+  searchParams: Promise<{ slug?: string; guests?: string; promo?: string }>
 }) {
   const { locale, id: mysteryId } = await props.params
   const resolvedSearch = await props.searchParams
@@ -90,8 +90,11 @@ export default async function CheckoutPage(props: {
   const currency = resolveCurrency(countryCode, cookieCurrency, locale)
   const slug = resolvedSearch?.slug || mysteryId
 
-  // Auto-resolve any promo/referral code saved during sign-up or unlocked via "Give 20%, Get 20%"
-  let initialPromoCode = cookieStore.get('BPM_PROMO_CODE')?.value || ''
+  // Auto-resolve any promo/referral code from URL query (?promo=), cookie, or referral wallet
+  let initialPromoCode =
+    resolvedSearch?.promo?.trim().toUpperCase() ||
+    cookieStore.get('BPM_PROMO_CODE')?.value ||
+    ''
   try {
     const { getOrRegisterUserReferralWalletAction } = await import('@/app/actions/referrals')
     const wallet = await getOrRegisterUserReferralWalletAction()
