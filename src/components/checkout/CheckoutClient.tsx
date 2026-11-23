@@ -695,7 +695,7 @@ export default function CheckoutClient({
             </div>
           </div>
 
-          {/* Instant Payment Box (Card + Apple Pay, zero skeleton wait) */}
+          {/* Instant Payment Box (Card + Apple Pay + Always-Visible Promo Code) */}
           <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-sm border border-slate-100 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
@@ -707,6 +707,48 @@ export default function CheckoutClient({
               <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
                 <span>🔒 256-Bit Encrypted</span>
               </div>
+            </div>
+
+            {/* Always-Visible Promo / Gift Code Box inside Complete Your Order */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  🏷️ Promo or Gift Code
+                </label>
+                {discountAmount > 0 && discountLabel && (
+                  <span className="text-[11px] font-black text-emerald-600">
+                    ✓ {discountLabel} (-{formatCurrency(discountAmount, activeCurrency, locale)})
+                  </span>
+                )}
+              </div>
+              <form onSubmit={handleApplyPromo} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                  placeholder="Enter promo or gift code"
+                  className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/15"
+                />
+                {appliedPromoCode ? (
+                  <button
+                    type="button"
+                    onClick={handleClearPromo}
+                    className="px-4 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-xs font-black uppercase tracking-wider text-slate-700 transition-colors cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-brand-pink text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                  >
+                    Apply
+                  </button>
+                )}
+              </form>
+              {promoError && (
+                <p className="text-[11px] font-bold text-red-500">{promoError}</p>
+              )}
             </div>
 
             {totalCost === 0 ? (
@@ -846,7 +888,7 @@ export default function CheckoutClient({
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Order Summary, Collapsible Promo Code & Cast Preview */}
+        {/* RIGHT COLUMN: Order Summary, Always-Open Promo Code & Cast Preview */}
         <div className="lg:col-span-5 order-1 lg:order-2">
           <div className="sticky top-8 bg-[#070b13] text-white p-7 sm:p-8 rounded-[2.25rem] border border-white/10 shadow-2xl space-y-6">
             <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
@@ -909,43 +951,36 @@ export default function CheckoutClient({
               </div>
             )}
 
-            {/* Collapsible Promo Code Input */}
+            {/* Always-Visible Promo Code Input in Order Summary */}
             <div className="border-t border-white/10 pt-4 space-y-2">
-              {!showPromoBox && !appliedPromoCode && discountAmount === 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowPromoBox(true)}
-                  className="text-[11px] font-bold text-slate-400 hover:text-brand-pink transition-colors cursor-pointer"
-                >
-                  + Have a promo or gift code?
-                </button>
-              ) : (
-                <form onSubmit={handleApplyPromo} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={promoInput}
-                    onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                    placeholder="Promo or gift code"
-                    className="flex-1 bg-white/5 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-pink"
-                  />
-                  {appliedPromoCode ? (
-                    <button
-                      type="button"
-                      onClick={handleClearPromo}
-                      className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-black uppercase tracking-wider text-slate-300 transition-colors cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      className="px-4 py-2.5 rounded-xl bg-brand-pink hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
-                    >
-                      Apply
-                    </button>
-                  )}
-                </form>
-              )}
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Promo or Gift Code
+              </label>
+              <form onSubmit={handleApplyPromo} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                  placeholder="Enter promo or gift code"
+                  className="flex-1 bg-white/5 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-pink"
+                />
+                {appliedPromoCode ? (
+                  <button
+                    type="button"
+                    onClick={handleClearPromo}
+                    className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-black uppercase tracking-wider text-slate-300 transition-colors cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="px-4 py-2.5 rounded-xl bg-brand-pink hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                  >
+                    Apply
+                  </button>
+                )}
+              </form>
               {promoError && (
                 <p className="text-[11px] font-bold text-red-400">{promoError}</p>
               )}
