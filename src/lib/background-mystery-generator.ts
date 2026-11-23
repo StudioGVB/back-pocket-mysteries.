@@ -429,17 +429,21 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
         if (
           qaReport.visualCluesRegenerated > 0 ||
           qaReport.portraitsRegenerated > 0 ||
+          qaReport.audioCluesRegenerated > 0 ||
           qaReport.textIssuesRepaired > 0
         ) {
           updateMysteryGenerationInStore(params.mysteryId, {
-            generationStep: `AI QA Bot self-healed ${qaReport.visualCluesRegenerated} visual clue(s) & ${qaReport.portraitsRegenerated} portrait(s)...`,
+            generationStep: `AI QA Bot self-healed ${qaReport.visualCluesRegenerated} visual clue(s), ${qaReport.portraitsRegenerated} portrait(s) & ${qaReport.audioCluesRegenerated} audio wiretap(s) (Score: ${qaReport.overallScore}/100)...`,
             generationProgress: 97,
+            qaReport,
+          });
+        } else {
+          updateMysteryGenerationInStore(params.mysteryId, {
+            generationStep: `AI QA Verified (${qaReport.overallScore}/100)! Finalizing Pre-Party Host Hub...`,
+            generationProgress: 98,
+            qaReport,
           });
         }
-        // Gate 4: Non-destructive audio wiretap verification pass (only synthesizes if any audio clue was still missing an .mp3 URL)
-        await pregenerateAllAudioCluesForMystery(params.mysteryId, {
-          forceRegenerate: false,
-        });
       } catch (qaErr) {
         console.warn('[BACKGROUND MYSTERY GENERATOR] Non-fatal QA audit error:', qaErr);
       }

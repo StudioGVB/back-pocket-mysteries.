@@ -5,7 +5,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Database, ClueFormat } from '@/types/database';
 import { addClueAction, updateClueAction } from '../actions';
 import { ClueCard } from './ClueCard';
-import { generateClueImageAction, generateClueDescriptionAction } from '@/app/actions/generator';
+import {
+  generateClueImageAction,
+  generateClueDescriptionAction,
+  auditAndHealCustomerPackAction,
+  CustomerPackQaGateResult,
+} from '@/app/actions/generator';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
 import { hydrateTextWithCharacters, tokenizeTextWithCharacterRoles } from '@/utils/hydration';
 import {
@@ -49,8 +54,25 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
   const [currentlyGeneratingId, setCurrentlyGeneratingId] = useState<string | null>(null);
   const [currentlyGeneratingLabel, setCurrentlyGeneratingLabel] = useState<string>('');
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isRunningQaBot, setIsRunningQaBot] = useState(false);
+  const [qaScorecard, setQaScorecard] = useState<CustomerPackQaGateResult | null>(null);
   
   const stopRequestedRef = useRef(false);
+
+  const handleRunQaBot = async () => {
+    if (isRunningQaBot || isRegenerating) return;
+    setIsRunningQaBot(true);
+    setGenerationError(null);
+    try {
+      const report = await auditAndHealCustomerPackAction(mysteryId);
+      setQaScorecard(report);
+      router.refresh();
+    } catch (err: any) {
+      setGenerationError(err?.message || 'Failed to run AI QA Critic.');
+    } finally {
+      setIsRunningQaBot(false);
+    }
+  };
 
   useEffect(() => {
     setCurrentClues(clues);
@@ -376,11 +398,30 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
                 🛑 Stop
               </button>
             )}
+            {!isRegenerating && (
+              <button
+                type="button"
+                onClick={handleRunQaBot}
+                disabled={isRunningQaBot || isRegenerating || Boolean(currentlyGeneratingId)}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer ${
+                  isRunningQaBot
+                    ? 'bg-emerald-600 text-white animate-pulse'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+                }`}
+                title="Runs the 4-Gate Multimodal AI QA Critic (Text/Pronouns, Portrait Likeness, Side-by-Side Clue Vision & MP3 Audio Listener) and self-heals any asset scoring < 82"
+              >
+                {isRunningQaBot
+                  ? '🧪 Running 4-Gate AI QA & Self-Heal...'
+                  : qaScorecard
+                  ? `✅ QA Score: ${qaScorecard.overallScore}/100 (Re-Run)`
+                  : '🧪 Run AI QA Critic & Self-Heal'}
+              </button>
+            )}
             {mediaClues.length > 0 && !isRegenerating && (
               <button
                 type="button"
                 onClick={() => handleBatchRegenerate('media_only')}
-                disabled={isRegenerating || Boolean(currentlyGeneratingId)}
+                disabled={isRegenerating || isRunningQaBot || Boolean(currentlyGeneratingId)}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
                 title="Regenerates AI Photos for CCTV/Prop clues and ElevenLabs Audio for Voice Note clues without overwriting existing text threads"
               >
@@ -390,7 +431,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
             <button
               type="button"
               onClick={() => handleBatchRegenerate('all')}
-              disabled={isRegenerating || Boolean(currentlyGeneratingId)}
+              disabled={isRegenerating || isRunningQaBot || Boolean(currentlyGeneratingId)}
               id="gen-clues-btn"
               className={`px-4 py-2 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm cursor-pointer ${
                 isRegenerating 
@@ -405,6 +446,77 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
             </button>
           </div>
         </div>
+        {qaScorecard && (
+          <div className="mb-6 p-5 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">
+                  AI QA Scorecard: {qaScorecard.overallScore}/100
+                </span>
+                <span className="text-xs font-bold text-slate-700">
+                  {qaScorecard.narrativeSanityNote}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQaScorecard(null)}
+                className="text-slate-400 hover:text-slate-700 text-xs font-black cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px] font-bold text-slate-700">
+              <div className="bg-white p-3 rounded-xl border border-emerald-100">
+                <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Gate 1: Text &amp; Pronouns</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">
+                  {qaScorecard.textIssuesRepaired} Auto-Repaired
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-emerald-100">
+                <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Gate 2: Costume Portraits</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">
+                  {qaScorecard.portraitsAudited} Audited ({qaScorecard.portraitsRegenerated} Healed)
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-emerald-100">
+                <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Gate 3: Clue Photos (Side-by-Side)</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">
+                  {qaScorecard.visualCluesAudited} Audited ({qaScorecard.visualCluesRegenerated} Healed)
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-emerald-100">
+                <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Gate 4: MP3 Audio Listener</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">
+                  {qaScorecard.audioCluesAudited} Audited ({qaScorecard.audioCluesRegenerated} Healed)
+                </div>
+              </div>
+            </div>
+            {qaScorecard.clueScores.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                {qaScorecard.clueScores.map(cs => (
+                  <div
+                    key={cs.clueId}
+                    className="bg-white/90 px-3 py-2 rounded-xl border border-slate-100 flex items-center justify-between gap-2 text-[11px]"
+                  >
+                    <div className="truncate">
+                      <span className="font-black text-slate-800">{cs.title}:</span>{' '}
+                      <span className="text-slate-500">{cs.note}</span>
+                    </div>
+                    <span
+                      className={`shrink-0 px-2 py-0.5 rounded-md font-black text-[10px] ${
+                        cs.finalScore >= 82
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {cs.regenerated ? `Healed ${cs.initialScore}→${cs.finalScore}` : `${cs.finalScore}/100`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {generationError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-bold flex items-center justify-between gap-4">
             <span>⚠️ Generation Error: {generationError}</span>

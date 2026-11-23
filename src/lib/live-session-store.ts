@@ -23,6 +23,14 @@ export interface StoredGuestReview {
   createdAt: string;
 }
 
+export interface StoredDetectiveGuest {
+  id: string;
+  name: string;
+  displayName: string;
+  token: string;
+  joinedAt: string;
+}
+
 export interface StoredGameSession {
   mysteryId: string;
   templateMysteryId?: string;
@@ -31,6 +39,7 @@ export interface StoredGameSession {
   currentRound: number;
   activeCharacterIds: string[];
   claimedCharacters?: Record<string, { token: string; claimedAt: string }>;
+  detectiveGuests?: StoredDetectiveGuest[];
   submissions: StoredRoundSubmission[];
   sharedTheoryRounds: number[];
   revealMode: 'hidden' | 'phone_free' | 'shared_with_guests';
@@ -240,6 +249,7 @@ export function saveStoredGameSession(
   const existing = store.sessions[mysteryId];
   store.sessions[mysteryId] = {
     ...session,
+    detectiveGuests: session.detectiveGuests ?? existing?.detectiveGuests ?? [],
     templateMysteryId: session.templateMysteryId ?? existing?.templateMysteryId,
     hostUserId: session.hostUserId ?? existing?.hostUserId ?? session.paidByUserId ?? existing?.paidByUserId,
     isPaid: session.isPaid ?? existing?.isPaid ?? false,
