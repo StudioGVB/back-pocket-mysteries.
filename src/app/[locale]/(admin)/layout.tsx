@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { requireAdminOrRedirect } from '@/utils/admin-auth';
+import { AdminHubTabs } from '@/components/admin/AdminHubTabs';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
@@ -33,6 +33,9 @@ export default function AdminLayout({
       {/* Main Content */}
       <main className="flex-grow ml-64 p-8">
         <AdminHeader />
+        <Suspense fallback={null}>
+          <AdminHubTabs />
+        </Suspense>
         {children}
       </main>
     </div>

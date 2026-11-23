@@ -39,6 +39,23 @@ export async function unarchiveMysteryAction(id: string) {
   }
 }
 
+export async function toggleMysteryStatusAction(id: string, nextStatus: 'published' | 'draft') {
+  try {
+    const { supabase } = await requireAdmin();
+    const { error } = await supabase
+      .from('mysteries')
+      .update({ status: nextStatus })
+      .eq('id', id);
+    if (error) return { success: false, error: error.message };
+    revalidatePath('/en/admin/mysteries');
+    revalidatePath('/admin/mysteries');
+    revalidatePath('/', 'layout');
+    return { success: true, status: nextStatus };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function deleteMysteryAction(id: string) {
   try {
     const { supabase } = await requireAdmin();

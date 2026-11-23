@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { Database } from '@/types/database';
 import { ensureChristmasNightmareCanon, replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
 import { requireAdmin } from '@/utils/admin-auth';
@@ -10,11 +12,32 @@ import {
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
 
+function readLightweightQaSummary(mysteryId: string) {
+  try {
+    const qaPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'mystery-qa-runs', `${mysteryId}.json`);
+    if (!fs.existsSync(qaPath)) return null;
+    const raw = JSON.parse(fs.readFileSync(qaPath, 'utf8'));
+    const pr = raw?.performanceReview;
+    if (!pr) return null;
+    const checklist = Array.isArray(pr.preLaunchChecklist) ? pr.preLaunchChecklist : [];
+    const passedBoxes = checklist.filter((b: any) => b.passed).length;
+    return {
+      overallReadinessScore: Number(pr.overallReadinessScore || 0),
+      certificationStatus: pr.certificationStatus as 'certified' | 'needs_tuning' | 'blocked',
+      passedBoxes,
+      totalBoxes: checklist.length || 7,
+      completedRunsCount: Number(raw.completedRunsCount || 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getMysteries() {
   const { supabase } = await requireAdmin();
   const { data, error } = (await supabase
     .from('mysteries')
-    .select('id, title, theme, status, description, image_url, created_at, min_players, max_players, complexity, spice_level')
+    .select('id, title, theme, status, description, image_url, created_at, min_players, max_players, complexity, spice_level, created_by')
     .order('created_at', { ascending: false })) as any;
 
   if (error) {
@@ -22,10 +45,37 @@ export async function getMysteries() {
     return [];
   }
 
-  return (data || []).map((m: any) => {
+  // Deduplicate canonical Mystery Bases so customer-cloned instances do not clutter the Studio bases grid
+  const allLiveSessions = getAllStoredGameSessions();
+  const customerInstanceIds = new Set(
+    allLiveSessions
+      .filter((s) => s.templateMysteryId && s.mysteryId !== s.templateMysteryId)
+      .map((s) => s.mysteryId)
+  );
+
+  const seenBaseTitles = new Set<string>();
+  const filteredRows: any[] = [];
+  // Prefer published bases first when deduplicating by title
+  const sortedRows = [...(data || [])].sort((a, b) => {
+    if (a.status === 'published' && b.status !== 'published') return -1;
+    if (b.status === 'published' && a.status !== 'published') return 1;
+    return 0;
+  });
+
+  for (const row of sortedRows) {
+    if (customerInstanceIds.has(row.id)) continue;
+    const titleKey = String(row.title || '').trim().toLowerCase();
+    if (titleKey && seenBaseTitles.has(titleKey)) continue;
+    if (titleKey) seenBaseTitles.add(titleKey);
+    filteredRows.push(row);
+  }
+
+  return filteredRows.map((m: any) => {
     const upgraded = ensureChristmasNightmareCanon(m);
+    const qaSummary = readLightweightQaSummary(upgraded.id);
     return {
       ...upgraded,
+      qaSummary,
       description: upgraded.description
         ? replaceLegacyNamesWithRoleTokens(upgraded.description).replace(/\{\{([A-Za-z0-9\s'._&-]+)\}\}/g, '$1')
         : upgraded.description,

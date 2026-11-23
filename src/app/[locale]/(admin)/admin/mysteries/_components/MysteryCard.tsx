@@ -2,7 +2,12 @@
 
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { archiveMysteryAction, unarchiveMysteryAction, deleteMysteryAction } from '../actions';
+import {
+  archiveMysteryAction,
+  unarchiveMysteryAction,
+  deleteMysteryAction,
+  toggleMysteryStatusAction,
+} from '../actions';
 import { formatDate } from '@/utils/date';
 import { getEffectiveCoverUrl, getEffectiveMoodboardPhotos } from '@/utils/moodboard';
 import { MoodboardStudio } from '@/components/admin/MoodboardStudio';
@@ -19,6 +24,15 @@ interface MysteryCardProps {
     created_at: string | null;
     min_players: number;
     max_players: number;
+    complexity?: string | null;
+    spice_level?: string | null;
+    qaSummary?: {
+      overallReadinessScore: number;
+      certificationStatus: 'certified' | 'needs_tuning' | 'blocked';
+      passedBoxes: number;
+      totalBoxes: number;
+      completedRunsCount: number;
+    } | null;
   };
   locale: string;
 }
@@ -29,14 +43,16 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isMoodboardOpen, setIsMoodboardOpen] = useState(false);
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(mystery.image_url);
+  const [currentStatus, setCurrentStatus] = useState<string>(mystery.status);
   const [error, setError] = useState<string | null>(null);
 
   const coverUrl = getEffectiveCoverUrl(rawImageUrl, mystery.theme, mystery.title);
   const moodboardPhotos = getEffectiveMoodboardPhotos(rawImageUrl, mystery.theme, mystery.title);
-  const isArchived = mystery.status === 'archived';
+  const isArchived = currentStatus === 'archived';
   const hasImage = !!coverUrl;
   const moodCount = moodboardPhotos.length;
   const pkgInfo = getPackageInfoForMaxPlayers(mystery.max_players);
+  const qa = mystery.qaSummary;
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -44,12 +60,28 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
     router.push(`/${locale}/builder/mysteries/${mystery.id}`);
   };
 
+  const handleToggleStatus = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextStatus = currentStatus === 'published' ? 'draft' : 'published';
+    setError(null);
+    startTransition(async () => {
+      const res = await toggleMysteryStatusAction(mystery.id, nextStatus);
+      if (res.success) {
+        setCurrentStatus(nextStatus);
+      } else {
+        setError(res.error || 'Failed to update status');
+      }
+    });
+  };
+
   const handleArchive = (e: React.MouseEvent) => {
     e.stopPropagation();
     setError(null);
     startTransition(async () => {
       const res = await archiveMysteryAction(mystery.id);
-      if (!res.success) {
+      if (res.success) {
+        setCurrentStatus('archived');
+      } else {
         setError(res.error || 'Failed to archive mystery base');
       }
     });
@@ -60,7 +92,9 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
     setError(null);
     startTransition(async () => {
       const res = await unarchiveMysteryAction(mystery.id);
-      if (!res.success) {
+      if (res.success) {
+        setCurrentStatus('draft');
+      } else {
         setError(res.error || 'Failed to restore mystery base');
       }
     });
@@ -110,11 +144,11 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'published':
-        return 'text-emerald-300 border-emerald-400/40 bg-emerald-950/75 shadow-[0_0_12px_rgba(34,197,94,0.4)]';
+        return 'text-emerald-300 border-emerald-400/40 bg-emerald-950/75 shadow-[0_0_12px_rgba(34,197,94,0.4)] hover:bg-emerald-900/90';
       case 'archived':
         return 'text-slate-400 border-slate-500/20 bg-slate-950/60';
       default:
-        return 'text-yellow-300 border-yellow-400/40 bg-yellow-950/75 shadow-[0_0_12px_rgba(250,204,21,0.4)]';
+        return 'text-yellow-300 border-yellow-400/40 bg-yellow-950/75 shadow-[0_0_12px_rgba(250,204,21,0.4)] hover:bg-yellow-900/90';
     }
   };
 
@@ -133,7 +167,7 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
     <>
       <div 
         onClick={handleCardClick}
-        className={`bg-black rounded-[2.5rem] border hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full cursor-pointer relative overflow-hidden text-white ${getCardGlowStyle(mystery.status)}`}
+        className={`bg-black rounded-[2.5rem] border hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full cursor-pointer relative overflow-hidden text-white ${getCardGlowStyle(currentStatus)}`}
       >
         {/* 1. Cover Image Section */}
         <div className="relative w-full aspect-video bg-neutral-950 overflow-hidden">
@@ -151,15 +185,44 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
             </div>
           )}
 
-          {/* Status Badge (Top Left) */}
-          <div className={`absolute top-4 left-4 px-3 py-1 border backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest z-20 ${getStatusStyle(mystery.status)}`}>
-            {mystery.status}
-          </div>
+          {/* 1-Click Interactive Status Toggle Badge (Top Left) */}
+          <button
+            type="button"
+            onClick={handleToggleStatus}
+            disabled={isPending || isArchived}
+            title={
+              currentStatus === 'published'
+                ? 'Click to switch back to Draft'
+                : 'Click to Publish live to Storefront'
+            }
+            className={`absolute top-4 left-4 px-3 py-1 border backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest z-20 transition-all cursor-pointer ${getStatusStyle(currentStatus)}`}
+          >
+            {isPending ? 'Updating…' : currentStatus === 'published' ? '● Published' : currentStatus}
+          </button>
 
           {/* Package & Player Count Badge (Top Right) */}
           <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 border border-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-slate-300 z-20">
             📦 {pkgInfo.label} • {pkgInfo.rangeLabel}
           </div>
+
+          {/* 7-Box QA Certification Pill (Bottom Left on Cover) */}
+          {qa && (
+            <a
+              href={`/${locale}/builder/mysteries/${mystery.id}/screen`}
+              onClick={(e) => e.stopPropagation()}
+              className={`absolute bottom-3 left-4 px-3 py-1.5 rounded-xl border backdrop-blur-md text-[10px] font-black uppercase tracking-widest z-20 flex items-center gap-1.5 shadow-lg transition-colors ${
+                qa.certificationStatus === 'certified' || qa.overallReadinessScore >= 90
+                  ? 'bg-emerald-950/85 border-emerald-400/50 text-emerald-300 hover:bg-emerald-900'
+                  : 'bg-amber-950/85 border-amber-400/50 text-amber-300 hover:bg-amber-900'
+              }`}
+              title="Open 4-Pack Pre-Launch QA Screener"
+            >
+              <span>🛡️</span>
+              <span>
+                QA {qa.overallReadinessScore}% • {qa.passedBoxes}/{qa.totalBoxes} Boxes
+              </span>
+            </a>
+          )}
 
           {/* Moodboard Photo Strip / Quick Button on Cover */}
           <button
@@ -180,9 +243,23 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
 
         {/* 2. Text Content Area */}
         <div className="flex-grow flex flex-col p-6 pt-3 bg-black z-10 relative">
-          {/* Theme Metadata */}
-          <div className="text-[10px] font-black uppercase tracking-widest text-brand-pink mb-1">
-            ✦ {mystery.theme || 'No theme'}
+          {/* Theme & Spice/Complexity Metadata */}
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="text-[10px] font-black uppercase tracking-widest text-brand-pink truncate">
+              ✦ {mystery.theme || 'No theme'}
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {mystery.complexity && (
+                <span className="px-2 py-0.5 rounded-md bg-white/10 text-[9px] font-black uppercase tracking-wider text-slate-300">
+                  {mystery.complexity}
+                </span>
+              )}
+              {mystery.spice_level && (
+                <span className="px-2 py-0.5 rounded-md bg-brand-pink/15 text-[9px] font-black uppercase tracking-wider text-brand-pink">
+                  🌶️ {mystery.spice_level}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Mystery Title */}
@@ -253,7 +330,7 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
                   >
                     Photos ({moodCount})
                   </button>
-                  {mystery.status === 'published' && (
+                  {currentStatus === 'published' && (
                     <>
                       <span className="text-neutral-800">|</span>
                       <button

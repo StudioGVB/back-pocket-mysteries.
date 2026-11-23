@@ -165,7 +165,7 @@ export default function SocialCalendarPage() {
     let partialWeekFraction = 0;
     let furthestDate = new Date(today);
     let firstIncompleteWeekMessage = "";
-    let firstIncompleteWeekLink = "/admin/social/linkedin";
+    let firstIncompleteWeekLink = "/en/admin/social/linkedin";
 
     for (let w = 0; w < 12; w++) {
       const wStart = new Date(today);
@@ -200,20 +200,20 @@ export default function SocialCalendarPage() {
             firstIncompleteWeekMessage = `Action Needed: Mark ${
               2 - wLinkedIn
             } LinkedIn post(s) as scheduled for week of ${weekStr}.`;
-            firstIncompleteWeekLink = "/admin/social/linkedin";
+            firstIncompleteWeekLink = "/en/admin/social/linkedin";
           } else if (wIgFb < 2) {
             firstIncompleteWeekMessage = `Action Needed: Mark ${
               2 - wIgFb
             } IG/FB post(s) as scheduled for week of ${weekStr}.`;
-            firstIncompleteWeekLink = "/admin/social/instagram-facebook";
+            firstIncompleteWeekLink = "/en/admin/social/instagram-facebook";
           } else if (wEdms < 1) {
             firstIncompleteWeekMessage = `Action Needed: Schedule 1 EDM campaign for week of ${weekStr}.`;
-            firstIncompleteWeekLink = "/admin/edm";
+            firstIncompleteWeekLink = "/en/admin/edm";
           } else if (wBlogs < 2) {
             firstIncompleteWeekMessage = `Action Needed: Schedule / publish ${
               2 - wBlogs
             } blog post(s) for week of ${weekStr}.`;
-            firstIncompleteWeekLink = "/admin/blog";
+            firstIncompleteWeekLink = "/en/admin/blog";
           }
         }
         break;
@@ -227,7 +227,7 @@ export default function SocialCalendarPage() {
     // KPI 3: Next Step / Action Item
     let nextStepMessage = "";
     let nextStepType: "success" | "warning" | "action" = "success";
-    let nextStepLink = "/admin/social/linkedin";
+    let nextStepLink = "/en/admin/social/linkedin";
     let nextStepLinkText = "Open Section";
 
     if (!sitBackEnabled) {
@@ -242,7 +242,7 @@ export default function SocialCalendarPage() {
         fullyScheduledWeeks * 7
       } assets are 100% scheduled for the next ${fullyScheduledWeeks} week(s)! You are safe to sit back!`;
       nextStepType = "success";
-      nextStepLink = "/admin/social/linkedin";
+      nextStepLink = "/en/admin/social/linkedin";
       nextStepLinkText = "View Schedule";
     }
 
@@ -269,46 +269,15 @@ export default function SocialCalendarPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header & Quick Channel Navigation */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-2">
-            Social Campaign <span className="text-brand-pink italic">Calendar</span>
+            Marketing <span className="text-brand-pink italic">Command Center</span>
           </h1>
           <p className="text-gray-500 text-xs font-bold">
-            Visualize and manage your marketing campaigns, social posts, and automated Buffer publishing schedule
+            Visualize and manage your bi-weekly blogs, social queues, weekly EDMs, and promo codes in one place
           </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/admin/blog"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-brand-dark shadow-xs"
-          >
-            <BookOpen className="h-3.5 w-3.5 text-orange-500" />
-            Blogs
-          </Link>
-          <Link
-            href="/admin/edm"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-brand-dark shadow-xs"
-          >
-            <Mail className="h-3.5 w-3.5 text-amber-500" />
-            EDM Campaigns
-          </Link>
-          <Link
-            href="/admin/social/linkedin"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0A66C2] hover:bg-[#084e96] text-xs font-bold text-white shadow-xs"
-          >
-            <Linkedin className="h-3.5 w-3.5" />
-            LinkedIn Queue
-          </Link>
-          <Link
-            href="/admin/social/instagram-facebook"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:opacity-95 text-xs font-bold text-white shadow-xs"
-          >
-            <Instagram className="h-3.5 w-3.5" />
-            IG &amp; FB Queue
-          </Link>
         </div>
       </div>
 
