@@ -444,18 +444,34 @@ export async function pregenerateAllAudioCluesForMystery(
         continue;
       }
 
-      const res = await generateAudioClueAction({
-        clueId: clue.id,
-        mysteryId,
-        transcript: clue.description,
-        voiceRegion: clue.voice_region || undefined,
-        title: clue.title || undefined,
-      });
+      let succeeded = false;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const res = await generateAudioClueAction({
+          clueId: clue.id,
+          mysteryId,
+          transcript: clue.description,
+          voiceRegion: clue.voice_region || undefined,
+          title: clue.title || undefined,
+        });
 
-      if (res.success) {
-        generatedCount += 1;
+        if (res.success && res.audioUrl) {
+          succeeded = true;
+          generatedCount += 1;
+          break;
+        }
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 4000));
+        }
       }
+
+      if (!succeeded) {
+        console.warn(`[pregenerateAllAudioCluesForMystery] Audio clue ${clue.id} did not succeed after 2 attempts.`);
+      }
+
       options?.onProgress?.(i + 1, audioClues.length);
+      if (i < audioClues.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
 
     return {

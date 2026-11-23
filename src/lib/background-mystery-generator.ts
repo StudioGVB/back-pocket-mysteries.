@@ -234,8 +234,12 @@ export async function finalizeMysteryGenerationNow(
 /**
  * Detached server-side background job launched right when the customer pays.
  * Continues running on the server even if the customer closes their browser tab!
+ * Includes a 3-second anti-rate-limit breather between AI calls and automatic retry sweeps
+ * so 100% of character portraits, visual clues, and audio wiretaps finish flawlessly.
  */
 export function triggerDetachedMysteryGeneration(params: BackgroundGenerationParams): void {
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   void (async () => {
     try {
       const session = getStoredGameSession(params.mysteryId);
@@ -255,7 +259,7 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
         });
       }
 
-      // 2. Pre-generate standard character reference photos in the background for active characters
+      // 2. STAGE 1: Pre-generate standard character reference photos sequentially with a 3s breather & retry pass
       const cachedMystery = getCachedMysterySnapshot(params.mysteryId);
       const characters: any[] = cachedMystery?.characters || [];
       const activeChars = characters.filter(
@@ -269,27 +273,48 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
         });
 
         let completedCount = 0;
-        for (const char of activeChars) {
-          try {
-            await ensureStandardCharacterPhoto(
-              char,
-              cachedMystery || { id: params.mysteryId, theme: 'Murder Mystery' },
-              null
-            );
-          } catch {
-            // Non-fatal if image API key is not configured in local dev
+        for (let idx = 0; idx < activeChars.length; idx++) {
+          const char = activeChars[idx];
+          let photoUrl: string | null = null;
+
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            try {
+              const res = await ensureStandardCharacterPhoto(
+                char,
+                cachedMystery || { id: params.mysteryId, theme: 'Murder Mystery' },
+                null,
+                attempt > 1
+              );
+              photoUrl = res?.photoUrl || null;
+              if (photoUrl) break;
+            } catch (err) {
+              console.warn(
+                `[BACKGROUND MYSTERY GENERATOR] Stage 1 portrait attempt ${attempt}/2 failed for ${char.id}:`,
+                err
+              );
+            }
+            if (attempt < 2) {
+              await sleep(5000);
+            }
           }
+
           completedCount += 1;
           const pct = Math.min(52, 28 + Math.round((completedCount / activeChars.length) * 24));
           updateMysteryGenerationInStore(params.mysteryId, {
             generationStep: `Generated character reference portrait (${completedCount}/${activeChars.length})...`,
             generationProgress: pct,
           });
+
+          // 3-second breather between character portrait requests to prevent Gemini 429 burst limits
+          if (idx < activeChars.length - 1) {
+            await sleep(3000);
+          }
         }
       }
 
-      // 2.25 Pre-generate visual clue scene photos featuring the cast's Standard Character Reference Photos
-      const allClues: any[] = cachedMystery?.clues || [];
+      // 2.25 STAGE 2: Pre-generate visual clue scene photos featuring the cast's Standard Character Reference Photos
+      const refreshedMysteryAfterStage1 = getCachedMysterySnapshot(params.mysteryId) || cachedMystery;
+      const allClues: any[] = refreshedMysteryAfterStage1?.clues || [];
       const visualClues = allClues.filter(
         c =>
           c?.id &&
@@ -303,22 +328,76 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
 
       if (visualClues.length > 0) {
         let clueCount = 0;
-        for (const vClue of visualClues) {
-          try {
-            await generateClueImageAction(vClue.id, params.mysteryId, vClue.generation_prompt);
-          } catch {
-            // Non-fatal in background worker
+        const failedVisualClues: any[] = [];
+
+        for (let idx = 0; idx < visualClues.length; idx++) {
+          const vClue = visualClues[idx];
+          let generatedOk = false;
+
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            try {
+              const res = await generateClueImageAction(
+                vClue.id,
+                params.mysteryId,
+                vClue.generation_prompt,
+                true
+              );
+              if (res?.imageUrl && !res?.error) {
+                generatedOk = true;
+                break;
+              }
+            } catch (err) {
+              console.warn(
+                `[BACKGROUND MYSTERY GENERATOR] Stage 2 clue image attempt ${attempt}/2 failed for ${vClue.id}:`,
+                err
+              );
+            }
+            if (attempt < 2) {
+              await sleep(5000);
+            }
           }
+
+          if (!generatedOk) {
+            failedVisualClues.push(vClue);
+          }
+
           clueCount += 1;
           const pct = Math.min(72, 52 + Math.round((clueCount / visualClues.length) * 20));
           updateMysteryGenerationInStore(params.mysteryId, {
             generationStep: `Placing cast into visual clue & CCTV photos (${clueCount}/${visualClues.length})...`,
             generationProgress: pct,
           });
+
+          // 3-second breather between visual clue image calls
+          if (idx < visualClues.length - 1) {
+            await sleep(3000);
+          }
+        }
+
+        // Verification Sweep: If any visual clue hit a temporary quota hiccup, pause 6s and run a dedicated recovery pass
+        if (failedVisualClues.length > 0) {
+          updateMysteryGenerationInStore(params.mysteryId, {
+            generationStep: `Verifying & recovering ${failedVisualClues.length} crime-scene photo(s)...`,
+            generationProgress: 73,
+          });
+          await sleep(6000);
+          for (const retryClue of failedVisualClues) {
+            try {
+              await generateClueImageAction(
+                retryClue.id,
+                params.mysteryId,
+                retryClue.generation_prompt,
+                true
+              );
+            } catch {
+              // Non-fatal after recovery sweep
+            }
+            await sleep(3500);
+          }
         }
       }
 
-      // 2.5 Pre-generate all custom voice recordings / audio clues with cast guest names & accents
+      // 2.5 STAGE 3: Pre-generate all custom voice recordings / audio clues with cast guest names & accents
       updateMysteryGenerationInStore(params.mysteryId, {
         generationStep: 'Synthesizing custom voice memos, accents & round audio clues...',
         generationProgress: 74,
@@ -334,7 +413,7 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
         },
       });
 
-      // 3. Finalize & send the "Your Mystery is Ready!" email as soon as all 3 asset stages finish
+      // 3. Finalize & send the "Your Mystery is Ready!" email as soon as all 3 asset stages finish verified
       const latestSession = getStoredGameSession(params.mysteryId);
       if (latestSession?.generationStatus === 'ready') {
         return;

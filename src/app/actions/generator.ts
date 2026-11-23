@@ -10,6 +10,7 @@ import {
   getGuestPhysicalDescription,
   getCharacterCandidateKeys,
   findInvolvedCharactersInText,
+  adaptOutfitForGuestGender,
   stripEmDashes,
 } from '@/utils/hydration';
 import { getStaticMockGuests } from '@/utils/mock-guests';
@@ -432,7 +433,12 @@ async function getBase64FromUrl(url: string): Promise<string> {
 
 function getCharacterOutfitDescription(char: any): string {
   const profile = char?.profile_data || {};
-  const genderStr = (char?.gender || profile.gender || '').toLowerCase();
+  const genderStr = (
+    char?.assignedFriend?.gender ||
+    char?.gender ||
+    profile.gender ||
+    ''
+  ).toLowerCase();
   let outfit = profile.outfit_advice || '';
   if (!outfit) {
     const pres = genderStr.includes('female') || genderStr === 'f'
@@ -445,7 +451,11 @@ function getCharacterOutfitDescription(char: any): string {
   if (!outfit && profile.act_summary) {
     outfit = `attire fitting ${profile.act_summary}`;
   }
-  return (outfit || 'tailored evening attire fitting their character persona').trim();
+  const adapted = adaptOutfitForGuestGender(
+    outfit || 'tailored evening attire fitting their character persona',
+    genderStr
+  );
+  return adapted.trim();
 }
 
 function getDeterministicFacialStructure(seedSource: string) {
@@ -691,35 +701,55 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
     },
   };
 
-  let res: Response | undefined;
-  let retries = 0;
-  while (retries < 3) {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (res.status === 429 || res.status === 403) {
-      retries++;
-      await new Promise(r => setTimeout(r, 2000 * retries));
-      continue;
-    }
-    break;
-  }
-
   let base64Image = '';
   let usageMetadata: any = null;
-  if (res && res.ok) {
+  for (let attempt = 1; attempt <= 4; attempt++) {
     try {
-      const data = await res.json();
-      usageMetadata = data.usageMetadata || null;
-      const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-      base64Image = imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
-    } catch (e) {
-      console.error('[STAGE 1: STANDARD CHAR PHOTO] Error parsing response:', e);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 429 || res.status === 403 || res.status >= 500) {
+        const waitMs = 4500 * attempt;
+        console.warn(
+          `[STAGE 1: STANDARD CHAR PHOTO] Gemini HTTP ${res.status} on attempt ${attempt}/4 for ${guestName}. Waiting ${waitMs}ms before retry...`
+        );
+        if (attempt < 4) {
+          await new Promise(r => setTimeout(r, waitMs));
+          continue;
+        }
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        usageMetadata = data.usageMetadata || null;
+        const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+        base64Image =
+          imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
+        if (base64Image) {
+          break;
+        }
+        console.warn(
+          `[STAGE 1: STANDARD CHAR PHOTO] Empty image payload on attempt ${attempt}/4 for ${guestName}. Retrying...`
+        );
+      } else {
+        console.error(
+          `[STAGE 1: STANDARD CHAR PHOTO] Gemini error (${res.status}) on attempt ${attempt}/4:`,
+          await res.text()
+        );
+      }
+    } catch (fetchErr) {
+      console.warn(
+        `[STAGE 1: STANDARD CHAR PHOTO] Network error on attempt ${attempt}/4 for ${guestName}:`,
+        fetchErr
+      );
     }
-  } else if (res) {
-    console.error(`[STAGE 1: STANDARD CHAR PHOTO] Gemini error (${res.status}):`, await res.text());
+
+    if (attempt < 4) {
+      await new Promise(r => setTimeout(r, 4000 * attempt));
+    }
   }
 
   if (!base64Image) {
@@ -1376,53 +1406,76 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
         },
       };
       
-      let res;
-      let retries = 0;
-      while (retries < 3) {
-        res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        
-        if (res.status === 429 || res.status === 403) {
-          retries++;
-          await new Promise(r => setTimeout(r, 2000 * retries));
-          continue;
-        }
-        break;
-      }
-
       let base64Image = '';
       let apiErrorMsg = '';
       let imageUsageMetadata: any = null;
 
-      if (res) {
-        console.log(`[GEMINI IMAGE RESPONSE] status: ${res.status}`);
-        const responseText = await res.text();
-        if (res.ok) {
-          try {
-            const data = JSON.parse(responseText);
-            imageUsageMetadata = data.usageMetadata || null;
-            const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-            base64Image = imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
-            if (!base64Image) {
-              console.warn(`[GEMINI IMAGE WARNING] No base64 image in response:`, responseText);
+      for (let attempt = 1; attempt <= 4; attempt++) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          console.log(`[GEMINI IMAGE RESPONSE] attempt ${attempt}/4 status: ${res.status}`);
+
+          if (res.status === 429 || res.status === 403 || res.status >= 500) {
+            const waitMs = 4500 * attempt;
+            console.warn(
+              `[STAGE 2: CLUE IMAGE] Gemini HTTP ${res.status} on attempt ${attempt}/4 for clue ${clueId}. Waiting ${waitMs}ms...`
+            );
+            if (attempt < 4) {
+              await new Promise(r => setTimeout(r, waitMs));
+              continue;
             }
-          } catch (e) {
-            console.error(`[GEMINI IMAGE ERROR] Failed to parse JSON response:`, responseText);
           }
-        } else {
-          console.error(`[GEMINI IMAGE ERROR] Response not OK (${res.status})! Body:`, responseText);
-          try {
-            const errJson = JSON.parse(responseText);
-            apiErrorMsg = errJson.error?.message || `API Error (${res.status})`;
-          } catch {
-            apiErrorMsg = `API Error (${res.status})`;
+
+          const responseText = await res.text();
+          if (res.ok) {
+            try {
+              const data = JSON.parse(responseText);
+              imageUsageMetadata = data.usageMetadata || null;
+              const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+              base64Image =
+                imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
+              if (base64Image) {
+                apiErrorMsg = '';
+                break;
+              }
+              console.warn(
+                `[GEMINI IMAGE WARNING] No base64 image in response on attempt ${attempt}/4:`,
+                responseText.slice(0, 300)
+              );
+            } catch {
+              console.error(
+                `[GEMINI IMAGE ERROR] Failed to parse JSON response on attempt ${attempt}/4:`,
+                responseText.slice(0, 300)
+              );
+            }
+          } else {
+            console.error(
+              `[GEMINI IMAGE ERROR] Response not OK (${res.status}) on attempt ${attempt}/4! Body:`,
+              responseText.slice(0, 300)
+            );
+            try {
+              const errJson = JSON.parse(responseText);
+              apiErrorMsg = errJson.error?.message || `API Error (${res.status})`;
+            } catch {
+              apiErrorMsg = `API Error (${res.status})`;
+            }
           }
+        } catch (fetchErr: any) {
+          console.warn(
+            `[STAGE 2: CLUE IMAGE] Network error on attempt ${attempt}/4 for clue ${clueId}:`,
+            fetchErr
+          );
+          apiErrorMsg = fetchErr?.message || 'Network fetch error';
         }
-      } else {
-        console.error(`[GEMINI IMAGE ERROR] Fetch returned undefined/null response!`);
+
+        if (attempt < 4) {
+          await new Promise(r => setTimeout(r, 4000 * attempt));
+        }
       }
 
       if (base64Image) {
