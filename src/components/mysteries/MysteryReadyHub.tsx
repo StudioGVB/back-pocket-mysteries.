@@ -231,6 +231,7 @@ export function MysteryReadyHub({
   const getOrigin = () =>
     typeof window !== 'undefined' ? window.location.origin : '';
 
+  const prepDirectoryUrl = `${getOrigin()}/${locale}/play/${mystery.id}?prep=1`;
   const lobbyUrl = `${getOrigin()}/${locale}/play/${mystery.id}?select=1`;
   const hostLobbyUrl = `/${locale}/play/${mystery.id}`;
   const formattedPin = `${pin.slice(0, 3)} ${pin.slice(3)}`;
@@ -249,8 +250,8 @@ export function MysteryReadyHub({
   };
 
   const buildGroupChatSelectInvite = () => {
-    const url = `${getOrigin()}/${locale}/play/${mystery.id}?select=1`;
-    return `🕵️‍♀️ You're invited to our Murder Mystery party: "${mystery.title}"!\n\n🎭 Tap the link below to open our Character Selection page, find your name and click into your character to see your Character Outline, Outfit & Dress Code, and Vibe (no login needed!):\n${url}\n\n📱 Party Night Reminder: Please bring a charged phone or device on the night so you can access live clues, voice memos, and vote on suspects each round!\n🔢 Game PIN: ${formattedPin}`;
+    const url = `${getOrigin()}/${locale}/play/${mystery.id}?prep=1`;
+    return `🕵️‍♀️ You're invited to our Murder Mystery party: "${mystery.title}"!\n\n👗 Tap the Pre-Party "First Glance" link below, find your name, and open your character sheet to see Who You Are, Your 3 Outfit Reference Photos, and What to Bring (no login needed, and zero game-night spoilers!):\n${url}\n\n📱 Party Night Reminder: Please bring a charged phone or device (50%+) on the night - our host will unlock the Live Round 1 Investigation when everyone arrives!`;
   };
 
   const sentCount = characters.filter(c => sentCharIds.includes(c.id)).length;
@@ -285,7 +286,7 @@ export function MysteryReadyHub({
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-              Everything you need before your guests arrive: send each friend their <strong>Character Link, Outfit &amp; Vibe</strong>, review the <strong>How to Play Run-Through</strong>, and check off your <strong>15-Minute Party Set-Up Guide</strong>.
+              <strong>Two Separate Guest Portals:</strong> Send your friends the <strong>📩 Pre-Party &ldquo;First Glance&rdquo; Sheet</strong> days before the event so they know what to wear and bring (with Round 1 clues locked), then launch the <strong>🕹️ &ldquo;Playing Now&rdquo; Live Game Portal</strong> on party night!
             </p>
 
             {/* Quick Progress Pills */}
@@ -317,21 +318,20 @@ export function MysteryReadyHub({
           {/* Right: 6-Digit Kahoot PIN + QR Sign Button */}
           <div className="bg-white/5 border border-white/15 rounded-3xl p-6 text-center shrink-0 space-y-3 min-w-[260px]">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-brand-pink">
-              6-Digit Party PIN
+              Party Night Game PIN
             </p>
             <div className="text-4xl sm:text-5xl font-black tracking-[0.18em] text-white font-mono">
               {formattedPin}
             </div>
             <p className="text-[11px] text-slate-400 font-medium">
-              Guests join at{' '}
+              On party night, guests join at{' '}
               <Link
                 href={`/${locale}/play`}
                 target="_blank"
                 className="text-brand-pink underline font-bold"
               >
                 /{locale}/play
-              </Link>{' '}
-              or via direct link
+              </Link>
             </p>
             <div className="flex items-center justify-center gap-2 pt-1">
               <button
@@ -352,34 +352,44 @@ export function MysteryReadyHub({
           </div>
         </div>
 
-        {/* Bottom Action Bar in Hero */}
+        {/* Bottom Action Bar in Hero: Clearly Split Pre-Party First Glance vs. Party Night Playing Now */}
         <div className="relative z-10 mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              copyToClipboard(buildGroupChatSelectInvite(), 'hero-group-invite');
-              markAllSent();
-            }}
-            className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
-              copiedId === 'hero-group-invite'
-                ? 'bg-emerald-500 text-slate-950'
-                : 'bg-white/10 hover:bg-white/15 border border-white/15 text-white'
-            }`}
-          >
-            {copiedId === 'hero-group-invite'
-              ? '✓ Group Chat Invite Copied!'
-              : '💬 Copy Group Chat Invite'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => {
+                copyToClipboard(buildGroupChatSelectInvite(), 'hero-group-invite');
+                markAllSent();
+              }}
+              className={`w-full sm:w-auto px-5 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
+                copiedId === 'hero-group-invite'
+                  ? 'bg-emerald-500 text-slate-950'
+                  : 'bg-white/10 hover:bg-white/15 border border-white/15 text-white'
+              }`}
+            >
+              {copiedId === 'hero-group-invite'
+                ? '✓ Pre-Party First Glance Copied!'
+                : '📩 1. Copy Pre-Party "First Glance" Invite (Send Days Ahead)'}
+            </button>
+
+            <Link
+              href={`/${locale}/play/${mystery.id}?prep=1`}
+              target="_blank"
+              className="w-full sm:w-auto px-4 py-3.5 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/35 text-emerald-300 text-xs font-black uppercase tracking-wider text-center transition-colors"
+            >
+              👗 Preview First Glance Portal ↗
+            </Link>
+          </div>
 
           <Link
             href={hostLobbyUrl}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-sm font-black uppercase tracking-widest text-center transition-all shadow-xl"
+            className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-widest text-center transition-all shadow-xl"
             style={{
               background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
               boxShadow: '0 10px 25px -8px rgba(254,4,198,0.5)',
             }}
           >
-            🚀 Launch Live Game Lobby &amp; Host Controls →
+            🕹️ 2. Party Night: Launch &ldquo;Playing Now&rdquo; Portal →
           </Link>
         </div>
       </div>
@@ -443,13 +453,13 @@ export function MysteryReadyHub({
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-100 pb-6">
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
-                Step 1 Before Party Night • Send Character Dossiers
+                Step 1 Before Party Night • Pre-Party &ldquo;First Glance&rdquo; Sheets (Round 1 Locked)
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                Your Cast: Outline, Outfit, Vibe &amp; Direct Guest Links
+                Send Pre-Party &ldquo;First Glance&rdquo; Character &amp; Outfit Sheets
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1 max-w-2xl">
-                Copy the <strong>Group Chat Invite</strong> so everyone can pick their character from one page, or send each guest their individual invite below!
+                These <strong>Pre-Party First Glance links</strong> only show each guest&apos;s <strong>Character Intro, 3 Outfit Reference Photos, Vibe, and What to Bring</strong> - keeping Round 1 clues and live game tabs locked until party night!
               </p>
             </div>
 
@@ -463,22 +473,22 @@ export function MysteryReadyHub({
             </div>
           </div>
 
-          {/* 1-CLICK GENERIC GROUP CHAT CHARACTER SELECTION LINK CARD */}
+          {/* 1-CLICK GENERIC GROUP CHAT PRE-PARTY "FIRST GLANCE" LINK CARD */}
           <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white border border-brand-pink/35 shadow-xl space-y-5">
             <div className="space-y-2.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
-                  ⚡ Fastest Option • Group Chat Invite
+                  📩 Send Days Before Party • Group Chat &ldquo;First Glance&rdquo; Link
                 </span>
                 <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  📱 Includes Charged Device Reminder
+                  🔒 Round 1 Clues &amp; Live Game Locked
                 </span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-white">
-                Send One Generic Link to the Group Chat (Guests Click Their Character)
+                Send One Pre-Party &ldquo;First Glance&rdquo; Link to the Group Chat (Outfit &amp; What to Bring)
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed max-w-3xl">
-                Don&apos;t want to text everyone individually? Drop this single invite into your group chat! It opens a <strong>Character Selection Page</strong> where each guest finds their name and clicks into their character to see their <strong>Outline</strong>, <strong>Outfit &amp; Dress Code</strong>, <strong>Vibe</strong>, and a reminder to <strong>bring a charged phone/device</strong> on the night.
+                Drop this single invite into your group chat before the party! It opens the <strong>Pre-Party First Glance Directory</strong> where each friend taps their name to see their <strong>Character Outline</strong>, <strong>3 Outfit Reference Photos</strong>, <strong>How to Act</strong>, and <strong>What to Bring</strong> - without opening the live Round 1 game portal early.
               </p>
             </div>
 
@@ -496,16 +506,16 @@ export function MysteryReadyHub({
                 }`}
               >
                 {copiedId === 'group-select-msg'
-                  ? '✓ Group Chat Invite Copied!'
-                  : '💬 Copy Group Chat Invite'}
+                  ? '✓ Pre-Party Group Invite Copied!'
+                  : '💬 Copy Pre-Party Group Chat Invite'}
               </button>
 
               <Link
-                href={`/${locale}/play/${mystery.id}?select=1`}
+                href={`/${locale}/play/${mystery.id}?prep=1`}
                 target="_blank"
                 className="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-slate-200 hover:text-white text-xs font-black uppercase tracking-wider transition-colors"
               >
-                Preview Selection Page ↗
+                👗 Preview Pre-Party &ldquo;First Glance&rdquo; Page ↗
               </Link>
             </div>
           </div>
@@ -514,10 +524,10 @@ export function MysteryReadyHub({
           <div className="p-5 sm:p-6 rounded-3xl bg-sky-50/70 border border-sky-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1 max-w-2xl">
               <span className="text-[10px] font-black uppercase tracking-widest text-sky-700 block">
-                🕵️ Have More Than {characters.length} Guests Coming (or Last-Minute Plus-Ones)?
+                🕵️ Have More Than {characters.length} Guests Coming on Party Night (or Last-Minute Plus-Ones)?
               </span>
               <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
-                No need to edit your cast! Extra friends can open the exact same <strong>Group Chat Link</strong> (or scan your party QR code on the night) and tap <strong className="text-sky-700">&ldquo;Join as Detective [Your Name]&rdquo;</strong> at the bottom of the Lobby to get an official Detective Briefing, interrogation questions, live clues, and round voting!
+                No need to edit your cast! On party night, extra friends can scan your <strong>Party Night QR Code</strong> (or enter the 6-digit PIN) and tap <strong className="text-sky-700">&ldquo;Join as Detective [Your Name]&rdquo;</strong> at the bottom of the Live Game Lobby to get an official Detective Briefing, live clues, and round voting!
               </p>
             </div>
             <Link
@@ -525,7 +535,7 @@ export function MysteryReadyHub({
               target="_blank"
               className="px-5 py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black uppercase tracking-widest transition-colors shrink-0 text-center"
             >
-              🕵️ Preview Detective Join Lobby ↗
+              🕵️ Preview Party-Night Live Lobby ↗
             </Link>
           </div>
 
@@ -566,7 +576,7 @@ export function MysteryReadyHub({
               const guestAvatar = resolveDisplayAvatarUrl(char.characterPhotoUrl || guest?.avatar_url || undefined);
 
               const buildCharacterUrl = () =>
-                `${getOrigin()}/${locale}/play/${mystery.id}?char=${char.id}`;
+                `${getOrigin()}/${locale}/play/${mystery.id}?char=${char.id}&prep=1`;
 
               const buildInviteText = () => {
                 const url = buildCharacterUrl();
@@ -574,7 +584,7 @@ export function MysteryReadyHub({
                   char.actBullets && char.actBullets.length > 0
                     ? `\n🎭 How to Play Them: ${char.actBullets.join(' • ')}`
                     : '';
-                return `🕵️‍♀️ ${guest ? `Hey ${guest.name}! ` : ''}You're cast in our Murder Mystery party: "${mystery.title}"!\n\n🎭 Your Role: ${char.roleTitle}\n📖 Character Outline: ${char.cleanBio}${vibeLine}\n👗 What to Wear: ${outfitText}\n📱 What to Bring: Please bring a charged phone or device on the night, you'll use it to access live clues, leaked messages, voice memos, and play along each round!\n\n🔗 Tap to open your Character Dossier (Game PIN: ${formattedPin} - no login needed):\n${url}`;
+                return `🕵️‍♀️ ${guest ? `Hey ${guest.name}! ` : ''}You're cast in our Murder Mystery party: "${mystery.title}"!\n\n🎭 Your Role: ${char.roleTitle}\n📖 First Glance: ${char.cleanBio}${vibeLine}\n👗 What to Wear: ${outfitText}\n📱 What to Bring: Please bring a charged phone or device (50%+) on the night - you'll use it once the party starts to access live clues, voice memos, and vote on suspects each round!\n\n🔗 Tap to open your Pre-Party "First Glance" Character & Outfit Sheet (no login needed, zero game-night spoilers):\n${url}`;
               };
 
               return (
@@ -745,11 +755,11 @@ export function MysteryReadyHub({
                     </button>
 
                     <Link
-                      href={`/${locale}/play/${mystery.id}?char=${char.id}`}
+                      href={`/${locale}/play/${mystery.id}?char=${char.id}&prep=1`}
                       target="_blank"
                       className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600 hover:text-slate-900 transition-colors"
                     >
-                      Preview Dossier ↗
+                      👗 Preview First Glance ↗
                     </Link>
                   </div>
                   </div>
@@ -1092,8 +1102,8 @@ export function MysteryReadyHub({
                 {
                   id: 'hype-week',
                   when: 'Send 1 Week Before',
-                  title: '1. The Cast & Dress Code Teaser',
-                  text: `🚨 OFFICIAL CAST ANNOUNCEMENT 🚨\nWe’re playing "${mystery.title}" for our Murder Mystery night!\n\nI’m texting each of you your personal Character Dossier link with your role, backstory, and what to wear. Check your DMs and start planning your outfit! 🥂🕵️‍♀️`,
+                  title: '1. Pre-Party "First Glance" & Outfit Drop',
+                  text: `🚨 OFFICIAL CAST ANNOUNCEMENT 🚨\nWe’re playing "${mystery.title}" for our Murder Mystery night!\n\nTap below to open our Pre-Party "First Glance" page, find your name, and check out your character outline, 3 outfit reference photos, and what to bring (zero game-night spoilers!):\n${prepDirectoryUrl} 🥂🕵️‍♀️`,
                 },
                 {
                   id: 'hype-day',

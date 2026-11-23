@@ -91,6 +91,7 @@ interface PlayroomClientProps {
   initialCharId?: string | null;
   initialIsHost?: boolean;
   forceSelect?: boolean;
+  initialPrepMode?: boolean;
 }
 
 export function PlayroomClient({
@@ -103,12 +104,17 @@ export function PlayroomClient({
   initialCharId = null,
   initialIsHost = false,
   forceSelect = false,
+  initialPrepMode = false,
 }: PlayroomClientProps) {
   // Filter to active characters for tonight's session
   const activeCharacters = useMemo(() => {
     const filtered = characters.filter(c => c.profile_data?.is_active_in_session !== false);
     return filtered.length > 0 ? filtered : characters;
   }, [characters]);
+
+  // Pre-Party "First Glance" Mode (Character Intro, What to Wear + 3 Outfit Photos & What to Bring)
+  // vs. Live Game Night "Playing Now" Portal (Secret Cheat-Sheet, Connections, Round 1+ Clues & Voting)
+  const [isPrepMode, setIsPrepMode] = useState<boolean>(initialPrepMode);
 
   // Host-only mode (hides Console & Next buttons from regular guest phones)
   const [isHostMode, setIsHostMode] = useState<boolean>(() =>
@@ -126,6 +132,10 @@ export function PlayroomClient({
   const [isJoiningDetective, setIsJoiningDetective] = useState<boolean>(false);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaimingCharId, setIsClaimingCharId] = useState<string | null>(null);
+
+  // Guard ref so initial forceSelect / localStorage hydration only runs once per mystery.id
+  // and NEVER resets selectedCharId after a background server action or polling update
+  const hasInitializedSelectionRef = useRef<string | null>(null);
 
   // Selected character (or 'sleuth-guest' if joining via PIN as Detective [Name])
   const [selectedCharId, setSelectedCharId] = useState<string | null>(() => {
@@ -260,9 +270,19 @@ export function PlayroomClient({
       setCustomSleuthName(savedDetectiveName);
     }
 
+    // Only initialize character selection ONCE per mystery.id on initial mount
+    if (hasInitializedSelectionRef.current === mystery.id) {
+      return;
+    }
+    hasInitializedSelectionRef.current = mystery.id;
+
     const savedCharKey = `bpm_selected_char_${mystery.id}`;
-    if (forceSelect) {
+    if (forceSelect && !initialCharId) {
       setSelectedCharId(null);
+      return;
+    }
+    if (initialCharId && characters.some(c => c.id === initialCharId)) {
+      setSelectedCharId(initialCharId);
       return;
     }
     const savedCharId = window.localStorage.getItem(savedCharKey);
@@ -273,7 +293,7 @@ export function PlayroomClient({
         setSelectedCharId(savedCharId);
       }
     }
-  }, [mystery.id, initialCharId, initialIsHost, characters, initialSession, forceSelect]);
+  }, [mystery.id, initialCharId, initialIsHost, forceSelect, characters]);
 
   useEffect(() => {
     if (!notebookLoaded || typeof window === 'undefined' || !mystery.id) return;
@@ -479,9 +499,53 @@ export function PlayroomClient({
     return () => clearInterval(interval);
   }, [refreshGameSession]);
 
+  // Toggle between Pre-Party "First Glance" Mode (?prep=1) and Live Game Night Portal
+  const handleTogglePrepMode = useCallback(
+    (nextPrep: boolean) => {
+      setIsPrepMode(nextPrep);
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('select');
+        if (nextPrep) {
+          url.searchParams.set('prep', '1');
+        } else {
+          url.searchParams.delete('prep');
+          url.searchParams.delete('mode');
+        }
+        if (selectedCharId && selectedCharId !== 'sleuth-guest') {
+          url.searchParams.set('char', selectedCharId);
+        }
+        window.history.replaceState(null, '', url.pathname + url.search);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    },
+    [selectedCharId]
+  );
+
   // Select a character from the Character Selection screen
   const handleSelectCharacterInLobby = async (charId: string) => {
     setClaimError(null);
+    setSelectedCharId(charId);
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(`bpm_selected_char_${mystery.id}`, charId);
+      // Strip ?select=1 from URL so refreshing or re-rendering never kicks back to the grid
+      const url = new URL(window.location.href);
+      url.searchParams.delete('select');
+      url.searchParams.set('char', charId);
+      if (isPrepMode) {
+        url.searchParams.set('prep', '1');
+      }
+      window.history.replaceState(null, '', url.pathname + url.search);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    // In Pre-Party "First Glance" mode, guests are just viewing their outfit & character sheet ahead of time
+    // so we don't lock the live party seat yet.
+    if (isPrepMode) {
+      return;
+    }
+
     const activeToken =
       playerToken ||
       `plr_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
@@ -503,10 +567,6 @@ export function PlayroomClient({
       return next;
     });
 
-    setSelectedCharId(charId);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(`bpm_selected_char_${mystery.id}`, charId);
-    }
     if (currentRound >= 5) {
       setActiveTab('reveal');
     } else if (currentRound >= 1) {
@@ -550,6 +610,10 @@ export function PlayroomClient({
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(`bpm_detective_name_${mystery.id}`, cleanFirstName);
       window.localStorage.setItem(`bpm_selected_char_${mystery.id}`, 'sleuth-guest');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('select');
+      url.searchParams.delete('char');
+      window.history.replaceState(null, '', url.pathname + url.search);
     }
 
     setSelectedCharId('sleuth-guest');
@@ -584,8 +648,12 @@ export function PlayroomClient({
     setSelectedCharId(null);
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(`bpm_selected_char_${mystery.id}`);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('char');
+      url.searchParams.delete('characterId');
+      window.history.replaceState(null, '', url.pathname + url.search);
     }
-    if (playerToken) {
+    if (!isPrepMode && playerToken) {
       setClaimedCharacters(prev => {
         const next = { ...prev };
         for (const [k, v] of Object.entries(next)) {
@@ -1964,6 +2032,511 @@ export function PlayroomClient({
           { r: 5, short: 'Reveal', label: '10. Reveal' },
         ];
 
+  // ============================================================================
+  // 0. PRE-PARTY "FIRST GLANCE" PORTAL (SENT BEFORE PARTY NIGHT: WHO YOU ARE, WHAT TO WEAR & BRING)
+  //    Completely separate from the Live Game Night ("Playing Now" / Round 1) Portal!
+  // ============================================================================
+  if (isPrepMode) {
+    if (!selectedChar) {
+      return (
+        <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans antialiased">
+          {renderPhotoLightboxModal()}
+
+          {/* Pre-Party First Glance Top Header */}
+          <header className="relative border-b border-white/10 bg-slate-950/95 sticky top-0 z-30 backdrop-blur-md">
+            {mysteryCoverUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={mysteryCoverUrl}
+                alt={mystery.title}
+                className="absolute inset-0 w-full h-full object-cover opacity-10 blur-[2px] pointer-events-none"
+              />
+            )}
+            <div className="relative z-10 max-w-6xl mx-auto px-3.5 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center justify-between sm:justify-start gap-2.5 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  {initialIsHost && (
+                    <Link
+                      href={`/${locale}/builder/mysteries/${mystery.id.split('__u_')[0]}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all"
+                    >
+                      ← Back to Host Hub
+                    </Link>
+                  )}
+                  <h1 className="text-sm sm:text-lg font-black uppercase tracking-tight text-white truncate">
+                    {mystery.title}
+                  </h1>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-wider shrink-0">
+                  📩 Pre-Party First Glance
+                </span>
+              </div>
+
+              {initialIsHost && (
+                <div className="flex items-center justify-end gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePrepMode(false)}
+                    className="px-3.5 py-1.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow cursor-pointer"
+                  >
+                    🕹️ Host: Switch to &ldquo;Playing Now&rdquo; Live Game Portal →
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+
+          <div className="flex-grow max-w-6xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+            {initialIsHost && (
+              <div className="rounded-2xl bg-emerald-950/50 border border-emerald-400/40 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 block">
+                    👀 Host Preview • Pre-Party Guest Portal (Zero Spoilers, No Clues)
+                  </span>
+                  <p className="text-xs text-slate-200 leading-relaxed">
+                    This is the <strong>Pre-Party &ldquo;First Glance&rdquo; Portal</strong> your guests see when you send out character links before the event. They can view their character intro, 3 outfit photos, and what to bring without unlocking Round 1 clues or live game controls.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTogglePrepMode(false)}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
+                >
+                  Open Live Game Portal →
+                </button>
+              </div>
+            )}
+
+            {/* Pre-Party Welcome Hero Card */}
+            <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-brand-pink/35 p-5 sm:p-7 shadow-xl space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                  👗 Pre-Party Character &amp; Outfit Guide
+                </span>
+                <span className="px-3 py-1 rounded-full bg-white/10 text-slate-200 text-[10px] font-black uppercase tracking-widest">
+                  🔒 Live Round 1 Game Locked Until Party Night
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Find Your Name Below for Your First Glance Sheet: Who You Are, What to Wear &amp; What to Bring
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
+                Tap your character card below to read your pre-party character outline, browse your <strong>3 costume &amp; outfit reference photos</strong>, and check what to bring on the night of the event.
+              </p>
+            </div>
+
+            {/* Cast Grid for Pre-Party First Glance */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+              {activeCharacters.map(char => {
+                const { name, archetype, guestName } = parseCharacter(char);
+                const charPres = getCleanCharacterPresentation(char, characters, { mode: 'generic' });
+                const charAvatarUrl = resolveDisplayAvatarUrl(
+                  charPres.characterPhotoUrl || char.profile_data?.avatar_url || char.image_url
+                );
+
+                return (
+                  <div
+                    key={char.id}
+                    onClick={() => handleSelectCharacterInLobby(char.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelectCharacterInLobby(char.id);
+                      }
+                    }}
+                    className="group rounded-2xl sm:rounded-3xl overflow-hidden text-left transition-all flex flex-col justify-between border bg-slate-900/75 border-white/15 hover:border-brand-pink/70 hover:bg-slate-900 shadow-lg cursor-pointer"
+                  >
+                    <div className="relative w-full h-44 sm:h-72 bg-slate-950 overflow-hidden border-b border-white/10">
+                      {charAvatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={charAvatarUrl}
+                          alt={name}
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-4xl sm:text-6xl bg-gradient-to-br from-slate-900 to-slate-950">
+                          {char.is_victim ? '💀' : '🕵️'}
+                        </div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 h-16 sm:h-24 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
+
+                      <div className="absolute top-2 inset-x-2 sm:top-3 sm:inset-x-3 flex items-center justify-between gap-1.5 z-10">
+                        {guestName ? (
+                          <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-brand-pink text-white text-[10px] sm:text-xs font-black uppercase tracking-wider max-w-[68%] truncate shadow-lg">
+                            👤 {guestName}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-200">
+                            Cast Role
+                          </span>
+                        )}
+
+                        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white shrink-0">
+                          {char.is_victim ? '💀 Victim' : '🕵️'}
+                          <span className="hidden sm:inline">{char.is_victim ? '' : ' Suspect'}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 sm:p-4 flex flex-col justify-between gap-2 sm:gap-3 flex-grow">
+                      <div className="space-y-1">
+                        <h3 className="text-xs sm:text-lg font-black text-white leading-snug group-hover:text-brand-pink transition-colors truncate">
+                          {charPres.roleTitle || archetype}
+                        </h3>
+                        <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-2 leading-snug sm:leading-relaxed">
+                          {charPres.shortBlurb}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 sm:pt-2.5 border-t border-white/10 flex items-center justify-between gap-1.5">
+                        <span className="hidden sm:inline text-[11px] font-bold text-slate-400 truncate">
+                          {guestName ? `For ${guestName}` : 'Pre-Party Sheet'}
+                        </span>
+                        <span className="w-full sm:w-auto text-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl shrink-0 bg-brand-pink text-white group-hover:opacity-95">
+                          👗 First Glance &amp; Outfit →
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Selected Character's Dedicated Pre-Party "First Glance" Sheet
+    const prepCharPres = getCleanCharacterPresentation(selectedChar, characters, { mode: 'print' });
+    const prepPortraitUrl =
+      prepCharPres.characterPhotoUrl ||
+      resolveDisplayAvatarUrl(selectedChar.profile_data?.avatar_url || selectedChar.image_url);
+
+    return (
+      <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans antialiased pb-12">
+        {renderPhotoLightboxModal()}
+
+        {/* Sticky Top Header for Pre-Party First Glance Sheet */}
+        <header className="bg-slate-950/95 border-b border-white/10 sticky top-0 z-40 backdrop-blur-md">
+          <div className="max-w-4xl mx-auto w-full px-3.5 sm:px-6 py-3 flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={handleSwitchCharacter}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/15 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer"
+              >
+                ← All Cast
+              </button>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-wider truncate">
+                📩 Pre-Party First Glance Sheet
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') window.print();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-slate-200 text-[10px] font-black uppercase tracking-wider cursor-pointer"
+              >
+                🖨️ Print / Save
+              </button>
+              {initialIsHost && (
+                <button
+                  type="button"
+                  onClick={() => handleTogglePrepMode(false)}
+                  className="px-3 py-1.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-[10px] font-black uppercase tracking-wider shadow cursor-pointer"
+                >
+                  🕹️ Switch to Live Game Portal →
+                </button>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-4xl mx-auto w-full px-3.5 sm:px-6 py-5 sm:py-7 space-y-5">
+          {initialIsHost && (
+            <div className="rounded-2xl bg-emerald-950/50 border border-emerald-400/40 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300 block">
+                  👀 Host Preview • Pre-Party &ldquo;First Glance&rdquo; Character Sheet
+                </span>
+                <p className="text-xs text-slate-200 leading-relaxed">
+                  Guests who open their invite link before the event see this exact pre-party briefing (Who They Are, What to Wear with 3 outfit options, How to Act &amp; What to Bring) without any Round 1 clues or live game spoilers.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTogglePrepMode(false)}
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
+              >
+                Open Live Game Portal →
+              </button>
+            </div>
+          )}
+
+          {/* 1. HERO CHARACTER IDENTITY & "FIRST GLANCE: WHO YOU ARE" */}
+          <section className="rounded-3xl bg-slate-900/85 border border-white/15 p-5 sm:p-7 shadow-2xl space-y-5">
+            <div className="flex flex-col sm:flex-row items-start gap-5">
+              <div
+                onClick={() => {
+                  if (prepPortraitUrl) {
+                    setLightboxPhoto({
+                      url: prepPortraitUrl,
+                      title: prepCharPres.roleTitle,
+                      subtitle: prepCharPres.guestName
+                        ? `Played by ${prepCharPres.guestName}`
+                        : undefined,
+                    });
+                  }
+                }}
+                className="w-32 h-40 sm:w-44 sm:h-56 rounded-2xl overflow-hidden border-2 border-brand-pink/60 bg-slate-950 shrink-0 relative group cursor-pointer shadow-xl mx-auto sm:mx-0"
+              >
+                {prepPortraitUrl ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={prepPortraitUrl}
+                      alt={prepCharPres.roleTitle}
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/75 text-white text-[9px] font-black uppercase">
+                      🔍 Tap to Zoom
+                    </span>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-5xl">
+                    🕵️
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3 flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
+                    {prepCharPres.isVictim ? '💀 Story Catalyst / Victim Role' : '🕵️ Official Suspect Role'}
+                  </span>
+                  {prepCharPres.guestName && (
+                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                      👤 Cast: {prepCharPres.guestName}
+                    </span>
+                  )}
+                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 text-slate-300">
+                    {mystery.title}
+                  </span>
+                </div>
+
+                <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                  {prepCharPres.roleTitle}
+                </h1>
+
+                <div className="space-y-2.5 pt-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
+                    📖 First Glance: Who You Are
+                  </span>
+                  {prepCharPres.blurbParagraphs && prepCharPres.blurbParagraphs.length > 0 ? (
+                    <div className="space-y-2.5 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                      {prepCharPres.blurbParagraphs.map((para, idx) => (
+                        <p key={idx}>{para}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                      {prepCharPres.shortBlurb}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. WHAT TO WEAR & 3 OUTFIT REFERENCE PHOTOS (FRONT & CENTER!) */}
+          <section className="rounded-3xl bg-slate-900/80 border border-emerald-500/35 p-5 sm:p-7 shadow-xl space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
+                  Step 1 Before Party Night • Plan Your Look
+                </span>
+                <h2 className="text-lg sm:text-2xl font-black text-white">
+                  👗 What to Wear &amp; Costume Inspiration
+                </h2>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-wider">
+                3 Outfit Ideas Below
+              </span>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed bg-slate-950/70 border border-white/10 rounded-2xl p-4">
+              {prepCharPres.outfitAdvice}
+            </p>
+
+            {prepCharPres.outfitReferenceImages && prepCharPres.outfitReferenceImages.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
+                  📸 Tap Any Outfit Reference Photo to Enlarge:
+                </span>
+                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                  {prepCharPres.outfitReferenceImages.slice(0, 3).map((refUrl, optIdx) => (
+                    <div
+                      key={optIdx}
+                      onClick={() =>
+                        setLightboxPhoto({
+                          url: refUrl,
+                          title: `${prepCharPres.roleTitle} - Outfit Option ${optIdx + 1}`,
+                        })
+                      }
+                      className="rounded-2xl overflow-hidden border border-white/15 bg-slate-950 cursor-pointer group/img shadow-lg flex flex-col"
+                    >
+                      <div className="aspect-[3/4] w-full overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={refUrl}
+                          alt={`Outfit Option ${optIdx + 1}`}
+                          className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-emerald-300 bg-slate-900 border-t border-white/10">
+                        Outfit Option {optIdx + 1} 🔍
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* 3. YOUR CHARACTER VIBE & HOW TO ACT */}
+          {(prepCharPres.actSummary || prepCharPres.actBullets.length > 0) && (
+            <section className="rounded-3xl bg-slate-900/75 border border-brand-pink/30 p-5 sm:p-7 shadow-xl space-y-3.5">
+              <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
+                    Step 2 • Get Into Character
+                  </span>
+                  <h2 className="text-lg sm:text-xl font-black text-white">
+                    🎭 Your Character Vibe &amp; How to Act
+                  </h2>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-brand-pink/15 text-brand-pink text-[10px] font-black uppercase">
+                  Roleplay Cues
+                </span>
+              </div>
+
+              {prepCharPres.actSummary && (
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                  {prepCharPres.actSummary}
+                </p>
+              )}
+
+              {prepCharPres.actBullets.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  {prepCharPres.actBullets.map((bullet, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 flex items-start gap-2.5 text-xs sm:text-sm text-slate-200 leading-snug"
+                    >
+                      <span className="text-brand-pink font-black shrink-0">✦</span>
+                      <span>{bullet}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* 4. WHAT TO BRING ON PARTY NIGHT */}
+          <section className="rounded-3xl bg-slate-900/75 border border-sky-400/35 p-5 sm:p-7 shadow-xl space-y-4">
+            <div className="border-b border-white/10 pb-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-sky-400 block">
+                Step 3 • Party Night Essentials
+              </span>
+              <h2 className="text-lg sm:text-xl font-black text-white">
+                🎒 What to Bring to the Party
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-sky-300">
+                  📱 1. Charged Phone (50%+)
+                </span>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Bring your phone on the night! You&apos;ll use it during the party to view your secret motives, inspect live Round 1–{maxClueRound} evidence drops, listen to audio clues, and vote on suspects.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                  👗 2. Your Costume Vibe
+                </span>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Come dressed in your character&apos;s outfit look above! Feel free to add a fun prop (sunglasses, a cocktail glass, a notebook, or dramatic jewelry).
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                  🎟️ 3. Party Night Game PIN
+                </span>
+                <p className="text-xl font-black font-mono tracking-widest text-white pt-0.5">
+                  {pin.slice(0, 3)} {pin.slice(3)}
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  No app download or account login required on party night.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* 5. SEPARATION FROM "PLAYING NOW" / LIVE ROUND 1 PORTAL */}
+          {currentRound >= 1 ? (
+            <section className="rounded-3xl bg-gradient-to-r from-brand-pink/25 via-rose-500/20 to-amber-500/20 border-2 border-brand-pink p-5 sm:p-6 text-center space-y-3 shadow-2xl">
+              <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                🚨 Party Night is Live Now • Round {unlockedClueRound} Unlocked
+              </span>
+              <h3 className="text-lg sm:text-xl font-black text-white">
+                Your Host Has Started the Live Investigation!
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-200 max-w-xl mx-auto">
+                Tap below to enter the <strong>&ldquo;Playing Now&rdquo; Live Game Portal</strong> to view your Secret Party-Night Cheat-Sheet, Round {unlockedClueRound} Clues, and Suspect Voting.
+              </p>
+              <button
+                type="button"
+                onClick={() => handleTogglePrepMode(false)}
+                className="px-6 py-3.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-widest shadow-xl cursor-pointer"
+              >
+                🕹️ Enter &ldquo;Playing Now&rdquo; Live Game Portal →
+              </button>
+            </section>
+          ) : (
+            <section className="rounded-3xl bg-slate-900/50 border border-white/10 p-5 sm:p-6 text-center space-y-2.5">
+              <div className="text-2xl">🔒</div>
+              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-white">
+                &ldquo;Playing Now&rdquo; Live Game Portal &amp; Round 1 Clues Are Locked Until Party Night
+              </h3>
+              <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+                You&apos;re all set for now! Nothing else is revealed before the event so nobody can peek ahead at Round 1 evidence. When you arrive at the party, your host will launch the Live Game Portal.
+              </p>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleTogglePrepMode(false)}
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
+                >
+                  Already arrived at the party? Enter Live Arrival Lobby →
+                </button>
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   if (!selectedChar && !isClueOnlySleuth) {
     return (
       <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans antialiased">
@@ -2505,7 +3078,7 @@ export function PlayroomClient({
                     ? `🗳️ Vote (Round ${unlockedClueRound})`
                     : unlockedClueRound >= 1
                     ? `🔍 Clues (Round ${unlockedClueRound})`
-                    : '🔍 Clues'}
+                    : '🔒 Clues (Round 1 Locked)'}
                 </span>
                 {totalUnreadUnlockedClues > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[9px] font-black">
@@ -2844,15 +3417,24 @@ export function PlayroomClient({
                 </div>
 
                 <div className="space-y-1.5 sm:space-y-2.5 text-left flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
-                      {charPres.isVictim ? '💀 Story Catalyst / Victim' : '🕵️ Suspect Cheat-Sheet'}
-                    </span>
-                    {charPres.guestName && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
-                        👤 {charPres.guestName}
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
+                        {charPres.isVictim ? '💀 Story Catalyst / Victim' : '🕵️ Suspect Cheat-Sheet'}
                       </span>
-                    )}
+                      {charPres.guestName && (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
+                          👤 {charPres.guestName}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePrepMode(true)}
+                      className="px-2.5 py-1 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/35 text-emerald-300 text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      👗 Pre-Party Outfit &amp; First Glance Sheet →
+                    </button>
                   </div>
 
                   <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight leading-tight">

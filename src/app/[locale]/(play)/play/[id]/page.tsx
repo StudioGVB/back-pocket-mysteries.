@@ -15,7 +15,14 @@ export default async function PlayroomPage({
   searchParams,
 }: {
   params: Promise<{ id: string; locale: string }>;
-  searchParams: Promise<{ char?: string; characterId?: string; host?: string; select?: string }>;
+  searchParams: Promise<{
+    char?: string;
+    characterId?: string;
+    host?: string;
+    select?: string;
+    prep?: string;
+    mode?: string;
+  }>;
 }) {
   const { id: rawId, locale } = await params;
   const resolvedSearch = await searchParams;
@@ -50,6 +57,10 @@ export default async function PlayroomPage({
 
   const characters = (mystery as any).characters || [];
   const clues = (mystery as any).clues || [];
+  const isPrepMode =
+    resolvedSearch?.prep === '1' ||
+    resolvedSearch?.prep === 'true' ||
+    resolvedSearch?.mode === 'prep';
 
   return (
     <PlayroomClient
@@ -62,6 +73,7 @@ export default async function PlayroomPage({
       initialCharId={resolvedSearch?.char || resolvedSearch?.characterId || null}
       initialIsHost={Boolean((initialSession as any)?.isHost || resolvedSearch?.host === '1')}
       forceSelect={resolvedSearch?.select === '1'}
+      initialPrepMode={isPrepMode}
     />
   );
 }

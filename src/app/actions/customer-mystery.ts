@@ -799,7 +799,6 @@ export async function claimCharacterInLobbyAction(
   session.claimedCharacters = claims;
   await writeSessionToCarrier(supabase, mysteryId, carrierCharacter, session);
 
-  revalidatePath(`/play/${mysteryId}`);
   return {
     success: true,
     claimedCharacters: claims,
@@ -867,7 +866,6 @@ export async function registerDetectiveGuestAction(
   session.detectiveGuests = [...existingList, detectiveGuest];
   await writeSessionToCarrier(supabase, mysteryId, carrierCharacter, session);
 
-  revalidatePath(`/play/${mysteryId}`);
   return {
     success: true,
     detectiveGuest,
