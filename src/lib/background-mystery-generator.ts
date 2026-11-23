@@ -269,7 +269,7 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
         });
 
         let completedCount = 0;
-        for (const char of activeChars.slice(0, 6)) {
+        for (const char of activeChars) {
           try {
             await ensureStandardCharacterPhoto(
               char,
@@ -295,6 +295,7 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
           c?.id &&
           c?.generation_prompt &&
           (/\{\{[^}]+\}\}/.test(c.generation_prompt) ||
+            /\{\{[^}]+\}\}/.test(c.description || '') ||
             c.format === 'cctv' ||
             c.format === 'physical_prop' ||
             c.format === 'social_post')
@@ -333,31 +334,19 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
         },
       });
 
-      // 3. Schedule automatic completion & "Your Mystery is Ready!" email when the 20-minute window finishes
+      // 3. Finalize & send the "Your Mystery is Ready!" email as soon as all 3 asset stages finish
       const latestSession = getStoredGameSession(params.mysteryId);
       if (latestSession?.generationStatus === 'ready') {
         return;
       }
 
-      const readyAtMs = latestSession?.generationReadyAt
-        ? Date.parse(latestSession.generationReadyAt)
-        : Date.now() + 20 * 60 * 1000;
-      const delayMs = Math.max(1000, readyAtMs - Date.now());
-
       const existingTimer = activeGenerationTimers.get(params.mysteryId);
       if (existingTimer) {
         clearTimeout(existingTimer);
-      }
-
-      const timer = setTimeout(() => {
         activeGenerationTimers.delete(params.mysteryId);
-        void finalizeMysteryGenerationNow(params);
-      }, delayMs);
-
-      if (typeof timer.unref === 'function') {
-        timer.unref();
       }
-      activeGenerationTimers.set(params.mysteryId, timer);
+
+      await finalizeMysteryGenerationNow(params);
     } catch (err) {
       console.error('[BACKGROUND MYSTERY GENERATOR] Error in detached job:', err);
     }

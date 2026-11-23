@@ -132,6 +132,217 @@ function shuffleArray<T>(items: T[], seedOffset = 1): T[] {
   return arr;
 }
 
+const RANDOM_DETECTIVE_SUSPECT_POOL: GuestItem[] = [
+  {
+    id: 'random-suspect-julian',
+    name: 'Julian Vance',
+    gender: 'male',
+    accent: 'British',
+    eye_color: 'Blue',
+    height: 'Tall',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=JulianVance&top=shortWaved&hairColor=282828&skinColor=ffcd94&eyeColor=Blue&height=Tall&hairLength=Short&hairTexture=Wavy&accent=British&age=middle_aged&aiPhotoUrl=%2Fgenerated-avatars%2F3f17dfda-9758-49fa-a3df-cdf4f6b25ef7-aa57451c4e53.jpg',
+    traits: ['Calculating', 'Antique Collector', 'Sharp-Dressed'],
+    bio: 'A silver-tongued financier with immaculate tailoring and a ledger full of unspoken debts.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-clara',
+    name: 'Clara Sterling',
+    gender: 'female',
+    accent: 'British',
+    eye_color: 'Hazel',
+    height: 'Average',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=ClaraSterling&top=straight01&hairColor=4a3123&skinColor=ffcd94&eyeColor=Hazel&height=Average&hairLength=Long&hairTexture=Wavy&accent=British&age=young&aiPhotoUrl=%2Fgenerated-avatars%2F44d70cd0-9f04-408b-8ac9-e064eb5c31d0-6224c730c6c6.jpg',
+    traits: ['Poised', 'Secretive', 'Observant'],
+    bio: 'An effortlessly composed socialite who notices every whispered conversation across the room.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-elena',
+    name: 'Elena Rostova',
+    gender: 'female',
+    accent: 'European',
+    eye_color: 'Brown',
+    height: 'Petite',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=ElenaRostova&top=straight02&hairColor=282828&skinColor=eac086&eyeColor=Brown&height=Petite&hairLength=Long&hairTexture=Straight&accent=European&age=young&aiPhotoUrl=%2Fgenerated-avatars%2Fd1433643-ac1b-4689-af57-84bb77c2be33-b6a686975735.jpg',
+    traits: ['Fiercely Loyal', 'Quick-Witted', 'Unforgiving'],
+    bio: 'A sharp-eyed gallery curator with a long memory for anyone who crosses her inner circle.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-seraphina',
+    name: 'Seraphina Vale',
+    gender: 'female',
+    accent: 'Australian',
+    eye_color: 'Green',
+    height: 'Tall',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=SeraphinaVale&top=curly&hairColor=d6b370&skinColor=ffcd94&eyeColor=Green&height=Tall&hairLength=Long&hairTexture=Wavy&accent=Australian&age=young&aiPhotoUrl=%2Fgenerated-avatars%2F5f9b36e0-44ae-4c3d-9762-432c5bb17783-5518cb6b6215.jpg',
+    traits: ['Glamorous', 'Ambitious', 'Magnetic'],
+    bio: 'A magnetic executive who always seems to be in the exact wrong place at the exact right moment.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-sebastian',
+    name: 'Sebastian Cross',
+    gender: 'male',
+    accent: 'American',
+    eye_color: 'Blue',
+    height: 'Tall',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=SebastianCross&top=shortFlat&hairColor=e8b07d&skinColor=ffe0bd&eyeColor=Blue&height=Tall&hairLength=Short&hairTexture=Straight&accent=American&age=young&aiPhotoUrl=%2Fgenerated-avatars%2Fda18ef00-ecdc-41e7-8c71-97d78046e43b-486590f0918d.jpg',
+    traits: ['Charismatic', 'Reckless', 'High-Stakes'],
+    bio: 'A smooth-talking heir whose charming smile hides a tangle of high-stakes rivalries.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-mateo',
+    name: 'Mateo Cruz',
+    gender: 'male',
+    accent: 'American',
+    eye_color: 'Brown',
+    height: 'Average',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=MateoCruz&top=shaved&hairColor=282828&skinColor=d08b5b&eyeColor=Brown&height=Average&hairLength=Short&hairTexture=Straight&accent=American&age=young&aiPhotoUrl=%2Fgenerated-avatars%2Ff3187085-155b-4389-9bf2-58c6dcc26d1b-350718ea0c1e.jpg',
+    traits: ['Easygoing', 'Resourceful', 'Protective'],
+    bio: 'The loyal confidant who knows where every skeleton is buried and never misses a detail.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-damon',
+    name: 'Damon Ross',
+    gender: 'male',
+    accent: 'American',
+    eye_color: 'Brown',
+    height: 'Tall',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=DamonRoss&top=shortFlat&hairColor=282828&skinColor=614335&facialHair=beardLight&eyeColor=Brown&height=Tall&hairLength=Short&hairTexture=Curly&accent=American&age=middle_aged&aiPhotoUrl=%2Fgenerated-avatars%2Fqa-pack2-da18ef00.jpg',
+    traits: ['Methodical', 'Unflappable', 'Strategist'],
+    bio: 'A calm crisis negotiator who treats every dinner party like a high-stakes chess board.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-siobhan',
+    name: "Siobhán O'Connor",
+    gender: 'female',
+    accent: 'Irish / Scottish',
+    eye_color: 'Green',
+    height: 'Petite',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=SiobhanOConnor&top=longButNotTooLong&hairColor=d95319&skinColor=ffe0bd&eyeColor=Green&height=Petite&hairLength=Long&hairTexture=Wavy&accent=Irish%20%2F%20Scottish&age=young&aiPhotoUrl=%2Fgenerated-avatars%2Fqa-pack2-44d70cd0.jpg',
+    traits: ['Witty', 'Investigative', 'Bold'],
+    bio: 'An investigative journalist with copper curls, a razor-sharp tongue, and zero patience for alibis.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-priya',
+    name: 'Priya Sharma',
+    gender: 'female',
+    accent: 'British',
+    eye_color: 'Brown',
+    height: 'Average',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=PriyaSharma&top=straight01&hairColor=282828&skinColor=ae5d29&eyeColor=Brown&height=Average&hairLength=Long&hairTexture=Straight&accent=British&age=young&aiPhotoUrl=%2Fgenerated-avatars%2Fqa-pack2-d1433643.jpg',
+    traits: ['Brilliant', 'Perfectionist', 'Guarded'],
+    bio: 'A brilliant corporate counsel who drafts airtight contracts and keeps her own motives under lock and key.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-maya',
+    name: 'Maya Lin',
+    gender: 'female',
+    accent: 'American',
+    eye_color: 'Brown',
+    height: 'Petite',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=MayaLin&top=bob&hairColor=282828&skinColor=eac086&eyeColor=Brown&height=Petite&hairLength=Short&hairTexture=Straight&accent=American&age=young&aiPhotoUrl=%2Fgenerated-avatars%2Fqa-pack2-5f9b36e0.jpg',
+    traits: ['Cool-Headed', 'Architect', 'Detail-Obsessed'],
+    bio: 'An award-winning architect who knows the floorplan, blind spots, and secret passages better than anyone.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-jeanluc',
+    name: 'Jean-Luc Moreau',
+    gender: 'male',
+    accent: 'European',
+    eye_color: 'Grey',
+    height: 'Tall',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=JeanLucMoreau&top=shortWaved&hairColor=e8e1e1&skinColor=ffcd94&accessories=prescription01&eyeColor=Grey&height=Tall&hairLength=Short&hairTexture=Wavy&accent=European&age=old&aiPhotoUrl=%2Fgenerated-avatars%2Fqa-pack2-3f17dfda.jpg',
+    traits: ['Distinguished', 'Connoisseur', 'Enigmatic'],
+    bio: 'A distinguished private art dealer with tortoise-shell glasses and a taste for rare, dangerous secrets.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-marcus',
+    name: 'Marcus Chen',
+    gender: 'male',
+    accent: 'Australian',
+    eye_color: 'Brown',
+    height: 'Average',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=MarcusChen&top=shortFlat&hairColor=282828&skinColor=eac086&accessories=prescription01&eyeColor=Brown&height=Average&hairLength=Short&hairTexture=Straight&accent=Australian&age=young&aiPhotoUrl=%2Fgenerated-avatars%2Fqa-pack2-f3187085.jpg',
+    traits: ['Tech-Savvy', 'Analytical', 'Skeptical'],
+    bio: 'A forensic data analyst who tracks every digital footprint while hiding a midnight alibi of his own.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-victoria',
+    name: 'Victoria Sterling',
+    gender: 'female',
+    accent: 'British',
+    eye_color: 'Hazel',
+    height: 'Average',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=VictoriaSterling&top=straight01&hairColor=4a3123&skinColor=ffcd94&eyeColor=Hazel&height=Average&hairLength=Long&hairTexture=Straight&accent=British&age=middle_aged&aiPhotoUrl=%2Fgenerated-avatars%2F4903bd39-e54f-42e4-b679-2af5d128bb8f-b130e47b4cee2149a7aad02dfc972e91.jpg',
+    traits: ['Commanding', 'Old-Money', 'Unforgiving'],
+    bio: 'A formidable family matriarch who guards the estate reputation at any cost.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-arthur',
+    name: 'Arthur Pendelton',
+    gender: 'male',
+    accent: 'British',
+    eye_color: 'Blue',
+    height: 'Tall',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=ArthurPendelton&top=shortFlat&hairColor=a0785a&skinColor=ffe0bd&eyeColor=Blue&height=Tall&hairLength=Short&hairTexture=Straight&accent=British&age=middle_aged&aiPhotoUrl=%2Fgenerated-avatars%2F74ced342-5614-4f81-a5e1-a4dab75e9420-ace4735b76caad3973e124ac2a06e161.jpg',
+    traits: ['Old-School', 'Diplomatic', 'Evasive'],
+    bio: 'A polished family solicitor who knows every clause of the will and every secret amendment.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-camille',
+    name: 'Camille Laurent',
+    gender: 'female',
+    accent: 'European',
+    eye_color: 'Green',
+    height: 'Tall',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=CamilleLaurent&top=curly&hairColor=d6b370&skinColor=ffcd94&eyeColor=Green&height=Tall&hairLength=Long&hairTexture=Wavy&accent=European&age=young&aiPhotoUrl=%2Fgenerated-avatars%2F5f9b36e0-44ae-4c3d-9762-432c5bb17783-6eb3e5429ae1.jpg',
+    traits: ['Dramatic', 'Sommelier', 'Insider'],
+    bio: 'A celebrated sommelier who poured every glass tonight and heard every toast.',
+    isHost: false,
+  },
+  {
+    id: 'random-suspect-dominic',
+    name: 'Dominic Thorne',
+    gender: 'male',
+    accent: 'Australian',
+    eye_color: 'Brown',
+    height: 'Average',
+    avatar_url:
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=DominicThorne&top=shortWaved&hairColor=4a3123&skinColor=d08b5b&eyeColor=Brown&height=Average&hairLength=Short&hairTexture=Wavy&accent=Australian&age=middle_aged&aiPhotoUrl=%2Fgenerated-avatars%2Ff3187085-155b-4389-9bf2-58c6dcc26d1b-b39015a5c476.jpg',
+    traits: ['Ambitious', 'Insider', 'Smooth'],
+    bio: 'An ambitious business partner who stood to gain the most if tonight’s deal fell through.',
+    isHost: false,
+  },
+];
+
 export default function CustomerCastClient({
   locale,
   mystery,
@@ -167,6 +378,14 @@ export default function CustomerCastClient({
   // Play Mode: 'party' (5+ guests playing 1 character each, zero extra side characters)
   // vs 'casefile' (1–4 players solving all selected suspect dossiers together like a detective box)
   const [playMode, setPlayMode] = useState<'party' | 'casefile'>('party');
+
+  // When in Case-File Detective Mode, let players choose between:
+  // - 'friends': Cast their own friends / created guest profiles
+  // - 'random': Instant Random Mystery Cast (fictional characters matched to the story)
+  const [casefileCastSource, setCasefileCastSource] = useState<'friends' | 'random'>('friends');
+  const [randomCastCount, setRandomCastCount] = useState<number>(() =>
+    Math.min(maxRoles, Math.max(minRoles, 6))
+  );
 
   // 1. Attending Guests / Selected Profiles (In or Out, minimum 5 characters for the story)
   // Ensure the Host is included at the front by default
@@ -406,11 +625,82 @@ export default function CustomerCastClient({
     });
   };
 
+  // Apply an instant gender-matched Random Mystery Cast for Case-File Detective Mode
+  const handleApplyRandomDetectiveCast = (countOverride?: number, customSeed?: number) => {
+    if (!victimCharacter) return;
+    setLockedSession(null);
+    const targetCount = Math.min(
+      maxRoles,
+      Math.max(minRoles, countOverride ?? randomCastCount)
+    );
+    setRandomCastCount(targetCount);
+    setCasefileCastSource('random');
+
+    const seed = customSeed ?? shuffleSeed + 7;
+    if (customSeed !== undefined) {
+      setShuffleSeed(seed);
+    }
+
+    const mandatoryPool = nonVictimCharacters.filter(c => c.is_mandatory);
+    const optionalPool = nonVictimCharacters.filter(c => !c.is_mandatory);
+    const targetSuspects = [...mandatoryPool, ...optionalPool].slice(
+      0,
+      Math.max(0, targetCount - 1)
+    );
+    const allActiveChars = [victimCharacter, ...targetSuspects];
+
+    const shuffledPool = shuffleArray(RANDOM_DETECTIVE_SUSPECT_POOL, seed);
+    const usedIds = new Set<string>();
+    const chosenRandomGuests: GuestItem[] = [];
+    const nextMap: Record<string, string> = {};
+
+    for (const char of allActiveChars) {
+      const charGender = normalizeGender(char.gender);
+      let candidate = shuffledPool.find(
+        g =>
+          !usedIds.has(g.id) &&
+          (charGender === 'adaptable' || normalizeGender(g.gender) === charGender)
+      );
+      if (!candidate) {
+        candidate = shuffledPool.find(g => !usedIds.has(g.id));
+      }
+      if (candidate) {
+        usedIds.add(candidate.id);
+        chosenRandomGuests.push(candidate);
+        nextMap[char.id] = candidate.id;
+      }
+    }
+
+    // Ensure the random characters exist in the `guests` state so Victim & Suspect cards display their names/avatars
+    setGuests(prev => {
+      const existingNonRandom = prev.filter(g => !g.id.startsWith('random-suspect-'));
+      return [...existingNonRandom, ...RANDOM_DETECTIVE_SUSPECT_POOL];
+    });
+
+    setAttendingGuestIds(chosenRandomGuests.map(g => g.id));
+    setAssignments(nextMap);
+  };
+
+  // Switch back to the user's own Friends & Created Guest Profiles
+  const handleRestoreFriendsCast = () => {
+    setLockedSession(null);
+    setCasefileCastSource('friends');
+    const friendOnlyGuests = guests.filter(g => !g.id.startsWith('random-suspect-'));
+    const targetCount = Math.min(friendOnlyGuests.length, Math.max(minRoles, 6), maxRoles);
+    const nextIds = friendOnlyGuests.slice(0, targetCount).map(g => g.id);
+    setAttendingGuestIds(nextIds);
+    reconcileAssignments(friendOnlyGuests.filter(g => nextIds.includes(g.id)));
+  };
+
   // Trigger AI Re-Sort (keeps Victim locked, shuffles and gender-matches all Suspects)
   const handleAiResort = () => {
     setLockedSession(null);
     const nextSeed = shuffleSeed + 1;
     setShuffleSeed(nextSeed);
+    if (playMode === 'casefile' && casefileCastSource === 'random') {
+      handleApplyRandomDetectiveCast(randomCastCount, nextSeed);
+      return;
+    }
     reconcileAssignments(attendingGuests, nextSeed);
   };
 
@@ -698,7 +988,12 @@ export default function CustomerCastClient({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             type="button"
-            onClick={() => setPlayMode('party')}
+            onClick={() => {
+              setPlayMode('party');
+              if (casefileCastSource === 'random') {
+                handleRestoreFriendsCast();
+              }
+            }}
             className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer ${
               playMode === 'party'
                 ? 'border-brand-pink bg-brand-pink/15 shadow-lg'
@@ -724,10 +1019,17 @@ export default function CustomerCastClient({
             type="button"
             onClick={() => {
               setPlayMode('casefile');
-              if (attendingGuestIds.length < minRoles && guests.length >= minRoles) {
-                const autoIds = guests.slice(0, Math.min(guests.length, Math.max(minRoles, 6))).map(g => g.id);
-                setAttendingGuestIds(autoIds);
-                reconcileAssignments(guests.filter(g => autoIds.includes(g.id)));
+              if (casefileCastSource === 'friends') {
+                const friendGuests = guests.filter(g => !g.id.startsWith('random-suspect-'));
+                if (attendingGuestIds.length < minRoles && friendGuests.length >= minRoles) {
+                  const autoIds = friendGuests
+                    .slice(0, Math.min(friendGuests.length, Math.max(minRoles, 6)))
+                    .map(g => g.id);
+                  setAttendingGuestIds(autoIds);
+                  reconcileAssignments(friendGuests.filter(g => autoIds.includes(g.id)));
+                } else if (friendGuests.length < minRoles) {
+                  handleApplyRandomDetectiveCast(Math.min(maxRoles, Math.max(minRoles, 6)));
+                }
               }
             }}
             className={`p-5 rounded-3xl border-2 text-left transition-all cursor-pointer ${
@@ -747,29 +1049,118 @@ export default function CustomerCastClient({
               )}
             </div>
             <p className="text-xs text-slate-300 font-medium leading-relaxed">
-              <strong>Solve It Together Like a Cold-Case Box - No Acting Needed!</strong> Playing solo, as a couple, or with 3–4 friends? Simply select {minRoles}–{maxRoles} profiles below to populate the story&apos;s suspect web, then inspect all character dossiers, texts &amp; audio clues together to catch the killer.
+              <strong>Solve It Together Like a Cold-Case Box - No Acting Needed!</strong> Playing solo, as a couple, or with 3–4 friends? Star your own friends in the crime scene OR generate a <strong>Random Mystery Cast</strong> of characters to investigate together!
             </p>
           </button>
         </div>
+
+        {/* CASE-FILE SUB-CHOICE: CAST YOUR FRIENDS VS. RANDOM MYSTERY CHARACTERS */}
+        {playMode === 'casefile' && (
+          <div className="pt-4 border-t border-white/10 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
+                  Case-File Cast Option • Who Should Star as the Suspects?
+                </span>
+                <p className="text-xs text-slate-300 font-medium mt-0.5">
+                  Even when solving solo or as a duo, you can cast your real friends as the suspects OR use an instant random cast of mystery characters.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <button
+                type="button"
+                onClick={handleRestoreFriendsCast}
+                className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-3.5 ${
+                  casefileCastSource === 'friends'
+                    ? 'border-brand-pink bg-white/10 shadow-md'
+                    : 'border-white/10 bg-white/5 hover:border-white/25'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-brand-pink/20 border border-brand-pink/40 flex items-center justify-center text-lg shrink-0">
+                  👥
+                </div>
+                <div className="min-w-0 flex-grow">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-white">
+                      Cast My Friends &amp; Profiles
+                    </span>
+                    {casefileCastSource === 'friends' && (
+                      <span className="px-2 py-0.5 rounded-full bg-brand-pink text-white text-[8px] font-black uppercase tracking-widest">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-300 font-medium mt-1 leading-relaxed">
+                    Put yourself, your partner, or your friend group into the CCTV photos, text logs, and voice wiretaps—even if you&apos;re solving it solo on the couch!
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleApplyRandomDetectiveCast(randomCastCount)}
+                className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-3.5 ${
+                  casefileCastSource === 'random'
+                    ? 'border-brand-pink bg-white/10 shadow-md'
+                    : 'border-white/10 bg-white/5 hover:border-white/25'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-lg shrink-0">
+                  🎲
+                </div>
+                <div className="min-w-0 flex-grow">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-white">
+                      Use a Random Cast of Characters
+                    </span>
+                    {casefileCastSource === 'random' && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[8px] font-black uppercase tracking-widest">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-300 font-medium mt-1 leading-relaxed">
+                    Don&apos;t want to create friend profiles? Instantly populate the story web with {minRoles}–{maxRoles} ready-made fictional suspects with studio portraits &amp; accents.
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
-      {/* STEP 1: GUEST ATTENDANCE (IN OR OUT) */}
+      {/* STEP 1: GUEST ATTENDANCE (IN OR OUT) OR RANDOM CAST GENERATOR */}
       <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
             <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block mb-1">
-              Step 1 • {playMode === 'casefile' ? 'Populate Your Suspect File' : 'In or Out (1 Character Per Guest)'}
+              Step 1 •{' '}
+              {playMode === 'casefile'
+                ? casefileCastSource === 'random'
+                  ? 'Random Mystery Suspect Web'
+                  : 'Populate Your Suspect File'
+                : 'In or Out (1 Character Per Guest)'}
             </span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900">
               {playMode === 'casefile'
-                ? `Select ${minRoles}–${maxRoles} Profiles for the Story Web (${attendingGuestIds.length} / ${maxRoles} Selected)`
+                ? casefileCastSource === 'random'
+                  ? `Random Detective Cast (${attendingGuestIds.length} Suspects Generated)`
+                  : `Select ${minRoles}–${maxRoles} Profiles for the Story Web (${attendingGuestIds.length} / ${maxRoles} Selected)`
                 : `Who's Playing Tonight? (${attendingGuestIds.length} / ${maxRoles} Selected - Min ${minRoles})`}
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1">
               {playMode === 'casefile' ? (
-                <>
-                  Every mystery requires at least <strong>{minRoles} suspects</strong> so the alibis, backstories, and motives tangle properly. Pick {minRoles}–{maxRoles} friends/profiles below to star in your case file, you&apos;ll receive all of their booklets and clues to solve solo or with a friend!
-                </>
+                casefileCastSource === 'random' ? (
+                  <>
+                    We&apos;ve populated your case file with <strong>{attendingGuestIds.length} ready-made fictional characters</strong> (matched to each role&apos;s gender and voice accent). You can shuffle for a fresh random cast, or switch back to casting your friends anytime!
+                  </>
+                ) : (
+                  <>
+                    Every mystery requires at least <strong>{minRoles} suspects</strong> so the alibis, backstories, and motives tangle properly. Pick {minRoles}–{maxRoles} friends/profiles below to star in your case file, or click <strong>🎲 Use Random Cast</strong> to fill the case with fictional suspects!
+                  </>
+                )
               ) : (
                 <>
                   Tap guests to mark them <strong>In</strong> or <strong>Out</strong> (minimum <strong>{minRoles}</strong> so the backstories and alibis interlock). We generate <strong>strictly {attendingGuestIds.length} characters</strong> - zero unplayed side characters!
@@ -779,39 +1170,91 @@ export default function CustomerCastClient({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {attendingGuestIds.length < minRoles && guests.length >= minRoles && (
-              <button
-                type="button"
-                onClick={() => {
-                  const targetCount = Math.min(guests.length, Math.max(minRoles, 6), maxRoles);
-                  const nextIds = guests.slice(0, targetCount).map(g => g.id);
-                  setAttendingGuestIds(nextIds);
-                  reconcileAssignments(guests.filter(g => nextIds.includes(g.id)));
-                }}
-                className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-brand-pink transition-colors cursor-pointer"
-              >
-                ⚡ Auto-Select {Math.min(guests.length, Math.max(minRoles, 6))} Suspects
-              </button>
+            {playMode === 'casefile' && casefileCastSource === 'random' ? (
+              <>
+                {maxRoles > minRoles && (
+                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    {Array.from(
+                      { length: maxRoles - minRoles + 1 },
+                      (_, idx) => minRoles + idx
+                    ).map(countNum => (
+                      <button
+                        key={countNum}
+                        type="button"
+                        onClick={() => handleApplyRandomDetectiveCast(countNum, shuffleSeed)}
+                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          attendingGuestIds.length === countNum
+                            ? 'bg-slate-900 text-white shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {countNum} Suspects
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleApplyRandomDetectiveCast(randomCastCount, shuffleSeed + 1)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-brand-pink transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>🎲</span> Shuffle Random Cast
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRestoreFriendsCast}
+                  className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-brand-pink hover:text-brand-pink text-xs font-black uppercase tracking-widest transition-colors cursor-pointer"
+                >
+                  👥 Switch to Friend Profiles
+                </button>
+              </>
+            ) : (
+              <>
+                {playMode === 'casefile' && (
+                  <button
+                    type="button"
+                    onClick={() => handleApplyRandomDetectiveCast(randomCastCount)}
+                    className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  >
+                    <span>🎲</span> Use Random Cast
+                  </button>
+                )}
+                {attendingGuestIds.length < minRoles && guests.length >= minRoles && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const friendGuests = guests.filter(g => !g.id.startsWith('random-suspect-'));
+                      const targetCount = Math.min(friendGuests.length, Math.max(minRoles, 6), maxRoles);
+                      const nextIds = friendGuests.slice(0, targetCount).map(g => g.id);
+                      setAttendingGuestIds(nextIds);
+                      reconcileAssignments(friendGuests.filter(g => nextIds.includes(g.id)));
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-brand-pink transition-colors cursor-pointer"
+                  >
+                    ⚡ Auto-Select {Math.min(guests.length, Math.max(minRoles, 6))} Suspects
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsHostProfileModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-brand-pink/10 border border-brand-pink/30 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-colors cursor-pointer"
+                >
+                  👑 View / Edit Host Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsGuestModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl border-2 border-dashed border-brand-pink/40 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink/5 transition-colors cursor-pointer"
+                >
+                  + Add Guest
+                </button>
+              </>
             )}
-            <button
-              type="button"
-              onClick={() => setIsHostProfileModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-brand-pink/10 border border-brand-pink/30 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-colors cursor-pointer"
-            >
-              👑 View / Edit Host Profile
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsGuestModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl border-2 border-dashed border-brand-pink/40 text-brand-pink text-xs font-black uppercase tracking-widest hover:bg-brand-pink/5 transition-colors cursor-pointer"
-            >
-              + Add Guest
-            </button>
           </div>
         </div>
 
-        {/* Dedicated Host Profile Spotlight Banner */}
-        {(() => {
+        {/* Dedicated Host Profile Spotlight Banner (shown when casting friends/profiles) */}
+        {!(playMode === 'casefile' && casefileCastSource === 'random') && (() => {
           const hostGuest = guests.find(g => g.isHost);
           if (!hostGuest) return null;
           const isHostIn = attendingGuestIds.includes(hostGuest.id);
@@ -893,61 +1336,84 @@ export default function CustomerCastClient({
         {attendingGuestIds.length < minRoles && (
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-xs font-bold text-amber-800">
-              ⚠️ Please select at least <strong>{minRoles} profiles</strong> ({minRoles - attendingGuestIds.length} more needed) so the murder mystery has enough interlocking suspects, alibis, and red herrings. Playing solo or in a duo? Switch to <strong>Case-File Mode</strong> above and keep {minRoles}+ suspects selected!
+              ⚠️ Please select at least <strong>{minRoles} profiles</strong> ({minRoles - attendingGuestIds.length} more needed) so the murder mystery has enough interlocking suspects, alibis, and red herrings. Don&apos;t have {minRoles} profiles yet? Click <strong>🎲 Use Random Cast</strong> above to instantly populate your case file with fictional suspects!
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setPlayMode('casefile');
+                handleApplyRandomDetectiveCast(Math.min(maxRoles, Math.max(minRoles, 6)));
+              }}
+              className="px-4 py-2 rounded-xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest hover:bg-brand-pink transition-colors shrink-0 cursor-pointer"
+            >
+              🎲 Fill with Random Cast
+            </button>
           </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-          {guests.map(guest => {
-            const isIn = attendingGuestIds.includes(guest.id);
-            const gBadge = formatGenderLabel(guest.gender);
-            const guestAvatar = resolveDisplayAvatarUrl(guest.avatar_url);
+          {guests
+            .filter(g =>
+              playMode === 'casefile' && casefileCastSource === 'random'
+                ? g.id.startsWith('random-suspect-')
+                : !g.id.startsWith('random-suspect-')
+            )
+            .map(guest => {
+              const isIn = attendingGuestIds.includes(guest.id);
+              const gBadge = formatGenderLabel(guest.gender);
+              const guestAvatar = resolveDisplayAvatarUrl(guest.avatar_url);
+              const isRandomSuspect = guest.id.startsWith('random-suspect-');
 
-            return (
-              <button
-                key={guest.id}
-                type="button"
-                onClick={() => handleToggleGuestAttendance(guest.id)}
-                className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
-                  isIn
-                    ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
-                    : 'border-slate-200 hover:border-brand-pink/50 bg-white'
-                }`}
-              >
-                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
-                  {guestAvatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={guestAvatar} alt={guest.name} className="w-full h-full object-cover object-top" />
-                  ) : (
-                    <span className="text-2xl">{guest.isHost ? '👑' : '👤'}</span>
-                  )}
-                </div>
-                <div className="min-w-0 flex-grow">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-black text-slate-900 truncate">{guest.name}</p>
-                    {guest.isHost && (
-                      <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[8px] font-black uppercase tracking-wider shrink-0">
-                        Host
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    {gBadge.shortLabel}
-                  </p>
-                </div>
-                <span
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
+              return (
+                <button
+                  key={guest.id}
+                  type="button"
+                  onClick={() => handleToggleGuestAttendance(guest.id)}
+                  className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-center gap-3 cursor-pointer ${
                     isIn
-                      ? 'bg-brand-pink text-white'
-                      : 'bg-slate-100 text-slate-500 hover:bg-brand-pink/10 hover:text-brand-pink'
+                      ? 'border-brand-pink bg-brand-pink/5 shadow-sm'
+                      : 'border-slate-200 hover:border-brand-pink/50 bg-white'
                   }`}
                 >
-                  {isIn ? 'IN' : 'OUT'}
-                </span>
-              </button>
-            );
-          })}
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center border border-slate-200 shadow-sm">
+                    {guestAvatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={guestAvatar} alt={guest.name} className="w-full h-full object-cover object-top" />
+                    ) : (
+                      <span className="text-2xl">{guest.isHost ? '👑' : '👤'}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-grow">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-black text-slate-900 truncate">{guest.name}</p>
+                      {guest.isHost && (
+                        <span className="px-1.5 py-0.5 rounded bg-brand-pink/15 text-brand-pink text-[8px] font-black uppercase tracking-wider shrink-0">
+                          Host
+                        </span>
+                      )}
+                      {isRandomSuspect && (
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] font-black uppercase tracking-wider shrink-0">
+                          Suspect
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      {gBadge.shortLabel}
+                      {guest.accent ? ` • ${guest.accent}` : ''}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${
+                      isIn
+                        ? 'bg-brand-pink text-white'
+                        : 'bg-slate-100 text-slate-500 hover:bg-brand-pink/10 hover:text-brand-pink'
+                    }`}
+                  >
+                    {isIn ? 'IN' : 'OUT'}
+                  </span>
+                </button>
+              );
+            })}
         </div>
       </section>
 
@@ -1037,21 +1503,27 @@ export default function CustomerCastClient({
                 <option value="" disabled>
                   Select guest for Victim...
                 </option>
-                {guests.map(g => {
-                  const gNorm = normalizeGender(g.gender);
-                  const vNorm = normalizeGender(victimCharacter.gender);
-                  const isMismatch =
-                    (vNorm === 'male' || vNorm === 'female') && gNorm !== vNorm;
-                  const isAttending = attendingGuestIds.includes(g.id);
-                  return (
-                    <option key={g.id} value={g.id}>
-                      {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
-                      {formatGenderLabel(g.gender).shortLabel}
-                      {isMismatch ? ' ⚠️ Gender Mismatch' : ''}
-                      {!isAttending ? ' • Tap to Add' : ''})
-                    </option>
-                  );
-                })}
+                {guests
+                  .filter(g =>
+                    playMode === 'casefile' && casefileCastSource === 'random'
+                      ? g.id.startsWith('random-suspect-')
+                      : !g.id.startsWith('random-suspect-')
+                  )
+                  .map(g => {
+                    const gNorm = normalizeGender(g.gender);
+                    const vNorm = normalizeGender(victimCharacter.gender);
+                    const isMismatch =
+                      (vNorm === 'male' || vNorm === 'female') && gNorm !== vNorm;
+                    const isAttending = attendingGuestIds.includes(g.id);
+                    return (
+                      <option key={g.id} value={g.id}>
+                        {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
+                        {formatGenderLabel(g.gender).shortLabel}
+                        {isMismatch ? ' ⚠️ Gender Mismatch' : ''}
+                        {!isAttending ? ' • Tap to Add' : ''})
+                      </option>
+                    );
+                  })}
               </CustomSelect>
 
               <p className="text-[11px] text-slate-400 font-medium leading-snug">
@@ -1215,16 +1687,22 @@ export default function CustomerCastClient({
                           className="flex-grow min-w-0 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-black text-slate-900 hover:border-slate-300 focus:outline-none focus:border-brand-pink cursor-pointer"
                         >
                           <option value="">Unassigned</option>
-                          {guests.map(g => {
-                            const isAttending = attendingGuestIds.includes(g.id);
-                            return (
-                              <option key={g.id} value={g.id}>
-                                {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
-                                {formatGenderLabel(g.gender).shortLabel}
-                                {!isAttending ? ' • Tap to Add' : ''})
-                              </option>
-                            );
-                          })}
+                          {guests
+                            .filter(g =>
+                              playMode === 'casefile' && casefileCastSource === 'random'
+                                ? g.id.startsWith('random-suspect-')
+                                : !g.id.startsWith('random-suspect-')
+                            )
+                            .map(g => {
+                              const isAttending = attendingGuestIds.includes(g.id);
+                              return (
+                                <option key={g.id} value={g.id}>
+                                  {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
+                                  {formatGenderLabel(g.gender).shortLabel}
+                                  {!isAttending ? ' • Tap to Add' : ''})
+                                </option>
+                              );
+                            })}
                         </CustomSelect>
                       </div>
                     </div>
