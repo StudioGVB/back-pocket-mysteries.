@@ -342,108 +342,94 @@ export default async function HomePage(props: {
       {/* Interactive Product Walkthrough */}
       <InteractivePackPreview locale={locale} />
 
-      {/* How It Works & Party Night Run Sheet */}
+      {/* How It Works - High-Level 6-Step Flow */}
       <section className="py-20 lg:py-28 bg-white">
         <div className="container mx-auto px-6 max-w-6xl">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16 lg:mb-20">
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink mb-3">
-                How It Works &amp; How to Play
-              </p>
-              <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
-                {dict.home.steps.title.split('is')[0]} is <span className="text-brand-pink italic">sorted</span> {dict.home.steps.title.split('sorted')[1]}
-              </h2>
-              <p className="text-gray-400 font-black uppercase tracking-[0.15em] text-xs">{dict.home.steps.subtitle}</p>
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink text-[11px] font-black uppercase tracking-[0.2em] mb-4">
+              How It Works · Start to Party Night
             </div>
-
-            <div className="space-y-6">
-              {[dict.home.steps.step1, dict.home.steps.step2, dict.home.steps.step3].map((step, i) => (
-                <div key={i} className="card-branded p-8 md:p-10 lg:p-14 flex flex-col sm:flex-row gap-6 lg:gap-10 items-start group hover:border-brand-pink">
-                  <span className="text-6xl lg:text-8xl font-black text-gray-100 leading-none group-hover:text-brand-pink/20 transition-colors shrink-0">0{i+1}</span>
-                  <div>
-                    <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-3">{step.title}</h3>
-                    <p className="text-gray-500 font-semibold text-lg leading-relaxed">{step.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-6xl font-black text-brand-dark mb-4 uppercase tracking-tight">
+              Your party is <span className="text-brand-pink italic">sorted</span> in 6 steps.
+            </h2>
+            <p className="text-gray-400 font-black uppercase tracking-[0.15em] text-xs">
+              {dict.home.steps.subtitle}
+            </p>
           </div>
 
-          {/* Architectural Hairline Grid: On Party Night (Host on Laptop · Guests on Phones) */}
-          <div className="mt-20 pt-16 border-t border-gray-200">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-brand-pink mb-2">
-                  On Party Night · Recommended Setup
-                </p>
-                <h3 className="text-2xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight leading-none">
-                  Host on a <span className="text-brand-pink italic">Laptop.</span> Guests on <span className="text-brand-pink italic">Phones.</span>
-                </h3>
-              </div>
-              <p className="text-gray-500 font-medium text-sm max-w-md leading-relaxed">
-                Only the Host sees the stage controller and decides when each round&apos;s clues and voting unlock—while extra friends above your cast size join free as <strong>Detective [Their Name]</strong>.
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {[
-                {
-                  num: '01',
-                  stage: 'Pre-Party Mingle',
-                  title: 'QR Join & Role Claim',
-                  desc: 'Guests scan the QR code to claim their character card — or join as Detective [Name] if you have more than 6 guests — and mingle with icebreakers.',
-                },
-                {
-                  num: '02',
-                  stage: 'Rounds 1–3 Clues',
-                  title: 'Host Unlocks Clues',
-                  desc: 'As you unlock each round on your laptop, intercepted text threads, CCTV stills, and voice wiretaps drop onto every guest’s phone.',
-                },
-                {
-                  num: '03',
-                  stage: 'Host-Gated Voting',
-                  title: 'Host Opens Ballot',
-                  desc: 'You decide when voting opens for each round. Suspects and Guest Detectives lock in their vote while you watch the live vote counter.',
-                },
-                {
-                  num: '04',
-                  stage: 'Final Reveal',
-                  title: 'Confession & Scores',
-                  desc: 'With one click, broadcast the Killer’s Confession, full timeline solution, and Combined Detective Leaderboard to every phone.',
-                },
-              ].map((item) => (
-                <div
-                  key={item.num}
-                  className="card-branded p-7 border-2 border-gray-100 hover:border-brand-pink transition-all flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-5">
-                      <span className="text-3xl font-black text-gray-200 group-hover:text-brand-pink transition-colors">
-                        {item.num}
-                      </span>
-                      <span className="px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[9px] font-black uppercase tracking-widest">
-                        {item.stage}
-                      </span>
-                    </div>
-                    <h4 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-2.5">
-                      {item.title}
-                    </h4>
-                    <p className="text-xs sm:text-sm text-gray-500 font-semibold leading-relaxed">
-                      {item.desc}
-                    </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
+            {[
+              {
+                num: '01',
+                tag: 'Before the Party',
+                title: 'Create Your Guests',
+                desc: 'Add your friends’ names, appearances (or snap a quick photo), accents, and real-life inside jokes so the mystery feels built for your crowd.',
+              },
+              {
+                num: '02',
+                tag: 'Choose the Vibe',
+                title: 'Pick Your Theme',
+                desc: 'Choose a human-written mystery storyline, difficulty, and spice level — from work-friendly Clean mysteries to Spicy reality-TV drama.',
+              },
+              {
+                num: '03',
+                tag: 'Match Your Crew',
+                title: 'Assign Your Cast',
+                desc: 'Match your friends to iconic character roles (or auto-cast them in 1 click). Smaller group? Use Hybrid Mode or a 100% Fictional Cast!',
+              },
+              {
+                num: '04',
+                tag: 'Ready in ~20 Mins',
+                title: 'Generate Custom Clues',
+                desc: 'Our engine builds your pack with clues tailored to your specific guests — custom portraits, crime-scene CCTV photos, leaked DMs & voice wiretaps.',
+              },
+              {
+                num: '05',
+                tag: 'Build the Hype',
+                title: 'Send Character Invites',
+                desc: 'Send your friends their character outline and outfit & dress code guide before the night via a 1-click group chat link so everyone arrives in character.',
+              },
+              {
+                num: '06',
+                tag: 'Party Night',
+                title: 'Launch Live Game Mode',
+                desc: 'Open the Playroom on your laptop when everyone arrives. Guests join via QR code on their phones to get live clues & vote (and extra friends join as Detective [Name]!).',
+              },
+            ].map((step) => (
+              <div
+                key={step.num}
+                className="card-branded p-8 border-2 border-gray-100 hover:border-brand-pink transition-all flex flex-col justify-between group"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-5xl font-black text-gray-100 group-hover:text-brand-pink/25 transition-colors leading-none">
+                      {step.num}
+                    </span>
+                    <span className="px-3.5 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                      {step.tag}
+                    </span>
                   </div>
+                  <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 font-semibold leading-relaxed">
+                    {step.desc}
+                  </p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            <div className="text-center mt-14">
-              <Link href={`/${locale}/how-it-works`} className="inline-flex items-center gap-3 text-brand-pink font-black uppercase tracking-widest text-sm hover:gap-5 transition-all">
-                {dict.home.steps.cta}
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </Link>
-            </div>
+          <div className="text-center mt-14">
+            <Link
+              href={`/${locale}/how-it-works`}
+              className="inline-flex items-center gap-3 text-brand-pink font-black uppercase tracking-widest text-sm hover:gap-5 transition-all"
+            >
+              {dict.home.steps.cta}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
           </div>
         </div>
       </section>
