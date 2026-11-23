@@ -63,7 +63,19 @@ export function extractAgeFromAvatarUrl(url?: string | null): 'young' | 'middle_
  * so we can detect when any physical attribute has changed and regenerate the AI photo.
  */
 export function computeAvatarPhysicalSignature(
-  configOrUrl: AvatarConfig | string | null | undefined,
+  configOrUrl:
+    | AvatarConfig
+    | {
+        gender?: string | null;
+        avatar_config?: Partial<AvatarConfig> | Record<string, unknown> | null;
+        avatar_url?: string | null;
+        eyeColor?: string | null;
+        height?: string | null;
+        ethnicity?: string | null;
+      }
+    | string
+    | null
+    | undefined,
   extra?: {
     gender?: string | null;
     eyeColor?: string | null;
@@ -72,6 +84,25 @@ export function computeAvatarPhysicalSignature(
   }
 ): string {
   if (!configOrUrl) return '';
+
+  // Support wrapper object shape: { gender, avatar_config, avatar_url }
+  if (
+    typeof configOrUrl === 'object' &&
+    ('avatar_config' in configOrUrl || 'avatar_url' in configOrUrl) &&
+    !('skinColor' in configOrUrl)
+  ) {
+    const mergedExtra = {
+      gender: extra?.gender ?? configOrUrl.gender,
+      eyeColor: extra?.eyeColor ?? configOrUrl.eyeColor,
+      height: extra?.height ?? configOrUrl.height,
+      ethnicity: extra?.ethnicity ?? configOrUrl.ethnicity,
+    };
+    const inner =
+      (configOrUrl.avatar_config as AvatarConfig | null | undefined) ??
+      configOrUrl.avatar_url;
+    return computeAvatarPhysicalSignature(inner, mergedExtra);
+  }
+
   if (typeof configOrUrl === 'string') {
     try {
       const u = new URL(configOrUrl);
@@ -97,7 +128,7 @@ export function computeAvatarPhysicalSignature(
     }
   }
 
-  const c = configOrUrl;
+  const c = configOrUrl as Partial<AvatarConfig>;
   const feats = Array.isArray(c.distinctiveFeatures)
     ? [...c.distinctiveFeatures].sort().join(',')
     : '';
