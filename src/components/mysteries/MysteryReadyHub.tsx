@@ -592,6 +592,25 @@ export function MysteryReadyHub({
             </div>
           </div>
 
+          {/* EXTRA GUEST PLAYERS / PLUS-ONES ("DETECTIVE [NAME]") BANNER */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-sky-50/70 border border-sky-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1 max-w-2xl">
+              <span className="text-[10px] font-black uppercase tracking-widest text-sky-700 block">
+                🕵️ Have More Than {characters.length} Guests Coming (or Last-Minute Plus-Ones)?
+              </span>
+              <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+                No need to edit your cast! Extra friends can open the exact same <strong>Group Chat Link</strong> (or scan your party QR code on the night) and tap <strong className="text-sky-700">&ldquo;Join as Detective [Your Name]&rdquo;</strong> at the bottom of the Lobby to get an official Detective Briefing, interrogation questions, live clues, and round voting!
+              </p>
+            </div>
+            <Link
+              href={`/${locale}/play/${mystery.id}?select=1`}
+              target="_blank"
+              className="px-5 py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black uppercase tracking-widest transition-colors shrink-0 text-center"
+            >
+              🕵️ Preview Detective Join Lobby ↗
+            </Link>
+          </div>
+
           {/* SOLO / DUO DETECTIVE CASE-FILE MODE BANNER */}
           <div className="p-5 sm:p-6 rounded-3xl bg-pink-50/50 border border-brand-pink/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1 max-w-2xl">

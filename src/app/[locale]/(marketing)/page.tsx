@@ -99,10 +99,10 @@ export default async function HomePage(props: {
         },
         {
           '@type': 'Question',
-          name: 'How many players can play a Back Pocket Murder Mystery?',
+          name: 'How many players can play a Back Pocket Murder Mystery? What if we have more than 6 guests?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Our mysteries dynamically scale for small groups of 4–6 players (Basic), medium parties of 4–10 players (Premium), and full-house celebrations of 4–16 players (Grand).',
+            text: 'Our mysteries include 6 to 16 core character roles (Basic, Premium, and Grand), PLUS unlimited Extra Guest Detectives at $0 extra cost! Any extra friends or last-minute plus-ones simply scan the party QR code on their phone to join as "Detective [Their Name]" with an official Detective Briefing, suspect interrogation prompts, live clues, and round voting.',
           },
         },
       ],
@@ -145,7 +145,7 @@ export default async function HomePage(props: {
               <p className="mt-6 text-xs text-gray-400 font-bold">
                 {dict.home.hero.priceLabel.replace('{{price}}', '')} 
                 <PriceDisplay tier="basic" locale={locale as Locale} />
-                {' · Ready in ~30 mins · No hosting required'}
+                {' · Ready in ~30 mins · Unlimited Extra Guest Detectives included'}
               </p>
             </div>
             
@@ -270,7 +270,7 @@ export default async function HomePage(props: {
                     {featuredMystery.category}
                   </span>
                   <span className="px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest border border-white/15">
-                    {featuredMystery.playersLabel}
+                    {featuredMystery.playersLabel} (+ Extra Detectives)
                   </span>
                 </div>
                 <div className="absolute bottom-6 left-6 right-6 grid grid-cols-3 gap-3">
@@ -295,13 +295,13 @@ export default async function HomePage(props: {
                 <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight mb-4 leading-tight">
                   {featuredMystery.title}
                 </h3>
-                <p className="text-gray-300 font-medium leading-relaxed mb-8">
+                <p className="text-gray-300 font-medium leading-relaxed mb-6">
                   {featuredMystery.shortDesc}
                 </p>
 
-                <div className="mb-8">
+                <div className="mb-5">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-3">
-                    9 Iconic Guest Archetypes (Your Friends&apos; Names Become The Cast):
+                    {featuredMystery.characters.length} Iconic Guest Archetypes (Your Friends&apos; Names Become The Cast):
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {featuredMystery.characters.map((char) => (
@@ -313,6 +313,10 @@ export default async function HomePage(props: {
                       </span>
                     ))}
                   </div>
+                </div>
+
+                <div className="mb-7 p-3.5 rounded-2xl bg-sky-500/10 border border-sky-400/30 text-xs text-slate-200 font-medium leading-snug">
+                  <strong className="text-sky-300">🕵️ Have more than {featuredMystery.characters.length} guests?</strong> Unlimited extra friends can join the live Game PIN on their phones as <strong className="text-white">&ldquo;Detective [Their Name]&rdquo;</strong> at $0 extra — with a Detective Briefing, interrogation prompts, live clues &amp; voting!
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -349,7 +353,7 @@ export default async function HomePage(props: {
               Built for Effortless Hosting on <span className="text-brand-pink italic">Guests&apos; Phones</span>
             </h2>
             <p className="text-gray-500 font-medium text-sm sm:text-base leading-relaxed">
-              Every game pack comes with a print-ready PDF kit <strong>and</strong> our live interactive Playroom app—so guests can scan a QR code at the table, track clues in their Detective Notebook, and let the host play completely spoiler-free.
+              Every game pack comes with a print-ready PDF kit <strong>and</strong> our live interactive Playroom app—so guests can scan a QR code at the table, view live clues on their phone, and even bring extra friends along as <strong>🕵️ Detective [Their Name]</strong>.
             </p>
           </div>
 
@@ -359,7 +363,13 @@ export default async function HomePage(props: {
                 icon: '📷',
                 badge: 'Zero App Store Download',
                 title: '1-Scan QR Code & 6-Digit PIN Join',
-                desc: 'Pop open the full-screen QR code on your phone or TV. Guests scan once with their camera to claim their custom character dossier in seconds.',
+                desc: 'Pop open the full-screen QR code on your laptop or TV. Guests scan once with their camera to claim their custom character dossier in seconds.',
+              },
+              {
+                icon: '🕵️',
+                badge: 'Have More Than 6 Guests?',
+                title: 'Extra Friends Play as “Detective [Name]”',
+                desc: 'Have extra friends or plus-ones show up? They can join the room as “Detective [Their Name]” with a Suspect Interrogation Lineup, live clues, and round voting!',
               },
               {
                 icon: '👥',
@@ -368,28 +378,22 @@ export default async function HomePage(props: {
                 desc: 'Guests see who is playing which character around the room, plus custom “💬 Ask Them Tonight” conversation starters on every relationship card.',
               },
               {
-                icon: '⏱️',
-                badge: 'Swipe or Grid Evidence Deck',
-                title: 'Chronological Crime Timeline',
-                desc: 'Toggle the Evidence Deck into a timestamped crime timeline (7:25 PM → 9:15 PM) to spot 15-minute alibi gaps across CCTV stills, texts, and audio wiretaps.',
-              },
-              {
-                icon: '📌',
-                badge: 'Mobile Detective Notebook',
-                title: 'Pin Suspects & 1-Tap Deduction Chips',
-                desc: 'Tag clues as 🔑 Key, 🛡️ Alibi, or 🐟 Red Herring, pin suspects to specific evidence, and tap quick chips (⏱️ Timeline Gap, 💔 Affair Motive, 🤥 Fake Alibi).',
+                icon: '📱',
+                badge: 'Simple Mobile Clue Feed',
+                title: 'Live Texts, CCTV & Audio Wiretaps',
+                desc: 'As the host unlocks each round, guests receive leaked iMessage threads, crime-scene CCTV photos, and voice-acted audio wiretaps straight on their phones.',
               },
               {
                 icon: '📢',
                 badge: '100% Spoiler-Free Host Mode',
-                title: 'Read-Aloud Host Scripts & Vote Tracker',
-                desc: 'A live header pill shows how many guests have claimed roles and voted (🗳️ 7/7 Voted), with word-for-word round announcements so the host plays as a suspect.',
+                title: 'Host Controls When Voting Opens',
+                desc: 'The host runs the rounds from their laptop and decides when voting opens for each round, while playing along as a full suspect without spoilers.',
               },
               {
                 icon: '🏆',
                 badge: 'End-of-Night Leaderboard',
-                title: 'Detective Bonus Points & Party Awards',
-                desc: 'Guests earn +10/+15 bonus points for spotting real Key Clues and Red Herrings, unlocking awards like “🦅 The BS Detector” and “🎣 Hook, Line & Sinker”.',
+                title: 'Combined Cast & Detective Leaderboard',
+                desc: 'Both character suspects and extra Guest Detectives compete on the final room leaderboard to see who cracked the case first.',
               },
             ].map((item) => (
               <div

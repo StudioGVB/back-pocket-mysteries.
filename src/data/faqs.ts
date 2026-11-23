@@ -150,6 +150,11 @@ export const faqsData: FAQ[] = [
   },
   {
     category: "Gameplay & Hosting",
+    q: "What if we have more than 6 guests (or extra friends / last-minute plus-ones show up on party night)?",
+    a: "Everyone can play! Beyond the core character roles in your mystery, unlimited extra guests can join the live Game PIN on their phones as '🕵️ Detective [Their Name]' at $0 extra cost. They receive an official Detective Briefing with tailored interrogation questions for every suspect in the room, see every live clue drop on their phone, vote in every round, and compete on the final Detective Leaderboard!"
+  },
+  {
+    category: "Gameplay & Hosting",
     q: "Do players get eliminated if they are 'killed'?",
     a: "Nobody sits on the sidelines! Even the Victim still participates in the investigation and submits their round-by-round theories to help catch their own killer."
   },
@@ -271,18 +276,18 @@ export const faqsData: FAQ[] = [
   // Themes & Content
   {
     category: "Themes & Content",
-    q: "What is the age rating for your games?",
-    a: "Our themes are rated 16+ by default. They contain references to murder, affairs, drinking, and adult drama, similar to a PG-13 movie or standard true crime podcast."
+    q: "What is the age and spice rating for your games?",
+    a: "Every mystery is calibrated across 4 clear Spice Levels: Clean (Safe For Work & Family — full murder, revenge, and blackmail motives with zero romantic affairs and zero cussing), Mild (PG-13 romantic affairs and betrayal with 100% clean dialogue and zero cussing), Spicy (18+ cussing, catfights, and sex-tape scandal), and Filthy (18+ unfiltered after-dark chaos)."
   },
   {
     category: "Themes & Content",
     q: "Are there content warnings or trigger warnings?",
-    a: "Yes, each theme page lists its tone, difficulty, and vibe rating. We avoid graphic gore and keep the tone fun, dramatic, and social."
+    a: "Yes, each theme page lists its Difficulty (Easy = 1 Killer / 1 Subplot, Medium = 1 Killer / Multi-Alibi Timestamps, Hard = Killer + Secret Accomplice) and its Spice Level badge so you know the exact dialogue and roleplay boundaries before booking."
   },
   {
     category: "Themes & Content",
     q: "Do you have work-friendly or family-friendly themes?",
-    a: "Yes! Check the Vibe / Spice badge on each mystery card in our catalog to choose between Mild (work & family friendly) or Spicy (reality-TV drama & messy exes)."
+    a: "Yes! Look for the Clean (Safe For Work & Family) badge—you still get a full high-stakes murder mystery with death, revenge, blackmail, and sabotage, without co-workers or family members ever having to roleplay a love affair or read profanity. For friend groups and couples who want romantic affairs without swearing, choose Mild."
   },
   {
     category: "Gameplay & Hosting",

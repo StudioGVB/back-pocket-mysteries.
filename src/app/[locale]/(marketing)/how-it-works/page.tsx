@@ -213,21 +213,21 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
           ))}
         </div>
 
-        {/* Two Ways To Play: Dinner Party Roleplay vs Couch Detective Case File */}
+        {/* Two Ways To Play + Unlimited Extra Guest Detectives */}
         <div className="mt-28 lg:mt-36 p-8 sm:p-12 lg:p-16 bg-brand-dark text-white rounded-[2rem] lg:rounded-[3rem] shadow-2xl border-2 border-brand-pink/30">
           <div className="max-w-3xl mb-10">
             <span className="inline-block px-4 py-1.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest mb-4">
-              Flexible Format • 1 to 16 People
+              Flexible Format • 1 to 16+ People
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.05] mb-4">
               Host a Full-Cast Party - Or Solve It <span className="text-brand-pink italic">Like a Detective Case File</span>
             </h2>
             <p className="text-gray-300 font-medium text-base sm:text-lg leading-relaxed">
-              Every mystery story features at least <strong>6 interlocking characters</strong> (1 Victim + 5 Suspects) so the alibis, motives, and backstories tangle properly — and our 4-Step Casting Wizard lets you cast <strong>All Real Friends</strong>, a <strong>Hybrid Mix (Friends + Fictional Strangers)</strong>, or a <strong>100% Fictional Cast</strong>!
+              Every mystery story features at least <strong>6 interlocking characters</strong> (1 Victim + 5 Suspects) so the alibis, motives, and backstories tangle properly — plus <strong>unlimited Extra Guest Detectives (&ldquo;Detective [Name]&rdquo;)</strong> if more friends come along!
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-3">
               <span className="text-xs font-black uppercase tracking-widest text-brand-pink block">
                 🎭 Option 1 • Dinner Party Roleplay (6–16 Players)
@@ -237,6 +237,18 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
               </h3>
               <p className="text-sm text-gray-300 font-medium leading-relaxed">
                 Having friends over for a dinner party, birthday, or hen night? Cast your guests into their own custom character roles with personalized outfit guides, secret alibis, and round-by-round talking points.
+              </p>
+            </div>
+
+            <div className="bg-sky-500/10 border border-sky-400/35 rounded-3xl p-8 space-y-3">
+              <span className="text-xs font-black uppercase tracking-widest text-sky-300 block">
+                🕵️ Have More Than 6 Guests? • Unlimited Extra Detectives
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight text-white">
+                Extra Friends Join Free as &ldquo;Detective [Name]&rdquo;
+              </h3>
+              <p className="text-sm text-gray-300 font-medium leading-relaxed">
+                Have 7, 8, or 10+ friends coming to a 6-character mystery (or last-minute plus-ones)? Any extra guests simply scan the QR code and join as <strong className="text-sky-300">Detective [Their Name]</strong> — getting an official Detective Briefing with suspect interrogation questions, live phone clues, and round voting!
               </p>
             </div>
 
@@ -274,7 +286,13 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                 icon: '📷',
                 tag: 'Instant Table Join',
                 title: '1-Scan QR Code & 6-Digit Game PIN',
-                desc: 'Open the full-screen QR code modal on your phone or TV. Guests scan once with their phone camera to enter the room and claim their character dossier.',
+                desc: 'Open the full-screen QR code modal on your laptop or TV. Guests scan once with their phone camera to enter the room and claim their character dossier.',
+              },
+              {
+                icon: '🕵️',
+                tag: 'Have More Than 6 Guests?',
+                title: 'Extra Friends Play as “Detective [Name]”',
+                desc: 'Extra guests or last-minute plus-ones join on their phone as “Detective [Their Name]” with a custom Suspect Interrogation Lineup, live clue drops, and round voting.',
               },
               {
                 icon: '👥',
@@ -283,28 +301,22 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                 desc: 'Tap “Room Cast” anytime to see which friend is playing which character, plus custom “💬 Ask Them Tonight” conversation starters on every relationship card.',
               },
               {
-                icon: '⏱️',
-                tag: 'Swipe or Grid Deck',
-                title: 'Chronological Crime Timeline',
-                desc: 'Switch the Evidence Deck between Swipe Cards, a 2-Column Grid, or a chronological Crime Timeline (7:25 PM → 9:15 PM) to catch alibi contradictions.',
-              },
-              {
-                icon: '📌',
-                tag: 'Interactive Deductions',
-                title: 'Clue Tagging & Suspect Pinning',
-                desc: 'Label evidence as 🔑 Key Clue, 🛡️ Alibi, or 🐟 Red Herring, pin suspects directly to clues, and tap 1-click deduction chips while mingling with a drink in hand.',
+                icon: '📱',
+                tag: 'Clean Mobile Clue Feed',
+                title: 'Live Texts, CCTV & Audio Wiretaps',
+                desc: 'Guests receive round-by-round evidence drops right on their phone — leaked iMessage threads, crime-scene photos, and multi-speaker voice recordings.',
               },
               {
                 icon: '📢',
-                tag: 'Host Plays Spoiler-Free',
-                title: 'Read-Aloud Host Scripts & Vote Counter',
-                desc: 'A live readiness pill shows how many guests have claimed roles and voted (🗳️ 7/7 Voted), with word-for-word round scripts so the host never sees spoilers.',
+                tag: 'Host Controls Pacing',
+                title: 'Host-Gated Round Clues & Voting',
+                desc: 'The host controls from their laptop when each clue round unlocks and when voting opens, with a live vote tally showing Cast + Guest Detective votes.',
               },
               {
                 icon: '🏆',
                 tag: 'Final Reveal & Awards',
-                title: 'Detective Bonus Points & Superlatives',
-                desc: 'Accurate clue tags earn +10/+15 bonus points on the final leaderboard and unlock party awards like “🦅 The BS Detector” and “🎣 Hook, Line & Sinker”.',
+                title: 'Combined Cast & Detective Leaderboard',
+                desc: 'At the Final Reveal, both character suspects and extra Guest Detectives compete on the combined room leaderboard to crown the night’s Master Sleuth.',
               },
             ].map((feat) => (
               <div

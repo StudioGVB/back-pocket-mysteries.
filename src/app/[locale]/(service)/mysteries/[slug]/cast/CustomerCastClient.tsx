@@ -1064,7 +1064,7 @@ export default function CustomerCastClient({
           pin: res.pin || initialPin,
           mysteryId: mystery.id,
         });
-        router.push(`/${locale}/mysteries/${mystery.slug}/ready`);
+        router.push(`/${locale}/account/orders/${mystery.id}`);
         return;
       }
 
@@ -1386,6 +1386,21 @@ export default function CustomerCastClient({
                     <span className="text-emerald-400">→</span>
                   </div>
                 </button>
+              </div>
+
+              {/* EXTRA GUEST DETECTIVES CALLOUT */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-sky-500/10 border border-sky-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-sky-300 block">
+                    🕵️ Have More Than {maxRoles} Guests Coming (or Last-Minute Plus-Ones)?
+                  </span>
+                  <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                    Everyone can play! You only need to cast the <strong className="text-white">{maxRoles} core character roles</strong> here — any extra friends can join the live Game PIN on party night as <strong className="text-sky-300">&ldquo;Detective [Their Name]&rdquo;</strong> at $0 extra, complete with an official Detective Briefing, suspect interrogation prompts, live clues, and round voting!
+                  </p>
+                </div>
+                <span className="px-3 py-1.5 rounded-xl bg-sky-400/15 border border-sky-400/30 text-sky-300 text-[10px] font-black uppercase tracking-widest shrink-0 self-start sm:self-center">
+                  + Unlimited Extra Detectives
+                </span>
               </div>
 
               <div className="pt-4 border-t border-white/10 flex items-center justify-end">

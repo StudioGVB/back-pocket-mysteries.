@@ -83,9 +83,17 @@ export default async function ServiceMysteryDetailPage({
       : `${mystery.min_players || 4}–${mystery.max_players || 12} Players`;
 
   const complexityLabel = (mystery.complexity || 'medium').toUpperCase();
-  const spiceLabel = isRealityGlam
-    ? 'SPICY 🔥'
-    : (mystery.spice_level || 'Mild').toUpperCase();
+  const rawSpice = isRealityGlam
+    ? 'spicy'
+    : String(mystery.spice_level || 'mild').toLowerCase();
+  const spiceLabel =
+    rawSpice === 'clean'
+      ? 'CLEAN ✨ (SFW)'
+      : rawSpice === 'spicy'
+      ? 'SPICY 🌶️🌶️'
+      : rawSpice === 'filthy'
+      ? 'FILTHY 🔥🔥🔥'
+      : 'MILD 🌶️';
   const occasions: string[] =
     mystery.occasions ||
     (isRealityGlam
@@ -205,10 +213,11 @@ export default async function ServiceMysteryDetailPage({
               </div>
 
               {/* Specs Grid */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Players</p>
                   <p className="text-sm font-black text-slate-900">{playersLabel}</p>
+                  <p className="text-[10px] font-bold text-sky-600 mt-0.5">🕵️ + Unlimited Extra Detectives</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Difficulty</p>
@@ -228,6 +237,16 @@ export default async function ServiceMysteryDetailPage({
                       : '2–3 Hours'}
                   </p>
                 </div>
+              </div>
+
+              {/* Have More Than X Guests Callout */}
+              <div className="p-4 rounded-2xl mb-3 bg-sky-50/70 border border-sky-200/80">
+                <p className="text-xs font-black text-slate-900 mb-1 flex items-center gap-1.5">
+                  <span>🕵️</span> Have More Than {characters.length} Guests?
+                </p>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Cast {characters.length} friends into the main character roles, and any extra friends or plus-ones can join the live Game PIN on their phones as <strong className="text-slate-900">&ldquo;Detective [Their Name]&rdquo;</strong> at $0 extra — with their own Detective Briefing, interrogation prompts, live clues, and round voting!
+                </p>
               </div>
 
               {/* Personalization Highlight */}
@@ -364,6 +383,7 @@ export default async function ServiceMysteryDetailPage({
                     'It-Girl Dress Code & Signature Cocktail Guide',
                     'Spoiler-Free Host Mode (Play & Sip Alongside Your Guests)',
                     'Final Rose / Accusation Voting Cards & Killer Reveal',
+                    'Unlimited Extra Guest Detectives ("Detective [Name]" Phone Mode)',
                   ]
                 : [
                     'Personalized Character Booklets & Backstories',
@@ -372,6 +392,7 @@ export default async function ServiceMysteryDetailPage({
                     'Round-by-Round Spoiler-Free Host Guide',
                     'Custom Guest Invitations & Costume Guides',
                     'Final Accusation Voting Cards & Killer Reveal',
+                    'Unlimited Extra Guest Detectives ("Detective [Name]" Phone Mode)',
                   ]
               ).map((item) => (
                 <li key={item} className="flex items-start gap-2.5">
@@ -391,12 +412,12 @@ export default async function ServiceMysteryDetailPage({
 
       {/* Character Types / Cast Roster Section */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>
             <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#fe04c6' }}>
               {isRealityGlam
-                ? `💋 Meet The Bombshells & Villains (${characters.length} Roles)`
-                : `Meet The Cast (${characters.length} Roles)`}
+                ? `💋 Meet The Bombshells & Villains (${characters.length} Roles + Extra Detectives)`
+                : `Meet The Cast (${characters.length} Core Roles + Extra Detectives)`}
             </p>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
               {isRealityGlam ? 'The Reunion Cast & Dress Code' : 'Character Types & Archetypes'}
@@ -408,6 +429,32 @@ export default async function ServiceMysteryDetailPage({
           <span className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-xs font-black text-slate-600 shrink-0">
             🔒 100% Spoiler-Free Preview
           </span>
+        </div>
+
+        {/* Have More Than X Guests Banner inside Cast Section */}
+        <div className="mb-8 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 text-white border border-sky-400/30 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md">
+          <div className="space-y-1.5 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-sky-400 text-slate-950 text-[10px] font-black uppercase tracking-widest">
+                🕵️ Extra Guest Players Included • $0 Extra
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-white/10 text-sky-300 text-[10px] font-black uppercase tracking-widest border border-white/10">
+                Play as &ldquo;Detective [Your Name]&rdquo;
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-white">
+              Have More Than {characters.length} Guests Coming (or Last-Minute Plus-Ones)?
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+              Everyone can play! Cast {characters.length} friends into the suspect and victim roles below, and any additional guests simply scan the party QR code on their phone and tap <strong className="text-sky-300">&ldquo;Join as Detective [Your Name]&rdquo;</strong>. They get an official Detective Briefing with tailored interrogation questions for every suspect, receive every live clue drop, vote in every round, and compete on the final leaderboard!
+            </p>
+          </div>
+          <Link
+            href={`/${locale}/mysteries/${slug}/cast`}
+            className="px-5 py-3.5 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-black uppercase tracking-wider transition-colors shrink-0 text-center"
+          >
+            Start Casting →
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

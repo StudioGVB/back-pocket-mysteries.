@@ -146,9 +146,15 @@ export default function PricingCalculator({
                 <span>11–16 Grand</span>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-xs font-bold text-gray-500 text-center">
-                <span className="text-emerald-600 font-black">🛡️ Last-Minute Dropout Protection:</span>
-                <span>Someone cancels on party night? Switch or scale characters in the Playroom in 1 tap without breaking the plot.</span>
+              <div className="mt-5 pt-4 border-t border-gray-100 space-y-2 text-xs font-bold text-gray-500 text-center">
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  <span className="text-sky-600 font-black">🕵️ Have More Than {guests} Guests Coming?</span>
+                  <span>Unlimited extra friends or plus-ones join the live Game PIN free as <strong className="text-brand-dark">&ldquo;Detective [Their Name]&rdquo;</strong> with interrogation prompts, live clues &amp; voting!</span>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  <span className="text-emerald-600 font-black">🛡️ Last-Minute Dropout Protection:</span>
+                  <span>Someone cancels on party night? Switch or scale characters in the Playroom in 1 tap without breaking the plot.</span>
+                </div>
               </div>
             </div>
           </div>

@@ -237,6 +237,9 @@ export default function MysteriesCatalogClient({
                           Players
                         </p>
                         <p className="text-xs font-black text-slate-900">{playersLabel}</p>
+                        <p className="text-[9px] font-bold text-sky-600 mt-0.5">
+                          🕵️ + Extra Detectives
+                        </p>
                       </div>
                       <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
@@ -256,6 +259,10 @@ export default function MysteriesCatalogClient({
                         </p>
                         <p className="text-xs font-black text-slate-900">{gameTimeLabel}</p>
                       </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-sky-50/70 border border-sky-200/70 text-[11px] text-slate-600 font-medium leading-snug">
+                      <strong className="text-slate-900">🕵️ Have more than {mystery.max_players} guests?</strong> Extra friends join free as <strong className="text-sky-700">&ldquo;Detective [Name]&rdquo;</strong> with interrogation prompts, live clues &amp; voting!
                     </div>
 
                     <Link

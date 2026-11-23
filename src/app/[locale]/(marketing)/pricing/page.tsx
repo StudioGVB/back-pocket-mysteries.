@@ -36,10 +36,11 @@ export default async function PricingPage(props: {
     {
       id: 'basic' as const,
       name: 'Basic',
-      tagline: 'UP TO 6 CHARACTERS • 1–6 PLAYERS.',
-      desc: 'Includes 6 interlocking character dossiers — play as an intimate 6-guest dinner party OR solve it solo, as a couple, or in a small group!',
+      tagline: 'UP TO 6 CHARACTERS • + UNLIMITED EXTRA DETECTIVES.',
+      desc: 'Includes 6 interlocking character dossiers — plus unlimited extra friends can join free as "Detective [Name]" on their phones!',
       features: [
         '6 interlocking character roles & booklets (1 Victim + 5 Suspects)',
+        'Have more than 6 guests? Unlimited extra friends join free as "Detective [Name]"',
         'Play 2 Ways: Dinner Party Roleplay OR Couch Detective / Case-File Mode',
         '3 Cast Options: All Friends, Hybrid (Friends + Fictional Strangers), or 100% Fictional Cast',
         'Interactive clues (texts, receipts, CCTV photos, voice memos)',
@@ -49,16 +50,17 @@ export default async function PricingPage(props: {
       ],
       cta: 'Browse Mysteries',
       featured: false,
-      bestFor: 'SOLO/COUPLE CASE FILES OR INTIMATE PARTIES (1–6 PLAYERS)',
+      bestFor: 'INTIMATE PARTIES (6+ GUESTS) OR SOLO/COUPLE CASE FILES',
       billingPeriod: 'event' as const
     },
     {
       id: 'premium' as const,
       name: 'Premium',
-      tagline: 'UP TO 10 CHARACTERS • 1–10 PLAYERS.',
-      desc: 'Our most popular package, ideal for birthdays, hens nights, and dinner parties up to 10 guests (or an expanded 10-suspect detective case file).',
+      tagline: 'UP TO 10 CHARACTERS • + UNLIMITED EXTRA DETECTIVES.',
+      desc: 'Our most popular package, ideal for birthdays, hens nights, and dinner parties up to 10 core character roles (plus unlimited extra Guest Detectives).',
       features: [
         'Up to 10 custom character roles & booklets',
+        'Have more than 10 guests? Unlimited extra friends join free as "Detective [Name]"',
         'Expanded relationship web, rival alliances & tangled side-plots',
         'Play 2 Ways: Dinner Party Roleplay OR Couch Detective / Case-File Mode',
         '3 Cast Options: All Friends, Hybrid (Friends + Fictional Strangers), or 100% Fictional Cast',
@@ -68,16 +70,17 @@ export default async function PricingPage(props: {
       ],
       cta: 'Browse Mysteries',
       featured: true,
-      bestFor: 'BIRTHDAYS, HENS NIGHTS & DINNER PARTIES (UP TO 10 PLAYERS)',
+      bestFor: 'BIRTHDAYS, HENS NIGHTS & DINNER PARTIES (UP TO 10+ PLAYERS)',
       billingPeriod: 'event' as const
     },
     {
       id: 'grand' as const,
       name: 'Grand',
-      tagline: 'UP TO 16 CHARACTERS • 1–16 PLAYERS.',
-      desc: 'Built for big celebrations, weekend getaways, and large groups of up to 16 suspects with interlocking alibis.',
+      tagline: 'UP TO 16 CHARACTERS • + UNLIMITED EXTRA DETECTIVES.',
+      desc: 'Built for big celebrations, weekend getaways, and large groups of up to 16 suspects with interlocking alibis (plus unlimited extra Guest Detectives).',
       features: [
         'Up to 16 custom character roles & booklets',
+        'Have more than 16 guests? Unlimited extra friends join free as "Detective [Name]"',
         'Full-house conflict graph, multi-faction subplots & red herrings',
         '3 Cast Options: All Friends, Hybrid (Friends + Fictional Strangers), or 100% Fictional Cast',
         'Interactive clues (group chats, audio wiretaps, visual CCTV)',
@@ -87,7 +90,7 @@ export default async function PricingPage(props: {
       ],
       cta: 'Browse Mysteries',
       featured: false,
-      bestFor: 'LARGE PARTIES & GETAWAYS (UP TO 16 PLAYERS)',
+      bestFor: 'LARGE PARTIES & GETAWAYS (UP TO 16+ PLAYERS)',
       billingPeriod: 'event' as const
     },
   ];
