@@ -241,6 +241,11 @@ export function getStoredGameSession(mysteryId: string): StoredGameSession | nul
   return store.sessions[mysteryId] || null;
 }
 
+export function getAllStoredGameSessions(): StoredGameSession[] {
+  const store = readSessionsFile();
+  return Object.values(store.sessions || {});
+}
+
 export function saveStoredGameSession(
   mysteryId: string,
   session: StoredGameSession

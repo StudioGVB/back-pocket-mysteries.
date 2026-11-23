@@ -1,6 +1,11 @@
 import { Database } from '@/types/database';
 import { getMysteries as getNormalizedMysteries } from '@/services/mysteries';
 import { requireAdmin } from '@/utils/admin-auth';
+import {
+  getAllStoredGameSessions,
+  getStoredGameSession,
+  getCachedMysterySnapshot,
+} from '@/lib/live-session-store';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
@@ -47,17 +52,92 @@ export async function getTransactions() {
     .from('orders')
     .select(`
       *,
-      profiles:user_id (full_name),
-      mysteries:mystery_id (title)
+      profiles:user_id (full_name, email),
+      mysteries:mystery_id (id, title, theme)
     `)
     .order('created_at', { ascending: false })) as any;
 
   if (error) {
     console.error('Error fetching transactions:', error);
-    return [];
   }
 
-  return data;
+  const dbOrders: any[] = Array.isArray(data) ? data : [];
+  const seenMysteryIds = new Set<string>();
+
+  const enrichedOrders = dbOrders.map((order: any) => {
+    const mId = order.mystery_id || order.mysteries?.id || null;
+    if (mId) seenMysteryIds.add(mId);
+    const liveSession = mId ? getStoredGameSession(mId) : null;
+    const cachedMystery = mId ? getCachedMysterySnapshot(mId) : null;
+
+    return {
+      ...order,
+      mystery_id: mId,
+      mysteries:
+        order.mysteries ||
+        (cachedMystery
+          ? { id: mId, title: cachedMystery.title, slug: cachedMystery.slug || mId }
+          : null),
+      profiles: order.profiles || {
+        full_name: liveSession?.customerName || 'Host',
+        email: liveSession?.customerEmail || null,
+      },
+      generationStatus: liveSession?.generationStatus || 'ready',
+      generationProgress: liveSession?.generationProgress ?? 100,
+      pin: liveSession?.pin || null,
+      qaReport: liveSession?.qaReport || null,
+    };
+  });
+
+  // Also include any live paid or QA-audited mystery sessions from .live-game-sessions.json not yet in dbOrders
+  const allLiveSessions = getAllStoredGameSessions();
+  for (const session of allLiveSessions) {
+    if (!session.mysteryId || seenMysteryIds.has(session.mysteryId)) continue;
+    if (!session.isPaid && !session.qaReport) continue;
+
+    const cachedMystery = getCachedMysterySnapshot(session.mysteryId);
+    let mysteryTitle = cachedMystery?.title || 'Custom Mystery Pack';
+    let mysterySlug = cachedMystery?.slug || session.mysteryId;
+
+    if (!cachedMystery) {
+      const { data: mRow } = (await supabase
+        .from('mysteries')
+        .select('id, title, theme')
+        .eq('id', session.mysteryId)
+        .maybeSingle()) as any;
+      if (mRow) {
+        mysteryTitle = mRow.title;
+        mysterySlug = mRow.id;
+      }
+    }
+
+    enrichedOrders.push({
+      id: session.orderId || session.mysteryId,
+      mystery_id: session.mysteryId,
+      user_id: session.paidByUserId || session.hostUserId || null,
+      amount: 19,
+      currency: 'USD',
+      status: session.isPaid ? 'succeeded' : 'qa_verified',
+      created_at: session.paidAt || session.updatedAt || new Date().toISOString(),
+      profiles: {
+        full_name: session.customerName || 'Host',
+        email: session.customerEmail || null,
+      },
+      mysteries: {
+        id: session.mysteryId,
+        title: mysteryTitle,
+        slug: mysterySlug,
+      },
+      generationStatus: session.generationStatus || 'ready',
+      generationProgress: session.generationProgress ?? 100,
+      pin: session.pin || null,
+      qaReport: session.qaReport || null,
+    });
+  }
+
+  return enrichedOrders.sort(
+    (a, b) => Date.parse(b.created_at || '') - Date.parse(a.created_at || '')
+  );
 }
 
 export async function processRefund(id: string) {

@@ -1317,6 +1317,12 @@ export function CustomerDashboard({
 
                       <div className="space-y-2 pt-4 border-t border-gray-200/60">
                         <Link
+                          href={`/en/admin/transactions/${m.id}`}
+                          className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                        >
+                          🔍 Inspect Pack &amp; QA Report &rarr;
+                        </Link>
+                        <Link
                           href={`/en/builder/mysteries/${m.id}`}
                           className="w-full py-2.5 bg-brand-dark hover:bg-brand-pink text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                         >
@@ -1471,16 +1477,24 @@ export function CustomerDashboard({
                               </span>
                             </td>
                             <td className="py-4 px-4 text-right">
-                              {!isRefunded && !isGifted && grossUsd > 0 ? (
-                                <button
-                                  onClick={() => openRefundModal(o)}
-                                  className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                                >
-                                  💸 Refund
-                                </button>
-                              ) : (
-                                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">-</span>
-                              )}
+                              <div className="flex items-center justify-end gap-2">
+                                {(o.mystery_id || o.mystery?.id) && (
+                                  <Link
+                                    href={`/en/admin/transactions/${o.mystery_id || o.mystery?.id}`}
+                                    className="px-3.5 py-1.5 bg-slate-900 hover:bg-brand-pink text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                  >
+                                    🔍 Inspect Pack &amp; QA →
+                                  </Link>
+                                )}
+                                {!isRefunded && !isGifted && grossUsd > 0 ? (
+                                  <button
+                                    onClick={() => openRefundModal(o)}
+                                    className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                  >
+                                    💸 Refund
+                                  </button>
+                                ) : null}
+                              </div>
                             </td>
                           </tr>
                         );

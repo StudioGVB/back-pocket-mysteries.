@@ -369,6 +369,44 @@ export default function CustomerCastClient({
     initialViewMode
   );
 
+  // Lazily generate any missing guest AI headshots in the background after the page has rendered
+  useEffect(() => {
+    let cancelled = false;
+    const missingAiGuests = initialGuests.filter(
+      (g) =>
+        !g.isLinked &&
+        !g.id.startsWith('random-suspect-') &&
+        !String(g.avatar_url || '').includes('aiPhotoUrl=')
+    );
+    if (missingAiGuests.length === 0) return;
+
+    import('@/app/actions/ai-guests')
+      .then(async ({ generateGuestAvatarAction }) => {
+        for (const guest of missingAiGuests) {
+          if (cancelled) break;
+          try {
+            const res = await generateGuestAvatarAction(guest.id, guest, {
+              isHostProfile: Boolean(guest.isHost),
+            });
+            if (!cancelled && res?.publicUrl) {
+              setGuests((prev) =>
+                prev.map((item) =>
+                  item.id === guest.id ? { ...item, avatar_url: res.publicUrl } : item
+                )
+              );
+            }
+          } catch {
+            // ignore background avatar generation errors
+          }
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialGuests]);
+
   const maxRoles = Math.min(
     characters.length,
     mystery.max_players || characters.length
@@ -2226,6 +2264,26 @@ export default function CustomerCastClient({
                   {saveError}
                 </div>
               )}
+
+              {/* Peace-of-Mind QA Guarantee Banner */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-3">
+                  <span className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
+                    🛡️
+                  </span>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-emerald-900">
+                      100% QA-Tested Before It Reaches You
+                    </p>
+                    <p className="text-xs text-emerald-800/90 font-medium leading-relaxed mt-0.5">
+                      Every character portrait, crime-scene photo, and voice memo is automatically QA-inspected for accuracy before we email you that your mystery pack is ready.
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-white text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-widest shrink-0 self-start sm:self-center">
+                  ✓ Verified Delivery
+                </span>
+              </div>
 
               {/* Lock Cast CTA */}
               <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">

@@ -58,9 +58,14 @@ export default function MysteriesCatalogClient({
     <div className="container mx-auto px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 mb-2">Available Stories</h1>
+          <div className="flex flex-wrap items-center gap-3 mb-2">
+            <h1 className="text-4xl font-black text-slate-900">Available Stories</h1>
+            <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black uppercase tracking-widest">
+              🛡️ 100% QA-Tested Before Delivery
+            </span>
+          </div>
           <p className="text-slate-500 font-medium text-lg">
-            Pick a theme and customize it for your crew, ready in ~20 minutes.
+            Pick a theme and customize it for your crew, ready in ~20 minutes—every character portrait, crime-scene photo, and voice memo is QA-verified before reaching you.
           </p>
         </div>
 
@@ -120,9 +125,17 @@ export default function MysteriesCatalogClient({
                 ? `${mystery.min_players} Players`
                 : `${mystery.min_players}–${mystery.max_players} Players`;
             const complexityLabel = (mystery.complexity || 'medium').toUpperCase();
-            const spiceLabel = isRealityGlam
-              ? 'SPICY 🔥'
-              : (mystery.spice_level || 'Mild').toUpperCase();
+            const rawSpice = isRealityGlam
+              ? 'spicy'
+              : String(mystery.spice_level || 'mild').toLowerCase();
+            const spiceLabel =
+              rawSpice === 'clean'
+                ? 'CLEAN ✨ (SFW)'
+                : rawSpice === 'spicy'
+                ? 'SPICY 🌶️🌶️'
+                : rawSpice === 'filthy'
+                ? 'FILTHY 🔥🔥🔥'
+                : 'MILD 🌶️';
             const gameTimeLabel = getGameTimeForComplexity(mystery.complexity);
 
             const coverUrl = getEffectiveCoverUrl(

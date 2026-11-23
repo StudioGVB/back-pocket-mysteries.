@@ -269,6 +269,9 @@ export function MysteryReadyHub({
               <span className="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 ✓ Mystery Ready for Party Night
               </span>
+              <span className="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                🛡️ 100% QA-Tested Before Delivery
+              </span>
               <span className="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink/20 text-brand-pink border border-brand-pink/30">
                 🔒 100% Spoiler-Free Host Hub
               </span>

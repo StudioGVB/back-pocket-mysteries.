@@ -148,14 +148,20 @@ export default function MysteryGeneratingScreen({
     {
       title: '3. Scene Clues, CCTV & Voice Memos',
       desc: 'Placing characters into crime scene evidence, leaked group chats, and audio clues.',
-      done: status === 'ready' || progress >= 80,
-      active: status !== 'ready' && progress >= 45 && progress < 80,
+      done: status === 'ready' || progress >= 93,
+      active: status !== 'ready' && progress >= 45 && progress < 93,
     },
     {
-      title: '4. Email Notification & Unlock in My Mysteries (Stories)',
+      title: '4. Automated Pre-Delivery QA Inspection',
+      desc: 'Every character portrait, crime-scene photo, and voice memo is QA-tested for accuracy before reaching you.',
+      done: status === 'ready' || progress >= 99,
+      active: status !== 'ready' && progress >= 93 && progress < 99,
+    },
+    {
+      title: '5. Email Notification & Unlock in My Mysteries (Stories)',
       desc: `Sending your ready email${emailAddress ? ` to ${emailAddress}` : ''} and unlocking your Pre-Party Host Hub.`,
       done: status === 'ready',
-      active: status !== 'ready' && progress >= 80,
+      active: status !== 'ready' && progress >= 99,
     },
   ];
 
