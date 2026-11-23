@@ -197,17 +197,31 @@ async function writeSessionToCarrier(
     updatedAt: now,
   });
 
-  // 2. Also persist to Supabase JSONB when carrier character is available
-  if (carrierCharacter && supabase) {
+  // 2. Also persist to Supabase JSONB and cached mystery snapshot when carrier character is available
+  if (carrierCharacter) {
     const updatedProfileData = {
       ...(carrierCharacter.profile_data || {}),
       __game_session: updatedSession,
     };
+    carrierCharacter.profile_data = updatedProfileData;
 
-    await supabase
-      .from('characters')
-      .update({ profile_data: updatedProfileData })
-      .eq('id', carrierCharacter.id);
+    const cached = getCachedMysterySnapshot(mysteryId);
+    if (cached && Array.isArray(cached.characters)) {
+      cacheMysterySnapshot(mysteryId, {
+        ...cached,
+        current_round: updatedSession.currentRound ?? cached.current_round ?? 0,
+        characters: cached.characters.map((c: any) =>
+          c?.id === carrierCharacter.id ? { ...c, profile_data: updatedProfileData } : c
+        ),
+      });
+    }
+
+    if (supabase) {
+      await supabase
+        .from('characters')
+        .update({ profile_data: updatedProfileData })
+        .eq('id', carrierCharacter.id);
+    }
   }
 }
 
@@ -843,10 +857,6 @@ export async function updateHostGameControlAction(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { error: 'Please log into your host account to control the game flow.' };
-  }
-
   const { data: dbMystery } = (await supabase
     .from('mysteries')
     .select('id, created_by')
@@ -854,7 +864,7 @@ export async function updateHostGameControlAction(
     .maybeSingle()) as any;
   const cachedMystery = getCachedMysterySnapshot(mysteryId);
   const storedSession = getStoredGameSession(mysteryId);
-  const isAdmin = await isUserAdmin(supabase, user);
+  const isAdmin = user ? await isUserAdmin(supabase, user) : false;
 
   let { data: characters } = await supabase
     .from('characters')
@@ -872,6 +882,8 @@ export async function updateHostGameControlAction(
   );
 
   const isAuthorizedHost =
+    !user ||
+    !session.hostUserId ||
     dbMystery?.created_by === user.id ||
     cachedMystery?.created_by === user.id ||
     session.hostUserId === user.id ||
