@@ -72,7 +72,7 @@ export const faqsData: FAQ[] = [
   {
     category: "What We Do",
     q: "Can I play this over Zoom or virtual calls?",
-    a: "Yes! Since every mystery includes both downloadable PDFs and a live 6-digit Game PIN lobby that guests can join from any phone or laptop, it works brilliantly both in-person and on Zoom."
+    a: "Yes! Since every mystery runs in a 100% online live 6-digit Game PIN lobby that guests can join from any phone, tablet, or laptop browser, it works brilliantly both in-person and on Zoom."
   },
 
   // Pricing & Purchasing
@@ -94,7 +94,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Pricing & Purchasing",
     q: "Do you offer physical boxed sets?",
-    a: "We are a 100% digital & print-ready platform. You get immediate access to both our Kahoot-style Live Mobile Playroom (guests join via a 6-digit PIN on their phones) and formatted PDF booklets you can print at home."
+    a: "We are a 100% online digital platform — zero printing required! You get access to our Kahoot-style Live Mobile Playroom where guests join via a 6-digit PIN on their phones to view their character dossiers, CCTV evidence, and audio wiretaps."
   },
   {
     category: "Pricing & Purchasing",
@@ -104,7 +104,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Pricing & Purchasing",
     q: "Can I buy a mystery as a gift for someone else?",
-    a: "Yes! You can purchase a pack and pass the access or the final PDFs to the organizer. It makes a fantastic gift for birthdays or hens nights."
+    a: "Yes! You can purchase a pack and use the '🔁 Transfer Host' button inside My Mysteries to transfer full host ownership to the recipient's email address."
   },
   {
     category: "Pricing & Purchasing",
@@ -240,22 +240,17 @@ export const faqsData: FAQ[] = [
   {
     category: "Delivery & Setup",
     q: "How is the mystery delivered?",
-    a: "Inside your My Mysteries (Stories) dashboard in ~20 minutes! We also send you an email with your direct Playroom link and 6-digit Game PIN the moment your custom portraits, visual clues, and audio wiretaps finish generating."
+    a: "Inside your My Mysteries (Stories) dashboard in ~15–20 minutes! We also send you an email with your direct Host Hub link the moment your custom portraits, visual clues, and audio wiretaps finish generating."
   },
   {
     category: "Delivery & Setup",
-    q: "Do I have to print everything?",
-    a: "No! Guests can scan a QR code or enter your 6-digit Game PIN on their phones to view their character dossiers, leaked group-chat clues, CCTV photos, and audio wiretaps live — or you can print the formatted PDF booklets if you love paper envelopes."
-  },
-  {
-    category: "Delivery & Setup",
-    q: "How much ink will printing this take?",
-    a: "Our printable PDF booklets are cleanly formatted for standard home printers, or you can go 100% paperless using the Live Mobile Lobby."
+    q: "Do I have to print anything?",
+    a: "No! Every mystery is 100% online and paperless. Guests simply enter your 6-digit Game PIN (or open their character link) on their phones to view their character dossiers, leaked group-chat clues, CCTV photos, and audio wiretaps live."
   },
   {
     category: "Delivery & Setup",
     q: "How long does it take to set up before the party?",
-    a: "If playing via the Live Mobile Lobby, setup is instant — just display or share your 6-digit Game PIN. If printing paper booklets, allow 15–20 minutes to print and slip them into envelopes."
+    a: "Setup is instant! You can text or WhatsApp your guests their spoiler-free character invite links before the party, and when everyone arrives, just click '🚀 Start Game' to open the live 6-digit PIN lobby."
   },
   {
     category: "Delivery & Setup",

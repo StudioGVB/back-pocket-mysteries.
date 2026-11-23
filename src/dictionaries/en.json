@@ -52,8 +52,8 @@
           "badge": "AI-Customised Package"
         },
         "instant": {
-          "title": "Live Mobile Lobby + Print Kit",
-          "desc": "In ~20 minutes, your custom package is ready with a 6-digit Game PIN mobile lobby, Spoiler-Free Host Mode, and formatted print-ready PDF booklets.",
+          "title": "100% Online Live Mobile Playroom",
+          "desc": "In ~20 minutes, your custom package is ready with pre-party character links, a 6-digit Game PIN live lobby, and Spoiler-Free Host Mode—zero printing required.",
           "badge": "Ready in ~20 Mins"
         }
       }
@@ -71,7 +71,7 @@
       },
       "step3": {
         "title": "AI builds your custom package in ~20 mins",
-        "desc": "Your personalised suspect dossiers, custom evidence, print-ready PDFs, and 6-digit Game PIN lobby are compiled automatically."
+        "desc": "Your personalised suspect dossiers, custom evidence, pre-party guest links, and 6-digit Game PIN live lobby are compiled automatically."
       },
       "cta": "See the full process"
     },
@@ -123,7 +123,7 @@
     "ctaSection": {
       "title": "Your party deserves better than a blank template.",
       "desc": "Human-written mystery depth, AI-tailored around your people. Packs from {{price}}.",
-      "meta": "Rated 16+ · UK, US & AU friendly · Live Mobile Lobby + Print-Ready PDFs"
+      "meta": "Rated 16+ · UK, US & AU friendly · 100% Online Live Mobile Playroom"
     }
   },
   "pricing": {
@@ -184,26 +184,26 @@
         ]
       },
       "download": {
-        "title": "Launch your Live Lobby or print your kit",
-        "desc": "In ~20 minutes, your personalised murder mystery is ready inside your Host Dashboard. Share the 6-digit Game PIN for live mobile play or print the formatted PDF booklets at home.",
+        "title": "Share Pre-Party Links & Launch Your Live Game",
+        "desc": "In ~20 minutes, your personalised murder mystery is ready inside your My Mysteries hub. Send your friends their Pre-Party First Glance link ahead of time, then click Start Game on party night to reveal your 6-digit Game PIN.",
         "bullets": [
-          "Kahoot-style 6-digit Game PIN lobby for guest phones",
+          "1-Click Pre-Party First Glance links for character outfits & bios",
+          "Kahoot-style 6-digit Game PIN lobby on party night (no guest logins)",
           "Interactive group-chat texts, visual CCTV & AI audio wiretap clues",
-          "Print-ready PDF Suspect Booklets & Host Guide",
           "Live Round 1–3 Host Controller"
         ]
       }
     },
     "packContents": {
       "title": "What's in, the pack?",
-      "subtitle": "Everything you need to run a seamless, memorable night, both digitally on guest phones and ready to print.",
+      "subtitle": "Everything you need to run a seamless, 100% online interactive night right on your guests' phones—zero printing required.",
       "items": {
-        "hostGuide": { "title": "Spoiler-Free Host Guide", "desc": "Step-by-step facilitation & live round controller so you can play too." },
-        "characterPackets": { "title": "Custom Suspect Booklets", "desc": "Individual character scripts cast with your guests' real names." },
-        "clues": { "title": "3-Round Clue Drops", "desc": "Structured secrets & objectives unlocked round by round." },
-        "evidence": { "title": "Chat & Audio Wiretaps", "desc": "Leaked group-chat DMs, receipts, and voice-note clues." },
-        "reveal": { "title": "Live Voting & Final Reveal", "desc": "Guests vote on the killer & Best Actor before the dramatic confession." },
-        "ready": { "title": "Mobile Lobby + Printable PDFs", "desc": "Join via 6-digit PIN on any phone or print paper envelopes." }
+        "hostGuide": { "title": "Spoiler-Free Host Hub", "desc": "Step-by-step facilitation & live round controller so you can play too." },
+        "characterPackets": { "title": "Pre-Party Guest Links", "desc": "Individual character & outfit pages cast with your guests' real names." },
+        "clues": { "title": "3-Round Clue Drops", "desc": "Structured secrets & evidence unlocked live round by round." },
+        "evidence": { "title": "Chat & Audio Wiretaps", "desc": "Leaked group-chat DMs, CCTV photos, receipts, and voice-note clues." },
+        "reveal": { "title": "Live Voting & Final Reveal", "desc": "Guests vote on the killer on their phones before the dramatic confession." },
+        "ready": { "title": "100% Online Live Lobby", "desc": "Guests join via QR code or 6-digit PIN on any phone—zero printing needed." }
       }
     },
     "cta": {

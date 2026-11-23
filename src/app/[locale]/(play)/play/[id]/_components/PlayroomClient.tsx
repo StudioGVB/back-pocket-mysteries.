@@ -2560,15 +2560,6 @@ export function PlayroomClient({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof window !== 'undefined') window.print();
-                }}
-                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-slate-200 text-[10px] font-black uppercase tracking-wider cursor-pointer"
-              >
-                🖨️ Print / Save
-              </button>
               {initialIsHost && (
                 <button
                   type="button"

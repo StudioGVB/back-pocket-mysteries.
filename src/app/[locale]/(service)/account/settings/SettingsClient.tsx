@@ -1067,29 +1067,9 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
               </div>
             </Field>
 
-            <Field label="Default Delivery Format" hint="How you prefer to receive and run your mystery materials.">
-              <div className="grid grid-cols-3 gap-3 mt-1">
-                {(
-                  [
-                    { id: 'email', label: 'Digital Playroom' },
-                    { id: 'print', label: 'Printable PDF' },
-                    { id: 'both', label: 'Both Digital & Print' },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setDefaultDelivery(opt.id)}
-                    className="py-3 px-3 rounded-xl text-xs font-black border-2 transition-all"
-                    style={{
-                      borderColor: defaultDelivery === opt.id ? '#fe04c6' : '#e2e8f0',
-                      color: defaultDelivery === opt.id ? '#fe04c6' : '#94a3b8',
-                      background: defaultDelivery === opt.id ? 'rgba(254,4,198,0.05)' : '#fff',
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+            <Field label="Delivery Format" hint="All mysteries run 100% online in the Live Mobile & Web Playroom (zero printing required).">
+              <div className="mt-1 py-3 px-4 rounded-xl text-xs font-black border-2 border-brand-pink text-brand-pink bg-pink-50/40 inline-flex items-center gap-2">
+                <span>📱 Live Mobile &amp; Web Playroom (100% Online)</span>
               </div>
             </Field>
 

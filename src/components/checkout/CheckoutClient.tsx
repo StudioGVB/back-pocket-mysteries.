@@ -16,6 +16,10 @@ import {
   createPaymentIntentAction,
   confirmMysteryOrderAction,
 } from '@/app/actions/stripe'
+import {
+  updatePartyEventDetailsAction,
+  getGameSessionAction,
+} from '@/app/actions/customer-mystery'
 import { formatCurrency, getRegionalPrice, PriceTierKey } from '@/utils/localization'
 import { Locale } from '@/lib/i18n-config'
 
@@ -64,6 +68,7 @@ function InstantCheckoutForm({
   setPaymentMethodTab,
   ensureClientSecret,
   onSimulateSuccess,
+  onBeforeConfirmPayment,
 }: {
   mysteryId: string
   mysteryTitle: string
@@ -79,6 +84,7 @@ function InstantCheckoutForm({
   setPaymentMethodTab: (tab: 'card' | 'apple_pay') => void
   ensureClientSecret: () => Promise<{ clientSecret: string | null; orderId?: string; mode: 'stripe' | 'test_simulation' }>
   onSimulateSuccess: () => Promise<void>
+  onBeforeConfirmPayment: () => Promise<void>
 }) {
   const router = useRouter()
   const stripe = useStripe()
@@ -127,6 +133,7 @@ function InstantCheckoutForm({
       setIsLoading(true)
       setErrorMessage(undefined)
       try {
+        await onBeforeConfirmPayment()
         const { clientSecret: secret, orderId: resolvedOrderId } = await ensureClientSecret()
         if (!secret) {
           ev.complete('fail')
@@ -186,7 +193,7 @@ function InstantCheckoutForm({
     return () => {
       mounted = false
     }
-  }, [stripe, currency, totalCost, mysteryTitle, mysteryId, slug, locale, orderId, promoCode, tier, ensureClientSecret, router])
+  }, [stripe, currency, totalCost, mysteryTitle, mysteryId, slug, locale, orderId, promoCode, tier, ensureClientSecret, onBeforeConfirmPayment, router])
 
   const handleCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -199,6 +206,7 @@ function InstantCheckoutForm({
     setErrorMessage(undefined)
 
     try {
+      await onBeforeConfirmPayment()
       const { clientSecret: secret, orderId: resolvedOrderId, mode } = await ensureClientSecret()
       if (mode === 'test_simulation' || !secret) {
         await onSimulateSuccess()
@@ -487,6 +495,120 @@ export default function CheckoutClient({
 
   const [isApplyingPromo, setIsApplyingPromo] = useState(false)
 
+  // Party Event Schedule (Date, Time, Address or ASAP) selected at Purchase
+  const [partyDate, setPartyDate] = useState('')
+  const [arrivalTime, setArrivalTime] = useState('')
+  const [partyLocation, setPartyLocation] = useState('')
+  const [partySavedBadge, setPartySavedBadge] = useState(false)
+  const existingWhatToBringRef = useRef<string[]>([
+    'Fully charged phone (for scanning clues & voting)',
+    'Your costume & signature prop',
+    'Your favourite drink / BYOB',
+  ])
+  const existingFoodVibeRef = useRef<string>('nibbles')
+  const existingHostNotesRef = useRef<string>('')
+  const existingGameStartRef = useRef<string>('')
+
+  const baseMysteryId = mysteryId.split('__u_')[0]
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const cached =
+        window.localStorage.getItem(`bpm_party_details_${mysteryId}`) ||
+        window.localStorage.getItem(`bpm_party_details_${baseMysteryId}`)
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (parsed.partyDate) setPartyDate(parsed.partyDate)
+        if (parsed.arrivalTime) setArrivalTime(parsed.arrivalTime)
+        if (parsed.location) setPartyLocation(parsed.location)
+        if (parsed.gameStartTime) existingGameStartRef.current = parsed.gameStartTime
+        if (parsed.hostNotes) existingHostNotesRef.current = parsed.hostNotes
+        if (parsed.foodAndDrinkVibe) existingFoodVibeRef.current = parsed.foodAndDrinkVibe
+        if (Array.isArray(parsed.whatToBringItems) && parsed.whatToBringItems.length > 0) {
+          existingWhatToBringRef.current = parsed.whatToBringItems
+        }
+      }
+    } catch {
+      // ignore
+    }
+    void getGameSessionAction(mysteryId).then((res) => {
+      if (!res || 'error' in res || !res.partyDetails) return
+      const pd = res.partyDetails
+      if (pd.partyDate) setPartyDate((prev) => prev || pd.partyDate || '')
+      if (pd.arrivalTime) setArrivalTime((prev) => prev || pd.arrivalTime || '')
+      if (pd.location) setPartyLocation((prev) => prev || pd.location || '')
+      if (pd.gameStartTime) existingGameStartRef.current = pd.gameStartTime
+      if (pd.hostNotes) existingHostNotesRef.current = pd.hostNotes
+      if (pd.foodAndDrinkVibe) existingFoodVibeRef.current = pd.foodAndDrinkVibe
+      if (Array.isArray(pd.whatToBringItems) && pd.whatToBringItems.length > 0) {
+        existingWhatToBringRef.current = pd.whatToBringItems
+      }
+    })
+  }, [mysteryId, baseMysteryId])
+
+  const persistCheckoutPartyDetails = async (overrides?: {
+    partyDate?: string
+    arrivalTime?: string
+    location?: string
+    gameStartTime?: string
+  }) => {
+    const nextDate = (overrides?.partyDate ?? partyDate).trim()
+    const nextArrival = (overrides?.arrivalTime ?? arrivalTime).trim()
+    const nextLocation = (overrides?.location ?? partyLocation).trim()
+    const nextGameStart = (overrides?.gameStartTime ?? existingGameStartRef.current).trim()
+
+    if (!nextDate && !nextArrival && !nextLocation) return
+
+    const payload = {
+      partyDate: nextDate,
+      arrivalTime: nextArrival,
+      gameStartTime: nextGameStart,
+      location: nextLocation,
+      hostNotes: existingHostNotesRef.current,
+      foodAndDrinkVibe: existingFoodVibeRef.current,
+      whatToBringItems: existingWhatToBringRef.current,
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(`bpm_party_details_${mysteryId}`, JSON.stringify(payload))
+        window.localStorage.setItem(`bpm_party_details_${baseMysteryId}`, JSON.stringify(payload))
+      } catch {
+        // ignore
+      }
+    }
+
+    try {
+      await updatePartyEventDetailsAction(mysteryId, payload)
+      setPartySavedBadge(true)
+      setTimeout(() => setPartySavedBadge(false), 2600)
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleSelectAsapAtCheckout = () => {
+    const todayIso = new Date().toISOString().slice(0, 10)
+    const nextArrival = 'Tonight / ASAP'
+    const nextStart = 'Right Away (ASAP)'
+    const nextLoc = partyLocation.trim() || 'Right Here / Host Home'
+    setPartyDate(todayIso)
+    setArrivalTime(nextArrival)
+    if (!partyLocation.trim()) setPartyLocation(nextLoc)
+    existingGameStartRef.current = nextStart
+    void persistCheckoutPartyDetails({
+      partyDate: todayIso,
+      arrivalTime: nextArrival,
+      gameStartTime: nextStart,
+      location: nextLoc,
+    })
+  }
+
+  const isAsapSelected =
+    arrivalTime.toLowerCase().includes('asap') ||
+    arrivalTime.toLowerCase().includes('tonight')
+
   const activeTier: PriceTierKey = initialTier
   const subtotalCost = getRegionalPrice(initialTier, activeCurrency)
   const totalCost = Math.max(0, subtotalCost - discountAmount)
@@ -606,6 +728,7 @@ export default function CheckoutClient({
 
   const executeSimulationUnlock = async () => {
     setIsSimulatingPayment(true)
+    await persistCheckoutPartyDetails()
     const res = await confirmMysteryOrderAction({
       mysteryId,
       slug: targetSlug,
@@ -695,7 +818,7 @@ export default function CheckoutClient({
             </div>
           </div>
 
-          {/* Instant Payment Box (Card + Apple Pay + Always-Visible Promo Code) */}
+          {/* Instant Payment Box (Party Date/Time/Address or ASAP + Promo Code + Card/Apple Pay) */}
           <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-sm border border-slate-100 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
@@ -706,6 +829,86 @@ export default function CheckoutClient({
               </div>
               <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
                 <span>🔒 256-Bit Encrypted</span>
+              </div>
+            </div>
+
+            {/* PARTY DATE, TIME & ADDRESS OR "PLAYING ASAP" SELECTOR */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-100/90 border-2 border-slate-300 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-200 pb-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                      📅 Pre-Render Your Guest Invites
+                    </span>
+                    {partySavedBadge && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-black uppercase tracking-wider">
+                        ✓ Saved to Guest Sheets
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                    When &amp; Where Is Your Party? (Or Click ASAP)
+                  </h3>
+                  <p className="text-[11px] text-slate-600 font-semibold">
+                    Rendered automatically on your Guest Character Sheets &amp; Invites from the get-go (editable anytime):
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSelectAsapAtCheckout}
+                  className={`h-10 px-4 rounded-xl text-xs font-black uppercase tracking-wider border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs ${
+                    isAsapSelected
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-white hover:bg-slate-50 text-slate-900 border-slate-300'
+                  }`}
+                >
+                  <span>⚡</span>
+                  <span>{isAsapSelected ? 'Playing ASAP / Tonight ✓' : 'Playing ASAP / Tonight'}</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <div className="flex flex-col gap-1">
+                  <label className="h-5 flex items-center text-[10px] font-black uppercase tracking-wider text-slate-800 truncate">
+                    📅 Party Date
+                  </label>
+                  <input
+                    type="date"
+                    value={partyDate}
+                    onChange={(e) => setPartyDate(e.target.value)}
+                    onBlur={() => void persistCheckoutPartyDetails()}
+                    className="h-11 w-full rounded-xl border-2 border-slate-300 bg-white px-3 text-xs font-bold text-slate-900 outline-none focus:border-brand-pink shadow-2xs"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="h-5 flex items-center text-[10px] font-black uppercase tracking-wider text-slate-800 truncate">
+                    🥂 Arrival Time
+                  </label>
+                  <input
+                    type="text"
+                    value={arrivalTime}
+                    onChange={(e) => setArrivalTime(e.target.value)}
+                    onBlur={() => void persistCheckoutPartyDetails()}
+                    placeholder="e.g. 7:00 PM or ASAP"
+                    className="h-11 w-full rounded-xl border-2 border-slate-300 bg-white px-3 text-xs font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="h-5 flex items-center text-[10px] font-black uppercase tracking-wider text-slate-800 truncate">
+                    📍 Party Address
+                  </label>
+                  <input
+                    type="text"
+                    value={partyLocation}
+                    onChange={(e) => setPartyLocation(e.target.value)}
+                    onBlur={() => void persistCheckoutPartyDetails()}
+                    placeholder="e.g. 42 Oxford St"
+                    className="h-11 w-full rounded-xl border-2 border-slate-300 bg-white px-3 text-xs font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs"
+                  />
+                </div>
               </div>
             </div>
 
@@ -795,6 +998,7 @@ export default function CheckoutClient({
                   setPaymentMethodTab={setPaymentMethodTab}
                   ensureClientSecret={ensureClientSecret}
                   onSimulateSuccess={executeSimulationUnlock}
+                  onBeforeConfirmPayment={() => persistCheckoutPartyDetails()}
                 />
               </Elements>
             ) : (
@@ -1027,7 +1231,7 @@ export default function CheckoutClient({
                 <span>Included</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold text-emerald-400">
-                <span>Guest Links, Audio Clues &amp; Printables</span>
+                <span>1-Click Guest Links, CCTV &amp; Audio Clues (100% Online)</span>
                 <span>Included</span>
               </div>
               {discountAmount > 0 && (
