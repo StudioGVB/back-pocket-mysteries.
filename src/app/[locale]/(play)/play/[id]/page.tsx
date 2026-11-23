@@ -60,7 +60,7 @@ export default async function PlayroomPage({
       clues={clues}
       initialSession={initialSession as any}
       initialCharId={resolvedSearch?.char || resolvedSearch?.characterId || null}
-      initialIsHost={Boolean((initialSession as any)?.isHost)}
+      initialIsHost={Boolean((initialSession as any)?.isHost || resolvedSearch?.host === '1')}
       forceSelect={resolvedSearch?.select === '1'}
     />
   );
