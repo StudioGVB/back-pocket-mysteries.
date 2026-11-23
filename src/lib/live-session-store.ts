@@ -31,6 +31,17 @@ export interface StoredDetectiveGuest {
   joinedAt: string;
 }
 
+export interface StoredPartyEventDetails {
+  partyDate?: string;
+  arrivalTime?: string;
+  gameStartTime?: string;
+  location?: string;
+  hostNotes?: string;
+  foodAndDrinkVibe?: string;
+  whatToBringItems?: string[];
+  updatedAt?: string;
+}
+
 export interface StoredGameSession {
   mysteryId: string;
   templateMysteryId?: string;
@@ -40,6 +51,8 @@ export interface StoredGameSession {
   activeCharacterIds: string[];
   claimedCharacters?: Record<string, { token: string; claimedAt: string }>;
   detectiveGuests?: StoredDetectiveGuest[];
+  partyDetails?: StoredPartyEventDetails;
+  prepConfirmedCharacters?: Record<string, { confirmedAt: string; guestName?: string }>;
   submissions: StoredRoundSubmission[];
   sharedTheoryRounds: number[];
   revealMode: 'hidden' | 'phone_free' | 'shared_with_guests';
@@ -255,6 +268,9 @@ export function saveStoredGameSession(
   store.sessions[mysteryId] = {
     ...session,
     detectiveGuests: session.detectiveGuests ?? existing?.detectiveGuests ?? [],
+    partyDetails: session.partyDetails ?? existing?.partyDetails,
+    prepConfirmedCharacters:
+      session.prepConfirmedCharacters ?? existing?.prepConfirmedCharacters ?? {},
     templateMysteryId: session.templateMysteryId ?? existing?.templateMysteryId,
     hostUserId: session.hostUserId ?? existing?.hostUserId ?? session.paidByUserId ?? existing?.paidByUserId,
     isPaid: session.isPaid ?? existing?.isPaid ?? false,
@@ -490,21 +506,59 @@ export async function syncLiveStateToSupabaseClueCarrier(
       sb = await createClient();
     }
 
+    const carrierId = deriveCarrierClueId(mysteryId);
     const cachedMystery = options?.mystery || getCachedMysterySnapshot(mysteryId);
+    let existingCarrierPayload: any = null;
+
+    if (!options?.characters || options.characters.length === 0) {
+      const { data: existingRow } = await sb
+        .from('clues')
+        .select('description')
+        .eq('id', carrierId)
+        .maybeSingle();
+      if (existingRow?.description) {
+        try {
+          existingCarrierPayload = JSON.parse(existingRow.description);
+        } catch {
+          existingCarrierPayload = null;
+        }
+      }
+    }
+
     const characters =
-      options?.characters ||
-      cachedMystery?.characters ||
-      [];
-    const session =
+      (options?.characters && options.characters.length > 0
+        ? options.characters
+        : cachedMystery?.characters && cachedMystery.characters.length > 0
+        ? cachedMystery.characters
+        : existingCarrierPayload?.characters) || [];
+
+    const rawSession =
       options?.session ||
       getStoredGameSession(mysteryId) ||
+      existingCarrierPayload?.session ||
       null;
+
+    const session = rawSession
+      ? {
+          ...(existingCarrierPayload?.session || {}),
+          ...rawSession,
+          hostUserId:
+            rawSession.hostUserId ||
+            existingCarrierPayload?.session?.hostUserId ||
+            undefined,
+          paidByUserId:
+            rawSession.paidByUserId ||
+            existingCarrierPayload?.session?.paidByUserId ||
+            undefined,
+        }
+      : null;
 
     // Resolve templateMysteryId (including known active mystery bases)
     let templateId =
       options?.templateMysteryId ||
       cachedMystery?.template_mystery_id ||
       session?.templateMysteryId ||
+      existingCarrierPayload?.templateMysteryId ||
       null;
 
     const KNOWN_BASE_IDS = [
@@ -541,9 +595,13 @@ export async function syncLiveStateToSupabaseClueCarrier(
     const payload = {
       mysteryId,
       templateMysteryId: templateId || mysteryId,
-      title: cachedMystery?.title || null,
-      theme: cachedMystery?.theme || null,
-      current_round: session?.currentRound ?? cachedMystery?.current_round ?? 0,
+      title: cachedMystery?.title || existingCarrierPayload?.title || null,
+      theme: cachedMystery?.theme || existingCarrierPayload?.theme || null,
+      current_round:
+        session?.currentRound ??
+        cachedMystery?.current_round ??
+        existingCarrierPayload?.current_round ??
+        0,
       characters: compactCharacters,
       session,
       updatedAt: new Date().toISOString(),
@@ -556,7 +614,6 @@ export async function syncLiveStateToSupabaseClueCarrier(
         ? mysteryId
         : '61196e53-09c3-427f-8862-30151f2ca75b';
 
-    const carrierId = deriveCarrierClueId(mysteryId);
     const { error } = await sb.from('clues').upsert({
       id: carrierId,
       mystery_id: anchorFkMysteryId,
@@ -581,26 +638,6 @@ export async function syncLiveStateToSupabaseClueCarrier(
         evidence_status: 'fake',
         is_essential: false,
         description: JSON.stringify(payload),
-      });
-    }
-
-    // Also sync under templateId so both /play/<instanceId> and /play/<templateId> have the live cast & photos
-    if (templateId && templateId !== mysteryId) {
-      const templateCarrierId = deriveCarrierClueId(templateId);
-      await sb.from('clues').upsert({
-        id: templateCarrierId,
-        mystery_id: anchorFkMysteryId,
-        title: LIVE_CARRIER_CLUE_TITLE,
-        round_number: 99,
-        clue_type: 'secret',
-        implication_type: 'red_herring',
-        evidence_status: 'fake',
-        is_essential: false,
-        description: JSON.stringify({
-          ...payload,
-          mysteryId: templateId,
-          instanceMysteryId: mysteryId,
-        }),
       });
     }
   } catch {

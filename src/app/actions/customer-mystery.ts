@@ -14,6 +14,7 @@ import {
   updateCachedMysteryCharacters,
   StoredGuestReview,
   StoredDetectiveGuest,
+  StoredPartyEventDetails,
   LIVE_CARRIER_CLUE_TITLE,
   isLiveCarrierClue,
   syncLiveStateToSupabaseClueCarrier,
@@ -40,6 +41,7 @@ export interface RoundSubmission {
 
 export type GuestReviewItem = StoredGuestReview;
 export type DetectiveGuestItem = StoredDetectiveGuest;
+export type PartyEventDetails = StoredPartyEventDetails;
 
 export interface GameSessionMeta {
   pin: string;
@@ -48,6 +50,8 @@ export interface GameSessionMeta {
   activeCharacterIds: string[];
   claimedCharacters: Record<string, { token: string; claimedAt: string }>;
   detectiveGuests?: DetectiveGuestItem[];
+  partyDetails?: PartyEventDetails;
+  prepConfirmedCharacters?: Record<string, { confirmedAt: string; guestName?: string }>;
   submissions: RoundSubmission[];
   sharedTheoryRounds: number[];
   revealMode: 'hidden' | 'phone_free' | 'shared_with_guests';
@@ -155,6 +159,18 @@ async function readSessionFromCharacters(
     ? mergeDetectiveGuests(raw?.detectiveGuests || [], stored?.detectiveGuests || [])
     : mergeDetectiveGuests(stored?.detectiveGuests || [], raw?.detectiveGuests || []);
 
+  const rawPartyTime = raw?.partyDetails?.updatedAt || '';
+  const storedPartyTime = stored?.partyDetails?.updatedAt || '';
+  const mergedPartyDetails: PartyEventDetails | undefined =
+    storedPartyTime >= rawPartyTime
+      ? stored?.partyDetails || raw?.partyDetails
+      : raw?.partyDetails || stored?.partyDetails;
+
+  const mergedPrepConfirmed: Record<string, { confirmedAt: string; guestName?: string }> =
+    preferStored
+      ? { ...(raw?.prepConfirmedCharacters || {}), ...(stored?.prepConfirmedCharacters || {}) }
+      : { ...(stored?.prepConfirmedCharacters || {}), ...(raw?.prepConfirmedCharacters || {}) };
+
   const session: GameSessionMeta = {
     pin: stored?.pin || raw?.pin || defaultPin,
     hostUserId: stored?.hostUserId || raw?.hostUserId || stored?.paidByUserId,
@@ -167,6 +183,8 @@ async function readSessionFromCharacters(
         : activeFromFlags,
     claimedCharacters: mergedClaims,
     detectiveGuests: mergedDetectives,
+    partyDetails: mergedPartyDetails,
+    prepConfirmedCharacters: mergedPrepConfirmed,
     submissions: mergeSubmissions(raw?.submissions || [], stored?.submissions || []),
     sharedTheoryRounds: preferStored
       ? stored?.sharedTheoryRounds || []
@@ -187,6 +205,8 @@ async function readSessionFromCharacters(
     activeCharacterIds: session.activeCharacterIds,
     claimedCharacters: session.claimedCharacters,
     detectiveGuests: session.detectiveGuests || [],
+    partyDetails: session.partyDetails,
+    prepConfirmedCharacters: session.prepConfirmedCharacters || {},
     submissions: session.submissions,
     sharedTheoryRounds: session.sharedTheoryRounds,
     revealMode: session.revealMode,
@@ -218,6 +238,8 @@ async function writeSessionToCarrier(
     activeCharacterIds: updatedSession.activeCharacterIds,
     claimedCharacters: updatedSession.claimedCharacters || {},
     detectiveGuests: updatedSession.detectiveGuests || [],
+    partyDetails: updatedSession.partyDetails,
+    prepConfirmedCharacters: updatedSession.prepConfirmedCharacters || {},
     submissions: updatedSession.submissions,
     sharedTheoryRounds: updatedSession.sharedTheoryRounds,
     revealMode: updatedSession.revealMode,
@@ -385,6 +407,11 @@ export async function saveCustomerCastAction(
     return { error: 'Please log into your host account to lock the cast and start the game.' };
   }
 
+  const [isAdmin, liveCarrier] = await Promise.all([
+    isUserAdmin(supabase, user),
+    loadLiveStateFromSupabaseClueCarrier(mysteryId, supabase),
+  ]);
+
   let { data: characters } = await supabase
     .from('characters')
     .select('*')
@@ -405,8 +432,19 @@ export async function saveCustomerCastAction(
     return { error: 'Could not load characters for this mystery.' };
   }
 
-  const pin = await generatePinFromMysteryId(mysteryId);
   const existingStored = getStoredGameSession(mysteryId);
+  const existingHostId =
+    existingStored?.hostUserId ||
+    existingStored?.paidByUserId ||
+    liveCarrier?.session?.hostUserId ||
+    liveCarrier?.session?.paidByUserId ||
+    null;
+
+  if (existingHostId && existingHostId !== user.id && !isAdmin) {
+    return { error: 'Only the host who owns this mystery instance can modify its cast.' };
+  }
+
+  const pin = await generatePinFromMysteryId(mysteryId);
   const activeSet = new Set(activeCharacterIds);
   const assignmentMap = new Map(assignments.map(a => [a.characterId, a.guest]));
 
@@ -500,41 +538,10 @@ export async function saveCustomerCastAction(
       .eq('id', char.id);
   }
 
-  // If this is a derived customer instance of a template mystery (e.g. Christmas Nightmare 61196e53-...),
-  // also update the template mystery's characters in Supabase by role title so both URLs stay in sync
   const templateMysteryId =
     resolvedMysteryObj?.template_mystery_id ||
     existingStored?.templateMysteryId ||
     null;
-
-  if (templateMysteryId && templateMysteryId !== mysteryId) {
-    try {
-      const { data: baseChars } = await supabase
-        .from('characters')
-        .select('id, name, profile_data')
-        .eq('mystery_id', templateMysteryId);
-
-      for (const bc of baseChars || []) {
-        const bcRole = getCharacterRoleTitle(bc).toLowerCase();
-        const matchUpdated = updatedCharObjects.find(
-          (uc) => getCharacterRoleTitle(uc).toLowerCase() === bcRole
-        );
-        if (matchUpdated?.profile_data) {
-          await supabase
-            .from('characters')
-            .update({
-              profile_data: {
-                ...((bc.profile_data as Record<string, any>) || {}),
-                ...((matchUpdated.profile_data as Record<string, any>) || {}),
-              },
-            })
-            .eq('id', bc.id);
-        }
-      }
-    } catch {
-      // non-fatal
-    }
-  }
 
   // Ensure mystery starts in Lobby (Round 0)
   await supabase
@@ -866,6 +873,8 @@ export async function getGameSessionAction(mysteryId: string) {
     activeCharacterIds: session.activeCharacterIds,
     claimedCharacters: session.claimedCharacters || {},
     detectiveGuests: session.detectiveGuests || [],
+    partyDetails: session.partyDetails || null,
+    prepConfirmedCharacters: session.prepConfirmedCharacters || {},
     submissions: session.submissions,
     sharedTheoryRounds: session.sharedTheoryRounds,
     revealMode: session.revealMode,
@@ -873,6 +882,109 @@ export async function getGameSessionAction(mysteryId: string) {
     detectiveLeaderboard,
     mostSuspectedList,
     solutionData,
+  };
+}
+
+/**
+ * Host saves or updates Pre-Party Event Details (Date, Arrival Time, Location, Food/Drink Vibe & Custom "What to Bring" Checklist)
+ * from the My Mysteries / Pre-Party Host Hub. Automatically renders on every guest's Pre-Party First Glance Sheet.
+ */
+export async function updatePartyEventDetailsAction(
+  mysteryId: string,
+  details: PartyEventDetails
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'Please log into your host account to update party event details.' };
+  }
+
+  let { data: characters } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('mystery_id', mysteryId);
+
+  if (!characters || characters.length === 0) {
+    const cached = getCachedMysterySnapshot(mysteryId);
+    characters = cached?.characters || [];
+  }
+
+  const [{ session, carrierCharacter }, isAdmin] = await Promise.all([
+    readSessionFromCharacters(characters || [], mysteryId),
+    isUserAdmin(supabase, user),
+  ]);
+
+  const storedSession = getStoredGameSession(mysteryId);
+  const existingHostId =
+    session.hostUserId ||
+    storedSession?.hostUserId ||
+    storedSession?.paidByUserId ||
+    null;
+
+  if (existingHostId && existingHostId !== user.id && !isAdmin) {
+    return { error: 'Only the host who owns this mystery instance can update party details.' };
+  }
+
+  const cleanItems = Array.isArray(details.whatToBringItems)
+    ? details.whatToBringItems.map(item => String(item || '').trim()).filter(Boolean)
+    : session.partyDetails?.whatToBringItems || [];
+
+  const updatedDetails: PartyEventDetails = {
+    ...(session.partyDetails || {}),
+    ...details,
+    whatToBringItems: cleanItems,
+    updatedAt: new Date().toISOString(),
+  };
+
+  session.partyDetails = updatedDetails;
+  await writeSessionToCarrier(supabase, mysteryId, carrierCharacter, session);
+
+  return {
+    success: true,
+    partyDetails: updatedDetails,
+  };
+}
+
+/**
+ * Guest clicks "I've Read My Role & Outfit - I'm Ready!" on their Pre-Party First Glance Sheet,
+ * updating the Host's Pre-Party Hub live.
+ */
+export async function confirmCharacterPrepReadAction(
+  mysteryId: string,
+  characterId: string,
+  guestName?: string
+) {
+  const supabase = await createClient();
+  let { data: characters } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('mystery_id', mysteryId);
+
+  if (!characters || characters.length === 0) {
+    const cached = getCachedMysterySnapshot(mysteryId);
+    characters = cached?.characters || [];
+  }
+
+  const { session, carrierCharacter } = await readSessionFromCharacters(
+    characters || [],
+    mysteryId
+  );
+
+  const existing = { ...(session.prepConfirmedCharacters || {}) };
+  existing[characterId] = {
+    confirmedAt: new Date().toISOString(),
+    guestName: guestName || existing[characterId]?.guestName,
+  };
+
+  session.prepConfirmedCharacters = existing;
+  await writeSessionToCarrier(supabase, mysteryId, carrierCharacter, session);
+
+  return {
+    success: true,
+    prepConfirmedCharacters: existing,
   };
 }
 
@@ -1104,15 +1216,16 @@ export async function updateHostGameControlAction(
     Math.floor(updates.currentRound ?? 0)
   );
 
-  const isAuthorizedHost =
-    !user ||
-    !session.hostUserId ||
-    dbMystery?.created_by === user.id ||
-    cachedMystery?.created_by === user.id ||
-    session.hostUserId === user.id ||
-    storedSession?.hostUserId === user.id ||
-    storedSession?.paidByUserId === user.id ||
-    isAdmin;
+  const isAuthorizedHost = Boolean(
+    user &&
+      (!session.hostUserId ||
+        dbMystery?.created_by === user.id ||
+        cachedMystery?.created_by === user.id ||
+        session.hostUserId === user.id ||
+        storedSession?.hostUserId === user.id ||
+        storedSession?.paidByUserId === user.id ||
+        isAdmin)
+  );
 
   if (!isAuthorizedHost) {
     return { error: 'Only the party host who owns this session can control the game flow.' };
@@ -1305,6 +1418,10 @@ export async function finishMysteryGenerationNowAction(payload: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('Authentication required to finalize mystery package generation.');
+  }
 
   const res = await finalizeMysteryGenerationNow({
     mysteryId: payload.mysteryId,

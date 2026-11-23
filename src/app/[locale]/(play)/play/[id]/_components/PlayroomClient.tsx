@@ -34,9 +34,15 @@ import {
   submitRoundTheoryAction,
   updateHostGameControlAction,
   submitGuestMysteryReviewAction,
+  confirmCharacterPrepReadAction,
   RoundSubmission,
   DetectiveGuestItem,
+  PartyEventDetails,
 } from '@/app/actions/customer-mystery';
+import {
+  formatPartyDateDisplay,
+  getFoodVibeDisplay,
+} from '@/components/mysteries/MysteryReadyHub';
 import { RelationshipGraph } from '@/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipGraph';
 
 interface Mystery {
@@ -338,6 +344,14 @@ export function PlayroomClient({
     initialSession?.currentRound ?? mystery.current_round ?? 0
   );
   const [pin] = useState<string>(initialSession?.pin || '482910');
+  const [partyDetails, setPartyDetails] = useState<PartyEventDetails | null>(
+    initialSession?.partyDetails || null
+  );
+  const [prepConfirmedCharacters, setPrepConfirmedCharacters] = useState<
+    Record<string, { confirmedAt: string; guestName?: string }>
+  >(initialSession?.prepConfirmedCharacters || {});
+  const [isConfirmingPrepRead, setIsConfirmingPrepRead] = useState<boolean>(false);
+  const [guestBringChecked, setGuestBringChecked] = useState<string[]>([]);
   const [submissions, setSubmissions] = useState<RoundSubmission[]>(
     initialSession?.submissions || []
   );
@@ -354,6 +368,192 @@ export function PlayroomClient({
     initialSession?.mostSuspectedList || []
   );
   const [solutionData, setSolutionData] = useState<any>(initialSession?.solutionData || null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedBring = window.localStorage.getItem(`bpm_guest_bring_${mystery.id}`);
+      if (savedBring) {
+        const parsed = JSON.parse(savedBring);
+        if (Array.isArray(parsed)) setGuestBringChecked(parsed);
+      }
+    } catch {
+      // ignore
+    }
+  }, [mystery.id]);
+
+  const handleToggleGuestBringItem = useCallback(
+    (item: string) => {
+      setGuestBringChecked(prev => {
+        const next = prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item];
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem(`bpm_guest_bring_${mystery.id}`, JSON.stringify(next));
+          } catch {
+            // ignore
+          }
+        }
+        return next;
+      });
+    },
+    [mystery.id]
+  );
+
+  const handleConfirmPrepRead = useCallback(
+    async (charId: string, guestName?: string) => {
+      setIsConfirmingPrepRead(true);
+      setPrepConfirmedCharacters(prev => ({
+        ...prev,
+        [charId]: { confirmedAt: new Date().toISOString(), guestName },
+      }));
+      try {
+        const res = await confirmCharacterPrepReadAction(mystery.id, charId, guestName);
+        if (res.prepConfirmedCharacters) {
+          setPrepConfirmedCharacters(res.prepConfirmedCharacters);
+        }
+      } finally {
+        setIsConfirmingPrepRead(false);
+      }
+    },
+    [mystery.id]
+  );
+
+  // Build Google Calendar & Apple/Outlook (.ics) event data from partyDetails
+  const parseCalendarDates = useCallback(() => {
+    const rawDate = (partyDetails?.partyDate || '').trim();
+    let year = new Date().getFullYear();
+    let month = new Date().getMonth() + 1;
+    let day = new Date().getDate() + 3;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+      const parts = rawDate.split('-').map(Number);
+      year = parts[0];
+      month = parts[1];
+      day = parts[2];
+    }
+    let startHour = 19;
+    let startMin = 0;
+    const rawTime = (partyDetails?.arrivalTime || '7:00 PM').trim();
+    const tm = rawTime.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
+    if (tm) {
+      let h = parseInt(tm[1], 10);
+      const m = parseInt(tm[2] || '0', 10);
+      const mer = (tm[3] || '').toUpperCase();
+      if (mer === 'PM' && h < 12) h += 12;
+      if (mer === 'AM' && h === 12) h = 0;
+      startHour = h;
+      startMin = m;
+    }
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const startDt = new Date(year, month - 1, day, startHour, startMin, 0);
+    const endDt = new Date(startDt.getTime() + 3 * 60 * 60 * 1000);
+    const fmtLocal = (d: Date) =>
+      `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(
+        d.getMinutes()
+      )}00`;
+    return {
+      startStr: fmtLocal(startDt),
+      endStr: fmtLocal(endDt),
+    };
+  }, [partyDetails]);
+
+  const buildGoogleCalendarUrl = useCallback(
+    (roleLabel?: string) => {
+      const { startStr, endStr } = parseCalendarDates();
+      const title = `🕵️ Murder Mystery Party: ${mystery.title}${
+        roleLabel ? ` (Playing ${roleLabel})` : ''
+      }`;
+      const bringList =
+        partyDetails?.whatToBringItems && partyDetails.whatToBringItems.length > 0
+          ? partyDetails.whatToBringItems
+          : ['📱 Charged phone or device (50%+ battery)', '👗 Your character outfit & costume vibe'];
+      const sheetUrl =
+        typeof window !== 'undefined'
+          ? window.location.href
+          : `https://www.backpocketmysteries.com/${locale}/play/${mystery.id}?prep=1`;
+      const descLines = [
+        `Murder Mystery Party: ${mystery.title}`,
+        roleLabel ? `Your Character Role: ${roleLabel}` : '',
+        partyDetails?.arrivalTime
+          ? `Arrival Time: ${partyDetails.arrivalTime}${
+              partyDetails.gameStartTime ? ` (Mystery starts at ${partyDetails.gameStartTime})` : ''
+            }`
+          : '',
+        partyDetails?.foodAndDrinkVibe
+          ? `Food & Drinks: ${getFoodVibeDisplay(partyDetails.foodAndDrinkVibe)}`
+          : '',
+        partyDetails?.hostNotes ? `Host Note: ${partyDetails.hostNotes}` : '',
+        `What to Bring:\n${bringList.map(i => `- ${i}`).join('\n')}`,
+        `Party Game PIN: ${pin.slice(0, 3)} ${pin.slice(3)}`,
+        `Your Pre-Party First Glance Sheet: ${sheetUrl}`,
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+
+      const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: title,
+        dates: `${startStr}/${endStr}`,
+        details: descLines,
+        location: partyDetails?.location || '',
+      });
+      return `https://calendar.google.com/calendar/render?${params.toString()}`;
+    },
+    [parseCalendarDates, mystery.title, mystery.id, locale, partyDetails, pin]
+  );
+
+  const handleDownloadIcsCalendar = useCallback(
+    (roleLabel?: string) => {
+      if (typeof window === 'undefined') return;
+      const { startStr, endStr } = parseCalendarDates();
+      const title = `Murder Mystery Party: ${mystery.title}${
+        roleLabel ? ` (${roleLabel})` : ''
+      }`;
+      const bringList =
+        partyDetails?.whatToBringItems && partyDetails.whatToBringItems.length > 0
+          ? partyDetails.whatToBringItems
+          : ['Charged phone or device (50%+ battery)', 'Your character outfit & costume vibe'];
+      const desc = [
+        `Murder Mystery Party: ${mystery.title}`,
+        roleLabel ? `Your Role: ${roleLabel}` : '',
+        partyDetails?.foodAndDrinkVibe
+          ? `Food & Drinks: ${getFoodVibeDisplay(partyDetails.foodAndDrinkVibe)}`
+          : '',
+        partyDetails?.hostNotes ? `Host Note: ${partyDetails.hostNotes}` : '',
+        `What to Bring: ${bringList.join(', ')}`,
+        `Party Game PIN: ${pin.slice(0, 3)} ${pin.slice(3)}`,
+        `Character Sheet: ${window.location.href}`,
+      ]
+        .filter(Boolean)
+        .join('\\n');
+
+      const ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Back Pocket Mysteries//Party Invite//EN',
+        'BEGIN:VEVENT',
+        `UID:bpm-${mystery.id}@backpocketmysteries.com`,
+        `DTSTAMP:${startStr}Z`,
+        `DTSTART:${startStr}`,
+        `DTEND:${endStr}`,
+        `SUMMARY:${title.replace(/[,;]/g, ' ')}`,
+        `LOCATION:${(partyDetails?.location || '').replace(/[,;]/g, ' ')}`,
+        `DESCRIPTION:${desc}`,
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n');
+
+      const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${mystery.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-party.ics`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    },
+    [parseCalendarDates, mystery.title, mystery.id, partyDetails, pin]
+  );
 
   // Host Console Modal & Guardrail Confirmation State
   const [isHostPanelOpen, setIsHostPanelOpen] = useState<boolean>(false);
@@ -476,6 +676,12 @@ export function PlayroomClient({
         setCurrentRound(latest.currentRound);
         setClaimedCharacters(latest.claimedCharacters || {});
         setDetectiveGuests(latest.detectiveGuests || []);
+        if (latest.partyDetails) {
+          setPartyDetails(latest.partyDetails);
+        }
+        if (latest.prepConfirmedCharacters) {
+          setPrepConfirmedCharacters(latest.prepConfirmedCharacters);
+        }
         setSubmissions(latest.submissions || []);
         setSharedTheoryRounds(latest.sharedTheoryRounds || []);
         setRevealMode(latest.revealMode || 'hidden');
@@ -2032,6 +2238,115 @@ export function PlayroomClient({
   //    Completely separate from the Live Game Night ("Playing Now" / Round 1) Portal!
   // ============================================================================
   if (isPrepMode) {
+    const resolvedWhatToBring =
+      partyDetails?.whatToBringItems && partyDetails.whatToBringItems.length > 0
+        ? partyDetails.whatToBringItems
+        : [
+            '📱 Charged phone or device (50%+ battery)',
+            '👗 Your character outfit & costume vibe',
+          ];
+
+    const hasCustomPartyDetails = Boolean(
+      partyDetails?.partyDate ||
+        partyDetails?.arrivalTime ||
+        partyDetails?.location ||
+        partyDetails?.foodAndDrinkVibe ||
+        partyDetails?.hostNotes
+    );
+
+    const renderPrepPartyDetailsCard = (roleLabel?: string) => (
+      <section className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-amber-400/35 p-5 sm:p-6 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3.5">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">
+              📅 Official Party Invitation &amp; Event Details
+            </span>
+            <h2 className="text-lg sm:text-xl font-black text-white">
+              When &amp; Where to Arrive for {mystery.title}
+            </h2>
+          </div>
+
+          {/* 1-Tap Add to Calendar Buttons */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <a
+              href={buildGoogleCalendarUrl(roleLabel)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-black uppercase tracking-wider transition-all shadow cursor-pointer"
+            >
+              📆 Add to Google Calendar
+            </a>
+            <button
+              type="button"
+              onClick={() => handleDownloadIcsCalendar(roleLabel)}
+              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
+            >
+              📅 Apple / Outlook (.ics)
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1">
+            <span className="text-[9px] font-black uppercase tracking-widest text-amber-300 block">
+              📅 Party Date
+            </span>
+            <p className="text-xs sm:text-sm font-black text-white">
+              {partyDetails?.partyDate
+                ? formatPartyDateDisplay(partyDetails.partyDate)
+                : 'Check with your host'}
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1">
+            <span className="text-[9px] font-black uppercase tracking-widest text-brand-pink block">
+              🥂 Arrival &amp; Start Time
+            </span>
+            <p className="text-xs sm:text-sm font-black text-white">
+              Arrive: {partyDetails?.arrivalTime || '7:00 PM'}
+            </p>
+            {partyDetails?.gameStartTime && (
+              <p className="text-[11px] font-bold text-slate-300">
+                🔪 Mystery starts: {partyDetails.gameStartTime}
+              </p>
+            )}
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1">
+            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300 block">
+              📍 Location / Address
+            </span>
+            <p className="text-xs sm:text-sm font-black text-white">
+              {partyDetails?.location || 'Host Residence'}
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1">
+            <span className="text-[9px] font-black uppercase tracking-widest text-sky-300 block">
+              🍽️ Food &amp; Drink Vibe
+            </span>
+            <p className="text-xs sm:text-sm font-black text-white">
+              {partyDetails?.foodAndDrinkVibe
+                ? getFoodVibeDisplay(partyDetails.foodAndDrinkVibe)
+                : '🥂 Cocktails & Finger Food / Grazing'}
+            </p>
+          </div>
+        </div>
+
+        {partyDetails?.hostNotes && (
+          <div className="p-3.5 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-start gap-2.5">
+            <span className="text-base shrink-0">📝</span>
+            <div className="text-xs text-amber-100 leading-relaxed">
+              <strong className="text-amber-300 uppercase tracking-wider text-[10px] mr-1.5">
+                Host Note:
+              </strong>
+              {partyDetails.hostNotes}
+            </div>
+          </div>
+        )}
+      </section>
+    );
+
     if (!selectedChar) {
       return (
         <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans antialiased">
@@ -2089,7 +2404,7 @@ export function PlayroomClient({
                     👀 Host Preview • Pre-Party Guest Portal (Zero Spoilers, No Clues)
                   </span>
                   <p className="text-xs text-slate-200 leading-relaxed">
-                    This is the <strong>Pre-Party &ldquo;First Glance&rdquo; Portal</strong> your guests see when you send out character links before the event. They can view their character intro, 3 outfit photos, and what to bring without unlocking Round 1 clues or live game controls.
+                    This is the <strong>Pre-Party &ldquo;First Glance&rdquo; Portal</strong> your guests see when you send out character links before the event. They can view your party date/time, their character intro, 3 outfit photos, and what to bring without unlocking Round 1 clues or live game controls.
                   </p>
                 </div>
                 <button
@@ -2116,9 +2431,12 @@ export function PlayroomClient({
                 Find Your Name Below for Your First Glance Sheet: Who You Are, What to Wear &amp; What to Bring
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
-                Tap your character card below to read your pre-party character outline, browse your <strong>3 costume &amp; outfit reference photos</strong>, and check what to bring on the night of the event.
+                Tap your character card below to read your pre-party character outline, browse your <strong>3 costume &amp; outfit reference photos</strong>, check off what to bring, and confirm you&apos;re ready for party night.
               </p>
             </div>
+
+            {/* Party Event Details Banner on Directory */}
+            {renderPrepPartyDetailsCard()}
 
             {/* Cast Grid for Pre-Party First Glance */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
@@ -2128,6 +2446,7 @@ export function PlayroomClient({
                 const charAvatarUrl = resolveDisplayAvatarUrl(
                   charPres.characterPhotoUrl || char.profile_data?.avatar_url || char.image_url
                 );
+                const isPrepConfirmed = Boolean(prepConfirmedCharacters[char.id]);
 
                 return (
                   <div
@@ -2174,6 +2493,14 @@ export function PlayroomClient({
                           <span className="hidden sm:inline">{char.is_victim ? '' : ' Suspect'}</span>
                         </span>
                       </div>
+
+                      {isPrepConfirmed && (
+                        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-10">
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950 text-[9px] sm:text-[10px] font-black uppercase tracking-wider shadow-md">
+                            ✋ Ready ✓
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-3 sm:p-4 flex flex-col justify-between gap-2 sm:gap-3 flex-grow">
@@ -2209,6 +2536,8 @@ export function PlayroomClient({
     const prepPortraitUrl =
       prepCharPres.characterPhotoUrl ||
       resolveDisplayAvatarUrl(selectedChar.profile_data?.avatar_url || selectedChar.image_url);
+    const isThisCharConfirmed = Boolean(prepConfirmedCharacters[selectedChar.id]);
+    const checkedBringCount = resolvedWhatToBring.filter(i => guestBringChecked.includes(i)).length;
 
     return (
       <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans antialiased pb-12">
@@ -2261,7 +2590,7 @@ export function PlayroomClient({
                   👀 Host Preview • Pre-Party &ldquo;First Glance&rdquo; Character Sheet
                 </span>
                 <p className="text-xs text-slate-200 leading-relaxed">
-                  Guests who open their invite link before the event see this exact pre-party briefing (Who They Are, What to Wear with 3 outfit options, How to Act &amp; What to Bring) without any Round 1 clues or live game spoilers.
+                  Guests who open their invite link before the event see this exact pre-party briefing (Party Date &amp; Time, Who They Are, What to Wear with 3 outfit options, How to Act &amp; Your Custom What to Bring Checklist) without any Round 1 clues or live game spoilers.
                 </p>
               </div>
               <button
@@ -2273,6 +2602,9 @@ export function PlayroomClient({
               </button>
             </div>
           )}
+
+          {/* 0. PARTY EVENT DETAILS & 1-TAP ADD TO CALENDAR BANNER */}
+          {renderPrepPartyDetailsCard(prepCharPres.roleTitle)}
 
           {/* 1. HERO CHARACTER IDENTITY & "FIRST GLANCE: WHO YOU ARE" */}
           <section className="rounded-3xl bg-slate-900/85 border border-white/15 p-5 sm:p-7 shadow-2xl space-y-5">
@@ -2446,48 +2778,122 @@ export function PlayroomClient({
             </section>
           )}
 
-          {/* 4. WHAT TO BRING ON PARTY NIGHT */}
+          {/* 4. INTERACTIVE "WHAT TO BRING TO THE PARTY" CHECKLIST (LIVE SYNCED FROM HOST HUB) */}
           <section className="rounded-3xl bg-slate-900/75 border border-sky-400/35 p-5 sm:p-7 shadow-xl space-y-4">
-            <div className="border-b border-white/10 pb-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-sky-400 block">
-                Step 3 • Party Night Essentials
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-sky-400 block">
+                  Step 3 • Party Night Essentials (Tap to Check Off)
+                </span>
+                <h2 className="text-lg sm:text-xl font-black text-white">
+                  🎒 What to Bring to the Party
+                </h2>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-sky-400/15 border border-sky-400/30 text-sky-300 text-[10px] font-black uppercase tracking-wider">
+                {checkedBringCount} / {resolvedWhatToBring.length} Checked
               </span>
-              <h2 className="text-lg sm:text-xl font-black text-white">
-                🎒 What to Bring to the Party
-              </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-sky-300">
-                  📱 1. Charged Phone (50%+)
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {resolvedWhatToBring.map((item, idx) => {
+                const isChecked = guestBringChecked.includes(item);
+                return (
+                  <button
+                    key={`${item}-${idx}`}
+                    type="button"
+                    onClick={() => handleToggleGuestBringItem(item)}
+                    className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
+                      isChecked
+                        ? 'bg-emerald-950/40 border-emerald-400/50 text-emerald-200'
+                        : 'bg-slate-950/80 border-white/10 hover:border-sky-400/50 text-slate-200'
+                    }`}
+                  >
+                    <span
+                      className={`w-5 h-5 rounded-lg flex items-center justify-center text-xs font-black shrink-0 border transition-colors ${
+                        isChecked
+                          ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                          : 'bg-slate-900 text-transparent border-white/25'
+                      }`}
+                    >
+                      ✓
+                    </span>
+                    <span
+                      className={`text-xs sm:text-sm font-bold leading-snug ${
+                        isChecked ? 'line-through text-emerald-300/80' : 'text-white'
+                      }`}
+                    >
+                      {item}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 block">
+                  🎟️ Party Night Game PIN (No Login or App Needed)
                 </span>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Bring your phone on the night! You&apos;ll use it during the party to view your secret motives, inspect live Round 1–{maxClueRound} evidence drops, listen to audio clues, and vote on suspects.
+                <p className="text-xs text-slate-300">
+                  Save this PIN for party night when your host unlocks the Live Game Portal.
                 </p>
               </div>
-
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                  👗 2. Your Costume Vibe
-                </span>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Come dressed in your character&apos;s outfit look above! Feel free to add a fun prop (sunglasses, a cocktail glass, a notebook, or dramatic jewelry).
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">
-                  🎟️ 3. Party Night Game PIN
-                </span>
-                <p className="text-xl font-black font-mono tracking-widest text-white pt-0.5">
-                  {pin.slice(0, 3)} {pin.slice(3)}
-                </p>
-                <p className="text-[11px] text-slate-400">
-                  No app download or account login required on party night.
-                </p>
+              <div className="text-2xl font-black font-mono tracking-widest text-white shrink-0">
+                {pin.slice(0, 3)} {pin.slice(3)}
               </div>
             </div>
+          </section>
+
+          {/* 4B. 1-TAP GUEST CONFIRMATION ("I'VE READ MY ROLE & OUTFIT - I'M READY!") */}
+          <section
+            className={`rounded-3xl border-2 p-5 sm:p-6 text-center space-y-3 shadow-xl transition-all ${
+              isThisCharConfirmed
+                ? 'bg-emerald-950/40 border-emerald-400/50'
+                : 'bg-gradient-to-r from-slate-900 via-pink-950/30 to-slate-900 border-brand-pink/50'
+            }`}
+          >
+            {isThisCharConfirmed ? (
+              <div className="space-y-1.5">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-widest">
+                  ✋ Confirmed Ready for Party Night ✓
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-white">
+                  You&apos;re All Set{prepCharPres.guestName ? `, ${prepCharPres.guestName}` : ''}!
+                </h3>
+                <p className="text-xs text-slate-300 max-w-lg mx-auto">
+                  Your host has been notified that you&apos;ve reviewed your character outline, costume guide, and what to bring.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink block">
+                    Step 4 • Quick 1-Tap Host Check-In
+                  </span>
+                  <h3 className="text-base sm:text-xl font-black text-white">
+                    Let Your Host Know You&apos;ve Read Your Character &amp; Outfit Guide!
+                  </h3>
+                  <p className="text-xs text-slate-300 max-w-lg mx-auto">
+                    Tap below to mark your role as read on your host&apos;s Pre-Party Dashboard.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isConfirmingPrepRead}
+                  onClick={() =>
+                    void handleConfirmPrepRead(
+                      selectedChar.id,
+                      prepCharPres.guestName || undefined
+                    )
+                  }
+                  className="px-6 py-3.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-xl transition-all cursor-pointer"
+                >
+                  {isConfirmingPrepRead
+                    ? 'Confirming...'
+                    : "✋ Confirm I've Read My Role & Outfit - I'm Ready!"}
+                </button>
+              </div>
+            )}
           </section>
 
           {/* 5. SEPARATION FROM "PLAYING NOW" / LIVE ROUND 1 PORTAL */}
