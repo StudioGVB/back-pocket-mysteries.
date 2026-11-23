@@ -1088,18 +1088,12 @@ export default function CustomerCastClient({
 
   const effectivePin = lockedSession?.pin || initialPin;
 
-  // Pool of guests shown in Victim / Suspect swap dropdowns
-  const dropdownPoolGuests = useMemo(() => {
-    if (casefileCastSource === 'random') {
-      return guests.filter(g => g.id.startsWith('random-suspect-'));
-    }
-    if (casefileCastSource === 'hybrid') {
-      return guests.filter(
-        g => !g.id.startsWith('random-suspect-') || attendingGuestIds.includes(g.id)
-      );
-    }
-    return guests.filter(g => !g.id.startsWith('random-suspect-'));
-  }, [guests, casefileCastSource, attendingGuestIds]);
+  // Pool of guests shown in Step 3 (Victim) & Step 4 (Suspect swap) dropdowns:
+  // Strictly limited to the cast already selected in Step 2 (attendingGuests)
+  const dropdownPoolGuests = useMemo(
+    () => guests.filter(g => attendingGuestIds.includes(g.id)),
+    [guests, attendingGuestIds]
+  );
 
   const goToStep = (step: 1 | 2 | 3 | 4) => {
     setCastWizardStep(step);
@@ -2003,13 +1997,16 @@ export default function CustomerCastClient({
                       const vNorm = normalizeGender(victimCharacter.gender);
                       const isMismatch =
                         (vNorm === 'male' || vNorm === 'female') && gNorm !== vNorm;
-                      const isAttending = attendingGuestIds.includes(g.id);
+                      const isRand = g.id.startsWith('random-suspect-');
                       return (
                         <option key={g.id} value={g.id}>
-                          {g.isHost ? `👑 ${g.name} (Host - You)` : g.name} (
-                          {formatGenderLabel(g.gender).shortLabel}
-                          {isMismatch ? ' ⚠️ Gender Mismatch' : ''}
-                          {!isAttending ? ' • Tap to Add' : ''})
+                          {g.isHost
+                            ? `👑 ${g.name} (Host - You)`
+                            : isRand
+                            ? `🎲 ${g.name} (Fictional Suspect)`
+                            : g.name}{' '}
+                          ({formatGenderLabel(g.gender).shortLabel}
+                          {isMismatch ? ' ⚠️ Gender Mismatch' : ''})
                         </option>
                       );
                     })}
@@ -2233,7 +2230,6 @@ export default function CustomerCastClient({
                               >
                                 <option value="">Unassigned</option>
                                 {dropdownPoolGuests.map(g => {
-                                  const isAttending = attendingGuestIds.includes(g.id);
                                   const isRand = g.id.startsWith('random-suspect-');
                                   return (
                                     <option key={g.id} value={g.id}>
@@ -2242,8 +2238,7 @@ export default function CustomerCastClient({
                                         : isRand
                                         ? `🎲 ${g.name} (Fictional Suspect)`
                                         : g.name}{' '}
-                                      ({formatGenderLabel(g.gender).shortLabel}
-                                      {!isAttending ? ' • Tap to Add' : ''})
+                                      ({formatGenderLabel(g.gender).shortLabel})
                                     </option>
                                   );
                                 })}
