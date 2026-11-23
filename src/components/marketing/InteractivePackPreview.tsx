@@ -391,6 +391,21 @@ export default function InteractivePackPreview({ locale }: { locale: string }) {
                       className="w-full px-4 py-3 rounded-2xl bg-black/40 border border-white/15 text-white text-xs font-medium focus:outline-none focus:border-brand-pink"
                     />
                   </div>
+
+                  {/* AI Photo-to-Trait Scanner Feature Highlight */}
+                  <div className="p-3.5 rounded-2xl bg-brand-pink/10 border border-brand-pink/30 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                        📸 AI Photo-to-Character Scanner Included
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400">
+                        🔒 Ephemeral &amp; Private
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 font-medium leading-snug">
+                      Inside the Guest Builder, upload a quick photo of your friend—our AI scans their hair, eye colour, glasses, and build in 3 seconds to generate their custom suspect portrait &amp; CCTV crime-scene clues (then auto-deletes the raw photo).
+                    </p>
+                  </div>
                 </div>
               </div>
 

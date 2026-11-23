@@ -385,6 +385,31 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
                 </div>
               </div>
 
+              {/* Ephemeral AI Photo-to-Trait Auto-Filler on Tab 1 */}
+              <PhotoTraitScanner
+                onTraitsDetected={(traits: ScannedGuestTraits) => {
+                  const mappedGender = traits.gender === 'Feminine' ? 'Feminine' : 'Masculine';
+                  setGender(mappedGender);
+                  if (traits.gender === 'Feminine' && !pronouns) setPronouns('she/her');
+                  if (traits.gender === 'Masculine' && !pronouns) setPronouns('he/him');
+                  setAvatarConfig((prev) => ({
+                    ...prev,
+                    skinColor: traits.skinColor,
+                    hairColor: traits.hairColor,
+                    hairLength: traits.hairLength,
+                    hairTexture: traits.hairTexture,
+                    top: deriveDiceBearTop(traits.hairLength, traits.hairTexture, mappedGender),
+                    facialHair: mappedGender === 'Masculine' ? traits.facialHair : undefined,
+                    eyeColor: traits.eyeColor,
+                    build: traits.build,
+                    distinctiveFeatures: traits.distinctiveFeatures,
+                    age: traits.age,
+                  }));
+                }}
+                onJumpToAvatarTab={() => setActiveTab('avatar')}
+                showJumpToAvatarButton={true}
+              />
+
               <div>
                 <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Pronouns</label>
                 <div className="flex flex-wrap gap-2">
