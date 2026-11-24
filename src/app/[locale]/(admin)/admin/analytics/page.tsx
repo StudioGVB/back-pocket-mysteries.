@@ -11,10 +11,8 @@ import {
 import { TrafficChart } from '@/components/admin/TrafficChart';
 import { TrafficTables } from '@/components/admin/TrafficTables';
 import { AnalyticsNav } from '@/components/admin/AnalyticsNav';
-import {
-  AnalyticsDurationSelector,
-  parseAnalyticsDays,
-} from '@/components/admin/AnalyticsDurationSelector';
+import { AnalyticsDurationSelector } from '@/components/admin/AnalyticsDurationSelector';
+import { parseAnalyticsDays } from '@/components/admin/analytics-duration-utils';
 
 export const unstable_instant = false;
 
@@ -71,13 +69,23 @@ export default async function AnalyticsPage({
 async function AnalyticsData({ days }: { days: number }) {
   const [timeseriesRes, topPaths, topCountries, topReferrers, devices, browsers, gsc] =
     await Promise.all([
-      getAnalyticsTimeseries(days),
-      getTopPaths(days),
-      getTopCountries(days),
-      getTopReferrers(days),
-      getDeviceBreakdown(days),
-      getBrowserBreakdown(days),
-      getGoogleSearchConsoleStats(days),
+      getAnalyticsTimeseries(days).catch(() => ({
+        isConnected: false,
+        totals: { visitors: 0, pageviews: 0 },
+        data: [],
+      })),
+      getTopPaths(days).catch(() => []),
+      getTopCountries(days).catch(() => []),
+      getTopReferrers(days).catch(() => []),
+      getDeviceBreakdown(days).catch(() => []),
+      getBrowserBreakdown(days).catch(() => []),
+      getGoogleSearchConsoleStats(days).catch(() => ({
+        isConnected: false,
+        siteUrl: 'sc-domain:backpocketmysteries.com',
+        totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 },
+        topQueries: [],
+        topPages: [],
+      })),
     ]);
 
   return (

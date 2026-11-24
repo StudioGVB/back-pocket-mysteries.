@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { getDurationLabel } from './AnalyticsDurationSelector';
+import { getDurationLabel } from './analytics-duration-utils';
 
 export function TrafficChart({
   data,
