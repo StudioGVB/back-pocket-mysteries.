@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
+import { createClient as createServerSupabaseClient } from "@/utils/supabase/server";
+import bundledStoreJson from "../../data/.marketing-suite-store.json";
 
 export interface MarketingStoreData {
   blog_posts: any[];
@@ -17,7 +19,7 @@ const LEADS_FILENAME = ".leads-store.json";
 const STORAGE_BUCKET = "character-images";
 const STORAGE_PATH = "system/marketing-suite-store.json";
 
-function getStorePath(): string {
+function getWriteStorePath(): string {
   const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", STORE_FILENAME);
   try {
     const dir = path.dirname(cwdPath);
@@ -31,72 +33,121 @@ function getStorePath(): string {
   }
 }
 
-function getLeadsPath(): string {
+function getReadStorePaths(): string[] {
+  const tmpPath = path.join("/tmp", STORE_FILENAME);
+  const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", STORE_FILENAME);
+  return [tmpPath, cwdPath];
+}
+
+function getReadLeadsPaths(): string[] {
+  const tmpPath = path.join("/tmp", LEADS_FILENAME);
   const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", LEADS_FILENAME);
-  try {
-    const dir = path.dirname(cwdPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.accessSync(dir, fs.constants.W_OK);
-    return cwdPath;
-  } catch {
-    return path.join("/tmp", LEADS_FILENAME);
-  }
+  return [tmpPath, cwdPath];
 }
 
 function readLeadsList(): any[] {
-  try {
-    const lp = getLeadsPath();
-    if (fs.existsSync(lp)) {
-      const parsed = JSON.parse(fs.readFileSync(lp, "utf8"));
-      if (parsed && parsed.leads && typeof parsed.leads === "object") {
-        return Object.values(parsed.leads);
+  for (const lp of getReadLeadsPaths()) {
+    try {
+      if (fs.existsSync(lp)) {
+        const parsed = JSON.parse(fs.readFileSync(lp, "utf8"));
+        if (parsed && parsed.leads && typeof parsed.leads === "object") {
+          const vals = Object.values(parsed.leads);
+          if (vals.length > 0) return vals;
+        }
       }
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
   }
   return [];
 }
 
-function emptyStore(): MarketingStoreData {
+function normalizeStore(parsed: any, leadsList: any[] = []): MarketingStoreData {
   return {
-    blog_posts: [],
-    social_posts: [],
-    social_post_captions: [],
-    edm_campaigns: [],
-    edm_events: [],
-    leads: [],
+    blog_posts: Array.isArray(parsed?.blog_posts) ? parsed.blog_posts : [],
+    social_posts: Array.isArray(parsed?.social_posts) ? parsed.social_posts : [],
+    social_post_captions: Array.isArray(parsed?.social_post_captions)
+      ? parsed.social_post_captions
+      : [],
+    edm_campaigns: Array.isArray(parsed?.edm_campaigns) ? parsed.edm_campaigns : [],
+    edm_events: Array.isArray(parsed?.edm_events) ? parsed.edm_events : [],
+    leads:
+      leadsList.length > 0
+        ? leadsList
+        : Array.isArray(parsed?.leads)
+        ? parsed.leads
+        : [],
+  };
+}
+
+function mergeById(baseRows: any[], overrideRows: any[], key = "id"): any[] {
+  const map = new Map<string, any>();
+  for (const r of baseRows) {
+    if (r && r[key]) map.set(String(r[key]), r);
+  }
+  for (const r of overrideRows) {
+    if (r && r[key]) map.set(String(r[key]), { ...(map.get(String(r[key])) || {}), ...r });
+  }
+  return Array.from(map.values());
+}
+
+function mergeStores(base: MarketingStoreData, override: MarketingStoreData): MarketingStoreData {
+  const mergedSocialPosts = mergeById(base.social_posts, override.social_posts, "id");
+  const mergedPostIds = new Set(mergedSocialPosts.map((p) => String(p.id)));
+
+  // For captions, if a post exists in override.social_posts and override has captions for it, prefer override's captions for that post
+  const overridePostIdsWithCaptions = new Set(
+    override.social_post_captions.map((c) => String(c.post_id))
+  );
+  const keptBaseCaptions = base.social_post_captions.filter(
+    (c) =>
+      mergedPostIds.has(String(c.post_id)) &&
+      !overridePostIdsWithCaptions.has(String(c.post_id))
+  );
+  const mergedCaptions = [
+    ...keptBaseCaptions,
+    ...override.social_post_captions.filter((c) => mergedPostIds.has(String(c.post_id))),
+  ];
+
+  return {
+    blog_posts: mergeById(base.blog_posts, override.blog_posts, "id"),
+    social_posts: mergedSocialPosts,
+    social_post_captions: mergedCaptions,
+    edm_campaigns: mergeById(base.edm_campaigns, override.edm_campaigns, "id"),
+    edm_events: mergeById(base.edm_events, override.edm_events, "id"),
+    leads: mergeById(base.leads, override.leads, "id"),
   };
 }
 
 export function readLocalMarketingStore(): MarketingStoreData {
-  const filePath = getStorePath();
   const leadsList = readLeadsList();
-  try {
-    if (fs.existsSync(filePath)) {
-      const raw = fs.readFileSync(filePath, "utf8");
-      const parsed = JSON.parse(raw);
-      return {
-        blog_posts: Array.isArray(parsed.blog_posts) ? parsed.blog_posts : [],
-        social_posts: Array.isArray(parsed.social_posts) ? parsed.social_posts : [],
-        social_post_captions: Array.isArray(parsed.social_post_captions)
-          ? parsed.social_post_captions
-          : [],
-        edm_campaigns: Array.isArray(parsed.edm_campaigns) ? parsed.edm_campaigns : [],
-        edm_events: Array.isArray(parsed.edm_events) ? parsed.edm_events : [],
-        leads: leadsList.length > 0 ? leadsList : Array.isArray(parsed.leads) ? parsed.leads : [],
-      };
+  let store = normalizeStore(bundledStoreJson as any, leadsList);
+
+  // Merge disk files (cwd first, then /tmp override if present)
+  const paths = getReadStorePaths().reverse();
+  for (const fp of paths) {
+    try {
+      if (fs.existsSync(fp)) {
+        const raw = fs.readFileSync(fp, "utf8");
+        const parsed = normalizeStore(JSON.parse(raw), leadsList);
+        if (
+          parsed.blog_posts.length > 0 ||
+          parsed.social_posts.length > 0 ||
+          parsed.edm_campaigns.length > 0
+        ) {
+          store = mergeStores(store, parsed);
+        }
+      }
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
   }
-  return { ...emptyStore(), leads: leadsList };
+
+  return store;
 }
 
 export function writeLocalMarketingStore(data: MarketingStoreData): void {
-  const filePath = getStorePath();
+  const filePath = getWriteStorePath();
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
   } catch {
@@ -104,7 +155,13 @@ export function writeLocalMarketingStore(data: MarketingStoreData): void {
   }
 }
 
-function getStorageSupabase() {
+async function getStorageSupabase() {
+  try {
+    const serverClient = await createServerSupabaseClient();
+    if (serverClient) return serverClient;
+  } catch {
+    // outside request scope
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
@@ -113,33 +170,17 @@ function getStorageSupabase() {
 
 export async function loadMarketingStore(): Promise<MarketingStoreData> {
   const local = readLocalMarketingStore();
-  if (
-    local.blog_posts.length > 0 ||
-    local.social_posts.length > 0 ||
-    local.edm_campaigns.length > 0
-  ) {
-    return local;
-  }
 
-  // Fallback to Supabase Storage if local is empty (e.g. cold Vercel lambda)
-  const sb = getStorageSupabase();
+  // Merge any persisted updates from Supabase Storage (if present)
+  const sb = await getStorageSupabase();
   if (sb) {
     try {
       const { data: blob } = await sb.storage.from(STORAGE_BUCKET).download(STORAGE_PATH);
       if (blob) {
-        const parsed = JSON.parse(await blob.text());
-        const hydrated: MarketingStoreData = {
-          blog_posts: Array.isArray(parsed.blog_posts) ? parsed.blog_posts : [],
-          social_posts: Array.isArray(parsed.social_posts) ? parsed.social_posts : [],
-          social_post_captions: Array.isArray(parsed.social_post_captions)
-            ? parsed.social_post_captions
-            : [],
-          edm_campaigns: Array.isArray(parsed.edm_campaigns) ? parsed.edm_campaigns : [],
-          edm_events: Array.isArray(parsed.edm_events) ? parsed.edm_events : [],
-          leads: Array.isArray(parsed.leads) ? parsed.leads : [],
-        };
-        writeLocalMarketingStore(hydrated);
-        return hydrated;
+        const parsed = normalizeStore(JSON.parse(await blob.text()), local.leads);
+        const merged = mergeStores(local, parsed);
+        writeLocalMarketingStore(merged);
+        return merged;
       }
     } catch {
       // ignore
@@ -151,7 +192,7 @@ export async function loadMarketingStore(): Promise<MarketingStoreData> {
 
 export async function saveMarketingStore(data: MarketingStoreData): Promise<void> {
   writeLocalMarketingStore(data);
-  const sb = getStorageSupabase();
+  const sb = await getStorageSupabase();
   if (sb) {
     try {
       await sb.storage
