@@ -30,6 +30,23 @@ export interface MysteryPerformanceItem {
   reviewsCount: number;
 }
 
+const FX_TO_GBP: Record<string, number> = {
+  GBP: 1,
+  USD: 0.79,
+  EUR: 0.86,
+  AUD: 0.52,
+  CAD: 0.57,
+  NZD: 0.47,
+};
+
+function normalizeOrderAmountToGbp(rawAmount: any, rawCurrency?: any): number {
+  const num = Number(rawAmount) || 0;
+  const major = num > 100 ? num / 100 : num;
+  const curr = String(rawCurrency || 'GBP').toUpperCase();
+  const rate = FX_TO_GBP[curr] ?? 1;
+  return Number((major * rate).toFixed(2));
+}
+
 export async function getMysteriesAndPackagesAnalytics() {
   const { supabase } = await requireAdmin();
 
@@ -58,7 +75,7 @@ export async function getMysteriesAndPackagesAnalytics() {
   > = {
     basic: {
       id: 'basic',
-      name: 'Basic Package',
+      name: 'Basic Package (£15)',
       rangeLabel: '4–6 Players',
       ordersCount: 0,
       revenue: 0,
@@ -67,7 +84,7 @@ export async function getMysteriesAndPackagesAnalytics() {
     },
     premium: {
       id: 'premium',
-      name: 'Premium Package',
+      name: 'Premium Package (£20)',
       rangeLabel: '4–10 Players',
       ordersCount: 0,
       revenue: 0,
@@ -76,7 +93,7 @@ export async function getMysteriesAndPackagesAnalytics() {
     },
     grand: {
       id: 'grand',
-      name: 'Grand Package',
+      name: 'Grand Package (£25)',
       rangeLabel: '4–16 Players',
       ordersCount: 0,
       revenue: 0,
@@ -85,7 +102,7 @@ export async function getMysteriesAndPackagesAnalytics() {
     },
     subscribe: {
       id: 'subscribe',
-      name: 'Unlimited Monthly Pass',
+      name: 'Unlimited Monthly Pass (£30/mo)',
       rangeLabel: 'Unlimited + Gift Pass',
       ordersCount: 0,
       revenue: 0,
@@ -105,38 +122,46 @@ export async function getMysteriesAndPackagesAnalytics() {
   const currencyBreakdown = new Map<string, { currency: string; count: number; revenue: number }>();
 
   for (const o of orders) {
-    const amount = Number(o.amount) || 0;
+    const rawAmt = Number(o.amount) || 0;
     const currency = (o.currency || 'GBP').toUpperCase();
+    const amountGbp = normalizeOrderAmountToGbp(rawAmt, currency);
     const m = mysteryById.get(o.mystery_id);
 
-    // Infer package tier from mystery max_players or order price points
+    // Infer package tier from mystery max_players or GBP order price points
     let tierId: 'basic' | 'premium' | 'grand' | 'subscribe' = 'grand';
-    if (amount === 30 || amount === 39 || amount === 59 || amount === 36 || amount === 65) {
+    if (
+      rawAmt === 30 ||
+      rawAmt === 39 ||
+      rawAmt === 59 ||
+      rawAmt === 36 ||
+      rawAmt === 65 ||
+      amountGbp >= 28
+    ) {
       tierId = 'subscribe';
     } else if (m) {
       const maxP = Number(m.max_players) || 16;
       if (maxP <= 6) tierId = 'basic';
       else if (maxP <= 10) tierId = 'premium';
       else tierId = 'grand';
-    } else if (amount <= 19) {
+    } else if (amountGbp <= 17) {
       tierId = 'basic';
-    } else if (amount <= 25) {
+    } else if (amountGbp <= 22) {
       tierId = 'premium';
     }
 
     packageBuckets[tierId].ordersCount += 1;
-    packageBuckets[tierId].revenue += amount;
+    packageBuckets[tierId].revenue = Number((packageBuckets[tierId].revenue + amountGbp).toFixed(2));
 
     if (o.mystery_id) {
       const prev = ordersByMystery.get(o.mystery_id) || { count: 0, revenue: 0 };
       prev.count += 1;
-      prev.revenue += amount;
+      prev.revenue = Number((prev.revenue + amountGbp).toFixed(2));
       ordersByMystery.set(o.mystery_id, prev);
     }
 
     const currPrev = currencyBreakdown.get(currency) || { currency, count: 0, revenue: 0 };
     currPrev.count += 1;
-    currPrev.revenue += amount;
+    currPrev.revenue = Number((currPrev.revenue + amountGbp).toFixed(2));
     currencyBreakdown.set(currency, currPrev);
   }
 
@@ -206,7 +231,9 @@ export async function getMysteriesAndPackagesAnalytics() {
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count);
 
-  const totalRevenue = orders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+  const totalRevenue = Number(
+    orders.reduce((s, o) => s + normalizeOrderAmountToGbp(o.amount, o.currency), 0).toFixed(2)
+  );
 
   return {
     summary: {
@@ -521,7 +548,9 @@ export async function getConversionAndPromoAnalytics() {
       ? Math.round((repeatHostsCount / uniquePayingCustomers) * 100)
       : 0;
 
-  const totalRevenue = paidOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+  const totalRevenue = Number(
+    paidOrders.reduce((s, o) => s + normalizeOrderAmountToGbp(o.amount, o.currency), 0).toFixed(2)
+  );
   const avgOrderValue =
     paidOrders.length > 0 ? Number((totalRevenue / paidOrders.length).toFixed(2)) : 0;
 

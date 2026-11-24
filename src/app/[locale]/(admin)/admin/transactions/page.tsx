@@ -156,12 +156,35 @@ async function AdminTransactionsList({ locale }: { locale: string }) {
                     </p>
                   </td>
                   <td className="px-6 py-5">
-                    <p className="text-sm font-black text-brand-dark">
-                      {new Intl.NumberFormat('en-GB', {
-                        style: 'currency',
-                        currency: item.currency || 'GBP',
-                      }).format(item.amount > 100 ? item.amount / 100 : item.amount)}
-                    </p>
+                    {(() => {
+                      const rawAmt = Number(item.amount) || 0;
+                      const major = rawAmt > 100 ? rawAmt / 100 : rawAmt;
+                      const curr = String(item.currency || 'GBP').toUpperCase();
+                      const fxToGbp: Record<string, number> = {
+                        GBP: 1,
+                        USD: 0.79,
+                        EUR: 0.86,
+                        AUD: 0.52,
+                        CAD: 0.57,
+                        NZD: 0.47,
+                      };
+                      const gbpVal = major * (fxToGbp[curr] ?? 1);
+                      return (
+                        <div>
+                          <p className="text-sm font-black text-brand-dark">
+                            {new Intl.NumberFormat('en-GB', {
+                              style: 'currency',
+                              currency: 'GBP',
+                            }).format(gbpVal)}
+                          </p>
+                          {curr !== 'GBP' && (
+                            <p className="text-[10px] font-bold text-gray-400">
+                              ({major} {curr})
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-5">
                     <span

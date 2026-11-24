@@ -38,25 +38,25 @@ export const PACKAGE_TIER_OPTIONS: PackageOption[] = [
     id: 'basic',
     name: 'Basic Package',
     subtitle: '4–6 Players • Any Complexity & Spice Level',
-    basePriceUsd: '$19',
+    basePriceUsd: '£15',
   },
   {
     id: 'premium',
     name: 'Premium Package',
     subtitle: '4–10 Players • Any Complexity & Spice Level',
-    basePriceUsd: '$25',
+    basePriceUsd: '£20',
   },
   {
     id: 'grand',
     name: 'Grand Package',
     subtitle: '4–16 Players • Any Complexity & Spice Level',
-    basePriceUsd: '$33',
+    basePriceUsd: '£25',
   },
   {
     id: 'subscribe',
     name: 'Unlimited Monthly Plan',
     subtitle: 'Unlimited mysteries/mo (4–16 players) + 1 Free Monthly Gift Pass',
-    basePriceUsd: '$39/mo',
+    basePriceUsd: '£30/mo',
   },
 ];
 

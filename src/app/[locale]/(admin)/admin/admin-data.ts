@@ -8,13 +8,30 @@ import { createClient } from '@/utils/supabase/server';
 import { readLocalAiLogs, StoredAiUsageLog } from '@/utils/ai-logger';
 import { requireAdmin } from '@/utils/admin-auth';
 
+const FX_TO_GBP: Record<string, number> = {
+  GBP: 1,
+  USD: 0.79,
+  EUR: 0.86,
+  AUD: 0.52,
+  CAD: 0.57,
+  NZD: 0.47,
+};
+
+function normalizeOrderAmountToGbp(rawAmount: any, rawCurrency?: any): number {
+  const num = Number(rawAmount) || 0;
+  const major = num > 100 ? num / 100 : num;
+  const curr = String(rawCurrency || 'GBP').toUpperCase();
+  const rate = FX_TO_GBP[curr] ?? 1;
+  return Number((major * rate).toFixed(2));
+}
+
 export const getAdminStats = cache(async (lastViewStr?: string) => {
   const { supabase } = await requireAdmin();
 
   const [ordersRes, usersCountRes, newUsersRes] = await Promise.all([
     supabase
       .from('orders')
-      .select('amount, status')
+      .select('amount, currency, status')
       .eq('status', 'succeeded'),
     supabase
       .from('profiles')
@@ -31,12 +48,16 @@ export const getAdminStats = cache(async (lastViewStr?: string) => {
   const usersCount = usersCountRes.count;
   const newUsersCount = newUsersRes.count || 0;
 
-  const totalRevenue = orders?.reduce((acc, order) => acc + (order.amount || 0), 0) || 0;
+  const totalRevenue =
+    orders?.reduce(
+      (acc, order) => acc + normalizeOrderAmountToGbp(order.amount, (order as any).currency),
+      0
+    ) || 0;
   const salesCount = orders?.length || 0;
   const avgOrderVal = salesCount > 0 ? totalRevenue / salesCount : 0;
 
   return {
-    totalRevenue,
+    totalRevenue: Number(totalRevenue.toFixed(2)),
     salesCount,
     activeUsers: usersCount || 0,
     newUsersCount,
@@ -49,7 +70,7 @@ export const getRecentTransactions = cache(async () => {
 
   const { data: orders, error } = await supabase
     .from('orders')
-    .select('id, amount, status, created_at, user_id, mystery_id')
+    .select('id, amount, currency, status, created_at, user_id, mystery_id')
     .order('created_at', { ascending: false })
     .limit(10);
 
@@ -88,6 +109,7 @@ export const getRecentTransactions = cache(async () => {
 
   return safeOrders.map(o => ({
     ...o,
+    amount: normalizeOrderAmountToGbp(o.amount, (o as any).currency),
     profile: profilesMap[o.user_id as string] || { full_name: 'Unknown User' },
     mystery: { title: mysteriesMap[o.mystery_id as string] || 'Unknown Mystery' }
   }));

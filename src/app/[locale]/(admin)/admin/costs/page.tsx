@@ -128,15 +128,18 @@ async function AdminCostsContent() {
     getLiveAiProviderStatus(),
   ]);
 
+  const USD_TO_GBP = 0.79;
   const totalRevenue = stats.totalRevenue;
 
-  // Separate Google API vs ElevenLabs costs
+  // Separate Google API vs ElevenLabs costs (converted from USD to GBP)
   const googleLogs = logs.filter((l) => !l.model_name.startsWith('elevenlabs:'));
   const elevenLogs = logs.filter((l) => l.model_name.startsWith('elevenlabs:'));
 
-  const googleCost = googleLogs.reduce((acc, log) => acc + Number(log.cost_usd || 0), 0);
-  const elevenCost = elevenLogs.reduce((acc, log) => acc + Number(log.cost_usd || 0), 0);
-  const totalAiCost = googleCost + elevenCost;
+  const googleCostGbp =
+    googleLogs.reduce((acc, log) => acc + Number(log.cost_usd || 0), 0) * USD_TO_GBP;
+  const elevenCostGbp =
+    elevenLogs.reduce((acc, log) => acc + Number(log.cost_usd || 0), 0) * USD_TO_GBP;
+  const totalAiCostGbp = googleCostGbp + elevenCostGbp;
 
   const googleImageLogs = googleLogs.filter(
     (l) => l.model_name.includes('image') || l.model_name.includes('imagen')
@@ -146,7 +149,7 @@ async function AdminCostsContent() {
   );
 
   const profitMargin =
-    totalRevenue > 0 ? ((totalRevenue - totalAiCost) / totalRevenue) * 100 : 0;
+    totalRevenue > 0 ? ((totalRevenue - totalAiCostGbp) / totalRevenue) * 100 : 0;
 
   const { googleStatus, elevenStatus } = providerStatus;
   const charPct =
@@ -156,14 +159,14 @@ async function AdminCostsContent() {
 
   return (
     <>
-      {/* Top KPI Cards */}
+      {/* Top KPI Cards (All in GBP £) */}
       <div className="grid gap-6 md:grid-cols-4">
         {/* Revenue Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">
-            Total Revenue
+            Total Revenue (GBP)
           </h2>
-          <div className="text-4xl font-black text-green-600">${totalRevenue.toFixed(2)}</div>
+          <div className="text-4xl font-black text-green-600">£{totalRevenue.toFixed(2)}</div>
           <p className="text-xs text-slate-400 mt-2 font-medium">From completed orders</p>
         </div>
 
@@ -177,9 +180,9 @@ async function AdminCostsContent() {
               {googleLogs.length} calls
             </span>
           </div>
-          <div className="text-4xl font-black text-red-500">${googleCost.toFixed(2)}</div>
+          <div className="text-4xl font-black text-red-500">£{googleCostGbp.toFixed(2)}</div>
           <p className="text-xs text-slate-400 mt-2 font-medium">
-            {googleImageLogs.length} images ($0.04/ea) · {googleTextLogs.length} text gens
+            {googleImageLogs.length} images (~£0.03/ea) · {googleTextLogs.length} text gens
           </p>
         </div>
 
@@ -193,19 +196,19 @@ async function AdminCostsContent() {
               {logs.length} total
             </span>
           </div>
-          <div className="text-4xl font-black text-red-500">${totalAiCost.toFixed(2)}</div>
+          <div className="text-4xl font-black text-red-500">£{totalAiCostGbp.toFixed(2)}</div>
           <p className="text-xs text-slate-400 mt-2 font-medium">
-            Google ${googleCost.toFixed(2)} + ElevenLabs ${elevenCost.toFixed(2)}
+            Google £{googleCostGbp.toFixed(2)} + ElevenLabs £{elevenCostGbp.toFixed(2)}
           </p>
         </div>
 
         {/* Profit Margin Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">
-            Net Profit
+            Net Profit (GBP)
           </h2>
           <div className="text-4xl font-black text-slate-900">
-            ${(totalRevenue - totalAiCost).toFixed(2)}
+            £{(totalRevenue - totalAiCostGbp).toFixed(2)}
           </div>
           <p className="text-xs text-slate-400 mt-2 font-medium">
             {profitMargin.toFixed(1)}% margin on AI usage
@@ -249,23 +252,23 @@ async function AdminCostsContent() {
               <div className="text-slate-400 font-bold uppercase text-[10px]">
                 gemini-2.5-flash-image
               </div>
-              <div className="text-slate-900 font-black text-sm mt-1">$0.04 / image</div>
+              <div className="text-slate-900 font-black text-sm mt-1">£0.03 / image</div>
               <div className="text-slate-400 text-[11px] mt-0.5">
-                {googleImageLogs.length} images (${(googleImageLogs.length * 0.039).toFixed(2)})
+                {googleImageLogs.length} images (£{(googleImageLogs.length * 0.039 * USD_TO_GBP).toFixed(2)})
               </div>
             </div>
             <div className="bg-slate-50 rounded-xl p-3">
               <div className="text-slate-400 font-bold uppercase text-[10px]">
                 gemini-2.5-flash
               </div>
-              <div className="text-slate-900 font-black text-sm mt-1">$0.30 / $2.50 1M</div>
+              <div className="text-slate-900 font-black text-sm mt-1">£0.24 / £1.98 1M</div>
               <div className="text-slate-400 text-[11px] mt-0.5">Input / Output tokens</div>
             </div>
             <div className="bg-slate-50 rounded-xl p-3">
               <div className="text-slate-400 font-bold uppercase text-[10px]">
                 gemini-2.5-pro
               </div>
-              <div className="text-slate-900 font-black text-sm mt-1">$1.25 / $10.00 1M</div>
+              <div className="text-slate-900 font-black text-sm mt-1">£0.99 / £7.90 1M</div>
               <div className="text-slate-400 text-[11px] mt-0.5">Input / Output tokens</div>
             </div>
           </div>
@@ -273,8 +276,8 @@ async function AdminCostsContent() {
           <p className="text-[11px] text-slate-400 leading-relaxed">
             Connected directly to <code className="text-slate-600">generativelanguage.googleapis.com</code> using your{' '}
             <code className="text-slate-600">GOOGLE_GENERATIVE_AI_API_KEY</code>. Every Gemini &amp; image generation call
-            extracts exact <code className="text-slate-600">usageMetadata</code> token/image counts and calculates your charge at
-            official Google AI Studio Paid Tier rates.
+            extracts exact <code className="text-slate-600">usageMetadata</code> token/image counts and converts your charge into
+            GBP (£).
           </p>
         </div>
 
@@ -328,7 +331,7 @@ async function AdminCostsContent() {
                     Usage Value
                   </div>
                   <div className="text-slate-900 font-black text-sm mt-1">
-                    ${elevenCost.toFixed(2)}
+                    £{elevenCostGbp.toFixed(2)}
                   </div>
                   <div className="text-slate-400 text-[11px] mt-0.5">
                     {elevenLogs.length} audio batches
@@ -339,7 +342,7 @@ async function AdminCostsContent() {
                     Current Overage
                   </div>
                   <div className="text-slate-900 font-black text-sm mt-1">
-                    ${elevenStatus.overageUsd.toFixed(2)}
+                    £{(Number(elevenStatus.overageUsd || 0) * USD_TO_GBP).toFixed(2)}
                   </div>
                   <div className="text-slate-400 text-[11px] mt-0.5">Extra charges</div>
                 </div>
@@ -348,7 +351,7 @@ async function AdminCostsContent() {
                     Next Invoice
                   </div>
                   <div className="text-slate-900 font-black text-sm mt-1">
-                    ${(elevenStatus.nextInvoiceCents / 100).toFixed(2)}
+                    £{((elevenStatus.nextInvoiceCents / 100) * USD_TO_GBP).toFixed(2)}
                   </div>
                   <div className="text-slate-400 text-[11px] mt-0.5">Plan renewal</div>
                 </div>
@@ -366,7 +369,7 @@ async function AdminCostsContent() {
               AI Generation &amp; API Charge Logs ({logs.length})
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Includes live logged requests, discovered Google Gemini/Imagen assets, and ElevenLabs synthesis history.
+              Includes live logged requests, discovered Google Gemini/Imagen assets, and ElevenLabs synthesis history (displayed in GBP £).
             </p>
           </div>
         </div>
@@ -379,7 +382,7 @@ async function AdminCostsContent() {
                 <th className="px-6 py-4">Feature</th>
                 <th className="px-6 py-4">Model</th>
                 <th className="px-6 py-4">Usage / Tokens</th>
-                <th className="px-6 py-4 text-right">Cost (USD)</th>
+                <th className="px-6 py-4 text-right">Cost (GBP)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
@@ -391,7 +394,7 @@ async function AdminCostsContent() {
                 </tr>
               ) : (
                 logs.slice(0, 100).map((log) => {
-                  const formattedDate = new Intl.DateTimeFormat('en-US', {
+                  const formattedDate = new Intl.DateTimeFormat('en-GB', {
                     month: 'short',
                     day: 'numeric',
                     hour: 'numeric',
@@ -401,6 +404,7 @@ async function AdminCostsContent() {
                   const isEleven = log.model_name.startsWith('elevenlabs:');
                   const isImage =
                     log.model_name.includes('image') || log.model_name.includes('imagen');
+                  const costGbp = Number(log.cost_usd || 0) * USD_TO_GBP;
 
                   return (
                     <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
@@ -452,7 +456,7 @@ async function AdminCostsContent() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right font-black text-red-500">
-                        ${Number(log.cost_usd).toFixed(2)}
+                        £{costGbp.toFixed(2)}
                       </td>
                     </tr>
                   );

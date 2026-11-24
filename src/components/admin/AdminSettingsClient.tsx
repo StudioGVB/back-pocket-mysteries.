@@ -431,57 +431,69 @@ export function AdminSettingsClient({
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                  Base Pack ($)
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                  Basic 4–6 (£)
                 </label>
                 <input
                   type="number"
                   min={1}
-                  value={settings.basePackPriceUsd}
-                  onChange={(e) => updateField('basePackPriceUsd', Number(e.target.value))}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
+                  value={settings.basicTierPriceGbp}
+                  onChange={(e) => updateField('basicTierPriceGbp', Number(e.target.value))}
+                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                  Custom Builder ($)
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                  Premium 4–10 (£)
                 </label>
                 <input
                   type="number"
                   min={1}
-                  value={settings.customBuilderPriceUsd}
-                  onChange={(e) => updateField('customBuilderPriceUsd', Number(e.target.value))}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
+                  value={settings.premiumTierPriceGbp}
+                  onChange={(e) => updateField('premiumTierPriceGbp', Number(e.target.value))}
+                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                  Bespoke VIP ($)
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                  Grand 4–16 (£)
                 </label>
                 <input
                   type="number"
                   min={1}
-                  value={settings.bespokePartyPriceUsd}
-                  onChange={(e) => updateField('bespokePartyPriceUsd', Number(e.target.value))}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
+                  value={settings.grandTierPriceGbp}
+                  onChange={(e) => updateField('grandTierPriceGbp', Number(e.target.value))}
+                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                  Default Currency
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                  Unlimited (£/mo)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={settings.unlimitedPassPriceGbp}
+                  onChange={(e) => updateField('unlimitedPassPriceGbp', Number(e.target.value))}
+                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                  Admin Currency
                 </label>
                 <select
                   value={settings.defaultCurrency}
                   onChange={(e) =>
                     updateField('defaultCurrency', e.target.value as SupportedCurrency)
                   }
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
+                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
                 >
+                  <option value="GBP">GBP (£)</option>
                   <option value="USD">USD ($)</option>
                   <option value="AUD">AUD (A$)</option>
-                  <option value="GBP">GBP (£)</option>
                   <option value="EUR">EUR (€)</option>
                   <option value="CAD">CAD (CA$)</option>
                 </select>
@@ -752,13 +764,13 @@ export function AdminSettingsClient({
               </div>
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                  Monthly AI Budget Alert ($)
+                  Monthly AI Budget Alert (£)
                 </label>
                 <input
                   type="number"
                   min={5}
-                  value={settings.monthlyAiBudgetAlertUsd}
-                  onChange={(e) => updateField('monthlyAiBudgetAlertUsd', Number(e.target.value))}
+                  value={settings.monthlyAiBudgetAlertGbp}
+                  onChange={(e) => updateField('monthlyAiBudgetAlertGbp', Number(e.target.value))}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
                 />
               </div>
