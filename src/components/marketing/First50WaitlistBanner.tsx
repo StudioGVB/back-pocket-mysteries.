@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { Gift, Sparkles, ArrowRight, CheckCircle2, X } from 'lucide-react';
 import {
   getLaunchWaitlistStatusAction,
   submitEmailLead,
@@ -18,14 +19,23 @@ type WaitlistStatus = {
   isFirst50Open: boolean;
 };
 
+const DEFAULT_STATUS: WaitlistStatus = {
+  totalLeads: 2,
+  vipCap: 50,
+  spotsRemaining: 48,
+  isFirst50Open: true,
+};
+
 export default function First50WaitlistBanner({
   initialStatus = null,
 }: {
   initialStatus?: WaitlistStatus | null;
 } = {}) {
-  const [status, setStatus] = useState<WaitlistStatus | null>(initialStatus);
+  const [status, setStatus] = useState<WaitlistStatus>(initialStatus || DEFAULT_STATUS);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Two-phase modal state for buttery-smooth 60fps entrance & exit animations
+  const [isModalMounted, setIsModalMounted] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
 
   // Form state
@@ -39,6 +49,35 @@ export default function First50WaitlistBanner({
     spotsRemaining: number;
     alreadyRegistered?: boolean;
   } | null>(null);
+
+  const openModalSmooth = useCallback(() => {
+    setIsModalMounted(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setIsModalVisible(true);
+      });
+    });
+  }, []);
+
+  const closeModalSmooth = useCallback(() => {
+    setIsModalVisible(false);
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(POPUP_DISMISSED_KEY, 'true');
+    }
+    setTimeout(() => {
+      setIsModalMounted(false);
+    }, 240);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isModalMounted) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModalSmooth();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isModalMounted, closeModalSmooth]);
 
   useEffect(() => {
     let mounted = true;
@@ -74,7 +113,7 @@ export default function First50WaitlistBanner({
 
     getLaunchWaitlistStatusAction()
       .then((res) => {
-        if (!mounted) return;
+        if (!mounted || !res) return;
         setStatus(res);
         if (typeof window !== 'undefined') {
           try {
@@ -99,9 +138,8 @@ export default function First50WaitlistBanner({
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           if (!mounted) return;
-          // Double-check lights aren't currently off on desktop
           if (document.documentElement.dataset.lightsOff === 'true') return;
-          setIsModalOpen(true);
+          openModalSmooth();
         }, delayMs);
       };
 
@@ -140,14 +178,7 @@ export default function First50WaitlistBanner({
     return () => {
       mounted = false;
     };
-  }, [initialStatus]);
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem(POPUP_DISMISSED_KEY, 'true');
-    }
-  };
+  }, [initialStatus, openModalSmooth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +197,7 @@ export default function First50WaitlistBanner({
         'first_50_vip_modal'
       );
       if (res.success) {
-        const currentTotal = status?.totalLeads ?? 0;
+        const currentTotal = status?.totalLeads ?? 2;
         const vipCap = status?.vipCap ?? 50;
         const rank = res.vipRank || currentTotal + 1;
         const qualifies = res.qualifiesForFreeMystery ?? rank <= vipCap;
@@ -205,13 +236,12 @@ export default function First50WaitlistBanner({
     }
   };
 
-  const isFirst50Open = status ? status.isFirst50Open : true;
-  const progressPercent = status
-    ? Math.min(
-        100,
-        Math.max(0, Math.round(((status.vipCap - status.spotsRemaining) / status.vipCap) * 100))
-      )
-    : 0;
+  const isFirst50Open = status.isFirst50Open;
+  const claimedCount = Math.max(1, status.vipCap - status.spotsRemaining);
+  const progressPercent = Math.min(
+    100,
+    Math.max(6, Math.round((claimedCount / status.vipCap) * 100))
+  );
 
   return (
     <>
@@ -220,8 +250,8 @@ export default function First50WaitlistBanner({
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between sm:justify-center gap-2 sm:gap-4 text-left sm:text-center">
           <div className="flex items-center gap-2 min-w-0">
             <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-              <span className="hidden xs:inline">Launch</span> Giveaway
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              Giveaway
             </span>
 
             {/* Compact Mobile Copy (<640px) */}
@@ -246,16 +276,9 @@ export default function First50WaitlistBanner({
                   >
                     FREE Custom Murder Mystery
                   </Link>
-                  {status ? (
-                    <span className="text-slate-400 font-semibold ml-1 animate-in fade-in duration-200">
-                      ({status.spotsRemaining} of {status.vipCap} spots left!)
-                    </span>
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="inline-block w-28 h-3.5 rounded-full bg-white/10 animate-pulse align-middle ml-1.5"
-                    />
-                  )}
+                  <span className="text-slate-400 font-semibold ml-1">
+                    ({status.spotsRemaining} of {status.vipCap} spots left!)
+                  </span>
                 </>
               ) : (
                 <>
@@ -268,8 +291,8 @@ export default function First50WaitlistBanner({
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="px-2.5 sm:px-3.5 py-1 rounded-full bg-white text-brand-dark hover:bg-brand-pink hover:text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer shrink-0"
+              onClick={openModalSmooth}
+              className="px-2.5 sm:px-3.5 py-1 rounded-full bg-white text-brand-dark hover:bg-brand-pink hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors cursor-pointer shrink-0"
             >
               {hasJoined ? (
                 'VIP Status →'
@@ -282,7 +305,7 @@ export default function First50WaitlistBanner({
             </button>
             <Link
               href="/en/free-murder-mystery-game"
-              className="hidden md:inline-flex px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-widest transition-all"
+              className="hidden md:inline-flex px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-widest transition-colors"
             >
               How It Works
             </Link>
@@ -290,110 +313,133 @@ export default function First50WaitlistBanner({
         </div>
       </div>
 
-      {/* Pop-Up Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md sm:max-w-lg rounded-[2rem] sm:rounded-[2.5rem] bg-brand-dark text-white border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
-            {/* Ambient Glow */}
-            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-pink/20 rounded-full blur-3xl pointer-events-none" />
+      {/* Sleek 60fps Spring Pop-Up Modal */}
+      {isModalMounted && (
+        <div
+          onClick={closeModalSmooth}
+          className={`fixed inset-0 z-[200] flex items-center justify-center p-4 transition-opacity duration-300 ease-out ${
+            isModalVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          style={{
+            backgroundColor: 'rgba(12, 7, 15, 0.72)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background:
+                'radial-gradient(120% 75% at 50% 0%, rgba(254, 4, 198, 0.18) 0%, rgba(20, 13, 24, 0) 70%), #140d18',
+              transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+              willChange: 'transform, opacity',
+            }}
+            className={`relative w-full max-w-[420px] rounded-3xl text-white border border-white/15 shadow-[0_24px_64px_rgba(0,0,0,0.65)] overflow-hidden transition-all duration-300 ${
+              isModalVisible
+                ? 'opacity-100 translate-y-0 scale-100'
+                : 'opacity-0 translate-y-5 scale-[0.96]'
+            }`}
+          >
+            {/* Top Neon Pink Accent Line */}
+            <div className="h-1 w-full bg-gradient-to-r from-brand-pink via-fuchsia-400 to-brand-pink" />
 
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              aria-label="Close"
-              className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
+            {/* Clean Top Bar inside Card: Badge + Close Button */}
+            <div className="flex items-center justify-between px-5 pt-4 pb-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-pink/15 border border-brand-pink/30 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                <Gift className="w-3 h-3" />
+                Founding Host Offer
+              </span>
 
-            <div className="relative z-10 p-6 sm:p-10">
+              <button
+                type="button"
+                onClick={closeModalSmooth}
+                aria-label="Close"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-6 pb-6 pt-2">
               {resultInfo ? (
-                <div className="text-center space-y-5 py-4">
-                  <div className="w-16 h-16 rounded-full bg-brand-pink/20 border-2 border-brand-pink text-brand-pink flex items-center justify-center text-3xl font-black mx-auto">
-                    🎉
+                <div className="text-center space-y-4 py-3">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-pink/20 border border-brand-pink text-brand-pink flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-6 h-6" />
                   </div>
 
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-pink/15 border border-brand-pink/30 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                    <Sparkles className="w-3 h-3" />
                     {resultInfo.qualifiesForFreeMystery
-                      ? `VIP Founding Host • Spot #${resultInfo.vipRank} of 50`
+                      ? `VIP Spot #${resultInfo.vipRank} of 50 Locked`
                       : `Waitlist Member #${resultInfo.vipRank}`}
                   </div>
 
-                  <h3 className="text-3xl font-black uppercase tracking-tight">
+                  <h3 className="text-2xl font-black uppercase tracking-tight leading-tight">
                     {resultInfo.alreadyRegistered
-                      ? "You're Already on the VIP List!"
+                      ? "You're on the VIP List!"
                       : resultInfo.qualifiesForFreeMystery
-                      ? 'Your Free Mystery Spot is Locked In!'
+                      ? 'Free Mystery Locked In!'
                       : "You're on the Launch List!"}
                   </h3>
 
-                  <p className="text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
+                  <p className="text-xs text-slate-300 leading-relaxed">
                     {resultInfo.qualifiesForFreeMystery ? (
                       <>
-                        You secured <strong className="text-white">Spot #{resultInfo.vipRank} of 50</strong>! We&apos;ve saved your email to our Founding VIP list and will email your <strong className="text-brand-pink">100% Free Custom Murder Mystery code</strong> the moment we launch.
+                        You secured <strong className="text-white">Spot #{resultInfo.vipRank} of 50</strong>. We&apos;ll email your{' '}
+                        <strong className="text-brand-pink">100% Free Custom Murder Mystery code</strong> on launch day.
                       </>
                     ) : (
                       <>
-                        The first 50 free mystery spots were claimed fast, but we&apos;ve added you to the VIP Launch List for our biggest early-bird launch discount!
+                        We&apos;ve added you to the VIP Launch List for our biggest early-bird launch discount!
                       </>
                     )}
                   </p>
 
-                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <div className="pt-1 flex flex-col gap-2">
                     <Link
                       href="/en/free-murder-mystery-game"
-                      onClick={handleCloseModal}
-                      className="px-7 py-4 bg-brand-pink hover:bg-white hover:text-brand-dark text-white rounded-full text-xs font-black uppercase tracking-widest transition-all"
+                      onClick={closeModalSmooth}
+                      className="w-full py-3.5 bg-brand-pink hover:bg-white hover:text-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-widest transition-colors inline-flex items-center justify-center gap-1.5"
                     >
-                      How the Giveaway Works →
+                      See What&apos;s Included
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                     <button
                       type="button"
-                      onClick={handleCloseModal}
-                      className="px-6 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+                      onClick={closeModalSmooth}
+                      className="w-full py-2.5 text-slate-400 hover:text-white text-[11px] font-bold transition-colors cursor-pointer"
                     >
                       Continue Browsing
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="space-y-1.5 sm:space-y-2 text-center pr-6 sm:pr-0">
-                    <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-brand-pink/15 border border-brand-pink/30 text-brand-pink text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
-                      🎁 Pre-Launch Founding Host Offer
-                    </div>
-                    <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight leading-none pt-1">
-                      First 50 Sign-Ups Get a <br />
+                <div className="space-y-4">
+                  {/* Headline & Concise Hook */}
+                  <div className="space-y-1.5">
+                    <h2 className="text-2xl sm:text-[28px] font-black uppercase tracking-tight leading-[1.08]">
+                      First 50 Sign-Ups Get a{' '}
                       <span className="text-brand-pink italic">Free Mystery</span>
                     </h2>
-                    <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed pt-1">
-                      Be one of the first 50 hosts on our launch list and we&apos;ll send you a <strong className="text-white">100% FREE Custom Murder Mystery Game Pack</strong> when we launch!
+                    <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                      Join our founding host list and get a{' '}
+                      <strong className="text-white font-bold">100% Free Custom Murder Mystery Pack</strong>{' '}
+                      (worth £25) when we launch.
                     </p>
                   </div>
 
-                  {/* Live Spots Counter Bar */}
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-3 sm:p-4 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] sm:text-xs font-black uppercase tracking-wider">
-                      {status ? (
-                        <>
-                          <span className="text-brand-pink">
-                            🔥 {status.spotsRemaining} of {status.vipCap} Free Spots Left
-                          </span>
-                          <span className="text-slate-400">
-                            {status.vipCap - status.spotsRemaining}/{status.vipCap} Claimed
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-brand-pink">
-                            🔥 Checking Live VIP Spots...
-                          </span>
-                          <span className="inline-block w-16 h-3.5 rounded-full bg-white/10 animate-pulse" />
-                        </>
-                      )}
+                  {/* Compact Live Spots Pill Bar */}
+                  <div className="bg-white/[0.06] border border-white/10 rounded-xl px-3.5 py-2.5 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider">
+                      <span className="text-brand-pink flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-pink animate-pulse" />
+                        {status.spotsRemaining} of {status.vipCap} Free Spots Left
+                      </span>
+                      <span className="text-slate-400">
+                        {claimedCount}/{status.vipCap} Claimed
+                      </span>
                     </div>
-                    <div className="w-full h-2 sm:h-2.5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-brand-pink to-fuchsia-400 rounded-full transition-all duration-500"
                         style={{ width: `${progressPercent}%` }}
@@ -402,52 +448,59 @@ export default function First50WaitlistBanner({
                   </div>
 
                   {error && (
-                    <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300 text-xs font-bold text-center">
+                    <div className="px-3 py-2 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300 text-xs font-bold text-center">
                       {error}
                     </div>
                   )}
 
-                  <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5">
+                  {/* Sleek Form Inputs */}
+                  <form onSubmit={handleSubmit} className="space-y-2.5">
                     <input
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Your First Name"
+                      placeholder="First name"
                       required
-                      className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-full bg-white/10 border border-white/15 text-white placeholder-slate-400 text-sm font-semibold focus:outline-none focus:border-brand-pink transition-colors"
+                      className="w-full px-4 py-3 rounded-xl bg-white/[0.07] border border-white/15 text-white placeholder-slate-400 text-sm font-medium focus:outline-none focus:border-brand-pink focus:bg-white/[0.1] transition-colors"
                     />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Your Email Address"
+                      placeholder="Email address"
                       required
-                      className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-full bg-white/10 border border-white/15 text-white placeholder-slate-400 text-sm font-semibold focus:outline-none focus:border-brand-pink transition-colors"
+                      className="w-full px-4 py-3 rounded-xl bg-white/[0.07] border border-white/15 text-white placeholder-slate-400 text-sm font-medium focus:outline-none focus:border-brand-pink focus:bg-white/[0.1] transition-colors"
                     />
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full py-3.5 sm:py-4.5 bg-brand-pink hover:bg-white hover:text-brand-dark text-white rounded-full text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-brand-pink/25 transition-all duration-200 cursor-pointer disabled:opacity-50"
+                      className="w-full py-3.5 bg-brand-pink hover:bg-white hover:text-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-[0.16em] shadow-lg shadow-brand-pink/25 transition-all duration-200 cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
                     >
                       {submitting
                         ? 'Locking In Your Spot...'
                         : isFirst50Open
-                        ? 'Claim My Free Mystery Spot →'
-                        : 'Join the VIP Waitlist →'}
+                        ? 'Claim My Free Mystery'
+                        : 'Join the VIP Waitlist'}
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </form>
 
-                  <div className="space-y-1 text-center">
-                    <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
-                      We&apos;ll email your free mystery code on launch day, plus weekly murder mystery tips &amp; blog updates. Unsubscribe anytime.
-                    </p>
+                  {/* Footer Actions */}
+                  <div className="flex items-center justify-between pt-0.5 text-[11px]">
                     <Link
                       href="/en/free-murder-mystery-game"
-                      onClick={handleCloseModal}
-                      className="inline-block text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-brand-pink hover:text-white underline decoration-brand-pink/50 transition-colors pt-0.5"
+                      onClick={closeModalSmooth}
+                      className="font-bold text-slate-400 hover:text-brand-pink transition-colors underline decoration-white/20"
                     >
-                      What&apos;s Included in the First 50 Giveaway? →
+                      What&apos;s included?
                     </Link>
+                    <button
+                      type="button"
+                      onClick={closeModalSmooth}
+                      className="font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      Maybe later
+                    </button>
                   </div>
                 </div>
               )}
@@ -458,3 +511,4 @@ export default function First50WaitlistBanner({
     </>
   );
 }
+

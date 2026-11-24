@@ -6,39 +6,32 @@ export default function GlobalSpotlight() {
   const pathname = usePathname();
   const isHomePage = pathname === '/en' || pathname === '/fr' || pathname === '/' || pathname === '';
 
-  // Start with lights ON during SSR / mobile, and switch lights OFF on desktop homepage mount
-  const [lightsOn, setLightsOn] = useState(true);
-  const [isDesktop, setIsDesktop] = useState(false);
+  // Start dark on homepage from frame 0 so desktop never flashes bright->dark on hydration.
+  // On mobile (<768px), CSS `hidden md:block` hides the overlay immediately from frame 0.
+  const [lightsOn, setLightsOn] = useState(!isHomePage);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const checkViewport = () => {
-      const desktop = window.innerWidth >= 768;
-      setIsDesktop(desktop);
-      if (!desktop) {
+    const syncViewportAndState = () => {
+      const isDesktop = window.innerWidth >= 768;
+      if (!isDesktop && !lightsOn) {
         setLightsOn(true);
+        return;
       }
+      const isDarkActive = isDesktop && !lightsOn && isHomePage;
+      document.documentElement.dataset.lightsOff = isDarkActive ? 'true' : 'false';
+      window.dispatchEvent(
+        new CustomEvent('bpm:lights-change', { detail: { lightsOff: isDarkActive } })
+      );
     };
 
-    const initialDesktop = window.innerWidth >= 768;
-    setIsDesktop(initialDesktop);
-    setLightsOn(!(isHomePage && initialDesktop));
-
-    window.addEventListener('resize', checkViewport);
-    return () => window.removeEventListener('resize', checkViewport);
-  }, [isHomePage]);
-
-  // Sync data-lights-off on <html> so modals (like First50WaitlistBanner) never pop up while lights are off
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const isDarkActive = isDesktop && !lightsOn;
-      document.documentElement.dataset.lightsOff = isDarkActive ? 'true' : 'false';
-      window.dispatchEvent(new CustomEvent('bpm:lights-change', { detail: { lightsOff: isDarkActive } }));
-    }
-  }, [lightsOn, isDesktop]);
+    syncViewportAndState();
+    window.addEventListener('resize', syncViewportAndState);
+    return () => window.removeEventListener('resize', syncViewportAndState);
+  }, [lightsOn, isHomePage]);
 
   useEffect(() => {
-    if (!isDesktop || lightsOn) return;
+    if (lightsOn) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if (overlayRef.current) {
@@ -47,28 +40,23 @@ export default function GlobalSpotlight() {
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [lightsOn, isDesktop]);
+  }, [lightsOn]);
 
   useEffect(() => {
-    if (!isDesktop || lightsOn) return;
+    if (lightsOn) return;
 
     const timer = setTimeout(() => {
       setLightsOn(true);
     }, 15000);
 
     return () => clearTimeout(timer);
-  }, [lightsOn, isDesktop]);
-
-  // Completely disabled on mobile screens (< 768px)
-  if (!isDesktop) {
-    return null;
-  }
+  }, [lightsOn]);
 
   return (
     <>
-      {/* Desktop-Only Dark Overlay */}
+      {/* Desktop-Only Dark Overlay (hidden on mobile from SSR frame 0 via `hidden md:block`) */}
       <div
         ref={overlayRef}
         className={`hidden md:block fixed inset-0 z-[100] pointer-events-none transition-opacity duration-700 ${
@@ -116,4 +104,5 @@ export default function GlobalSpotlight() {
     </>
   );
 }
+
 
