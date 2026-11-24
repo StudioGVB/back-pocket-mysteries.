@@ -482,9 +482,13 @@ export function PackScreenerClient({
           const fId = friendAssignments[c.id];
           const friend = liveFriends.find((f) => f.id === fId);
           if (!friend) return null;
+          const prevGuestId = String(c?.profile_data?.guest_id || '');
+          const hasExistingPortrait = Boolean(c?.profile_data?.standard_character_photo_url);
+          const needsNewPortrait = prevGuestId !== String(friend.id) || !hasExistingPortrait;
           return {
             characterId: c.id,
             roleTitle: getCharacterRoleTitle(c) || c.name,
+            needsNewPortrait,
             friend: {
               id: friend.id,
               name: friend.name,
@@ -500,6 +504,7 @@ export function PackScreenerClient({
         .filter(Boolean) as Array<{
         characterId: string;
         roleTitle: string;
+        needsNewPortrait: boolean;
         friend: {
           id: string;
           name: string;
@@ -512,18 +517,16 @@ export function PackScreenerClient({
         };
       }>;
 
-      // Identify all visual clues that depict characters (via prompt or description tokens, CCTV, Polaroids, props)
+      const charsToRegenPortrait = assignmentsPayload.filter((a) => a.needsNewPortrait);
+
+      // Identify all visual clues (CCTV, physical props, Polaroids, photos)
       const visualCluesToRegen = rawClues.filter((c) => {
         const prompt = String(c.generation_prompt || c.prompt_template || '');
-        const desc = String(c.description || '');
-        const title = String(c.title || '');
-        const combined = `${prompt} ${desc} ${title}`;
-        const hasCharacterToken = /\{\{[^}]+\}\}/.test(combined);
         const fmt = c.format || inferClueFormat(c);
         if (fmt === 'audio') return false;
         const isVisualFormat =
           fmt === 'physical_prop' || fmt === 'cctv' || fmt === 'social_post' || Boolean(c.static_image_url);
-        return (hasCharacterToken && (Boolean(prompt) || isVisualFormat)) || (isVisualFormat && Boolean(prompt));
+        return isVisualFormat && Boolean(prompt || c.static_image_url);
       });
 
       // Identify all audio clues so their voice notes are re-synthesized with the newly cast friends' names & voices
@@ -533,7 +536,7 @@ export function PackScreenerClient({
       });
 
       const totalSteps =
-        1 + assignmentsPayload.length + visualCluesToRegen.length + audioCluesToRegen.length;
+        1 + charsToRegenPortrait.length + visualCluesToRegen.length + audioCluesToRegen.length;
       let currentStep = 1;
 
       setGenerationProgress({
@@ -555,15 +558,14 @@ export function PackScreenerClient({
         prev.map((c) => {
           const match = assignmentsPayload.find((a) => a.characterId === c.id);
           if (!match) return c;
-          const prevGuestId = String(c?.profile_data?.guest_id || '');
-          const isDifferent = prevGuestId !== String(match.friend.id);
           const nextProfile = {
             ...(c.profile_data || {}),
             guest_id: match.friend.id,
             guest_name: match.friend.name,
+            gender: match.friend.gender || c.profile_data?.gender,
             avatar_url: match.friend.avatar_url || c.profile_data?.avatar_url,
           };
-          if (isDifferent) {
+          if (match.needsNewPortrait) {
             delete nextProfile.standard_character_photo_url;
             delete nextProfile.standard_character_photo_hash;
             delete nextProfile.outfit_image_url;
@@ -575,8 +577,8 @@ export function PackScreenerClient({
         })
       );
 
-      // 2. Generate Stage 1 Standard Character Costume Portraits for the selected cast
-      for (const item of assignmentsPayload) {
+      // 2. Generate Stage 1 Standard Character Costume Portraits ONLY for recasted/missing characters
+      for (const item of charsToRegenPortrait) {
         currentStep++;
         setGenerationProgress({
           current: currentStep,
@@ -587,7 +589,8 @@ export function PackScreenerClient({
         const charRes = await generateStandardCharacterPhotoAction(
           mystery.id,
           item.characterId,
-          true
+          true,
+          item.friend
         );
         if (charRes?.imageUrl) {
           const freshPortrait = charRes.imageUrl.startsWith('data:')
@@ -1902,6 +1905,32 @@ export function PackScreenerClient({
               )}
             </div>
           </div>
+
+          {isGeneratingCastMedia && generationProgress && (
+            <div className="mb-3 rounded-xl bg-slate-900 text-white px-4 py-3 border border-brand-pink/40 shadow-md space-y-2">
+              <div className="flex items-center justify-between gap-2 text-xs font-black">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-3.5 h-3.5 border-2 border-brand-pink border-t-transparent rounded-full animate-spin shrink-0" />
+                  <span className="truncate text-amber-300">{generationProgress.label}</span>
+                </div>
+                <span className="text-[11px] text-slate-300 shrink-0">
+                  Step {generationProgress.current} of {generationProgress.total} (
+                  {Math.round((generationProgress.current / Math.max(1, generationProgress.total)) * 100)}%)
+                </span>
+              </div>
+              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-brand-pink to-amber-400 transition-all duration-300"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.round((generationProgress.current / Math.max(1, generationProgress.total)) * 100)
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {activeCharacters.map((char) => {

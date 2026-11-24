@@ -914,6 +914,7 @@ export async function applyScreenerCastAssignmentAction(
         ...rawProfile,
         guest_id: assigned.id,
         guest_name: assigned.name,
+        gender: assigned.gender || rawProfile.gender,
         avatar_url: assigned.avatar_url || assigned.photoUrl || rawProfile.avatar_url,
         eye_color: assigned.eye_color || rawProfile.eye_color,
         height: assigned.height || rawProfile.height,
@@ -939,12 +940,10 @@ export async function applyScreenerCastAssignmentAction(
       });
     }
 
-    if (cachedMystery) {
-      cacheMysterySnapshot(mysteryId, {
-        ...cachedMystery,
-        characters: updatedCharacters,
-      });
-    }
+    cacheMysterySnapshot(mysteryId, {
+      ...(cachedMystery || { id: mysteryId }),
+      characters: updatedCharacters,
+    });
 
     try {
       revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
@@ -966,7 +965,8 @@ export async function applyScreenerCastAssignmentAction(
 export async function generateStandardCharacterPhotoAction(
   mysteryId: string,
   characterId: string,
-  forceRegenerate = true
+  forceRegenerate = true,
+  guestOverride?: ScreenerCastAssignmentInput['friend']
 ): Promise<{ success?: boolean; imageUrl?: string | null; identityHash?: string; error?: string }> {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return { error: 'GOOGLE_GENERATIVE_AI_API_KEY is not configured' };
@@ -996,15 +996,35 @@ export async function generateStandardCharacterPhotoAction(
       .single();
 
     const cachedChar = (cachedMystery?.characters || []).find((c: any) => c.id === characterId);
+    const mergedProfileData: Record<string, any> = {
+      ...((dbCharData?.profile_data as Record<string, any>) || {}),
+      ...(cachedChar?.profile_data || {}),
+      ...(guestOverride
+        ? {
+            guest_id: guestOverride.id,
+            guest_name: guestOverride.name,
+            ...(guestOverride.gender ? { gender: guestOverride.gender } : {}),
+            ...(guestOverride.avatar_url || guestOverride.photoUrl
+              ? { avatar_url: guestOverride.avatar_url || guestOverride.photoUrl }
+              : {}),
+            ...(guestOverride.eye_color ? { eye_color: guestOverride.eye_color } : {}),
+            ...(guestOverride.height ? { height: guestOverride.height } : {}),
+            ...(guestOverride.ethnicity ? { ethnicity: guestOverride.ethnicity } : {}),
+          }
+        : {}),
+    };
+
     const charData = dbCharData
       ? {
           ...dbCharData,
-          profile_data: {
-            ...((dbCharData.profile_data as Record<string, any>) || {}),
-            ...(cachedChar?.profile_data || {}),
-          },
+          profile_data: mergedProfileData,
         }
-      : cachedChar;
+      : cachedChar
+      ? {
+          ...cachedChar,
+          profile_data: mergedProfileData,
+        }
+      : null;
 
     if (!charData) {
       return { error: charError?.message || 'Character not found' };
@@ -1017,25 +1037,27 @@ export async function generateStandardCharacterPhotoAction(
       return { error: 'Failed to generate standard character photo' };
     }
 
-    if (cachedMystery && Array.isArray(cachedMystery.characters)) {
-      const updatedChars = cachedMystery.characters.map((c: any) =>
-        c.id === characterId
-          ? {
-              ...c,
-              profile_data: {
-                ...(c.profile_data || {}),
-                standard_character_photo_url: result.photoUrl,
-                standard_character_photo_hash: result.identityHash,
-                outfit_image_url: result.photoUrl,
-              },
-            }
-          : c
-      );
-      cacheMysterySnapshot(mysteryId, {
-        ...cachedMystery,
-        characters: updatedChars,
-      });
-    }
+    const existingCharsList = Array.isArray(cachedMystery?.characters)
+      ? cachedMystery.characters
+      : [charData];
+    const updatedChars = existingCharsList.map((c: any) =>
+      c.id === characterId
+        ? {
+            ...c,
+            profile_data: {
+              ...(c.profile_data || {}),
+              ...mergedProfileData,
+              standard_character_photo_url: result.photoUrl,
+              standard_character_photo_hash: result.identityHash,
+              outfit_image_url: result.photoUrl,
+            },
+          }
+        : c
+    );
+    cacheMysterySnapshot(mysteryId, {
+      ...(cachedMystery || { id: mysteryId, title: mystery.title, theme: mystery.theme }),
+      characters: updatedChars,
+    });
 
     try {
       revalidatePath(`/builder/mysteries/${mysteryId}/characters`);

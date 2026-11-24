@@ -3,9 +3,9 @@ import crypto from 'crypto';
 export const CHRISTMAS_NIGHTMARE_TITLE = 'Christmas Nightmare';
 export const CHRISTMAS_NIGHTMARE_THEME = 'Christmas Party';
 export const CHRISTMAS_NIGHTMARE_DESCRIPTION =
-  'They all grew up together on the same street: two sisters and two neighbour brothers whose lives have been intertwined since childhood. Tonight, beneath the twinkling lights of their annual Christmas dinner party, years of tangled history, secret affairs, and broken marriages finally snap. When a sudden 8:19 PM power surge plunges the living room into darkness and The Husband is discovered dead in the Christmas tree corner—amid a spilled cup of spiced eggnog, a scorched wall outlet, and a tangled coil of vintage tree lights—the holiday reunion turns into a Christmas Nightmare. Everyone in the room is family, a childhood neighbour, a spouse, or a secret lover, and every single one of them is hiding a betrayal.';
+  'They all grew up together on the same street: two pairs of next-door childhood siblings whose lives have been intertwined since high school. Tonight, beneath the twinkling lights of their annual Christmas dinner party, years of tangled history, secret affairs, and broken marriages finally snap. When a sudden 8:19 PM power surge plunges the living room into darkness and The Husband is discovered dead in the Christmas tree corner, amid a spilled cup of spiced eggnog, a scorched wall outlet, and a tangled coil of vintage tree lights, the holiday reunion turns into a Christmas Nightmare. Everyone in the room is family, a childhood neighbour, a spouse, or a secret lover, and every single one of them is hiding a betrayal.';
 export const CHRISTMAS_NIGHTMARE_INSIDE_JOKES =
-  'Keep your neighbours close, your sisters closer, and never trust what happens when the Christmas lights go dark.';
+  'Keep your neighbours close, your family closer, and never trust what happens when the Christmas lights go dark.';
 
 export function isChristmasNightmareMystery(title?: string | null, theme?: string | null): boolean {
   const t = String(title || '').toLowerCase();
@@ -73,7 +73,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       act_summary: 'Act like the charming, larger-than-life host of the annual Christmas dinner who loves holding court with old high school friends and childhood neighbours.',
       act_bullets: [
         'Toast loudly to growing up on the same street and keeping the old high school crew together.',
-        'Keep up a polished holiday host front alongside your wife of five years, {{The Wife}}.',
+        'Keep up a polished holiday host front alongside your {{The Wife_spouse}} of five years, {{The Wife}}.',
         'Treat your childhood neighbour, {{The Bestie}}, like your lifelong right-hand confidant.',
         'Talk work and office politics with {{The Co-Worker}}, who works at the same firm as you.',
       ],
@@ -93,20 +93,20 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Emerald Green',
-      bio: '{{The Wife}} grew up next door to the two neighbour siblings ({{The Co-Worker}} and {{The Bestie}}) alongside her younger sister, {{The Sister-in-Law}}—and tonight both sisters are wearing their matching "Forever Sisters" sterling silver snowflake hairpins. She has been married to {{The Husband}} for five years after dating since high school, briefly dated {{The Co-Worker}} in high school, and used to be best friends with {{The Mistress}} when they were teenagers.',
-      outfit_advice: 'Effortlessly glamorous holiday hostess: an emerald green silk midi dress or velvet jumpsuit, a matching sterling silver snowflake hairpin (a childhood sisters\' set shared with {{The Sister-in-Law}}), gold statement earrings, and heels.',
+      bio: '{{The Wife}} grew up next door to the two neighbour siblings ({{The Co-Worker}} and {{The Bestie}}) alongside {{The Wife_his}} younger {{The Sister-in-Law_sibling}}, {{The Sister-in-Law}}, and tonight both siblings are wearing their matching sterling silver snowflake hairpins. {{The Wife_He}} has been married to {{The Husband}} for five years after dating since high school, briefly dated {{The Co-Worker}} in high school, and used to be best friends with {{The Mistress}} when they were teenagers.',
+      outfit_advice: 'Effortlessly glamorous holiday hostess: an emerald green silk midi dress or velvet jumpsuit, a matching sterling silver snowflake hairpin (a childhood siblings\' set shared with {{The Sister-in-Law}}), gold statement earrings, and heels.',
       outfit_reference_images: [
         '/outfits/christmas/wife-1.jpg',
       ],
       standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-20058bab3911.jpg',
       outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-20058bab3911.jpg',
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheWife&eyebrows=default&eyes=default&mouth=smile&clothesColor=065f46&backgroundColor=transparent&top=straight01&hairColor=4a3123&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2F44d70cd0-9f04-408b-8ac9-e064eb5c31d0-20058bab3911.jpg',
-      act_summary: 'Play the poised, gracious Christmas party hostess welcoming your sister and childhood neighbours back to the house for the holidays.',
+      act_summary: 'Play the poised, gracious Christmas party host welcoming your {{The Sister-in-Law_sibling}} and childhood neighbours back to the house for the holidays.',
       act_bullets: [
-        'Stay close with your younger sister, {{The Sister-in-Law}}, who you grew up sharing everything with (including your matching silver snowflake hairpins).',
+        'Stay close with your younger {{The Sister-in-Law_sibling}}, {{The Sister-in-Law}}, who you grew up sharing everything with (including your matching silver snowflake hairpins).',
         'Keep things polite and composed around your old high school best friend, {{The Mistress}}.',
         'Reminisce about growing up next door to the two neighbour siblings, {{The Co-Worker}} and {{The Bestie}}.',
-        'Keep the holiday dinner moving smoothly alongside your spouse of five years, {{The Husband}}.',
+        'Keep the holiday dinner moving smoothly alongside your {{The Husband_spouse}} of five years, {{The Husband}}.',
       ],
       traits: ['Poised', 'Guarded', 'Graceful', 'Observant'],
     },
@@ -124,17 +124,17 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Silver',
-      bio: '{{The Sister-in-Law}} is {{The Wife}}\'s fiercely loyal younger sister (wearing her half of their matching "Forever Sisters" sterling silver snowflake hairpins tonight) and grew up next door to the two neighbour siblings ({{The Co-Worker}} and {{The Bestie}}). She went to high school with {{The Husband}} and {{The Mistress}}, and over the last few years she and {{The Mistress}} have become close best friends.',
-      outfit_advice: 'Sleek winter chic: a shimmering silver sweater dress or satin blouse with tailored trousers, a matching sterling silver snowflake hairpin (identical to your sister {{The Wife}}\'s), layered silver jewelry, and dark berry lipstick.',
+      bio: '{{The Sister-in-Law}} is {{The Wife}}\'s fiercely loyal younger {{The Sister-in-Law_sibling}} (wearing {{The Sister-in-Law_his}} half of their matching sterling silver snowflake hairpins tonight) and grew up next door to the two neighbour siblings ({{The Co-Worker}} and {{The Bestie}}). {{The Sister-in-Law_He}} went to high school with {{The Husband}} and {{The Mistress}}, and over the last few years {{The Sister-in-Law_he}} and {{The Mistress}} have become close best friends.',
+      outfit_advice: 'Sleek winter chic: a shimmering silver sweater dress or satin blouse with tailored trousers, a matching sterling silver snowflake hairpin (identical to your {{The Wife_sibling}} {{The Wife}}\'s), layered silver jewelry, and dark berry lipstick.',
       outfit_reference_images: [
         '/outfits/christmas/sister-1.jpg',
       ],
       standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/d1433643-ac1b-4689-af57-84bb77c2be33-63aa0e7355d6.jpg',
       outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/d1433643-ac1b-4689-af57-84bb77c2be33-63aa0e7355d6.jpg',
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheSisterInLaw&eyebrows=default&eyes=default&mouth=smile&clothesColor=64748b&backgroundColor=transparent&top=curvy&hairColor=a55728&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2Fd1433643-ac1b-4689-af57-84bb77c2be33-63aa0e7355d6.jpg',
-      act_summary: 'Play the sharp-witted, loyal younger sister who grew up on the street with everyone at the table and knows all the old neighbourhood history.',
+      act_summary: 'Play the sharp-witted, loyal younger {{The Sister-in-Law_sibling}} who grew up on the street with everyone at the table and knows all the old neighbourhood history.',
       act_bullets: [
-        'Always have your older sister {{The Wife}}\'s back during family holiday dinners.',
+        'Always have your older {{The Wife_sibling}} {{The Wife}}\'s back during family holiday dinners.',
         'Chat and catch up with your current best friend, {{The Mistress}}.',
         'Banter with the two neighbour siblings you grew up next door to, {{The Co-Worker}} and {{The Bestie}}.',
         'If anyone asks where you were around 8:15–8:25 PM, insist you were in the kitchen pantry corridor the entire time fetching extra holiday drinks with {{The Bestie}}.',
@@ -145,7 +145,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       legacyId: '74df0c99-4a91-495c-b60a-98da5de9e10e',
       motive_type: 'love',
       strength: 'critical',
-      notes: 'After exposing that her current bestie ({{The Mistress}}) was having an affair with {{The Husband}} and overhearing {{The Husband}} and {{The Wife}}\'s marital issues, {{The Sister-in-Law}} ended {{The Husband}} with the Christmas lights because she chose for her sister to finally be happy and free.',
+      notes: 'After exposing that {{The Sister-in-Law_his}} current bestie ({{The Mistress}}) was having an affair with {{The Husband}} and overhearing {{The Husband}} and {{The Wife}}\'s marital issues, {{The Sister-in-Law}} ended {{The Husband}} with the Christmas lights because {{The Sister-in-Law_he}} chose for {{The Sister-in-Law_his}} {{The Wife_sibling}} to finally be happy and free.',
     },
   },
   {
@@ -161,7 +161,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Gold',
-      bio: '{{The Mistress}} went to high school with the whole group and has been married to {{The Co-Worker}} for three years. She works in the exact same company department as her in-law and office colleague, {{The Bestie}}. Back in high school she was best friends with {{The Wife}}, and today she is close best friends with {{The Sister-in-Law}}.',
+      bio: '{{The Mistress}} went to high school with the whole group and has been married to {{The Co-Worker}} for three years. {{The Mistress_He}} works in the exact same company department as {{The Mistress_his}} in-law and office colleague, {{The Bestie}}. Back in high school {{The Mistress_he}} was best friends with {{The Wife}}, and today {{The Mistress_he}} is close best friends with {{The Sister-in-Law}}.',
       outfit_advice: 'Show-stopping holiday glamour: a gold sequin or scarlet cocktail dress, statement heels, and bold holiday makeup.',
       outfit_reference_images: [
         '/outfits/christmas/mistress-1.jpg',
@@ -171,10 +171,10 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheMistress&eyebrows=default&eyes=default&mouth=smile&clothesColor=b45309&backgroundColor=transparent&top=straight02&hairColor=d6b370&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2F5f9b36e0-44ae-4c3d-9762-432c5bb17783-d468b1b12c33.jpg',
       act_summary: 'Act like the glamorous, outgoing socialite of the friend group who loves holiday parties and knows everyone from high school and the office.',
       act_bullets: [
-        'Be affectionate with your spouse of three years, {{The Co-Worker}}.',
+        'Be affectionate with your {{The Co-Worker_spouse}} of three years, {{The Co-Worker}}.',
         'Gossip and laugh with your current best friend, {{The Sister-in-Law}}.',
-        'Reminisce about high school days with your old best friend, {{The Wife}}, and her spouse, {{The Husband}}.',
-        'Talk work life with your in-law and office colleague, {{The Bestie}}.',
+        'Reminisce about high school days with your old best friend, {{The Wife}}, and {{The Wife_his}} {{The Husband_spouse}}, {{The Husband}}.',
+        'Talk work life with your {{The Bestie_inlaw}} and office colleague, {{The Bestie}}.',
       ],
       traits: ['Glamorous', 'Outgoing', 'Charming', 'Social'],
     },
@@ -182,7 +182,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       legacyId: '1206a2e2-169b-489b-a99d-ffe72f2f07b0',
       motive_type: 'fear',
       strength: 'high',
-      notes: 'Terrified that her secret affair with {{The Husband}} and missing office funds would be exposed to her spouse ({{The Co-Worker}}), her old bestie ({{The Wife}}), and her current bestie ({{The Sister-in-Law}}).',
+      notes: 'Terrified that {{The Mistress_his}} secret affair with {{The Husband}} and missing office funds would be exposed to {{The Mistress_his}} {{The Co-Worker_spouse}} ({{The Co-Worker}}), {{The Mistress_his}} old bestie ({{The Wife}}), and {{The Mistress_his}} current bestie ({{The Sister-in-Law}}).',
     },
   },
   {
@@ -198,7 +198,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Charcoal',
-      bio: '{{The Co-Worker}} grew up right next door to the two sisters ({{The Wife}} and {{The Sister-in-Law}}) alongside {{The Co-Worker_his}} younger {{The Bestie_sibling}}, {{The Bestie}}. {{The Co-Worker_He}} has been married to {{The Mistress}} for three years, works at the same company as {{The Husband}}, and briefly dated {{The Wife}} back when they were in high school.',
+      bio: '{{The Co-Worker}} grew up right next door to {{The Wife}} and {{The Sister-in-Law}} alongside {{The Co-Worker_his}} younger {{The Bestie_sibling}}, {{The Bestie}}. {{The Co-Worker_He}} has been married to {{The Mistress}} for three years, works at the same company as {{The Husband}}, and briefly dated {{The Wife}} back when they were in high school.',
       outfit_advice: 'Sleek smart-casual holiday attire: a charcoal blazer over a dark merino knit sweater, tailored trousers, and a whiskey glass in hand.',
       outfit_reference_images: [
         '/outfits/christmas/coworker-1.jpg',
@@ -206,11 +206,11 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/3f17dfda-9758-49fa-a3df-cdf4f6b25ef7-c2f4839cd4a1.jpg',
       outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/3f17dfda-9758-49fa-a3df-cdf4f6b25ef7-c2f4839cd4a1.jpg',
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheCoWorker&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e293b&backgroundColor=transparent&top=shortCurly&hairColor=282828&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2F3f17dfda-9758-49fa-a3df-cdf4f6b25ef7-c2f4839cd4a1.jpg',
-      act_summary: 'Be the observant, level-headed older neighbour sibling who grew up next door to the sisters and works at the same company as {{The Husband}}.',
+      act_summary: 'Be the observant, level-headed older neighbour sibling who grew up next door to {{The Wife}} and {{The Sister-in-Law}} and works at the same company as {{The Husband}}.',
       act_bullets: [
         'Chat about work with {{The Husband}}, since the two of you work in the same department.',
-        'Share childhood street memories with the sisters you grew up next door to, {{The Wife}} and {{The Sister-in-Law}}.',
-        'Enjoy the Christmas party alongside your wife of three years, {{The Mistress}}.',
+        'Share childhood street memories with the neighbours you grew up next door to, {{The Wife}} and {{The Sister-in-Law}}.',
+        'Enjoy the Christmas party alongside your {{The Mistress_spouse}} of three years, {{The Mistress}}.',
         'Joke around with your younger {{The Bestie_sibling}}, {{The Bestie}}.',
       ],
       traits: ['Observant', 'Loyal', 'Composed', 'Grounded'],
@@ -235,7 +235,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
     profile_data: {
       age: 'adult',
       color: 'Navy Blue',
-      bio: '{{The Bestie}} grew up next door to {{The Wife}} and {{The Sister-in-Law}} alongside {{The Bestie_his}} older {{The Co-Worker_sibling}}, {{The Co-Worker}}. {{The Bestie_He}} has been {{The Husband}}\'s best friend since high school and works in the exact same office department as {{The Bestie_his}} sister-in-law, {{The Mistress}}.',
+      bio: '{{The Bestie}} grew up next door to {{The Wife}} and {{The Sister-in-Law}} alongside {{The Bestie_his}} older {{The Co-Worker_sibling}}, {{The Co-Worker}}. {{The Bestie_He}} has been {{The Husband}}\'s best friend since high school and works in the exact same office department as {{The Bestie_his}} {{The Mistress_inlaw}}, {{The Mistress}}.',
       outfit_advice: 'Classic, disarming holiday style: a navy cable-knit sweater layered over a crisp Oxford shirt, dark chinos, and an easygoing smile.',
       outfit_reference_images: [
         '/outfits/christmas/bestie-1.jpg',
@@ -243,10 +243,10 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/f3187085-155b-4389-9bf2-58c6dcc26d1b-1dcd5acb69d9.jpg',
       outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/f3187085-155b-4389-9bf2-58c6dcc26d1b-1dcd5acb69d9.jpg',
       avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheBestie&eyebrows=default&eyes=default&mouth=smile&clothesColor=1e3a8a&backgroundColor=transparent&top=shortFlat&hairColor=4a3123&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2Ff3187085-155b-4389-9bf2-58c6dcc26d1b-1dcd5acb69d9.jpg',
-      act_summary: 'Act like {{The Husband}}\'s easygoing lifelong best friend and the fun-loving younger neighbour brother who grew up on the street with everyone.',
+      act_summary: 'Act like {{The Husband}}\'s easygoing lifelong best friend and the fun-loving younger neighbour {{The Bestie_sibling}} who grew up on the street with everyone.',
       act_bullets: [
         'Talk up how you and {{The Husband}} have been inseparable best friends since high school.',
-        'Trade stories with your older brother, {{The Co-Worker}}, and your sister-in-law and co-worker, {{The Mistress}}.',
+        'Trade stories with your older {{The Co-Worker_sibling}}, {{The Co-Worker}}, and your {{The Mistress_inlaw}} and co-worker, {{The Mistress}}.',
         'Catch up with {{The Wife}} and {{The Sister-in-Law}}, who grew up in the house right next door to yours.',
         'If anyone asks about 8:15–8:25 PM, back up {{The Sister-in-Law}} and say the two of you were in the kitchen pantry pouring holiday drinks together.',
       ],
@@ -256,7 +256,7 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
       legacyId: '78c3a198-4be8-4ae6-ab3c-7dcf9a68c182',
       motive_type: 'fear',
       strength: 'moderate',
-      notes: 'Besties with {{The Husband}}, who threatened tonight to expose {{The Bestie}}\'s secret fling with {{The Sister-in-Law}} as well as his workplace cover-up with his co-worker and sister-in-law ({{The Mistress}}).',
+      notes: 'Besties with {{The Husband}}, who threatened tonight to expose {{The Bestie}}\'s secret fling with {{The Sister-in-Law}} as well as {{The Bestie_his}} workplace cover-up with {{The Bestie_his}} co-worker and {{The Mistress_inlaw}} ({{The Mistress}}).',
     },
   },
 ];

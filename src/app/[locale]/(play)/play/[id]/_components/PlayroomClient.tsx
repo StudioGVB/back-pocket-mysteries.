@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { resolveDisplayAvatarUrl } from '@/utils/avatar';
-import { getEffectiveCoverUrl } from '@/utils/moodboard';
+import { getEffectiveCoverUrl, parseMysteryImageField } from '@/utils/moodboard';
 import {
   hydrateTextWithCharacters,
   getCharacterDisplayName,
