@@ -446,7 +446,10 @@ export function PackScreenerClient({
         const res = await generateClueImageAction(
           clue.id,
           mystery.id,
-          clue.generation_prompt || clue.prompt_template || ''
+          clue.generation_prompt || clue.prompt_template || '',
+          true,
+          undefined,
+          assignmentsPayload
         );
         if (res?.imageUrl) {
           const freshUrl = res.imageUrl.startsWith('data:')
@@ -498,6 +501,12 @@ export function PackScreenerClient({
               eye_color: friend.eye_color,
               height: friend.height,
               ethnicity: friend.ethnicity,
+              standard_character_photo_url: !needsNewPortrait
+                ? (c?.profile_data?.standard_character_photo_url as string | null)
+                : null,
+              standard_character_photo_hash: !needsNewPortrait
+                ? (c?.profile_data?.standard_character_photo_hash as string | null)
+                : null,
             },
           };
         })
@@ -514,6 +523,8 @@ export function PackScreenerClient({
           eye_color?: string;
           height?: string;
           ethnicity?: string;
+          standard_character_photo_url?: string | null;
+          standard_character_photo_hash?: string | null;
         };
       }>;
 
@@ -593,6 +604,9 @@ export function PackScreenerClient({
           item.friend
         );
         if (charRes?.imageUrl) {
+          item.friend.standard_character_photo_url = charRes.imageUrl;
+          item.friend.standard_character_photo_hash = charRes.identityHash || null;
+
           const freshPortrait = charRes.imageUrl.startsWith('data:')
             ? charRes.imageUrl
             : `${charRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
@@ -615,6 +629,11 @@ export function PackScreenerClient({
           );
         }
       }
+
+      const castOverridesForClues = assignmentsPayload.map((a) => ({
+        characterId: a.characterId,
+        friend: a.friend,
+      }));
 
       // 3. Generate Stage 2 Visual Clue Photos featuring the selected cast (in batches of 2 for speed)
       const batchSize = 2;
@@ -642,7 +661,9 @@ export function PackScreenerClient({
                 clue.id,
                 mystery.id,
                 clue.generation_prompt || clue.prompt_template || '',
-                true
+                true,
+                undefined,
+                castOverridesForClues
               );
               if (clueRes?.imageUrl) {
                 const freshClueUrl = clueRes.imageUrl.startsWith('data:')

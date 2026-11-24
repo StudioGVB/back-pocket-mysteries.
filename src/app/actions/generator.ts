@@ -1156,7 +1156,14 @@ export async function generateClueImageAction(
   mysteryId: string,
   promptText: string,
   forceRegenerate = true,
-  qaCorrectionDirective?: string
+  qaCorrectionDirective?: string,
+  castOverrides?: Array<{
+    characterId: string;
+    friend: ScreenerCastAssignmentInput['friend'] & {
+      standard_character_photo_url?: string | null;
+      standard_character_photo_hash?: string | null;
+    };
+  }>
 ) {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
@@ -1183,7 +1190,7 @@ export async function generateClueImageAction(
       ? `${mystery.theme} setting (${mystery.title || 'the mystery venue'})`
       : mystery.title || 'a moody luxury mystery setting';
 
-    // Direct select of characters, merged with any freshly recasted profile_data in cachedMystery
+    // Direct select of characters, merged with any freshly recasted profile_data in cachedMystery & castOverrides
     const { data: charactersData, error: charError } = await supabase
       .from('characters')
       .select('id, name, gender, profile_data, is_victim, plot_role')
@@ -1202,15 +1209,47 @@ export async function generateClueImageAction(
       if (cc?.id) cachedCharsById.set(cc.id, cc);
     }
 
+    const overrideById = new Map<string, any>();
+    for (const ov of castOverrides || []) {
+      if (ov?.characterId && ov?.friend) {
+        overrideById.set(ov.characterId, ov.friend);
+      }
+    }
+
     const characters = baseCharacters.map((c: any) => {
       const cachedChar = cachedCharsById.get(c.id);
-      if (!cachedChar) return c;
+      const ovFriend = overrideById.get(c.id);
+      const mergedProfile: Record<string, any> = {
+        ...(c.profile_data || {}),
+        ...(cachedChar?.profile_data || {}),
+      };
+      if (ovFriend) {
+        const prevGuestId = String(mergedProfile.guest_id || '');
+        const isDifferent = prevGuestId !== String(ovFriend.id || '');
+        mergedProfile.guest_id = ovFriend.id;
+        mergedProfile.guest_name = ovFriend.name;
+        if (ovFriend.gender) mergedProfile.gender = ovFriend.gender;
+        if (ovFriend.avatar_url || ovFriend.photoUrl) {
+          mergedProfile.avatar_url = ovFriend.avatar_url || ovFriend.photoUrl;
+        }
+        if (ovFriend.eye_color) mergedProfile.eye_color = ovFriend.eye_color;
+        if (ovFriend.height) mergedProfile.height = ovFriend.height;
+        if (ovFriend.ethnicity) mergedProfile.ethnicity = ovFriend.ethnicity;
+        if (ovFriend.standard_character_photo_url) {
+          mergedProfile.standard_character_photo_url = ovFriend.standard_character_photo_url;
+          mergedProfile.outfit_image_url = ovFriend.standard_character_photo_url;
+          if (ovFriend.standard_character_photo_hash) {
+            mergedProfile.standard_character_photo_hash = ovFriend.standard_character_photo_hash;
+          }
+        } else if (isDifferent) {
+          delete mergedProfile.standard_character_photo_url;
+          delete mergedProfile.standard_character_photo_hash;
+          delete mergedProfile.outfit_image_url;
+        }
+      }
       return {
         ...c,
-        profile_data: {
-          ...(c.profile_data || {}),
-          ...(cachedChar.profile_data || {}),
-        },
+        profile_data: mergedProfile,
       };
     });
 
