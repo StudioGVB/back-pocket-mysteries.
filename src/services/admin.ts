@@ -185,7 +185,14 @@ export async function getTransactions() {
 
   const seenMysteryIds = new Set<string>();
 
-  const enrichWithEconomics = (item: any) => {
+  const inferPackageTierLabel = (grossGbp: number): string => {
+    if (grossGbp >= 28) return 'Unlimited Pass';
+    if (grossGbp >= 23) return 'Grand (4–16)';
+    if (grossGbp >= 18) return 'Premium (4–10)';
+    return 'Basic (4–6)';
+  };
+
+  const enrichWithEconomics = (item: any, liveSession?: any, cachedMystery?: any) => {
     const grossGbp = convertToGbp(item.amount, item.currency);
     const isPaid = item.status === 'succeeded' || item.status === 'qa_verified';
     // UK Stripe processing fee default: 1.5% + £0.20 on paid orders
@@ -197,12 +204,32 @@ export async function getTransactions() {
     const netRevenueGbp = isPaid
       ? Number(Math.max(0, grossGbp - stripeFeeGbp - aiCostGbp).toFixed(2))
       : 0;
+    const marginPercent =
+      isPaid && grossGbp > 0 ? Math.round((netRevenueGbp / grossGbp) * 100) : 0;
+
+    const partyDetails = liveSession?.partyDetails || null;
+    const currentRound = Number(liveSession?.currentRound ?? item.mysteries?.current_round ?? 0);
+    const prepReadyCount = Object.keys(liveSession?.prepConfirmedCharacters || {}).length;
+    const claimedCount = Object.keys(liveSession?.claimedCharacters || {}).length;
+    const totalCastCount = Array.isArray(cachedMystery?.characters)
+      ? cachedMystery.characters.length
+      : 6;
+
     return {
       ...item,
       grossGbp,
       stripeFeeGbp,
       aiCostGbp,
       netRevenueGbp,
+      marginPercent,
+      packageTier: inferPackageTierLabel(grossGbp),
+      partyDate: partyDetails?.partyDate || null,
+      arrivalTime: partyDetails?.arrivalTime || null,
+      partyLocation: partyDetails?.location || null,
+      currentRound,
+      prepReadyCount,
+      claimedCount,
+      totalCastCount,
     };
   };
 
@@ -214,28 +241,32 @@ export async function getTransactions() {
     const dbProfile = order.user_id ? profilesMap.get(order.user_id) : null;
     const dbMystery = mId ? mysteriesMap.get(mId) : null;
 
-    return enrichWithEconomics({
-      ...order,
-      mystery_id: mId,
-      mysteries:
-        dbMystery ||
-        (cachedMystery
-          ? { id: mId, title: cachedMystery.title, slug: cachedMystery.slug || mId }
-          : null),
-      profiles: dbProfile
-        ? {
-            ...dbProfile,
-            email: dbProfile.email || liveSession?.customerEmail || null,
-          }
-        : {
-            full_name: liveSession?.customerName || 'Host',
-            email: liveSession?.customerEmail || null,
-          },
-      generationStatus: liveSession?.generationStatus || 'ready',
-      generationProgress: liveSession?.generationProgress ?? 100,
-      pin: liveSession?.pin || null,
-      qaReport: liveSession?.qaReport || null,
-    });
+    return enrichWithEconomics(
+      {
+        ...order,
+        mystery_id: mId,
+        mysteries:
+          dbMystery ||
+          (cachedMystery
+            ? { id: mId, title: cachedMystery.title, slug: cachedMystery.slug || mId }
+            : null),
+        profiles: dbProfile
+          ? {
+              ...dbProfile,
+              email: dbProfile.email || liveSession?.customerEmail || null,
+            }
+          : {
+              full_name: liveSession?.customerName || 'Host',
+              email: liveSession?.customerEmail || null,
+            },
+        generationStatus: liveSession?.generationStatus || 'ready',
+        generationProgress: liveSession?.generationProgress ?? 100,
+        pin: liveSession?.pin || null,
+        qaReport: liveSession?.qaReport || null,
+      },
+      liveSession,
+      cachedMystery
+    );
   });
 
   // Also include any live paid or QA-audited mystery sessions from .live-game-sessions.json not yet in dbOrders
@@ -272,28 +303,32 @@ export async function getTransactions() {
     const mysterySlug = cachedMystery?.slug || session.mysteryId;
 
     enrichedOrders.push(
-      enrichWithEconomics({
-        id: session.orderId || session.mysteryId,
-        mystery_id: session.mysteryId,
-        user_id: session.paidByUserId || session.hostUserId || null,
-        amount: 15,
-        currency: 'GBP',
-        status: session.isPaid ? 'succeeded' : 'qa_verified',
-        created_at: session.paidAt || session.updatedAt || new Date().toISOString(),
-        profiles: {
-          full_name: session.customerName || 'Host',
-          email: session.customerEmail || null,
+      enrichWithEconomics(
+        {
+          id: session.orderId || session.mysteryId,
+          mystery_id: session.mysteryId,
+          user_id: session.paidByUserId || session.hostUserId || null,
+          amount: 15,
+          currency: 'GBP',
+          status: session.isPaid ? 'succeeded' : 'qa_verified',
+          created_at: session.paidAt || session.updatedAt || new Date().toISOString(),
+          profiles: {
+            full_name: session.customerName || 'Host',
+            email: session.customerEmail || null,
+          },
+          mysteries: {
+            id: session.mysteryId,
+            title: mysteryTitle,
+            slug: mysterySlug,
+          },
+          generationStatus: session.generationStatus || 'ready',
+          generationProgress: session.generationProgress ?? 100,
+          pin: session.pin || null,
+          qaReport: session.qaReport || null,
         },
-        mysteries: {
-          id: session.mysteryId,
-          title: mysteryTitle,
-          slug: mysterySlug,
-        },
-        generationStatus: session.generationStatus || 'ready',
-        generationProgress: session.generationProgress ?? 100,
-        pin: session.pin || null,
-        qaReport: session.qaReport || null,
-      })
+        session,
+        cachedMystery
+      )
     );
   }
 

@@ -5,6 +5,7 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  Cell,
   AreaChart,
   Area,
   XAxis,
@@ -23,7 +24,7 @@ export interface TransactionChartInputItem {
   netRevenueGbp: number;
 }
 
-interface DailyNetRevenuePoint {
+export interface DailyNetRevenuePoint {
   dateKey: string; // YYYY-MM-DD
   shortDate: string; // e.g. "24 Nov"
   fullDate: string; // e.g. "Tue, 24 Nov 2026"
@@ -44,8 +45,12 @@ function formatGbp(val: number): string {
 
 export function TransactionsRevenueChart({
   transactions,
+  selectedDateKey = null,
+  onSelectDateKey,
 }: {
   transactions: TransactionChartInputItem[];
+  selectedDateKey?: string | null;
+  onSelectDateKey?: (dateKey: string | null) => void;
 }) {
   const [chartType, setChartType] = useState<'bar' | 'area'>('bar');
 
@@ -99,6 +104,7 @@ export function TransactionsRevenueChart({
   const summary = useMemo(() => {
     const totalNet = dailyData.reduce((acc, d) => acc + d.netRevenue, 0);
     const totalGross = dailyData.reduce((acc, d) => acc + d.grossRevenue, 0);
+    const totalFees = dailyData.reduce((acc, d) => acc + d.feesAndCosts, 0);
     const totalOrders = dailyData.reduce((acc, d) => acc + d.ordersCount, 0);
     const bestDay =
       dailyData.length > 0
@@ -109,6 +115,7 @@ export function TransactionsRevenueChart({
     return {
       totalNet: Number(totalNet.toFixed(2)),
       totalGross: Number(totalGross.toFixed(2)),
+      totalFees: Number(totalFees.toFixed(2)),
       totalOrders,
       activeDays: dailyData.length,
       bestDay,
@@ -116,19 +123,36 @@ export function TransactionsRevenueChart({
     };
   }, [dailyData]);
 
+  const handleToggleDay = (dateKey: string) => {
+    if (!onSelectDateKey) return;
+    onSelectDateKey(selectedDateKey === dateKey ? null : dateKey);
+  };
+
   return (
     <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
       {/* Top KPI Summary Header */}
       <div className="p-6 sm:p-8 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
-            <span>Daily Net Earnings (GBP £)</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+              <span>Daily Net Earnings (GBP £)</span>
+            </span>
+            {selectedDateKey && (
+              <button
+                type="button"
+                onClick={() => onSelectDateKey?.(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-brand-pink transition-colors cursor-pointer"
+              >
+                <span>Filtered to {selectedDateKey}</span>
+                <span>✕</span>
+              </button>
+            )}
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-brand-dark tracking-tight">
             Net Revenue by Transaction Day
           </h3>
           <p className="text-xs text-gray-400 font-semibold">
-            Every calendar day with a transaction and your take-home Net Revenue (after Stripe card fees &amp; AI generation costs)
+            Every calendar day with a transaction and your take-home Net Revenue (£). Click any bar or day pill to filter the table below to that day.
           </p>
         </div>
 
@@ -168,7 +192,7 @@ export function TransactionsRevenueChart({
             {formatGbp(summary.totalNet)}
           </p>
           <p className="text-[11px] text-gray-400 font-semibold mt-0.5">
-            Take-home after fees &amp; AI
+            After -{formatGbp(summary.totalFees)} Stripe &amp; AI costs
           </p>
         </div>
 
@@ -219,7 +243,14 @@ export function TransactionsRevenueChart({
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'bar' ? (
-                <BarChart data={dailyData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <BarChart
+                  data={dailyData}
+                  margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                  onClick={(state: any) => {
+                    const clickedKey = state?.activePayload?.[0]?.payload?.dateKey;
+                    if (clickedKey) handleToggleDay(clickedKey);
+                  }}
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis
                     dataKey="shortDate"
@@ -240,7 +271,7 @@ export function TransactionsRevenueChart({
                       if (!active || !payload || !payload.length) return null;
                       const pt = payload[0].payload as DailyNetRevenuePoint;
                       return (
-                        <div className="rounded-2xl bg-slate-950 text-white p-4 shadow-2xl border border-slate-800 space-y-2 min-w-[210px]">
+                        <div className="rounded-2xl bg-slate-950 text-white p-4 shadow-2xl border border-slate-800 space-y-2 min-w-[220px]">
                           <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-2">
                             <span className="text-xs font-black text-white">{pt.fullDate}</span>
                             <span className="px-2 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink text-[10px] font-black uppercase">
@@ -267,6 +298,9 @@ export function TransactionsRevenueChart({
                               </span>
                             </div>
                           </div>
+                          <p className="text-[10px] text-slate-400 pt-1 border-t border-white/10">
+                            Click bar to filter transactions to this day
+                          </p>
                         </div>
                       );
                     }}
@@ -274,13 +308,32 @@ export function TransactionsRevenueChart({
                   <Bar
                     dataKey="netRevenue"
                     name="Net Revenue (£)"
-                    fill="#fe04c6"
                     radius={[10, 10, 0, 0]}
                     maxBarSize={56}
-                  />
+                    className="cursor-pointer"
+                  >
+                    {dailyData.map((entry) => {
+                      const isSelected = selectedDateKey === entry.dateKey;
+                      const isDimmed = Boolean(selectedDateKey && !isSelected);
+                      return (
+                        <Cell
+                          key={entry.dateKey}
+                          fill={isSelected ? '#1e191c' : '#fe04c6'}
+                          fillOpacity={isDimmed ? 0.35 : 1}
+                        />
+                      );
+                    })}
+                  </Bar>
                 </BarChart>
               ) : (
-                <AreaChart data={dailyData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <AreaChart
+                  data={dailyData}
+                  margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                  onClick={(state: any) => {
+                    const clickedKey = state?.activePayload?.[0]?.payload?.dateKey;
+                    if (clickedKey) handleToggleDay(clickedKey);
+                  }}
+                >
                   <defs>
                     <linearGradient id="netRevGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#fe04c6" stopOpacity={0.25} />
@@ -306,7 +359,7 @@ export function TransactionsRevenueChart({
                       if (!active || !payload || !payload.length) return null;
                       const pt = payload[0].payload as DailyNetRevenuePoint;
                       return (
-                        <div className="rounded-2xl bg-slate-950 text-white p-4 shadow-2xl border border-slate-800 space-y-2 min-w-[210px]">
+                        <div className="rounded-2xl bg-slate-950 text-white p-4 shadow-2xl border border-slate-800 space-y-2 min-w-[220px]">
                           <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-2">
                             <span className="text-xs font-black text-white">{pt.fullDate}</span>
                             <span className="px-2 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink text-[10px] font-black uppercase">
@@ -351,39 +404,67 @@ export function TransactionsRevenueChart({
             </ResponsiveContainer>
           </div>
 
-          {/* Scannable Day-by-Day Net Revenue Pills */}
+          {/* Scannable Day-by-Day Net Revenue Pills (Click to Filter Table) */}
           <div className="pt-4 border-t border-gray-100">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
-              Transaction Days Breakdown ({dailyData.length} {dailyData.length === 1 ? 'Day' : 'Days'})
-            </p>
-            <div className="flex flex-wrap gap-2.5">
-              {[...dailyData].reverse().map((day) => (
-                <div
-                  key={day.dateKey}
-                  className="px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-3"
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                Transaction Days Breakdown ({dailyData.length} {dailyData.length === 1 ? 'Day' : 'Days'} • Click any day to filter table)
+              </p>
+              {selectedDateKey && (
+                <button
+                  type="button"
+                  onClick={() => onSelectDateKey?.(null)}
+                  className="text-[11px] font-black text-brand-pink hover:underline cursor-pointer"
                 >
-                  <div>
-                    <p className="text-xs font-black text-brand-dark">{day.fullDate}</p>
-                    <p className="text-[10px] font-bold text-gray-400">
-                      {day.ordersCount} {day.ordersCount === 1 ? 'transaction' : 'transactions'} • Gross{' '}
-                      {formatGbp(day.grossRevenue)}
-                    </p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black">
-                    +{formatGbp(day.netRevenue)} net
-                  </span>
-                </div>
-              ))}
+                  Show All Days ({summary.totalOrders} orders)
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              {[...dailyData].reverse().map((day) => {
+                const isSelected = selectedDateKey === day.dateKey;
+                return (
+                  <button
+                    key={day.dateKey}
+                    type="button"
+                    onClick={() => handleToggleDay(day.dateKey)}
+                    className={`px-3.5 py-2 rounded-2xl border flex items-center gap-3 text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                        : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-brand-dark'
+                    }`}
+                  >
+                    <div>
+                      <p className={`text-xs font-black ${isSelected ? 'text-white' : 'text-brand-dark'}`}>
+                        {day.fullDate}
+                      </p>
+                      <p className={`text-[10px] font-bold ${isSelected ? 'text-slate-300' : 'text-gray-400'}`}>
+                        {day.ordersCount} {day.ordersCount === 1 ? 'transaction' : 'transactions'} • Gross{' '}
+                        {formatGbp(day.grossRevenue)}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-2.5 py-1 rounded-xl text-xs font-black border ${
+                        isSelected
+                          ? 'bg-brand-pink text-white border-brand-pink'
+                          : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                      }`}
+                    >
+                      +{formatGbp(day.netRevenue)} net
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       ) : (
         <div className="p-12 text-center space-y-2">
           <p className="text-sm font-black text-brand-dark uppercase tracking-widest">
-            No Transaction Days Recorded Yet
+            No Transaction Days in Selected Timeframe
           </p>
           <p className="text-xs text-gray-400 font-medium max-w-md mx-auto">
-            As soon as orders are completed, each day with a transaction and your daily take-home Net Revenue (£) will appear on this graph.
+            As soon as orders are completed in this period, each day with a transaction and your daily take-home Net Revenue (£) will appear on this graph.
           </p>
         </div>
       )}
