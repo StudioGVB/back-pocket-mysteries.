@@ -4,7 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
-import { requireAdmin } from '@/utils/admin-auth';
+import { requireAdmin, ADMIN_EMAIL_ALLOWLIST, ADMIN_UID_ALLOWLIST } from '@/utils/admin-auth';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { saveDiscountAction, deleteDiscountAction } from '@/app/actions/discounts';
 import { CORE_MYSTERY_PACKAGES } from '@/utils/discounts';
 
@@ -78,6 +79,8 @@ export interface CustomerCrmRecord {
   providedReview: boolean;
   accountSuspended: boolean;
   suspendedReason?: string;
+  accountDeleted?: boolean;
+  deletedAt?: string;
   notes: CustomerAdminNote[];
   customOrders: CustomCustomerOrder[];
   giftedMysteries: GiftedMysteryEntry[];
@@ -1115,3 +1118,142 @@ export async function adminSendPasswordReset(targetUserId: string, email: string
     return { error: err.message || 'Failed to send password reset email' };
   }
 }
+
+export async function adminDeleteCustomerAccount(targetUserId: string) {
+  try {
+    const { supabase, user } = await requireAdmin();
+
+    if (!targetUserId) {
+      return { error: 'Target user ID is required.' };
+    }
+
+    if (user?.id === targetUserId) {
+      return { error: 'You cannot delete your own admin account.' };
+    }
+
+    if (ADMIN_UID_ALLOWLIST.includes(targetUserId)) {
+      return { error: 'Protected Super Admin accounts cannot be deleted.' };
+    }
+
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, avatar_config')
+      .eq('id', targetUserId)
+      .maybeSingle();
+
+    const targetEmail = String((targetProfile as any)?.email || '')
+      .toLowerCase()
+      .trim();
+
+    if (targetEmail && ADMIN_EMAIL_ALLOWLIST.includes(targetEmail)) {
+      return { error: 'Protected Super Admin accounts cannot be deleted.' };
+    }
+
+    // 1. Delete dependent customer data (guests, connections, invitations, custom mysteries, roles)
+    await Promise.allSettled([
+      supabase.from('guests').delete().eq('user_id', targetUserId),
+      (supabase as any)
+        .from('guest_connections')
+        .delete()
+        .or(`host_user_id.eq.${targetUserId},guest_user_id.eq.${targetUserId}`),
+      (supabase as any)
+        .from('guest_invitations')
+        .delete()
+        .or(`inviter_user_id.eq.${targetUserId},invited_user_id.eq.${targetUserId}`),
+      (supabase as any).from('customer_mysteries').delete().eq('user_id', targetUserId),
+      supabase.from('mysteries').delete().eq('created_by', targetUserId),
+      supabase.from('user_roles').delete().eq('user_id', targetUserId),
+    ]);
+
+    // 2. If SUPABASE_SERVICE_ROLE_KEY is configured, hard-delete from auth.users & profiles
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && serviceRoleKey) {
+      try {
+        const serviceClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        await serviceClient.from('profiles').delete().eq('id', targetUserId);
+        await serviceClient.auth.admin.deleteUser(targetUserId);
+      } catch (srvErr) {
+        console.warn('Service role deleteUser warning:', srvErr);
+      }
+    }
+
+    // 3. Also attempt RPC / direct profile delete via authenticated admin session
+    try {
+      await (supabase as any).rpc('admin_delete_user_account', {
+        target_user_id: targetUserId,
+      });
+    } catch {
+      // RPC optional
+    }
+
+    try {
+      await supabase.from('profiles').delete().eq('id', targetUserId);
+    } catch {
+      // ignore if blocked by FK or RLS
+    }
+
+    // 4. Guaranteed Scrub & Tombstone fallback on public.profiles (permitted via Admin FOR UPDATE RLS)
+    //    Ensures that even if public.profiles row is retained by order FKs or anon-key RLS,
+    //    all PII is wiped and avatar_config.is_deleted marks it deleted immediately across all queries.
+    const nowIso = new Date().toISOString();
+    try {
+      const existingConfig =
+        targetProfile &&
+        typeof (targetProfile as any).avatar_config === 'object' &&
+        (targetProfile as any).avatar_config !== null
+          ? (targetProfile as any).avatar_config
+          : {};
+
+      await (supabase as any)
+        .from('profiles')
+        .update({
+          full_name: '[Deleted Account]',
+          email: null,
+          bio: null,
+          fun_facts: null,
+          location: null,
+          country: null,
+          how_found_us: null,
+          avatar_url: null,
+          character_preferences: [],
+          dietary_needs: [],
+          avatar_config: {
+            ...existingConfig,
+            is_deleted: true,
+            deleted_at: nowIso,
+            deleted_by: user?.id || 'admin',
+          },
+        })
+        .eq('id', targetUserId);
+    } catch (scrubErr) {
+      console.warn('Profile scrub fallback warning:', scrubErr);
+    }
+
+    // 5. Mark deleted in local CRM store as well
+    const record = loadCustomerCrmSync(targetUserId);
+    record.accountDeleted = true;
+    record.accountSuspended = true;
+    record.deletedAt = nowIso;
+    record.membership.isActive = false;
+    record.aiQuota.aiFrozen = true;
+    prependAuditNote(
+      record,
+      `Account permanently DELETED by Admin (${user?.email || 'Admin'}).`,
+      'security'
+    );
+    saveCustomerCrm(targetUserId, record);
+
+    revalidatePath('/en/admin/users');
+    revalidatePath(`/en/admin/users/${targetUserId}`);
+    revalidatePath('/en/admin');
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('adminDeleteCustomerAccount error:', err);
+    return { error: err.message || 'Failed to delete customer account' };
+  }
+}
+

@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { EmailVerificationBanner } from '@/components/account/EmailVerificationBanner';
 import { createClient } from '@/utils/supabase/server';
@@ -70,6 +71,10 @@ async function ServiceSidebarAndWizardLoader() {
     .select('avatar_config, onboarding_completed')
     .eq('id', user.id)
     .maybeSingle();
+
+  if (profile?.avatar_config?.is_deleted) {
+    redirect('/en/login?deleted=1');
+  }
 
   const userData = {
     name: user.user_metadata?.full_name ?? '',

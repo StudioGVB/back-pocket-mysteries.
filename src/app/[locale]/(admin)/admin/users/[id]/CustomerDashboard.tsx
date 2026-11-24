@@ -24,6 +24,7 @@ import {
   adminToggleProvidedReview,
   adminToggleSuspendAccount,
   adminSendPasswordReset,
+  adminDeleteCustomerAccount,
   CustomerCrmRecord,
 } from '@/app/actions/admin-users';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -591,6 +592,8 @@ export function CustomerDashboard({
     }
   };
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const handleToggleSuspend = async () => {
     const nextSuspended = !initialCrm.accountSuspended;
     let reason = '';
@@ -610,6 +613,20 @@ export function CustomerDashboard({
       showToast(nextSuspended ? 'Account suspended' : 'Account reactivated');
       router.refresh();
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    const res = await adminDeleteCustomerAccount(profile.id);
+    if (res.error) {
+      setLoading(false);
+      showToast(res.error, 'error');
+      return;
+    }
+    setIsDeleteModalOpen(false);
+    showToast('Customer account permanently deleted');
+    router.push('/en/admin/users');
+    router.refresh();
   };
 
   const inputClass =
@@ -703,6 +720,16 @@ export function CustomerDashboard({
             <span>{initialCrm.accountSuspended ? '✅' : '🚫'}</span>
             {initialCrm.accountSuspended ? 'Unsuspend' : 'Suspend'}
           </button>
+
+          {!profile.isSuperAdmin && !profile.isCurrentUser && (
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              disabled={loading}
+              className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white shadow-sm"
+            >
+              <span>🗑️</span> Delete Account
+            </button>
+          )}
         </div>
       </div>
 
@@ -2730,6 +2757,74 @@ export function CustomerDashboard({
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* DELETE CUSTOMER ACCOUNT CONFIRMATION MODAL                          */}
+      {/* =================================================================== */}
+      {isDeleteModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => !loading && setIsDeleteModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-[32px] max-w-md w-full p-8 shadow-2xl border border-rose-100 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl mb-5">
+              🗑️
+            </div>
+
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-600 mb-1">
+              Permanent Action · Cannot Be Undone
+            </p>
+            <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-2">
+              Delete Customer Account?
+            </h3>
+            <p className="text-xs font-medium text-gray-500 leading-relaxed mb-5">
+              You are about to permanently delete{' '}
+              <span className="font-black text-brand-dark">
+                {profile.full_name || 'Anonymous User'}
+              </span>
+              {profile.email ? ` (${profile.email})` : ''}.
+            </p>
+
+            <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-4 mb-6 space-y-1.5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-rose-700 mb-1">
+                What will be removed:
+              </p>
+              <p className="text-xs font-bold text-rose-900">• Customer profile &amp; login access</p>
+              <p className="text-xs font-bold text-rose-900">
+                • Guest roster ({guests.length} saved guests)
+              </p>
+              <p className="text-xs font-bold text-rose-900">
+                • Custom mysteries &amp; party progress ({mysteries.length} mysteries)
+              </p>
+              <p className="text-xs font-bold text-rose-900">
+                • Membership status, store credit &amp; CRM perks
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-black uppercase tracking-widest transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleDeleteAccount}
+                className="flex-1 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-widest transition-colors shadow-lg shadow-rose-600/20"
+              >
+                {loading ? 'Deleting...' : 'Delete Account'}
+              </button>
             </div>
           </div>
         </div>

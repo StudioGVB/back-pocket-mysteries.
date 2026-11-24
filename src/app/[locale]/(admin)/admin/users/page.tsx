@@ -173,12 +173,6 @@ async function CustomerList({
                        <span className="w-2 h-2 rounded-full bg-brand-blue opacity-20"></span>
                     </div>
                   </td>
-                  <td className="px-8 py-6">
-                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-brand-pink/10 text-brand-pink rounded-xl text-[10px] font-black uppercase tracking-widest group-hover:bg-brand-pink group-hover:text-white transition-all shadow-sm">
-                      View Profile
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </span>
-                  </td>
                 </UserRowClient>
               );
             })

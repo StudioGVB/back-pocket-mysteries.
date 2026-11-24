@@ -25,28 +25,39 @@ function normalizeOrderAmountToGbp(rawAmount: any, rawCurrency?: any): number {
   return Number((major * rate).toFixed(2));
 }
 
+function isProfileDeleted(profile: any, crm?: any): boolean {
+  if (!profile) return true;
+  if (profile.full_name === '[Deleted Account]') return true;
+  if (profile.avatar_config && typeof profile.avatar_config === 'object' && profile.avatar_config.is_deleted) {
+    return true;
+  }
+  if (crm?.accountDeleted) return true;
+  return false;
+}
+
 export const getAdminStats = cache(async (lastViewStr?: string) => {
   const { supabase } = await requireAdmin();
+  const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
 
-  const [ordersRes, usersCountRes, newUsersRes] = await Promise.all([
+  const [ordersRes, profilesRes, crmMap] = await Promise.all([
     supabase
       .from('orders')
       .select('amount, currency, status')
       .eq('status', 'succeeded'),
     supabase
       .from('profiles')
-      .select('*', { count: 'exact', head: true }),
-    lastViewStr
-      ? supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', lastViewStr)
-      : Promise.resolve({ count: 0 }),
+      .select('id, full_name, avatar_config, created_at'),
+    getAllCustomerCrmData(),
   ]);
 
   const orders = ordersRes.data;
-  const usersCount = usersCountRes.count;
-  const newUsersCount = newUsersRes.count || 0;
+  const activeProfiles = (profilesRes.data || []).filter(
+    (p: any) => !isProfileDeleted(p, crmMap[p.id])
+  );
+  const usersCount = activeProfiles.length;
+  const newUsersCount = lastViewStr
+    ? activeProfiles.filter((p: any) => p.created_at && p.created_at >= lastViewStr).length
+    : 0;
 
   const totalRevenue =
     orders?.reduce(
@@ -199,9 +210,10 @@ function computeNewSignupMeta(createdAt?: string | null) {
 
 export const getCustomers = cache(async () => {
   const { supabase, user } = await requireAdmin();
+  const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
 
-  // Fetch all profiles and admin roles in parallel
-  const [{ data, error }, { data: rolesData }] = await Promise.all([
+  // Fetch all profiles, admin roles, and CRM records in parallel
+  const [{ data, error }, { data: rolesData }, crmMap] = await Promise.all([
     supabase
       .from('profiles')
       .select('*')
@@ -210,6 +222,7 @@ export const getCustomers = cache(async () => {
       .from('user_roles')
       .select('user_id, role')
       .in('role', ['admin', 'superadmin', 'super_admin']),
+    getAllCustomerCrmData(),
   ]);
 
   if (error) {
@@ -227,30 +240,32 @@ export const getCustomers = cache(async () => {
   const currentUserId = user?.id || '';
   const currentUserEmail = (user?.email || '').toLowerCase().trim();
 
-  return (data || []).map((p: any) => {
-    const emailLower = (p.email || '').toLowerCase().trim();
-    const dbRole = roleByUserId[p.id] || '';
-    const isAllowlistedOwner =
-      ADMIN_UID_ALLOWLIST.includes(p.id) ||
-      (emailLower && ADMIN_EMAIL_ALLOWLIST.includes(emailLower));
-    const isSuperAdmin =
-      isAllowlistedOwner || dbRole === 'superadmin' || dbRole === 'super_admin';
-    const isAdmin = isSuperAdmin || dbRole === 'admin';
-    const isCurrentUser = Boolean(
-      (currentUserId && p.id === currentUserId) ||
-        (currentUserEmail && emailLower && emailLower === currentUserEmail)
-    );
-    const signupMeta = computeNewSignupMeta(p.created_at);
+  return (data || [])
+    .filter((p: any) => !isProfileDeleted(p, crmMap[p.id]))
+    .map((p: any) => {
+      const emailLower = (p.email || '').toLowerCase().trim();
+      const dbRole = roleByUserId[p.id] || '';
+      const isAllowlistedOwner =
+        ADMIN_UID_ALLOWLIST.includes(p.id) ||
+        (emailLower && ADMIN_EMAIL_ALLOWLIST.includes(emailLower));
+      const isSuperAdmin =
+        isAllowlistedOwner || dbRole === 'superadmin' || dbRole === 'super_admin';
+      const isAdmin = isSuperAdmin || dbRole === 'admin';
+      const isCurrentUser = Boolean(
+        (currentUserId && p.id === currentUserId) ||
+          (currentUserEmail && emailLower && emailLower === currentUserEmail)
+      );
+      const signupMeta = computeNewSignupMeta(p.created_at);
 
-    return {
-      ...p,
-      isCurrentUser,
-      isSuperAdmin,
-      isAdmin,
-      adminRoleLabel: isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : null,
-      ...signupMeta,
-    };
-  });
+      return {
+        ...p,
+        isCurrentUser,
+        isSuperAdmin,
+        isAdmin,
+        adminRoleLabel: isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : null,
+        ...signupMeta,
+      };
+    });
 });
 
 export async function getAdmins() {
@@ -638,7 +653,8 @@ export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
 
 export async function getCustomerProfile(userId: string) {
   const { supabase, user } = await requireAdmin();
-  const [{ data, error }, { data: roleData }] = await Promise.all([
+  const { getCustomerCrmData } = await import('@/app/actions/admin-users');
+  const [{ data, error }, { data: roleData }, crm] = await Promise.all([
     supabase
       .from('profiles')
       .select('*')
@@ -649,10 +665,11 @@ export async function getCustomerProfile(userId: string) {
       .select('role')
       .eq('user_id', userId)
       .maybeSingle(),
+    getCustomerCrmData(userId),
   ]);
 
   if (error) console.error('Error fetching customer profile:', error);
-  if (!data) return null;
+  if (!data || isProfileDeleted(data, crm)) return null;
 
   const emailLower = ((data as any).email || '').toLowerCase().trim();
   const dbRole = String((roleData as any)?.role || '').toLowerCase().trim();
