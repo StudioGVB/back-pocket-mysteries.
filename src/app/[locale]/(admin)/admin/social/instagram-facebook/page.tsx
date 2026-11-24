@@ -510,11 +510,23 @@ function IgFbPostCard({
     (post.caption_data?.media_urls && post.caption_data.media_urls[0]) || "";
 
   const extractSlug = (url: string, postUrl?: string) => {
+    const explicitSlug = (post.slide_content as any)?.cardSlug;
+    if (explicitSlug) {
+      return String(explicitSlug).replace(/\.jpg$/, "").replace(/\.png$/, "");
+    }
+    if (url && url.includes("/api/social-card/")) {
+      return url
+        .split("/api/social-card/")[1]
+        .split("?")[0]
+        .replace(/\.jpg$/, "")
+        .replace(/\.png$/, "");
+    }
     if (postUrl && postUrl.includes("/blog/")) {
       return postUrl.split("/blog/")[1].split("?")[0].replace(/\/$/, "");
     }
     if (postUrl && postUrl.includes("/themes/")) {
-      return postUrl.split("/themes/")[1].split("?")[0].replace(/\/$/, "");
+      const themeSlug = postUrl.split("/themes/")[1].split("?")[0].replace(/\/$/, "");
+      if (themeSlug) return themeSlug;
     }
     if (url.includes("/blog-images/social-card-")) {
       return url
@@ -566,8 +578,8 @@ function IgFbPostCard({
     .replaceAll("—", ", ")
     .trim();
 
-  if (!cleanCopy.toLowerCase().includes("link in bio")) {
-    cleanCopy += `\n\n👇 Link in bio to read the full guide on Back Pocket Mysteries!`;
+  if (!/link in (our |the )?bio/i.test(cleanCopy)) {
+    cleanCopy += `\n\n👇 Link in bio to explore Back Pocket Mysteries!`;
   }
 
   const hashtagString = hashtags
