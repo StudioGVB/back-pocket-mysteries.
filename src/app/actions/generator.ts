@@ -23,6 +23,10 @@ import {
   updateMysteryGenerationInStore,
 } from '@/lib/live-session-store';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
+import {
+  sanitizePromptForImageSafety,
+  buildSafetyFallbackImagePrompt,
+} from '@/utils/filthy-prompt-sanitizer';
 import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -679,9 +683,10 @@ export async function ensureStandardCharacterPhoto(
     ? `${mystery.theme} (${mystery?.title || 'Murder Mystery'})`
     : mystery?.title || 'a classic noir murder mystery';
 
-  const bioSnippet = profile.act_summary || profile.bio || '';
+  const bioSnippet = sanitizePromptForImageSafety(profile.act_summary || profile.bio || '');
+  const safeOutfit = sanitizePromptForImageSafety(outfit);
 
-  let standardPortraitPrompt = `Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (waist-up 3/4 studio character portrait) that will serve as the master visual identity reference for this character across all crime scene photos.
+  let standardPortraitPrompt = sanitizePromptForImageSafety(`Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (waist-up 3/4 studio character portrait) that will serve as the master visual identity reference for this character across all crime scene photos.
 
 CHARACTER ROLE: "${roleTitle}" (played by ${guestName}) in ${mysteryTheme}.
 ${bioSnippet ? `CHARACTER VIBE / PERSONA: ${bioSnippet}` : ''}
@@ -692,38 +697,40 @@ STRICT PHYSICAL APPEARANCE (MUST MATCH EXACTLY):
 ${referenceParts.length > 0 ? '- CRITICAL: An existing face photo of the guest is attached as Reference Image #1. Preserve the exact same person, facial identity, bone structure, skin tone, eye shape, and hair from the attached photo while dressing them in the character outfit below.' : ''}
 
 SIGNATURE CHARACTER COSTUME & STYLING (MUST WEAR THIS EXACT OUTFIT):
-- ${outfit}
+- ${safeOutfit}
 
 PHOTOGRAPHY & FRAMING DIRECTIVES:
 - Waist-up portrait facing the camera, natural poised expression in character, clear unobstructed view of their face, hair, accessories, and upper-body outfit.
 - Atmospheric softly lit studio backdrop with subtle ${mystery?.theme || 'cinematic'} tones so the character's face and costume details are crystal clear.
 - Shot on 85mm prime lens, f/2.8, photorealistic natural skin texture, 8k resolution.
-- CRITICAL: Absolutely NO text, NO labels, NO character sheets, NO multiple panels, NO borders, NO illustrations, NO 3D CGI.`;
+- CRITICAL: Absolutely NO text, NO labels, NO character sheets, NO multiple panels, NO borders, NO illustrations, NO 3D CGI.`);
 
   if (qaCorrectionDirective && qaCorrectionDirective.trim()) {
-    standardPortraitPrompt += `\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${qaCorrectionDirective.trim()}`;
+    standardPortraitPrompt += `\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${sanitizePromptForImageSafety(qaCorrectionDirective.trim())}`;
   }
 
   console.log(`[STAGE 1: STANDARD CHAR PHOTO] Generating canonical reference photo for ${guestName} (${roleTitle})...`);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
-  const payload = {
-    contents: [
-      {
-        parts: [
-          ...referenceParts,
-          { text: standardPortraitPrompt },
-        ],
-      },
-    ],
-    generationConfig: {
-      responseModalities: ['IMAGE'],
-    },
-  };
+  let currentPortraitPrompt = standardPortraitPrompt;
 
   let base64Image = '';
   let usageMetadata: any = null;
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
+      const payload = {
+        contents: [
+          {
+            parts: [
+              ...referenceParts,
+              { text: currentPortraitPrompt },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseModalities: ['IMAGE'],
+        },
+      };
+
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -750,9 +757,12 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
         if (base64Image) {
           break;
         }
+        const finishReason = data.candidates?.[0]?.finishReason || '';
         console.warn(
-          `[STAGE 1: STANDARD CHAR PHOTO] Empty image payload on attempt ${attempt}/4 for ${guestName}. Retrying...`
+          `[STAGE 1: STANDARD CHAR PHOTO] Empty image payload (finishReason=${finishReason}) on attempt ${attempt}/4 for ${guestName}. Retrying with ultra-safe portrait prompt...`
         );
+        // Strip bio/persona snippet if safety filter triggered on a spicy/filthy character bio
+        currentPortraitPrompt = currentPortraitPrompt.replace(/CHARACTER VIBE \/ PERSONA:[^\n]+\n?/i, '');
       } else {
         console.error(
           `[STAGE 1: STANDARD CHAR PHOTO] Gemini error (${res.status}) on attempt ${attempt}/4:`,
@@ -1363,8 +1373,10 @@ export async function generateClueImageAction(
       }
     }
 
-    // Hydrate the prompt with subject references if available
-    const hydratedPrompt = hydrateTextWithCharacters(basePrompt, hydratedCharacters, 'ai', charToRefIdMap);
+    // Hydrate the prompt with subject references if available, then sanitize for Gemini IMAGE_SAFETY
+    const hydratedPrompt = sanitizePromptForImageSafety(
+      hydrateTextWithCharacters(basePrompt, hydratedCharacters, 'ai', charToRefIdMap)
+    );
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     let finalPrompt = '';
@@ -1382,7 +1394,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
         referenceImages.map(ref => {
           const name = getCharacterDisplayName(ref.char);
           const role = getCharacterRoleTitle(ref.char);
-          return `- Attached Reference Image #${ref.referenceId} (subject [${ref.referenceId}]): ${name} (${role}) - Physical traits: ${ref.standardPhoto.physicalDesc || 'match reference photo exactly'}. Signature outfit: ${ref.standardPhoto.outfit}.`;
+          return `- Attached Reference Image #${ref.referenceId} (subject [${ref.referenceId}]): ${name} (${role}) - Physical traits: ${ref.standardPhoto.physicalDesc || 'match reference photo exactly'}. Signature outfit: ${sanitizePromptForImageSafety(ref.standardPhoto.outfit)}.`;
         }).join('\n')
       : '';
 
@@ -1454,8 +1466,10 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
     }
 
     if (qaCorrectionDirective && qaCorrectionDirective.trim()) {
-      finalPrompt += `\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${qaCorrectionDirective.trim()}`;
+      finalPrompt += `\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${sanitizePromptForImageSafety(qaCorrectionDirective.trim())}`;
     }
+
+    finalPrompt = sanitizePromptForImageSafety(finalPrompt);
 
     const identityHashesKey = referenceImages.map(r => r.standardPhoto.identityHash).join(',');
     const promptHash = crypto.createHash('sha256').update(`${finalPrompt}|refs:${identityHashesKey}`).digest('hex');
@@ -1476,28 +1490,31 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
     } else {
       console.log(`[STAGE 2: GEMINI SCENE IMAGE REQUEST] (${referenceImages.length} standard char refs) prompt: "${finalPrompt}"`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
-      const parts: any[] = [
-        ...referenceImages.map(ref => ({
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: ref.referenceImage.imageBytes,
-          },
-        })),
-        { text: finalPrompt },
-      ];
-      const payload = {
-        contents: [{ parts }],
-        generationConfig: {
-          responseModalities: ['IMAGE'],
-        },
-      };
-      
+      let activeScenePrompt = finalPrompt;
+      const charDescriptionsList = involvedCharacters.map(c => buildCharDescription(c, getRefId(c)));
+
       let base64Image = '';
       let apiErrorMsg = '';
       let imageUsageMetadata: any = null;
 
       for (let attempt = 1; attempt <= 4; attempt++) {
         try {
+          const parts: any[] = [
+            ...referenceImages.map(ref => ({
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: ref.referenceImage.imageBytes,
+              },
+            })),
+            { text: activeScenePrompt },
+          ];
+          const payload = {
+            contents: [{ parts }],
+            generationConfig: {
+              responseModalities: ['IMAGE'],
+            },
+          };
+
           const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1529,10 +1546,19 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
                 apiErrorMsg = '';
                 break;
               }
+              const finishReason = data.candidates?.[0]?.finishReason || '';
               console.warn(
-                `[GEMINI IMAGE WARNING] No base64 image in response on attempt ${attempt}/4:`,
+                `[GEMINI IMAGE WARNING] No base64 image in response (finishReason=${finishReason}) on attempt ${attempt}/4. Switching to compromising-noir safety fallback prompt...`,
                 responseText.slice(0, 300)
               );
+              // Automatically switch to the guaranteed-safe compromising noir surveillance prompt for the next attempt
+              activeScenePrompt = buildSafetyFallbackImagePrompt({
+                mysterySetting,
+                clueFormat,
+                charDescriptions: charDescriptionsList,
+                referenceManifest,
+                zeroTextRule,
+              });
             } catch {
               console.error(
                 `[GEMINI IMAGE ERROR] Failed to parse JSON response on attempt ${attempt}/4:`,
