@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import crypto from "crypto";
 
+if (fs.existsSync(".env")) process.loadEnvFile(".env");
 if (fs.existsSync(".env.local")) process.loadEnvFile(".env.local");
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -42,7 +43,7 @@ const PACK_TEMPLATES = {
     hashtags: ["LoveOnTheRocks", "BacheloretteParty", "MurderMysteryParty", "GirlsNightIn", "BackPocketMysteries"],
     igFb: (themeUrl) => `🥂 NEW MYSTERY PACK DROP: Love On The Rocks 🏝️💔
 
-The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest reality dating show reunites at a five-star penthouse—until The Star collapses mid-champagne-toast 🍾👀
+The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest reality dating show reunites at a five-star penthouse, until The Star collapses mid-champagne-toast 🍾👀
 
 Built for 5 to 12 players (perfect for Bachelorettes, 20s/30s Birthdays & Girls' Nights):
 📱 Leaked DMs, group-chat threads & burner account receipts
@@ -75,20 +76,84 @@ What Is Included in Every Customised Kit:
 - Signature cocktail and mocktail recipes alongside a curated reunion party playlist guide.
 - Live mobile lobby for theory tracking, final suspect voting, and end-of-night superlative awards (Best Detective, Master Manipulator, and Best Dressed).
 
-Whether you are hosting an intimate 6-person apartment dinner or a 12-person weekend away, the entire mystery can be customised and ready to play in under 30 minutes.
+Why Host Prep Time Matters for Modern Gatherings:
+Our goal with every Back Pocket Mysteries pack is to eliminate the three-hour printing and cutting marathon that stops busy organisers from hosting interactive dinner parties. From entering your guest list to sending out spoiler-free character invites in the group chat, the entire setup takes less than 30 minutes and costs around $2.50 per guest. Whether you are hosting an intimate 6-person apartment dinner or a 12-person weekend away, the entire mystery adapts automatically to your table.
 
 Explore the Love On The Rocks Mystery Base Pack and preview the character line-up:
 ${themeUrl}
 
 #LoveOnTheRocks #BacheloretteParty #MurderMysteryParty #GirlsNightIn #BackPocketMysteries`,
   },
+  "christmas-nightmare": {
+    slug: "christmas-nightmare",
+    title: "Christmas Nightmare",
+    theme: "Holiday Dinner Party",
+    players: "6",
+    image: "/moodboards/christmas-cabin/main-cover.jpg",
+    stat: { value: "6", label: "Suspects • Holiday Dinner Party Murder Mystery Pack" },
+    shortDesc:
+      "Two pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when a sudden 8:19 PM power surge plunges the house into darkness and The Husband is found dead in the Christmas tree corner.",
+    included: [
+      "Custom Holiday Character Booklets Named After Your Guests (100% Gender-Flex Ready)",
+      "Intercepted Lock-Screen Texts, Smart-Home Power Surge Logs & Nursery-Monitor Audio Clips",
+      "Crime Scene Reports, Hallway CCTV Stills & Childhood Polaroid Evidence",
+    ],
+    hashtags: [
+      "ChristmasNightmare",
+      "ChristmasMurderMystery",
+      "FriendsmasParty",
+      "MurderMysteryParty",
+      "BackPocketMysteries",
+    ],
+    igFb: (themeUrl) => `🎄 NEW HOLIDAY MYSTERY PACK LIVE: Christmas Nightmare ⚡🍷
+
+Two pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when an 8:19 PM power surge plunges the living room into darkness and The Husband is found dead in the Christmas tree corner 👀✨
+
+Built for 6 players (from $19 / ~$3.15 per guest • 100% Gender-Flex for any group ratio):
+📱 Intercepted lock-screen texts & smart-home 1,840W power surge logs
+🎙️ Upstairs nursery-monitor audio fights & pocket voicemails on guests' phones
+📸 Personalized hallway CCTV stills, safe break-ins & Polaroid evidence starring your real friends
+🥂 Spoiler-free Host Mode so the host can sip mulled wine & play along
+
+👇 Link in bio to customize your Christmas or Friendsmas party in 30 minutes
+${themeUrl}
+
+#ChristmasNightmare #ChristmasMurderMystery #FriendsmasParty #MurderMysteryParty #BackPocketMysteries`,
+    linkedin: (themeUrl) => `Product Launch: How We Engineered "Christmas Nightmare" as a Gender-Flexible, Multi-Layered Holiday Dinner Party Murder Mystery for 6 Players
+
+Every December, hosts planning Friendsmas dinners, couples game nights, and holiday cabin weekends run into the same friction with legacy murder mystery kits. Most holiday-themed boxed games rely on campy caricatures, require an exact three-male and three-female guest ratio, and hand players static paper paragraphs that feel disconnected from how modern groups socialize around a dinner table.
+
+Today we are excited to launch our newest Mystery Base Pack on Back Pocket Mysteries: Christmas Nightmare, a high-drama holiday dinner party whodunit architected specifically for a tight-knit table of 6 suspects.
+
+The Narrative Premise and Table Dynamics:
+They all grew up together on the same street: two pairs of next-door childhood siblings whose lives have been intertwined since high school. Tonight, beneath the twinkling lights of their annual Christmas dinner party, years of tangled history, secret affairs, and broken marriages finally snap. At 8:19:12 PM, a 1,840W electrical overload plunges the living room into darkness. When the lights come back on, The Husband is discovered dead in the Christmas tree corner amid a spilled crystal cup of spiced eggnog, a scorched wall outlet, and a tangled 25-foot coil of vintage red-and-green tree lights. Every person at the table is family, a childhood neighbour, a spouse, or a secret lover, and every single one of them is hiding a betrayal.
+
+Four Architectural Innovations Inside Christmas Nightmare:
+1. Bidirectional Gender-Flex Casting for Any Group Ratio: While the six canonical roles (The Husband, The Wife, The Sister-in-Law, The Mistress, The Co-Worker, and The Bestie) match a classic 3M/3F dinner table by default, real-world guest lists rarely stay balanced. Our hydration engine dynamically adapts every character title, pronoun, sibling and spouse relationship token, and AI costume portrait so the exact same mystery plays seamlessly with 4F/2M, an all-female 6F Friendsmas group, or an all-male 6M table with zero pronoun conflicts.
+2. Interlocking Three-Round Forensic Deduction (16 Clues): Across three progressive rounds, players cross-reference 16 distinct pieces of multimedia evidence. Round 1 introduces the coat-closet affair, the stocked-versus-empty utility closet shelves, and the 8:19:12 PM smart-home power log while launching two entangled red-herring subplots (an upstairs study safe heist and a spiked eggnog phone-wipe). Round 2 escalates suspicion with nursery-monitor audio recordings, torn bathroom place cards, and hallway breaker-panel CCTV stills. Round 3 delivers four interlocking alibi and coroner clues that cleanly exonerate the four innocent suspects at the exact 8:19:12 PM timestamp while locking in the true killer.
+3. Personalised Visual and Audio Evidence on the Final Mile: When a host enters their six guests' names and optional selfies, our two-stage identity-locked pipeline generates custom costume portraits and crime-scene photographs featuring the actual players inside the upstairs study, at the kitchen bar, and on the hallway security cameras, paired with multi-speaker ElevenLabs audio clips.
+4. Spoiler-Free Host Mode and Pre-Party Clarity: Pre-party character cards share only warm, spoiler-free childhood, high school, and workplace connections so no plot twists leak before dinner begins. During the party, our mobile Playroom conceals the solution behind timed round unlocks so the host can play as a full suspect.
+
+What Is Included in Every Customised Kit:
+- Six personalised holiday character dossiers with three festive outfit options per role.
+- Sixteen progressive multimedia clues across chat threads, audio wiretaps, CCTV stills, smart-home logs, and forensic reports.
+- Live mobile Playroom lobby with theory tracking, final suspect voting, and end-of-night superlative awards (Best Detective, Master Manipulator, and Best Dressed).
+
+Designed for Zero-Stress Holiday Hosting:
+From entering your six guests' names to dropping spoiler-free character invites into your group chat, the entire setup takes under 30 minutes and starts from $19 (roughly $3.15 per guest), replacing hours of paper cutting with an unforgettable two-to-three-hour holiday dinner table experience.
+
+Explore the Christmas Nightmare Mystery Base Pack and preview the 6-suspect line-up:
+${themeUrl}
+
+#ChristmasNightmare #ChristmasMurderMystery #FriendsmasParty #MurderMysteryParty #BackPocketMysteries`,
+  },
 };
 
 export async function queueMysteryPackLaunch(
-  packSlug = process.argv[2] || "love-on-the-rocks",
+  packSlug = process.argv[2] || "christmas-nightmare",
   scheduledAt = process.argv[3] || "2026-11-25T09:00:00Z"
 ) {
-  const pack = PACK_TEMPLATES[packSlug] || PACK_TEMPLATES["love-on-the-rocks"];
+  const pack = PACK_TEMPLATES[packSlug] || PACK_TEMPLATES["christmas-nightmare"];
   const themeUrl = `${SITE}/themes/${pack.slug}`;
   const igFbCopy = pack.igFb(themeUrl);
   const liCopy = pack.linkedin(themeUrl);
@@ -96,10 +161,11 @@ export async function queueMysteryPackLaunch(
   // Guardrail validation
   const igTags = (igFbCopy.match(/#\w+/g) || []).length;
   if (igTags > 5) throw new Error(`IG/FB has ${igTags} hashtags (max 5)`);
+  if (liCopy.includes("—")) throw new Error("LinkedIn post contains an em-dash (—)");
   const liWords = liCopy.split(/\s+/).filter(Boolean).length;
   console.log(`Mystery Pack [${pack.slug}]: IG/FB hashtags=${igTags}, LinkedIn words=${liWords}`);
-  if (liWords < 550 || liWords > 700) {
-    throw new Error(`LinkedIn post is ${liWords} words (target 550–700)`);
+  if (liWords < 600 || liWords > 700) {
+    throw new Error(`LinkedIn post is ${liWords} words (strictly required: 600–700)`);
   }
 
   const storePath = "data/.marketing-suite-store.json";
