@@ -24,7 +24,7 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: {
     default: "Custom Murder Mystery Games | Back Pocket Mysteries",
-    template: "%s | Back Pocket Mysteries",
+    template: "%s",
   },
   description: "Host a custom murder mystery party built around your actual guest list. Personalised 100% online murder mystery packs ready to play in ~20 minutes. Perfect for birthdays and dinner parties.",
   keywords: ["custom murder mystery", "murder mystery party", "personalised mystery", "online murder mystery games", "dinner party games", "murder mystery kit", "custom party game"],
