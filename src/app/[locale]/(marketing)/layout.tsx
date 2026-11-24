@@ -124,6 +124,10 @@ export default async function MarketingLayout(props: {
                 <li><Link href={`/${locale}/blog`} className="hover:text-brand-pink transition-colors">{dict.common.blog}</Link></li>
                 <li><Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-colors">{dict.common.faq}</Link></li>
                 <li><Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-colors">{dict.common.contact}</Link></li>
+                <li><Link href={`/${locale}/privacy`} className="hover:text-brand-pink transition-colors">Privacy Policy</Link></li>
+                <li><Link href={`/${locale}/terms`} className="hover:text-brand-pink transition-colors">Terms of Service</Link></li>
+                <li><Link href={`/${locale}/refund-policy`} className="hover:text-brand-pink transition-colors">Refund Policy</Link></li>
+                <li><Link href={`/${locale}/cookies`} className="hover:text-brand-pink transition-colors">Cookie Policy</Link></li>
               </ul>
             </div>
 
@@ -150,7 +154,11 @@ export default async function MarketingLayout(props: {
           
           <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8 text-[11px] font-black uppercase tracking-widest text-gray-500">
             <p>&copy; <CopyrightYear /> {dict.common.footer.rights}</p>
-            <div className="flex gap-8 items-center">
+            <div className="flex flex-wrap justify-center gap-6 items-center">
+              <Link href={`/${locale}/privacy`} className="hover:text-brand-pink transition-colors">Privacy</Link>
+              <Link href={`/${locale}/terms`} className="hover:text-brand-pink transition-colors">Terms</Link>
+              <Link href={`/${locale}/refund-policy`} className="hover:text-brand-pink transition-colors">Refunds</Link>
+              <Link href={`/${locale}/cookies`} className="hover:text-brand-pink transition-colors">Cookies</Link>
               <a href="mailto:hello@backpocketgames.com" className="hover:text-brand-pink transition-colors lowercase">hello@backpocketgames.com</a>
               <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-colors">{dict.common.contact}</Link>
               <span className="w-1 h-1 rounded-full bg-white/10 hidden md:block"></span>
