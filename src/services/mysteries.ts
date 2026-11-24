@@ -147,22 +147,59 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     mystery.image_url = canonicalChristmasImageUrl;
   }
 
+  const isBaseChristmasTemplate = mysteryId === '61196e53-09c3-427f-8862-30151f2ca75b';
+  const SUPERSEDED_CHRISTMAS_PORTRAIT_HASHES = [
+    '28ec1e5263c3',
+    '20058bab3911',
+    'b06f3ace7cdf',
+    '63aa0e7355d6',
+    '1dcd5acb69d9',
+  ];
+  const ALEX_HUSBAND_PORTRAIT =
+    'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-b90b57ad1e85.jpg';
+  const LUKE_HUSBAND_PORTRAIT =
+    'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg';
+
   // Sync characters + motives
   const canonicalChars = CHRISTMAS_NIGHTMARE_CHARACTERS.map((spec) => {
     const id = charIdMap[spec.key];
     const existing = existingChars.find((c: any) => c?.id === id) || {};
     const existingProfile = existing.profile_data || {};
 
-    // Auto-heal The Husband (Victim) if it had 'Alex' paired with Luke's blonde portrait (28ec1e5263c3.jpg)
-    const isMismatchedAlexOnLukePortrait =
+    // For customer clones (not the base pack template), do NOT copy base-pack admin portraits from spec.profile_data
+    const baseSpecProfile: Record<string, any> = { ...spec.profile_data };
+    if (!isBaseChristmasTemplate) {
+      delete baseSpecProfile.standard_character_photo_url;
+      delete baseSpecProfile.outfit_image_url;
+      delete baseSpecProfile.avatar_url;
+    }
+
+    const existingGuestName = String(existingProfile.guest_name || '').trim().toLowerCase();
+    const hasSupersededPortrait =
+      isBaseChristmasTemplate &&
+      SUPERSEDED_CHRISTMAS_PORTRAIT_HASHES.some(
+        (h) =>
+          String(existingProfile.standard_character_photo_url || '').includes(h) ||
+          String(existingProfile.outfit_image_url || '').includes(h) ||
+          String(existingProfile.avatar_url || '').includes(h)
+      ) &&
+      !(spec.key === 'husband' && existingGuestName === 'luke');
+
+    const isHusbandAlexMismatch =
+      isBaseChristmasTemplate &&
       spec.key === 'husband' &&
-      String(existingProfile.guest_name || '').trim().toLowerCase() === 'alex' &&
-      (!existingProfile.standard_character_photo_url ||
-        String(existingProfile.standard_character_photo_url).includes('28ec1e5263c3'));
+      existingGuestName === 'alex' &&
+      String(existingProfile.standard_character_photo_url || '').includes('28ec1e5263c3');
+
+    const isHusbandLukeMismatch =
+      isBaseChristmasTemplate &&
+      spec.key === 'husband' &&
+      existingGuestName === 'luke' &&
+      String(existingProfile.standard_character_photo_url || '').includes('b90b57ad1e85');
 
     // Preserve any linked guest info while replacing bio/act/outfit with canonical Christmas Nightmare profile
     const mergedProfile: Record<string, any> = {
-      ...spec.profile_data,
+      ...baseSpecProfile,
       ...existingProfile,
       color: spec.profile_data.color,
       bio: spec.profile_data.bio,
@@ -170,21 +207,44 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       outfit_reference_images: spec.profile_data.outfit_reference_images,
       act_summary: spec.profile_data.act_summary,
       act_bullets: spec.profile_data.act_bullets,
-      ...(isMismatchedAlexOnLukePortrait
+      ...(hasSupersededPortrait || isHusbandAlexMismatch
         ? {
-            guest_id: '0370c2e5-a829-4b37-9eff-8251c337aa34',
-            guest_name: 'Luke',
-            gender: 'male',
-            eye_color: 'Blue',
-            height: 'Very Tall',
-            ethnicity: '',
-            avatar_url:
-              'https://api.dicebear.com/8.x/avataaars/svg?seed=Luke&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=transparent&top=shortFlat&hairColor=d6b370&hatColor=d6b370&skinColor=ffe0bd&facialHairProbability=0&accessoriesProbability=0&build=Average&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2F0370c2e5-a829-4b37-9eff-8251c337aa34-2bf6d5bf0afbd2f035beba3503d89b0715244bba9ce52d769847659687fdce22.jpg',
-            standard_character_photo_url: spec.profile_data.standard_character_photo_url,
-            outfit_image_url: spec.profile_data.outfit_image_url,
+            standard_character_photo_url:
+              spec.key === 'husband' ? ALEX_HUSBAND_PORTRAIT : spec.profile_data.standard_character_photo_url,
+            outfit_image_url:
+              spec.key === 'husband' ? ALEX_HUSBAND_PORTRAIT : spec.profile_data.outfit_image_url,
+          }
+        : {}),
+      ...(isHusbandLukeMismatch
+        ? {
+            standard_character_photo_url: LUKE_HUSBAND_PORTRAIT,
+            outfit_image_url: LUKE_HUSBAND_PORTRAIT,
           }
         : {}),
     };
+
+    // On customer clones, strip any leftover base-pack portrait URL that belongs to 61196e53-09c3-427f-8862-30151f2ca75b
+    let strippedStaleBasePortrait = false;
+    if (!isBaseChristmasTemplate) {
+      if (
+        String(mergedProfile.standard_character_photo_url || '').includes(
+          '/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/'
+        )
+      ) {
+        delete mergedProfile.standard_character_photo_url;
+        delete mergedProfile.standard_character_photo_hash;
+        strippedStaleBasePortrait = true;
+      }
+      if (
+        String(mergedProfile.outfit_image_url || '').includes(
+          '/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/'
+        )
+      ) {
+        delete mergedProfile.outfit_image_url;
+        strippedStaleBasePortrait = true;
+      }
+    }
+
     if (spec.gender !== 'adaptable') {
       delete mergedProfile.presentation_male;
       delete mergedProfile.presentation_female;
@@ -208,7 +268,10 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
 
     const needsCharProfileSync =
       !hasCanonicalNames ||
-      isMismatchedAlexOnLukePortrait ||
+      hasSupersededPortrait ||
+      isHusbandAlexMismatch ||
+      isHusbandLukeMismatch ||
+      strippedStaleBasePortrait ||
       existingProfile.outfit_advice !== spec.profile_data.outfit_advice ||
       JSON.stringify(existingProfile.outfit_reference_images) !== JSON.stringify(spec.profile_data.outfit_reference_images) ||
       JSON.stringify(existingProfile.act_bullets) !== JSON.stringify(spec.profile_data.act_bullets);

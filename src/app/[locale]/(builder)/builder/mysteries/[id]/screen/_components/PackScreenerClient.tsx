@@ -973,23 +973,40 @@ export function PackScreenerClient({
     const rawGuestId = String(rawChar?.profile_data?.guest_id || '').trim().toLowerCase();
     const rawGuestName = String(rawChar?.profile_data?.guest_name || '').trim().toLowerCase();
     const currentGuestId = String(c?.profile_data?.guest_id || '').trim().toLowerCase();
-    const currentGuestName = String(c?.profile_data?.guest_name || '').trim().toLowerCase();
-
-    const hasExplicitRenderedGuest = Boolean(rawGuestId || rawGuestName);
-    const isSameGuestAsRendered = hasExplicitRenderedGuest
-      ? (Boolean(rawGuestId && currentGuestId && rawGuestId === currentGuestId) ||
-          Boolean(rawGuestName && currentGuestName && rawGuestName === currentGuestName))
-      : true;
+    const currentGuestName = String(
+      c?.profile_data?.guest_name || c?.assignedFriend?.name || ''
+    )
+      .trim()
+      .toLowerCase();
 
     if (useFriendNames) {
+      // On Christmas Nightmare (The Husband), both Alex and Luke have pre-rendered costume portraits in Storage
+      if (c?.id === 'da18ef00-ecdc-41e7-8c71-97d78046e43b') {
+        if (currentGuestName === 'alex') {
+          return 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-b90b57ad1e85.jpg';
+        }
+        if (currentGuestName === 'luke') {
+          return 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg';
+        }
+      }
+
+      const hasExplicitRenderedGuest = Boolean(rawGuestId || rawGuestName);
+      const isSameGuestAsRendered = hasExplicitRenderedGuest
+        ? Boolean(rawGuestId && currentGuestId && rawGuestId === currentGuestId) ||
+          Boolean(rawGuestName && currentGuestName && rawGuestName === currentGuestName)
+        : true;
+
       if (isSameGuestAsRendered && rawChar?.profile_data?.standard_character_photo_url) {
         return rawChar.profile_data.standard_character_photo_url;
       }
       if (c?.profile_data?.friend_photo_url) {
         return c.profile_data.friend_photo_url;
       }
-      if (!isSameGuestAsRendered && c?.assignedFriend?.avatar_url) {
+      if (c?.assignedFriend?.avatar_url) {
         return resolveDisplayAvatarUrl(c.assignedFriend.avatar_url);
+      }
+      if (!isSameGuestAsRendered) {
+        return c?.profile_data?.outfit_reference_images?.[0] || null;
       }
     }
     return (

@@ -514,6 +514,19 @@ export async function saveCustomerCastAction(
           console.error('Auto AI avatar generation during saveCustomerCastAction failed:', aiErr);
         }
       }
+      const prevGuestId = String(existingProfile.guest_id || '').trim();
+      const prevStandardPhoto = String(existingProfile.standard_character_photo_url || '');
+      const isDifferentGuest = prevGuestId !== String(assignedGuest.id || '').trim();
+      const isForeignTemplatePortrait =
+        prevStandardPhoto.includes('/standard-characters/') &&
+        !prevStandardPhoto.includes(String(mysteryId));
+
+      if (isDifferentGuest || isForeignTemplatePortrait) {
+        delete nextProfile.standard_character_photo_url;
+        delete nextProfile.standard_character_photo_hash;
+        delete nextProfile.outfit_image_url;
+      }
+
       const resolvedGender = assignedGuest.gender || char.gender || 'adaptable';
       nextProfile.guest_id = assignedGuest.id;
       nextProfile.guest_name = assignedGuest.name;

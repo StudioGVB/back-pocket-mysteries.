@@ -238,9 +238,25 @@ export function getCleanCharacterPresentation(
       resolvedAvatar.startsWith('/generated-avatars/') ||
       resolvedAvatar.includes('/character-images/'));
 
+  const charMysteryId = String(char?.mystery_id || '').trim();
+  const rawStandardPhoto = String(profile.standard_character_photo_url || '').trim();
+  const isForeignTemplateStandardPhoto =
+    Boolean(guestIdStr) &&
+    Boolean(charMysteryId) &&
+    rawStandardPhoto.includes('/standard-characters/') &&
+    !rawStandardPhoto.includes(charMysteryId);
+
+  const validStandardPhoto =
+    rawStandardPhoto && !isForeignTemplateStandardPhoto ? rawStandardPhoto : null;
+
+  const isDedicatedMysteryCostumePortrait =
+    Boolean(validStandardPhoto) &&
+    Boolean(charMysteryId) &&
+    validStandardPhoto!.includes(`/standard-characters/${charMysteryId}/`);
+
   const rawFallbackPhoto =
-    profile.standard_character_photo_url ||
-    profile.outfit_image_url ||
+    validStandardPhoto ||
+    (!isForeignTemplateStandardPhoto ? profile.outfit_image_url : null) ||
     activePres?.outfit_image_url ||
     presFemale?.outfit_image_url ||
     presMale?.outfit_image_url ||
@@ -252,6 +268,7 @@ export function getCleanCharacterPresentation(
     : null;
 
   const characterPhotoUrl =
+    (isDedicatedMysteryCostumePortrait ? validStandardPhoto : null) ||
     (hasAiGuestPortrait ? resolvedAvatar : null) ||
     adaptedFallbackPhoto;
 
