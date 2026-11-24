@@ -4697,8 +4697,8 @@ export function PlayroomClient({
         {/* TAB 4: FINAL SOLUTION REVEAL, CLUE SCORECARD, ALL-PLAYERS CHARTS & 5-STAR GUEST REVIEW */}
         {activeTab === 'reveal' && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            {/* 1. OFFICIAL CASE SOLUTION: WHO KILLED, WHY, HOW & PLOT BEATS + SUPPORTING CLUES */}
-            <section className="bg-slate-900/70 border border-emerald-500/40 rounded-2xl p-4 sm:p-6 shadow-xl space-y-5">
+            {/* 1. EDITORIAL CASE SOLUTION: KILLER PORTRAIT HERO + CHRONOLOGICAL TIMELINE */}
+            <section className="bg-slate-900/75 border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-7">
               {solutionData ? (
                 (() => {
                   const realMurderClues = clues.filter(
@@ -4710,124 +4710,135 @@ export function PlayroomClient({
                   const beatsList: any[] = Array.isArray(solutionData.plotBeats)
                     ? solutionData.plotBeats
                     : [];
-                  const howBeats = beatsList.filter(
-                    b => Number(b.beat_number) === 2 || Number(b.beat_number) >= 4
-                  );
+
+                  const killerCharObj =
+                    characters.find(c => c.id === solutionData.killer?.id) ||
+                    characters.find(c => (c as any).plot_role === 'killer') ||
+                    null;
+                  const killerPres = killerCharObj
+                    ? getCleanCharacterPresentation(killerCharObj, characters, { mode: 'print' })
+                    : null;
+                  const killerPhotoUrl = killerCharObj
+                    ? resolveDisplayAvatarUrl(
+                        killerPres?.characterPhotoUrl ||
+                          killerCharObj.profile_data?.avatar_url ||
+                          killerCharObj.image_url
+                      )
+                    : null;
+
+                  const executionBeat =
+                    beatsList.find(b => Number(b.beat_number) === 4) ||
+                    beatsList[beatsList.length - 1] ||
+                    null;
 
                   return (
-                    <div className="space-y-5">
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
-                        <div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                            📂 Official Case Solution • Declassified
-                          </span>
-                          <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                            🔪 {solutionData.killer?.name || 'The Killer'} Murdered{' '}
-                            {solutionData.victim?.name || 'The Victim'}
-                          </h2>
-                        </div>
-                        {revealMode === 'phone_free' && (
-                          <span className="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-black uppercase tracking-widest">
-                            📵 Host Read-Aloud View
-                          </span>
-                        )}
-                      </div>
-
-                      {/* 3-Column Core Summary: WHO KILLED / WHY THEY KILLED / HOW THEY KILLED */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        {/* WHO KILLED */}
-                        <div className="p-4 rounded-xl bg-rose-950/35 border border-rose-500/40 space-y-3">
-                          <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-black uppercase tracking-widest">
-                            🔪 1. Who Killed
-                          </span>
-                          {solutionData.killer && (
-                            <div>
-                              <div className="text-[10px] font-black uppercase text-rose-400">
-                                True Murderer
-                              </div>
-                              <h3 className="text-base font-black text-white">
-                                {solutionData.killer.name}
-                              </h3>
-                              <p className="text-xs font-bold text-rose-200/80">
-                                {solutionData.killer.role}
-                              </p>
+                    <div className="space-y-7">
+                      {/* Editorial Killer Hero Banner */}
+                      <div className="flex flex-col md:flex-row items-center md:items-stretch gap-6 pb-7 border-b border-white/10">
+                        {/* Killer Portrait */}
+                        <div className="w-40 h-52 sm:w-48 sm:h-60 rounded-2xl overflow-hidden bg-slate-950 border border-white/15 shrink-0 relative shadow-xl">
+                          {killerPhotoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={killerPhotoUrl}
+                              alt={solutionData.killer?.name || 'The Killer'}
+                              className="w-full h-full object-cover object-top"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl text-slate-600">
+                              🕵️
                             </div>
                           )}
-                          {solutionData.victim && (
-                            <div className="pt-2 border-t border-white/10">
-                              <div className="text-[10px] font-black uppercase text-slate-400">
-                                Victim
-                              </div>
-                              <div className="text-sm font-black text-white">
-                                {solutionData.victim.name}{' '}
-                                <span className="text-xs font-normal text-slate-400">
-                                  ({solutionData.victim.role})
+                          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent pointer-events-none" />
+                          <div className="absolute top-3 left-3">
+                            <span className="px-2.5 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest shadow">
+                              The Killer
+                            </span>
+                          </div>
+                          <div className="absolute bottom-2.5 inset-x-3">
+                            <div className="text-sm font-black text-white truncate">
+                              {solutionData.killer?.name || 'The Killer'}
+                            </div>
+                            <div className="text-[11px] font-semibold text-slate-300 truncate">
+                              {solutionData.killer?.role}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Headline + Motive & Method */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between space-y-4 text-center md:text-left">
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-pink">
+                                Case Solved • The Final Reveal
+                              </span>
+                              {solutionData.victim && (
+                                <span className="text-xs text-slate-400 font-medium">
+                                  • Victim: <strong className="text-slate-200">{solutionData.victim.name}</strong> ({solutionData.victim.role})
                                 </span>
-                              </div>
+                              )}
+                              {solutionData.assistant && (
+                                <span className="text-xs text-slate-400 font-medium">
+                                  • Accomplice: <strong className="text-slate-200">{solutionData.assistant.name}</strong> ({solutionData.assistant.role})
+                                </span>
+                              )}
                             </div>
-                          )}
-                          {solutionData.assistant && (
-                            <div className="pt-2 border-t border-white/10">
-                              <div className="text-[10px] font-black uppercase text-amber-400">
-                                Accomplice
-                              </div>
-                              <div className="text-sm font-black text-white">
-                                {solutionData.assistant.name} ({solutionData.assistant.role})
-                              </div>
-                            </div>
-                          )}
-                        </div>
 
-                        {/* WHY THEY KILLED */}
-                        <div className="p-4 rounded-xl bg-amber-950/25 border border-amber-500/40 space-y-2">
-                          <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-black uppercase tracking-widest">
-                            💔 2. Why They Killed (Motive)
-                          </span>
-                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-                            {hydrateTextWithCharacters(
-                              solutionData.killer?.motiveNotes ||
-                                beatsList.find(b => Number(b.beat_number) === 3)?.description ||
-                                beatsList[0]?.description ||
-                                'Committed to protect their secret and settle a deep personal betrayal.',
-                              characters,
-                              'print'
-                            )}
-                          </p>
-                        </div>
+                            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+                              {solutionData.killer?.name || 'The Killer'} Murdered{' '}
+                              {solutionData.victim?.name || 'The Victim'}
+                            </h2>
+                          </div>
 
-                        {/* HOW THEY KILLED */}
-                        <div className="p-4 rounded-xl bg-sky-950/25 border border-sky-500/40 space-y-2">
-                          <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-black uppercase tracking-widest">
-                            ⚡ 3. How They Killed (Method &amp; Execution)
-                          </span>
-                          <div className="space-y-1.5 text-xs text-slate-200 leading-relaxed">
-                            {howBeats.length > 0 ? (
-                              howBeats.map((hb: any) => (
-                                <p key={hb.id}>
-                                  <strong className="text-sky-300">
-                                    Beat {hb.beat_number}:
-                                  </strong>{' '}
-                                  {hydrateTextWithCharacters(hb.description || '', characters, 'print')}
-                                </p>
-                              ))
-                            ) : (
-                              <p>
-                                Used a pre-staged weapon during an alibi window and was caught by physical forensic trace in Round 3.
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
+                            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1.5">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                The Motive
+                              </span>
+                              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                                {hydrateTextWithCharacters(
+                                  solutionData.killer?.motiveNotes ||
+                                    beatsList.find(b => Number(b.beat_number) === 3)?.description ||
+                                    beatsList[0]?.description ||
+                                    'Committed to protect their secret and settle a deep personal betrayal.',
+                                  characters,
+                                  'print'
+                                )}
                               </p>
-                            )}
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1.5">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                How It Happened
+                              </span>
+                              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                                {executionBeat
+                                  ? hydrateTextWithCharacters(
+                                      executionBeat.description || '',
+                                      characters,
+                                      'print'
+                                    )
+                                  : 'Used a pre-staged weapon during an alibi window and was caught by physical forensic trace in the final round.'}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* MAIN PLOT BEATS & THE CLUES THAT SUPPORTED EACH BEAT */}
+                      {/* CHRONOLOGICAL TIMELINE OF THE CRIME */}
                       {beatsList.length > 0 && (
-                        <div className="space-y-3 pt-2 border-t border-white/10">
+                        <div className="space-y-4">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <h4 className="text-xs font-black uppercase tracking-widest text-emerald-300">
-                              🎯 The Main Plot Beats &amp; The Clues That Supported This
-                            </h4>
-                            <span className="text-[11px] font-bold text-slate-400">
-                              {realMurderClues.length} Real Murder Clues • {decoyClues.length} Red Herrings
+                            <div>
+                              <h3 className="text-base sm:text-lg font-bold text-white">
+                                How the Night Unfolded
+                              </h3>
+                              <p className="text-xs text-slate-400">
+                                Step-by-step reconstruction of the crime and the evidence that proved it
+                              </p>
+                            </div>
+                            <span className="text-xs font-semibold text-slate-400">
+                              {realMurderClues.length} Real Clues • {decoyClues.length} Red Herrings
                             </span>
                           </div>
 
@@ -4857,28 +4868,24 @@ export function PlayroomClient({
                               return (
                                 <div
                                   key={beat.id || idx}
-                                  className="rounded-xl bg-slate-950/80 border border-emerald-500/30 p-3.5 space-y-2.5"
+                                  className="rounded-2xl bg-white/[0.02] border border-white/10 p-4 sm:p-5 space-y-3"
                                 >
                                   <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest">
-                                        Beat {bNum}
+                                    <div className="flex items-center gap-3">
+                                      <span className="w-6 h-6 rounded-full bg-white/10 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                                        {bNum}
                                       </span>
-                                      <h5 className="text-xs sm:text-sm font-black text-white">
+                                      <h4 className="text-sm sm:text-base font-bold text-white">
                                         {hydrateTextWithCharacters(
                                           beat.event_title || beat.title || '',
                                           characters,
                                           'print'
                                         )}
-                                      </h5>
+                                      </h4>
                                     </div>
-                                    <span className="text-[10px] font-black text-emerald-400 uppercase">
-                                      {beatClues.length} Supporting{' '}
-                                      {beatClues.length === 1 ? 'Clue' : 'Clues'}
-                                    </span>
                                   </div>
 
-                                  <p className="text-xs text-slate-300 leading-relaxed">
+                                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pl-9">
                                     {hydrateTextWithCharacters(
                                       beat.description || '',
                                       characters,
@@ -4887,28 +4894,27 @@ export function PlayroomClient({
                                   </p>
 
                                   {beatClues.length > 0 && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1.5 border-t border-white/10">
+                                    <div className="pl-9 flex flex-wrap gap-2 pt-1">
                                       {beatClues.map(bc => {
-                                        const cTitle = hydrateTextWithCharacters(
+                                        const rawTitle = hydrateTextWithCharacters(
                                           stripCustomerFacingTitle(bc.title) || bc.title,
                                           characters,
                                           'print'
-                                        );
+                                        ).trim();
+                                        const cTitle =
+                                          rawTitle.length <= 4
+                                            ? `Recovered Text Thread (${rawTitle})`
+                                            : rawTitle;
                                         return (
                                           <div
                                             key={bc.id}
-                                            className="rounded-lg bg-emerald-950/30 border border-emerald-500/30 px-2.5 py-2 flex items-center justify-between gap-2"
+                                            className="rounded-xl bg-slate-950/80 border border-white/10 px-3 py-1.5 flex items-center gap-2"
                                           >
-                                            <div className="flex items-center gap-1.5 min-w-0">
-                                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase shrink-0">
-                                                R{bc.round_number || 1}
-                                              </span>
-                                              <span className="text-xs font-bold text-white truncate">
-                                                {cTitle}
-                                              </span>
-                                            </div>
-                                            <span className="text-[9px] font-black text-emerald-300 uppercase shrink-0">
-                                              🔑 Real Proof
+                                            <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 text-[10px] font-bold uppercase shrink-0">
+                                              Round {bc.round_number || 1}
+                                            </span>
+                                            <span className="text-xs font-medium text-slate-200">
+                                              {cTitle}
                                             </span>
                                           </div>
                                         );
