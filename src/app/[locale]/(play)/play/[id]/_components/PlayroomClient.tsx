@@ -154,6 +154,12 @@ export function PlayroomClient({
     }
     return null;
   });
+  // Tracks the character this guest actually confirmed as THEIR role on this device,
+  // so snooping on other characters' bios/outfits on the invite never steals or blocks another player's role
+  const [myOwnCharId, setMyOwnCharId] = useState<string | null>(() =>
+    initialCharId && characters.some(c => c.id === initialCharId) ? initialCharId : null
+  );
+  const [pendingLobbyCharId, setPendingLobbyCharId] = useState<string | null>(null);
   const [customSleuthName, setCustomSleuthName] = useState('');
 
   // Track which clues this player has viewed so we can badge unread clues
@@ -286,12 +292,26 @@ export function PlayroomClient({
     hasInitializedSelectionRef.current = mystery.id;
 
     const savedCharKey = `bpm_selected_char_${mystery.id}`;
+    const confirmedOwnKey = `bpm_my_confirmed_char_${mystery.id}`;
+    const savedOwnCharId = window.localStorage.getItem(confirmedOwnKey);
+    if (savedOwnCharId && characters.some(c => c.id === savedOwnCharId)) {
+      setMyOwnCharId(savedOwnCharId);
+    } else if (initialCharId && characters.some(c => c.id === initialCharId)) {
+      setMyOwnCharId(initialCharId);
+    }
+
     if (forceSelect && !initialCharId) {
       setSelectedCharId(null);
       return;
     }
     if (initialCharId && characters.some(c => c.id === initialCharId)) {
       setSelectedCharId(initialCharId);
+      return;
+    }
+    // On the Pre-Party Group Invite (?prep=1 without ?char=...), always land on the main Invitation & Guest List
+    // so a guest who previously peeked at another character isn't trapped on someone else's sheet
+    if (initialPrepMode && !initialCharId) {
+      setSelectedCharId(null);
       return;
     }
     const savedCharId = window.localStorage.getItem(savedCharKey);
@@ -302,7 +322,7 @@ export function PlayroomClient({
         setSelectedCharId(savedCharId);
       }
     }
-  }, [mystery.id, initialCharId, initialIsHost, forceSelect, characters]);
+  }, [mystery.id, initialCharId, initialIsHost, forceSelect, initialPrepMode, characters]);
 
   useEffect(() => {
     if (!notebookLoaded || typeof window === 'undefined' || !mystery.id) return;
@@ -405,6 +425,15 @@ export function PlayroomClient({
   const handleConfirmPrepRead = useCallback(
     async (charId: string, guestName?: string) => {
       setIsConfirmingPrepRead(true);
+      setMyOwnCharId(charId);
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(`bpm_my_confirmed_char_${mystery.id}`, charId);
+          window.localStorage.setItem(`bpm_selected_char_${mystery.id}`, charId);
+        } catch {
+          // ignore
+        }
+      }
       setPrepConfirmedCharacters(prev => ({
         ...prev,
         [charId]: { confirmedAt: new Date().toISOString(), guestName },
@@ -863,26 +892,42 @@ export function PlayroomClient({
   );
 
   // Select a character from the Character Selection screen
-  const handleSelectCharacterInLobby = async (charId: string) => {
+  const handleSelectCharacterInLobby = async (
+    charId: string,
+    options?: { previewOnly?: boolean }
+  ) => {
     setClaimError(null);
+    setPendingLobbyCharId(null);
+    const isPreviewOnly = Boolean(options?.previewOnly || isPrepMode);
+
+    if (options?.previewOnly) {
+      setIsPrepMode(true);
+      setPrepSheetTab('character');
+    }
+
     setSelectedCharId(charId);
 
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(`bpm_selected_char_${mystery.id}`, charId);
-      // Strip ?select=1 from URL so refreshing or re-rendering never kicks back to the grid
+      // Only persist to localStorage when the player is claiming their own live game role,
+      // NEVER when they are just browsing/snooping on other characters' bios & outfits on the invite
+      if (!isPreviewOnly) {
+        window.localStorage.setItem(`bpm_selected_char_${mystery.id}`, charId);
+        window.localStorage.setItem(`bpm_my_confirmed_char_${mystery.id}`, charId);
+        setMyOwnCharId(charId);
+      }
       const url = new URL(window.location.href);
       url.searchParams.delete('select');
       url.searchParams.set('char', charId);
-      if (isPrepMode) {
+      if (isPreviewOnly) {
         url.searchParams.set('prep', '1');
       }
       window.history.replaceState(null, '', url.pathname + url.search);
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
-    // In Pre-Party "First Glance" mode, guests are just viewing their outfit & character sheet ahead of time
-    // so we don't lock the live party seat yet.
-    if (isPrepMode) {
+    // In Pre-Party "First Glance" or "Just Looking" preview mode, guests are only viewing
+    // the public outfit & character blurb — never lock or claim the character for others.
+    if (isPreviewOnly) {
       return;
     }
 
@@ -3169,6 +3214,12 @@ export function PlayroomClient({
       prepCharPres.characterPhotoUrl ||
       resolveDisplayAvatarUrl(selectedChar.profile_data?.avatar_url || selectedChar.image_url);
     const isThisCharConfirmed = Boolean(prepConfirmedCharacters[selectedChar.id]);
+    const isPeekingAtOtherCharacter = Boolean(myOwnCharId && myOwnCharId !== selectedChar.id);
+    const myOwnCharObj = myOwnCharId ? activeCharacters.find(c => c.id === myOwnCharId) : null;
+    const myOwnCharDisplayName = myOwnCharObj
+      ? parseCharacter(myOwnCharObj).guestName ||
+        getCleanCharacterPresentation(myOwnCharObj, characters, { mode: 'generic' }).roleTitle
+      : 'My Role';
     const mainGuestTitle = prepCharPres.guestName || prepCharPres.roleTitle;
     const outfitOptionsCount = Math.max(
       prepCharPres.outfitReferenceImages?.length || 0,
@@ -3194,6 +3245,18 @@ export function PlayroomClient({
               >
                 ← Back to Invite &amp; Guest List
               </button>
+              {isPeekingAtOtherCharacter && myOwnCharId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSelectCharacterInLobby(myOwnCharId);
+                    setPrepSheetTab('character');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-pink/20 hover:bg-brand-pink/30 text-brand-pink border border-brand-pink/40 text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                >
+                  Return to My Role ({myOwnCharDisplayName}) →
+                </button>
+              )}
               <span className="text-xs font-semibold text-slate-400 truncate hidden sm:inline">
                 {mystery.title}
               </span>
@@ -3222,6 +3285,30 @@ export function PlayroomClient({
 
         <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
           {renderLiveGameStartedBanner()}
+
+          {/* Nosy-Guest Public Preview Banner */}
+          {isPeekingAtOtherCharacter && myOwnCharId && (
+            <div className="p-4 rounded-2xl bg-slate-900 border border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                  Public Guest List Preview
+                </div>
+                <p className="text-xs text-slate-300">
+                  You are viewing <strong className="text-white">{mainGuestTitle}</strong>&apos;s public character brief &amp; wardrobe vibe. Looking here does not lock or claim their role.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSelectCharacterInLobby(myOwnCharId);
+                  setPrepSheetTab('character');
+                }}
+                className="px-4 py-2 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs font-bold shrink-0 cursor-pointer"
+              >
+                ← Back to {myOwnCharDisplayName}
+              </button>
+            </div>
+          )}
 
           {/* Character Invite Card with Tabs */}
           <div className="rounded-3xl bg-slate-900/75 border border-white/10 overflow-hidden shadow-2xl">
@@ -3411,35 +3498,76 @@ export function PlayroomClient({
                     </div>
                   )}
 
-                  {/* Confirm Ready CTA */}
+                  {/* Confirm Ready CTA (Protected from Nosy Guests Snooping on Other Roles) */}
                   <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-sm sm:text-base font-bold text-white">
-                        {isThisCharConfirmed
-                          ? `You're confirmed ready for party night${prepCharPres.guestName ? `, ${prepCharPres.guestName}` : ''}!`
-                          : 'Let your host know you have read your role & outfit guide'}
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {isThisCharConfirmed
-                          ? 'Your host can see that you have reviewed your character sheet.'
-                          : 'Round 1 clues remain locked until everyone arrives at the party.'}
-                      </p>
-                    </div>
+                    {isPeekingAtOtherCharacter ? (
+                      <>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-bold text-white">
+                            Just checking out {mainGuestTitle}&apos;s character &amp; wardrobe?
+                          </h3>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Their character remains open for them to confirm on their own phone.
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          {myOwnCharId && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSelectCharacterInLobby(myOwnCharId);
+                                setPrepSheetTab('character');
+                              }}
+                              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold cursor-pointer"
+                            >
+                              ← Back to {myOwnCharDisplayName}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleConfirmPrepRead(
+                                selectedChar.id,
+                                prepCharPres.guestName || undefined
+                              )
+                            }
+                            className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-slate-300 text-xs font-semibold cursor-pointer"
+                          >
+                            Wait, I&apos;m {mainGuestTitle}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-bold text-white">
+                            {isThisCharConfirmed
+                              ? `You're confirmed ready for party night${prepCharPres.guestName ? `, ${prepCharPres.guestName}` : ''}!`
+                              : `Are you playing ${mainGuestTitle}? Confirm you've read your outfit guide`}
+                          </h3>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            {isThisCharConfirmed
+                              ? 'Your host can see that you have reviewed your character sheet (and you can still browse other guests freely).'
+                              : 'Only tap confirm below if this is your character role. Round 1 clues stay locked until party night.'}
+                          </p>
+                        </div>
 
-                    {!isThisCharConfirmed && (
-                      <button
-                        type="button"
-                        disabled={isConfirmingPrepRead}
-                        onClick={() =>
-                          void handleConfirmPrepRead(
-                            selectedChar.id,
-                            prepCharPres.guestName || undefined
-                          )
-                        }
-                        className="px-5 py-3 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer shrink-0"
-                      >
-                        {isConfirmingPrepRead ? 'Confirming...' : "I've Read My Role & Outfit ✓"}
-                      </button>
+                        {!isThisCharConfirmed && (
+                          <button
+                            type="button"
+                            disabled={isConfirmingPrepRead}
+                            onClick={() =>
+                              void handleConfirmPrepRead(
+                                selectedChar.id,
+                                prepCharPres.guestName || undefined
+                              )
+                            }
+                            className="px-5 py-3 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer shrink-0"
+                          >
+                            {isConfirmingPrepRead ? 'Confirming...' : `This Is Me — I've Read My Role ✓`}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </>
@@ -3658,6 +3786,68 @@ export function PlayroomClient({
             </div>
           )}
 
+          {/* Nosy-Guest Protection Modal: Confirm Role vs. Just Looking at Public Bio/Outfit */}
+          {pendingLobbyCharId && (() => {
+            const targetChar = activeCharacters.find(c => c.id === pendingLobbyCharId);
+            if (!targetChar) return null;
+            const { name, archetype, guestName } = parseCharacter(targetChar);
+            const charPres = getCleanCharacterPresentation(targetChar, characters, { mode: 'generic' });
+            const roleLabel = charPres.roleTitle || archetype || name;
+            const displayGuest = guestName || roleLabel;
+
+            return (
+              <div
+                className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+                onClick={() => setPendingLobbyCharId(null)}
+              >
+                <div
+                  className="relative w-full max-w-md rounded-3xl bg-slate-950 border border-white/15 p-6 space-y-5 shadow-2xl"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="space-y-1.5">
+                    <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/20 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                      Confirm Character Role
+                    </span>
+                    <h3 className="text-xl font-black text-white tracking-tight">
+                      Are you playing as {displayGuest}?
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      If you are just curious about <strong className="text-white">{displayGuest}</strong> ({roleLabel}), tap <strong className="text-white">Just Looking</strong> below to view their public bio and outfit guide without locking their character or spoiling their game-night secrets.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectCharacterInLobby(targetChar.id)}
+                      className="w-full py-3.5 px-4 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-lg transition-all cursor-pointer"
+                    >
+                      Yes, I&apos;m {displayGuest} — Open My Secret Dossier →
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleSelectCharacterInLobby(targetChar.id, { previewOnly: true })
+                      }
+                      className="w-full py-3 px-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Just Looking — Preview Public Bio &amp; Outfit Only
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPendingLobbyCharId(null)}
+                      className="w-full py-2 text-xs font-semibold text-slate-400 hover:text-white cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
             {activeCharacters.map(char => {
               const { name, archetype, guestName } = parseCharacter(char);
@@ -3667,10 +3857,8 @@ export function PlayroomClient({
               );
               const claimInfo = claimedCharacters[char.id];
               const isClaimedByMe = Boolean(
-                claimInfo && playerToken && claimInfo.token === playerToken
-              );
-              const isClaimedByOther = Boolean(
-                claimInfo && (!playerToken || claimInfo.token !== playerToken)
+                (claimInfo && playerToken && claimInfo.token === playerToken) ||
+                  myOwnCharId === char.id
               );
               const isClaimingThis = isClaimingCharId === char.id;
 
@@ -3679,7 +3867,11 @@ export function PlayroomClient({
                   key={char.id}
                   onClick={() => {
                     if (!isClaimingThis) {
-                      handleSelectCharacterInLobby(char.id);
+                      if (isClaimedByMe) {
+                        handleSelectCharacterInLobby(char.id);
+                      } else {
+                        setPendingLobbyCharId(char.id);
+                      }
                     }
                   }}
                   role="button"
@@ -3687,7 +3879,11 @@ export function PlayroomClient({
                   onKeyDown={e => {
                     if ((e.key === 'Enter' || e.key === ' ') && !isClaimingThis) {
                       e.preventDefault();
-                      handleSelectCharacterInLobby(char.id);
+                      if (isClaimedByMe) {
+                        handleSelectCharacterInLobby(char.id);
+                      } else {
+                        setPendingLobbyCharId(char.id);
+                      }
                     }
                   }}
                   className={`group rounded-2xl sm:rounded-3xl overflow-hidden text-left transition-all flex flex-col justify-between border relative cursor-pointer ${
@@ -3713,7 +3909,7 @@ export function PlayroomClient({
 
                     <div className="absolute inset-x-0 bottom-0 h-16 sm:h-24 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
 
-                    {/* Top Overlay: Character Type Pill on Left, Victim/Claimed Status on Right */}
+                    {/* Top Overlay: Character Type Pill on Left, Victim Status on Right */}
                     <div className="absolute top-2.5 inset-x-2.5 sm:top-3 sm:inset-x-3 flex items-center justify-between gap-1.5 z-10">
                       <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-slate-950/85 backdrop-blur-md border border-white/15 text-white text-[10px] sm:text-xs font-bold tracking-wide max-w-[72%] truncate shadow-sm">
                         {charPres.roleTitle || archetype || name}
@@ -3726,16 +3922,10 @@ export function PlayroomClient({
                       )}
                     </div>
 
-                    {(isClaimedByMe || isClaimedByOther) && (
+                    {isClaimedByMe && (
                       <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-10">
-                        <span
-                          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider shadow-md ${
-                            isClaimedByMe
-                              ? 'bg-emerald-500 text-slate-950'
-                              : 'bg-black/85 text-emerald-300 border border-emerald-400/40'
-                          }`}
-                        >
-                          {isClaimedByMe ? '✓ Yours' : '✓ Joined'}
+                        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider shadow-md bg-emerald-500 text-slate-950">
+                          ✓ Yours
                         </span>
                       </div>
                     )}
@@ -3761,7 +3951,7 @@ export function PlayroomClient({
 
                     <div className="pt-2 sm:pt-2.5 border-t border-white/10 flex items-center justify-between gap-1.5">
                       <span className="hidden sm:inline text-[11px] font-bold text-slate-400 truncate">
-                        {guestName ? `For ${guestName}` : 'Tap to claim'}
+                        {guestName ? `For ${guestName}` : 'Tap to open'}
                       </span>
                       <span
                         className={`w-full sm:w-auto text-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 sm:px-3 py-1.5 rounded-xl shrink-0 ${
@@ -3774,7 +3964,7 @@ export function PlayroomClient({
                           ? 'Opening...'
                           : isClaimedByMe
                           ? 'Enter →'
-                          : 'Claim Role →'}
+                          : 'Select →'}
                       </span>
                     </div>
                   </div>
