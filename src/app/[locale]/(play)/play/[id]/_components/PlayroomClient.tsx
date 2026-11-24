@@ -5012,7 +5012,11 @@ export function PlayroomClient({
                                               const rawProofNote = String(
                                                 (bc as any).internal_notes || ''
                                               )
-                                                .replace(/^\[?Beat\s*\d+[^\]]*\]?:?\s*/i, '')
+                                                .replace(/^\[CODE:[^\]]+\]\s*/i, '')
+                                                .replace(/^(REAL|FAKE)\s*\/\s*(CANON|RED\s*HERRING)\s*/i, '')
+                                                .replace(/^\(?Beat\s*\d+[^)]*\)?\s*[-:–—]?\s*/i, '')
+                                                .replace(/^\[?Beat\s*\d+[^\]]*\]?\s*[-:–—]?\s*/i, '')
+                                                .replace(/^[-:–—]\s*/, '')
                                                 .trim();
                                               const hydratedProofNote = rawProofNote
                                                 ? hydrateTextWithCharacters(
