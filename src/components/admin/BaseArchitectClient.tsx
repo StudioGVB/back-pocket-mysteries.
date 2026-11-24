@@ -19,6 +19,44 @@ import {
   transferBlueprintToDraftMysteryBaseAction,
 } from '@/app/actions/base-architect';
 import { ClueFormat } from '@/utils/clue-format';
+import { recommendDifficultyFromPlotAndClues } from '@/utils/architect-difficulty-recommender';
+
+const SPICE_TIER_CARDS: {
+  level: ArchitectSpiceLevel;
+  badge: string;
+  scoreRange: string;
+  tagline: string;
+  clueFlavor: string;
+}[] = [
+  {
+    level: 'Clean',
+    badge: '✨ Clean (SFW & Family)',
+    scoreRange: '1.0 – 3.4 / 10',
+    tagline: 'High-stakes murder, poison & financial blackmail',
+    clueFlavor: '0 romantic affairs • 0 swearing/profanity in chats or audio',
+  },
+  {
+    level: 'Mild',
+    badge: '🌶️ Mild (Romantic Drama)',
+    scoreRange: '3.5 – 5.5 / 10',
+    tagline: 'Secret love affairs, jealous exes & betrayal',
+    clueFlavor: 'Romantic scandal allowed • 100% clean PG-13 dialogue (0 cussing)',
+  },
+  {
+    level: 'Spicy',
+    badge: '🌶️🌶️ Spicy (Scandalous)',
+    scoreRange: '5.6 – 8.2 / 10',
+    tagline: 'Cussing, drink-throwing catfights & leaked tapes',
+    clueFlavor: 'Sharp swearing (bitch, shit, wtf), boudoir blackmail & sugar daddies',
+  },
+  {
+    level: 'Filthy',
+    badge: '🔥🔥🔥 Filthy (18+ After-Dark)',
+    scoreRange: '8.3 – 10.0 / 10',
+    tagline: 'Unfiltered F-bombs, VIP debauchery & wild secrets',
+    clueFlavor: 'Raw 18+ dialogue, party powder scandals & ruthless extortion',
+  },
+];
 
 interface WorkspaceSlotState {
   slotId: string;
@@ -648,6 +686,21 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
   const killerCount = blueprint.characters.filter((c) => c.plotRole === 'killer').length;
   const assistantCount = blueprint.characters.filter((c) => c.plotRole === 'assistant').length;
 
+  // Live 5-Factor Difficulty Recommender based on Plot, Characters, Timeline Beats, Core Clues & Red Herrings
+  const difficultyRec = recommendDifficultyFromPlotAndClues({
+    blueprint,
+    coreClues,
+    subplots,
+  });
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (blueprint.complexity !== difficultyRec.recommendedTier) {
+      updateBlueprint({ complexity: difficultyRec.recommendedTier });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [difficultyRec.recommendedTier, hydrated, activeSlotIndex]);
+
   return (
     <div className="space-y-8 pb-20">
       {/* Top Header & 3-Mystery Workspace Slot Switcher */}
@@ -930,19 +983,165 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
             )}
           </div>
 
-          {/* Core Setting, Spice Level, Complexity & Murder Truth */}
+          {/* Core Setting, Spice Level Selector, Auto-Recommended Difficulty & Murder Truth */}
           <div className="bg-white rounded-[28px] border border-slate-200 p-7 shadow-sm space-y-6">
             <div className="border-b border-slate-100 pb-4">
               <span className="text-[11px] font-black uppercase tracking-widest text-indigo-600">
-                Section 1A • Theme, Spice & Murder Solution
+                Section 1A • Select Your Spice Level & Let AI Recommend Difficulty
               </span>
               <h2 className="text-xl font-black text-slate-900">
-                Core Setting & The Murder Truth
+                Core Setting, Spice Level & The Murder Truth
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-              <div className="lg:col-span-2">
+            {/* 1. Prominent 4-Tier Spice Level Selector (Drives Clue & Subplot Generation) */}
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-800">
+                  1. Select Your Target Spice Level (All Clues & Red Herrings Are Tailored to This) *
+                </label>
+                <span className="text-xs font-bold text-brand-pink">
+                  Active Spice: {blueprint.spiceLevel}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {SPICE_TIER_CARDS.map((card) => {
+                  const isSelected = blueprint.spiceLevel === card.level;
+                  return (
+                    <button
+                      key={card.level}
+                      type="button"
+                      onClick={() => updateBlueprint({ spiceLevel: card.level })}
+                      className={`text-left p-4 rounded-2xl border-2 transition-all space-y-1.5 ${
+                        isSelected
+                          ? 'bg-slate-900 text-white border-brand-pink shadow-md ring-2 ring-brand-pink/30'
+                          : 'bg-slate-50/70 hover:bg-slate-100 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-black">{card.badge}</span>
+                        <span
+                          className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                            isSelected
+                              ? 'bg-brand-pink text-white'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {card.scoreRange}
+                        </span>
+                      </div>
+                      <div
+                        className={`text-xs font-bold ${
+                          isSelected ? 'text-white/90' : 'text-slate-700'
+                        }`}
+                      >
+                        {card.tagline}
+                      </div>
+                      <div
+                        className={`text-[11px] leading-snug ${
+                          isSelected ? 'text-white/65' : 'text-slate-500'
+                        }`}
+                      >
+                        {card.clueFlavor}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. Live AI Auto-Recommended Difficulty Engine (Based on Plot, Clues & Red Herrings) */}
+            <div className="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 p-5 space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-indigo-600 text-white">
+                      🎯 Auto-Recommended Difficulty (5-Factor Rubric)
+                    </span>
+                    <span className="text-xs font-bold text-slate-500">
+                      Updates live as you edit your plot, cast & ticked clues
+                    </span>
+                  </div>
+                  <h3 className="text-base font-black text-slate-900">
+                    {difficultyRec.headlineReason}
+                  </h3>
+                </div>
+
+                <div
+                  className={`px-4 py-2 rounded-2xl text-sm font-black uppercase tracking-wider shadow-sm ${
+                    difficultyRec.recommendedTier === 'hard'
+                      ? 'bg-rose-600 text-white'
+                      : difficultyRec.recommendedTier === 'medium'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-emerald-600 text-white'
+                  }`}
+                >
+                  Recommended: {difficultyRec.badgeText}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+                {difficultyRec.factors.map((f) => (
+                  <div
+                    key={f.id}
+                    className="p-3 rounded-xl bg-white border border-slate-200/90 space-y-1"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-black uppercase text-slate-500">
+                        {f.name}
+                      </span>
+                      <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                        {f.pointsLabel}
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-800 leading-snug">
+                      {f.detail}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs text-slate-600">
+                <span>💡 {difficultyRec.adjustmentTip}</span>
+                {assistantCount === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const firstInnocentIdx = blueprint.characters.findIndex(
+                        (c) => c.plotRole === 'innocent'
+                      );
+                      if (firstInnocentIdx !== -1) {
+                        updateCharacter(firstInnocentIdx, { plotRole: 'assistant' });
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-900 text-[11px] font-black uppercase tracking-wider"
+                  >
+                    + Add Secret Accomplice (Push to Hard)
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateCurrentSlot((prev) => ({
+                        ...prev,
+                        blueprint: {
+                          ...prev.blueprint,
+                          characters: prev.blueprint.characters.map((c) =>
+                            c.plotRole === 'assistant' ? { ...c, plotRole: 'innocent' } : c
+                          ),
+                        },
+                      }));
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-[11px] font-black uppercase tracking-wider"
+                  >
+                    Switch Accomplice to Innocent (Lone-Wolf Killer)
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
                   Mystery Title *
                 </label>
@@ -956,44 +1155,6 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
               </div>
 
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                  Spice Level (4-Tier Rubric) *
-                </label>
-                <select
-                  value={blueprint.spiceLevel}
-                  onChange={(e) =>
-                    updateBlueprint({ spiceLevel: e.target.value as ArchitectSpiceLevel })
-                  }
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-bold text-slate-900 bg-white focus:border-brand-pink focus:outline-none"
-                >
-                  <option value="Clean">✨ Clean (1.0–3.4 • SFW / 0 Affairs / 0 Swearing)</option>
-                  <option value="Mild">🌶️ Mild (3.5–5.5 • Romantic Affairs • PG-13 Clean)</option>
-                  <option value="Spicy">🌶️🌶️ Spicy (5.6–8.2 • Cussing, Catfights & Tapes)</option>
-                  <option value="Filthy">🔥🔥🔥 Filthy (8.3–10.0 • 18+ Unfiltered After-Dark)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                  Complexity (5-Factor Rubric) *
-                </label>
-                <select
-                  value={blueprint.complexity}
-                  onChange={(e) => {
-                    const nextComp = e.target.value as ArchitectComplexity;
-                    updateBlueprint({ complexity: nextComp });
-                  }}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-bold text-slate-900 bg-white focus:border-brand-pink focus:outline-none"
-                >
-                  <option value="easy">🟢 Easy (1 Lone Killer • ~9 Clues • 1 Red Herring)</option>
-                  <option value="medium">🟡 Medium (1 Lone Killer • ~14 Clues • 2 Red Herrings)</option>
-                  <option value="hard">🔴 Hard (Killer + 1 Accomplice • ~18 Clues • 3 Red Herrings)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="md:col-span-2">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
                   Theme & Era / Vibe *
                 </label>
@@ -1436,28 +1597,20 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
       {/* ===================================================================== */}
       {currentSlot.step === 2 && (
         <div className="space-y-6">
-          <div className="bg-white rounded-[28px] border border-slate-200 p-7 shadow-sm space-y-4">
+          <div className="bg-white rounded-[28px] border border-slate-200 p-7 shadow-sm space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <span className="text-[11px] font-black uppercase tracking-widest text-brand-pink">
-                  Step 2 of 5 • Core Murder Trail Clues
+                  Step 2 of 5 • Core Murder Trail Clues (Tailored to {blueprint.spiceLevel} Spice)
                 </span>
                 <h2 className="text-xl font-black text-slate-900">
                   Tick <span className="text-emerald-600">✓ Yes</span> or{' '}
                   <span className="text-rose-600">✕ No</span> on Core Murder Clues
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Target for <strong>{blueprint.complexity.toUpperCase()}</strong> difficulty:{' '}
-                  <strong>
-                    {blueprint.complexity === 'easy'
-                      ? '5–6'
-                      : blueprint.complexity === 'medium'
-                        ? '7–8'
-                        : '9–10'}{' '}
-                    approved Core Clues
-                  </strong>
-                  . You can edit any clue inline, add your own custom clue, or click{' '}
-                  <strong>&quot;Show Me More Clue Options&quot;</strong> to replace rejected clues!
+                  Clues are generated for your chosen <strong>{blueprint.spiceLevel}</strong> spice
+                  level. As you tick ✓ Yes or ✕ No, the AI updates its{' '}
+                  <strong>Recommended Difficulty ({difficultyRec.badgeText})</strong> automatically!
                 </p>
               </div>
 
@@ -1485,6 +1638,46 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                     ? '⏳ Generating More Options...'
                     : '✨ Show Me More Clue Options'}
                 </button>
+              </div>
+            </div>
+
+            {/* Live Spice Level Switcher + Auto-Recommended Difficulty Bar */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">
+                  Clue Spice Level:
+                </span>
+                {SPICE_TIER_CARDS.map((card) => (
+                  <button
+                    key={card.level}
+                    type="button"
+                    onClick={() => updateBlueprint({ spiceLevel: card.level })}
+                    className={`px-3 py-1 rounded-xl text-xs font-black transition ${
+                      blueprint.spiceLevel === card.level
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {card.badge}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xs text-slate-600 font-medium">
+                  {difficultyRec.headlineReason}
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
+                    difficultyRec.recommendedTier === 'hard'
+                      ? 'bg-rose-600 text-white'
+                      : difficultyRec.recommendedTier === 'medium'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-emerald-600 text-white'
+                  }`}
+                >
+                  🎯 Recommended: {difficultyRec.badgeText}
+                </span>
               </div>
             </div>
           </div>
@@ -1684,7 +1877,7 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
       {/* ===================================================================== */}
       {currentSlot.step === 3 && (
         <div className="space-y-6">
-          <div className="bg-white rounded-[28px] border border-slate-200 p-7 shadow-sm space-y-4">
+          <div className="bg-white rounded-[28px] border border-slate-200 p-7 shadow-sm space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <span className="text-[11px] font-black uppercase tracking-widest text-brand-pink">
@@ -1716,6 +1909,46 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                     ? '⏳ Generating More Subplots...'
                     : '✨ Show Me More Red-Herring Options'}
                 </button>
+              </div>
+            </div>
+
+            {/* Live Spice Level + Auto-Recommended Difficulty Banner */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">
+                  Subplot Spice Level:
+                </span>
+                {SPICE_TIER_CARDS.map((card) => (
+                  <button
+                    key={card.level}
+                    type="button"
+                    onClick={() => updateBlueprint({ spiceLevel: card.level })}
+                    className={`px-3 py-1 rounded-xl text-xs font-black transition ${
+                      blueprint.spiceLevel === card.level
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {card.badge}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xs text-slate-600 font-medium">
+                  {difficultyRec.headlineReason}
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
+                    difficultyRec.recommendedTier === 'hard'
+                      ? 'bg-rose-600 text-white'
+                      : difficultyRec.recommendedTier === 'medium'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-emerald-600 text-white'
+                  }`}
+                >
+                  🎯 Recommended: {difficultyRec.badgeText}
+                </span>
               </div>
             </div>
           </div>

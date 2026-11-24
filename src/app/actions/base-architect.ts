@@ -9,6 +9,7 @@ import { createClient } from '@/utils/supabase/server';
 import { requireAdmin } from '@/utils/admin-auth';
 import { logAiUsage } from '@/utils/ai-logger';
 import { ClueFormat } from '@/utils/clue-format';
+import { recommendDifficultyFromPlotAndClues } from '@/utils/architect-difficulty-recommender';
 
 export type ArchitectSpiceLevel = 'Clean' | 'Mild' | 'Spicy' | 'Filthy';
 export type ArchitectComplexity = 'easy' | 'medium' | 'hard';
@@ -363,6 +364,11 @@ Return strict JSON matching this exact structure:
         : params.currentBlueprint.beats,
     };
 
+    // Preserve user's explicitly chosen Spice Level and auto-recommend Complexity from the parsed plot!
+    merged.spiceLevel = params.currentBlueprint.spiceLevel;
+    const autoRec = recommendDifficultyFromPlotAndClues({ blueprint: merged });
+    merged.complexity = autoRec.recommendedTier;
+
     return { success: true, blueprint: merged };
   } catch (err: any) {
     return {
@@ -383,6 +389,7 @@ export async function suggestCoreCluesForBlueprintAction(params: {
 }): Promise<{
   success: boolean;
   clues?: SuggestedClueCandidate[];
+  recommendedComplexity?: ArchitectComplexity;
   error?: string;
 }> {
   await requireAdmin();
@@ -392,7 +399,12 @@ export async function suggestCoreCluesForBlueprintAction(params: {
   }
 
   const { blueprint, existingClues = [] } = params;
-  const compInfo = getComplexityRubricDirective(blueprint.complexity);
+  const autoRec = recommendDifficultyFromPlotAndClues({
+    blueprint,
+    coreClues: existingClues,
+  });
+  const effectiveComplexity = autoRec.recommendedTier;
+  const compInfo = getComplexityRubricDirective(effectiveComplexity);
   const spiceDirective = getSpiceRubricDirective(blueprint.spiceLevel);
   const tokenDirective = getGenderFlexTokenDirective(blueprint.characters);
 
@@ -536,7 +548,13 @@ export async function suggestRedHerringsAndBackstoriesAction(params: {
   }
 
   const { blueprint, approvedCoreClues, existingSubplots = [] } = params;
-  const compInfo = getComplexityRubricDirective(blueprint.complexity);
+  const autoRec = recommendDifficultyFromPlotAndClues({
+    blueprint,
+    coreClues: approvedCoreClues,
+    subplots: existingSubplots,
+  });
+  const effectiveComplexity = autoRec.recommendedTier;
+  const compInfo = getComplexityRubricDirective(effectiveComplexity);
   const spiceDirective = getSpiceRubricDirective(blueprint.spiceLevel);
   const tokenDirective = getGenderFlexTokenDirective(blueprint.characters);
 
@@ -1094,13 +1112,20 @@ Return strict JSON:
     // Sort clues by roundNumber (1 -> 2 -> 3)
     const sortedClues = [...allApprovedClues].sort((a, b) => a.roundNumber - b.roundNumber);
 
+    // Automatically calculate the recommended Difficulty (Easy / Medium / Hard) from the plot, characters, core clues & red herrings
+    const autoRec = recommendDifficultyFromPlotAndClues({
+      blueprint,
+      coreClues: approvedCoreClues,
+      subplots: approvedSubplots,
+    });
+
     const partialBase: Omit<AssembledFullMysteryBase, 'proofreadReport'> = {
       title: blueprint.title,
       theme: blueprint.theme,
       description: String(parsed.description || blueprint.settingDescription).trim(),
       insideJokes: String(parsed.insideJokes || blueprint.insideJokesOrProps || '').trim(),
       spiceLevel: blueprint.spiceLevel,
-      complexity: blueprint.complexity,
+      complexity: autoRec.recommendedTier,
       characters: assembledChars,
       relationships: completeRelationships,
       beats: blueprint.beats,
