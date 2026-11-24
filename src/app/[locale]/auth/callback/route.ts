@@ -43,6 +43,26 @@ export async function GET(
     return NextResponse.redirect(`${origin}/${locale}/login`)
   }
 
+  // If this OAuth login created a brand-new account within the last 90 seconds, notify Admin
+  try {
+    const createdMs = user.created_at ? new Date(user.created_at).getTime() : 0
+    if (createdMs > 0 && Date.now() - createdMs < 90_000) {
+      const { sendAdminNewAccountNotificationEmail } = await import('@/lib/branded-email-template')
+      await sendAdminNewAccountNotificationEmail({
+        userId: user.id,
+        email: user.email || '',
+        fullName:
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split('@')[0] ||
+          null,
+        source: `OAuth Sign-Up (${user.app_metadata?.provider || 'Google'})`,
+      })
+    }
+  } catch (err) {
+    console.error('Failed to send OAuth new account notification:', err)
+  }
+
   if (next && next.startsWith('/') && !next.startsWith('//')) {
     return NextResponse.redirect(`${origin}${next}`)
   }

@@ -1471,6 +1471,74 @@ export async function submitGuestMysteryReviewAction(payload: {
     // Non-fatal if public.reviews is not migrated
   }
 
+  // 3. Send instant Admin Email Notification to Hello@backpocketgames.com for every Playroom review
+  try {
+    if (process.env.RESEND_API_KEY) {
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const escapeHtml = (s: string) =>
+        String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+
+      const safeName = escapeHtml(cleanName);
+      const safeRole = escapeHtml(payload.characterRole || 'Sleuth');
+      const safeTitle = escapeHtml(payload.mysteryTitle || 'Murder Mystery');
+      const safeComment = escapeHtml(reviewEntry.comment).replace(/\n/g, '<br/>');
+
+      let emailAttachments: Array<{ filename: string; content: Buffer }> | undefined;
+      if (rawPhoto && rawPhoto.startsWith('data:image/')) {
+        const match = rawPhoto.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/);
+        if (match) {
+          const ext = match[1].includes('png') ? 'png' : 'jpg';
+          emailAttachments = [
+            {
+              filename: `party-photo-${Date.now()}.${ext}`,
+              content: Buffer.from(match[2], 'base64'),
+            },
+          ];
+        }
+      }
+
+      const photoHtml =
+        resolvedPhotoUrl && resolvedPhotoUrl.startsWith('http')
+          ? `<div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;"><strong style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Attached Party Photo</strong><br/><a href="${escapeHtml(resolvedPhotoUrl)}" style="color:#F02882;font-size:13px;font-weight:bold;">View Party Photo ↗</a></div>`
+          : emailAttachments
+          ? `<div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;"><strong style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Attached Party Photo</strong><br/><span style="color:#333;font-size:13px;">Included as an attachment on this email.</span></div>`
+          : '';
+
+      await resend.emails.send({
+        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+        to: 'Hello@backpocketgames.com',
+        subject: `⭐ New ${rating}/5 Playroom Review from ${cleanName} (${payload.mysteryTitle})`,
+        attachments: emailAttachments,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 10px; border-top: 4px solid #F02882;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #1a1a1a; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Back Pocket Mysteries</h2>
+              <p style="color: #F02882; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">New End-of-Game Playroom Review</p>
+            </div>
+            <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Player &amp; Role</strong><br/><span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${safeName}</span> <span style="color:#666;font-size:13px;">(Played ${safeRole} in ${safeTitle})</span></p>
+              <p style="margin: 0 0 15px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Rating</strong><br/><span style="color: #F02882; font-size: 16px; font-weight: bold;">${'★'.repeat(rating)} (${rating}/5 Stars)</span></p>
+              <div style="background-color: #f5f5f5; padding: 16px; border-radius: 6px; border-left: 3px solid #F02882;">
+                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6; font-style: italic;">"${safeComment}"</p>
+              </div>
+              ${photoHtml}
+            </div>
+            <div style="text-align: center; margin-top: 18px;">
+              <a href="https://backpocketmysteries.com/en/admin/reviews" style="display:inline-block;background:#F02882;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:999px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;">Moderate &amp; Publish in Admin →</a>
+            </div>
+          </div>
+        `,
+      });
+    }
+  } catch (err) {
+    console.error('Failed to send Playroom review email notification:', err);
+  }
+
   revalidatePath(`/play/${payload.mysteryId}`);
   revalidatePath('/en/admin/reviews');
   return { success: true, review: reviewEntry, reviews: session.reviews };
