@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { createClient as createServerSupabaseClient } from "@/utils/supabase/server";
 import bundledStoreJson from "../../data/.marketing-suite-store.json";
+import bundledLeadsJson from "../../data/.leads-store.json";
 
 export interface MarketingStoreData {
   blog_posts: any[];
@@ -19,47 +20,33 @@ const LEADS_FILENAME = ".leads-store.json";
 const STORAGE_BUCKET = "character-images";
 const STORAGE_PATH = "system/marketing-suite-store.json";
 
-function getWriteStorePath(): string {
-  const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", STORE_FILENAME);
-  try {
-    const dir = path.dirname(cwdPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.accessSync(dir, fs.constants.W_OK);
-    return cwdPath;
-  } catch {
-    return path.join("/tmp", STORE_FILENAME);
+const globalForMarketing = globalThis as unknown as {
+  __marketingStoreCache?: MarketingStoreData;
+};
+
+function readBundledLeadsList(): any[] {
+  const leadsObj = (bundledLeadsJson as any)?.leads;
+  if (leadsObj && typeof leadsObj === "object") {
+    return Object.values(leadsObj);
   }
-}
-
-function getReadStorePaths(): string[] {
-  const tmpPath = path.join("/tmp", STORE_FILENAME);
-  const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", STORE_FILENAME);
-  return [tmpPath, cwdPath];
-}
-
-function getReadLeadsPaths(): string[] {
-  const tmpPath = path.join("/tmp", LEADS_FILENAME);
-  const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", LEADS_FILENAME);
-  return [tmpPath, cwdPath];
+  return [];
 }
 
 function readLeadsList(): any[] {
-  for (const lp of getReadLeadsPaths()) {
+  if (process.env.NODE_ENV === "development") {
     try {
-      if (fs.existsSync(lp)) {
-        const parsed = JSON.parse(fs.readFileSync(lp, "utf8"));
+      const cwdLeads = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", LEADS_FILENAME);
+      if (fs.existsSync(cwdLeads)) {
+        const parsed = JSON.parse(fs.readFileSync(cwdLeads, "utf8"));
         if (parsed && parsed.leads && typeof parsed.leads === "object") {
-          const vals = Object.values(parsed.leads);
-          if (vals.length > 0) return vals;
+          return Object.values(parsed.leads);
         }
       }
     } catch {
       // ignore
     }
   }
-  return [];
+  return readBundledLeadsList();
 }
 
 function normalizeStore(parsed: any, leadsList: any[] = []): MarketingStoreData {
@@ -95,7 +82,6 @@ function mergeStores(base: MarketingStoreData, override: MarketingStoreData): Ma
   const mergedSocialPosts = mergeById(base.social_posts, override.social_posts, "id");
   const mergedPostIds = new Set(mergedSocialPosts.map((p) => String(p.id)));
 
-  // For captions, if a post exists in override.social_posts and override has captions for it, prefer override's captions for that post
   const overridePostIdsWithCaptions = new Set(
     override.social_post_captions.map((c) => String(c.post_id))
   );
@@ -123,20 +109,16 @@ export function readLocalMarketingStore(): MarketingStoreData {
   const leadsList = readLeadsList();
   let store = normalizeStore(bundledStoreJson as any, leadsList);
 
-  // Merge disk files (cwd first, then /tmp override if present)
-  const paths = getReadStorePaths().reverse();
-  for (const fp of paths) {
+  if (globalForMarketing.__marketingStoreCache) {
+    store = mergeStores(store, globalForMarketing.__marketingStoreCache);
+  }
+
+  if (process.env.NODE_ENV === "development") {
     try {
-      if (fs.existsSync(fp)) {
-        const raw = fs.readFileSync(fp, "utf8");
-        const parsed = normalizeStore(JSON.parse(raw), leadsList);
-        if (
-          parsed.blog_posts.length > 0 ||
-          parsed.social_posts.length > 0 ||
-          parsed.edm_campaigns.length > 0
-        ) {
-          store = mergeStores(store, parsed);
-        }
+      const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", STORE_FILENAME);
+      if (fs.existsSync(cwdPath)) {
+        const parsed = normalizeStore(JSON.parse(fs.readFileSync(cwdPath, "utf8")), leadsList);
+        store = mergeStores(store, parsed);
       }
     } catch {
       // ignore
@@ -147,11 +129,14 @@ export function readLocalMarketingStore(): MarketingStoreData {
 }
 
 export function writeLocalMarketingStore(data: MarketingStoreData): void {
-  const filePath = getWriteStorePath();
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
-  } catch {
-    // ignore in read-only env
+  globalForMarketing.__marketingStoreCache = data;
+  if (process.env.NODE_ENV === "development") {
+    try {
+      const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", STORE_FILENAME);
+      fs.writeFileSync(cwdPath, JSON.stringify(data, null, 2), "utf8");
+    } catch {
+      // ignore
+    }
   }
 }
 
