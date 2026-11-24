@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
-import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
@@ -31,9 +30,6 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <main className="flex-grow ml-64 p-8">
-        <Suspense fallback={<div className="h-16" />}>
-          <AdminHeader />
-        </Suspense>
         <Suspense fallback={<div className="py-12" />}>
           {children}
         </Suspense>
