@@ -37,10 +37,22 @@ export default async function AdminUsers({
 
 async function CustomerCount() {
   const customers = await getCustomers();
+  const newSignupsCount = customers.filter((c: any) => c.isNewSignup).length;
   return (
-    <div className="bg-white px-6 py-3 rounded-2xl border border-gray-100 shadow-sm">
-      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Customers</p>
-      <p className="text-2xl font-black text-brand-dark">{customers.length}</p>
+    <div className="flex items-center gap-3">
+      {newSignupsCount > 0 && (
+        <div className="bg-emerald-50 px-5 py-3 rounded-2xl border border-emerald-200 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            New Sign-Ups (7d)
+          </p>
+          <p className="text-2xl font-black text-emerald-700">+{newSignupsCount}</p>
+        </div>
+      )}
+      <div className="bg-white px-6 py-3 rounded-2xl border border-gray-100 shadow-sm">
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Customers</p>
+        <p className="text-2xl font-black text-brand-dark">{customers.length}</p>
+      </div>
     </div>
   );
 }
@@ -93,7 +105,7 @@ async function CustomerList({
 
               return (
                 <UserRowClient key={user.id} user={user} locale={locale}>
-                  <td className="px-8 py-6">
+                  <td className={`px-8 py-6 ${user.isNewSignup ? 'border-l-4 border-l-emerald-500 bg-emerald-50/20' : ''}`}>
                     <div className="flex items-center gap-4">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -118,6 +130,11 @@ async function CustomerList({
                               🛡️ Admin
                             </span>
                           ) : null}
+                          {user.isNewSignup && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest shadow-sm">
+                              ✨ {user.newSignupBadge || 'New Sign-Up'}
+                            </span>
+                          )}
                           {userCrm?.tags?.slice(0, 2).map((t: string) => (
                             <span key={t} className="px-2 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink text-[9px] font-black uppercase tracking-widest">
                               {t}
@@ -139,10 +156,16 @@ async function CustomerList({
                   <td className="px-8 py-6">
                     <p className="text-sm text-gray-400 font-bold">
                       {new Date(user.created_at).toLocaleDateString('en-GB', {
+                        day: 'numeric',
                         month: 'short',
                         year: 'numeric'
                       })}
                     </p>
+                    {user.isNewSignup && user.signupAgeLabel && (
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">
+                        ✨ Joined {user.signupAgeLabel}
+                      </p>
+                    )}
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-2">

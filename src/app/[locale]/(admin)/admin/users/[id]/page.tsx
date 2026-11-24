@@ -155,6 +155,11 @@ async function CustomerProfileContent({
                   🛡️ Admin
                 </span>
               ) : null}
+              {profile.isNewSignup && (
+                <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
+                  ✨ {profile.newSignupBadge || 'New Customer Sign-Up'}
+                </span>
+              )}
               {crm.accountSuspended && (
                 <span className="px-3 py-1 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest">
                   Suspended
@@ -169,6 +174,12 @@ async function CustomerProfileContent({
 
         {/* Status Pills */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {profile.isNewSignup && (
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              ✨ {profile.newSignupBadge || 'New Customer Sign-Up'}{profile.signupAgeLabel ? ` (${profile.signupAgeLabel})` : ''}
+            </span>
+          )}
           {profile.isCurrentUser && (
             <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-brand-pink/10 text-brand-pink border border-brand-pink/25">
               👤 Your Account
@@ -213,8 +224,8 @@ async function CustomerProfileContent({
             <h3 className="text-xl font-black uppercase tracking-tight mb-1">{profile.full_name || 'Unknown'}</h3>
             <p className="text-brand-pink text-[10px] font-black uppercase tracking-widest mb-2.5">{profile.email}</p>
 
-            {/* Account Identity & Admin Role Badges */}
-            {(profile.isCurrentUser || profile.isSuperAdmin || profile.isAdmin) && (
+            {/* Account Identity, Admin Role & New Sign-Up Badges */}
+            {(profile.isCurrentUser || profile.isSuperAdmin || profile.isAdmin || profile.isNewSignup) && (
               <div className="flex flex-wrap justify-center gap-1.5 mb-2.5">
                 {profile.isCurrentUser && (
                   <span className="px-2.5 py-1 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest shadow-sm">
@@ -230,6 +241,11 @@ async function CustomerProfileContent({
                     🛡️ Admin
                   </span>
                 ) : null}
+                {profile.isNewSignup && (
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[9px] font-black uppercase tracking-widest">
+                    ✨ {profile.newSignupBadge || 'New Sign-Up'}
+                  </span>
+                )}
               </div>
             )}
 

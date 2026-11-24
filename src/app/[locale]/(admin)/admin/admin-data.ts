@@ -147,6 +147,56 @@ export async function getLeads() {
   return getAllMarketingLeadsAction();
 }
 
+function computeNewSignupMeta(createdAt?: string | null) {
+  if (!createdAt) {
+    return {
+      isNewSignup: false,
+      isNewToday: false,
+      newSignupBadge: null as string | null,
+      signupAgeLabel: null as string | null,
+    };
+  }
+  const createdMs = new Date(createdAt).getTime();
+  if (Number.isNaN(createdMs)) {
+    return {
+      isNewSignup: false,
+      isNewToday: false,
+      newSignupBadge: null as string | null,
+      signupAgeLabel: null as string | null,
+    };
+  }
+  const ageHours = Math.max(0, (Date.now() - createdMs) / (1000 * 60 * 60));
+  const isNewToday = ageHours <= 24;
+  const isNewSignup = ageHours <= 24 * 7; // Last 7 days
+
+  if (!isNewSignup) {
+    return {
+      isNewSignup: false,
+      isNewToday: false,
+      newSignupBadge: null as string | null,
+      signupAgeLabel: null as string | null,
+    };
+  }
+
+  let signupAgeLabel = 'This week';
+  if (ageHours < 1) {
+    signupAgeLabel = 'Just now';
+  } else if (ageHours <= 24) {
+    signupAgeLabel = `${Math.max(1, Math.floor(ageHours))}h ago`;
+  } else if (ageHours <= 48) {
+    signupAgeLabel = 'Yesterday';
+  } else {
+    signupAgeLabel = `${Math.floor(ageHours / 24)}d ago`;
+  }
+
+  return {
+    isNewSignup: true,
+    isNewToday,
+    newSignupBadge: isNewToday ? 'New Sign-Up Today' : 'New Customer Sign-Up',
+    signupAgeLabel,
+  };
+}
+
 export const getCustomers = cache(async () => {
   const { supabase, user } = await requireAdmin();
 
@@ -190,6 +240,7 @@ export const getCustomers = cache(async () => {
       (currentUserId && p.id === currentUserId) ||
         (currentUserEmail && emailLower && emailLower === currentUserEmail)
     );
+    const signupMeta = computeNewSignupMeta(p.created_at);
 
     return {
       ...p,
@@ -197,6 +248,7 @@ export const getCustomers = cache(async () => {
       isSuperAdmin,
       isAdmin,
       adminRoleLabel: isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : null,
+      ...signupMeta,
     };
   });
 });
@@ -617,12 +669,15 @@ export async function getCustomerProfile(userId: string) {
       (currentUserEmail && emailLower && emailLower === currentUserEmail)
   );
 
+  const signupMeta = computeNewSignupMeta((data as any).created_at);
+
   return {
     ...(data as any),
     isCurrentUser,
     isSuperAdmin,
     isAdmin,
     adminRoleLabel: isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : null,
+    ...signupMeta,
   };
 }
 
