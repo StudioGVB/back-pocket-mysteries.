@@ -198,3 +198,51 @@ export async function bulkUpdateReviews(ids: string[], action: 'publish' | 'unpu
 
   return { success: true };
 }
+
+import fs from 'fs';
+import path from 'path';
+import { revalidatePath } from 'next/cache';
+
+const REVIEW_META_PATH = path.join(process.cwd(), 'data', 'review-metadata.json');
+
+export interface ReviewExtraMeta {
+  mysteryTitle?: string;
+  featuredOnHomepage?: boolean;
+  adminReply?: string;
+  updatedAt?: string;
+}
+
+export async function getReviewMetadataMap(): Promise<Record<string, ReviewExtraMeta>> {
+  try {
+    if (fs.existsSync(REVIEW_META_PATH)) {
+      const parsed = JSON.parse(fs.readFileSync(REVIEW_META_PATH, 'utf8'));
+      if (parsed && typeof parsed === 'object') return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+export async function assignReviewMysteryBaseAction(
+  reviewId: string,
+  mysteryTitle: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    await requireAdmin();
+    const map = await getReviewMetadataMap();
+    map[reviewId] = {
+      ...(map[reviewId] || {}),
+      mysteryTitle: mysteryTitle.trim() || undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    const dir = path.dirname(REVIEW_META_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(REVIEW_META_PATH, JSON.stringify(map, null, 2), 'utf8');
+    revalidatePath('/en/admin/reviews');
+    return { success: true };
+  } catch (err: any) {
+    return { error: err?.message || 'Failed to update review mystery base' };
+  }
+}
+
