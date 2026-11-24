@@ -147,11 +147,26 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     mystery.image_url = canonicalChristmasImageUrl;
   }
 
+  const SUPERSEDED_CHRISTMAS_PORTRAIT_HASHES = [
+    '28ec1e5263c3',
+    '20058bab3911',
+    'b06f3ace7cdf',
+    '63aa0e7355d6',
+    '1dcd5acb69d9',
+  ];
+
   // Sync characters + motives
   const canonicalChars = CHRISTMAS_NIGHTMARE_CHARACTERS.map((spec) => {
     const id = charIdMap[spec.key];
     const existing = existingChars.find((c: any) => c?.id === id) || {};
     const existingProfile = existing.profile_data || {};
+
+    const hasSupersededPortrait = SUPERSEDED_CHRISTMAS_PORTRAIT_HASHES.some(
+      (h) =>
+        String(existingProfile.standard_character_photo_url || '').includes(h) ||
+        String(existingProfile.outfit_image_url || '').includes(h) ||
+        String(existingProfile.avatar_url || '').includes(h)
+    );
 
     // Preserve any linked guest info while replacing bio/act/outfit with canonical Christmas Nightmare profile
     const mergedProfile: Record<string, any> = {
@@ -163,6 +178,13 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       outfit_reference_images: spec.profile_data.outfit_reference_images,
       act_summary: spec.profile_data.act_summary,
       act_bullets: spec.profile_data.act_bullets,
+      ...(hasSupersededPortrait
+        ? {
+            standard_character_photo_url: spec.profile_data.standard_character_photo_url,
+            outfit_image_url: spec.profile_data.outfit_image_url,
+            avatar_url: spec.profile_data.avatar_url,
+          }
+        : {}),
     };
     if (spec.gender !== 'adaptable') {
       delete mergedProfile.presentation_male;
@@ -187,6 +209,7 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
 
     const needsCharProfileSync =
       !hasCanonicalNames ||
+      hasSupersededPortrait ||
       existingProfile.outfit_advice !== spec.profile_data.outfit_advice ||
       JSON.stringify(existingProfile.outfit_reference_images) !== JSON.stringify(spec.profile_data.outfit_reference_images) ||
       JSON.stringify(existingProfile.act_bullets) !== JSON.stringify(spec.profile_data.act_bullets);
