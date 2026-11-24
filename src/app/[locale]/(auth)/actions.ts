@@ -305,7 +305,22 @@ export async function signup(formData: FormData) {
   revalidatePath('/', 'layout')
 
   // If Supabase auto-signed them in (e.g. email confirmation disabled or immediate session), redirect straight in
-  if (signUpData?.session) {
+  let hasSession = Boolean(signUpData?.session)
+  if (!hasSession) {
+    try {
+      const { data: signInData } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (signInData?.session) {
+        hasSession = true
+      }
+    } catch {
+      // ignore if email confirmation is required
+    }
+  }
+
+  if (hasSession) {
     if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
       redirect(nextPath)
     }
@@ -313,7 +328,7 @@ export async function signup(formData: FormData) {
   }
 
   const params = new URLSearchParams({
-    message: 'Welcome to Back Pocket Mysteries! Check your email to confirm your account, our new mysteries are coming soon, so check back shortly!',
+    message: 'Welcome to Back Pocket Mysteries! Check your email to confirm your account, then sign in below.',
     email,
     step: 'login',
   })
