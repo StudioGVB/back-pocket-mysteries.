@@ -706,16 +706,18 @@ export async function ensureStandardCharacterPhoto(
     }
   }
 
-  const mysteryTheme = mystery?.theme
-    ? `${mystery.theme} (${mystery?.title || 'Murder Mystery'})`
-    : mystery?.title || 'a classic noir murder mystery';
+  const rawThemeLabel = (mystery?.theme || mystery?.title || 'upscale evening dinner party')
+    .replace(/\b(nightmare|murder|death|dead|kill(?:ing|er)?|corpse|slaughter|massacre|bloodbath)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const mysteryTheme = `${rawThemeLabel || 'upscale evening dinner party'} setting`;
 
   const bioSnippet = sanitizePromptForImageSafety(profile.act_summary || profile.bio || '');
   const upperBodyOutfit = getCharacterOutfitDescription(char, true);
   const safeOutfit = sanitizePromptForImageSafety(upperBodyOutfit);
   const unifiedBackdrop = getCanonicalMysteryPortraitBackdrop(mystery);
 
-  let standardPortraitPrompt = sanitizePromptForImageSafety(`Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (strict WAIST-UP medium studio portrait) that will serve as the master visual identity and costume reference for this character across all crime scene photos.
+  let standardPortraitPrompt = sanitizePromptForImageSafety(`Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (strict WAIST-UP medium studio portrait) that will serve as the master visual identity and costume reference for this character across all scene photos.
 
 CHARACTER ROLE: "${roleTitle}" (played by ${guestName}) in ${mysteryTheme}.
 ${bioSnippet ? `CHARACTER VIBE / PERSONA: ${bioSnippet}` : ''}
@@ -729,7 +731,7 @@ LOCKED CANONICAL SIGNATURE COSTUME (MUST WEAR THIS EXACT OUTFIT & COLOR):
 - ${safeOutfit}
 
 MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARACTER CARDS):
-1. STRICT WAIST-UP MEDIUM PORTRAIT CROP: Frame the character from the WAIST / HIP BELT-LINE UP to ~10% headroom above the top of their head. Their face must occupy ~25% of the vertical frame height, centered horizontally, showing their full upper-body torso, shoulders, holiday attire, and waist.
+1. STRICT WAIST-UP MEDIUM PORTRAIT CROP: Frame the character from the WAIST / HIP BELT-LINE UP to ~10% headroom above the top of their head. Their face must occupy ~25% of the vertical frame height, centered horizontally, showing their full upper-body torso, shoulders, attire, and waist.
 2. FORBIDDEN CROPS (HARD RULE): Absolutely NO full-body shots, NO legs, NO knees, NO feet, NO shoes, and NO studio floor visible. Also NO tight face-only close-ups (must clearly show upper-body costume down to the waist).
 3. ${unifiedBackdrop}
 4. Shot on 85mm prime lens at f/2.8, cinematic warm key lighting with subtle rim light, photorealistic natural skin texture, 8k resolution.
@@ -741,73 +743,142 @@ MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARAC
 
   console.log(`[STAGE 1: STANDARD CHAR PHOTO] Generating canonical reference photo for ${guestName} (${roleTitle})...`);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
-  let currentPortraitPrompt = standardPortraitPrompt;
 
-  let base64Image = '';
-  let usageMetadata: any = null;
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  const callGeminiPortrait = async (portraitPromptToRun: string) => {
+    let outB64 = '';
+    let outUsage: any = null;
+    let currentPortraitPrompt = portraitPromptToRun;
+
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        const payload = {
+          contents: [
+            {
+              parts: [
+                ...referenceParts,
+                { text: currentPortraitPrompt },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseModalities: ['IMAGE'],
+          },
+        };
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.status === 429 || res.status === 403 || res.status >= 500) {
+          const waitMs = 4500 * attempt;
+          console.warn(
+            `[STAGE 1: STANDARD CHAR PHOTO] Gemini HTTP ${res.status} on attempt ${attempt}/4 for ${guestName}. Waiting ${waitMs}ms before retry...`
+          );
+          if (attempt < 4) {
+            await new Promise(r => setTimeout(r, waitMs));
+            continue;
+          }
+        }
+
+        if (res.ok) {
+          const data = await res.json();
+          outUsage = data.usageMetadata || null;
+          const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+          outB64 =
+            imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
+          if (outB64) {
+            break;
+          }
+          const finishReason = data.candidates?.[0]?.finishReason || '';
+          console.warn(
+            `[STAGE 1: STANDARD CHAR PHOTO] Empty image payload (finishReason=${finishReason}) on attempt ${attempt}/4 for ${guestName}. Retrying with ultra-safe portrait prompt...`
+          );
+          currentPortraitPrompt = currentPortraitPrompt.replace(/CHARACTER VIBE \/ PERSONA:[^\n]+\n?/i, '');
+        } else {
+          console.error(
+            `[STAGE 1: STANDARD CHAR PHOTO] Gemini error (${res.status}) on attempt ${attempt}/4:`,
+            await res.text()
+          );
+        }
+      } catch (fetchErr) {
+        console.warn(
+          `[STAGE 1: STANDARD CHAR PHOTO] Network error on attempt ${attempt}/4 for ${guestName}:`,
+          fetchErr
+        );
+      }
+
+      if (attempt < 4) {
+        await new Promise(r => setTimeout(r, 4000 * attempt));
+      }
+    }
+
+    return { outB64, outUsage };
+  };
+
+  const initialPortrait = await callGeminiPortrait(standardPortraitPrompt);
+  let base64Image = initialPortrait.outB64;
+  let usageMetadata: any = initialPortrait.outUsage;
+
+  // INLINE STAGE 1 PORTRAIT VISION CRITIC GUARDRAIL:
+  // Because every Stage 2 clue scene copies this master Reference Portrait, verify its crop, hair/beard/glasses,
+  // outfit color, and dark backdrop before persisting it.
+  if (base64Image && !qaCorrectionDirective) {
     try {
-      const payload = {
+      const geminiFlash = new GoogleGenerativeAI(apiKey).getGenerativeModel({
+        model: 'gemini-2.5-flash',
+      });
+      const portraitCriticPrompt = `You are a strict Master Portrait QA Critic for Back Pocket Mysteries.
+Inspect the attached portrait for ${guestName} (${roleTitle}).
+Expected Physical Traits: ${physicalDesc}
+Expected Signature Costume: ${safeOutfit}
+
+Check these 4 hard rules:
+1. Waist-Up Framing: Is this a single-person WAIST-UP medium portrait (NO legs, knees, feet, or shoes visible, and not an extreme tight face-only crop)?
+2. Hair, Beard & Glasses Match: Does the subject match the expected gender, hair color/style, facial hair (beard vs. strictly clean-shaven), and glasses (wearing glasses vs. no glasses)?
+3. Signature Costume Match: Does the upper-body outfit color and style match "${safeOutfit}"?
+4. Dark Evening Backdrop: Is the background dark/moody (NOT a plain bright white studio background)?
+
+Respond with valid JSON ONLY:
+{
+  "passed": <true if all 4 rules pass, else false>,
+  "correctionDirective": "<If passed is false, write a 1-sentence specific instruction fixing the exact defect; if passed is true, empty string>"
+}`;
+      const cRes = await geminiFlash.generateContent({
         contents: [
           {
+            role: 'user',
             parts: [
-              ...referenceParts,
-              { text: currentPortraitPrompt },
+              { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
+              { text: portraitCriticPrompt },
             ],
           },
         ],
         generationConfig: {
-          responseModalities: ['IMAGE'],
+          responseMimeType: 'application/json',
+          maxOutputTokens: 256,
         },
-      };
-
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
       });
-
-      if (res.status === 429 || res.status === 403 || res.status >= 500) {
-        const waitMs = 4500 * attempt;
+      const rawJson = cRes.response
+        .text()
+        .trim()
+        .replace(/^```json\s*/i, '')
+        .replace(/\s*```$/i, '');
+      const parsed = JSON.parse(rawJson);
+      if (parsed && parsed.passed === false && parsed.correctionDirective) {
         console.warn(
-          `[STAGE 1: STANDARD CHAR PHOTO] Gemini HTTP ${res.status} on attempt ${attempt}/4 for ${guestName}. Waiting ${waitMs}ms before retry...`
+          `[STAGE 1: INLINE PORTRAIT CRITIC] Retrying portrait for ${guestName} (${roleTitle}) with directive: "${parsed.correctionDirective}"`
         );
-        if (attempt < 4) {
-          await new Promise(r => setTimeout(r, waitMs));
-          continue;
+        const retryPrompt = `${standardPortraitPrompt}\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${sanitizePromptForImageSafety(String(parsed.correctionDirective))}`;
+        const retryPortrait = await callGeminiPortrait(retryPrompt);
+        if (retryPortrait.outB64) {
+          base64Image = retryPortrait.outB64;
+          usageMetadata = retryPortrait.outUsage || usageMetadata;
         }
       }
-
-      if (res.ok) {
-        const data = await res.json();
-        usageMetadata = data.usageMetadata || null;
-        const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-        base64Image =
-          imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
-        if (base64Image) {
-          break;
-        }
-        const finishReason = data.candidates?.[0]?.finishReason || '';
-        console.warn(
-          `[STAGE 1: STANDARD CHAR PHOTO] Empty image payload (finishReason=${finishReason}) on attempt ${attempt}/4 for ${guestName}. Retrying with ultra-safe portrait prompt...`
-        );
-        // Strip bio/persona snippet if safety filter triggered on a spicy/filthy character bio
-        currentPortraitPrompt = currentPortraitPrompt.replace(/CHARACTER VIBE \/ PERSONA:[^\n]+\n?/i, '');
-      } else {
-        console.error(
-          `[STAGE 1: STANDARD CHAR PHOTO] Gemini error (${res.status}) on attempt ${attempt}/4:`,
-          await res.text()
-        );
-      }
-    } catch (fetchErr) {
-      console.warn(
-        `[STAGE 1: STANDARD CHAR PHOTO] Network error on attempt ${attempt}/4 for ${guestName}:`,
-        fetchErr
-      );
-    }
-
-    if (attempt < 4) {
-      await new Promise(r => setTimeout(r, 4000 * attempt));
+    } catch (criticErr) {
+      console.warn(`[STAGE 1: INLINE PORTRAIT CRITIC] Non-blocking critic check skipped:`, criticErr);
     }
   }
 
