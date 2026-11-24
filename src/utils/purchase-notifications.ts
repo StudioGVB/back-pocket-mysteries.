@@ -21,8 +21,9 @@ export interface PurchaseNotificationPayload {
   orderId?: string | null;
 }
 
+const ADMIN_NOTIFICATION_EMAILS = ['hello@backpocketgames.com', 'hello@studiogvb.com'];
 const ADMIN_NOTIFICATION_EMAIL = 'hello@backpocketgames.com';
-const PRIMARY_FROM_EMAIL = 'Back Pocket Mysteries <hello@backpocketgames.com>';
+const PRIMARY_FROM_EMAIL = 'Back Pocket Mysteries Alerts <alerts@backpocketgames.com>';
 const VERIFIED_FALLBACK_FROM = 'Back Pocket Mysteries <support@lancii.com>';
 const SENT_LOG_PATH = path.join(process.cwd(), 'data', 'sent-purchase-notifications.json');
 const OUTBOX_LOG_PATH = path.join(process.cwd(), 'data', 'purchase-notification-outbox.json');
@@ -240,10 +241,10 @@ export async function sendAdminPurchaseNotificationEmail(
     const resend = new Resend(apiKey);
     const replyTo = payload.customerEmail || ADMIN_NOTIFICATION_EMAIL;
 
-    // 1. Try sending from Back Pocket Mysteries <hello@backpocketgames.com>
+    // 1. Try sending from Back Pocket Mysteries Alerts <alerts@backpocketgames.com>
     let res = await resend.emails.send({
       from: PRIMARY_FROM_EMAIL,
-      to: ADMIN_NOTIFICATION_EMAIL,
+      to: ADMIN_NOTIFICATION_EMAILS,
       replyTo,
       subject,
       html,
@@ -254,7 +255,7 @@ export async function sendAdminPurchaseNotificationEmail(
     if (res.error) {
       res = await resend.emails.send({
         from: VERIFIED_FALLBACK_FROM,
-        to: ADMIN_NOTIFICATION_EMAIL,
+        to: ADMIN_NOTIFICATION_EMAILS,
         replyTo,
         subject,
         html,

@@ -457,13 +457,70 @@ export async function submitEmailLead(
   const all = await getAllMarketingLeadsAction();
   const existing = all.find((l) => l.email.toLowerCase() === cleanEmail);
 
+  const buildAdminLeadAlertPayload = (
+    rank: number,
+    qualifies: boolean,
+    remaining: number,
+    leadName: string | null,
+    isRepeat = false
+  ) => ({
+    from: 'Back Pocket Mysteries Alerts <alerts@backpocketgames.com>',
+    to: ['hello@backpocketgames.com', 'hello@studiogvb.com'],
+    replyTo: cleanEmail,
+    subject: qualifies
+      ? `🎉 Free Mystery VIP Signup #${rank}/50${isRepeat ? ' (Re-checked)' : ''}: ${leadName || cleanEmail}`
+      : `New Launch Waitlist Lead (#${rank}): ${leadName || cleanEmail}`,
+    html: buildBrandedEmailShell({
+      preheader: `${leadName || cleanEmail} just claimed VIP Spot #${rank} of ${FIRST_50_VIP_CAP} (${remaining} spots left).`,
+      kicker: qualifies
+        ? `FIRST 50 FREE MYSTERY VIP SPOT #${rank} OF ${FIRST_50_VIP_CAP}`
+        : `NEWSLETTER & WAITLIST SIGNUP #${rank}`,
+      headline: `New Free Mystery VIP Signup!`,
+      bodyHtml: `
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:20px;">
+          <tr>
+            <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+              <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Subscriber Email</span><br/>
+              <a href="mailto:${cleanEmail}" style="color:#fe04c6;text-decoration:none;font-size:16px;font-weight:800;">${cleanEmail}</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+              <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Name</span><br/>
+              <span style="color:#1e191c;font-size:15px;font-weight:700;">${leadName || 'Not provided (Email-only Lead)'}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 0;">
+              <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Signup Source</span><br/>
+              <span style="color:#1e191c;font-size:14px;font-weight:600;">${source}</span>
+            </td>
+          </tr>
+        </table>
+        <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;padding:18px 22px;border-radius:12px;">
+          <p style="margin:0 0 4px 0;color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;">
+            FIRST 50 VIP TALLY STATUS
+          </p>
+          <p style="margin:0;color:#ffffff;font-size:14px;font-weight:700;line-height:1.6;">
+            ${
+              qualifies
+                ? `✓ Qualifies for First 50 FREE Mystery (Spot #${rank} of 50 — ${remaining} spots remaining). Open Admin → Leads to dispatch their 100%-off promo code whenever you're ready.`
+                : `Registered after the first 50 spots (#${rank}). Added to your Newsletter Subscribers list.`
+            }
+          </p>
+        </div>
+      `,
+      ctaText: 'Open Admin → Leads & Send Free Code →',
+      ctaUrl: 'https://backpocketmysteries.com/en/admin/leads',
+    }),
+  });
+
   if (existing) {
     const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - all.length);
-    // Still send the subscriber their "You're In!" confirmation email if they re-submit to check their spot
     try {
       if (process.env.RESEND_API_KEY) {
         const firstName = (cleanName || existing.full_name || '').split(' ')[0] || 'there';
-        await resend.emails.send({
+        const subPayload = {
           from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
           to: [cleanEmail],
           replyTo: 'Hello@backpocketgames.com',
@@ -477,7 +534,15 @@ export async function submitEmailLead(
             qualifiesForFreeMystery: existing.qualifies_for_free_mystery,
             spotsRemaining,
           }),
-        });
+        };
+        const admPayload = buildAdminLeadAlertPayload(
+          existing.vip_rank,
+          existing.qualifies_for_free_mystery,
+          spotsRemaining,
+          cleanName || existing.full_name,
+          true
+        );
+        await resend.batch.send([subPayload, admPayload]);
       }
     } catch (err) {
       console.error('Failed to resend VIP welcome email:', err);
@@ -552,57 +617,13 @@ export async function submitEmailLead(
         }),
       };
 
-      const adminEmailPayload = {
-        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
-        to: ['Hello@backpocketgames.com'],
-        replyTo: cleanEmail,
-        subject: qualifiesForFreeMystery
-          ? `🎉 VIP Lead #${vipRank}/50 (Free Mystery Spot): ${cleanName || cleanEmail}`
-          : `New Launch Waitlist Lead (#${vipRank}): ${cleanName || cleanEmail}`,
-        html: buildBrandedEmailShell({
-          preheader: `${cleanName || cleanEmail} just claimed VIP Spot #${vipRank} of ${FIRST_50_VIP_CAP} (${spotsRemaining} spots left).`,
-          kicker: qualifiesForFreeMystery
-            ? `FIRST 50 VIP SPOT #${vipRank} OF ${FIRST_50_VIP_CAP}`
-            : `NEWSLETTER & WAITLIST SIGNUP #${vipRank}`,
-          headline: `New VIP Launch Waitlist Registration`,
-          bodyHtml: `
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:20px;">
-              <tr>
-                <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
-                  <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Subscriber Email</span><br/>
-                  <a href="mailto:${cleanEmail}" style="color:#fe04c6;text-decoration:none;font-size:16px;font-weight:800;">${cleanEmail}</a>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
-                  <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Name</span><br/>
-                  <span style="color:#1e191c;font-size:15px;font-weight:700;">${cleanName || 'Not provided (Email-only Lead)'}</span>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:12px 0;">
-                  <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Signup Source</span><br/>
-                  <span style="color:#1e191c;font-size:14px;font-weight:600;">${source}</span>
-                </td>
-              </tr>
-            </table>
-            <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;padding:18px 22px;border-radius:12px;">
-              <p style="margin:0 0 4px 0;color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;">
-                FIRST 50 VIP TALLY STATUS
-              </p>
-              <p style="margin:0;color:#ffffff;font-size:14px;font-weight:700;line-height:1.6;">
-                ${
-                  qualifiesForFreeMystery
-                    ? `✓ Qualifies for First 50 FREE Mystery (Spot #${vipRank} of 50 — ${spotsRemaining} spots remaining). Open Admin → Newsletter & VIP Leads to dispatch their 100%-off promo code on launch day.`
-                    : `Registered after the first 50 spots (#${vipRank}). Added to your Newsletter Subscribers list.`
-                }
-              </p>
-            </div>
-          `,
-          ctaText: 'Open Newsletter & VIP Leads →',
-          ctaUrl: 'https://backpocketmysteries.com/en/admin/leads',
-        }),
-      };
+      const adminEmailPayload = buildAdminLeadAlertPayload(
+        vipRank,
+        qualifiesForFreeMystery,
+        spotsRemaining,
+        cleanName,
+        false
+      );
 
       // Dispatch both emails in a single atomic Resend batch call (avoids 2 req/sec rate limit drops)
       const batchRes = await resend.batch.send([subscriberEmailPayload, adminEmailPayload]);

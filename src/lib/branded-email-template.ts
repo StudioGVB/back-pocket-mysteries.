@@ -284,8 +284,8 @@ export async function sendAdminNewAccountNotificationEmail(
     });
 
     await resend.emails.send({
-      from: 'Back Pocket Mysteries <hello@backpocketgames.com>',
-      to: ['hello@backpocketgames.com'],
+      from: 'Back Pocket Mysteries Alerts <alerts@backpocketgames.com>',
+      to: ['hello@backpocketgames.com', 'hello@studiogvb.com'],
       replyTo: params.email,
       subject: `New Member Account Created: ${displayName} (${params.email})`,
       html,
