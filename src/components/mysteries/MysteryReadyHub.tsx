@@ -1173,7 +1173,7 @@ export function MysteryReadyHub({
                   <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                     <span className="text-brand-pink">2. The Investigation Loop</span>
                     <span className="px-2.5 py-0.5 rounded-full bg-pink-100 text-brand-pink">
-                      Rounds 1–3 (Repeats)
+                      Repeats Each Round
                     </span>
                   </div>
                   <h3 className="text-base sm:text-lg font-black text-slate-900">
@@ -1201,7 +1201,7 @@ export function MysteryReadyHub({
                         3
                       </span>
                       <span>
-                        <strong>Advance When Votes Are In:</strong> Once you&apos;ve received all votes (or whenever you&apos;re ready), click <strong>Next</strong> to start the next round—repeating this loop for all rounds in the mystery.
+                        <strong>Advance When Votes Are In:</strong> Once you&apos;ve received all votes (or whenever you&apos;re ready), click <strong>Next</strong> to start the next round—repeating this loop for the total number of rounds in your mystery (3–5 rounds).
                       </span>
                     </li>
                   </ol>
@@ -1226,7 +1226,7 @@ export function MysteryReadyHub({
                         1
                       </span>
                       <span>
-                        <strong>Final Guess After Round 3:</strong> After reviewing the final round of evidence, everyone locks in their final accusation for who did it and why.
+                        <strong>Final Guess After the Last Round:</strong> After everyone reviews the final round of clues and locks in their final accusation for who did it and why, click <strong>Next</strong> to launch the finale.
                       </span>
                     </li>
                     <li className="flex items-start gap-2">

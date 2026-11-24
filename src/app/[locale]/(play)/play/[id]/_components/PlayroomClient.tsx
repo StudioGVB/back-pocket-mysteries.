@@ -5215,6 +5215,79 @@ export function PlayroomClient({
                       </div>
                     ))}
                   </div>
+
+                  {/* Round-by-Round Everyone's Guesses & Theories Breakdown */}
+                  {submissions.length > 0 && (
+                    <div className="pt-3 border-t border-white/10 space-y-4">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                          💬 Everyone&apos;s Guesses &amp; Theories Across All Rounds
+                        </span>
+                        <h3 className="text-sm sm:text-base font-black text-white mt-0.5">
+                          Who Everyone Voted For &amp; Why in Each Round
+                        </h3>
+                      </div>
+
+                      <div className="space-y-3">
+                        {availableClueRounds.map(roundNum => {
+                          const roundSubs = submissions.filter(s => s.round === roundNum);
+                          if (roundSubs.length === 0) return null;
+                          const isFinalRound = roundNum === maxClueRound;
+                          return (
+                            <div
+                              key={roundNum}
+                              className="rounded-xl bg-slate-950/75 border border-white/10 p-3.5 sm:p-4 space-y-2.5"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/15 border border-brand-pink/30 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                                  {isFinalRound
+                                    ? `Round ${roundNum} • Final Guess (${roundSubs.length})`
+                                    : `Round ${roundNum} Guesses & Theories (${roundSubs.length})`}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {roundSubs.map(sub => {
+                                  const guessedKiller =
+                                    Boolean(solutionData?.killer?.id) &&
+                                    sub.suspectCharId === solutionData?.killer?.id;
+                                  return (
+                                    <div
+                                      key={sub.id}
+                                      className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                                        guessedKiller
+                                          ? 'bg-emerald-950/30 border-emerald-500/40'
+                                          : 'bg-white/[0.03] border-white/10'
+                                      }`}
+                                    >
+                                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                        <span className="font-black text-white">
+                                          {sub.voterName}
+                                        </span>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-[11px] font-black text-brand-pink">
+                                            → {sub.suspectName}
+                                          </span>
+                                          {guessedKiller && (
+                                            <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 text-[9px] font-black uppercase">
+                                              ✓ Correct
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <p className="text-slate-300 italic leading-relaxed">
+                                        &ldquo;{sub.reason}&rdquo;
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </section>
