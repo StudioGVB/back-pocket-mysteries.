@@ -871,3 +871,26 @@ export function mapChristmasCharacterIds(existingChars: any[] | null | undefined
 
   return result;
 }
+
+export const CHRISTMAS_NIGHTMARE_ID = '61196e53-09c3-427f-8862-30151f2ca75b';
+
+export const CHRISTMAS_NIGHTMARE_MYSTERY = {
+  id: CHRISTMAS_NIGHTMARE_ID,
+  title: CHRISTMAS_NIGHTMARE_TITLE,
+  theme: CHRISTMAS_NIGHTMARE_THEME,
+  description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
+  inside_jokes: CHRISTMAS_NIGHTMARE_INSIDE_JOKES,
+  characters: CHRISTMAS_NIGHTMARE_CHARACTERS.map((c) => ({
+    ...c,
+    id: c.legacyId || c.key,
+  })),
+  clues: CHRISTMAS_NIGHTMARE_CLUES.map((cl, idx) => ({
+    ...cl,
+    id: cl.legacyId || `cn-clue-${idx + 1}`,
+  })),
+  plot_beats: CHRISTMAS_NIGHTMARE_BEATS.map((b) => ({
+    ...b,
+    id: b.legacyId || `cn-beat-${b.beat_number}`,
+  })),
+};
+
