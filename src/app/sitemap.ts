@@ -21,6 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '',
     '/custom-murder-mystery',
     '/free-murder-mystery-game',
+    '/mini-mystery',
     '/themes',
     '/pricing',
     '/how-it-works',

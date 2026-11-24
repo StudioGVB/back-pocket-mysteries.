@@ -112,6 +112,7 @@ export default async function MarketingLayout(props: {
               <ul className="space-y-4 text-sm font-bold text-gray-400">
                 <li><Link href={`/${locale}/custom-murder-mystery`} className="text-brand-pink hover:text-white transition-colors">Custom Murder Mystery</Link></li>
                 <li><Link href={`/${locale}/free-murder-mystery-game`} className="text-white hover:text-brand-pink transition-colors">🎁 Free Murder Mystery Game</Link></li>
+                <li><Link href={`/${locale}/mini-mystery`} className="text-emerald-400 hover:text-white transition-colors">🕵️‍♀️ 60-Sec Mini-Mystery Quiz</Link></li>
                 <li><Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-colors">{dict.common.themes}</Link></li>
                 <li><Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-colors">{dict.common.howItWorks}</Link></li>
                 <li><Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-colors">{dict.common.pricing}</Link></li>
@@ -119,29 +120,30 @@ export default async function MarketingLayout(props: {
             </div>
             
             <div>
-              <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">{dict.common.company}</h4>
-              <ul className="space-y-4 text-sm font-bold text-gray-400">
+              <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">By Player Count &amp; Company</h4>
+              <ul className="space-y-3.5 text-sm font-bold text-gray-400">
+                <li><Link href={`/${locale}/occasions/murder-mystery-game-for-6-players`} className="hover:text-brand-pink transition-colors">6-Player Murder Mystery</Link></li>
+                <li><Link href={`/${locale}/occasions/murder-mystery-game-for-8-players`} className="hover:text-brand-pink transition-colors">8-Player Murder Mystery</Link></li>
+                <li><Link href={`/${locale}/occasions/murder-mystery-game-for-10-players`} className="hover:text-brand-pink transition-colors">10-Player Murder Mystery</Link></li>
+                <li><Link href={`/${locale}/occasions/murder-mystery-game-for-12-to-16-players`} className="hover:text-brand-pink transition-colors">Large Groups (12–16+ Players)</Link></li>
+                <li><Link href={`/${locale}/occasions/small-group-murder-mystery-games-4-6-8-players`} className="hover:text-brand-pink transition-colors">Small Groups (4–8 Players)</Link></li>
                 <li><Link href={`/${locale}/blog`} className="hover:text-brand-pink transition-colors">{dict.common.blog}</Link></li>
                 <li><Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-colors">{dict.common.faq}</Link></li>
                 <li><Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-colors">{dict.common.contact}</Link></li>
-                <li><Link href={`/${locale}/privacy`} className="hover:text-brand-pink transition-colors">Privacy Policy</Link></li>
-                <li><Link href={`/${locale}/terms`} className="hover:text-brand-pink transition-colors">Terms of Service</Link></li>
-                <li><Link href={`/${locale}/refund-policy`} className="hover:text-brand-pink transition-colors">Refund Policy</Link></li>
-                <li><Link href={`/${locale}/cookies`} className="hover:text-brand-pink transition-colors">Cookie Policy</Link></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">Occasions &amp; Compare</h4>
-              <ul className="space-y-3.5 text-sm font-bold text-gray-400">
+              <ul className="space-y-3 text-sm font-bold text-gray-400">
+                <li><Link href={`/${locale}/occasions/christmas-murder-mystery-party-games`} className="hover:text-brand-pink transition-colors">🎄 Christmas Party Games</Link></li>
                 <li><Link href={`/${locale}/occasions/hen-party-bachelorette-murder-mystery-games`} className="hover:text-brand-pink transition-colors">Hen Do &amp; Bachelorette</Link></li>
+                <li><Link href={`/${locale}/occasions/all-female-murder-mystery-party-games`} className="hover:text-brand-pink transition-colors">All-Female &amp; Girls Night</Link></li>
                 <li><Link href={`/${locale}/occasions/birthday-murder-mystery-party-games`} className="hover:text-brand-pink transition-colors">Birthday Murder Mystery</Link></li>
                 <li><Link href={`/${locale}/occasions/dinner-party-murder-mystery-games-for-adults`} className="hover:text-brand-pink transition-colors">Adult Dinner Party Games</Link></li>
-                <li><Link href={`/${locale}/occasions/small-group-murder-mystery-games-4-6-8-players`} className="hover:text-brand-pink transition-colors">Small Groups (4–8 Players)</Link></li>
-                <li><Link href={`/${locale}/compare`} className="hover:text-brand-pink transition-colors">All Brand Comparisons</Link></li>
-                <li><Link href={`/${locale}/compare/hunt-a-killer`} className="hover:text-brand-pink transition-colors">Hunt a Killer Alternative</Link></li>
-                <li><Link href={`/${locale}/compare/my-mystery-party`} className="hover:text-brand-pink transition-colors">My Mystery Party Alternative</Link></li>
-                <li><Link href={`/${locale}/compare/night-of-mystery`} className="hover:text-brand-pink transition-colors">Night of Mystery Alternative</Link></li>
+                <li><Link href={`/${locale}/occasions/corporate-team-building-murder-mystery-games`} className="hover:text-brand-pink transition-colors">Corporate Team-Building (SFW)</Link></li>
+                <li><Link href={`/${locale}/occasions/online-virtual-zoom-murder-mystery-party-games`} className="hover:text-brand-pink transition-colors">100% Online &amp; Virtual / Zoom</Link></li>
+                <li><Link href={`/${locale}/compare`} className="text-brand-pink hover:text-white transition-colors">All 9 Brand Comparisons →</Link></li>
               </ul>
             </div>
             

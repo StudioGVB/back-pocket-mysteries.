@@ -268,8 +268,473 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       },
     ],
   },
+  {
+    slug: 'christmas-murder-mystery-party-games',
+    navLabel: 'Christmas & Holiday Parties',
+    emoji: '🎄',
+    badge: 'Christmas Eve, Festive Dinners & Office Xmas Parties',
+    title: 'Christmas Murder Mystery',
+    titleHighlight: 'Party Games',
+    subtitle:
+      'Swap awkward festive charades for a high-stakes Christmas mansion scandal. Cast your real family, friends, or workmates into our signature Christmas Nightmare mystery with custom portraits, CCTV stills, and audio wiretaps.',
+    metaTitle:
+      'Christmas Murder Mystery Party Games for Adults (100% Online & Custom) | Back Pocket Mysteries',
+    metaDescription:
+      'Host an unforgettable Christmas murder mystery dinner party. Cast your friends or family into Christmas Nightmare with custom character dossiers, CCTV clues, and a live 6-digit PIN mobile lobby.',
+    keywords: [
+      'christmas murder mystery game',
+      'christmas murder mystery party game for adults',
+      'holiday murder mystery dinner party',
+      'christmas eve murder mystery game',
+      'festive murder mystery party kit',
+      'custom christmas murder mystery',
+    ],
+    recommendedThemeSlug: 'christmas-nightmare',
+    groupSizeLabel: '6 to 16 Festive Suspects (+ Unlimited Extra Detectives)',
+    prepTimeLabel: '100% Online • Ready in ~20 Mins',
+    whyTitle: 'Why a Custom Christmas Murder Mystery Beats Every Board Game',
+    whyParagraphs: [
+      'Every December, hosts face the same challenge: finding a Christmas party activity that keeps everyone from your competitive brother-in-law to your best friends laughing and engaged between turkey and dessert.',
+      'Our flagship holiday pack, Christmas Nightmare, locks your guests inside a snowbound black-tie Christmas Eve dinner where the host of the manor is found dead by the tree. Because our engine weaves your guests’ real names, traits, and inside jokes into the alibis, leaked texts, and CCTV evidence, everyone is invested from the first glass of mulled wine.',
+    ],
+    highlights: [
+      {
+        title: 'Choose Clean (Family/Office SFW) or Mild/Spicy Drama',
+        description:
+          'Hosting family or co-workers? Choose Clean for high-stakes inheritance greed, blackmail, and sabotage with zero romantic affairs or swearing. Hosting close friends? Dial up the festive scandal.',
+      },
+      {
+        title: 'Bidirectional Gender-Flex Casting for Any Holiday Table',
+        description:
+          'Whether your Christmas table has 3 men and 3 women, 5 women and 1 man, or an all-female friendsmas group, every character role adapts titles, pronouns, and festive outfits automatically.',
+      },
+      {
+        title: 'Zero Last-Minute Christmas Printing',
+        description:
+          'No running out of printer ink on Christmas Eve—guests join the live Playroom on their phones via a 6-digit Game PIN to inspect forensic reports and audio wiretaps.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Is Christmas Nightmare suitable for a family or work Christmas party?',
+        answer:
+          'Yes! You can select the Clean (Safe For Work & Family) spice tier so the entire mystery revolves around financial blackmail, inheritance greed, and sabotage with zero romantic affairs and 100% clean dialogue, or select Mild to include romantic betrayal.',
+      },
+      {
+        question: 'Can the Christmas party host play without knowing who the killer is?',
+        answer:
+          'Yes! Spoiler-Free Host Mode keeps the murderer’s identity locked until the Round 3 accusation vote so the host plays as a full suspect.',
+      },
+    ],
+  },
+  {
+    slug: 'all-female-murder-mystery-party-games',
+    navLabel: 'All-Female & Girls Night',
+    emoji: '👑',
+    badge: 'All-Female Casts, Girls Night In & Bachelorettes',
+    title: 'All-Female Murder Mystery',
+    titleHighlight: 'Party Games',
+    subtitle:
+      'Finally, a murder mystery where nobody is forced to draw on a fake moustache and play "Lord Reginald." Our Bidirectional Gender-Flex engine adapts every suspect role, pronoun, relationship, and costume portrait for a 100% female cast.',
+    metaTitle:
+      'All-Female Murder Mystery Party Games (Girls Night & Bachelorette) | Back Pocket Mysteries',
+    metaDescription:
+      'Looking for an all-female murder mystery game for adults? Every Back Pocket Mystery adapts 100% of character titles, pronouns, outfits, and clues to an all-women cast.',
+    keywords: [
+      'all female murder mystery game',
+      'all women murder mystery party',
+      'girls night murder mystery game for adults',
+      'female only murder mystery party kit',
+      'bachelorette murder mystery game all female',
+    ],
+    recommendedThemeSlug: 'love-on-the-rocks',
+    groupSizeLabel: '6 to 16 Female Suspects (+ Extra Detectives)',
+    prepTimeLabel: 'Auto-Adapts Titles, Pronouns & Outfits',
+    whyTitle: 'How Our Bidirectional Gender-Flex Casting Solves the All-Female Party Problem',
+    whyParagraphs: [
+      'Almost every off-the-shelf murder mystery kit is hardcoded for a rigid 50/50 male-female split. If you are hosting a girls’ night in, a birthday dinner, or a bachelorette weekend, half your friends are usually stuck reading male pronouns and wearing awkward masculine costumes.',
+      'Back Pocket Mysteries was architected from the ground up with Bidirectional Gender-Flex Hydration. When you cast an all-female group (or 5 women and 1 man), our engine automatically flexes gendered titles (e.g., The Brother-in-Law becomes The Sister-in-Law), updates every third-person pronoun and relationship token across all 3 rounds of clues, and generates chic feminine AI costume portraits for every guest.',
+    ],
+    highlights: [
+      {
+        title: 'Zero Awkward Cross-Gender Scripts',
+        description:
+          'Every character bio, leaked group-chat message, audio wiretap, and forensic report uses your guests’ actual names and she/her or they/them pronouns naturally.',
+      },
+      {
+        title: 'Glamorous Costume Guides & AI Portraits',
+        description:
+          'Send 1-click WhatsApp character invites before the party with tailored feminine outfit inspiration and custom AI character portraits.',
+      },
+      {
+        title: 'Pre-Launch Certified on 6F All-Female Casts',
+        description:
+          'Every Mystery Base Pack in our catalog is stress-tested against an all-female cast permutation before launch to guarantee zero pronoun leaks.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Does the story still make sense if all 6 to 10 players are women?',
+        answer:
+          '100% yes. Our hydration engine dynamically adapts relationship nouns (sister/wife/partner/ex) and pronouns across every single clue, timeline, and motive so the mystery reads as if it were written exclusively for your girls’ night.',
+      },
+      {
+        question: 'What if we have mostly women and just 1 or 2 men?',
+        answer:
+          'It works seamlessly for any ratio—whether 6F/0M, 5F/1M, 7F/2M, or all-male. Each role matches same-gender guests first and auto-flexes the remaining roles to match your exact roster.',
+      },
+    ],
+  },
+  {
+    slug: 'corporate-team-building-murder-mystery-games',
+    navLabel: 'Corporate & Team Building',
+    emoji: '💼',
+    badge: 'Safe-For-Work (Clean Tier) • In-Office or Remote Teams',
+    title: 'Corporate Team-Building',
+    titleHighlight: 'Murder Mystery Games',
+    subtitle:
+      'High-stakes deductive team-building without the HR headaches. Full adult murder mystery plots with corporate sabotage, financial blackmail, and alibi cross-examination—with 100% clean dialogue and zero romantic affair roleplay.',
+    metaTitle:
+      'Corporate Team-Building Murder Mystery Games (Safe For Work & Online) | Back Pocket Mysteries',
+    metaDescription:
+      'Host a corporate team-building murder mystery game for 6 to 16+ colleagues. Clean SFW spice level guarantees zero romantic roleplay and zero profanity while delivering complex forensic deduction.',
+    keywords: [
+      'corporate murder mystery team building',
+      'office murder mystery party game',
+      'work friendly murder mystery game',
+      'team building murder mystery online',
+      'clean adult murder mystery game for coworkers',
+    ],
+    recommendedThemeSlug: 'christmas-nightmare',
+    groupSizeLabel: '6 to 16 Core Roles + Unlimited Team Detectives',
+    prepTimeLabel: '✨ Clean SFW Tier • 100% Online Mobile Lobby',
+    whyTitle: 'Built for Smart Teams Who Hate Cringey Icebreakers',
+    whyParagraphs: [
+      'Most corporate team-building activities fail for one of two reasons: either they feel like childish trust-falls, or someone buys a standard murder mystery kit and two co-workers suddenly discover their characters are having a steamy love affair.',
+      'Our Clean (Safe For Work & Family) tier keeps all the intellectual thrill of a real adult murder investigation—poisoned drinks, stolen patents, embezzlement, blackmail ledgers, and timestamped CCTV alibi math—while strictly enforcing zero romantic affair roleplay between players and zero profanity.',
+    ],
+    highlights: [
+      {
+        title: 'Strict SFW Roleplay Boundary (Zero Office Awkwardness)',
+        description:
+          'Colleagues interrogate each other over financial motives, alibi timeline gaps, and forensic evidence—never awkward romantic subplots.',
+      },
+      {
+        title: 'Scales to Large Teams with Free Guest Detective Slots',
+        description:
+          'Cast 6 to 16 team members as the core suspects while unlimited additional colleagues join the live 6-digit PIN lobby on their phones as named Detectives (or pair up in 2-person investigative teams).',
+      },
+      {
+        title: 'Works In-Person, Hybrid, or 100% Remote on Zoom/Teams',
+        description:
+          'Because all dossiers, CCTV stills, chat logs, and audio wiretaps are delivered in the live browser Playroom, remote and in-office teammates can play together effortlessly.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'What happens if we have 20 or 30 people on our team?',
+        answer:
+          'You can cast up to 16 colleagues as the core suspects (or 6–10 in Basic/Premium), and unlimited extra team members can join the exact same 6-digit Game PIN lobby on their phones as "Detective [Name]" to inspect every clue and vote on the killer!',
+      },
+      {
+        question: 'Can the team manager or event organizer transferred host controls to a colleague?',
+        answer:
+          'Yes! Any purchaser can use the 1-click "🔁 Transfer Host" button inside My Mysteries to hand full host ownership to the event facilitator.',
+      },
+    ],
+  },
+  {
+    slug: 'online-virtual-zoom-murder-mystery-party-games',
+    navLabel: '100% Online & Virtual / Zoom',
+    emoji: '📱',
+    badge: '100% Online Live Mobile & Web Playroom • Zero Printing',
+    title: '100% Online & Virtual',
+    titleHighlight: 'Murder Mystery Games',
+    subtitle:
+      'Whether your friends are sitting around the same living room or dialing in over Zoom, FaceTime, or Discord across three time zones, our Kahoot-style 6-digit Game PIN Playroom syncs everyone’s dossiers and clues in real time.',
+    metaTitle:
+      '100% Online & Virtual Zoom Murder Mystery Party Games | Back Pocket Mysteries',
+    metaDescription:
+      'Play a 100% online custom murder mystery game on phones, tablets, or laptops via a 6-digit Game PIN. Perfect for paperless in-person parties or virtual Zoom game nights.',
+    keywords: [
+      'online murder mystery party game',
+      'virtual murder mystery game zoom',
+      'digital murder mystery game on phones',
+      'paperless murder mystery party',
+      'remote murder mystery game for friends',
+    ],
+    recommendedThemeSlug: 'love-on-the-rocks',
+    groupSizeLabel: '4 to 16+ Players Anywhere in the World',
+    prepTimeLabel: 'Instant 6-Digit PIN Join • No App Download',
+    whyTitle: 'One Live 6-Digit Game PIN. Zero PDFs. Zero App Downloads.',
+    whyParagraphs: [
+      'Running a virtual or modern in-person murder mystery used to mean emailing 12 separate PDF attachments and hoping nobody accidentally opened the killer solution file.',
+      'Back Pocket Mysteries runs entirely inside our synchronized Live Mobile & Web Playroom. Before the party, you send each friend their spoiler-free 1-click invite link. When the game begins, the host clicks "🚀 Start Game" to reveal the 6-digit Game PIN, and every round’s CCTV photos, leaked group-chat texts, and multi-speaker audio wiretaps unlock on everyone’s screens simultaneously.',
+    ],
+    highlights: [
+      {
+        title: 'Synchronized Round 1, 2 & 3 Evidence Drops',
+        description:
+          'When the host advances the round, every player’s phone or laptop browser unlocks the new forensic clues, audio briefings, and accusation prompts in real time.',
+      },
+      {
+        title: 'Built-In Detective Notebook & Live Voting',
+        description:
+          'Players can tag clues, cross-reference suspect bios, and cast their final Round 3 killer vote right inside the browser before the dramatic animated reveal.',
+      },
+      {
+        title: 'Works In-Person OR Over Zoom / Discord / Teams',
+        description:
+          'Use phones as second-screen detective dossiers in your living room, or share your screen on a video call for long-distance friend groups.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'Do my guests need to download an app or create an account to play?',
+        answer:
+          'No! Guests join directly in any mobile, tablet, or desktop web browser using their character invite link or your 6-digit Game PIN.',
+      },
+      {
+        question: 'Can I play with fewer than 6 people online?',
+        answer:
+          'Yes! If you have 2 to 5 players on a call (or on the sofa), simply choose Hybrid Mode or Couch Detective / Case-File Mode to investigate all 6 interlocking suspect dossiers together.',
+      },
+    ],
+  },
+  {
+    slug: 'murder-mystery-game-for-6-players',
+    navLabel: '6-Player Murder Mystery Games',
+    emoji: '6️⃣',
+    badge: 'Exact Fit for 6 Players (1 Victim + 5 Suspects)',
+    title: 'Murder Mystery Games',
+    titleHighlight: 'for 6 Players',
+    subtitle:
+      'Looking for a murder mystery party game built specifically for 6 players? Our Basic Tier features 6 tightly interlocked characters with tangled alibis, 25+ timeline data points, and Spoiler-Free Host Mode so all 6 of you play.',
+    metaTitle:
+      'Murder Mystery Games for 6 Players (Custom & 100% Online) | Back Pocket Mysteries',
+    metaDescription:
+      'Host a custom 6-player murder mystery dinner party. Cast your 6 guests into interlocking suspect roles with personalised clues, CCTV evidence, audio wiretaps, and spoiler-free host mode.',
+    keywords: [
+      'murder mystery game for 6 players',
+      '6 player murder mystery party game',
+      '6 person murder mystery dinner party',
+      'murder mystery game 6 adults',
+      'small group murder mystery 6 players',
+    ],
+    recommendedThemeSlug: 'christmas-nightmare',
+    groupSizeLabel: '6 Core Characters (+ Unlimited Free Extra Detectives)',
+    prepTimeLabel: 'Basic Tier ($19 / £15) • Ready in ~20 Mins',
+    whyTitle: 'Why 6 Players Is the Ultimate Dinner Table Detective Count',
+    whyParagraphs: [
+      'Six players is the golden number for an intimate dinner party—everyone sits around one table, hears every accusation, and gets caught in real-time contradictions. Yet most boxed murder mystery kits require 8 to 12 people and force the host to sit out as a referee.',
+      'In a Back Pocket Mysteries 6-player game, every single seat at your table is essential to the crime timeline. Because our Spoiler-Free Host Mode automates the round briefings and final reveal, the host plays as a full suspect—and if a 7th or 8th friend joins last minute, they can hop into the 6-digit PIN lobby for free as "Detective [Name]"!',
+    ],
+    highlights: [
+      {
+        title: 'Zero Filler Roles — All 6 Characters Have Deep Motives',
+        description:
+          'Every suspect in a 6-player pack has a serious motive, a secret to hide, and timestamped movements that collide with the other 5 players across Rounds 1, 2, and 3.',
+      },
+      {
+        title: 'Any Gender Mix Works (3M/3F, 4F/2M, or All-Female 6F)',
+        description:
+          'Don’t have an even 3-male / 3-female split? Our Bidirectional Gender-Flex engine adapts titles, pronouns, and outfits to your exact 6 guests.',
+      },
+      {
+        title: 'Only ~$3 / £2.50 Per Guest (Flat $19 / £15 Pack)',
+        description:
+          'One flat price covers the entire 6-player custom mystery with zero per-player add-on fees and zero subscriptions.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'In a 6-player mystery, does the person playing the Victim still play the whole game?',
+        answer:
+          'Yes! Either the Victim is discovered right as Round 1 begins and immediately transitions into the Lead Inspector / Detective role with full investigative powers, or you can assign the Victim slot to a Fictional Character so all 6 of your real friends play active suspects!',
+      },
+      {
+        question: 'What if a 7th friend shows up on the night of our 6-player party?',
+        answer:
+          'Unlimited extra friends can scan the QR code or enter your 6-digit Game PIN to join free as "Detective [Name]" with full access to the evidence feed and final killer vote.',
+      },
+    ],
+  },
+  {
+    slug: 'murder-mystery-game-for-8-players',
+    navLabel: '8-Player Murder Mystery Games',
+    emoji: '8️⃣',
+    badge: 'Perfect for 8-Player Dinner Parties & Four Couples',
+    title: 'Murder Mystery Games',
+    titleHighlight: 'for 8 Players',
+    subtitle:
+      'Hosting 8 friends or 4 couples for dinner and drinks? Cast all 8 guests into a custom human-written murder mystery tailored with their real names, traits, inside jokes, and interactive mobile evidence.',
+    metaTitle:
+      'Murder Mystery Games for 8 Players (Custom & 100% Online) | Back Pocket Mysteries',
+    metaDescription:
+      'Host a custom 8-player murder mystery party at home or online. Personalised character dossiers, CCTV & chat clues, voice-acted audio wiretaps, and spoiler-free host mode.',
+    keywords: [
+      'murder mystery game for 8 players',
+      '8 player murder mystery party',
+      '8 person murder mystery dinner party game',
+      'murder mystery for 8 adults',
+      'four couples murder mystery game',
+    ],
+    recommendedThemeSlug: 'love-on-the-rocks',
+    groupSizeLabel: '8 Personalized Suspects (+ Free Extra Detectives)',
+    prepTimeLabel: '100% Online Live Mobile Lobby • Ready in ~20 Mins',
+    whyTitle: 'Why 8 Players Is the Classic Dinner Party Sweet Spot',
+    whyParagraphs: [
+      'Eight players is large enough for secret side-alliances, tangled red-herring subplots, and whispered accusations by the drinks table, while still small enough that everyone interacts with everyone else in every round.',
+      'With Back Pocket Mysteries, you can either run our Premium 8-to-10-character suspect web (filling any extra slots with Fictional Suspects in Hybrid Mode) or cast 6 core roles and let 2 guests play as Lead Detectives—all synchronized through a single 6-digit Game PIN.',
+    ],
+    highlights: [
+      {
+        title: 'Multi-Subplot Red Herrings & Alibi Pairs',
+        description:
+          'With 8 players in the room, innocent suspects are busy covering up secondary scandals (blackmail, secret affairs, or sabotaged contracts), making Round 1 and Round 2 deductions electric.',
+      },
+      {
+        title: 'Dropout-Proof Hybrid Casting',
+        description:
+          'If 1 or 2 of your 8 guests cancel on party day, simply switch their slot to a Fictional Suspect in 1 click without spoiling or breaking the clue chain.',
+      },
+      {
+        title: 'Host Plays Along 100% Spoiler-Free',
+        description:
+          'All 8 people at your table get to play and vote on the killer without anyone having to read the solution ahead of time.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'What if we have 8 players with an uneven gender ratio (like 6 women and 2 men)?',
+        answer:
+          'Every character role flexes automatically to any guest gender—updating titles, pronouns, relationship references, and costume recommendations so your exact 8 guests fit effortlessly.',
+      },
+      {
+        question: 'How long does an 8-player murder mystery take to play?',
+        answer:
+          'Typically 90 to 150 minutes across 3 rounds, timed naturally around drinks or a 3-course dinner.',
+      },
+    ],
+  },
+  {
+    slug: 'murder-mystery-game-for-10-players',
+    navLabel: '10-Player Murder Mystery Games',
+    emoji: '🔟',
+    badge: 'Premium Tier • Up to 10 Custom Characters',
+    title: 'Murder Mystery Games',
+    titleHighlight: 'for 10 Players',
+    subtitle:
+      'Built for lively 10-player dinner parties, milestone birthdays, and hen weekends. Ten custom-named characters, entangled rival factions, leaked group-chat screenshots, CCTV evidence, and multi-speaker audio wiretaps.',
+    metaTitle:
+      'Murder Mystery Games for 10 Players (Custom & 100% Online) | Back Pocket Mysteries',
+    metaDescription:
+      'Host a custom 10-player murder mystery party game. Cast 10 real friends into iconic roles with custom dossiers, CCTV & audio clues, and a live 6-digit PIN mobile Playroom.',
+    keywords: [
+      'murder mystery game for 10 players',
+      '10 player murder mystery party game',
+      '10 person murder mystery dinner party',
+      'murder mystery game 10 adults',
+    ],
+    recommendedThemeSlug: 'love-on-the-rocks',
+    groupSizeLabel: 'Up to 10 Custom Characters (+ Unlimited Extra Detectives)',
+    prepTimeLabel: 'Premium Tier • 100% Online Mobile Playroom',
+    whyTitle: 'High-Energy Mingling & Rival Alliances for 10 Players',
+    whyParagraphs: [
+      'At 10 players, a murder mystery transforms from a single-table conversation into a full-room social deduction event where guests pull each other aside to compare alibis, trade leaked text screenshots, and verify timestamps.',
+      'Our Premium Tier weaves all 10 of your guests’ real names, traits, and inside jokes into an interlocking web of motives and red herrings—delivered 100% paperlessly to every guest’s phone via your 6-digit Game PIN.',
+    ],
+    highlights: [
+      {
+        title: '10 Interlocking Suspect Dossiers',
+        description:
+          'Every guest receives a pre-party invite link with their character backstory and outfit guide, plus round-by-round secrets and talking points on party night.',
+      },
+      {
+        title: 'Synchronized Mobile Clue Drops',
+        description:
+          'No shouting over a noisy 10-person room to hand out paper slips—when Round 2 and Round 3 unlock, everyone’s phones chime with the new CCTV and audio wiretap evidence.',
+      },
+      {
+        title: 'Live Accusation Tally & Superlative Awards',
+        description:
+          'At the end of Round 3, all 10 players lock in their killer vote and motive on their phones before the dramatic final reveal.',
+      },
+    ],
+    faqs: [
+      {
+        question: 'What if we book for 10 players and 11 or 12 friends end up coming?',
+        answer:
+          'Any extra guests beyond the 10 character roles can join the live 6-digit Game PIN lobby for free as "Detective [Name]" with full access to all clues and voting!',
+      },
+      {
+        question: 'What if only 8 or 9 of our 10 guests can make it?',
+        answer:
+          'You can either toggle optional characters off or assign any uncast role to a Fictional Mystery Suspect in Hybrid Mode so the 10-character web stays 100% intact.',
+      },
+    ],
+  },
+  {
+    slug: 'murder-mystery-game-for-12-to-16-players',
+    navLabel: 'Large Group (12–16+ Players)',
+    emoji: '🥂',
+    badge: 'Grand Tier • 12, 14, 16+ Player House Parties & Getaways',
+    title: 'Large Group Murder Mystery',
+    titleHighlight: 'Games (12–16+ Players)',
+    subtitle:
+      'Hosting a big house party, weekend Airbnb getaway, hen party, or team social for 12 to 16+ people? Our Grand Tier scales up to 16 custom suspect roles—plus unlimited extra friends can join free as named Guest Detectives.',
+    metaTitle:
+      'Large Group Murder Mystery Games for 12, 14 & 16+ Players | Back Pocket Mysteries',
+    metaDescription:
+      'Host a custom large-group murder mystery party for 12 to 16+ players. Full-house suspect web, custom character dossiers, CCTV & audio clues, and a live 6-digit PIN mobile lobby.',
+    keywords: [
+      'murder mystery game for 12 players',
+      'murder mystery game for 14 players',
+      'murder mystery game for 16 players',
+      'large group murder mystery party game',
+      'house party murder mystery game for adults',
+    ],
+    recommendedThemeSlug: 'love-on-the-rocks',
+    groupSizeLabel: 'Up to 16 Suspects + Unlimited Free Extra Detectives',
+    prepTimeLabel: 'Grand Tier • Zero Printing Required',
+    whyTitle: 'How to Run a 12-to-16+ Person Murder Mystery Without Chaos',
+    whyParagraphs: [
+      'Anyone who has tried to run a traditional paper murder mystery for 14 or 16 people knows the nightmare: 80 pages of printing, 48 paper clue slips to sort into envelopes, and guests constantly asking "Wait, who is Lord Pemberton again?"',
+      'Back Pocket Mysteries eliminates large-group chaos completely. First, every character is named after your real guests (`Sarah | The Bombshell`, `Marcus | The Producer`), and the live Room Cast directory on every phone shows each guest’s photo and role. Second, our 6-digit Game PIN Playroom pushes Round 1, 2, and 3 clues to all 16+ phones simultaneously.',
+    ],
+    highlights: [
+      {
+        title: 'Live Room Cast Directory on Every Phone',
+        description:
+          'Even in a group of 16 where some friends are meeting for the first time, everyone can see each suspect’s photo, real name, and role title right on their phone.',
+      },
+      {
+        title: 'Multi-Faction Subplots & Accomplice Conspiracies',
+        description:
+          'Large groups thrive on faction drama—choose Medium or Hard difficulty packs where decoy alliances and secret accomplices keep the whole room debating.',
+      },
+      {
+        title: 'Have More Than 16 Guests? Unlimited Detectives Join Free',
+        description:
+          'Hosting 18, 20, or 25 people? Cast 16 core suspects and let every additional guest join the live 6-digit PIN lobby free as "Detective [Name]".',
+      },
+    ],
+    faqs: [
+      {
+        question: 'How do 12 to 16 players hear the audio wiretap clues at a lively house party?',
+        answer:
+          'Both the host’s screen (which you can connect to a TV or Bluetooth speaker) and every individual guest’s phone can play and replay the audio wiretaps and read the synced transcript anytime during the round!',
+      },
+      {
+        question: 'Do I have to print 16 booklets for a large group?',
+        answer:
+          'Zero printing! Everything runs 100% online on your guests’ phones via your 6-digit Game PIN.',
+      },
+    ],
+  },
 ];
 
 export function getOccasionSeoPageBySlug(slug: string): OccasionSeoPageData | undefined {
   return OCCASION_SEO_PAGES.find((p) => p.slug === slug);
 }
+

@@ -39,6 +39,7 @@ export default function robots(): MetadataRoute.Robots {
             `/${locale}`,
             `/${locale}/custom-murder-mystery`,
             `/${locale}/free-murder-mystery-game`,
+            `/${locale}/mini-mystery`,
             `/${locale}/giveaway`,
             `/${locale}/occasions`,
             `/${locale}/themes`,
