@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { requireAdmin } from '@/utils/admin-auth';
 import { getPackageInfoForMaxPlayers } from '@/utils/localization';
+import { getAllPlatformReviews } from '@/app/actions/reviews';
 
 export interface PackagePopularityItem {
   id: 'basic' | 'premium' | 'grand' | 'subscribe';
@@ -53,16 +54,16 @@ export async function getMysteriesAndPackagesAnalytics() {
   const [
     { data: mysteriesData },
     { data: ordersData },
-    { data: reviewsData },
+    allPlatformReviews,
   ] = await Promise.all([
     supabase.from('mysteries').select('*').order('created_at', { ascending: false }),
     supabase.from('orders').select('*').order('created_at', { ascending: false }),
-    (supabase as any).from('reviews').select('*'),
+    getAllPlatformReviews(supabase),
   ]);
 
   const mysteries = (mysteriesData || []) as any[];
   const orders = ((ordersData || []) as any[]).filter((o) => o.status !== 'refunded' && o.status !== 'cancelled');
-  const reviews = (reviewsData || []) as any[];
+  const reviews = (allPlatformReviews || []) as any[];
 
   const mysteryById = new Map<string, any>();
   for (const m of mysteries) {

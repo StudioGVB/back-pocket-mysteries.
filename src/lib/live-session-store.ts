@@ -16,11 +16,13 @@ export interface StoredRoundSubmission {
 export interface StoredGuestReview {
   id: string;
   mysteryId: string;
+  mysteryTitle?: string;
   playerName: string;
   characterRole?: string;
   rating: number;
   comment: string;
   photoUrl?: string;
+  status?: 'pending' | 'published';
   createdAt: string;
 }
 

@@ -1258,7 +1258,7 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
               : 'clue_reveal',
         timeline_phase: b.phase,
       }));
-      await supabase.from('story_beats').insert(beatRows as any);
+      await (supabase as any).from('story_beats').insert(beatRows as any);
     }
 
     // 5. Insert round-cast clues

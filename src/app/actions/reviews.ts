@@ -151,34 +151,51 @@ export async function toggleReviewStatus(reviewId: string, currentStatus: string
   const { supabase } = await requireAdmin();
   const newStatus = currentStatus === 'published' ? 'pending' : 'published';
 
+  // Always persist status override in review-metadata.json so session reviews and DB reviews both update
+  const map = await getReviewMetadataMap();
+  map[reviewId] = {
+    ...(map[reviewId] || {}),
+    status: newStatus,
+    updatedAt: new Date().toISOString(),
+  };
+  saveReviewMetadataMap(map);
+
   const { error } = await supabase
     .from('reviews')
     .update({ status: newStatus })
     .eq('id', reviewId);
 
-  if (error) {
-    console.error('Failed to toggle review status:', error);
-    throw new Error('Failed to toggle review status');
+  if (error && error.code !== 'PGRST205') {
+    console.warn('Warning updating review in DB (saved in metadata store):', error);
   }
 
+  revalidatePath('/en/admin/reviews');
   return { success: true, newStatus };
 }
 
 export async function bulkUpdateReviews(ids: string[], action: 'publish' | 'unpublish' | 'delete') {
   const { supabase } = await requireAdmin();
 
+  const map = await getReviewMetadataMap();
+  const now = new Date().toISOString();
+  for (const id of ids) {
+    if (action === 'delete') {
+      map[id] = { ...(map[id] || {}), deleted: true, updatedAt: now };
+    } else {
+      const status = action === 'publish' ? 'published' : 'pending';
+      map[id] = { ...(map[id] || {}), status, updatedAt: now };
+    }
+  }
+  saveReviewMetadataMap(map);
+
   if (action === 'delete') {
     const { error } = await supabase
       .from('reviews')
       .delete()
       .in('id', ids);
-    
-    if (error) {
-      if (error.code === 'PGRST205') {
-        return { success: true };
-      }
-      console.error('Error deleting reviews:', error);
-      return { error: 'Failed to delete reviews.' };
+
+    if (error && error.code !== 'PGRST205') {
+      console.warn('Warning deleting reviews from DB:', error);
     }
   } else {
     const status = action === 'publish' ? 'published' : 'pending';
@@ -187,29 +204,44 @@ export async function bulkUpdateReviews(ids: string[], action: 'publish' | 'unpu
       .update({ status })
       .in('id', ids);
 
-    if (error) {
-      if (error.code === 'PGRST205') {
-        return { success: true };
-      }
-      console.error('Error updating reviews:', error);
-      return { error: 'Failed to update reviews.' };
+    if (error && error.code !== 'PGRST205') {
+      console.warn('Warning updating reviews in DB:', error);
     }
   }
 
+  revalidatePath('/en/admin/reviews');
   return { success: true };
 }
 
 import fs from 'fs';
 import path from 'path';
 import { revalidatePath } from 'next/cache';
+import {
+  getAllStoredGameSessions,
+  getCachedMysterySnapshot,
+  LIVE_CARRIER_CLUE_TITLE,
+  StoredGuestReview,
+} from '@/lib/live-session-store';
 
 const REVIEW_META_PATH = path.join(process.cwd(), 'data', 'review-metadata.json');
 
 export interface ReviewExtraMeta {
   mysteryTitle?: string;
+  status?: 'pending' | 'published';
+  deleted?: boolean;
   featuredOnHomepage?: boolean;
   adminReply?: string;
   updatedAt?: string;
+}
+
+function saveReviewMetadataMap(map: Record<string, ReviewExtraMeta>) {
+  try {
+    const dir = path.dirname(REVIEW_META_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(REVIEW_META_PATH, JSON.stringify(map, null, 2), 'utf8');
+  } catch {
+    // non-fatal in read-only environments
+  }
 }
 
 export async function getReviewMetadataMap(): Promise<Record<string, ReviewExtraMeta>> {
@@ -236,13 +268,123 @@ export async function assignReviewMysteryBaseAction(
       mysteryTitle: mysteryTitle.trim() || undefined,
       updatedAt: new Date().toISOString(),
     };
-    const dir = path.dirname(REVIEW_META_PATH);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(REVIEW_META_PATH, JSON.stringify(map, null, 2), 'utf8');
+    saveReviewMetadataMap(map);
     revalidatePath('/en/admin/reviews');
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || 'Failed to update review mystery base' };
   }
 }
+
+/**
+ * Aggregates all customer & guest reviews across:
+ * 1. public.reviews table (if migrated)
+ * 2. Supabase LIVE_CARRIER_CLUE_TITLE carrier rows (Playroom end-of-game Review Wall submissions)
+ * 3. Local .live-game-sessions.json sessions (Playroom end-of-game Review Wall submissions)
+ */
+export async function getAllPlatformReviews(
+  supabaseClient?: any,
+  mysteryTitleById?: Map<string, string>
+): Promise<any[]> {
+  const supabase = supabaseClient || (await createClient());
+  const metaMap = await getReviewMetadataMap();
+  const byId = new Map<string, any>();
+
+  // 1. Query public.reviews if available
+  const { data: dbReviews, error: dbErr } = await supabase
+    .from('reviews')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (!dbErr && Array.isArray(dbReviews)) {
+    for (const r of dbReviews) {
+      if (!r?.id || metaMap[r.id]?.deleted) continue;
+      byId.set(String(r.id), {
+        ...r,
+        status: metaMap[r.id]?.status || r.status || 'pending',
+        mystery_title: metaMap[r.id]?.mysteryTitle || r.mystery_title,
+      });
+    }
+  }
+
+  const ingestGuestReview = (
+    rev: StoredGuestReview,
+    fallbackMysteryId?: string,
+    fallbackMysteryTitle?: string
+  ) => {
+    if (!rev || !rev.id || metaMap[rev.id]?.deleted) return;
+    const mId = rev.mysteryId || fallbackMysteryId || '';
+    const baseId = mId.includes('__u_') ? mId.split('__u_')[0] : mId;
+    const cachedSnap = getCachedMysterySnapshot(mId) || getCachedMysterySnapshot(baseId);
+    const resolvedMysteryTitle =
+      metaMap[rev.id]?.mysteryTitle ||
+      rev.mysteryTitle ||
+      fallbackMysteryTitle ||
+      (mysteryTitleById && (mysteryTitleById.get(mId) || mysteryTitleById.get(baseId))) ||
+      cachedSnap?.title ||
+      undefined;
+
+    const existing = byId.get(rev.id);
+    const formattedComment = rev.characterRole
+      ? `[Played ${rev.characterRole}${resolvedMysteryTitle ? ` • ${resolvedMysteryTitle}` : ''}] ${rev.comment}`
+      : rev.comment;
+
+    byId.set(rev.id, {
+      ...(existing || {}),
+      id: rev.id,
+      name: rev.playerName || 'Mystery Guest',
+      rating: Number(rev.rating) || 5,
+      review_text: formattedComment || rev.comment || 'Loved playing!',
+      status: metaMap[rev.id]?.status || rev.status || existing?.status || 'pending',
+      attachment_urls: rev.photoUrl
+        ? [rev.photoUrl]
+        : existing?.attachment_urls || [],
+      mystery_id: mId,
+      mystery_title: resolvedMysteryTitle,
+      character_role: rev.characterRole,
+      created_at: rev.createdAt || existing?.created_at || new Date().toISOString(),
+    });
+  };
+
+  // 2. Read all Supabase LIVE_CARRIER_CLUE_TITLE rows so cross-container Playroom reviews always show in Admin
+  try {
+    const { data: carrierRows } = await supabase
+      .from('clues')
+      .select('id, mystery_id, description')
+      .eq('title', LIVE_CARRIER_CLUE_TITLE);
+
+    for (const row of carrierRows || []) {
+      if (!row?.description) continue;
+      try {
+        const parsed =
+          typeof row.description === 'string' ? JSON.parse(row.description) : row.description;
+        const sessionReviews: StoredGuestReview[] = parsed?.session?.reviews || parsed?.reviews || [];
+        for (const rev of sessionReviews) {
+          ingestGuestReview(rev, row.mystery_id, parsed?.title);
+        }
+      } catch {
+        // ignore malformed row
+      }
+    }
+  } catch {
+    // non-fatal
+  }
+
+  // 3. Read all local game sessions from .live-game-sessions.json
+  try {
+    const localSessions = getAllStoredGameSessions();
+    for (const sess of localSessions) {
+      for (const rev of sess.reviews || []) {
+        ingestGuestReview(rev, sess.mysteryId);
+      }
+    }
+  } catch {
+    // non-fatal
+  }
+
+  return Array.from(byId.values()).sort(
+    (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+  );
+}
+
 

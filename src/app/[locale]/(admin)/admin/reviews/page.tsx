@@ -2,7 +2,7 @@
 import React, { Suspense } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import ReviewsTable from '@/components/admin/ReviewsTable';
-import { getReviewMetadataMap } from '@/app/actions/reviews';
+import { getReviewMetadataMap, getAllPlatformReviews } from '@/app/actions/reviews';
 import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
 
 export const unstable_instant = false;
@@ -81,8 +81,7 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
   await params;
   const supabase = await createClient();
 
-  const [reviewsRes, mysteriesRes, ordersRes, profilesRes, metaMap] = await Promise.all([
-    supabase.from('reviews').select('*').order('created_at', { ascending: false }),
+  const [mysteriesRes, ordersRes, profilesRes, metaMap] = await Promise.all([
     supabase
       .from('mysteries')
       .select('id, title, theme, status')
@@ -94,22 +93,6 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
     supabase.from('profiles').select('id, full_name, email'),
     getReviewMetadataMap(),
   ]);
-
-  let allReviews = reviewsRes.data || [];
-
-  if (reviewsRes.error && reviewsRes.error.code === 'PGRST205') {
-    allReviews = [
-      {
-        id: 'mock-1',
-        name: 'Michael Scott',
-        rating: 5,
-        review_text:
-          'Absolutely incredible! We played the "Midnight at the Manor" theme for our corporate retreat. The customized inside jokes had everyone in tears laughing. Highly recommend!',
-        status: 'pending',
-        created_at: new Date().toISOString(),
-      },
-    ];
-  }
 
   const dbMysteries = mysteriesRes.data || [];
   const mysteryTitleById = new Map<string, string>();
@@ -125,6 +108,8 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
     }
   }
   baseTitleSet.add('Midnight at the Manor');
+
+  const allReviews = await getAllPlatformReviews(supabase, mysteryTitleById);
 
   const profileNameById = new Map<string, string>();
   for (const p of profilesRes.data || []) {

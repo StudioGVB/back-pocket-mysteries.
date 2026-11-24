@@ -1430,11 +1430,13 @@ export async function submitGuestMysteryReviewAction(payload: {
   const reviewEntry: GuestReviewItem = {
     id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     mysteryId: payload.mysteryId,
+    mysteryTitle: payload.mysteryTitle,
     playerName: cleanName,
     characterRole: payload.characterRole || 'Sleuth',
     rating,
     comment: cleanComment || `Loved playing ${payload.mysteryTitle}!`,
     ...(resolvedPhotoUrl ? { photoUrl: resolvedPhotoUrl } : {}),
+    status: 'pending',
     createdAt: new Date().toISOString(),
   };
 
@@ -1470,6 +1472,7 @@ export async function submitGuestMysteryReviewAction(payload: {
   }
 
   revalidatePath(`/play/${payload.mysteryId}`);
+  revalidatePath('/en/admin/reviews');
   return { success: true, review: reviewEntry, reviews: session.reviews };
 }
 
