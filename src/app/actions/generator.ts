@@ -11,6 +11,7 @@ import {
   getCharacterCandidateKeys,
   findInvolvedCharactersInText,
   adaptOutfitForGuestGender,
+  extractCanonicalSingleAiOutfit,
   adaptBioForGuestGender,
   adaptOutfitReferenceImagesForGuestGender,
   stripEmDashes,
@@ -451,7 +452,7 @@ async function getBase64FromUrl(url: string): Promise<string> {
   return buffer.toString('base64');
 }
 
-function getCharacterOutfitDescription(char: any): string {
+function getCharacterOutfitDescription(char: any, upperBodyOnly = false): string {
   const profile = char?.profile_data || {};
   const genderStr = (
     char?.assignedFriend?.gender ||
@@ -471,30 +472,30 @@ function getCharacterOutfitDescription(char: any): string {
   if (!outfit && profile.act_summary) {
     outfit = `attire fitting ${profile.act_summary}`;
   }
-  // When outfit_advice lists multiple human costume choices ("Option 1 — ...; Option 2 — ...; Option 3 — ..."),
-  // lock the AI visual generator to Option 1 (plus any shared accessory note in parentheses)
-  // so the character wears the exact same signature costume in their Stage 1 portrait and every Stage 2 clue photo.
-  if (/Option\s*1\b/i.test(outfit) && /Option\s*2\b/i.test(outfit)) {
-    const trailingParenMatch = outfit.match(
-      /(\([^)]*(?:hairpin|brooch|ring|locket|scarf|gloves|badge)[^)]*\))\s*\.?\s*$/i
-    );
-    const primarySegment = outfit
-      .replace(/^[^:]*:\s*/i, '')
-      .split(/;\s*Option\s*2\b/i)[0]
-      .replace(/^Option\s*1\s*(?:—|--|-|:|,)\s*/i, '')
-      .trim();
-    if (primarySegment) {
-      outfit =
-        trailingParenMatch && !primarySegment.includes(trailingParenMatch[1])
-          ? `${primarySegment} ${trailingParenMatch[1]}`
-          : primarySegment;
-    }
-  }
-  const adapted = adaptOutfitForGuestGender(
+  return extractCanonicalSingleAiOutfit(
     outfit || 'tailored evening attire fitting their character persona',
-    genderStr
+    genderStr,
+    {
+      upperBodyOnly,
+      signatureColor: profile.color || null,
+    }
   );
-  return adapted.trim();
+}
+
+function getCanonicalMysteryPortraitBackdrop(mystery?: any): string {
+  const titleAndTheme = `${mystery?.title || ''} ${mystery?.theme || ''}`.toLowerCase();
+  if (titleAndTheme.includes('christmas') || titleAndTheme.includes('holiday')) {
+    return 'UNIFIED DARK CHRISTMAS DINNER BACKDROP: A dark, moody charcoal-mahogany candlelit evening dining room background (#181210) with soft out-of-focus warm golden fairy-light bokeh (2700K) softly glowing in the dark background. Strictly NO white studio walls, NO light grey backgrounds, and NO bright icy blue/silver backgrounds.';
+  }
+  if (
+    titleAndTheme.includes('love on the rocks') ||
+    titleAndTheme.includes('reality') ||
+    titleAndTheme.includes('island') ||
+    titleAndTheme.includes('villa')
+  ) {
+    return 'UNIFIED TWILIGHT VILLA TERRACE BACKDROP: A dark, warm twilight luxury tropical villa terrace background (#141824) with deep evening navy sky and soft out-of-focus warm golden string-light and torch bokeh glowing softly behind the subject. Strictly NO white studio walls or bright daylight backgrounds.';
+  }
+  return 'UNIFIED DARK EDITORIAL STUDIO BACKDROP: A dark, moody slate-charcoal candlelit evening portrait backdrop (#16161A) with subtle out-of-focus warm amber bokeh lights softly glowing in the dark background. Strictly NO plain white or light grey backgrounds.';
 }
 
 function getDeterministicFacialStructure(seedSource: string) {
@@ -662,11 +663,12 @@ export async function ensureStandardCharacterPhoto(
   const existingStandardUrl = profile.standard_character_photo_url || rawProfile.standard_character_photo_url;
   const existingHash = profile.standard_character_photo_hash || rawProfile.standard_character_photo_hash;
 
-  // Reuse existing standard character photo when not force-regenerating (applyScreenerCastAssignmentAction clears it whenever a character is recasted to a new friend)
-  if (!forceRegenerate && existingStandardUrl) {
+  // Reuse existing standard character photo only when not force-regenerating AND any stored identityHash matches the current guest+outfit
+  const isHashMismatch = Boolean(existingHash && existingHash !== identityHash);
+  if (!forceRegenerate && existingStandardUrl && !isHashMismatch) {
     return {
       photoUrl: existingStandardUrl,
-      identityHash: existingHash || identityHash,
+      identityHash,
       physicalDesc,
       outfit,
     };
@@ -709,9 +711,11 @@ export async function ensureStandardCharacterPhoto(
     : mystery?.title || 'a classic noir murder mystery';
 
   const bioSnippet = sanitizePromptForImageSafety(profile.act_summary || profile.bio || '');
-  const safeOutfit = sanitizePromptForImageSafety(outfit);
+  const upperBodyOutfit = getCharacterOutfitDescription(char, true);
+  const safeOutfit = sanitizePromptForImageSafety(upperBodyOutfit);
+  const unifiedBackdrop = getCanonicalMysteryPortraitBackdrop(mystery);
 
-  let standardPortraitPrompt = sanitizePromptForImageSafety(`Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (waist-up 3/4 studio character portrait) that will serve as the master visual identity reference for this character across all crime scene photos.
+  let standardPortraitPrompt = sanitizePromptForImageSafety(`Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (strict WAIST-UP medium studio portrait) that will serve as the master visual identity and costume reference for this character across all crime scene photos.
 
 CHARACTER ROLE: "${roleTitle}" (played by ${guestName}) in ${mysteryTheme}.
 ${bioSnippet ? `CHARACTER VIBE / PERSONA: ${bioSnippet}` : ''}
@@ -719,16 +723,17 @@ ${bioSnippet ? `CHARACTER VIBE / PERSONA: ${bioSnippet}` : ''}
 STRICT PHYSICAL APPEARANCE (MUST MATCH EXACTLY):
 - ${physicalDesc || `${genderStr} adult with distinctive natural facial features`}
 - Facial structure: ${bones.faceShape}, ${bones.jawline}, ${bones.cheekbones}, ${bones.noseShape}
-${referenceParts.length > 0 ? '- CRITICAL: An existing face photo of the guest is attached as Reference Image #1. Preserve the exact same person, facial identity, bone structure, skin tone, eye shape, and hair from the attached photo while dressing them in the character outfit below.' : ''}
+${referenceParts.length > 0 ? '- CRITICAL IDENTITY LOCK: An existing face photo of the guest is attached as Reference Image #1. Preserve the exact same person, facial identity, bone structure, skin tone, eye shape, and hair from Reference Image #1, while re-framing them to the mandatory WAIST-UP medium portrait crop and unified dark backdrop below (do NOT copy the plain white background or tight head-only crop of Reference Image #1).' : ''}
 
-SIGNATURE CHARACTER COSTUME & STYLING (MUST WEAR THIS EXACT OUTFIT):
+LOCKED CANONICAL SIGNATURE COSTUME (MUST WEAR THIS EXACT OUTFIT & COLOR):
 - ${safeOutfit}
 
-PHOTOGRAPHY & FRAMING DIRECTIVES:
-- Waist-up portrait facing the camera, natural poised expression in character, clear unobstructed view of their face, hair, accessories, and upper-body outfit.
-- Atmospheric softly lit studio backdrop with subtle ${mystery?.theme || 'cinematic'} tones so the character's face and costume details are crystal clear.
-- Shot on 85mm prime lens, f/2.8, photorealistic natural skin texture, 8k resolution.
-- CRITICAL: Absolutely NO text, NO labels, NO character sheets, NO multiple panels, NO borders, NO illustrations, NO 3D CGI.`);
+MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARACTER CARDS):
+1. STRICT WAIST-UP MEDIUM PORTRAIT CROP: Frame the character from the WAIST / HIP BELT-LINE UP to ~10% headroom above the top of their head. Their face must occupy ~25% of the vertical frame height, centered horizontally, showing their full upper-body torso, shoulders, neckline, sleeves, and waist.
+2. FORBIDDEN CROPS (HARD RULE): Absolutely NO full-body shots, NO legs, NO knees, NO feet, NO shoes, and NO studio floor visible. Also NO tight face-only close-ups (must clearly show upper-body costume down to the waist).
+3. ${unifiedBackdrop}
+4. Shot on 85mm prime lens at f/2.8, cinematic warm key lighting with subtle rim light, photorealistic natural skin texture, 8k resolution.
+5. CRITICAL: Absolutely NO text, NO labels, NO character sheets, NO multiple panels, NO borders, NO illustrations, NO 3D CGI.`);
 
   if (qaCorrectionDirective && qaCorrectionDirective.trim()) {
     standardPortraitPrompt += `\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${sanitizePromptForImageSafety(qaCorrectionDirective.trim())}`;
@@ -1227,9 +1232,11 @@ export async function generateClueImageAction(
       throw new Error(mysteryError?.message || 'Mystery not found');
     }
 
-    const mysterySetting = mystery.theme
-      ? `${mystery.theme} setting (${mystery.title || 'the mystery venue'})`
-      : mystery.title || 'a moody luxury mystery setting';
+    const cleanSettingName = (mystery.theme || mystery.title || 'upscale evening party')
+      .replace(/\b(nightmare|murder|death|dead|kill(?:ing|er)?|corpse|slaughter|massacre|bloodbath)\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const mysterySetting = `${cleanSettingName || 'upscale evening party'} setting`;
 
     // Direct select of characters, merged with any freshly recasted profile_data in cachedMystery & castOverrides
     const { data: charactersData, error: charError } = await supabase
@@ -1337,11 +1344,11 @@ export async function generateClueImageAction(
 
     // Determine the base prompt to use (preferring the live promptText from editor if provided)
     let basePrompt = promptText?.trim() || clue.generation_prompt?.trim() || clue.title || '';
-    // Clean up any quotes or text inside the base prompt
-    basePrompt = basePrompt.replace(/"[^"]*"/g, '').replace(/'[^']*'/g, '').trim();
-    // Strip words that might cause the AI to draw paper notes, receipts, text, or phone screens
+    // Clean up any quotes or parenthetical "(No text)" notes inside the base prompt while preserving physical prop nouns (smartphone, papers, folder, note)
     basePrompt = basePrompt
-      .replace(/\b(receipt|bar tab|invoice|document|dossier|lab report|police report|handwritten|sticky note|crumpled note|note|letter|paper|stationery|text message|sms|screengrab|screenshot|smartphone|phone screen|written|writing|printed|text)\b/gi, '')
+      .replace(/\(\s*no\s+text[^)]*\)/gi, '')
+      .replace(/"[^"]*"/g, '')
+      .replace(/\b(with the words|inscribed with|labeled with|reading|written in ink|printed text)\b/gi, '')
       .replace(/\s+/g, ' ')
       .trim();
 
@@ -1369,7 +1376,7 @@ export async function generateClueImageAction(
     }
 
     // Find involved characters in the clue (strictly using the visual generation_prompt when characters are specified there)
-    const involvedCharacters = getInvolvedCharacters(clue, hydratedCharacters, promptText).slice(0, 4);
+    const involvedCharacters = getInvolvedCharacters(clue, hydratedCharacters, promptText).slice(0, 6);
 
     // STAGE 1 -> STAGE 2 BRIDGE:
     // For every character in this scene, ensure their canonical Standard Character Photo exists first,
@@ -1433,28 +1440,51 @@ export async function generateClueImageAction(
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     let finalPrompt = '';
     const charCount = involvedCharacters.length;
-    const zeroTextRule = `CRITICAL: The image MUST contain absolutely NO text, NO readable letters, NO numbers, NO paper notes, NO receipts, NO phone screens, NO timestamps, and NO overlays. Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations, NO stylized art.`;
+    const zeroTextRule = `CRITICAL: The image MUST contain absolutely NO text, NO readable letters, NO numbers, NO timestamps, and NO HUD overlays (if a smartphone or folder is held, keep its surface blank or glowing without readable words). Absolutely NO 3D renders, NO CGI, NO cartoons, NO illustrations, NO stylized art.`;
 
     const getRefId = (char: any) =>
       charToRefIdMap.get(getCharacterRoleTitle(char)) ??
       charToRefIdMap.get((char.name || '').split('|')[0]?.trim());
 
-    // Build Strict Character Consistency Manifest binding each attached Standard Character Photo to its character in the scene
+    const spatialZones =
+      referenceImages.length === 1
+        ? ['CENTER of frame']
+        : referenceImages.length === 2
+        ? ['LEFT side of frame', 'RIGHT side of frame']
+        : referenceImages.length === 3
+        ? ['LEFT side of frame', 'CENTER of frame', 'RIGHT side of frame']
+        : ['FOREGROUND-LEFT', 'CENTER-LEFT', 'CENTER-RIGHT', 'FOREGROUND-RIGHT', 'MIDGROUND-LEFT', 'MIDGROUND-RIGHT'];
+
+    const explicitlyMentionsDeadBody = /\b(dead|corpse|lifeless|murdered body|strangled|body on the floor)\b/i.test(basePrompt);
+    const livePartySceneRule =
+      !explicitlyMentionsDeadBody && referenceImages.length > 0
+        ? `\nLIVE PARTY SCENE RULE (CRITICAL): All ${referenceImages.length} depicted character(s) are alive, conscious, and unharmed. Do NOT depict any dead bodies, people lying on the floor, or blood.`
+        : '';
+
+    const antiCloneRule =
+      referenceImages.length >= 2
+        ? `\nMULTI-PLAYER ANTI-CLONE & CONTRAST LOCK (CRITICAL): There are ${referenceImages.length} DIFFERENT individuals in this scene. Each person [subject 1]..[subject ${referenceImages.length}] MUST preserve their own distinct facial bone structure, hair color/style, facial hair (beard vs. clean-shaven), skin tone, and signature costume color from their respective Attached Reference Image #1..#${referenceImages.length}. NEVER duplicate, clone, or blend one person's face or beard onto another person's body.`
+        : '';
+
+    // Build Strict Character Consistency Manifest binding each attached Standard Character Photo to its character and spatial zone in the scene
     const referenceManifest = referenceImages.length > 0
       ? `\n\nCHARACTER VISUAL CONSISTENCY LOCK (MANDATORY):
 You are provided ${referenceImages.length} canonical Standard Character Reference Photo(s) attached in order. Every character depicted in this scene MUST look 100% identical to their attached Standard Character Reference Photo, preserve their exact facial identity, bone structure, age, skin tone, hair color/style, glasses/accessories, body build, and their exact signature costume:
 ` +
-        referenceImages.map(ref => {
+        referenceImages.map((ref, idx) => {
           const name = getCharacterDisplayName(ref.char);
           const role = getCharacterRoleTitle(ref.char);
-          return `- Attached Reference Image #${ref.referenceId} (subject [${ref.referenceId}]): ${name} (${role}) - Physical traits: ${ref.standardPhoto.physicalDesc || 'match reference photo exactly'}. Signature outfit: ${sanitizePromptForImageSafety(ref.standardPhoto.outfit)}.`;
+          const zone = spatialZones[idx] || `Zone #${idx + 1}`;
+          return `- Attached Reference Image #${ref.referenceId} (subject [${ref.referenceId}] — spatial placement: ${zone}): ${name} (${role}) - Physical traits: ${ref.standardPhoto.physicalDesc || 'match reference photo exactly'}. Signature outfit: ${sanitizePromptForImageSafety(ref.standardPhoto.outfit)}.`;
         }).join('\n') +
-        `\nSTRICT SUBJECT COUNT & NON-DUPLICATION RULE: Depict EXACTLY ${referenceImages.length} person(s) in this photograph (${referenceImages.map(r => getCharacterDisplayName(r.char)).join(' and ')}). Do NOT add any extra people, background bystanders, or dead bodies on the floor unless explicitly described in the scene prompt. Every person in the frame MUST be a distinct individual matching their assigned Reference Image #N (subject [N]) — NEVER duplicate the same person's face onto two bodies.`
+        `\nSTRICT SUBJECT COUNT RULE: Depict EXACTLY ${referenceImages.length} person(s) in this photograph (${referenceImages.map(r => getCharacterDisplayName(r.char)).join(', ')}). Do NOT add any extra unprompted people.` +
+        antiCloneRule +
+        livePartySceneRule
       : '';
 
     if (clueFormat === 'cctv') {
       if (charCount === 0) {
-        finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance still showing an atmospheric corridor or lounge area: ${hydratedPrompt || 'dimly lit crime scene area'}. Gritty noir aesthetic, low-key lighting, high contrast, atmospheric shadows, 8k resolution. ${zeroTextRule}`;
+        finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance still showing an atmospheric corridor or lounge area: ${hydratedPrompt || 'dimly lit area'}. Gritty noir aesthetic, low-key lighting, high contrast, atmospheric shadows, 8k resolution. ${zeroTextRule}`;
       } else if (charCount === 1) {
         const desc1 = buildCharDescription(involvedCharacters[0], getRefId(involvedCharacters[0]));
         finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance footage still showing ONLY ${desc1} in the scene: ${hydratedPrompt}. Gritty noir surveillance aesthetic, high angle, low-key lighting, high contrast, atmospheric shadows, cinematic shot, 8k resolution. ${zeroTextRule}${referenceManifest}`;
@@ -1463,8 +1493,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
         const desc2 = buildCharDescription(involvedCharacters[1], getRefId(involvedCharacters[1]));
         finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance footage still showing ONLY ${desc1} and ${desc2} in the scene: ${hydratedPrompt}. Gritty noir surveillance aesthetic, high angle, low-key lighting, high contrast, atmospheric shadows, cinematic shot, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       } else {
-        const count = Math.min(involvedCharacters.length, 4);
-        const panelPrompts = involvedCharacters.slice(0, count).map((c, idx) => {
+        const panelPrompts = involvedCharacters.map((c, idx) => {
           const desc = buildCharDescription(c, getRefId(c));
           return `Subject ${idx + 1}: ${desc}`;
         }).join('; ');
@@ -1484,7 +1513,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
       const propScene = hydratedPrompt && hydratedPrompt.length > 6
         ? `${hydratedPrompt}, alongside a crystal coupe glass with a dark red stain sitting on a vintage mahogany bar counter under warm amber lamplight`
         : 'a crystal coupe glass with a dark red stain sitting on a vintage mahogany bar counter under warm amber lamplight';
-      finalPrompt = `A cinematic crime scene prop photograph inside ${mysterySetting}: ${propScene}. Gritty noir aesthetic, dramatic low-key lighting, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}`;
+      finalPrompt = `A cinematic forensic prop photograph inside ${mysterySetting}: ${propScene}. Dramatic low-key lighting, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}`;
     } else {
       // Physical prop clues, Polaroids, or any visual clue with involved characters
       if (charCount === 0) {
@@ -1530,96 +1559,186 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
       let apiErrorMsg = '';
       let imageUsageMetadata: any = null;
 
-      for (let attempt = 1; attempt <= 4; attempt++) {
-        try {
-          const parts: any[] = [
-            ...referenceImages.map(ref => ({
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: ref.referenceImage.imageBytes,
+      const callGeminiSceneImage = async (scenePromptToRun: string) => {
+        let outB64 = '';
+        let outErr = '';
+        let outUsage: any = null;
+        let currentPrompt = scenePromptToRun;
+
+        for (let attempt = 1; attempt <= 4; attempt++) {
+          try {
+            const parts: any[] = [
+              ...referenceImages.map(ref => ({
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: ref.referenceImage.imageBytes,
+                },
+              })),
+              { text: currentPrompt },
+            ];
+            const payload = {
+              contents: [{ parts }],
+              generationConfig: {
+                responseModalities: ['IMAGE'],
               },
-            })),
-            { text: activeScenePrompt },
-          ];
-          const payload = {
-            contents: [{ parts }],
-            generationConfig: {
-              responseModalities: ['IMAGE'],
-            },
-          };
+            };
 
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
 
-          console.log(`[GEMINI IMAGE RESPONSE] attempt ${attempt}/4 status: ${res.status}`);
+            console.log(`[GEMINI IMAGE RESPONSE] attempt ${attempt}/4 status: ${res.status}`);
 
-          if (res.status === 429 || res.status === 403 || res.status >= 500) {
-            const waitMs = 4500 * attempt;
-            console.warn(
-              `[STAGE 2: CLUE IMAGE] Gemini HTTP ${res.status} on attempt ${attempt}/4 for clue ${clueId}. Waiting ${waitMs}ms...`
-            );
-            if (attempt < 4) {
-              await new Promise(r => setTimeout(r, waitMs));
-              continue;
-            }
-          }
-
-          const responseText = await res.text();
-          if (res.ok) {
-            try {
-              const data = JSON.parse(responseText);
-              imageUsageMetadata = data.usageMetadata || null;
-              const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-              base64Image =
-                imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
-              if (base64Image) {
-                apiErrorMsg = '';
-                break;
-              }
-              const finishReason = data.candidates?.[0]?.finishReason || '';
+            if (res.status === 429 || res.status === 403 || res.status >= 500) {
+              const waitMs = 4500 * attempt;
               console.warn(
-                `[GEMINI IMAGE WARNING] No base64 image in response (finishReason=${finishReason}) on attempt ${attempt}/4. Switching to compromising-noir safety fallback prompt...`,
-                responseText.slice(0, 300)
+                `[STAGE 2: CLUE IMAGE] Gemini HTTP ${res.status} on attempt ${attempt}/4 for clue ${clueId}. Waiting ${waitMs}ms...`
               );
-              // Automatically switch to the guaranteed-safe compromising noir surveillance prompt for the next attempt
-              activeScenePrompt = buildSafetyFallbackImagePrompt({
-                mysterySetting,
-                clueFormat,
-                charDescriptions: charDescriptionsList,
-                referenceManifest,
-                zeroTextRule,
-              });
-            } catch {
+              if (attempt < 4) {
+                await new Promise(r => setTimeout(r, waitMs));
+                continue;
+              }
+            }
+
+            const responseText = await res.text();
+            if (res.ok) {
+              try {
+                const data = JSON.parse(responseText);
+                outUsage = data.usageMetadata || null;
+                const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+                outB64 =
+                  imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
+                if (outB64) {
+                  outErr = '';
+                  break;
+                }
+                const finishReason = data.candidates?.[0]?.finishReason || '';
+                console.warn(
+                  `[GEMINI IMAGE WARNING] No base64 image in response (finishReason=${finishReason}) on attempt ${attempt}/4. Switching to compromising-noir safety fallback prompt...`,
+                  responseText.slice(0, 300)
+                );
+                currentPrompt = buildSafetyFallbackImagePrompt({
+                  mysterySetting,
+                  clueFormat,
+                  charDescriptions: charDescriptionsList,
+                  referenceManifest,
+                  zeroTextRule,
+                });
+              } catch {
+                console.error(
+                  `[GEMINI IMAGE ERROR] Failed to parse JSON response on attempt ${attempt}/4:`,
+                  responseText.slice(0, 300)
+                );
+              }
+            } else {
               console.error(
-                `[GEMINI IMAGE ERROR] Failed to parse JSON response on attempt ${attempt}/4:`,
+                `[GEMINI IMAGE ERROR] Response not OK (${res.status}) on attempt ${attempt}/4! Body:`,
                 responseText.slice(0, 300)
               );
+              try {
+                const errJson = JSON.parse(responseText);
+                outErr = errJson.error?.message || `API Error (${res.status})`;
+              } catch {
+                outErr = `API Error (${res.status})`;
+              }
             }
-          } else {
-            console.error(
-              `[GEMINI IMAGE ERROR] Response not OK (${res.status}) on attempt ${attempt}/4! Body:`,
-              responseText.slice(0, 300)
+          } catch (fetchErr: any) {
+            console.warn(
+              `[STAGE 2: CLUE IMAGE] Network error on attempt ${attempt}/4 for clue ${clueId}:`,
+              fetchErr
             );
-            try {
-              const errJson = JSON.parse(responseText);
-              apiErrorMsg = errJson.error?.message || `API Error (${res.status})`;
-            } catch {
-              apiErrorMsg = `API Error (${res.status})`;
-            }
+            outErr = fetchErr?.message || 'Network fetch error';
           }
-        } catch (fetchErr: any) {
-          console.warn(
-            `[STAGE 2: CLUE IMAGE] Network error on attempt ${attempt}/4 for clue ${clueId}:`,
-            fetchErr
-          );
-          apiErrorMsg = fetchErr?.message || 'Network fetch error';
+
+          if (attempt < 4) {
+            await new Promise(r => setTimeout(r, 4000 * attempt));
+          }
         }
 
-        if (attempt < 4) {
-          await new Promise(r => setTimeout(r, 4000 * attempt));
+        return { outB64, outErr, outUsage };
+      };
+
+      const initialGen = await callGeminiSceneImage(activeScenePrompt);
+      base64Image = initialGen.outB64;
+      apiErrorMsg = initialGen.outErr;
+      imageUsageMetadata = initialGen.outUsage;
+
+      // INLINE SIDE-BY-SIDE VISION CRITIC GUARDRAIL:
+      // Whenever characters are in the photo and this isn't already a critic retry, inspect the generated image
+      // side-by-side against the attached Reference Portraits for:
+      // 1) Exact subject count & no unprompted dead body on the floor
+      // 2) Zero cloned/duplicate faces
+      // 3) Hair color, facial hair (beard vs. clean-shaven), and signature outfit color match
+      if (base64Image && referenceImages.length > 0 && !qaCorrectionDirective) {
+        try {
+          const geminiFlash = new GoogleGenerativeAI(apiKey).getGenerativeModel({
+            model: 'gemini-2.5-flash',
+          });
+          const criticParts: any[] = referenceImages.map((ref) => ({
+            inlineData: { mimeType: 'image/jpeg', data: ref.referenceImage.imageBytes },
+          }));
+          criticParts.push({
+            inlineData: { mimeType: 'image/jpeg', data: base64Image },
+          });
+          const targetIdx = referenceImages.length + 1;
+          const refSummary = referenceImages
+            .map((ref) => {
+              const name = getCharacterDisplayName(ref.char);
+              const role = getCharacterRoleTitle(ref.char);
+              return `- Reference Image #${ref.referenceId}: ${name} (${role}) — ${ref.standardPhoto.physicalDesc}. Outfit: ${ref.standardPhoto.outfit}`;
+            })
+            .join('\n');
+
+          const inlineCriticPrompt = `You are a strict Visual QA Guardrail for Back Pocket Mysteries.
+Reference Image #1..#${referenceImages.length} are the canonical character portraits.
+Image #${targetIdx} (FINAL IMAGE) is the generated clue scene for: "${hydratedPrompt}".
+
+EXPECTED CHARACTERS (EXACTLY ${referenceImages.length} person(s)):
+${refSummary}
+
+Check Image #${targetIdx} against these 3 hard rules:
+1. Exact Subject Count & No Unprompted Corpse: Does Image #${targetIdx} show EXACTLY ${referenceImages.length} main person(s)${!explicitlyMentionsDeadBody ? ' with NO dead body lying on the floor' : ''}?
+2. Zero Cloned Faces: Are all ${referenceImages.length} person(s) distinct individuals (not the same face/beard duplicated onto two bodies)?
+3. Hair, Beard & Outfit Match: Does each person match their Reference Image's hair color, facial hair (beard vs. clean-shaven), skin tone, and outfit color?
+
+Respond with valid JSON ONLY:
+{
+  "passed": <true if all 3 rules pass, else false>,
+  "correctionDirective": "<If passed is false, write a 1-sentence specific instruction fixing the exact defect; if passed is true, empty string>"
+}`;
+          criticParts.push({ text: inlineCriticPrompt });
+
+          const criticRes = await geminiFlash.generateContent({
+            contents: [{ role: 'user', parts: criticParts }],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              maxOutputTokens: 256,
+            },
+          });
+          const parsedCritic = JSON.parse(
+            criticRes.response
+              .text()
+              .trim()
+              .replace(/^```json\s*/i, '')
+              .replace(/\s*```$/i, '')
+          );
+          if (parsedCritic && parsedCritic.passed === false && parsedCritic.correctionDirective) {
+            console.warn(
+              `[INLINE PHOTO GUARDRAIL] Clue ${clueId} failed initial vision check ("${parsedCritic.correctionDirective}"). Auto-retrying with correction...`
+            );
+            const correctedPrompt = sanitizePromptForImageSafety(
+              `${activeScenePrompt}\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${parsedCritic.correctionDirective}`
+            );
+            const retryGen = await callGeminiSceneImage(correctedPrompt);
+            if (retryGen.outB64) {
+              base64Image = retryGen.outB64;
+              imageUsageMetadata = retryGen.outUsage || imageUsageMetadata;
+            }
+          }
+        } catch (criticErr) {
+          console.warn('[INLINE PHOTO GUARDRAIL] Non-fatal vision check warning:', criticErr);
         }
       }
 
@@ -2267,7 +2386,8 @@ Respond with valid JSON ONLY:
         const roleTitle = getCharacterRoleTitle(charObj);
         const gender = charObj.profile_data?.gender || charObj.gender || 'unspecified';
         const phys = getGuestPhysicalDescription(charObj.profile_data || {}, gender);
-        const outfit = getCharacterOutfitDescription(charObj);
+        const outfit = getCharacterOutfitDescription(charObj, true);
+        const expectedBackdrop = getCanonicalMysteryPortraitBackdrop(mystery);
         const guestSelfieUrl = extractAiPhotoUrl(charObj.profile_data?.avatar_url);
 
         const parts: any[] = [];
@@ -2286,28 +2406,31 @@ Respond with valid JSON ONLY:
 
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: portraitBase64 } });
 
-        const portraitCriticPrompt = `You are a Stage 1 Character Portrait Visual QA Critic for Back Pocket Mysteries.
+        const portraitCriticPrompt = `You are a strict Stage 1 Character Portrait Visual QA Critic for Back Pocket Mysteries.
 ${
   hasGuestSelfieRef
-    ? 'Image #1 is the Guest Reference Headshot. Image #2 is the Generated Standard Character Costume Portrait.'
+    ? 'Image #1 is the Guest Candid Reference Headshot. Image #2 is the Generated Standard Character Costume Portrait to audit.'
     : 'Inspect the attached Generated Standard Character Costume Portrait.'
 }
 
 CHARACTER: ${displayName} (${roleTitle})
 EXPECTED GENDER & PHYSICAL TRAITS: ${gender}, ${phys}
-EXPECTED COSTUME: ${outfit}
+EXPECTED LOCKED SIGNATURE COSTUME & COLOR: ${outfit}
+EXPECTED UNIFIED BACKDROP: ${expectedBackdrop}
 
-Audit the Generated Character Costume Portrait against these 3 rules:
-1. Single Clean Portrait: Shows 1 clear person waist-up (no split panels, no multiple heads, no text blocks).
+Audit the Generated Character Costume Portrait against these 5 mandatory guardrails:
+1. Single Clean Subject: Shows 1 clear person (no split panels, no multiple heads, no text overlays).
 2. Physical & Likeness Match: Matches the expected gender, hair color, skin tone, and glasses/facial hair${hasGuestSelfieRef ? ' from Image #1' : ''}.
-3. Costume Accuracy: Wearing attire matching the Expected Costume vibe.
+3. Locked Costume & Color Accuracy (HARD FAIL IF VIOLATED): Must wear the exact signature outfit and color specified in EXPECTED LOCKED SIGNATURE COSTUME (e.g. if signature color is Gold, a red dress is a HARD FAIL with score <= 50).
+4. Strict Waist-Up Medium Portrait Crop (HARD FAIL IF VIOLATED): Must be framed from the WAIST / BELT-LINE UP to the top of the head, showing the full upper-body torso. If knees, lower legs, feet/shoes, or studio floor are visible (full-body shot), OR if it is a tight chin-up face close-up hiding the torso outfit, score MUST be <= 55 and passed MUST be false.
+5. Unified Dark Bokeh Backdrop (HARD FAIL IF VIOLATED): Background must match the EXPECTED UNIFIED BACKDROP (dark moody evening backdrop with warm golden bokeh). If the background is plain white, light grey, or bright studio lighting, score MUST be <= 60 and passed MUST be false.
 
 Respond with valid JSON ONLY:
 {
   "score": <number 0-100>,
-  "passed": <true if score >= 82 else false>,
+  "passed": <true if score >= 84 and NO hard-fail rules were violated, else false>,
   "note": "<1 concise sentence explaining why the portrait passed or failed>",
-  "correctionDirective": "<If passed is false, provide a 1-sentence specific instruction to fix the exact defect; if passed is true, return empty string>"
+  "correctionDirective": "<If passed is false, provide a 1-sentence specific instruction to fix the exact crop, backdrop, or costume color defect; if passed is true, return empty string>"
 }`;
 
         parts.push({ text: portraitCriticPrompt });
