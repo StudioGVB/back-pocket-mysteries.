@@ -278,7 +278,7 @@ export const CHRISTMAS_WIFE_MOTIVE = {
   legacyId: '45ea4fe2-f279-43af-8329-16ff80d21692',
   motive_type: 'revenge' as const,
   strength: 'high' as const,
-  notes: 'Locked in bitter marital issues with {{The Husband}} (who trapped her with a ruthless estate clause) and teamed up with her ex ({{The Co-Worker}}) to break into his study safe tonight.',
+  notes: 'Locked in bitter marital issues with {{The Husband}} (who trapped {{The Wife_him}} with a ruthless estate clause) and teamed up with {{The Wife_his}} ex ({{The Co-Worker}}) to break into {{The Husband_his}} study safe tonight.',
 };
 
 export interface CanonicalChristmasRelationship {
@@ -301,7 +301,7 @@ export const CHRISTMAS_NIGHTMARE_RELATIONSHIPS: CanonicalChristmasRelationship[]
     charAKey: 'husband',
     charBKey: 'sister',
     dynamics: ['Siblings-in-Law', 'High School Classmates'],
-    notes: 'Went to high school together and have been siblings-in-law for 5 years through his marriage to {{The Wife}}.',
+    notes: 'Went to high school together and have been siblings-in-law for 5 years through {{The Husband_his}} marriage to {{The Wife}}.',
   },
   // 3. HUSBAND <-> Mistress (High School Friends)
   {
@@ -324,12 +324,12 @@ export const CHRISTMAS_NIGHTMARE_RELATIONSHIPS: CanonicalChristmasRelationship[]
     dynamics: ['Lifelong Besties', 'High School Friends'],
     notes: 'Best friends since high school who grew up on the same street.',
   },
-  // 6. WIFE <-> Sister (Sisters)
+  // 6. WIFE <-> Sister (Siblings)
   {
     charAKey: 'wife',
     charBKey: 'sister',
-    dynamics: ['Sisters', 'Grew Up Together'],
-    notes: 'Sisters who grew up together right next door to the two neighbour brothers ({{The Co-Worker}} and {{The Bestie}}).',
+    dynamics: ['Siblings', 'Grew Up Together'],
+    notes: 'Siblings who grew up together right next door to the two neighbour siblings ({{The Co-Worker}} and {{The Bestie}}).',
   },
   // 7. WIFE <-> Mistress (Old High School Besties)
   {
@@ -350,7 +350,7 @@ export const CHRISTMAS_NIGHTMARE_RELATIONSHIPS: CanonicalChristmasRelationship[]
     charAKey: 'wife',
     charBKey: 'coworker',
     dynamics: ['Childhood Neighbours', 'High School Exes'],
-    notes: 'Grew up next door to each other and dated back in high school before she married {{The Husband}} and he married {{The Mistress}}.',
+    notes: 'Grew up next door to each other and dated back in high school before {{The Wife_he}} married {{The Husband}} and {{The Co-Worker_he}} married {{The Mistress}}.',
   },
   // 10. Mistress <-> Neighbour A / Co-Worker (Married)
   {
@@ -359,12 +359,12 @@ export const CHRISTMAS_NIGHTMARE_RELATIONSHIPS: CanonicalChristmasRelationship[]
     dynamics: ['Married (3 Years)', 'High School Friends'],
     notes: 'Married for 3 years after knowing each other since high school.',
   },
-  // 11. Neighbour A / Co-Worker <-> Neighbour B / Bestie (Brothers)
+  // 11. Neighbour A / Co-Worker <-> Neighbour B / Bestie (Siblings)
   {
     charAKey: 'coworker',
     charBKey: 'bestie',
-    dynamics: ['Brothers', 'Grew Up Together'],
-    notes: 'Brothers who grew up together in the house next door to {{The Wife}} and {{The Sister-in-Law}}.',
+    dynamics: ['Siblings', 'Grew Up Together'],
+    notes: 'Siblings who grew up together in the house next door to {{The Wife}} and {{The Sister-in-Law}}.',
   },
   // 12. Sister <-> Neighbour B / Bestie (Childhood Neighbours)
   {
@@ -385,14 +385,14 @@ export const CHRISTMAS_NIGHTMARE_RELATIONSHIPS: CanonicalChristmasRelationship[]
     charAKey: 'mistress',
     charBKey: 'bestie',
     dynamics: ['Work Together', 'In-Laws'],
-    notes: 'Work in the same office and have been siblings-in-law for 3 years through her marriage to his brother ({{The Co-Worker}}).',
+    notes: 'Work in the same office and have been siblings-in-law for 3 years through {{The Mistress_his}} marriage to {{The Bestie_his}} {{The Co-Worker_sibling}} ({{The Co-Worker}}).',
   },
   // 15. WIFE <-> Neighbour B / Bestie (Childhood Neighbours)
   {
     charAKey: 'wife',
     charBKey: 'bestie',
     dynamics: ['Childhood Neighbours', 'Family Friends'],
-    notes: 'Grew up next door to each other alongside her sister ({{The Sister-in-Law}}) and his brother ({{The Co-Worker}}).',
+    notes: 'Grew up next door to each other alongside {{The Wife_his}} {{The Sister-in-Law_sibling}} ({{The Sister-in-Law}}) and {{The Bestie_his}} {{The Co-Worker_sibling}} ({{The Co-Worker}}).',
   },
 ];
 
@@ -414,7 +414,7 @@ export const CHRISTMAS_NIGHTMARE_BEATS: CanonicalChristmasBeat[] = [
     legacyId: '042f4d6c-89d6-47e9-b92d-df0e40cd511f',
     event_title: '{{The Mistress}}\'s Affair Exposed to {{The Sister-in-Law}}',
     description:
-      'Early in the Christmas party, {{The Sister-in-Law}} discovers that her own current bestie ({{The Mistress}}, who is married to {{The Co-Worker}} and used to be {{The Wife}}\'s old bestie) is having a secret affair with {{The Husband}}.',
+      'Early in the Christmas party, {{The Sister-in-Law}} discovers that {{The Sister-in-Law_his}} own current bestie ({{The Mistress}}, who is married to {{The Co-Worker}} and used to be {{The Wife}}\'s old bestie) is having a secret affair with {{The Husband}}.',
     beat_type: 'discovery',
     timeline_phase: 'pre_crime',
     involvedKeys: ['sister', 'husband', 'mistress'],
@@ -447,7 +447,7 @@ export const CHRISTMAS_NIGHTMARE_BEATS: CanonicalChristmasBeat[] = [
     legacyId: '48b65411-906f-41d7-9f2d-5b2b68bc2200',
     event_title: '{{The Sister-in-Law}} Ends {{The Husband}} So {{The Wife}} Can Be Happy & Free',
     description:
-      'Determined that the only way for {{The Wife}} to finally be happy and free is with {{The Husband}} gone, {{The Sister-in-Law}} slips away from her pantry tryst with {{The Bestie}} and uses the missing Christmas lights on {{The Husband}}.',
+      'Determined that the only way for {{The Wife}} to finally be happy and free is with {{The Husband}} gone, {{The Sister-in-Law}} slips away from {{The Sister-in-Law_his}} pantry tryst with {{The Bestie}} and uses the missing Christmas lights on {{The Husband}}.',
     beat_type: 'twist',
     timeline_phase: 'crime',
     involvedKeys: ['sister', 'husband', 'wife'],
@@ -497,7 +497,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R1-C1] REAL / CANON (Beat 1) - Exposes the secret affair between {{The Husband}} and {{The Mistress}}, and shows {{The Sister-in-Law}} was suspicious.',
     description:
-      '❤️ (7:32 PM): Sneak into the coat closet before dinner. I can\'t keep smiling across the table like we\'re all just one big happy street.\nMe (7:33 PM): Keep your voice down. Someone\'s been staring at us all night like they know.\n❤️ (7:34 PM): Relax, she\'s my best friend. She\'d never suspect me.',
+      '❤️ (7:32 PM): Sneak into the coat closet before dinner. I can\'t keep smiling across the table like we\'re all just one big happy street.\nMe (7:33 PM): Keep your voice down. Someone\'s been staring at us all night like they know.\n❤️ (7:34 PM): Relax, {{The Sister-in-Law_hes}} my best friend. {{The Sister-in-Law_He}}\'d never suspect me.',
     generation_prompt: 'A glowing smartphone resting beside a crystal glass of mulled wine and pine branches on a dark wooden table. (No text).',
   },
   {
@@ -529,7 +529,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 1,
     format: 'physical_prop',
     static_image_url: '/generated-clues/5ff23ebe-96f7-49d5-8222-84ca13a932f4-840601e54d17.jpg',
-    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} inside the coat closet with a dropped sterling silver snowflake hairpin (worn by both sisters) on the carpet outside.',
+    internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} inside the coat closet with a dropped sterling silver snowflake hairpin (worn by both siblings) on the carpet outside.',
     description: '',
     generation_prompt: 'A candid low-light hallway photograph showing {{The Husband}} and {{The Mistress}} standing closely together talking by an open wooden coat closet doorway while a vintage silver snowflake hairpin lies on the dark hallway runner carpet in the foreground. (No text).',
   },
@@ -560,7 +560,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'chat',
     internal_notes: '[FORMAT:chat] [CODE:R1-C5] Fake Arc Step 1 ({{The Mistress}} + {{The Bestie}}) - Exposes that co-workers {{The Mistress}} and {{The Bestie}} were both threatened by {{The Husband}} and plotted to wipe his phone.',
     description:
-      '🤫💼 (7:35 PM): {{The Husband_He}} just cornered me in the kitchen. Said {{The Husband_hes}} never leaving her, and if I make a scene tonight {{The Husband_hes}} telling my {{The Co-Worker_spouse}} AND reporting the missing money from our shared office department account.\nMe (7:36 PM): Are you kidding?! {{The Husband_He}} just threatened me too—and {{The Husband_hes}} supposed to be my best friend! Said if I don\'t end my secret fling tonight, {{The Husband_hes}} telling my older {{The Co-Worker_sibling}} everything.\n🤫💼 (7:37 PM): Everything {{The Husband_he}} has on us is on {{The Husband_his}} phone. Help me get it unlocked before dessert or we\'re both done.',
+      '🤫💼 (7:35 PM): {{The Husband_He}} just cornered me in the kitchen. Said {{The Husband_hes}} never leaving {{The Wife_him}}, and if I make a scene tonight {{The Husband_hes}} telling my {{The Co-Worker_spouse}} AND reporting the missing money from our shared office department account.\nMe (7:36 PM): Are you kidding?! {{The Husband_He}} just threatened me too, and {{The Husband_hes}} supposed to be my best friend! Said if I don\'t end my secret fling tonight, {{The Husband_hes}} telling my older {{The Co-Worker_sibling}} everything.\n🤫💼 (7:37 PM): Everything {{The Husband_he}} has on us is on {{The Husband_his}} phone. Help me get it unlocked before dessert or we\'re both done.',
     generation_prompt: 'Two smartphones lying side by side on a marble bar counter next to cocktail napkins. (No text).',
   },
   {
@@ -609,7 +609,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     voice_region: 'en-AU',
     internal_notes: '[FORMAT:audio] [CODE:R2-C2] REAL / CANON (Beat 3) - Captures the explosive marital fight between {{The Husband}} and {{The Wife}}, overheard outside the door at 8:12 PM.',
     description:
-      'Recording Duration: 19.2 Seconds (8:12 PM • Upstairs Master Hallway):\n{{The Wife}}: "Why are you doing this to me?! Everyone downstairs knows our marriage is a lie! Just let me go!"\n{{The Husband}}: "You\'re never leaving me. You\'ll fix your makeup, come downstairs, and play the grateful wife, or I\'ll ruin your whole family."\n[Sound of footsteps retreating from the door and a hushed voice in the hallway: "{{The Husband_Hes}} never going to let her be happy..."]',
+      'Recording Duration: 19.2 Seconds (8:12 PM • Upstairs Master Hallway):\n{{The Wife}}: "Why are you doing this to me?! Everyone downstairs knows our marriage is a lie! Just let me go!"\n{{The Husband}}: "You\'re never leaving me. You\'ll fix your face, come downstairs, and play the grateful {{The Wife_spouse}}, or I\'ll ruin your whole family."\n[Sound of footsteps retreating from the door and a hushed voice in the hallway: "{{The Husband_Hes}} never going to let {{The Wife_him}} be happy..."]',
     generation_prompt: 'A dimly lit upstairs hallway with warm light spilling from underneath a closed wooden door and festive garland on the banister. (No text).',
   },
   {
@@ -624,7 +624,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     format: 'handwritten_note',
     internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C3] REAL / CANON (Beat 3) - Written right after overhearing the marital fight; ambiguous enough to sound like a childhood neighbour or sibling.',
     description:
-      'Recovered: Torn in half inside the upstairs bathroom bin (8:14 PM)\n"...heard {{The Husband_him}} through the bedroom door just now. First the coat closet, and now {{The Husband_he}} swears she\'ll never leave this marriage free. Twenty years on this street and {{The Husband_he}} still thinks {{The Husband_he}} owns us. Not after tonight."',
+      'Recovered: Torn in half inside the upstairs bathroom bin (8:14 PM)\n"...heard {{The Husband_him}} through the bedroom door just now. First the coat closet, and now {{The Husband_he}} swears {{The Wife_he}}\'ll never leave this marriage free. Twenty years on this street and {{The Husband_he}} still thinks {{The Husband_he}} owns us. Not after tonight."',
     generation_prompt: 'A torn cream-colored holiday place card with gold trim resting beside a sink in a candlelit bathroom. (No text).',
   },
   {
@@ -653,9 +653,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 4,
     format: 'chat',
-    internal_notes: '[FORMAT:chat] [CODE:R2-C5] REAL / CANON (Beat 4) - Proves {{The Sister-in-Law}} left {{The Bestie}} alone in the pantry from 8:15 to 8:25 PM and asked him to lie for her alibi.',
+    internal_notes: '[FORMAT:chat] [CODE:R2-C5] REAL / CANON (Beat 4) - Proves {{The Sister-in-Law}} left {{The Bestie}} alone in the pantry from 8:15 to 8:25 PM and asked {{The Bestie_him}} to lie for {{The Sister-in-Law_his}} alibi.',
     description:
-      'Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\nMe (8:27 PM): Of course I\'ll cover for you—if my older {{The Co-Worker_sibling}} or your sister found out I was hooking up with the hostess\'s little sister, we\'d both be dead. Wait, why are your hands shaking?',
+      'Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\nMe (8:27 PM): Of course I\'ll cover for you, if my older {{The Co-Worker_sibling}} or your {{The Wife_sibling}} found out I was hooking up with {{The Wife}}\'s younger {{The Sister-in-Law_sibling}}, we\'d both be dead. Wait, why are your hands shaking?',
     generation_prompt: 'Two champagne flutes left behind on a marble pantry counter beside holiday ribbon and pine cones. (No text).',
   },
   {
@@ -687,9 +687,9 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     beatNumber: 5,
     format: 'document',
     static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111109-6c6f2b97ac73.jpg',
-    internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19:12 PM (not the sedative drops or work gloves), and shows the "...ever Sisters" silver snowflake hairpin snagged inside the knotted light cord.',
+    internal_notes: '[FORMAT:document] [CODE:R3-C1] REAL / CANON (Beat 5) - Confirms cause of death was the 25-foot Christmas lights at 8:19:12 PM (not the sedative drops or work gloves), and shows the matching sibling silver snowflake hairpin snagged inside the knotted light cord.',
     description:
-      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: DEATH AT 8:19:12 PM • 1ST FLOOR TREE CORNER\n• Cause of Death: 25-ft vintage Christmas light cord (Wall Outlet #1).\n• Toxicology: Zolpidem 0.04 mg/L (mild sedation only; non-fatal).\n• Cord Trace: Sterling silver snowflake hairpin ("...ever Sisters") snagged inside wire knot.',
+      'LAB: FORENSIC CRIME SCENE UNIT\nTIME: DEATH AT 8:19:12 PM • 1ST FLOOR TREE CORNER\n• Cause of Death: 25-ft vintage Christmas light cord (Wall Outlet #1).\n• Toxicology: Zolpidem 0.04 mg/L (mild sedation only; non-fatal).\n• Cord Trace: Sterling silver snowflake hairpin (matching sibling set) snagged inside wire knot.',
     generation_prompt: 'A macro forensic close-up photograph on a dark hardwood floor beside a Christmas tree showing a tangled, knotted cord of glowing red and green vintage Christmas tree lights with a metallic sterling silver snowflake hairpin snagged right in the middle of the knotted wire. Raw unedited photo, NO text.',
   },
   {
@@ -767,7 +767,7 @@ export const CHRISTMAS_NIGHTMARE_SUBPLOTS: CanonicalChristmasSubplotSpec[] = [
     beats: [
       {
         beat_number: 1,
-        description: 'Step 1 (The Trigger): {{The Co-Worker}} learns {{The Husband}} brought company audit files to ruin him on Monday, while {{The Wife}} reveals {{The Husband}}\'s prenup clause leaves her penniless. The exes agree to meet by the hallway closet at 8:00 PM.',
+        description: 'Step 1 (The Trigger): {{The Co-Worker}} learns {{The Husband}} brought company audit files to ruin {{The Co-Worker_him}} on Monday, while {{The Wife}} reveals {{The Husband}}\'s prenup clause leaves {{The Wife_him}} penniless. The exes agree to meet by the hallway closet at 8:00 PM.',
         linkedBeatNumber: 1,
       },
       {
@@ -787,7 +787,7 @@ export const CHRISTMAS_NIGHTMARE_SUBPLOTS: CanonicalChristmasSubplotSpec[] = [
     title: '{{The Mistress}} & {{The Bestie}}: The Spiked Eggnog & Phone Wipe',
     theme: 'Office blackmail, secret affairs, and a drugged holiday drink',
     description:
-      'Co-workers and in-laws {{The Mistress}} and {{The Bestie}} (Neighbour B) panic when {{The Husband}} threatens to expose both {{The Mistress}}\'s affair/work account and {{The Bestie}}\'s secret fling with {{The Sister-in-Law}}, leading them to spike his eggnog with sleep drops to wipe his phone.',
+      'Co-workers and in-laws {{The Mistress}} and {{The Bestie}} (Neighbour B) panic when {{The Husband}} threatens to expose both {{The Mistress}}\'s affair/work account and {{The Bestie}}\'s secret fling with {{The Sister-in-Law}}, leading them to spike {{The Husband_his}} eggnog with sleep drops to wipe {{The Husband_his}} phone.',
     primaryKey: 'mistress',
     secondaryKey: 'bestie',
     beats: [
@@ -798,12 +798,12 @@ export const CHRISTMAS_NIGHTMARE_SUBPLOTS: CanonicalChristmasSubplotSpec[] = [
       },
       {
         beat_number: 2,
-        description: 'Step 2 (The Escalation): At 8:08 PM, {{The Mistress}} and {{The Bestie}} spike {{The Husband}}\'s spiced eggnog with fast-acting sleep drops so they can unlock his phone with FaceID and delete his blackmail files.',
+        description: 'Step 2 (The Escalation): At 8:08 PM, {{The Mistress}} and {{The Bestie}} spike {{The Husband}}\'s spiced eggnog with fast-acting sleep drops so they can unlock {{The Husband_his}} phone with FaceID and delete {{The Husband_his}} blackmail files.',
         linkedBeatNumber: 2,
       },
       {
         beat_number: 3,
-        description: 'Step 3 (The Suspicious Action & Hole): At 8:16 PM, {{The Mistress}} steals {{The Husband}}\'s phone while he is groggy but alive on the living room sofa, and returns to the dining table by 8:18 PM, accidentally leaving him easy for {{The Sister-in-Law}} to overpower at 8:19 PM.',
+        description: 'Step 3 (The Suspicious Action & Hole): At 8:16 PM, {{The Mistress}} steals {{The Husband}}\'s phone while {{The Husband_he}} is groggy but alive on the living room sofa, and returns to the dining table by 8:18 PM, accidentally leaving {{The Husband_him}} easy for {{The Sister-in-Law}} to overpower at 8:19 PM.',
         linkedBeatNumber: 4,
       },
     ],
