@@ -585,6 +585,7 @@ export function PlayroomClient({
   const [selectedClueModalIndex, setSelectedClueModalIndex] = useState<number | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [expandedRevealBeats, setExpandedRevealBeats] = useState<number[]>([1]);
+  const [revealSubPage, setRevealSubPage] = useState<'solution' | 'stats'>('solution');
 
   const toggleRevealBeat = useCallback((beatNum: number) => {
     setExpandedRevealBeats(prev =>
@@ -598,15 +599,88 @@ export function PlayroomClient({
   const [isSubmittingTheory, setIsSubmittingTheory] = useState<boolean>(false);
   const [theorySavedNotice, setTheorySavedNotice] = useState<boolean>(false);
 
-  // 5-Star Guest Review Form State
+  // 5-Star Guest Review Form & Review-Gated Stats Unlock State
   const [reviews, setReviews] = useState<any[]>(initialSession?.reviews || []);
   const [reviewRating, setReviewRating] = useState<number>(5);
   const [reviewHoverRating, setReviewHoverRating] = useState<number>(0);
   const [reviewName, setReviewName] = useState<string>('');
   const [reviewComment, setReviewComment] = useState<string>('');
+  const [reviewPhotoDataUrl, setReviewPhotoDataUrl] = useState<string>('');
+  const [isCompressingPhoto, setIsCompressingPhoto] = useState<boolean>(false);
+  const reviewPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
   const [copiedGuestLink, setCopiedGuestLink] = useState<boolean>(false);
+
+  // Restore review-unlock status for this device/guest if they already left a review tonight
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('subpage') === 'stats') {
+        setRevealSubPage('stats');
+      }
+      const unlocked = window.localStorage.getItem(`bpm_review_unlocked_${mystery.id}`);
+      if (unlocked === '1' || params.get('unlocked') === '1') {
+        setReviewSubmitted(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, [mystery.id]);
+
+  // Client-side party photo compression so mobile camera shots upload fast
+  const handleReviewPhotoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsCompressingPhoto(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      if (!dataUrl) {
+        setIsCompressingPhoto(false);
+        return;
+      }
+      const img = new window.Image();
+      img.onload = () => {
+        try {
+          const maxDim = 1000;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width >= height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            setReviewPhotoDataUrl(compressed);
+          } else {
+            setReviewPhotoDataUrl(dataUrl);
+          }
+        } catch {
+          setReviewPhotoDataUrl(dataUrl);
+        } finally {
+          setIsCompressingPhoto(false);
+        }
+      };
+      img.onerror = () => {
+        setReviewPhotoDataUrl(dataUrl);
+        setIsCompressingPhoto(false);
+      };
+      img.src = dataUrl;
+    };
+    reader.onerror = () => setIsCompressingPhoto(false);
+    reader.readAsDataURL(file);
+  }, []);
 
   // Copy or native-share the clean guest lobby link (never requires login or sign-up)
   const handleShareOrCopyGuestLink = useCallback(
@@ -1210,7 +1284,7 @@ export function PlayroomClient({
     }
   };
 
-  // Submit 5-Star Guest Review
+  // Submit 5-Star Guest Review & Unlock Party Voting Stats
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingReview(true);
@@ -1223,11 +1297,20 @@ export function PlayroomClient({
         characterRole: roleLabel,
         rating: reviewRating,
         comment: reviewComment,
+        ...(reviewPhotoDataUrl ? { photoDataUrl: reviewPhotoDataUrl } : {}),
       });
       if (res.reviews) {
         setReviews(res.reviews);
       }
       setReviewSubmitted(true);
+      setRevealSubPage('stats');
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(`bpm_review_unlocked_${mystery.id}`, '1');
+        } catch {
+          // ignore
+        }
+      }
     } finally {
       setIsSubmittingReview(false);
     }
@@ -4702,12 +4785,52 @@ export function PlayroomClient({
           </div>
         )}
 
-        {/* TAB 4: FINAL SOLUTION REVEAL, CLUE SCORECARD, ALL-PLAYERS CHARTS & 5-STAR GUEST REVIEW */}
+        {/* TAB 4: FINAL SOLUTION REVEAL & REVIEW-GATED PARTY VOTING STATS */}
         {activeTab === 'reveal' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* 1. EDITORIAL CASE SOLUTION: KILLER PORTRAIT HERO + CHRONOLOGICAL TIMELINE */}
-            <section className="bg-slate-900/75 border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-7">
-              {solutionData ? (
+          <div id="finale-reveal-top" className="space-y-6 animate-in fade-in duration-200">
+            {/* 2-Page Finale Switcher: Page 1 (The Grand Reveal) -> Page 2 (Review-Gated Voting Stats & Who Voted For Who) */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-1.5 rounded-2xl bg-slate-900/90 border border-white/10 shadow-lg">
+              <button
+                type="button"
+                onClick={() => setRevealSubPage('solution')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  revealSubPage === 'solution'
+                    ? 'bg-brand-pink text-white shadow-md'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>1. The Murder Reveal &amp; Timeline</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRevealSubPage('stats')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  revealSubPage === 'stats'
+                    ? 'bg-brand-pink text-white shadow-md'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>2. Voting Stats &amp; Who Voted For Who</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                    reviewSubmitted
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                      : revealSubPage === 'stats'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
+                  }`}
+                >
+                  {reviewSubmitted ? '✓ Unlocked' : '🔒 Leave Review'}
+                </span>
+              </button>
+            </div>
+
+            {revealSubPage === 'solution' ? (
+              <div className="space-y-6">
+                {/* 1. EDITORIAL CASE SOLUTION: KILLER PORTRAIT HERO + CHRONOLOGICAL TIMELINE */}
+                <section className="bg-slate-900/75 border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-7">
+                  {solutionData ? (
                 (() => {
                   const realMurderClues = clues.filter(
                     c => c.evidence_status !== 'fake' && c.implication_type !== 'red_herring'
@@ -5095,607 +5218,621 @@ export function PlayroomClient({
                   </p>
                 </div>
               )}
-            </section>
+                </section>
 
-            {/* 2. HOW YOUR CLUES STACKED UP AGAINST THE TRUTH (PERSONAL DETECTIVE NOTEBOOK SCORECARD) */}
-            {solutionData &&
-              (() => {
-                const taggedItems = clues.filter(c => Boolean(clueTags[c.id]));
-
-                let correctKeyCount = 0;
-                let totalKeyTagged = 0;
-                let correctDecoyOrAlibiCount = 0;
-                let totalDecoyOrAlibiTagged = 0;
-
-                for (const c of taggedItems) {
-                  const t = clueTags[c.id];
-                  const isFake =
-                    c.evidence_status === 'fake' || c.implication_type === 'red_herring';
-                  if (t === 'key') {
-                    totalKeyTagged++;
-                    if (!isFake) correctKeyCount++;
-                  } else if (t === 'red_herring' || t === 'alibi') {
-                    totalDecoyOrAlibiTagged++;
-                    if (isFake) correctDecoyOrAlibiCount++;
-                  }
-                }
-
-                const totalTagged = totalKeyTagged + totalDecoyOrAlibiTagged;
-                const totalCorrectTags = correctKeyCount + correctDecoyOrAlibiCount;
-                const bonusPoints = correctKeyCount * 10 + correctDecoyOrAlibiCount * 15;
-                const accuracyPct =
-                  totalTagged > 0 ? Math.round((totalCorrectTags / totalTagged) * 100) : null;
-                const notesWrittenCount = clues.filter(c =>
-                  Boolean((clueNotes[c.id] || '').trim())
-                ).length;
-
-                return (
-                  <section className="bg-slate-900/50 border border-amber-400/35 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
-                          📓 Below the Solution • Evidence Truth Breakdown
-                        </span>
-                        <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                          How All Clues &amp; Your Tags Stacked Up Against the Truth
-                        </h2>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        {bonusPoints > 0 && (
-                          <div className="px-3.5 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-right">
-                            <div className="text-[9px] font-black uppercase tracking-wider text-emerald-300">
-                              Clue Tag Bonus
-                            </div>
-                            <div className="text-sm sm:text-base font-black text-emerald-300">
-                              +{bonusPoints} Detective Pts
-                            </div>
-                          </div>
-                        )}
-                        {accuracyPct !== null && (
-                          <div className="px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/40 text-right">
-                            <div className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                              Evidence Accuracy
-                            </div>
-                            <div className="text-sm sm:text-base font-black text-amber-300">
-                              {accuracyPct}% ({totalCorrectTags}/{totalTagged} Clues Right)
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                {/* NEXT PAGE CTA BANNER AT BOTTOM OF PAGE 1 */}
+                <div className="rounded-3xl bg-gradient-to-r from-brand-pink/20 via-slate-900 to-amber-500/15 border border-brand-pink/35 p-5 sm:p-7 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                        Page 2 of 2 • Party Receipts
+                      </span>
+                      <span className="text-xs font-semibold text-amber-300">
+                        {reviewSubmitted ? '✓ Unlocked' : '🔒 Leave a 5-Star Review to Unlock'}
+                      </span>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
-                        <div className="text-[9px] font-black uppercase tracking-wider text-amber-400">
-                          🔑 Key Evidence Tagged (+10 pts each)
-                        </div>
-                        <div className="text-xs sm:text-sm font-black text-white mt-1">
-                          {totalKeyTagged > 0
-                            ? `${correctKeyCount}/${totalKeyTagged} were Real Murder Clues`
-                            : 'No clues tagged 🔑 Key'}
-                        </div>
-                      </div>
-                      <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
-                        <div className="text-[9px] font-black uppercase tracking-wider text-rose-400">
-                          🐟 Decoys &amp; 🛡️ Alibis Spotted (+15 pts each)
-                        </div>
-                        <div className="text-xs sm:text-sm font-black text-white mt-1">
-                          {totalDecoyOrAlibiTagged > 0
-                            ? `${correctDecoyOrAlibiCount}/${totalDecoyOrAlibiTagged} were Red Herrings`
-                            : 'No clues tagged Decoy/Alibi'}
-                        </div>
-                      </div>
-                      <div className="rounded-xl bg-slate-950/80 border border-white/10 p-3.5">
-                        <div className="text-[9px] font-black uppercase tracking-wider text-sky-400">
-                          ✍️ Detective Notes Written
-                        </div>
-                        <div className="text-xs sm:text-sm font-black text-white mt-1">
-                          {notesWrittenCount} {notesWrittenCount === 1 ? 'Note' : 'Notes'} Saved
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-white/10">
-                      {clues.map(c => {
-                        const t = clueTags[c.id];
-                        const note = (clueNotes[c.id] || '').trim();
-                        const pinnedNames = (clueSuspects[c.id] || [])
-                          .map(sId => {
-                            const ch = activeCharacters.find(ac => ac.id === sId);
-                            return ch ? parseCharacter(ch).name : null;
-                          })
-                          .filter(Boolean);
-                        const isFake =
-                          c.evidence_status === 'fake' || c.implication_type === 'red_herring';
-                        const tagWasCorrect =
-                          t === 'key'
-                            ? !isFake
-                            : t === 'red_herring' || t === 'alibi'
-                            ? isFake
-                            : null;
-                        const cleanTitle = hydrateTextWithCharacters(
-                          stripCustomerFacingTitle(c.title) || c.title,
-                          characters,
-                          'print'
-                        );
-
-                        return (
-                          <div
-                            key={c.id}
-                            className={`rounded-xl p-3 border space-y-1.5 ${
-                              tagWasCorrect === true
-                                ? 'bg-emerald-950/30 border-emerald-500/40'
-                                : tagWasCorrect === false
-                                ? 'bg-rose-950/30 border-rose-500/40'
-                                : 'bg-slate-950/80 border-white/10'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-black uppercase shrink-0">
-                                  R{c.round_number || 1}
-                                </span>
-                                <span className="text-xs font-black text-white truncate">
-                                  {cleanTitle}
-                                </span>
-                              </div>
-                              <span
-                                className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${
-                                  isFake
-                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                }`}
-                              >
-                                {isFake ? '🎭 Truth: Decoy / Alibi' : '✓ Truth: Real Clue'}
-                              </span>
-                            </div>
-
-                            <div className="text-[11px] font-bold text-slate-300">
-                              {t ? (
-                                <>
-                                  Your Tag:{' '}
-                                  <strong className="text-white">
-                                    {t === 'key'
-                                      ? '🔑 Key'
-                                      : t === 'red_herring'
-                                      ? '🐟 Decoy'
-                                      : '🛡️ Alibi'}
-                                  </strong>{' '}
-                                  {tagWasCorrect
-                                    ? '✅ Spot-on!'
-                                    : isFake
-                                    ? '❌ Tricked by a decoy!'
-                                    : '❌ Dismissed real evidence!'}
-                                </>
-                              ) : (
-                                <span className="text-slate-500 italic">Untagged</span>
-                              )}
-                            </div>
-
-                            {pinnedNames.length > 0 && (
-                              <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                                {pinnedNames.map((sName, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="px-1.5 py-0.5 rounded bg-brand-pink/20 text-brand-pink text-[9px] font-black uppercase"
-                                  >
-                                    📌 {sName}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-
-                            {note && (
-                              <p className="text-xs text-slate-300 italic pt-1 border-t border-white/10">
-                                Your Note: &ldquo;{note}&rdquo;
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                );
-              })()}
-
-            {/* 3. ALL-PLAYERS INPUT CHARTS, SUSPECT VOTE BREAKDOWN & DETECTIVE LEADERBOARD */}
-            <section className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl space-y-5">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                  📊 All-Players Inputs &amp; End of Mystery Superlatives
-                </span>
-                <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                  🏆 All-Players Voting Charts &amp; Detective Leaderboard
-                </h2>
-              </div>
-
-              {detectiveLeaderboard.length === 0 ? (
-                <p className="text-xs text-slate-500 font-medium">
-                  No round votes were recorded during this session yet.
-                </p>
-              ) : (
-                <>
-                  {/* Chart A: Suspect Accusation Breakdown Bar Chart across all players */}
-                  {mostSuspectedList.length > 0 && (
-                    <div className="rounded-xl bg-slate-950/70 border border-white/10 p-4 space-y-3">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        📊 Suspect Accusation Distribution (All Players&apos; Votes)
-                      </div>
-                      <div className="space-y-2.5">
-                        {mostSuspectedList.map(item => {
-                          const totalCastVotes = Math.max(
-                            1,
-                            mostSuspectedList.reduce((acc, s) => acc + s.count, 0)
-                          );
-                          const pct = Math.round((item.count / totalCastVotes) * 100);
-                          const isTrueKiller =
-                            solutionData?.killer?.id && item.suspectId === solutionData.killer.id;
-                          return (
-                            <div key={item.suspectId} className="space-y-1">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-black text-white">
-                                  {item.suspectName}{' '}
-                                  {isTrueKiller && (
-                                    <span className="ml-1 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase">
-                                      🔪 True Killer
-                                    </span>
-                                  )}
-                                </span>
-                                <span className="text-slate-300 font-bold">
-                                  {item.count} {item.count === 1 ? 'vote' : 'votes'} ({pct}%)
-                                </span>
-                              </div>
-                              <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${
-                                    isTrueKiller ? 'bg-emerald-500' : 'bg-brand-pink'
-                                  }`}
-                                  style={{ width: `${Math.max(6, pct)}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Party Awards & Superlatives */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {detectiveLeaderboard[0] && (
-                      <div className="p-3.5 rounded-xl bg-gradient-to-br from-amber-500/20 to-slate-900 border border-amber-400/30 space-y-1">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-400">
-                          🥇 Master Detective
-                        </span>
-                        <h3 className="text-sm font-black text-white">
-                          {detectiveLeaderboard[0].voterName}
-                        </h3>
-                        <p className="text-[11px] text-slate-300">
-                          {detectiveLeaderboard[0].correctVotes}/
-                          {detectiveLeaderboard[0].totalVotes} right (
-                          {detectiveLeaderboard[0].accuracyPercent}%)
-                        </p>
-                      </div>
-                    )}
-
-                    {mostSuspectedList[0] && (
-                      <div className="p-3.5 rounded-xl bg-gradient-to-br from-brand-pink/20 to-slate-900 border border-brand-pink/30 space-y-1">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-brand-pink">
-                          🎯 Most Suspected
-                        </span>
-                        <h3 className="text-sm font-black text-white">
-                          {mostSuspectedList[0].suspectName}
-                        </h3>
-                        <p className="text-[11px] text-slate-300">
-                          Accused {mostSuspectedList[0].count}{' '}
-                          {mostSuspectedList[0].count === 1 ? 'time' : 'times'}
-                        </p>
-                      </div>
-                    )}
-
-                    {(() => {
-                      const wildest = [...detectiveLeaderboard].sort(
-                        (a, b) => b.uniqueSuspectsCount - a.uniqueSuspectsCount
-                      )[0];
-                      if (!wildest) return null;
-                      return (
-                        <div className="p-3.5 rounded-xl bg-gradient-to-br from-purple-500/20 to-slate-900 border border-purple-400/30 space-y-1">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-purple-300">
-                            🌀 Wildest Sleuth
-                          </span>
-                          <h3 className="text-sm font-black text-white">{wildest.voterName}</h3>
-                          <p className="text-[11px] text-slate-300">
-                            {wildest.uniqueSuspectsCount} different suspects
-                          </p>
-                        </div>
-                      );
-                    })()}
-
-                    {(() => {
-                      const bsDetector = [...detectiveLeaderboard]
-                        .filter(r => (r.decoysSpotted || 0) > 0)
-                        .sort((a, b) => (b.decoysSpotted || 0) - (a.decoysSpotted || 0))[0];
-                      if (!bsDetector) return null;
-                      return (
-                        <div className="p-3.5 rounded-xl bg-gradient-to-br from-emerald-500/20 to-slate-900 border border-emerald-400/30 space-y-1">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">
-                            🦅 The BS Detector
-                          </span>
-                          <h3 className="text-sm font-black text-white">{bsDetector.voterName}</h3>
-                          <p className="text-[11px] text-slate-300">
-                            Spotted {bsDetector.decoysSpotted}{' '}
-                            {bsDetector.decoysSpotted === 1 ? 'red herring' : 'red herrings'}
-                          </p>
-                        </div>
-                      );
-                    })()}
-
-                    {(() => {
-                      const hookLine = [...detectiveLeaderboard]
-                        .filter(r => (r.trickedByDecoys || 0) > 0)
-                        .sort((a, b) => (b.trickedByDecoys || 0) - (a.trickedByDecoys || 0))[0];
-                      if (!hookLine) return null;
-                      return (
-                        <div className="p-3.5 rounded-xl bg-gradient-to-br from-rose-500/20 to-slate-900 border border-rose-400/30 space-y-1">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-rose-300">
-                            🎣 Hook, Line &amp; Sinker
-                          </span>
-                          <h3 className="text-sm font-black text-white">{hookLine.voterName}</h3>
-                          <p className="text-[11px] text-slate-300">
-                            Baited into tagging {hookLine.trickedByDecoys}{' '}
-                            {hookLine.trickedByDecoys === 1 ? 'decoy' : 'decoys'} as 🔑 Key
-                          </p>
-                        </div>
-                      );
-                    })()}
+                    <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                      Who Voted For Who &amp; Why? See Tonight&apos;s Party Voting Stats
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                      Unlock the Suspect Vote Distribution, Party Superlatives (Master Detective &amp; Most Suspected), and every player&apos;s round-by-round accusations and theories.
+                    </p>
                   </div>
 
-                  {/* Full Player Leaderboard */}
-                  <div className="divide-y divide-white/5 rounded-xl border border-white/10 bg-slate-950/60 overflow-hidden">
-                    {detectiveLeaderboard.map((row, idx) => (
-                      <div
-                        key={row.voterCharId}
-                        className="px-3.5 py-2.5 flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <span className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center font-black text-[10px] text-white">
-                            {idx + 1}
-                          </span>
-                          <span className="font-black text-white">{row.voterName}</span>
-                          {row.earliestCorrectRound && (
-                            <span className="text-[10px] font-bold text-emerald-400">
-                              • R{row.earliestCorrectRound}
-                            </span>
-                          )}
-                          {(row.clueTagBonusPoints || 0) > 0 && (
-                            <span className="px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 text-[9px] font-black uppercase">
-                              +{row.clueTagBonusPoints} clue pts
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <span className="font-black text-brand-pink">
-                            {row.accuracyScore} pts
-                          </span>
-                          <span className="text-slate-500 ml-1.5 text-[11px]">
-                            ({row.correctVotes}/{row.totalVotes})
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Round-by-Round Everyone's Guesses & Theories Breakdown */}
-                  {submissions.length > 0 && (
-                    <div className="pt-3 border-t border-white/10 space-y-4">
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                          💬 Everyone&apos;s Guesses &amp; Theories Across All Rounds
-                        </span>
-                        <h3 className="text-sm sm:text-base font-black text-white mt-0.5">
-                          Who Everyone Voted For &amp; Why in Each Round
-                        </h3>
-                      </div>
-
-                      <div className="space-y-3">
-                        {availableClueRounds.map(roundNum => {
-                          const roundSubs = submissions.filter(s => s.round === roundNum);
-                          if (roundSubs.length === 0) return null;
-                          const isFinalRound = roundNum === maxClueRound;
-                          return (
-                            <div
-                              key={roundNum}
-                              className="rounded-xl bg-slate-950/75 border border-white/10 p-3.5 sm:p-4 space-y-2.5"
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/15 border border-brand-pink/30 text-brand-pink text-[10px] font-black uppercase tracking-widest">
-                                  {isFinalRound
-                                    ? `Round ${roundNum} • Final Guess (${roundSubs.length})`
-                                    : `Round ${roundNum} Guesses & Theories (${roundSubs.length})`}
-                                </span>
-                              </div>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                {roundSubs.map(sub => {
-                                  const guessedKiller =
-                                    Boolean(solutionData?.killer?.id) &&
-                                    sub.suspectCharId === solutionData?.killer?.id;
-                                  return (
-                                    <div
-                                      key={sub.id}
-                                      className={`p-3 rounded-xl border text-xs space-y-1.5 ${
-                                        guessedKiller
-                                          ? 'bg-emerald-950/30 border-emerald-500/40'
-                                          : 'bg-white/[0.03] border-white/10'
-                                      }`}
-                                    >
-                                      <div className="flex flex-wrap items-center justify-between gap-1.5">
-                                        <span className="font-black text-white">
-                                          {sub.voterName}
-                                        </span>
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="text-[11px] font-black text-brand-pink">
-                                            → {sub.suspectName}
-                                          </span>
-                                          {guessedKiller && (
-                                            <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 text-[9px] font-black uppercase">
-                                              ✓ Correct
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                      <p className="text-slate-300 italic leading-relaxed">
-                                        &ldquo;{sub.reason}&rdquo;
-                                      </p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </section>
-
-            {/* 2B. FULL CHARACTER RELATIONSHIP & SECRET WEB (UNLOCKED AT FINAL REVEAL) */}
-            {solutionData && relationships.length > 0 && (
-              <section className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                    Unlocked Secret Dynamics
-                  </span>
-                  <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                    🕸️ Full Character Relationship Web
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Now that the truth is out, explore how every character, affair, rivalry, and hidden motive connected across the room.
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRevealSubPage('stats');
+                      if (typeof document !== 'undefined') {
+                        document
+                          .getElementById('finale-reveal-top')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                    className="w-full sm:w-auto shrink-0 px-6 py-3.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-xl transition-all cursor-pointer"
+                  >
+                    {reviewSubmitted
+                      ? 'View Party Voting Stats →'
+                      : '⭐ Leave Review & Unlock Stats →'}
+                  </button>
                 </div>
-
-                <RelationshipGraph
-                  characters={activeCharacters.map(c => ({
-                    ...c,
-                    is_victim: Boolean(c.is_victim || solutionData?.victim?.id === c.id),
-                    plot_role:
-                      c.is_victim || solutionData?.victim?.id === c.id
-                        ? 'victim'
-                        : solutionData?.killer?.id === c.id
-                        ? 'killer'
-                        : solutionData?.assistant?.id === c.id
-                        ? 'assistant'
-                        : 'suspect',
-                  }))}
-                  relationships={relationships}
-                  variant="dark"
-                  revealPlotRoles={true}
-                />
-              </section>
-            )}
-
-            {/* 3. 5-STAR GUEST REVIEW & COMMENT CARD */}
-            <section className="bg-slate-900/50 border border-brand-pink/30 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                  Rate Tonight&apos;s Mystery
-                </span>
-                <h2 className="text-lg font-black text-white">⭐ Leave a 5-Star Review</h2>
               </div>
-
-              {reviewSubmitted ? (
-                <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-center space-y-1">
-                  <h3 className="text-sm font-black text-emerald-300">
-                    🎉 Thank You for Your {reviewRating}-Star Review!
-                  </h3>
-                  <p className="text-xs text-slate-300">
-                    Saved for {mystery.title}.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleReviewSubmit} className="space-y-3">
-                  <div className="flex items-center gap-1.5">
-                    {[1, 2, 3, 4, 5].map(star => {
-                      const active = (reviewHoverRating || reviewRating) >= star;
-                      return (
-                        <button
-                          key={star}
-                          type="button"
-                          onMouseEnter={() => setReviewHoverRating(star)}
-                          onMouseLeave={() => setReviewHoverRating(0)}
-                          onClick={() => setReviewRating(star)}
-                          className={`text-2xl transition-transform hover:scale-110 cursor-pointer ${
-                            active ? 'text-amber-400' : 'text-slate-700'
-                          }`}
-                        >
-                          ★
-                        </button>
-                      );
-                    })}
-                    <span className="ml-2 text-xs font-black uppercase tracking-widest text-amber-400">
-                      {reviewRating} / 5
+            ) : !reviewSubmitted ? (
+              /* PAGE 2 (LOCKED): 5-STAR REVIEW GATE WALL (WITH OPTIONAL COMMENT & PARTY PHOTO) */
+              <section className="bg-slate-900/85 border border-brand-pink/35 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-7">
+                {/* Locked Stats Teaser Preview */}
+                <div className="rounded-2xl bg-slate-950/80 border border-white/10 p-4 sm:p-5 space-y-4 relative overflow-hidden">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+                        🔒 Locked Party Metrics
+                      </span>
+                      <span className="text-xs font-bold text-slate-300">
+                        {submissions.length > 0
+                          ? `${submissions.length} Player Votes & Written Theories Ready`
+                          : 'All Round Votes, Superlatives & Player Theories'}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      Unlocks instantly below ↓
                     </span>
                   </div>
 
-                  <input
-                    type="text"
-                    value={reviewName}
-                    onChange={e => setReviewName(e.target.value)}
-                    placeholder="Your Name"
-                    className="w-full sm:w-64 min-h-[42px] bg-slate-950 border border-white/15 focus:border-brand-pink rounded-xl px-3.5 py-2 text-base sm:text-xs font-bold text-white placeholder:text-slate-600 outline-none"
-                  />
-
-                  <textarea
-                    rows={2}
-                    value={reviewComment}
-                    onChange={e => setReviewComment(e.target.value)}
-                    placeholder="Favorite moment, costume, or plot twist tonight? (Optional)"
-                    className="w-full bg-slate-950 border border-white/15 focus:border-brand-pink rounded-xl p-3 text-base sm:text-xs text-white placeholder:text-slate-600 outline-none resize-none"
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={isSubmittingReview}
-                    className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs font-black uppercase tracking-wider transition-all shadow cursor-pointer"
-                  >
-                    {isSubmittingReview ? 'Submitting...' : 'Submit Review →'}
-                  </button>
-                </form>
-              )}
-
-              {reviews.length > 0 && (
-                <div className="pt-4 border-t border-white/10 space-y-2">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Tonight&apos;s Reviews ({reviews.length})
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {reviews.map((rev: any) => (
-                      <div
-                        key={rev.id}
-                        className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-black text-white">
-                            {rev.playerName}
-                          </span>
-                          <span className="text-xs font-black text-amber-400">
-                            {'★'.repeat(Math.max(1, Math.min(5, rev.rating || 5)))}
-                          </span>
-                        </div>
-                        {rev.comment && (
-                          <p className="text-xs text-slate-300 leading-relaxed">
-                            &ldquo;{rev.comment}&rdquo;
-                          </p>
-                        )}
+                  {/* Blurred Teaser Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 select-none">
+                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-amber-500/15 to-slate-900 border border-amber-400/25 space-y-1">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-amber-400">
+                        🥇 Master Detective
+                      </span>
+                      <div className="text-sm font-black text-white/80 blur-[4px]">
+                        Top Sleuth Winner
                       </div>
-                    ))}
+                      <p className="text-[11px] text-slate-400">🔒 Rate below to reveal</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-brand-pink/15 to-slate-900 border border-brand-pink/25 space-y-1">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-brand-pink">
+                        🎯 Most Suspected
+                      </span>
+                      <div className="text-sm font-black text-white/80 blur-[4px]">
+                        Top Accused Suspect
+                      </div>
+                      <p className="text-[11px] text-slate-400">🔒 Rate below to reveal</p>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-purple-500/15 to-slate-900 border border-purple-400/25 space-y-1">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-purple-300">
+                        💬 Who Voted For Who &amp; Why
+                      </span>
+                      <div className="text-sm font-black text-white/80 blur-[4px]">
+                        Round 1–{maxClueRound} Receipts
+                      </div>
+                      <p className="text-[11px] text-slate-400">🔒 Rate below to reveal</p>
+                    </div>
                   </div>
                 </div>
-              )}
-            </section>
+
+                {/* Review Gate Form */}
+                <div className="max-w-xl mx-auto space-y-5">
+                  <div className="text-center space-y-2">
+                    <span className="px-3 py-1 rounded-full bg-brand-pink/15 border border-brand-pink/30 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                      ⭐ Quick 5-Star Review Gate
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                      Rate Tonight&apos;s Mystery to Unlock the Party Stats
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                      Tap a star rating out of 5 below (with an optional comment or party photo) to unlock everyone&apos;s round-by-round votes, theories, and the final Detective Leaderboard.
+                    </p>
+                  </div>
+
+                  <form
+                    onSubmit={handleReviewSubmit}
+                    className="rounded-2xl bg-slate-950/90 border border-white/10 p-5 sm:p-6 space-y-5 shadow-xl"
+                  >
+                    {/* 1. Star Rating Out of 5 (Required) */}
+                    <div className="space-y-2 text-center">
+                      <label className="block text-[11px] font-black uppercase tracking-widest text-slate-300">
+                        1. Your Rating Out of 5 Stars <span className="text-brand-pink">*</span>
+                      </label>
+                      <div className="flex items-center justify-center gap-2 py-1">
+                        {[1, 2, 3, 4, 5].map(star => {
+                          const active = (reviewHoverRating || reviewRating) >= star;
+                          return (
+                            <button
+                              key={star}
+                              type="button"
+                              onMouseEnter={() => setReviewHoverRating(star)}
+                              onMouseLeave={() => setReviewHoverRating(0)}
+                              onClick={() => setReviewRating(star)}
+                              className={`w-12 h-12 rounded-2xl border text-2xl flex items-center justify-center transition-all cursor-pointer ${
+                                active
+                                  ? 'bg-amber-400/15 border-amber-400/60 text-amber-400 scale-105 shadow-lg shadow-amber-500/10'
+                                  : 'bg-white/[0.03] border-white/10 text-slate-700 hover:text-slate-500'
+                              }`}
+                            >
+                              ★
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="text-xs font-bold text-amber-300">
+                        {reviewRating === 5
+                          ? '5 / 5 Stars — Loved It!'
+                          : reviewRating === 4
+                          ? '4 / 5 Stars — Great Night!'
+                          : reviewRating === 3
+                          ? '3 / 5 Stars — Fun Party'
+                          : `${reviewRating} / 5 Stars`}
+                      </div>
+                    </div>
+
+                    {/* 2. Player Name */}
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Your Name
+                      </label>
+                      <input
+                        type="text"
+                        value={reviewName}
+                        onChange={e => setReviewName(e.target.value)}
+                        placeholder={voterDisplayName || 'Your Name'}
+                        className="w-full min-h-[44px] bg-slate-900 border border-white/15 focus:border-brand-pink rounded-xl px-3.5 py-2.5 text-sm font-bold text-white placeholder:text-slate-500 outline-none"
+                      />
+                    </div>
+
+                    {/* 3. Optional Comment */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                          2. Leave a Comment
+                        </label>
+                        <span className="text-[10px] font-semibold text-slate-500">Optional</span>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={reviewComment}
+                        onChange={e => setReviewComment(e.target.value)}
+                        placeholder="Favorite plot twist, funniest accusation, or best costume tonight? (Optional)"
+                        className="w-full bg-slate-900 border border-white/15 focus:border-brand-pink rounded-xl p-3.5 text-sm text-white placeholder:text-slate-500 outline-none resize-none"
+                      />
+                    </div>
+
+                    {/* 4. Optional Party Photo Upload */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                          3. Add a Party Photo
+                        </label>
+                        <span className="text-[10px] font-semibold text-slate-500">Optional</span>
+                      </div>
+
+                      <input
+                        ref={reviewPhotoInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleReviewPhotoChange}
+                        className="hidden"
+                      />
+
+                      {reviewPhotoDataUrl ? (
+                        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-900 border border-emerald-500/40">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={reviewPhotoDataUrl}
+                              alt="Party Photo Preview"
+                              className="w-14 h-14 rounded-lg object-cover border border-white/15 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-emerald-300">
+                                ✓ Party Photo Attached
+                              </div>
+                              <p className="text-[11px] text-slate-400 truncate">
+                                Ready to include with your review
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReviewPhotoDataUrl('');
+                              if (reviewPhotoInputRef.current) {
+                                reviewPhotoInputRef.current.value = '';
+                              }
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-[11px] font-bold text-slate-300 shrink-0 cursor-pointer"
+                          >
+                            Remove ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => reviewPhotoInputRef.current?.click()}
+                          disabled={isCompressingPhoto}
+                          className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-dashed border-white/20 hover:border-brand-pink/50 text-xs font-bold text-slate-300 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                        >
+                          <span>📷</span>
+                          <span>
+                            {isCompressingPhoto
+                              ? 'Processing photo...'
+                              : 'Snap or Upload a Party Photo (Optional)'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Submit & Unlock CTA */}
+                    <button
+                      type="submit"
+                      disabled={isSubmittingReview || isCompressingPhoto}
+                      className="w-full min-h-[50px] px-6 py-3.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-sm font-black uppercase tracking-wider transition-all shadow-xl cursor-pointer"
+                    >
+                      {isSubmittingReview
+                        ? 'Unlocking Party Stats...'
+                        : '⭐ Submit Review & Unlock Party Voting Stats →'}
+                    </button>
+                  </form>
+                </div>
+              </section>
+            ) : (
+              /* PAGE 2 (UNLOCKED): PARTY VOTING STATISTICS, WHO VOTED FOR WHO & WHY, LEADERBOARD & SCORECARD */
+              <div className="space-y-6 animate-in fade-in duration-200">
+                {/* Unlocked Confirmation Strip */}
+                <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/35 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-lg">🎉</span>
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-emerald-300">
+                        Thank You for Your {reviewRating}-Star Review! Party Voting Stats Unlocked
+                      </h3>
+                      <p className="text-[11px] text-slate-300">
+                        Here is the full breakdown of how everyone voted and why across all rounds.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRevealSubPage('solution')}
+                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-[11px] font-bold text-white transition-all cursor-pointer"
+                  >
+                    ← Back to Murder Timeline
+                  </button>
+                </div>
+
+                {/* 1. ALL-PLAYERS VOTING STATISTICS, SUSPECT ACCUSATION BREAKDOWN & WHO VOTED FOR WHO */}
+                <section className="bg-slate-900/75 border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-pink">
+                        Party Voting Statistics &amp; Receipts
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
+                        How Everyone Voted &amp; Who Accused Who
+                      </h2>
+                    </div>
+                    <div className="px-3.5 py-2 rounded-xl bg-slate-950 border border-white/10 text-right">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Total Votes Cast
+                      </div>
+                      <div className="text-sm sm:text-base font-black text-white">
+                        {submissions.length} {submissions.length === 1 ? 'Accusation' : 'Accusations'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {detectiveLeaderboard.length === 0 && submissions.length === 0 ? (
+                    <p className="text-xs text-slate-400 font-medium py-4">
+                      No round votes were recorded during this session yet.
+                    </p>
+                  ) : (
+                    <>
+                      {/* Party Awards & Superlatives */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        {detectiveLeaderboard[0] && (
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/20 to-slate-950 border border-amber-400/35 space-y-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                              🥇 Master Detective
+                            </span>
+                            <h3 className="text-base font-black text-white">
+                              {detectiveLeaderboard[0].voterName}
+                            </h3>
+                            <p className="text-xs text-slate-300">
+                              {detectiveLeaderboard[0].correctVotes}/
+                              {detectiveLeaderboard[0].totalVotes} rounds right (
+                              {detectiveLeaderboard[0].accuracyPercent}% accuracy •{' '}
+                              {detectiveLeaderboard[0].accuracyScore} pts)
+                            </p>
+                          </div>
+                        )}
+
+                        {mostSuspectedList[0] && (
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-brand-pink/20 to-slate-950 border border-brand-pink/35 space-y-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                              🎯 Most Suspected
+                            </span>
+                            <h3 className="text-base font-black text-white">
+                              {mostSuspectedList[0].suspectName}
+                            </h3>
+                            <p className="text-xs text-slate-300">
+                              Accused {mostSuspectedList[0].count}{' '}
+                              {mostSuspectedList[0].count === 1 ? 'time' : 'times'} across the night
+                            </p>
+                          </div>
+                        )}
+
+                        {(() => {
+                          const wildest = [...detectiveLeaderboard].sort(
+                            (a, b) => b.uniqueSuspectsCount - a.uniqueSuspectsCount
+                          )[0];
+                          if (!wildest) return null;
+                          return (
+                            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-slate-950 border border-purple-400/35 space-y-1">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-purple-300">
+                                🌀 Wildest Sleuth
+                              </span>
+                              <h3 className="text-base font-black text-white">
+                                {wildest.voterName}
+                              </h3>
+                              <p className="text-xs text-slate-300">
+                                Pointed the finger at {wildest.uniqueSuspectsCount} different suspects
+                              </p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Chart A: Suspect Accusation Distribution (Who got voted for & by whom) */}
+                      {mostSuspectedList.length > 0 && (
+                        <div className="rounded-2xl bg-slate-950/80 border border-white/10 p-4 sm:p-5 space-y-4">
+                          <div>
+                            <h3 className="text-sm sm:text-base font-bold text-white">
+                              Suspect Vote Breakdown (Who Got Accused the Most)
+                            </h3>
+                            <p className="text-xs text-slate-400">
+                              Percentage of total accusations cast against each suspect across all rounds
+                            </p>
+                          </div>
+
+                          <div className="space-y-3.5">
+                            {mostSuspectedList.map(item => {
+                              const totalCastVotes = Math.max(
+                                1,
+                                mostSuspectedList.reduce((acc, s) => acc + s.count, 0)
+                              );
+                              const pct = Math.round((item.count / totalCastVotes) * 100);
+                              const isTrueKiller =
+                                solutionData?.killer?.id &&
+                                item.suspectId === solutionData.killer.id;
+                              const votersForSuspect = submissions.filter(
+                                s => s.suspectCharId === item.suspectId
+                              );
+
+                              return (
+                                <div
+                                  key={item.suspectId}
+                                  className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2"
+                                >
+                                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                                    <span className="font-black text-white flex items-center gap-2 flex-wrap">
+                                      <span>{item.suspectName}</span>
+                                      {isTrueKiller && (
+                                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase">
+                                          🔪 True Killer
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="text-slate-200 font-black">
+                                      {item.count} {item.count === 1 ? 'vote' : 'votes'} ({pct}%)
+                                    </span>
+                                  </div>
+                                  <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${
+                                        isTrueKiller ? 'bg-emerald-500' : 'bg-brand-pink'
+                                      }`}
+                                      style={{ width: `${Math.max(6, pct)}%` }}
+                                    />
+                                  </div>
+                                  {votersForSuspect.length > 0 && (
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Accused by:
+                                      </span>
+                                      {votersForSuspect.map(v => (
+                                        <span
+                                          key={v.id}
+                                          className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] text-slate-300 font-semibold"
+                                        >
+                                          {v.voterName} (R{v.round})
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Round-by-Round: Who Voted For Who & Why */}
+                      {submissions.length > 0 && (
+                        <div className="space-y-4 pt-2">
+                          <div>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-pink">
+                              Round-by-Round Theories
+                            </span>
+                            <h3 className="text-base sm:text-lg font-bold text-white mt-0.5">
+                              Who Everyone Voted For &amp; Why
+                            </h3>
+                            <p className="text-xs text-slate-400">
+                              Every guest&apos;s exact accusation and written theory from Round 1 through the Final Guess
+                            </p>
+                          </div>
+
+                          <div className="space-y-4">
+                            {availableClueRounds.map(roundNum => {
+                              const roundSubs = submissions.filter(s => s.round === roundNum);
+                              if (roundSubs.length === 0) return null;
+                              const isFinalRound = roundNum === maxClueRound;
+                              const correctInRound = roundSubs.filter(
+                                s =>
+                                  Boolean(solutionData?.killer?.id) &&
+                                  s.suspectCharId === solutionData?.killer?.id
+                              ).length;
+
+                              return (
+                                <div
+                                  key={roundNum}
+                                  className="rounded-2xl bg-slate-950/80 border border-white/10 p-4 sm:p-5 space-y-3.5"
+                                >
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <span className="px-3 py-1 rounded-full bg-brand-pink/15 border border-brand-pink/30 text-brand-pink text-[11px] font-black uppercase tracking-widest">
+                                      {isFinalRound
+                                        ? `Round ${roundNum} • Final Accusations (${roundSubs.length})`
+                                        : `Round ${roundNum} Votes & Theories (${roundSubs.length})`}
+                                    </span>
+                                    <span className="text-xs font-semibold text-slate-400">
+                                      {correctInRound} of {roundSubs.length} clocked the killer in Round {roundNum}
+                                    </span>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {roundSubs.map(sub => {
+                                      const guessedKiller =
+                                        Boolean(solutionData?.killer?.id) &&
+                                        sub.suspectCharId === solutionData?.killer?.id;
+                                      return (
+                                        <div
+                                          key={sub.id}
+                                          className={`p-3.5 rounded-xl border text-xs space-y-2 ${
+                                            guessedKiller
+                                              ? 'bg-emerald-950/30 border-emerald-500/40'
+                                              : 'bg-white/[0.03] border-white/10'
+                                          }`}
+                                        >
+                                          <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                            <span className="font-black text-white text-xs sm:text-sm">
+                                              {sub.voterName}
+                                            </span>
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="text-xs font-black text-brand-pink">
+                                                voted {sub.suspectName}
+                                              </span>
+                                              {guessedKiller ? (
+                                                <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 text-[9px] font-black uppercase">
+                                                  ✓ Correct
+                                                </span>
+                                              ) : (
+                                                <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 text-[9px] font-bold uppercase">
+                                                  ✗ Fooled
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="p-2.5 rounded-lg bg-slate-950/70 border border-white/5 text-slate-200 italic leading-relaxed">
+                                            &ldquo;{sub.reason}&rdquo;
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Full Player Detective Leaderboard */}
+                      <div className="space-y-2.5 pt-2">
+                        <h3 className="text-sm sm:text-base font-bold text-white">
+                          Final Detective Leaderboard
+                        </h3>
+                        <div className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-slate-950/80 overflow-hidden">
+                          {detectiveLeaderboard.map((row, idx) => (
+                            <div
+                              key={row.voterCharId}
+                              className="px-4 py-3 flex items-center justify-between gap-3 text-xs sm:text-sm"
+                            >
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <span
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[11px] ${
+                                    idx === 0
+                                      ? 'bg-amber-400 text-slate-950'
+                                      : 'bg-white/10 text-white'
+                                  }`}
+                                >
+                                  {idx + 1}
+                                </span>
+                                <span className="font-black text-white">{row.voterName}</span>
+                                {row.earliestCorrectRound && (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-300">
+                                    Clocked killer in R{row.earliestCorrectRound}
+                                  </span>
+                                )}
+                                {(row.clueTagBonusPoints || 0) > 0 && (
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 text-[10px] font-bold">
+                                    +{row.clueTagBonusPoints} clue pts
+                                  </span>
+                                )}
+                              </div>
+                              <div className="shrink-0">
+                                <span className="font-black text-brand-pink">
+                                  {row.accuracyScore} pts
+                                </span>
+                                <span className="text-slate-400 ml-1.5 text-xs">
+                                  ({row.correctVotes}/{row.totalVotes} right)
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </section>
+
+                {/*Tonight's Submitted Reviews & Party Photos */}
+                {reviews.length > 0 && (
+                  <section className="bg-slate-900/60 border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl space-y-3">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">
+                      ⭐ Tonight&apos;s Guest Reviews ({reviews.length})
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {reviews.map((rev: any) => (
+                        <div
+                          key={rev.id}
+                          className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-black text-white">
+                              {rev.playerName}
+                            </span>
+                            <span className="text-xs font-black text-amber-400">
+                              {'★'.repeat(Math.max(1, Math.min(5, rev.rating || 5)))}
+                            </span>
+                          </div>
+                          {rev.comment && (
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                              &ldquo;{rev.comment}&rdquo;
+                            </p>
+                          )}
+                          {rev.photoUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={rev.photoUrl}
+                              alt={`Party photo by ${rev.playerName}`}
+                              className="w-full max-h-48 object-cover rounded-xl border border-white/10 mt-1"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -1383,6 +1383,7 @@ export async function submitGuestMysteryReviewAction(payload: {
   characterRole?: string;
   rating: number;
   comment: string;
+  photoDataUrl?: string;
 }) {
   const supabase = await createClient();
   const cleanName = payload.playerName.trim() || 'Mystery Guest';
@@ -1392,6 +1393,40 @@ export async function submitGuestMysteryReviewAction(payload: {
     ? `[${payload.mysteryTitle}${payload.characterRole ? ` • Played ${payload.characterRole}` : ''}] ${cleanComment}`
     : `Played ${payload.mysteryTitle}${payload.characterRole ? ` as ${payload.characterRole}` : ''} - ${rating}/5 stars!`;
 
+  let resolvedPhotoUrl: string | undefined;
+  const rawPhoto = (payload.photoDataUrl || '').trim();
+  if (rawPhoto && rawPhoto.startsWith('data:image/')) {
+    resolvedPhotoUrl = rawPhoto;
+    try {
+      const match = rawPhoto.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/);
+      if (match) {
+        const mimeType = match[1];
+        const base64Data = match[2];
+        const ext = mimeType.includes('png') ? 'png' : mimeType.includes('webp') ? 'webp' : 'jpg';
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const filePath = `reviews/${fileName}`;
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('uploads')
+          .upload(filePath, buffer, { contentType: mimeType, upsert: false });
+
+        if (!uploadError && uploadData) {
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('uploads').getPublicUrl(filePath);
+          if (publicUrl) {
+            resolvedPhotoUrl = publicUrl;
+          }
+        }
+      }
+    } catch {
+      // Keep compressed data URL fallback
+    }
+  } else if (rawPhoto && (rawPhoto.startsWith('http://') || rawPhoto.startsWith('https://'))) {
+    resolvedPhotoUrl = rawPhoto;
+  }
+
   const reviewEntry: GuestReviewItem = {
     id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     mysteryId: payload.mysteryId,
@@ -1399,6 +1434,7 @@ export async function submitGuestMysteryReviewAction(payload: {
     characterRole: payload.characterRole || 'Sleuth',
     rating,
     comment: cleanComment || `Loved playing ${payload.mysteryTitle}!`,
+    ...(resolvedPhotoUrl ? { photoUrl: resolvedPhotoUrl } : {}),
     createdAt: new Date().toISOString(),
   };
 
@@ -1427,6 +1463,7 @@ export async function submitGuestMysteryReviewAction(payload: {
       rating,
       review_text: commentText,
       status: 'pending',
+      ...(resolvedPhotoUrl ? { attachment_urls: [resolvedPhotoUrl] } : {}),
     });
   } catch {
     // Non-fatal if public.reviews is not migrated

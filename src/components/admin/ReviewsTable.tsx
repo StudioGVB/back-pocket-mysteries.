@@ -234,7 +234,10 @@ export default function ReviewsTable({ reviews }: { reviews: any[] }) {
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Attached Photos</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {selectedReview.attachment_urls.map((url: string, idx: number) => {
-                      const isImage = url.match(/\.(jpeg|jpg|gif|png)$/i) != null || url.includes('mock-storage');
+                      const isImage =
+                        url.startsWith('data:image/') ||
+                        url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null ||
+                        url.includes('mock-storage');
                       return (
                         <a 
                           key={idx} 

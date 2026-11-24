@@ -20,6 +20,7 @@ export interface StoredGuestReview {
   characterRole?: string;
   rating: number;
   comment: string;
+  photoUrl?: string;
   createdAt: string;
 }
 
