@@ -1779,6 +1779,7 @@ export interface CustomerPackQaGateResult {
     passed: boolean;
     regenerated: boolean;
     note: string;
+    bestUrl?: string | null;
   }>;
   clueScores: Array<{
     clueId: string;
@@ -1788,6 +1789,7 @@ export interface CustomerPackQaGateResult {
     passed: boolean;
     regenerated: boolean;
     note: string;
+    bestUrl?: string | null;
   }>;
   audioScores: Array<{
     clueId: string;
@@ -1797,12 +1799,13 @@ export interface CustomerPackQaGateResult {
     passed: boolean;
     regenerated: boolean;
     note: string;
+    bestAudioUrl?: string | null;
   }>;
 }
 
 /**
  * STAGE 3.5: Pre-Delivery Automated QA Critic & Self-Healing Gate (Upgraded 4-Gate Multimodal Pipeline)
- * Runs before a customer is notified that their mystery package is ready (and available on-demand in Admin):
+ * Runs before a customer is notified that their mystery package is ready (and available on-demand in Admin & Screener):
  * - Gate 1 (Text, Pronoun & Murderer Solvability Sanity Check):
  *   Scrubs unresolved {{tokens}} and runs a fast Gemini 2.5 Flash narrative audit across all hydrated clues
  *   to detect and auto-repair pronoun/gender mismatches after guest casting and confirm killer solvability.
@@ -1818,7 +1821,14 @@ export interface CustomerPackQaGateResult {
  * - Persists the completed QA Scorecard (`CustomerPackQaGateResult`) on `StoredGameSession.qaReport`.
  */
 export async function auditAndHealCustomerPackAction(
-  mysteryId: string
+  mysteryId: string,
+  castOverrides?: Array<{
+    characterId: string;
+    friend: ScreenerCastAssignmentInput['friend'] & {
+      standard_character_photo_url?: string | null;
+      standard_character_photo_hash?: string | null;
+    };
+  }>
 ): Promise<CustomerPackQaGateResult> {
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
   const result: CustomerPackQaGateResult = {
@@ -1856,8 +1866,52 @@ export async function auditAndHealCustomerPackAction(
       .select('id, name, gender, profile_data, is_victim, plot_role')
       .eq('mystery_id', mysteryId);
 
-    const baseCharacters =
+    const rawBaseCharacters =
       dbChars && dbChars.length > 0 ? dbChars : cachedMystery?.characters || [];
+
+    const cachedCharsById = new Map<string, any>();
+    for (const cc of cachedMystery?.characters || []) {
+      if (cc?.id) cachedCharsById.set(cc.id, cc);
+    }
+
+    const overrideById = new Map<string, any>();
+    for (const ov of castOverrides || []) {
+      if (ov?.characterId && ov?.friend) {
+        overrideById.set(ov.characterId, ov.friend);
+      }
+    }
+
+    const baseCharacters = rawBaseCharacters.map((c: any) => {
+      const cachedChar = cachedCharsById.get(c.id);
+      const ovFriend = overrideById.get(c.id);
+      const mergedProfile: Record<string, any> = {
+        ...(c.profile_data || {}),
+        ...(cachedChar?.profile_data || {}),
+      };
+      if (ovFriend) {
+        mergedProfile.guest_id = ovFriend.id;
+        mergedProfile.guest_name = ovFriend.name;
+        if (ovFriend.gender) mergedProfile.gender = ovFriend.gender;
+        if (ovFriend.avatar_url || ovFriend.photoUrl) {
+          mergedProfile.avatar_url = ovFriend.avatar_url || ovFriend.photoUrl;
+        }
+        if (ovFriend.eye_color) mergedProfile.eye_color = ovFriend.eye_color;
+        if (ovFriend.height) mergedProfile.height = ovFriend.height;
+        if (ovFriend.ethnicity) mergedProfile.ethnicity = ovFriend.ethnicity;
+        if (ovFriend.standard_character_photo_url) {
+          mergedProfile.standard_character_photo_url = ovFriend.standard_character_photo_url;
+          mergedProfile.outfit_image_url = ovFriend.standard_character_photo_url;
+        }
+        if (ovFriend.standard_character_photo_hash) {
+          mergedProfile.standard_character_photo_hash = ovFriend.standard_character_photo_hash;
+        }
+      }
+      return {
+        ...c,
+        profile_data: mergedProfile,
+      };
+    });
+
     const hydratedCharacters = await hydrateCharactersWithGuests(
       baseCharacters,
       mystery.created_by,
@@ -2308,8 +2362,25 @@ Respond with valid JSON ONLY:
         passed: bestPassed,
         regenerated: wasRegenerated,
         note: bestNote,
+        bestUrl,
       });
     }
+
+    // Build updated castOverrides reflecting any Gate 2 self-healed character portraits
+    const liveCastOverrides = activeChars.map((ac: any) => ({
+      characterId: ac.id,
+      friend: {
+        id: ac.profile_data?.guest_id || ac.id,
+        name: getCharacterDisplayName(ac),
+        gender: ac.profile_data?.gender || ac.gender,
+        avatar_url: ac.profile_data?.avatar_url,
+        eye_color: ac.profile_data?.eye_color,
+        height: ac.profile_data?.height,
+        ethnicity: ac.profile_data?.ethnicity,
+        standard_character_photo_url: ac.profile_data?.standard_character_photo_url,
+        standard_character_photo_hash: ac.profile_data?.standard_character_photo_hash,
+      },
+    }));
 
     // =========================================================================
     // GATE 3: Stage 2 Visual Clue Side-by-Side Reference Portrait Critic + Best-of-N Self-Healing
@@ -2517,7 +2588,9 @@ Respond with valid JSON ONLY:
             vClue.id,
             mysteryId,
             vClue.generation_prompt,
-            true
+            true,
+            undefined,
+            liveCastOverrides
           );
           if (regenRes?.imageUrl) {
             currentImageUrl = regenRes.imageUrl;
@@ -2549,7 +2622,8 @@ Respond with valid JSON ONLY:
             mysteryId,
             vClue.generation_prompt,
             true,
-            latestDirective
+            latestDirective,
+            liveCastOverrides
           );
           if (healedRes?.imageUrl) {
             wasRegenerated = true;
@@ -2589,6 +2663,7 @@ Respond with valid JSON ONLY:
         passed: bestPassed,
         regenerated: wasRegenerated,
         note: bestNote,
+        bestUrl,
       });
     }
 
@@ -2777,6 +2852,7 @@ Respond with valid JSON ONLY:
         passed: finalPassed,
         regenerated: wasRegenerated,
         note: finalNote,
+        bestAudioUrl: currentAudioUrl,
       });
     }
 

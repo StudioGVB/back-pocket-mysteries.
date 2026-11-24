@@ -18,6 +18,8 @@ import {
   applyScreenerCastAssignmentAction,
   generateStandardCharacterPhotoAction,
   generateClueImageAction,
+  auditAndHealCustomerPackAction,
+  CustomerPackQaGateResult,
 } from '@/app/actions/generator';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
 import { GuestModal } from '@/components/account/GuestModal';
@@ -148,6 +150,8 @@ export function PackScreenerClient({
     total: number;
     label: string;
   } | null>(null);
+  const [latestQaReport, setLatestQaReport] = useState<CustomerPackQaGateResult | null>(null);
+  const [isQaDetailsOpen, setIsQaDetailsOpen] = useState<boolean>(false);
   const [regeneratingClueIds, setRegeneratingClueIds] = useState<Set<string>>(new Set());
   const [selectedRevealClue, setSelectedRevealClue] = useState<any | null>(null);
   const [selectedPortraitModal, setSelectedPortraitModal] = useState<{
@@ -547,8 +551,9 @@ export function PackScreenerClient({
       });
 
       const totalSteps =
-        1 + charsToRegenPortrait.length + visualCluesToRegen.length + audioCluesToRegen.length;
+        1 + charsToRegenPortrait.length + visualCluesToRegen.length + audioCluesToRegen.length + 1;
       let currentStep = 1;
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
       setGenerationProgress({
         current: currentStep,
@@ -588,21 +593,28 @@ export function PackScreenerClient({
         })
       );
 
-      // 2. Generate Stage 1 Standard Character Costume Portraits ONLY for recasted/missing characters
-      for (const item of charsToRegenPortrait) {
+      // 2. STAGE 1: Generate Standard Character Costume Portraits sequentially with a 3s anti-rate-limit breather & 2-attempt retry
+      for (let pIdx = 0; pIdx < charsToRegenPortrait.length; pIdx++) {
+        const item = charsToRegenPortrait[pIdx];
         currentStep++;
         setGenerationProgress({
           current: currentStep,
           total: totalSteps,
-          label: `Generating character costume portrait: ${item.friend.name} (${item.roleTitle})...`,
+          label: `Stage 1: Generating character costume portrait: ${item.friend.name} (${item.roleTitle})...`,
         });
 
-        const charRes = await generateStandardCharacterPhotoAction(
-          mystery.id,
-          item.characterId,
-          true,
-          item.friend
-        );
+        let charRes: any = null;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          charRes = await generateStandardCharacterPhotoAction(
+            mystery.id,
+            item.characterId,
+            true,
+            item.friend
+          );
+          if (charRes?.imageUrl) break;
+          if (attempt < 2) await sleep(4000);
+        }
+
         if (charRes?.imageUrl) {
           item.friend.standard_character_photo_url = charRes.imageUrl;
           item.friend.standard_character_photo_hash = charRes.identityHash || null;
@@ -628,6 +640,10 @@ export function PackScreenerClient({
             )
           );
         }
+
+        if (pIdx < charsToRegenPortrait.length - 1) {
+          await sleep(2500);
+        }
       }
 
       const castOverridesForClues = assignmentsPayload.map((a) => ({
@@ -635,65 +651,109 @@ export function PackScreenerClient({
         friend: a.friend,
       }));
 
-      // 3. Generate Stage 2 Visual Clue Photos featuring the selected cast (in batches of 2 for speed)
-      const batchSize = 2;
-      for (let i = 0; i < visualCluesToRegen.length; i += batchSize) {
-        const batch = visualCluesToRegen.slice(i, i + batchSize);
-        const batchTitles = batch
-          .map((clue) => stripCustomerFacingTitle(clue.title) || clue.title)
-          .join(' & ');
-        currentStep = Math.min(totalSteps, currentStep + batch.length);
+      // 3. STAGE 2: Generate Visual Clue Photos featuring the selected cast's Stage 1 Reference Portraits + Failed Clue Recovery Sweep
+      const failedVisualClues: any[] = [];
+      for (let i = 0; i < visualCluesToRegen.length; i++) {
+        const clue = visualCluesToRegen[i];
+        const clueTitle = stripCustomerFacingTitle(clue.title) || clue.title;
+        currentStep = Math.min(totalSteps - 1, currentStep + 1);
         setGenerationProgress({
           current: currentStep,
           total: totalSteps,
-          label: `Generating visual clue photo(s) with your cast: ${batchTitles}...`,
+          label: `Stage 2: Placing cast into visual clue photo (${i + 1}/${visualCluesToRegen.length}): ${clueTitle}...`,
         });
-        setRegeneratingClueIds((prev) => {
-          const next = new Set(prev);
-          batch.forEach((c) => next.add(c.id));
-          return next;
-        });
+        setRegeneratingClueIds((prev) => new Set(prev).add(clue.id));
 
-        await Promise.all(
-          batch.map(async (clue) => {
-            try {
-              const clueRes = await generateClueImageAction(
-                clue.id,
-                mystery.id,
-                clue.generation_prompt || clue.prompt_template || '',
-                true,
-                undefined,
-                castOverridesForClues
-              );
-              if (clueRes?.imageUrl) {
-                const freshClueUrl = clueRes.imageUrl.startsWith('data:')
-                  ? clueRes.imageUrl
-                  : `${clueRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
-                setRawClues((prev) =>
-                  prev.map((item) =>
-                    item.id === clue.id ? { ...item, static_image_url: freshClueUrl } : item
-                  )
-                );
-              }
-            } finally {
-              setRegeneratingClueIds((prev) => {
-                const next = new Set(prev);
-                next.delete(clue.id);
-                return next;
-              });
-            }
-          })
-        );
+        let generatedOk = false;
+        try {
+          const clueRes = await generateClueImageAction(
+            clue.id,
+            mystery.id,
+            clue.generation_prompt || clue.prompt_template || '',
+            true,
+            undefined,
+            castOverridesForClues
+          );
+          if (clueRes?.imageUrl && !clueRes?.error) {
+            generatedOk = true;
+            const freshClueUrl = clueRes.imageUrl.startsWith('data:')
+              ? clueRes.imageUrl
+              : `${clueRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
+            setRawClues((prev) =>
+              prev.map((item) =>
+                item.id === clue.id ? { ...item, static_image_url: freshClueUrl } : item
+              )
+            );
+          }
+        } catch (err) {
+          console.warn('Stage 2 clue generation error:', err);
+        } finally {
+          setRegeneratingClueIds((prev) => {
+            const next = new Set(prev);
+            next.delete(clue.id);
+            return next;
+          });
+        }
+
+        if (!generatedOk) {
+          failedVisualClues.push(clue);
+        }
+
+        if (i < visualCluesToRegen.length - 1) {
+          await sleep(2000);
+        }
       }
 
-      // 4. Regenerate Stage 3 Multi-Speaker Audio Clues with the newly cast friends' names & voices
+      // Dedicated Recovery Sweep if any visual clue hit a temporary Gemini rate limit
+      if (failedVisualClues.length > 0) {
+        setGenerationProgress({
+          current: currentStep,
+          total: totalSteps,
+          label: `Stage 2 Recovery: Retrying ${failedVisualClues.length} crime-scene photo(s)...`,
+        });
+        await sleep(4500);
+        for (const retryClue of failedVisualClues) {
+          setRegeneratingClueIds((prev) => new Set(prev).add(retryClue.id));
+          try {
+            const retryRes = await generateClueImageAction(
+              retryClue.id,
+              mystery.id,
+              retryClue.generation_prompt || retryClue.prompt_template || '',
+              true,
+              undefined,
+              castOverridesForClues
+            );
+            if (retryRes?.imageUrl) {
+              const freshClueUrl = retryRes.imageUrl.startsWith('data:')
+                ? retryRes.imageUrl
+                : `${retryRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
+              setRawClues((prev) =>
+                prev.map((item) =>
+                  item.id === retryClue.id ? { ...item, static_image_url: freshClueUrl } : item
+                )
+              );
+            }
+          } catch {
+            // Handled by Stage 3.5 QA self-healing gate next
+          } finally {
+            setRegeneratingClueIds((prev) => {
+              const next = new Set(prev);
+              next.delete(retryClue.id);
+              return next;
+            });
+          }
+          await sleep(2500);
+        }
+      }
+
+      // 4. STAGE 3: Regenerate Multi-Speaker Audio Clues with the newly cast friends' names & voices
       for (const audioClue of audioCluesToRegen) {
-        currentStep = Math.min(totalSteps, currentStep + 1);
+        currentStep = Math.min(totalSteps - 1, currentStep + 1);
         const audioTitle = stripCustomerFacingTitle(audioClue.title) || audioClue.title;
         setGenerationProgress({
           current: currentStep,
           total: totalSteps,
-          label: `Synthesizing audio wiretap with your cast's names: ${audioTitle}...`,
+          label: `Stage 3: Synthesizing audio wiretap with your cast's names: ${audioTitle}...`,
         });
         setRegeneratingClueIds((prev) => new Set(prev).add(audioClue.id));
         try {
@@ -720,6 +780,69 @@ export function PackScreenerClient({
             return next;
           });
         }
+      }
+
+      // 5. STAGE 3.5: Pre-Delivery 4-Gate Multimodal AI QA Critic & Self-Healing Bot (Gates 1–4)
+      setGenerationProgress({
+        current: totalSteps,
+        total: totalSteps,
+        label:
+          'Stage 3.5 (4-Gate Customer QA Protocol): Auditing & self-healing portraits, side-by-side clue photos, pronouns & audio...',
+      });
+      try {
+        const qaReport = await auditAndHealCustomerPackAction(
+          mystery.id,
+          castOverridesForClues
+        );
+        setLatestQaReport(qaReport);
+
+        // Apply any self-healed Best-of-N character portraits back to local state immediately
+        if (Array.isArray(qaReport.portraitScores) && qaReport.portraitScores.length > 0) {
+          setRawCharacters((prev) =>
+            prev.map((c) => {
+              const pScore = qaReport.portraitScores.find((ps) => ps.characterId === c.id);
+              if (!pScore?.bestUrl) return c;
+              const freshUrl = pScore.bestUrl.startsWith('data:')
+                ? pScore.bestUrl
+                : `${pScore.bestUrl.split('?')[0]}?t=${Date.now()}`;
+              return {
+                ...c,
+                profile_data: {
+                  ...(c.profile_data || {}),
+                  standard_character_photo_url: freshUrl,
+                  outfit_image_url: freshUrl,
+                },
+              };
+            })
+          );
+        }
+
+        // Apply any self-healed Best-of-N clue photos or re-synthesized audio wiretaps back to local state immediately
+        if (
+          (Array.isArray(qaReport.clueScores) && qaReport.clueScores.length > 0) ||
+          (Array.isArray(qaReport.audioScores) && qaReport.audioScores.length > 0)
+        ) {
+          setRawClues((prev) =>
+            prev.map((item) => {
+              const cScore = qaReport.clueScores?.find((cs) => cs.clueId === item.id);
+              const aScore = qaReport.audioScores?.find((as) => as.clueId === item.id);
+              let nextItem = item;
+              if (cScore?.bestUrl) {
+                const freshImg = cScore.bestUrl.startsWith('data:')
+                  ? cScore.bestUrl
+                  : `${cScore.bestUrl.split('?')[0]}?t=${Date.now()}`;
+                nextItem = { ...nextItem, static_image_url: freshImg };
+              }
+              if (aScore?.bestAudioUrl) {
+                const freshAud = `${aScore.bestAudioUrl.split('?')[0]}?v=${Date.now()}`;
+                nextItem = { ...nextItem, audio_url: freshAud };
+              }
+              return nextItem;
+            })
+          );
+        }
+      } catch (qaErr) {
+        console.warn('Screener 4-Gate QA audit warning:', qaErr);
       }
 
       setHasUnsavedRecast(false);
@@ -1854,18 +1977,37 @@ export function PackScreenerClient({
                   {isGeneratingCastMedia ? (
                     <>
                       <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Generating Clues &amp; Cast...</span>
+                      <span>Generating Clues &amp; Running 4-Gate QA...</span>
                     </>
                   ) : (
                     <>
                       <span>✨</span>
                       <span>
                         {hasUnsavedRecast
-                          ? 'Cast Changed — Click to Generate Clues & Relationships'
-                          : 'Generate Clues & Relationships for Selected Cast'}
+                          ? 'Cast Changed — Click to Generate Clues & Run 4-Gate QA'
+                          : 'Generate Clues & Run 4-Gate QA for Selected Cast'}
                       </span>
                     </>
                   )}
+                </button>
+              )}
+
+              {latestQaReport && !isGeneratingCastMedia && (
+                <button
+                  type="button"
+                  onClick={() => setIsQaDetailsOpen((prev) => !prev)}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    latestQaReport.passed
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                      : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'
+                  }`}
+                >
+                  <span>🛡️</span>
+                  <span>
+                    4-Gate QA: {latestQaReport.overallScore}/100{' '}
+                    {latestQaReport.passed ? '• Passed' : '• Review'}
+                  </span>
+                  <span>{isQaDetailsOpen ? '▴' : '▾'}</span>
                 </button>
               )}
             </div>
@@ -1949,6 +2091,77 @@ export function PackScreenerClient({
                     )}%`,
                   }}
                 />
+              </div>
+            </div>
+          )}
+
+          {latestQaReport && isQaDetailsOpen && !isGeneratingCastMedia && (
+            <div className="mb-3 rounded-xl bg-slate-950 text-white p-4 border border-emerald-500/30 space-y-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400 font-black uppercase tracking-wider">
+                    🛡️ 4-Gate Customer Pack QA Report ({latestQaReport.overallScore}/100)
+                  </span>
+                  <span className="text-slate-400 text-[11px]">
+                    {latestQaReport.narrativeSanityNote}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-200">
+                    Gate 1 Text Fixes: {latestQaReport.textIssuesRepaired}
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-200">
+                    Gate 2 Portraits: {latestQaReport.portraitsAudited} audited ({latestQaReport.portraitsRegenerated} self-healed)
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-200">
+                    Gate 3 Visual Clues: {latestQaReport.visualCluesAudited} audited ({latestQaReport.visualCluesRegenerated} self-healed)
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-200">
+                    Gate 4 Audio: {latestQaReport.audioCluesAudited} audited ({latestQaReport.audioCluesRegenerated} self-healed)
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-56 overflow-y-auto">
+                <div className="space-y-1">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-amber-400">
+                    Gate 2: Character Costume Portraits
+                  </div>
+                  {latestQaReport.portraitScores.map((p) => (
+                    <div key={p.characterId} className="text-[11px] text-slate-300 flex items-start justify-between gap-2 bg-slate-900/90 px-2.5 py-1.5 rounded-lg">
+                      <span className="font-bold text-white truncate">{p.name}</span>
+                      <span className={p.passed ? 'text-emerald-400 font-black shrink-0' : 'text-amber-400 font-black shrink-0'}>
+                        {p.finalScore}/100 {p.regenerated ? '⚡' : '✓'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-sky-400">
+                    Gate 3: Side-by-Side Visual Clue Critic
+                  </div>
+                  {latestQaReport.clueScores.map((c) => (
+                    <div key={c.clueId} className="text-[11px] text-slate-300 flex items-start justify-between gap-2 bg-slate-900/90 px-2.5 py-1.5 rounded-lg" title={c.note}>
+                      <span className="truncate">{stripCustomerFacingTitle(c.title) || c.title}</span>
+                      <span className={c.passed ? 'text-emerald-400 font-black shrink-0' : 'text-amber-400 font-black shrink-0'}>
+                        {c.finalScore}/100 {c.regenerated ? '⚡' : '✓'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-purple-400">
+                    Gate 4: Audio Wiretap Listener Critic
+                  </div>
+                  {latestQaReport.audioScores.map((a) => (
+                    <div key={a.clueId} className="text-[11px] text-slate-300 flex items-start justify-between gap-2 bg-slate-900/90 px-2.5 py-1.5 rounded-lg" title={a.note}>
+                      <span className="truncate">{stripCustomerFacingTitle(a.title) || a.title}</span>
+                      <span className={a.passed ? 'text-emerald-400 font-black shrink-0' : 'text-amber-400 font-black shrink-0'}>
+                        {a.finalScore}/100 {a.regenerated ? '⚡' : '✓'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

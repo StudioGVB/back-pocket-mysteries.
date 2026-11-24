@@ -49,7 +49,7 @@ function cleanText(text: string | null | undefined, allCharacters: any[], mode: 
       ? hydrateTextWithCharacters(
           replacePlaceholderNamesWithRoles(text, allCharacters),
           allCharacters,
-          'generic'
+          'role'
         )
       : hydrateTextWithCharacters(text, allCharacters, 'print');
 
