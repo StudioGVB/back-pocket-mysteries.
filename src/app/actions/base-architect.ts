@@ -386,6 +386,7 @@ export async function suggestCoreCluesForBlueprintAction(params: {
   blueprint: MysteryBlueprintInput;
   existingClues?: SuggestedClueCandidate[];
   countToGenerate?: number;
+  customDirection?: string;
 }): Promise<{
   success: boolean;
   clues?: SuggestedClueCandidate[];
@@ -398,7 +399,7 @@ export async function suggestCoreCluesForBlueprintAction(params: {
     return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
   }
 
-  const { blueprint, existingClues = [] } = params;
+  const { blueprint, existingClues = [], customDirection } = params;
   const autoRec = recommendDifficultyFromPlotAndClues({
     blueprint,
     coreClues: existingClues,
@@ -462,6 +463,13 @@ ${
   rejectedClues.length > 0
     ? `REJECTED CLUE IDEAS (THE CREATOR VOTED "NO" ON THESE — avoid these angles and suggest fresh, better ideas):
 ${rejectedClues.map((c) => `- ${c.title}: ${c.description}`).join('\n')}`
+    : ''
+}
+
+${
+  customDirection && customDirection.trim()
+    ? `CREATOR'S SPECIFIC DIRECTION FOR THIS BATCH (PRIORITIZE THIS REQUEST):
+"${customDirection.trim()}"`
     : ''
 }
 
@@ -536,6 +544,7 @@ export async function suggestRedHerringsAndBackstoriesAction(params: {
   blueprint: MysteryBlueprintInput;
   approvedCoreClues: SuggestedClueCandidate[];
   existingSubplots?: SuggestedRedHerringSubplot[];
+  customDirection?: string;
 }): Promise<{
   success: boolean;
   subplots?: SuggestedRedHerringSubplot[];
@@ -547,7 +556,7 @@ export async function suggestRedHerringsAndBackstoriesAction(params: {
     return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
   }
 
-  const { blueprint, approvedCoreClues, existingSubplots = [] } = params;
+  const { blueprint, approvedCoreClues, existingSubplots = [], customDirection } = params;
   const autoRec = recommendDifficultyFromPlotAndClues({
     blueprint,
     coreClues: approvedCoreClues,
@@ -611,6 +620,13 @@ ${
   rejectedSubplots.length > 0
     ? `REJECTED SUBPLOT IDEAS (Creator voted NO — avoid these angles):
 ${rejectedSubplots.map((s) => `- ${s.title}: ${s.summary}`).join('\n')}`
+    : ''
+}
+
+${
+  customDirection && customDirection.trim()
+    ? `CREATOR'S SPECIFIC DIRECTION FOR THIS BATCH (PRIORITIZE THIS REQUEST):
+"${customDirection.trim()}"`
     : ''
 }
 
@@ -1325,3 +1341,573 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
     };
   }
 }
+
+export interface PitchedPlotHookOption {
+  id: string;
+  title: string;
+  theme: string;
+  targetDifficulty: ArchitectComplexity;
+  settingDescription: string;
+  murderTimeWindow: string;
+  murderWeaponAndMethod: string;
+  killerHowAndWhySummary: string;
+  insideJokesOrProps: string;
+  characters: BlueprintCharacterInput[];
+  beats: BlueprintBeatInput[];
+}
+
+/**
+ * UPGRADE 4: Pitches 3 distinct 6-player murder plot & cast hooks (Easy, Medium, Hard)
+ * tailored to the user's selected Theme & Spice Level.
+ */
+export async function pitchThreePlotHooksAction(params: {
+  themeOrIdea: string;
+  spiceLevel: ArchitectSpiceLevel;
+}): Promise<{
+  success: boolean;
+  options?: PitchedPlotHookOption[];
+  error?: string;
+}> {
+  await requireAdmin();
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
+
+  const spiceDirective = getSpiceRubricDirective(params.spiceLevel);
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const prompt = `You are the Master Mystery Architect for Back Pocket Mysteries.
+Pitch 3 distinct, high-concept 6-player Murder Mystery Plot & Cast Blueprints for:
+- Theme / Vibe: "${params.themeOrIdea || 'High-Society Dinner Party'}"
+- Selected Spice Level: ${params.spiceLevel}
+
+${spiceDirective}
+
+PITCH 3 OPTIONS ACROSS THE DIFFICULTY SPECTRUM:
+- Option 1 (targetDifficulty = "easy"): 1 Lone-Wolf Killer (0 assistants), clean direct murder method, great for casual/first-time groups.
+- Option 2 (targetDifficulty = "medium"): 1 Lone-Wolf Killer (0 assistants), clever staged alibi / multi-timestamp twist.
+- Option 3 (targetDifficulty = "hard"): 2-Person Conspiracy (1 'killer' + 1 'assistant' secret accomplice who tampers with evidence/alibi).
+
+Each option MUST have exactly 6 characters (1 'victim', 1 'killer', 1 'assistant' ONLY if targetDifficulty="hard", and the rest 'innocent' suspects) with role titles starting with "The " (e.g. "The Sommelier", "The Heiress") and 4 timeline beats.
+
+Return strict JSON:
+{
+  "options": [
+    {
+      "title": "Catchy Mystery Title",
+      "theme": "Theme label",
+      "targetDifficulty": "easy" | "medium" | "hard",
+      "settingDescription": "2-sentence atmospheric setting & premise",
+      "murderTimeWindow": "e.g. 8:19 PM",
+      "murderWeaponAndMethod": "Exact murder weapon & forensic method",
+      "killerHowAndWhySummary": "Who killed the victim, why, and how (using {{Role}} tokens)",
+      "insideJokesOrProps": "Signature props or atmospheric details",
+      "characters": [
+        {
+          "roleTitle": "The ...",
+          "defaultGender": "female" | "male",
+          "plotRole": "victim" | "killer" | "assistant" | "innocent",
+          "color": "Crimson Red",
+          "conceptNotes": "Who they are & dynamics",
+          "motiveOrSecret": "Their motive or dark secret (calibrated to ${params.spiceLevel} spice)",
+          "outfitNotes": "Signature outfit look"
+        }
+      ],
+      "beats": [
+        {
+          "beatNumber": 1,
+          "title": "Beat title",
+          "timeWindow": "7:30 PM",
+          "phase": "pre_crime" | "crime" | "investigation",
+          "description": "What happens using {{Role}} tokens"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const res = await model.generateContent(prompt);
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'architect_pitch_plot_hooks',
+      usageMetadata: res.response.usageMetadata,
+    });
+
+    const parsed = extractJsonObject(res.response.text());
+    const palette = [
+      'Crimson Red',
+      'Emerald Green',
+      'Royal Purple',
+      'Sapphire Blue',
+      'Amber Gold',
+      'Obsidian Black',
+    ];
+
+    const options: PitchedPlotHookOption[] = (parsed.options || []).slice(0, 3).map((opt: any, idx: number) => ({
+      id: `pitch-${Date.now()}-${idx}`,
+      title: String(opt.title || `Mystery Pitch #${idx + 1}`).trim(),
+      theme: String(opt.theme || params.themeOrIdea || 'Luxury Mystery').trim(),
+      targetDifficulty: ['easy', 'medium', 'hard'].includes(opt.targetDifficulty)
+        ? opt.targetDifficulty
+        : idx === 0
+          ? 'easy'
+          : idx === 1
+            ? 'medium'
+            : 'hard',
+      settingDescription: String(opt.settingDescription || '').trim(),
+      murderTimeWindow: String(opt.murderTimeWindow || '8:19 PM').trim(),
+      murderWeaponAndMethod: String(opt.murderWeaponAndMethod || '').trim(),
+      killerHowAndWhySummary: String(opt.killerHowAndWhySummary || '').trim(),
+      insideJokesOrProps: String(opt.insideJokesOrProps || '').trim(),
+      characters: Array.isArray(opt.characters)
+        ? opt.characters.slice(0, 6).map((c: any, cIdx: number) => ({
+            id: `char-${cIdx + 1}`,
+            roleTitle: String(c.roleTitle || `The Suspect ${cIdx + 1}`).replace(/^\{\{|\}\}$/g, ''),
+            defaultGender: ['female', 'male', 'adaptable'].includes(c.defaultGender)
+              ? c.defaultGender
+              : cIdx % 2 === 0
+                ? 'female'
+                : 'male',
+            plotRole: ['victim', 'killer', 'assistant', 'innocent'].includes(c.plotRole)
+              ? c.plotRole
+              : 'innocent',
+            color: c.color || palette[cIdx % palette.length],
+            conceptNotes: String(c.conceptNotes || '').trim(),
+            motiveOrSecret: String(c.motiveOrSecret || '').trim(),
+            outfitNotes: String(c.outfitNotes || '').trim(),
+          }))
+        : [],
+      beats: Array.isArray(opt.beats)
+        ? opt.beats.map((b: any, bIdx: number) => ({
+            beatNumber: bIdx + 1,
+            title: String(b.title || `Beat ${bIdx + 1}`).trim(),
+            timeWindow: String(b.timeWindow || '8:00 PM').trim(),
+            phase: ['pre_crime', 'crime', 'investigation', 'resolution'].includes(b.phase)
+              ? b.phase
+              : 'investigation',
+            description: String(b.description || '').trim(),
+          }))
+        : [],
+    }));
+
+    return { success: true, options };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to pitch plot hooks.',
+    };
+  }
+}
+
+/**
+ * UPGRADE 3: 1-Click Auto-Fixer for Step 4 Proofreader Warnings.
+ * Deterministically repairs broken curly braces, injects gender-flex tokens if sparse,
+ * ensures 3 distinct outfit options per character, balances Round 1-3 clues, and re-runs the proofreader.
+ */
+export async function autoFixAssembledBaseIssuesAction(params: {
+  assembled: AssembledFullMysteryBase;
+}): Promise<{
+  success: boolean;
+  assembled?: AssembledFullMysteryBase;
+  fixesApplied?: string[];
+  error?: string;
+}> {
+  await requireAdmin();
+  const { assembled } = params;
+  const fixesApplied: string[] = [];
+
+  try {
+    const cleanBraces = (text: string) =>
+      String(text || '')
+        .replace(/\{\{\{+/g, '{{')
+        .replace(/\}\}\}+/g, '}}')
+        .replace(/\{([A-Za-z0-9\s'._-]+)\}\}/g, '{{$1}}')
+        .replace(/\{\{([A-Za-z0-9\s'._-]+)\}(?!\})/g, '{{$1}}');
+
+    const killerRole =
+      assembled.characters.find((c) => c.plotRole === 'killer')?.roleTitle ||
+      assembled.characters[1]?.roleTitle ||
+      'The Rival';
+    const victimRole =
+      assembled.characters.find((c) => c.plotRole === 'victim')?.roleTitle ||
+      assembled.characters[0]?.roleTitle ||
+      'The Host';
+
+    // 1. Clean tokens & ensure 3 outfit options + gender-flex tokens on every character
+    const fixedCharacters = assembled.characters.map((c) => {
+      let bio = cleanBraces(c.bio);
+      let actSummary = cleanBraces(c.actSummary);
+      let outfitAdvice = cleanBraces(c.outfitAdvice);
+      const otherRole = c.roleTitle === victimRole ? killerRole : victimRole;
+
+      if (!new RegExp(`\\{\\{${otherRole}_(?:he|him|his|spouse|sibling|inlaw)\\}\\}`, 'i').test(bio)) {
+        bio = `${bio} Behind closed doors, {{${otherRole}}} insisted {{${otherRole}_he}} would protect {{${otherRole}_his}} inner circle at all costs.`;
+        fixesApplied.push(`Injected dynamic gender-flex pronoun tokens into {{${c.roleTitle}}} bio.`);
+      }
+
+      if (!/Option\s*1/i.test(outfitAdvice) || !/Option\s*2/i.test(outfitAdvice) || !/Option\s*3/i.test(outfitAdvice)) {
+        const baseLook = outfitAdvice.replace(/Option\s*\d\s*:\s*/gi, '').trim() || `Tailored ${c.color} evening attire`;
+        outfitAdvice = `Option 1: ${baseLook} with metallic accents. | Option 2: Velvet ${c.color} cocktail ensemble with statement accessories. | Option 3: Sharp modern noir silhouette with a signature ${c.color} detail.`;
+        fixesApplied.push(`Expanded {{${c.roleTitle}}} outfit guide to 3 distinct looks (Option 1, Option 2, Option 3).`);
+      }
+
+      // If Clean spice, scrub any accidental profanity or affair keywords
+      if (assembled.spiceLevel === 'Clean') {
+        const scrubClean = (s: string) =>
+          s
+            .replace(/\b(bitch|shit|bullshit|asshole|slut|wtf|stfu|fuck|fucking|motherfucker)\b/gi, 'scoundrel')
+            .replace(/\b(secret lover|mistress|cheating spouse|love affair|sleeping with)\b/gi, 'secret rival');
+        bio = scrubClean(bio);
+        actSummary = scrubClean(actSummary);
+      } else if (assembled.spiceLevel === 'Mild') {
+        const scrubMild = (s: string) =>
+          s.replace(/\b(bitch|shit|bullshit|asshole|slut|wtf|stfu|fuck|fucking|motherfucker)\b/gi, 'rival');
+        bio = scrubMild(bio);
+        actSummary = scrubMild(actSummary);
+      }
+
+      return {
+        ...c,
+        bio,
+        actSummary,
+        outfitAdvice,
+        actBullets: (c.actBullets || []).map(cleanBraces),
+        motiveNotes: cleanBraces(c.motiveNotes),
+      };
+    });
+
+    // 2. Balance Round 1, Round 2, and Round 3 clues if any round has < 2 clues
+    const fixedClues = assembled.clues.map((cl) => ({
+      ...cl,
+      title: cleanBraces(cl.title),
+      description: cleanBraces(cl.description),
+    }));
+
+    for (const targetRound of [1, 2, 3] as const) {
+      const countInRound = fixedClues.filter((c) => c.roundNumber === targetRound).length;
+      if (countInRound < 2 && fixedClues.length >= 6) {
+        const donorRound = ([1, 2, 3] as const).find(
+          (r) => fixedClues.filter((c) => c.roundNumber === r).length > 3
+        );
+        if (donorRound) {
+          const candidate = fixedClues.find((c) => c.roundNumber === donorRound);
+          if (candidate) {
+            candidate.roundNumber = targetRound;
+            fixesApplied.push(`Rebalanced clue "${candidate.title}" to Round ${targetRound}.`);
+          }
+        }
+      }
+    }
+
+    const partialBase: Omit<AssembledFullMysteryBase, 'proofreadReport'> = {
+      ...assembled,
+      description: cleanBraces(assembled.description),
+      characters: fixedCharacters,
+      relationships: assembled.relationships.map((r) => ({
+        ...r,
+        notes: cleanBraces(r.notes),
+      })),
+      clues: fixedClues,
+    };
+
+    const proofreadReport = runAutomatedProofreader(partialBase);
+
+    return {
+      success: true,
+      assembled: {
+        ...partialBase,
+        proofreadReport,
+      },
+      fixesApplied:
+        fixesApplied.length > 0
+          ? fixesApplied
+          : ['Verified all tokens, 3 outfit options, round pacing, and relationships.'],
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Could not auto-fix assembled base.',
+    };
+  }
+}
+
+/**
+ * UPGRADE 5A: Cloud / Server Persistence for the 3 OG Base Builder Workspace Slots.
+ */
+const CLOUD_SLOTS_FILE = path.join(
+  /*turbopackIgnore: true*/ process.cwd(),
+  'data',
+  '.architect-cloud-slots.json'
+);
+
+export async function saveArchitectCloudWorkspaceAction(params: {
+  slotsJson: string;
+}): Promise<{ success: boolean; savedAt?: string }> {
+  await requireAdmin();
+  try {
+    const dir = path.dirname(CLOUD_SLOTS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const savedAt = new Date().toISOString();
+    fs.writeFileSync(
+      CLOUD_SLOTS_FILE,
+      JSON.stringify({ savedAt, slots: JSON.parse(params.slotsJson) }, null, 2),
+      'utf-8'
+    );
+    return { success: true, savedAt };
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function loadArchitectCloudWorkspaceAction(): Promise<{
+  success: boolean;
+  slots?: any[];
+  savedAt?: string;
+}> {
+  await requireAdmin();
+  try {
+    if (fs.existsSync(CLOUD_SLOTS_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(CLOUD_SLOTS_FILE, 'utf-8'));
+      if (Array.isArray(raw?.slots) && raw.slots.length === 3) {
+        return { success: true, slots: raw.slots, savedAt: raw.savedAt };
+      }
+    }
+  } catch {}
+  return { success: false };
+}
+
+/**
+ * UPGRADE 5B: Lists existing Draft Mystery Bases from Supabase and loads any chosen draft
+ * back into the 5-step OG Base Builder slot so the creator can add/edit clues or red herrings.
+ */
+export async function listDraftMysteryBasesForArchitectAction(): Promise<{
+  success: boolean;
+  drafts?: {
+    id: string;
+    title: string;
+    theme: string;
+    spiceLevel: string;
+    complexity: string;
+    status: string;
+    createdAt: string;
+  }[];
+}> {
+  const { supabase } = await requireAdmin();
+  try {
+    const { data, error } = await supabase
+      .from('mysteries')
+      .select('id, title, theme, spice_level, complexity, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error || !data) return { success: false };
+
+    return {
+      success: true,
+      drafts: data.map((m: any) => ({
+        id: m.id,
+        title: m.title || 'Untitled Mystery',
+        theme: m.theme || 'Mystery',
+        spiceLevel: m.spice_level || 'Mild',
+        complexity: m.complexity || 'medium',
+        status: m.status || 'draft',
+        createdAt: m.created_at || '',
+      })),
+    };
+  } catch {
+    return { success: false };
+  }
+}
+
+export async function loadExistingDraftIntoArchitectAction(params: {
+  mysteryId: string;
+}): Promise<{
+  success: boolean;
+  blueprint?: MysteryBlueprintInput;
+  coreClues?: SuggestedClueCandidate[];
+  subplots?: SuggestedRedHerringSubplot[];
+  error?: string;
+}> {
+  const { supabase } = await requireAdmin();
+  try {
+    const [
+      { data: mystery },
+      { data: chars },
+      { data: motives },
+      { data: beats },
+      { data: clues },
+    ] = await Promise.all([
+      supabase.from('mysteries').select('*').eq('id', params.mysteryId).single(),
+      supabase.from('characters').select('*').eq('mystery_id', params.mysteryId),
+      supabase.from('motives').select('*').eq('mystery_id', params.mysteryId),
+      (supabase as any)
+        .from('story_beats')
+        .select('*')
+        .eq('mystery_id', params.mysteryId)
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('clues')
+        .select('*')
+        .eq('mystery_id', params.mysteryId)
+        .order('round_number', { ascending: true }),
+    ]);
+
+    if (!mystery) {
+      return { success: false, error: 'Mystery not found.' };
+    }
+
+    const motiveByCharId = new Map<string, string>();
+    for (const m of motives || []) {
+      motiveByCharId.set((m as any).character_id, (m as any).notes || '');
+    }
+
+    const palette = [
+      'Crimson Red',
+      'Emerald Green',
+      'Royal Purple',
+      'Sapphire Blue',
+      'Amber Gold',
+      'Obsidian Black',
+    ];
+
+    const mappedChars: BlueprintCharacterInput[] = (chars || []).slice(0, 6).map((c: any, idx: number) => {
+      const pData = (c.profile_data || {}) as any;
+      const plotRole: CharacterPlotRole = c.is_victim
+        ? 'victim'
+        : c.plot_role === 'killer'
+          ? 'killer'
+          : c.plot_role === 'assistant'
+            ? 'assistant'
+            : 'innocent';
+      return {
+        id: c.id || `char-${idx + 1}`,
+        roleTitle: String(c.name || `The Suspect ${idx + 1}`).replace(/^\{\{|\}\}$/g, ''),
+        defaultGender: ['female', 'male', 'adaptable'].includes(c.gender) ? c.gender : 'adaptable',
+        plotRole,
+        color: pData.color || palette[idx % palette.length],
+        conceptNotes: pData.bio || pData.act_summary || '',
+        motiveOrSecret: motiveByCharId.get(c.id) || pData.act_summary || '',
+        outfitNotes: pData.outfit_advice || '',
+      };
+    });
+
+    const mappedBeats: BlueprintBeatInput[] = (beats || []).map((b: any, idx: number) => ({
+      beatNumber: idx + 1,
+      title: String(b.event_title || `Beat ${idx + 1}`),
+      timeWindow: '8:19 PM',
+      phase: ['pre_crime', 'crime', 'investigation', 'resolution'].includes(b.timeline_phase)
+        ? b.timeline_phase
+        : 'investigation',
+      description: String(b.description || ''),
+    }));
+
+    const killerChar = mappedChars.find((c) => c.plotRole === 'killer');
+    const spiceMap: Record<string, ArchitectSpiceLevel> = {
+      clean: 'Clean',
+      mild: 'Mild',
+      spicy: 'Spicy',
+      filthy: 'Filthy',
+    };
+    const rawSpice = String((mystery as any).spice_level || 'Mild').toLowerCase();
+
+    const blueprint: MysteryBlueprintInput = {
+      id: `bp-${mystery.id}`,
+      title: mystery.title || 'Loaded Mystery',
+      theme: (mystery as any).theme || '',
+      settingDescription: mystery.description || '',
+      spiceLevel: spiceMap[rawSpice] || 'Mild',
+      complexity: ['easy', 'medium', 'hard'].includes(String((mystery as any).complexity || '').toLowerCase())
+        ? (String((mystery as any).complexity).toLowerCase() as ArchitectComplexity)
+        : 'medium',
+      murderTimeWindow: '8:19 PM',
+      murderWeaponAndMethod: 'Imported from existing mystery base clues and beats.',
+      killerHowAndWhySummary: killerChar
+        ? `{{${killerChar.roleTitle}}} committed the murder: ${killerChar.motiveOrSecret}`
+        : 'Imported from existing mystery base.',
+      insideJokesOrProps: (mystery as any).inside_jokes || '',
+      characters: mappedChars.length > 0 ? mappedChars : [],
+      beats: mappedBeats,
+    };
+
+    const allClues = clues || [];
+    const coreClues: SuggestedClueCandidate[] = allClues
+      .filter((c: any) => !c.is_fake)
+      .map((c: any, idx: number) => ({
+        id: c.id || `loaded-core-${idx}`,
+        title: c.title || `Clue #${idx + 1}`,
+        format: (c.format as ClueFormat) || 'document',
+        roundNumber: [1, 2, 3].includes(Number(c.round_number))
+          ? (Number(c.round_number) as 1 | 2 | 3)
+          : 1,
+        timestampLabel: '8:19 PM',
+        description: c.description || '',
+        generationPrompt: c.generation_prompt || c.description || '',
+        pointsTo: 'Core evidence loaded from draft mystery base.',
+        involvedRoles: [],
+        isRedHerring: false,
+        decision: 'yes',
+      }));
+
+    const fakeClues: SuggestedClueCandidate[] = allClues
+      .filter((c: any) => Boolean(c.is_fake))
+      .map((c: any, idx: number) => ({
+        id: c.id || `loaded-decoy-${idx}`,
+        title: c.title || `Decoy Clue #${idx + 1}`,
+        format: (c.format as ClueFormat) || 'chat',
+        roundNumber: [1, 2, 3].includes(Number(c.round_number))
+          ? (Number(c.round_number) as 1 | 2 | 3)
+          : 1,
+        timestampLabel: '8:19 PM',
+        description: c.description || '',
+        generationPrompt: c.generation_prompt || c.description || '',
+        pointsTo: 'Red-herring decoy clue loaded from draft mystery base.',
+        involvedRoles: [],
+        isRedHerring: true,
+        decision: 'yes',
+      }));
+
+    const subplots: SuggestedRedHerringSubplot[] =
+      fakeClues.length > 0
+        ? [
+            {
+              id: `loaded-subplot-${mystery.id}`,
+              title: 'Imported Red-Herring Decoy Clues',
+              involvedRoles: mappedChars
+                .filter((c) => c.plotRole === 'innocent')
+                .slice(0, 2)
+                .map((c) => c.roleTitle),
+              theme: 'Loaded Red Herrings',
+              summary: 'Decoy clues imported from your existing draft mystery base.',
+              step1TriggerR1: 'Early Round 1 suspicion trigger.',
+              step2EscalationR2: 'Round 2 compromising escalation.',
+              step3AlibiHoleR3: 'Round 3 alibi hole at the murder timestamp.',
+              backstoryAdditions: {},
+              decoyClues: fakeClues,
+              decision: 'yes',
+            },
+          ]
+        : [];
+
+    return {
+      success: true,
+      blueprint,
+      coreClues,
+      subplots,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to load draft mystery into OG Base Builder.',
+    };
+  }
+}
+

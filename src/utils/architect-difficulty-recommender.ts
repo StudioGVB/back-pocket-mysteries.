@@ -216,3 +216,109 @@ export function recommendDifficultyFromPlotAndClues(params: {
     adjustmentTip,
   };
 }
+
+export interface SolvabilityPillarStatus {
+  id: 'motive' | 'means' | 'opportunity' | 'pacing';
+  label: string;
+  covered: boolean;
+}
+
+export interface SuspectClueCoverageItem {
+  roleTitle: string;
+  plotRole: string;
+  clueCount: number;
+  underUsed: boolean;
+}
+
+export interface MurderTrailSolvabilityReport {
+  pillars: SolvabilityPillarStatus[];
+  characterCoverage: SuspectClueCoverageItem[];
+  underUsedRoles: string[];
+}
+
+export function evaluateMurderTrailSolvability(params: {
+  blueprint: MysteryBlueprintInput;
+  coreClues: SuggestedClueCandidate[];
+  subplots: SuggestedRedHerringSubplot[];
+}): MurderTrailSolvabilityReport {
+  const { blueprint, coreClues = [], subplots = [] } = params;
+  const approvedCore = coreClues.filter((c) => c.decision === 'yes');
+  const approvedDecoys = subplots
+    .filter((s) => s.decision === 'yes')
+    .flatMap((s) => s.decoyClues || []);
+  const allApproved = [...approvedCore, ...approvedDecoys];
+
+  const killerChar = blueprint.characters.find((c) => c.plotRole === 'killer');
+  const killerRoleClean = killerChar
+    ? killerChar.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase()
+    : '';
+
+  const coreText = approvedCore
+    .map((c) => `${c.title} ${c.description} ${c.pointsTo} ${c.involvedRoles.join(' ')}`)
+    .join(' ')
+    .toLowerCase();
+
+  // 1. Motive Pillar
+  const hasMotive =
+    approvedCore.length >= 2 &&
+    (/\b(motive|secret|debt|blackmail|revenge|inheritance|fraud|affair|threat|fired|ruin|betray|cut out|counterfeit|steal|embezzl)\b/i.test(
+      coreText
+    ) ||
+      (killerRoleClean.length > 0 && coreText.includes(killerRoleClean)));
+
+  // 2. Murder Weapon / Means Pillar
+  const weaponKeywords = blueprint.murderWeaponAndMethod
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 4);
+  const hasMeans =
+    approvedCore.length >= 1 &&
+    (weaponKeywords.some((kw) => coreText.includes(kw)) ||
+      /\b(weapon|poison|vial|blade|strike|decanter|glass|toxin|dose|blood|residue|fingerprint|fiber|wound|murder)\b/i.test(
+        coreText
+      ));
+
+  // 3. Opportunity / Round 3 Smoking Gun Timestamp Alibi Breaker
+  const r3Core = approvedCore.filter((c) => c.roundNumber === 3);
+  const hasOpportunity = r3Core.length >= 1;
+
+  // 4. Round 1 -> Round 2 -> Round 3 Pacing
+  const hasR1 = allApproved.some((c) => c.roundNumber === 1);
+  const hasR2 = allApproved.some((c) => c.roundNumber === 2);
+  const hasR3 = allApproved.some((c) => c.roundNumber === 3);
+  const hasPacing = hasR1 && hasR2 && hasR3;
+
+  const pillars: SolvabilityPillarStatus[] = [
+    { id: 'motive', label: 'Motive Proof', covered: hasMotive },
+    { id: 'means', label: 'Weapon / Means', covered: hasMeans },
+    { id: 'opportunity', label: 'R3 Smoking Gun', covered: hasOpportunity },
+    { id: 'pacing', label: 'R1–R3 Pacing', covered: hasPacing },
+  ];
+
+  const characterCoverage: SuspectClueCoverageItem[] = blueprint.characters.map((char) => {
+    const cleanRole = char.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
+    const lowerRole = cleanRole.toLowerCase();
+    const count = allApproved.filter((c) => {
+      const hay = `${c.title} ${c.description} ${c.pointsTo} ${(c.involvedRoles || []).join(' ')}`.toLowerCase();
+      return hay.includes(lowerRole);
+    }).length;
+
+    return {
+      roleTitle: cleanRole,
+      plotRole: char.plotRole,
+      clueCount: count,
+      underUsed: allApproved.length >= 3 && count < 1,
+    };
+  });
+
+  const underUsedRoles = characterCoverage
+    .filter((c) => c.underUsed)
+    .map((c) => c.roleTitle);
+
+  return {
+    pillars,
+    characterCoverage,
+    underUsedRoles,
+  };
+}
+
