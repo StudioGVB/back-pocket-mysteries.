@@ -6,30 +6,22 @@ import {
 import { AdminSettingsClient } from '@/components/admin/AdminSettingsClient';
 import { getAdmins } from '../admin-data';
 import { AdminInviteForm } from '../admins/AdminInviteForm';
-import { getUserDisplayAvatarUrl } from '@/utils/avatar';
+import { AdminListTableClient } from '../admins/AdminListTableClient';
 
 export const unstable_instant = false;
 
 export default async function AdminSettingsPage() {
   return (
     <div className="space-y-12">
-      <Suspense
-        fallback={
-          <div className="bg-white h-96 rounded-[32px] border border-gray-100 animate-pulse" />
-        }
-      >
-        <PlatformSettingsContent />
-      </Suspense>
-
-      {/* Super Admins Section living inside Settings */}
-      <section className="space-y-6 pt-8 border-t border-gray-200/80">
+      {/* Super Admins Section (Invite by Email) */}
+      <section id="super-admins" className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h2 className="text-3xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-2">
               Super <span className="text-brand-pink italic">Admins</span>
             </h2>
             <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px]">
-              Manage users with full internal admin &amp; mystery builder access
+              Invite team members by email for full internal admin &amp; mystery builder access
             </p>
           </div>
           <Suspense
@@ -47,6 +39,16 @@ export default async function AdminSettingsPage() {
           <AdminList />
         </Suspense>
       </section>
+
+      <div className="pt-6 border-t border-gray-200/80">
+        <Suspense
+          fallback={
+            <div className="bg-white h-96 rounded-[32px] border border-gray-100 animate-pulse" />
+          }
+        >
+          <PlatformSettingsContent />
+        </Suspense>
+      </div>
     </div>
   );
 }
@@ -74,84 +76,12 @@ async function AdminCount() {
 
 async function AdminList() {
   const admins = await getAdmins();
-
-  return (
-    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-      <table className="w-full text-left">
-        <thead className="bg-gray-50/50 border-b border-gray-100">
-          <tr>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
-              Admin
-            </th>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
-              Role
-            </th>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
-              Permissions
-            </th>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {admins.length > 0 ? (
-            admins.map((admin: any) => (
-              <tr key={admin.id} className="hover:bg-gray-50/30 transition-colors">
-                <td className="px-8 py-6">
-                  <div className="flex items-center gap-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getUserDisplayAvatarUrl(admin)}
-                      alt={admin.full_name || 'Admin'}
-                      className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-slate-100 shrink-0"
-                    />
-                    <div>
-                      <p className="text-sm font-black text-brand-dark tracking-tight">
-                        {admin.full_name || 'Admin User'}
-                      </p>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
-                        ID: {admin.id.slice(0, 8)}...
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-8 py-6">
-                  <span className="px-3 py-1 bg-brand-dark text-white text-[9px] font-black uppercase tracking-widest rounded-full italic">
-                    {admin.user_roles?.[0]?.role || 'Admin'}
-                  </span>
-                </td>
-                <td className="px-8 py-6">
-                  <div className="flex gap-2 items-center">
-                    <span className="w-2 h-2 rounded-full bg-green-500" title="Full Access" />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Full Access
-                    </span>
-                  </div>
-                </td>
-                <td className="px-8 py-6">
-                  <button className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 transition-colors">
-                    Revoke Access
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={4} className="px-8 py-20 text-center text-gray-400 font-bold">
-                No super admins found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <AdminListTableClient admins={admins} />;
 }
 
 function AdminListSkeleton() {
   return (
-    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden h-96 animate-pulse">
+    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden h-64 animate-pulse">
       <div className="h-16 bg-gray-50/50 border-b border-gray-100 w-full" />
       <div className="p-8 space-y-6">
         {[1, 2].map((i) => (
@@ -172,4 +102,3 @@ function AdminListSkeleton() {
     </div>
   );
 }
-

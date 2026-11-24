@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { isUserAdmin } from '@/utils/admin-auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { headers, cookies } from 'next/headers'
@@ -52,12 +53,7 @@ export async function signInAction(formData: FormData) {
     return redirect(`/${locale}/login?${params.toString()}`)
   }
 
-  // Once logged in, check the user's role in the user_roles table
-  const { data: userRole } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', authData.user.id)
-    .single()
+  const isAdmin = await isUserAdmin(supabase, authData.user)
 
   revalidatePath('/', 'layout')
 
@@ -65,22 +61,9 @@ export async function signInAction(formData: FormData) {
     redirect(nextPath)
   }
 
-  const role = (userRole?.role as string || '').toLowerCase();
-  const isAdminByRole = ['admin', 'superadmin', 'super_admin'].includes(role);
-  const isAdminByEmail = authData.user.email?.toLowerCase() === 'hello@studiogvb.com';
-
-  const isAdmin = isAdminByRole || isAdminByEmail;
-
-  // Conditional Redirect based on role
   if (isAdmin) {
     redirect(`/${locale}/admin`)
   } else {
-    // Append debug info to the customer portal URL to diagnose the role mismatch
-    const debugParams = new URLSearchParams({
-      role: role || 'no_role_detected',
-      email: authData.user.email || 'no_email'
-    }).toString();
-    
-    redirect(`/${locale}/account/orders?${debugParams}`)
+    redirect(`/${locale}/account/orders`)
   }
 }

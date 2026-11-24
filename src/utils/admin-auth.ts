@@ -26,10 +26,48 @@ export async function isUserAdmin(supabase: any, user: { id: string; email?: str
       .maybeSingle();
 
     const role = ((roleData?.role as string) || '').toLowerCase().trim();
-    return VALID_ADMIN_ROLES.includes(role);
+    if (VALID_ADMIN_ROLES.includes(role)) {
+      return true;
+    }
   } catch {
-    return false;
+    // continue to invited email check
   }
+
+  // Check if this user's email was invited as a Super Admin via platform_settings
+  if (email) {
+    try {
+      const { data: settingsRow } = await supabase
+        .from('platform_settings')
+        .select('config_json')
+        .eq('id', 'global')
+        .maybeSingle();
+
+      const invitedList = Array.isArray(settingsRow?.config_json?.invitedSuperAdmins)
+        ? settingsRow.config_json.invitedSuperAdmins
+        : [];
+
+      const matchedInvite = invitedList.find(
+        (inv: any) => String(inv?.email || '').toLowerCase().trim() === email
+      );
+
+      if (matchedInvite) {
+        // Auto-provision their user_roles row in the background so future checks are instant
+        try {
+          await supabase
+            .from('user_roles')
+            .upsert(
+              { user_id: user.id, role: 'superadmin' },
+              { onConflict: 'user_id' }
+            );
+        } catch {}
+        return true;
+      }
+    } catch {
+      // platform_settings optional
+    }
+  }
+
+  return false;
 }
 
 const getCachedAdminSession = cache(async () => {

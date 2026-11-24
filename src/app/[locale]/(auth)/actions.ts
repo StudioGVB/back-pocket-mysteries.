@@ -133,22 +133,14 @@ export async function verifyMagicLinkOtpAction(
       }
     }
 
+    const { isUserAdmin } = await import('@/utils/admin-auth')
+    const isAdmin = await isUserAdmin(supabase, authData.user)
+
     revalidatePath('/', 'layout')
 
     if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
       return { success: true, redirectTo: nextPath }
     }
-
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', authData.user.id)
-      .maybeSingle()
-
-    const role = ((userRole?.role as string) || '').toLowerCase()
-    const isAdminByRole = ['admin', 'superadmin', 'super_admin'].includes(role)
-    const isAdminByEmail = authData.user.email?.toLowerCase() === 'hello@studiogvb.com'
-    const isAdmin = isAdminByRole || isAdminByEmail
 
     return {
       success: true,
