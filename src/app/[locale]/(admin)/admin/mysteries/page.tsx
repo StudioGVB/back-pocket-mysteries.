@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import Link from 'next/link';
 import { getMysteries } from '@/services/admin';
 import { CreateMysteryBaseButton } from './_components/CreateMysteryBaseButton';
 import { MysteryCard } from './_components/MysteryCard';
@@ -19,6 +20,12 @@ export default async function AdminMysteries({
           <p className="text-gray-500 text-sm font-medium">Create and manage the foundation of your murder mysteries</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/en/admin/mysteries/architect"
+            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-900 to-slate-900 hover:from-brand-pink hover:to-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-sm transition flex items-center gap-2"
+          >
+            <span>✨ OG Base Builder (Yes/No Clue & Subplot Curation)</span>
+          </Link>
           <BrainstormWorksheetButton variant="admin-pill" />
           <CreateMysteryBaseButton />
         </div>

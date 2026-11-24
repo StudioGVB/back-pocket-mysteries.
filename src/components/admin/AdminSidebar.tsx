@@ -48,9 +48,18 @@ export function AdminSidebar() {
       id: 'mysteries',
       label: 'Mystery Bases',
       href: '/admin/mysteries',
-      matchPrefixes: ['/admin/mysteries'],
+      exact: true,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      ),
+    },
+    {
+      id: 'base-architect',
+      label: 'OG Base Builder',
+      href: '/admin/mysteries/architect',
+      matchPrefixes: ['/admin/mysteries/architect'],
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3m6.36-.36-2.12 2.12M21 12h-3m.36 6.36-2.12-2.12M12 21v-3m-6.36.36 2.12-2.12M3 12h3m-.36-6.36 2.12 2.12"/><circle cx="12" cy="12" r="3"/></svg>
       ),
     },
   ];
