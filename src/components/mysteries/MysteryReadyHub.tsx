@@ -1148,43 +1148,106 @@ export function MysteryReadyHub({
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                {
-                  step: '1. Arrival & Lobby',
-                  time: '15–20 Mins',
-                  title: '🥂 Click "Start Game" & Mingle',
-                  desc: 'When guests arrive in costume, click Start Game to display your 6-digit Game PIN & QR code. Friends scan in on their phone with zero login required.',
-                },
-                {
-                  step: '2. The Investigation',
-                  time: 'Rounds 1–3',
-                  title: '🔍 Evidence Drops & Accusations',
-                  desc: 'Tap "Next Round" on your phone when ready. Everyone’s phone receives the new clues, leaked texts, and audio voice memos to interrogate each other.',
-                },
-                {
-                  step: '3. Final Vote & Reveal',
-                  time: '15 Mins',
-                  title: '🏆 Leaderboard & Killer Reveal',
-                  desc: 'Players lock in their final suspect vote on their phones. Unveil the Top Detective Leaderboard, then unseal the Killer and complete Murder Timeline!',
-                },
-              ].map((st, i) => (
-                <div
-                  key={i}
-                  className="p-5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2"
-                >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+              {/* STEP 1 */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 flex flex-col justify-between space-y-3">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                    <span className="text-brand-pink">{st.step}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                      {st.time}
+                    <span className="text-brand-pink">1. Arrival &amp; Lobby</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                      15–20 Mins
                     </span>
                   </div>
-                  <h3 className="text-base font-black text-slate-900">{st.title}</h3>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    🥂 Click &ldquo;Start Game&rdquo; &amp; Mingle
+                  </h3>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                    {st.desc}
+                    When guests arrive in costume, click <strong>Start Game</strong> to display your 6-digit Game PIN &amp; QR code. Friends scan in on their phone with zero login required, claim their character to read their secret backstory, and mingle in character before Round 1 begins.
                   </p>
                 </div>
-              ))}
+              </div>
+
+              {/* STEP 2 (FLESHED OUT INVESTIGATION LOOP) */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border-2 border-brand-pink/25 flex flex-col justify-between space-y-3 shadow-2xs">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-brand-pink">2. The Investigation Loop</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-pink-100 text-brand-pink">
+                      Rounds 1–3 (Repeats)
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    🔍 Drop Clues → Vote &amp; Why → Next Round
+                  </h3>
+                  <ol className="space-y-2 text-xs text-slate-600 font-medium leading-relaxed">
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-brand-pink text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                        1
+                      </span>
+                      <span>
+                        <strong>Start the Round by Dropping Clues:</strong> Tap <strong>Next</strong> to drop that round&apos;s clues, texts, CCTV stills, and audio memos to everyone&apos;s phones. Everyone takes time to review the evidence and question each other.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-brand-pink text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                        2
+                      </span>
+                      <span>
+                        <strong>Click &ldquo;Next&rdquo; to Open Round Voting:</strong> When you&apos;re ready, click <strong>Next</strong> so all guests can submit their vote for who they suspect and write <em>why</em> they think that person did it.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-brand-pink text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                        3
+                      </span>
+                      <span>
+                        <strong>Advance When Votes Are In:</strong> Once you&apos;ve received all votes (or whenever you&apos;re ready), click <strong>Next</strong> to start the next round—repeating this loop for all rounds in the mystery.
+                      </span>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* STEP 3 (FINAL GUESS, GRAND REVEAL & ALL THEORIES) */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/70 flex flex-col justify-between space-y-3">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-brand-pink">3. Final Vote &amp; Grand Reveal</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                      15 Mins
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    🏆 Grand Reveal, Murder Breakdown &amp; All Theories
+                  </h3>
+                  <ol className="space-y-2 text-xs text-slate-600 font-medium leading-relaxed">
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                        1
+                      </span>
+                      <span>
+                        <strong>Final Guess After Round 3:</strong> After reviewing the final round of evidence, everyone locks in their final accusation for who did it and why.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                        2
+                      </span>
+                      <span>
+                        <strong>Host Leads the Grand Reveal:</strong> Click into the <strong>Grand Reveal</strong> to unmask the Killer, explain how and why the murder happened, and walk through the true crime timeline.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                        3
+                      </span>
+                      <span>
+                        <strong>See Everyone&apos;s Guesses &amp; Theories:</strong> The finale screen displays the Top Detective Leaderboard, party awards, and every guest&apos;s votes and theories from across all rounds!
+                      </span>
+                    </li>
+                  </ol>
+                </div>
+              </div>
             </div>
 
             {/* 3 Quick FAQ Callouts */}
