@@ -364,7 +364,15 @@ export async function advanceMysteryGenerationOneStep(
     // 2. STAGE 2 CHECKPOINT: Find the first visual clue that hasn't been generated for this cast yet
     const visualClues = allClues.filter((c) => {
       const fmt = c?.format || inferClueFormat(c);
-      if (fmt === 'audio') return false;
+      if (
+        fmt === 'audio' ||
+        fmt === 'chat' ||
+        fmt === 'search_log' ||
+        fmt === 'receipt' ||
+        fmt === 'call_sheet'
+      ) {
+        return false;
+      }
       const hasPrompt = Boolean(c?.generation_prompt || c?.prompt_template);
       const isVisual =
         fmt === 'cctv' ||

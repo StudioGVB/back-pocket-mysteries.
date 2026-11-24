@@ -373,7 +373,8 @@ export function PackScreenerClient({
   useEffect(() => {
     if (typeof window === 'undefined' || !mystery?.id) return;
     try {
-      const savedCast = window.localStorage.getItem(`bpm_friend_assignments_${mystery.id}`);
+      window.localStorage.removeItem(`bpm_friend_assignments_${mystery.id}`);
+      const savedCast = window.localStorage.getItem(`bpm_friend_assignments_v2_${mystery.id}`);
       if (savedCast) {
         const parsed = JSON.parse(savedCast);
         if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
@@ -389,7 +390,7 @@ export function PackScreenerClient({
     if (typeof window === 'undefined' || !mystery?.id) return;
     try {
       window.localStorage.setItem(
-        `bpm_friend_assignments_${mystery.id}`,
+        `bpm_friend_assignments_v2_${mystery.id}`,
         JSON.stringify(friendAssignments)
       );
     } catch {
@@ -419,6 +420,8 @@ export function PackScreenerClient({
   const handleRegenerateSingleCluePhoto = useCallback(
     async (clue: any) => {
       if (!clue?.id || !mystery?.id || regeneratingClueIds.has(clue.id)) return;
+      const fmt = clue.format || inferClueFormat(clue);
+      if (fmt === 'chat' || fmt === 'audio') return;
       setRegeneratingClueIds((prev) => new Set(prev).add(clue.id));
       try {
         // First ensure current friendAssignments are synced to server cache
@@ -468,7 +471,7 @@ export function PackScreenerClient({
           );
           if (typeof window !== 'undefined' && !freshUrl.startsWith('data:')) {
             try {
-              const key = `bpm_screener_clue_images_${mystery.id}`;
+              const key = `bpm_screener_clue_images_v2_${mystery.id}`;
               const existing = JSON.parse(window.localStorage.getItem(key) || '{}');
               existing[clue.id] = freshUrl;
               window.localStorage.setItem(key, JSON.stringify(existing));
@@ -490,16 +493,23 @@ export function PackScreenerClient({
     [mystery?.id, rawCharacters, friendAssignments, liveFriends, regeneratingClueIds]
   );
 
-  // Restore any persisted screener clue images from localStorage on mount
+  // Restore any persisted screener clue images from localStorage on mount (never for chat/audio clues)
   useEffect(() => {
     if (typeof window === 'undefined' || !mystery?.id) return;
     try {
+      window.localStorage.removeItem(`bpm_screener_clue_images_${mystery.id}`);
       const savedMap = JSON.parse(
-        window.localStorage.getItem(`bpm_screener_clue_images_${mystery.id}`) || '{}'
+        window.localStorage.getItem(`bpm_screener_clue_images_v2_${mystery.id}`) || '{}'
       );
       if (savedMap && typeof savedMap === 'object' && Object.keys(savedMap).length > 0) {
         setRawClues((prev) =>
-          prev.map((c) => (savedMap[c.id] ? { ...c, static_image_url: savedMap[c.id] } : c))
+          prev.map((c) => {
+            const fmt = c.format || inferClueFormat(c);
+            if (fmt === 'chat' || fmt === 'audio') {
+              return { ...c, static_image_url: null };
+            }
+            return savedMap[c.id] ? { ...c, static_image_url: savedMap[c.id] } : c;
+          })
         );
       }
     } catch {
@@ -563,11 +573,19 @@ export function PackScreenerClient({
 
       const charsToRegenPortrait = assignmentsPayload.filter((a) => a.needsNewPortrait);
 
-      // Identify all visual clues (CCTV, physical props, Polaroids, photos)
+      // Identify all visual clues (CCTV, physical props, Polaroids, photos — NEVER chat or audio)
       const visualCluesToRegen = rawClues.filter((c) => {
         const prompt = String(c.generation_prompt || c.prompt_template || '');
         const fmt = c.format || inferClueFormat(c);
-        if (fmt === 'audio') return false;
+        if (
+          fmt === 'audio' ||
+          fmt === 'chat' ||
+          fmt === 'search_log' ||
+          fmt === 'receipt' ||
+          fmt === 'call_sheet'
+        ) {
+          return false;
+        }
         const isVisualFormat =
           fmt === 'physical_prop' || fmt === 'cctv' || fmt === 'social_post' || Boolean(c.static_image_url);
         return isVisualFormat && Boolean(prompt || c.static_image_url);
@@ -904,11 +922,13 @@ export function PackScreenerClient({
     const fakeCount = total - realCount;
 
     const visualFormats = new Set(['physical_prop', 'cctv', 'social_post']);
-    const visualClues = rawClues.filter(
-      (c) =>
-        visualFormats.has(c.format || inferClueFormat(c)) ||
-        Boolean(c.static_image_url)
-    );
+    const visualClues = rawClues.filter((c) => {
+      const fmt = c.format || inferClueFormat(c);
+      if (fmt === 'audio' || fmt === 'chat' || fmt === 'search_log' || fmt === 'receipt' || fmt === 'call_sheet') {
+        return false;
+      }
+      return visualFormats.has(fmt) || Boolean(c.static_image_url);
+    });
     const missingImages = rawClues.filter(
       (c) =>
         visualFormats.has(c.format || inferClueFormat(c)) && !c.static_image_url
@@ -990,9 +1010,19 @@ export function PackScreenerClient({
     const linkedBeat = plotBeats.find((b: any) => b.id === clue.linked_plot_beat_id);
     const cleanInternalNotes = stripFormatTagFromNotes(clue.internal_notes);
     const isRegeneratingThisClue = regeneratingClueIds.has(clue.id);
-    const hasVisualPhotoOrPrompt = Boolean(
-      clue.static_image_url || clue.generation_prompt || clue.prompt_template
-    );
+    const resolvedClueFormat = clue.format || inferClueFormat(clue);
+    const hasVisualPhotoOrPrompt =
+      resolvedClueFormat !== 'chat' &&
+      resolvedClueFormat !== 'audio' &&
+      resolvedClueFormat !== 'search_log' &&
+      resolvedClueFormat !== 'receipt' &&
+      resolvedClueFormat !== 'call_sheet' &&
+      Boolean(
+        clue.static_image_url ||
+          resolvedClueFormat === 'physical_prop' ||
+          resolvedClueFormat === 'cctv' ||
+          resolvedClueFormat === 'social_post'
+      );
 
     return (
       <div

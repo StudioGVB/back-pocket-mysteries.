@@ -39,23 +39,6 @@ export function ChatClueView({
 
   return (
     <div className="w-full rounded-2xl overflow-hidden bg-[#0b101b] border border-slate-800/90 text-slate-100 shadow-xl font-sans">
-      {/* Optional Atmospheric Scene Header Photo */}
-      {showImage && clue.static_image_url && (
-        <div className={`relative w-full ${compact ? 'h-32' : 'h-44'} overflow-hidden border-b border-slate-800/80`}>
-          <img
-            src={clue.static_image_url}
-            alt={displayHeaderTitle}
-            className="w-full h-full object-cover opacity-85"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b101b] via-[#0b101b]/30 to-transparent" />
-          <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
-              💬 Messages
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* Messenger Top Bar */}
       <div className="bg-slate-900/95 border-b border-slate-800/80 px-4 py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">

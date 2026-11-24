@@ -147,26 +147,18 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     mystery.image_url = canonicalChristmasImageUrl;
   }
 
-  const SUPERSEDED_CHRISTMAS_PORTRAIT_HASHES = [
-    '28ec1e5263c3',
-    '20058bab3911',
-    'b06f3ace7cdf',
-    '63aa0e7355d6',
-    '1dcd5acb69d9',
-  ];
-
   // Sync characters + motives
   const canonicalChars = CHRISTMAS_NIGHTMARE_CHARACTERS.map((spec) => {
     const id = charIdMap[spec.key];
     const existing = existingChars.find((c: any) => c?.id === id) || {};
     const existingProfile = existing.profile_data || {};
 
-    const hasSupersededPortrait = SUPERSEDED_CHRISTMAS_PORTRAIT_HASHES.some(
-      (h) =>
-        String(existingProfile.standard_character_photo_url || '').includes(h) ||
-        String(existingProfile.outfit_image_url || '').includes(h) ||
-        String(existingProfile.avatar_url || '').includes(h)
-    );
+    // Auto-heal The Husband (Victim) if it had 'Alex' paired with Luke's blonde portrait (28ec1e5263c3.jpg)
+    const isMismatchedAlexOnLukePortrait =
+      spec.key === 'husband' &&
+      String(existingProfile.guest_name || '').trim().toLowerCase() === 'alex' &&
+      (!existingProfile.standard_character_photo_url ||
+        String(existingProfile.standard_character_photo_url).includes('28ec1e5263c3'));
 
     // Preserve any linked guest info while replacing bio/act/outfit with canonical Christmas Nightmare profile
     const mergedProfile: Record<string, any> = {
@@ -178,11 +170,18 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       outfit_reference_images: spec.profile_data.outfit_reference_images,
       act_summary: spec.profile_data.act_summary,
       act_bullets: spec.profile_data.act_bullets,
-      ...(hasSupersededPortrait
+      ...(isMismatchedAlexOnLukePortrait
         ? {
+            guest_id: '0370c2e5-a829-4b37-9eff-8251c337aa34',
+            guest_name: 'Luke',
+            gender: 'male',
+            eye_color: 'Blue',
+            height: 'Very Tall',
+            ethnicity: '',
+            avatar_url:
+              'https://api.dicebear.com/8.x/avataaars/svg?seed=Luke&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=transparent&top=shortFlat&hairColor=d6b370&hatColor=d6b370&skinColor=ffe0bd&facialHairProbability=0&accessoriesProbability=0&build=Average&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2F0370c2e5-a829-4b37-9eff-8251c337aa34-2bf6d5bf0afbd2f035beba3503d89b0715244bba9ce52d769847659687fdce22.jpg',
             standard_character_photo_url: spec.profile_data.standard_character_photo_url,
             outfit_image_url: spec.profile_data.outfit_image_url,
-            avatar_url: spec.profile_data.avatar_url,
           }
         : {}),
     };
@@ -209,7 +208,7 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
 
     const needsCharProfileSync =
       !hasCanonicalNames ||
-      hasSupersededPortrait ||
+      isMismatchedAlexOnLukePortrait ||
       existingProfile.outfit_advice !== spec.profile_data.outfit_advice ||
       JSON.stringify(existingProfile.outfit_reference_images) !== JSON.stringify(spec.profile_data.outfit_reference_images) ||
       JSON.stringify(existingProfile.act_bullets) !== JSON.stringify(spec.profile_data.act_bullets);
@@ -359,6 +358,34 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
 
     mystery.plot_beats = canonicalBeats;
 
+    const SUPERSEDED_CHRISTMAS_CLUE_IMAGE_HASHES = [
+      'b46530763357',
+      'bbc353dd6d00',
+      'a2d1f7c12954',
+      '0f261e72ed79',
+      '558196e7f2b9',
+      'af75388909ab',
+      '5bb7831c6e25',
+      '1a577d073d89',
+      '2c4d42f54455',
+      '38ea2f8993a9',
+      'b2b4930ec6c4',
+      'a4e388b33c63',
+      '5826261dc24b',
+      '9be90d8d00e5',
+      'b5c9ed05ea0e',
+      '4db82731c4cc',
+      '3cbdfc51cf8f',
+      '2de9619b65ec',
+      '1bc1e4116176',
+      '45fd5371bedd',
+      '6c95b13d6d2e',
+      '840601e54d17',
+      '9d445ddd408d',
+      '0eefa60444a8',
+      'c105d7a3c582',
+    ];
+
     // Sync clues if present
     if (Array.isArray(mystery.clues)) {
       const existingClues = mystery.clues.filter((c: any) => !isLiveCarrierClue(c));
@@ -372,8 +399,22 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         const preservedAudioUrl = resolveLocalMysteryAudioUrl(mysteryId, clueId, rawPreservedAudioUrl);
         const preservedVoiceRegion =
           existingClue?.voice_region || extractVoiceRegionFromNotes(existingClue?.internal_notes) || cSpec.voice_region || null;
-        const preservedStaticImage =
-          existingClue?.static_image_url || cSpec.static_image_url || null;
+
+        const isNonVisualClue =
+          cSpec.format === 'chat' ||
+          cSpec.format === 'audio' ||
+          cSpec.format === 'search_log' ||
+          !cSpec.static_image_url;
+
+        const hasSupersededClueImage = SUPERSEDED_CHRISTMAS_CLUE_IMAGE_HASHES.some((h) =>
+          String(existingClue?.static_image_url || '').includes(h)
+        );
+
+        const preservedStaticImage = isNonVisualClue
+          ? null
+          : hasSupersededClueImage
+          ? cSpec.static_image_url || null
+          : existingClue?.static_image_url || cSpec.static_image_url || null;
 
         const desiredRawNotes = embedFormatTagInNotes(
           stripFormatTagFromNotes(cSpec.internal_notes),

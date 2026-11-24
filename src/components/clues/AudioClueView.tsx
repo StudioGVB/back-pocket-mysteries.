@@ -250,36 +250,6 @@ export function AudioClueView({
         />
       )}
 
-      {/* Optional Atmospheric Photo Header */}
-      {showImage && clue.static_image_url && (
-        <div
-          className={`relative w-full ${
-            compact ? 'h-32' : 'aspect-square'
-          } overflow-hidden border-b border-slate-800`}
-        >
-          <img
-            src={clue.static_image_url}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0c1220] to-transparent" />
-          <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-center justify-between gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-[9px] font-black uppercase tracking-widest text-blue-300 backdrop-blur-md">
-              🎙️ Voice Memo Recording
-            </span>
-            {hasAudio ? (
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-[8px] font-black uppercase tracking-widest text-emerald-300 backdrop-blur-md">
-                🔊 Audio Ready
-              </span>
-            ) : (
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-[8px] font-black uppercase tracking-widest text-blue-200 backdrop-blur-md">
-                ▶️ Tap Play to Listen
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Voice Memo Player & Transcript Card */}
       <div className="p-4 space-y-3.5">
         <div className="flex items-center justify-between gap-2">

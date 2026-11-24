@@ -495,10 +495,11 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 1,
     format: 'chat',
+    static_image_url: null,
     internal_notes: '[FORMAT:chat] [CODE:R1-C1] REAL / CANON (Beat 1) - Exposes the secret affair between {{The Husband}} and {{The Mistress}}, and shows {{The Sister-in-Law}} was suspicious.',
     description:
       '❤️ (7:32 PM): Sneak into the coat closet before dinner. I can\'t keep smiling across the table like we\'re all just one big happy street.\nMe (7:33 PM): Keep your voice down. Someone\'s been staring at us all night like they know.\n❤️ (7:34 PM): Relax, {{The Sister-in-Law_hes}} my best friend. {{The Sister-in-Law_He}}\'d never suspect me.',
-    generation_prompt: 'A glowing smartphone resting beside a crystal glass of mulled wine and pine branches on a dark wooden table. (No text).',
+    generation_prompt: '',
   },
   {
     legacyId: 'db9ad3d8-94fd-4b67-8de8-f2fcdc75b8ea',
@@ -510,13 +511,13 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'audio',
-    static_image_url: '/generated-clues/db9ad3d8-94fd-4b67-8de8-f2fcdc75b8ea-a2d1f7c12954.jpg',
+    static_image_url: null,
     audio_url: '/mystery-audio/61196e53-09c3-427f-8862-30151f2ca75b/db9ad3d8-94fd-4b67-8de8-f2fcdc75b8ea.mp3',
     voice_region: 'en-AU',
     internal_notes: '[FORMAT:audio] [CODE:R1-C2] Fake Arc Step 1 ({{The Wife}} + {{The Co-Worker}}) - Exposes that exes {{The Wife}} and {{The Co-Worker}} conspired to break into {{The Husband}}\'s study safe at 8:00 PM.',
     description:
       'Recording Duration: 22.4 Seconds (7:25 PM • Kitchen Patio):\n{{The Co-Worker}}: "{{The Husband_He}} brought the company audit folder to the house tonight. If {{The Husband_he}} hands that over on Monday, my career is finished."\n{{The Wife}}: "And if I try to leave {{The Husband_him}}, {{The Husband_his}} new prenup clause leaves me with nothing. We grew up on this street together, you promised you\'d protect me."\n{{The Co-Worker}}: "I will. Meet me by the hallway closet at 8PM. We get into {{The Husband_his}} study safe tonight."',
-    generation_prompt: 'A cinematic photograph of {{The Wife}} and {{The Co-Worker}} leaning in closely together outside a glass patio door under warm holiday string lights. Raw unedited photograph, no evidence markers, no text.',
+    generation_prompt: '',
   },
   {
     legacyId: '5ff23ebe-96f7-49d5-8222-84ca13a932f4',
@@ -528,7 +529,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 1,
     format: 'physical_prop',
-    static_image_url: '/generated-clues/5ff23ebe-96f7-49d5-8222-84ca13a932f4-840601e54d17.jpg',
+    static_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/clue-images/61196e53-09c3-427f-8862-30151f2ca75b/5ff23ebe-96f7-49d5-8222-84ca13a932f4-51a87e7b96f1.jpg',
     internal_notes: '[FORMAT:physical_prop] [CODE:R1-C3] REAL / CANON (Beat 1) - Visual photo showing {{The Husband}} and {{The Mistress}} inside the coat closet with a dropped sterling silver snowflake hairpin (worn by both siblings) on the carpet outside.',
     description: '',
     generation_prompt: 'A candid low-light hallway photograph showing {{The Husband}} and {{The Mistress}} standing closely together talking by an open wooden coat closet doorway while a vintage silver snowflake hairpin lies on the dark hallway runner carpet in the foreground. (No text).',
@@ -558,10 +559,11 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'chat',
+    static_image_url: null,
     internal_notes: '[FORMAT:chat] [CODE:R1-C5] Fake Arc Step 1 ({{The Mistress}} + {{The Bestie}}) - Exposes that co-workers {{The Mistress}} and {{The Bestie}} were both threatened by {{The Husband}} and plotted to wipe his phone.',
     description:
       '🤫💼 (7:35 PM): {{The Husband_He}} just cornered me in the kitchen. Said {{The Husband_hes}} never leaving {{The Wife_him}}, and if I make a scene tonight {{The Husband_hes}} telling my {{The Co-Worker_spouse}} AND reporting the missing money from our shared office department account.\nMe (7:36 PM): Are you kidding?! {{The Husband_He}} just threatened me too, and {{The Husband_hes}} supposed to be my best friend! Said if I don\'t end my secret fling tonight, {{The Husband_hes}} telling my older {{The Co-Worker_sibling}} everything.\n🤫💼 (7:37 PM): Everything {{The Husband_he}} has on us is on {{The Husband_his}} phone. Help me get it unlocked before dessert or we\'re both done.',
-    generation_prompt: 'Two smartphones lying side by side on a marble bar counter next to cocktail napkins. (No text).',
+    generation_prompt: '',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111104',
@@ -573,10 +575,11 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 4,
     format: 'search_log',
+    static_image_url: null,
     internal_notes: '[FORMAT:search_log] [CODE:R1-C6] REAL / CANON (Beat 4) - Pinpoints the exact time of the living room blackout and 1,840W outlet overload fault to 8:19:12 PM without yet revealing who took the Christmas lights or gloves.',
     description:
       'SMART HOME POWER LOG • GROUND FLOOR LIVING ROOM:\n• 8:18:04 PM - Zone 1 Overhead Dimmer: Manual switch -> 0% (DARK)\n• 8:19:12 PM - Wall Outlet #1 (Tree Corner): Load spike 0W -> 1,840W (OVERLOAD FAULT / SHORT CIRCUIT)\n• 8:21:55 PM - Side Hallway Door Sensor (Pantry Corridor): OPEN -> CLOSED',
-    generation_prompt: 'A glowing Christmas tree corner in a dark living room with shadows cast across the hardwood floor. (No text).',
+    generation_prompt: '',
   },
 
   // ── ROUND 2 (6 Clues: 4 Main Beat 2-4 Clues + 2 Double-Duty Step-2 Fake Clues, Shuffled) ──
@@ -590,7 +593,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'physical_prop',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111105-1bc1e4116176.jpg',
+    static_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/clue-images/61196e53-09c3-427f-8862-30151f2ca75b/a1111111-1111-4111-8111-111111111105-9dcdbd61ef87.jpg',
     internal_notes: '[FORMAT:physical_prop] [CODE:R2-C1] Fake Arc Step 2 ({{The Wife}} + {{The Co-Worker}}) - Visual photo showing {{The Wife}} and {{The Co-Worker}} beside the open upstairs study safe with the tan leather work gloves.',
     description: '',
     generation_prompt: 'A dramatic low-light photograph inside a dark wood-paneled upstairs study showing {{The Co-Worker}} with tan insulated leather work gloves beside an open wall safe while {{The Wife}} stands beside the mahogany desk looking toward the doorway. (No text).',
@@ -605,12 +608,13 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 3,
     format: 'audio',
+    static_image_url: null,
     audio_url: '/mystery-audio/61196e53-09c3-427f-8862-30151f2ca75b/a1111111-1111-4111-8111-111111111101.mp3',
     voice_region: 'en-AU',
     internal_notes: '[FORMAT:audio] [CODE:R2-C2] REAL / CANON (Beat 3) - Captures the explosive marital fight between {{The Husband}} and {{The Wife}}, overheard outside the door at 8:12 PM.',
     description:
       'Recording Duration: 19.2 Seconds (8:12 PM • Upstairs Master Hallway):\n{{The Wife}}: "Why are you doing this to me?! Everyone downstairs knows our marriage is a lie! Just let me go!"\n{{The Husband}}: "You\'re never leaving me. You\'ll fix your face, come downstairs, and play the grateful {{The Wife_spouse}}, or I\'ll ruin your whole family."\n[Sound of footsteps retreating from the door and a hushed voice in the hallway: "{{The Husband_Hes}} never going to let {{The Wife_him}} be happy..."]',
-    generation_prompt: 'A dimly lit upstairs hallway with warm light spilling from underneath a closed wooden door and festive garland on the banister. (No text).',
+    generation_prompt: '',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111102',
@@ -622,10 +626,11 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 3,
     format: 'handwritten_note',
+    static_image_url: null,
     internal_notes: '[FORMAT:handwritten_note] [CODE:R2-C3] REAL / CANON (Beat 3) - Written right after overhearing the marital fight; ambiguous enough to sound like a childhood neighbour or sibling.',
     description:
       'Recovered: Torn in half inside the upstairs bathroom bin (8:14 PM)\n"...heard {{The Husband_him}} through the bedroom door just now. First the coat closet, and now {{The Husband_he}} swears {{The Wife_he}}\'ll never leave this marriage free. Twenty years on this street and {{The Husband_he}} still thinks {{The Husband_he}} owns us. Not after tonight."',
-    generation_prompt: 'A torn cream-colored holiday place card with gold trim resting beside a sink in a candlelit bathroom. (No text).',
+    generation_prompt: '',
   },
   {
     legacyId: 'a1111111-1111-4111-8111-111111111106',
@@ -637,7 +642,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'medical_rx',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111106-45fd5371bedd.jpg',
+    static_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/clue-images/61196e53-09c3-427f-8862-30151f2ca75b/a1111111-1111-4111-8111-111111111106-358cd121a6c5.jpg',
     internal_notes: '[FORMAT:medical_rx] [CODE:R2-C4] Fake Arc Step 2 ({{The Mistress}} + {{The Bestie}}) - Visual bar photo + Rx label showing the two co-workers spiking the eggnog cup with fast-acting sleeping drops.',
     description:
       'Medication: Zolpidem Tartrate Oral Drops (10mg/mL Fast-Acting Sedative)\nPrescribed to: [Torn] ... Co. Group Plan #B-04\nIssue date: Dec 18 (Found 8:08 PM • Kitchen Bar)\nRef: RX-409-12\nWARNING: 5 drops in warm/spiced alcohol induces 20-minute sleep onset (Sub-lethal dose).',
@@ -653,10 +658,11 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 4,
     format: 'chat',
+    static_image_url: null,
     internal_notes: '[FORMAT:chat] [CODE:R2-C5] REAL / CANON (Beat 4) - Proves {{The Sister-in-Law}} left {{The Bestie}} alone in the pantry from 8:15 to 8:25 PM and asked {{The Bestie_him}} to lie for {{The Sister-in-Law_his}} alibi.',
     description:
       'Me (8:25 PM): Where did you go?? You said you were stepping out of the pantry for one second, you\'ve been gone 10 minutes.\n❤️‍🔥 (8:26 PM): Shh. If anyone asks where I was between 8:15 and 8:25, tell them I was in the pantry with you the whole time.\nMe (8:27 PM): Of course I\'ll cover for you, if my older {{The Co-Worker_sibling}} or your {{The Wife_sibling}} found out I was hooking up with {{The Wife}}\'s younger {{The Sister-in-Law_sibling}}, we\'d both be dead. Wait, why are your hands shaking?',
-    generation_prompt: 'Two champagne flutes left behind on a marble pantry counter beside holiday ribbon and pine cones. (No text).',
+    generation_prompt: '',
   },
   {
     legacyId: '3e8e61ad-32f1-4c0a-a75b-024969eef8f4',
@@ -668,7 +674,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 2,
     format: 'cctv',
-    static_image_url: '/generated-clues/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-0eefa60444a8.jpg',
+    static_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/clue-images/61196e53-09c3-427f-8862-30151f2ca75b/3e8e61ad-32f1-4c0a-a75b-024969eef8f4-7d01fd61bf30.jpg',
     internal_notes: '[FORMAT:cctv] [CODE:R2-C6] REAL / CANON (Beat 2 + Ambiguous Overlap) - Visual CCTV showing {{The Sister-in-Law}} carrying the Christmas tree lights out of the storage closet and {{The Co-Worker}} wearing the tan leather work gloves at the 2F breaker panel.',
     description:
       'Header: CAM 01 • HALLWAY STORAGE & 2F STUDY BREAKER\nTimestamp: 7:52 PM - 8:03 PM',
@@ -702,7 +708,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'physical_prop',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111107-6c95b13d6d2e.jpg',
+    static_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/clue-images/61196e53-09c3-427f-8862-30151f2ca75b/a1111111-1111-4111-8111-111111111107-7b350e41e42b.jpg',
     internal_notes: '[FORMAT:physical_prop] [CODE:R3-C2] Fake Arc Step 3 & Fatal Hole ({{The Wife}} + {{The Co-Worker}}) - Visual photo showing {{The Wife}} and {{The Co-Worker}} burning the stolen safe papers in the locked 2nd-floor study fireplace during the 8:19 PM murder downstairs.',
     description: '',
     generation_prompt: 'A dramatic low-light photograph inside the upstairs wood-paneled study showing {{The Wife}} and {{The Co-Worker}} kneeling together beside a glowing brick fireplace burning a folder of papers in the flames. (No text).',
@@ -717,7 +723,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: true,
     beatNumber: 4,
     format: 'handwritten_note',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111110-2de9619b65ec.jpg',
+    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111110-a420608fa3de.jpg',
     internal_notes: '[FORMAT:handwritten_note] [CODE:R3-C3] REAL / CANON (Beat 4 True Motive) - Visual Polaroid photo of {{The Sister-in-Law}} and {{The Wife}} + cryptic handwritten message on the back that requires cross-referencing the 8:19 PM study alibi and pantry chat.',
     description:
       'Recovered: Written on back of Polaroid inside coat pocket near pantry\n"We grew up on this street together, and I meant it when I promised you wouldn\'t be trapped in this marriage another year. After what I heard {{The Husband_him}} say to you upstairs at 8:12 PM, I knew there was only one way you\'d ever be happy and free."',
@@ -733,7 +739,7 @@ export const CHRISTMAS_NIGHTMARE_CLUES: CanonicalChristmasClue[] = [
     is_essential: false,
     beatNumber: null,
     format: 'cctv',
-    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111108-b5c9ed05ea0e.jpg',
+    static_image_url: '/generated-clues/a1111111-1111-4111-8111-111111111108-00cc6f5af6b0.jpg',
     internal_notes: '[FORMAT:cctv] [CODE:R3-C4] Fake Arc Step 3 & Fatal Hole ({{The Mistress}} + {{The Bestie}}) - Visual CCTV still proving {{The Husband}} was still alive on the sofa at 8:16:10 PM when {{The Mistress}} slipped out with his unlocked phone to the dining table.',
     description:
       'Header: CAM 02 • LIVING ROOM DOOR (8:16 PM) -> DINING TABLE (8:17-8:22 PM)\nTimestamp: 8:16:10 PM - 8:22:00 PM',

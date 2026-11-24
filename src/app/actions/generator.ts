@@ -471,6 +471,25 @@ function getCharacterOutfitDescription(char: any): string {
   if (!outfit && profile.act_summary) {
     outfit = `attire fitting ${profile.act_summary}`;
   }
+  // When outfit_advice lists multiple human costume choices ("Option 1 — ...; Option 2 — ...; Option 3 — ..."),
+  // lock the AI visual generator to Option 1 (plus any shared accessory note in parentheses)
+  // so the character wears the exact same signature costume in their Stage 1 portrait and every Stage 2 clue photo.
+  if (/Option\s*1\b/i.test(outfit) && /Option\s*2\b/i.test(outfit)) {
+    const trailingParenMatch = outfit.match(
+      /(\([^)]*(?:hairpin|brooch|ring|locket|scarf|gloves|badge)[^)]*\))\s*\.?\s*$/i
+    );
+    const primarySegment = outfit
+      .replace(/^[^:]*:\s*/i, '')
+      .split(/;\s*Option\s*2\b/i)[0]
+      .replace(/^Option\s*1\s*(?:—|--|-|:|,)\s*/i, '')
+      .trim();
+    if (primarySegment) {
+      outfit =
+        trailingParenMatch && !primarySegment.includes(trailingParenMatch[1])
+          ? `${primarySegment} ${trailingParenMatch[1]}`
+          : primarySegment;
+    }
+  }
   const adapted = adaptOutfitForGuestGender(
     outfit || 'tailored evening attire fitting their character persona',
     genderStr
@@ -1094,13 +1113,25 @@ export async function generateStandardCharacterPhotoAction(
 function getInvolvedCharacters(clue: any, characters: any[], livePromptText?: string): any[] {
   const involved = new Set<any>();
 
-  // 1. Scan the live visual prompt (or saved generation_prompt) first - this is the primary source of truth for what should be in the image
-  const promptSource = [livePromptText, clue.generation_prompt, clue.title].filter(Boolean).join('\n');
-  for (const char of findInvolvedCharactersInText(promptSource, characters)) {
+  // 1. Scan the live visual prompt (or saved generation_prompt) first - this is the primary source of truth for who should appear in the image
+  const visualPromptOnly = [livePromptText, clue.generation_prompt].filter(Boolean).join('\n');
+  for (const char of findInvolvedCharactersInText(visualPromptOnly, characters)) {
     involved.add(char);
   }
 
-  // 2. Check if there are active speaker/sender/recipient markers in the clue description
+  // CRITICAL: If the visual prompt explicitly specifies which character(s) appear in the photograph,
+  // do NOT pollute the cast list with extra characters who are merely talked about in clue.description
+  // (e.g. a note or dialogue mentioning {{The Husband}} when he is not in the room/photo).
+  if (involved.size > 0) {
+    return Array.from(involved);
+  }
+
+  // 2. Fallback only when no characters were specified in generation_prompt: check title & active speaker/sender markers
+  const titleMatches = findInvolvedCharactersInText(clue.title || '', characters);
+  for (const char of titleMatches) {
+    involved.add(char);
+  }
+
   const desc = clue.description || '';
   const activeTokens = new Set<string>();
   const lines = desc.split('\n').map((l: string) => l.trim());
@@ -1127,12 +1158,6 @@ function getInvolvedCharacters(clue: any, characters: any[], livePromptText?: st
         involved.add(char);
       }
     }
-  }
-
-  // 3. Also scan the description text for any character tokens (e.g. {{The Star}}) so clues that reference characters in their description are always personalized
-  const descMatches = findInvolvedCharactersInText(desc, characters);
-  for (const char of descMatches) {
-    involved.add(char);
   }
 
   return Array.from(involved);
@@ -1289,6 +1314,27 @@ export async function generateClueImageAction(
 
     const clueFormat = (clue as any).format || inferClueFormat(clue);
 
+    // Message clues ('chat') and Voice clues ('audio') never need images generated or displayed
+    if (clueFormat === 'chat' || clueFormat === 'audio') {
+      await supabase
+        .from('clues')
+        .update({ static_image_url: null, updated_at: new Date().toISOString() })
+        .eq('id', clueId);
+      if (cachedMystery && Array.isArray(cachedMystery.clues)) {
+        cacheMysterySnapshot(mysteryId, {
+          ...cachedMystery,
+          clues: cachedMystery.clues.map((c: any) =>
+            c.id === clueId ? { ...c, static_image_url: null } : c
+          ),
+        });
+      }
+      return {
+        success: true,
+        imageUrl: null,
+        referencedCharacters: [],
+      };
+    }
+
     // Determine the base prompt to use (preferring the live promptText from editor if provided)
     let basePrompt = promptText?.trim() || clue.generation_prompt?.trim() || clue.title || '';
     // Clean up any quotes or text inside the base prompt
@@ -1322,7 +1368,7 @@ export async function generateClueImageAction(
       }
     }
 
-    // Find involved characters in the clue (scanning live promptText + clue fields + description)
+    // Find involved characters in the clue (strictly using the visual generation_prompt when characters are specified there)
     const involvedCharacters = getInvolvedCharacters(clue, hydratedCharacters, promptText).slice(0, 4);
 
     // STAGE 1 -> STAGE 2 BRIDGE:
@@ -1396,62 +1442,43 @@ export async function generateClueImageAction(
     // Build Strict Character Consistency Manifest binding each attached Standard Character Photo to its character in the scene
     const referenceManifest = referenceImages.length > 0
       ? `\n\nCHARACTER VISUAL CONSISTENCY LOCK (MANDATORY):
-You are provided ${referenceImages.length} canonical Standard Character Reference Photo(s) attached in order. Every character depicted in this scene MUST look 100% identical to their attached Standard Character Reference Photo, preserve their exact facial identity, bone structure, age, skin tone, hair color/style, glasses/accessories, body build, and their exact signature costume:\n` +
+You are provided ${referenceImages.length} canonical Standard Character Reference Photo(s) attached in order. Every character depicted in this scene MUST look 100% identical to their attached Standard Character Reference Photo, preserve their exact facial identity, bone structure, age, skin tone, hair color/style, glasses/accessories, body build, and their exact signature costume:
+` +
         referenceImages.map(ref => {
           const name = getCharacterDisplayName(ref.char);
           const role = getCharacterRoleTitle(ref.char);
           return `- Attached Reference Image #${ref.referenceId} (subject [${ref.referenceId}]): ${name} (${role}) - Physical traits: ${ref.standardPhoto.physicalDesc || 'match reference photo exactly'}. Signature outfit: ${sanitizePromptForImageSafety(ref.standardPhoto.outfit)}.`;
-        }).join('\n')
+        }).join('\n') +
+        `\nSTRICT SUBJECT COUNT & NON-DUPLICATION RULE: Depict EXACTLY ${referenceImages.length} person(s) in this photograph (${referenceImages.map(r => getCharacterDisplayName(r.char)).join(' and ')}). Do NOT add any extra people, background bystanders, or dead bodies on the floor unless explicitly described in the scene prompt. Every person in the frame MUST be a distinct individual matching their assigned Reference Image #N (subject [N]) — NEVER duplicate the same person's face onto two bodies.`
       : '';
 
-    if (clueFormat === 'audio' && charCount === 0) {
-      const lowerPrompt = (clue.generation_prompt || clue.title || '').toLowerCase();
-      let location = `resting on a vintage surface inside ${mysterySetting}`;
-      if (lowerPrompt.includes('bar') || lowerPrompt.includes('counter')) {
-        location = `resting on a dark bar counter next to an out-of-focus crystal glass inside ${mysterySetting}`;
-      } else if (lowerPrompt.includes('desk') || lowerPrompt.includes('office')) {
-        location = `resting on a polished mahogany desk in a shadowed corner of ${mysterySetting}`;
-      }
-
-      finalPrompt = `A cinematic, atmospheric crime scene close-up photograph of a sleek vintage brass and black metal microphone and analog tape reel ${location}. Moody low-key lighting, warm amber shadows, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}`;
-    } else if (clueFormat === 'cctv') {
+    if (clueFormat === 'cctv') {
       if (charCount === 0) {
         finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance still showing an atmospheric corridor or lounge area: ${hydratedPrompt || 'dimly lit crime scene area'}. Gritty noir aesthetic, low-key lighting, high contrast, atmospheric shadows, 8k resolution. ${zeroTextRule}`;
       } else if (charCount === 1) {
         const desc1 = buildCharDescription(involvedCharacters[0], getRefId(involvedCharacters[0]));
-        finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance footage still showing ${desc1} in the scene: ${hydratedPrompt}. Gritty noir surveillance aesthetic, high angle, low-key lighting, high contrast, atmospheric shadows, cinematic shot, 8k resolution. ${zeroTextRule}${referenceManifest}`;
+        finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance footage still showing ONLY ${desc1} in the scene: ${hydratedPrompt}. Gritty noir surveillance aesthetic, high angle, low-key lighting, high contrast, atmospheric shadows, cinematic shot, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       } else if (charCount === 2) {
         const desc1 = buildCharDescription(involvedCharacters[0], getRefId(involvedCharacters[0]));
         const desc2 = buildCharDescription(involvedCharacters[1], getRefId(involvedCharacters[1]));
-        finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance footage still showing both ${desc1} and ${desc2} in the scene: ${hydratedPrompt}. Gritty noir surveillance aesthetic, high angle, low-key lighting, high contrast, atmospheric shadows, cinematic shot, 8k resolution. ${zeroTextRule}${referenceManifest}`;
+        finalPrompt = `An overhead security camera angle inside ${mysterySetting}, grainy surveillance footage still showing ONLY ${desc1} and ${desc2} in the scene: ${hydratedPrompt}. Gritty noir surveillance aesthetic, high angle, low-key lighting, high contrast, atmospheric shadows, cinematic shot, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       } else {
         const count = Math.min(involvedCharacters.length, 4);
         const panelPrompts = involvedCharacters.slice(0, count).map((c, idx) => {
           const desc = buildCharDescription(c, getRefId(c));
           return `Subject ${idx + 1}: ${desc}`;
         }).join('; ');
-        finalPrompt = `An overhead wide-angle security camera still inside ${mysterySetting} showing ${panelPrompts} in the scene: ${hydratedPrompt}. Gritty noir surveillance aesthetic, low-key lighting, high contrast, atmospheric shadows, 8k resolution. ${zeroTextRule}${referenceManifest}`;
+        finalPrompt = `An overhead wide-angle security camera still inside ${mysterySetting} showing ONLY ${panelPrompts} in the scene: ${hydratedPrompt}. Gritty noir surveillance aesthetic, low-key lighting, high contrast, atmospheric shadows, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       }
     } else if (clueFormat === 'social_post') {
       if (charCount === 0) {
         finalPrompt = `A candid party photograph taken at ${mysterySetting}: ${hydratedPrompt || 'glamorous party scene with champagne glasses and moody lighting'}. Candid flash photography aesthetic, shallow depth of field, 35mm film grain, 8k resolution. ${zeroTextRule}`;
       } else if (charCount === 1) {
         const desc1 = buildCharDescription(involvedCharacters[0], getRefId(involvedCharacters[0]));
-        finalPrompt = `A candid social media party photograph taken inside ${mysterySetting} featuring ${desc1}: ${hydratedPrompt}. Candid flash photography aesthetic, expressive in-character pose, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}${referenceManifest}`;
+        finalPrompt = `A candid social media party photograph taken inside ${mysterySetting} featuring ONLY ${desc1}: ${hydratedPrompt}. Candid flash photography aesthetic, expressive in-character pose, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       } else {
         const charDescriptions = involvedCharacters.map(c => buildCharDescription(c, getRefId(c))).join(' and ');
-        finalPrompt = `A candid social media party photograph taken inside ${mysterySetting} featuring ${charDescriptions}: ${hydratedPrompt}. Candid flash photography aesthetic, expressive in-character interaction, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}${referenceManifest}`;
-      }
-    } else if (clueFormat === 'chat') {
-      if (charCount === 0) {
-        finalPrompt = `A cinematic crime scene atmosphere photograph inside ${mysterySetting}: two people sitting in a moody cocktail lounge whispering in the shadows, cinematic lighting, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}`;
-      } else if (charCount === 1) {
-        const desc1 = buildCharDescription(involvedCharacters[0], getRefId(involvedCharacters[0]));
-        finalPrompt = `A cinematic photograph of ${desc1} inside ${mysterySetting}: ${hydratedPrompt || 'sitting in a moody lounge glancing over their shoulder in secretive conversation'}. Cinematic lighting, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}${referenceManifest}`;
-      } else {
-        const desc1 = buildCharDescription(involvedCharacters[0], getRefId(involvedCharacters[0]));
-        const desc2 = buildCharDescription(involvedCharacters[1], getRefId(involvedCharacters[1]));
-        finalPrompt = `A cinematic photograph of ${desc1} and ${desc2} inside ${mysterySetting}: ${hydratedPrompt || 'whispering conspiratorially in a shadowed corner'}. Cinematic lighting, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}${referenceManifest}`;
+        finalPrompt = `A candid social media party photograph taken inside ${mysterySetting} featuring ONLY ${charDescriptions}: ${hydratedPrompt}. Candid flash photography aesthetic, expressive in-character interaction, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       }
     } else if ((clueFormat === 'receipt' || clueFormat === 'document') && charCount === 0) {
       const propScene = hydratedPrompt && hydratedPrompt.length > 6
@@ -1459,15 +1486,15 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
         : 'a crystal coupe glass with a dark red stain sitting on a vintage mahogany bar counter under warm amber lamplight';
       finalPrompt = `A cinematic crime scene prop photograph inside ${mysterySetting}: ${propScene}. Gritty noir aesthetic, dramatic low-key lighting, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}`;
     } else {
-      // Physical prop clues, Polaroids, crime scene photos, or any clue with involved characters
+      // Physical prop clues, Polaroids, or any visual clue with involved characters
       if (charCount === 0) {
-        finalPrompt = `A professional close-up crime scene photograph of a physical prop inside ${mysterySetting}: ${hydratedPrompt || 'a mysterious vintage key and velvet glove on a dark mahogany table'}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. ${zeroTextRule}`;
+        finalPrompt = `A professional close-up forensic photograph of a physical prop inside ${mysterySetting}: ${hydratedPrompt || 'a mysterious vintage key and velvet glove on a dark mahogany table'}. Dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. ${zeroTextRule}`;
       } else if (charCount === 1) {
         const desc1 = buildCharDescription(involvedCharacters[0], getRefId(involvedCharacters[0]));
-        finalPrompt = `A cinematic crime scene photograph showing ${desc1} inside ${mysterySetting}: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. ${zeroTextRule}${referenceManifest}`;
+        finalPrompt = `A cinematic, photorealistic live-action photograph showing ONLY ${desc1} inside ${mysterySetting}: ${hydratedPrompt}. Dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       } else {
         const charDescriptions = involvedCharacters.map(c => buildCharDescription(c, getRefId(c))).join(' and ');
-        finalPrompt = `A cinematic crime scene photograph showing ${charDescriptions} inside ${mysterySetting}: ${hydratedPrompt}. Gritty noir aesthetic, dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. ${zeroTextRule}${referenceManifest}`;
+        finalPrompt = `A cinematic, photorealistic live-action photograph showing ONLY ${charDescriptions} inside ${mysterySetting}: ${hydratedPrompt}. Dramatic low-key lighting, highly detailed texture, atmospheric shadows, cinematic shot, sharp focus, 8k resolution. ${zeroTextRule}${referenceManifest}`;
       }
     }
 
@@ -2418,16 +2445,35 @@ Respond with valid JSON ONLY:
     // =========================================================================
     // GATE 3: Stage 2 Visual Clue Side-by-Side Reference Portrait Critic + Best-of-N Self-Healing
     // =========================================================================
-    const visualClues = allClues.filter(
-      (c: any) =>
-        c?.id &&
-        c?.generation_prompt &&
-        (/\{\{[^}]+\}\}/.test(c.generation_prompt) ||
-          /\{\{[^}]+\}\}/.test(c.description || '') ||
-          c.format === 'cctv' ||
-          c.format === 'physical_prop' ||
-          c.format === 'social_post')
-    );
+    for (const c of allClues) {
+      const fmt = c?.format || inferClueFormat(c);
+      if ((fmt === 'chat' || fmt === 'audio') && c?.static_image_url) {
+        c.static_image_url = null;
+        if (c.id) {
+          await supabase.from('clues').update({ static_image_url: null }).eq('id', c.id);
+        }
+      }
+    }
+
+    const visualClues = allClues.filter((c: any) => {
+      if (!c?.id || !c?.generation_prompt) return false;
+      const fmt = c.format || inferClueFormat(c);
+      if (
+        fmt === 'chat' ||
+        fmt === 'audio' ||
+        fmt === 'search_log' ||
+        fmt === 'receipt' ||
+        fmt === 'call_sheet'
+      ) {
+        return false;
+      }
+      return (
+        fmt === 'cctv' ||
+        fmt === 'physical_prop' ||
+        fmt === 'social_post' ||
+        Boolean(c.static_image_url)
+      );
+    });
 
     const evaluateVisualClueWithCritic = async (
       clueObj: any,
