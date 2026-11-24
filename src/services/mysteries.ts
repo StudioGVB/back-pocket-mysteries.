@@ -153,6 +153,8 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     '20058bab3911',
     'b06f3ace7cdf',
     '63aa0e7355d6',
+    '0b6e029e9a8d',
+    'd468b1b12c33',
     '1dcd5acb69d9',
   ];
   const ALEX_HUSBAND_PORTRAIT =

@@ -729,7 +729,7 @@ LOCKED CANONICAL SIGNATURE COSTUME (MUST WEAR THIS EXACT OUTFIT & COLOR):
 - ${safeOutfit}
 
 MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARACTER CARDS):
-1. STRICT WAIST-UP MEDIUM PORTRAIT CROP: Frame the character from the WAIST / HIP BELT-LINE UP to ~10% headroom above the top of their head. Their face must occupy ~25% of the vertical frame height, centered horizontally, showing their full upper-body torso, shoulders, neckline, sleeves, and waist.
+1. STRICT WAIST-UP MEDIUM PORTRAIT CROP: Frame the character from the WAIST / HIP BELT-LINE UP to ~10% headroom above the top of their head. Their face must occupy ~25% of the vertical frame height, centered horizontally, showing their full upper-body torso, shoulders, holiday attire, and waist.
 2. FORBIDDEN CROPS (HARD RULE): Absolutely NO full-body shots, NO legs, NO knees, NO feet, NO shoes, and NO studio floor visible. Also NO tight face-only close-ups (must clearly show upper-body costume down to the waist).
 3. ${unifiedBackdrop}
 4. Shot on 85mm prime lens at f/2.8, cinematic warm key lighting with subtle rim light, photorealistic natural skin texture, 8k resolution.
@@ -1172,29 +1172,23 @@ function buildCharDescription(char: any, refId?: number): string {
   const profile = char.profile_data || {};
   const guestName = getCharacterDisplayName(char);
   const roleTitle = getCharacterRoleTitle(char);
-  const genderStr = char?.assignedFriend?.gender || profile.gender || char.gender || '';
+  const sigColor = (profile.color || '').trim();
+  const label = guestName && guestName !== roleTitle ? `${guestName} (${roleTitle})` : guestName;
 
+  if (refId !== undefined) {
+    return `${label} [subject ${refId} matching Reference Image #${refId}${sigColor ? ` in ${sigColor}` : ''}]`;
+  }
+
+  const genderStr = char?.assignedFriend?.gender || profile.gender || char.gender || '';
   const desc = getGuestPhysicalDescription(profile, genderStr);
   const outfit = getCharacterOutfitDescription(char);
+  const mergedDesc = outfit
+    ? desc
+      ? `${desc}, wearing their signature outfit: ${outfit}`
+      : `wearing their signature outfit: ${outfit}`
+    : desc;
 
-  let mergedDesc = desc;
-  if (outfit) {
-    mergedDesc = desc ? `${desc}, wearing their signature outfit: ${outfit}` : `wearing their signature outfit: ${outfit}`;
-  }
-
-  const refStr = refId !== undefined ? `MUST MATCH Reference Image #${refId} [subject ${refId}]` : '';
-
-  let details = '';
-  if (refStr && mergedDesc) {
-    details = `(${refStr} - ${mergedDesc})`;
-  } else if (refStr) {
-    details = `(${refStr})`;
-  } else if (mergedDesc) {
-    details = `(${mergedDesc})`;
-  }
-
-  const label = guestName && guestName !== roleTitle ? `${guestName} (${roleTitle})` : guestName;
-  return details ? `${label} ${details}` : label;
+  return mergedDesc ? `${label} (${mergedDesc})` : label;
 }
 
 export async function generateClueImageAction(
@@ -1463,7 +1457,16 @@ export async function generateClueImageAction(
 
     const antiCloneRule =
       referenceImages.length >= 2
-        ? `\nMULTI-PLAYER ANTI-CLONE & CONTRAST LOCK (CRITICAL): There are ${referenceImages.length} DIFFERENT individuals in this scene. Each person [subject 1]..[subject ${referenceImages.length}] MUST preserve their own distinct facial bone structure, hair color/style, facial hair (beard vs. clean-shaven), skin tone, and signature costume color from their respective Attached Reference Image #1..#${referenceImages.length}. NEVER duplicate, clone, or blend one person's face or beard onto another person's body.`
+        ? `\nMULTI-PLAYER ANTI-CLONE & CONTRAST LOCK (CRITICAL): There are ${referenceImages.length} DIFFERENT individuals in this scene. Each person [subject 1]..[subject ${referenceImages.length}] MUST preserve their own distinct facial bone structure, hair color/style, facial hair (beard vs. clean-shaven), skin tone, and signature costume color from their respective Attached Reference Image #1..#${referenceImages.length}. NEVER duplicate, clone, or blend one person's face or beard onto another person's body.\nPAIRWISE SUBJECT DISTINCTION SUMMARY:\n` +
+          referenceImages.map((ref, idx) => {
+            const name = getCharacterDisplayName(ref.char);
+            const zone = spatialZones[idx] || `Zone #${idx + 1}`;
+            const phys = (ref.standardPhoto.physicalDesc || '').toLowerCase();
+            const hasBeard = /\b(beard|mustache|goatee)\b/i.test(phys) && !/no beard/i.test(phys);
+            const hasGlasses = /\b(glasses|spectacles)\b/i.test(phys) && !/no glasses/i.test(phys);
+            const sigColor = extractSignatureColorSummary(ref.standardPhoto.outfit);
+            return `  * Subject #${ref.referenceId} (${zone}): ${name} — ${hasBeard ? 'WITH facial hair/beard' : 'CLEAN-SHAVEN (STRICTLY NO beard/facial hair)'}, ${hasGlasses ? 'WEARING glasses' : 'NO glasses'}, wearing ${sigColor}.`;
+          }).join('\n')
         : '';
 
     // Build Strict Character Consistency Manifest binding each attached Standard Character Photo to its character and spatial zone in the scene

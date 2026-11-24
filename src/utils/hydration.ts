@@ -271,6 +271,76 @@ export function adaptOutfitForGuestGender(
 }
 
 /**
+ * Extracts a single, deterministic canonical costume (Option 1 + Signature Color + Mandatory Accessories)
+ * for AI portrait and clue scene generation so a character wears the EXACT same outfit & color
+ * in every single photo throughout the mystery (never alternating between Option 1, Option 2, and Option 3).
+ *When upperBodyOnly is true (Stage 1 waist-up character portraits), strips footwear and lower-leg garment terms
+ * so the image generator never zooms out to a full-body shot to show shoes or trousers.
+ */
+export function extractCanonicalSingleAiOutfit(
+  rawOutfit: string,
+  guestGender?: string | null,
+  options?: {
+    upperBodyOnly?: boolean;
+    signatureColor?: string | null;
+  }
+): string {
+  if (!rawOutfit) return '';
+
+  // 1. Preserve any trailing mandatory prop note like "(paired with your matching silver snowflake hairpin)"
+  const trailingPropMatch = rawOutfit.match(/\(([^)]*(?:hairpin|brooch|watch|glasses|earrings|necklace)[^)]*)\)/i);
+  const trailingProp = trailingPropMatch
+    ? trailingPropMatch[1].replace(/\byour\b/gi, 'their').trim()
+    : '';
+
+  // 2. If the outfit string lists "Option 1 — ...; Option 2 — ...", lock strictly to Option 1
+  let singleOption = rawOutfit;
+  const opt1Match = rawOutfit.match(/Option\s*1\s*(?:—|–|-|:)\s*([^;.]+)/i);
+  if (opt1Match && opt1Match[1]) {
+    singleOption = opt1Match[1].trim();
+  } else {
+    // Strip any prefix label like "Sharp holiday host attire:" before splitting options
+    const afterColon = rawOutfit.includes(':') ? rawOutfit.split(':').slice(1).join(':').trim() : rawOutfit;
+    singleOption = afterColon.split(/;\s*Option\s*2/i)[0].trim();
+  }
+
+  // 3. Adapt for guest gender (Male <-> Female)
+  let adapted = adaptOutfitForGuestGender(singleOption, guestGender);
+
+  // 4. Collapse "A or B" garment alternatives to the first canonical choice so AI never flips between two styles
+  adapted = adapted
+    .replace(/\b(off-the-shoulder sweater)\s+or\s+silk\s+(?:holiday\s+)?blouse\b/gi, '$1')
+    .replace(/\b(silk midi dress)\s+or\s+velvet\s+jumpsuit\b/gi, '$1')
+    .replace(/\b(sweater dress)\s+or\s+satin\s+blouse\b/gi, '$1')
+    .replace(/\b(gold sequin)\s+or\s+scarlet\s+(cocktail dress)\b/gi, '$1 $2')
+    .replace(/\b(velvet evening dress)\s+or\s+chic\s+velvet\s+jumpsuit\b/gi, '$1')
+    .replace(/\b(satin cocktail dress)\s+or\s+tailored\s+feminine\s+evening\s+blazer\b/gi, '$1')
+    .replace(/\b(satin midi skirt)\s+or\s+tailored\s+high-waisted\s+(?:evening\s+)?trousers\b/gi, '$1');
+
+  // 5. Re-attach mandatory prop/hairpin if it wasn't inside Option 1
+  if (trailingProp && !adapted.toLowerCase().includes(trailingProp.toLowerCase().slice(0, 12))) {
+    adapted = `${adapted} (${trailingProp})`;
+  }
+
+  // 6. For Stage 1 Waist-Up Portraits, strip footwear & lower-body triggers that cause full-body zoom-outs
+  if (options?.upperBodyOnly) {
+    adapted = adapted
+      .replace(/,?\s*\b(?:with|and)\s+(?:statement|strappy|resort|evening|polished\s+leather|expensive\s+leather|woven\s+leather)?\s*(?:heels|stilettos|dress\s+shoes|loafers|shoes|boots|flats)\b/gi, '')
+      .replace(/,?\s*\b(?:with|and)\s+(?:a\s+satin\s+midi\s+skirt|tailored\s+high-waisted\s+(?:evening\s+)?trousers|dark\s+chinos|dark\s+tailored\s+trousers|dark\s+dress\s+trousers|cream\s+resort\s+trousers)\b/gi, '')
+      .trim();
+  }
+
+  const sigColor = (options?.signatureColor || '').trim();
+  if (sigColor && !adapted.toLowerCase().includes(sigColor.toLowerCase())) {
+    adapted = `[Signature Color: ${sigColor}] ${adapted}`;
+  } else if (sigColor) {
+    adapted = `[Signature Color: ${sigColor}] ${adapted}`;
+  }
+
+  return adapted.replace(/\s+/g, ' ').trim();
+}
+
+/**
  * Adapts self-referential gendered nouns in character outlines, act summaries, and bios
  * when a guest of the opposite gender is cast (e.g. "younger neighbour brother" <-> "younger neighbour sister").
  */
@@ -637,16 +707,20 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
     parts.push(eyeColor);
   }
 
-  if (rawFacialHair && rawFacialHair.toLowerCase() !== 'none') {
+  const facialHairProb = extractUrlParam(url, 'facialHairProbability');
+  if (rawFacialHair && rawFacialHair.toLowerCase() !== 'none' && facialHairProb !== '0') {
     const cleanFacialHair = rawFacialHair
       .replace(/([A-Z])/g, ' $1')
       .toLowerCase()
       .replace(/[0-9]/g, '')
       .trim();
     parts.push(`${cleanFacialHair} facial hair`);
+  } else if (isMasculine) {
+    parts.push('strictly clean-shaven face (no beard, no facial hair)');
   }
 
-  if (rawAccessories && rawAccessories.toLowerCase() !== 'none') {
+  const accProb = extractUrlParam(url, 'accessoriesProbability');
+  if (rawAccessories && rawAccessories.toLowerCase() !== 'none' && accProb !== '0') {
     const cleanAcc =
       rawAccessories === 'prescription01' || rawAccessories === 'prescription02'
         ? 'prescription glasses'
@@ -658,6 +732,8 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
             .replace(/[0-9]/g, '')
             .trim();
     parts.push(`wearing ${cleanAcc}`);
+  } else {
+    parts.push('no glasses');
   }
 
   if (rawDistinctive && rawDistinctive.toLowerCase() !== 'none') {
@@ -700,11 +776,14 @@ function buildAiReplacementForCharacter(
       outfit = pres.outfit_advice || '';
     }
   }
-  outfit = adaptOutfitForGuestGender(outfit, genderStr);
+  outfit = extractCanonicalSingleAiOutfit(outfit, genderStr, {
+    upperBodyOnly: false,
+    signatureColor: profile.color || null,
+  });
 
   let mergedDesc = desc;
   if (outfit) {
-    mergedDesc = desc ? `${desc}, styled like: ${outfit}` : `styled like: ${outfit}`;
+    mergedDesc = desc ? `${desc}, wearing their locked signature outfit: ${outfit}` : `wearing their locked signature outfit: ${outfit}`;
   }
 
   const rawBase = (char.name || '').split('|')[0]?.trim();
@@ -716,9 +795,9 @@ function buildAiReplacementForCharacter(
     (baseRoleTitle && charToRefIdMap?.get(baseRoleTitle));
 
   if (refId !== undefined) {
-    return mergedDesc
-      ? `${displayName} (matching subject [${refId}], ${mergedDesc})`
-      : `${displayName} (matching subject [${refId}])`;
+    // Keep the inline token inside the scene action sentence concise so Gemini clearly tracks WHO is doing WHICH action,
+    // while the CHARACTER VISUAL CONSISTENCY LOCK manifest below defines their full physical traits & outfit once.
+    return `${displayName} [subject ${refId} matching Reference Image #${refId}]`;
   }
 
   return mergedDesc ? `${displayName} (${mergedDesc})` : displayName;
