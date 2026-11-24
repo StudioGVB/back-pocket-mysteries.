@@ -584,6 +584,13 @@ export function PlayroomClient({
   const [clueSlideIndex, setClueSlideIndex] = useState<number>(0);
   const [selectedClueModalIndex, setSelectedClueModalIndex] = useState<number | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [expandedRevealBeats, setExpandedRevealBeats] = useState<number[]>([1]);
+
+  const toggleRevealBeat = useCallback((beatNum: number) => {
+    setExpandedRevealBeats(prev =>
+      prev.includes(beatNum) ? prev.filter(n => n !== beatNum) : [...prev, beatNum]
+    );
+  }, []);
 
   // Between-Round Theory ("Who & Why") Form State
   const [accusedCharId, setAccusedCharId] = useState<string>('');
@@ -4826,7 +4833,7 @@ export function PlayroomClient({
                         </div>
                       </div>
 
-                      {/* CHRONOLOGICAL TIMELINE OF THE CRIME */}
+                      {/* CHRONOLOGICAL TIMELINE OF THE CRIME (CLICKABLE BEATS + FULL SUPPORTING CLUES) */}
                       {beatsList.length > 0 && (
                         <div className="space-y-4">
                           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -4835,20 +4842,45 @@ export function PlayroomClient({
                                 How the Night Unfolded
                               </h3>
                               <p className="text-xs text-slate-400">
-                                Step-by-step reconstruction of the crime and the evidence that proved it
+                                Tap any step below to read what happened and inspect the clues that pointed to it
                               </p>
                             </div>
-                            <span className="text-xs font-semibold text-slate-400">
-                              {realMurderClues.length} Real Clues • {decoyClues.length} Red Herrings
-                            </span>
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-xs font-semibold text-slate-400 hidden sm:inline">
+                                {realMurderClues.length} Real Clues • {decoyClues.length} Red Herrings
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const allBeatNums = beatsList.map((b: any, i: number) =>
+                                    Number(b.beat_number || i + 1)
+                                  );
+                                  if (expandedRevealBeats.length === allBeatNums.length) {
+                                    setExpandedRevealBeats([]);
+                                  } else {
+                                    setExpandedRevealBeats(allBeatNums);
+                                  }
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-200 transition-colors cursor-pointer"
+                              >
+                                {expandedRevealBeats.length === beatsList.length
+                                  ? 'Collapse All'
+                                  : 'Expand All Steps'}
+                              </button>
+                            </div>
                           </div>
 
                           <div className="space-y-3">
                             {beatsList.map((beat: any, idx: number) => {
                               const bNum = Number(beat.beat_number || idx + 1);
+                              const isBeatExpanded = expandedRevealBeats.includes(bNum);
                               const matchedBeatClues = realMurderClues.filter(c => {
                                 const ca = c as any;
-                                if (ca.linked_plot_beat_id && beat.id && ca.linked_plot_beat_id === beat.id) {
+                                if (
+                                  ca.linked_plot_beat_id &&
+                                  beat.id &&
+                                  ca.linked_plot_beat_id === beat.id
+                                ) {
                                   return true;
                                 }
                                 if (Number(ca.beatNumber || ca.beat_number) === bNum) return true;
@@ -4866,60 +4898,177 @@ export function PlayroomClient({
                                       return r === 3;
                                     });
 
+                              const hydratedBeatTitle = hydrateTextWithCharacters(
+                                beat.event_title || beat.title || '',
+                                characters,
+                                'print'
+                              );
+                              const hydratedBeatDesc = hydrateTextWithCharacters(
+                                beat.description || '',
+                                characters,
+                                'print'
+                              );
+
                               return (
                                 <div
                                   key={beat.id || idx}
-                                  className="rounded-2xl bg-white/[0.02] border border-white/10 p-4 sm:p-5 space-y-3"
+                                  className={`rounded-2xl border transition-all overflow-hidden ${
+                                    isBeatExpanded
+                                      ? 'bg-slate-950/75 border-brand-pink/40 shadow-lg'
+                                      : 'bg-white/[0.02] border-white/10 hover:border-white/25 hover:bg-white/[0.04]'
+                                  }`}
                                 >
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex items-center gap-3">
-                                      <span className="w-6 h-6 rounded-full bg-white/10 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                                  {/* Clickable Beat Header */}
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleRevealBeat(bNum)}
+                                    className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left cursor-pointer"
+                                  >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <span
+                                        className={`w-7 h-7 rounded-full text-xs font-black flex items-center justify-center shrink-0 transition-colors ${
+                                          isBeatExpanded
+                                            ? 'bg-brand-pink text-white'
+                                            : 'bg-white/10 text-white'
+                                        }`}
+                                      >
                                         {bNum}
                                       </span>
-                                      <h4 className="text-sm sm:text-base font-bold text-white">
-                                        {hydrateTextWithCharacters(
-                                          beat.event_title || beat.title || '',
-                                          characters,
-                                          'print'
+                                      <div className="min-w-0">
+                                        <h4 className="text-sm sm:text-base font-bold text-white truncate">
+                                          {hydratedBeatTitle}
+                                        </h4>
+                                        {!isBeatExpanded && (
+                                          <p className="text-xs text-slate-400 truncate mt-0.5">
+                                            {hydratedBeatDesc}
+                                          </p>
                                         )}
-                                      </h4>
+                                      </div>
                                     </div>
-                                  </div>
 
-                                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pl-9">
-                                    {hydrateTextWithCharacters(
-                                      beat.description || '',
-                                      characters,
-                                      'print'
-                                    )}
-                                  </p>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span
+                                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                                          isBeatExpanded
+                                            ? 'bg-brand-pink/15 border-brand-pink/40 text-brand-pink'
+                                            : 'bg-white/5 border-white/10 text-slate-300'
+                                        }`}
+                                      >
+                                        {beatClues.length}{' '}
+                                        {beatClues.length === 1 ? 'Clue' : 'Clues'}
+                                      </span>
+                                      <svg
+                                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                                          isBeatExpanded ? 'rotate-180 text-brand-pink' : ''
+                                        }`}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth="2.5"
+                                          d="M19 9l-7 7-7-7"
+                                        />
+                                      </svg>
+                                    </div>
+                                  </button>
 
-                                  {beatClues.length > 0 && (
-                                    <div className="pl-9 flex flex-wrap gap-2 pt-1">
-                                      {beatClues.map(bc => {
-                                        const rawTitle = hydrateTextWithCharacters(
-                                          stripCustomerFacingTitle(bc.title) || bc.title,
-                                          characters,
-                                          'print'
-                                        ).trim();
-                                        const cTitle =
-                                          rawTitle.length <= 4
-                                            ? `Recovered Text Thread (${rawTitle})`
-                                            : rawTitle;
-                                        return (
-                                          <div
-                                            key={bc.id}
-                                            className="rounded-xl bg-slate-950/80 border border-white/10 px-3 py-1.5 flex items-center gap-2"
-                                          >
-                                            <span className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 text-[10px] font-bold uppercase shrink-0">
-                                              Round {bc.round_number || 1}
+                                  {/* Expanded Beat Explanation + Actual Clues That Point to This Beat */}
+                                  {isBeatExpanded && (
+                                    <div className="px-4 sm:px-6 pb-5 pt-1 border-t border-white/10 space-y-4 animate-in fade-in duration-150">
+                                      <div className="p-3.5 sm:p-4 rounded-xl bg-white/[0.03] border border-white/10 space-y-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-pink block">
+                                          What Happened
+                                        </span>
+                                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                                          {hydratedBeatDesc}
+                                        </p>
+                                      </div>
+
+                                      {beatClues.length > 0 && (
+                                        <div className="space-y-2.5">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                              Clues That Pointed to This ({beatClues.length})
                                             </span>
-                                            <span className="text-xs font-medium text-slate-200">
-                                              {cTitle}
+                                            <span className="text-[11px] text-slate-500">
+                                              Tap any clue card to zoom in
                                             </span>
                                           </div>
-                                        );
-                                      })}
+
+                                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                                            {beatClues.map(bc => {
+                                              const rawTitle = hydrateTextWithCharacters(
+                                                stripCustomerFacingTitle(bc.title) || bc.title,
+                                                characters,
+                                                'print'
+                                              ).trim();
+                                              const cTitle =
+                                                rawTitle.length <= 4
+                                                  ? `Recovered Text Thread (${rawTitle})`
+                                                  : rawTitle;
+                                              const rawProofNote = String(
+                                                (bc as any).internal_notes || ''
+                                              )
+                                                .replace(/^\[?Beat\s*\d+[^\]]*\]?:?\s*/i, '')
+                                                .trim();
+                                              const hydratedProofNote = rawProofNote
+                                                ? hydrateTextWithCharacters(
+                                                    rawProofNote,
+                                                    characters,
+                                                    'print'
+                                                  )
+                                                : '';
+
+                                              return (
+                                                <div
+                                                  key={bc.id}
+                                                  onClick={() => {
+                                                    setSelectedClueRoundFilter('all');
+                                                    const allIdx = clues.findIndex(
+                                                      c => c.id === bc.id
+                                                    );
+                                                    if (allIdx >= 0) {
+                                                      setSelectedClueModalIndex(allIdx);
+                                                    }
+                                                  }}
+                                                  className="rounded-2xl bg-slate-900/90 border border-white/10 hover:border-brand-pink/40 p-3.5 space-y-3 transition-all cursor-pointer"
+                                                >
+                                                  <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                      <span className="px-2 py-0.5 rounded-md bg-brand-pink/15 text-brand-pink border border-brand-pink/30 text-[10px] font-bold uppercase shrink-0">
+                                                        Round {bc.round_number || 1}
+                                                      </span>
+                                                      <span className="text-xs font-bold text-white truncate">
+                                                        {cTitle}
+                                                      </span>
+                                                    </div>
+                                                    <span className="text-[10px] font-semibold text-slate-400 shrink-0">
+                                                      Inspect ↗
+                                                    </span>
+                                                  </div>
+
+                                                  {/* Rendered Clue Card (SMS chat, CCTV photo, receipt, audio memo, etc.) */}
+                                                  <div className="pointer-events-none">
+                                                    {renderClueFormatView(bc, true)}
+                                                  </div>
+
+                                                  {hydratedProofNote && (
+                                                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] text-slate-300 leading-snug">
+                                                      <strong className="text-white">
+                                                        How this pointed to Step {bNum}:
+                                                      </strong>{' '}
+                                                      {hydratedProofNote}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
