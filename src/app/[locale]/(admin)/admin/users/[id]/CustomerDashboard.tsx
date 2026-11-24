@@ -667,7 +667,7 @@ export function CustomerDashboard({
               Admin Controls
             </p>
             <p className="text-xs font-bold text-gray-300">
-              Gift mysteries, toggle monthly membership, issue promos & refunds
+              Gift mysteries, issue promos, store credit & refunds
             </p>
           </div>
         </div>
@@ -678,19 +678,6 @@ export function CustomerDashboard({
             className="px-4 py-2.5 bg-brand-pink hover:bg-brand-pink/90 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-2"
           >
             <span>🎁</span> Gift Free Mystery
-          </button>
-
-          <button
-            onClick={() => handleMembershipAction(isMemberIn ? 'deactivate' : 'activate')}
-            disabled={loading}
-            className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border flex items-center gap-2 ${
-              isMemberIn
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30'
-                : 'bg-white/10 text-white border-white/10 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/30'
-            }`}
-          >
-            <span>👑</span>
-            {isMemberIn ? 'Monthly Member: IN (Click to Set OUT)' : 'Set Monthly Member: IN'}
           </button>
 
           <button
@@ -738,7 +725,7 @@ export function CustomerDashboard({
         {/* Tabs Navigation */}
         <div className="flex flex-wrap border-b border-gray-100">
           {[
-            { id: 'perks', label: 'Membership, Promos & CRM' },
+            { id: 'perks', label: 'Promos, Credits & CRM' },
             { id: 'mysteries', label: `Mysteries (${mysteries.length})` },
             { id: 'orders', label: `Orders & Refunds (${orders.length})` },
             { id: 'guests', label: `Guest Roster (${guests.length})` },
@@ -761,102 +748,86 @@ export function CustomerDashboard({
         {/* Tab Content */}
         <div className="p-8">
           {/* =================================================================== */}
-          {/* TAB 1: MEMBERSHIP, PROMOS, AI QUOTA & CRM NOTES                     */}
+          {/* TAB 1: PROMOS, STORE CREDIT, AI QUOTA & CRM NOTES                   */}
           {/* =================================================================== */}
           {activeTab === 'perks' && (
             <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* 1. Binary Monthly Membership Card */}
-                <div className="rounded-3xl border border-gray-100 p-7 bg-gray-50/60 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
+                {/* 1. Purchases Made & Mysteries Summary Card */}
+                {(() => {
+                  const paidOrdersCount = orders.filter(
+                    (o: any) => o.status !== 'gifted' && o.status !== 'refunded'
+                  ).length;
+                  const giftedCount = (initialCrm.giftedMysteries || []).length;
+                  return (
+                    <div className="rounded-3xl border border-gray-100 p-7 bg-gray-50/60 flex flex-col justify-between">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          Monthly Membership
-                        </p>
-                        <h3 className="text-2xl font-black text-brand-dark tracking-tight uppercase mt-0.5">
-                          Status:{' '}
-                          <span className={isMemberIn ? 'text-emerald-600' : 'text-gray-400'}>
-                            {isMemberIn ? 'IN (Active Monthly)' : 'OUT (Inactive)'}
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                              Purchase Activity
+                            </p>
+                            <h3 className="text-2xl font-black text-brand-dark tracking-tight uppercase mt-0.5">
+                              Purchases Made:{' '}
+                              <span className={paidOrdersCount > 0 ? 'text-emerald-600' : 'text-gray-400'}>
+                                {paidOrdersCount} {paidOrdersCount === 1 ? 'Order' : 'Orders'}
+                              </span>
+                            </h3>
+                          </div>
+                          <span
+                            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                              paidOrdersCount > 0
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-gray-200 text-gray-600'
+                            }`}
+                          >
+                            {paidOrdersCount > 0 ? 'Paid Customer' : '0 Purchases'}
                           </span>
-                        </h3>
-                      </div>
-                      <span
-                        className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                          isMemberIn
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-200 text-gray-600'
-                        }`}
-                      >
-                        {isMemberIn ? 'IN' : 'OUT'}
-                      </span>
-                    </div>
+                        </div>
 
-                    <p className="text-xs text-gray-500 font-medium mb-6">
-                      Membership is binary on a monthly cycle. Toggle the customer IN to grant active
-                      monthly member status, or OUT to end their monthly membership.
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-4 mb-6 bg-white p-4 rounded-2xl border border-gray-100">
-                      <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
-                          Monthly Rate (USD)
+                        <p className="text-xs text-gray-500 font-medium mb-6">
+                          Track how many one-time mystery purchases this customer has completed, alongside any complimentary or gifted packs on their account.
                         </p>
-                        <div className="flex items-center gap-1">
-                          <span className="text-sm font-black text-gray-400">$</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={monthlyRateInput}
-                            onChange={e => setMonthlyRateInput(e.target.value)}
-                            className="w-20 text-lg font-black text-brand-dark bg-transparent outline-none border-b border-gray-200 focus:border-brand-pink"
-                          />
-                          <span className="text-xs font-bold text-gray-400">/mo</span>
+
+                        <div className="grid grid-cols-3 gap-4 mb-6 bg-white p-4 rounded-2xl border border-gray-100">
+                          <div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                              Paid Purchases
+                            </p>
+                            <p className="text-lg font-black text-brand-dark">{paidOrdersCount}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                              Mysteries Owned
+                            </p>
+                            <p className="text-lg font-black text-brand-dark">{mysteries.length}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                              Gifted Packs
+                            </p>
+                            <p className="text-lg font-black text-brand-pink">{giftedCount}</p>
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">
-                          Next Monthly Renewal
-                        </p>
-                        <p className="text-sm font-black text-brand-dark">
-                          {isMemberIn && initialCrm.membership.renewsAt
-                            ? formatDate(initialCrm.membership.renewsAt)
-                            : '-'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    {!isMemberIn ? (
-                      <button
-                        onClick={() => handleMembershipAction('activate')}
-                        disabled={loading}
-                        className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
-                      >
-                        Set Membership IN (Activate Month)
-                      </button>
-                    ) : (
-                      <>
+                      <div className="flex flex-wrap gap-3">
                         <button
-                          onClick={() => handleMembershipAction('extend_month')}
-                          disabled={loading}
+                          onClick={() => setActiveTab('orders')}
                           className="flex-1 py-3.5 bg-brand-dark hover:bg-brand-pink text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
                         >
-                          +1 Month Extension
+                          View Orders &amp; Refunds ({orders.length})
                         </button>
                         <button
-                          onClick={() => handleMembershipAction('deactivate')}
-                          disabled={loading}
-                          className="flex-1 py-3.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+                          onClick={() => setIsGiftModalOpen(true)}
+                          className="flex-1 py-3.5 bg-brand-pink/10 hover:bg-brand-pink text-brand-pink hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95"
                         >
-                          Set Membership OUT
+                          🎁 Gift Free Mystery
                         </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* 2. AI Generation Quota & Cost Protection Card */}
                 <div className="rounded-3xl border border-gray-100 p-7 bg-gray-50/60 flex flex-col justify-between">

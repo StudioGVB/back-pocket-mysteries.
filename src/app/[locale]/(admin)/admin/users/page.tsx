@@ -90,7 +90,7 @@ async function CustomerList({
         <thead className="bg-gray-50/50 border-b border-gray-100">
           <tr>
             <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Customer</th>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Monthly Membership</th>
+            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Purchases Made</th>
             <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Joined Date</th>
             <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Mysteries Owned</th>
             <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</th>
@@ -100,7 +100,10 @@ async function CustomerList({
           {customers.length > 0 ? (
             customers.map((user: any) => {
               const userCrm = crmMap[user.id];
-              const isMemberIn = userCrm?.membership?.isActive;
+              const customPaidOrdersCount = (userCrm?.customOrders || []).filter(
+                (co: any) => co.status !== 'gifted' && co.status !== 'refunded'
+              ).length;
+              const purchasesCount = (orderCounts[user.id] || 0) + customPaidOrdersCount;
               const ownedCount = Math.max(orderCounts[user.id] || 0, mysteryCounts[user.id] || 0);
 
               return (
@@ -147,10 +150,10 @@ async function CustomerList({
                   </td>
                   <td className="px-8 py-6">
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      isMemberIn ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                      purchasesCount > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isMemberIn ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                      {isMemberIn ? 'IN (Monthly)' : 'OUT'}
+                      <span className={`w-1.5 h-1.5 rounded-full ${purchasesCount > 0 ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                      {purchasesCount} {purchasesCount === 1 ? 'Purchase' : 'Purchases'}
                     </span>
                   </td>
                   <td className="px-8 py-6">

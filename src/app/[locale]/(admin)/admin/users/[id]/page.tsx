@@ -192,13 +192,13 @@ async function CustomerProfileContent({
           )}
           <span
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${
-              isMemberIn
+              mergedOrders.filter((o: any) => o.status !== 'gifted' && o.status !== 'refunded').length > 0
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 : 'bg-gray-100 text-gray-500 border-gray-200'
             }`}
           >
-            <span className={`w-2 h-2 rounded-full ${isMemberIn ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
-            Monthly Membership: {isMemberIn ? 'IN (Active)' : 'OUT (Inactive)'}
+            <span className={`w-2 h-2 rounded-full ${mergedOrders.filter((o: any) => o.status !== 'gifted' && o.status !== 'refunded').length > 0 ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+            Purchases Made: {mergedOrders.filter((o: any) => o.status !== 'gifted' && o.status !== 'refunded').length}
           </span>
 
           {crm.creditBalanceUsd > 0 && (
@@ -298,14 +298,19 @@ async function CustomerProfileContent({
               </div>
 
               <div>
-                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Monthly Membership</p>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Purchases Made</p>
                 <p className="text-xs font-bold flex items-center gap-2">
-                  <span className={`inline-block w-2 h-2 rounded-full ${isMemberIn ? 'bg-emerald-400' : 'bg-gray-500'}`}></span>
-                  <span className={isMemberIn ? 'text-emerald-400' : 'text-gray-400'}>
-                    {isMemberIn
-                      ? `IN ($${crm.membership.monthlyRateUsd}/mo)`
-                      : 'OUT (Not Enrolled)'}
-                  </span>
+                  {(() => {
+                    const paidCount = mergedOrders.filter((o: any) => o.status !== 'gifted' && o.status !== 'refunded').length;
+                    return (
+                      <>
+                        <span className={`inline-block w-2 h-2 rounded-full ${paidCount > 0 ? 'bg-emerald-400' : 'bg-gray-500'}`}></span>
+                        <span className={paidCount > 0 ? 'text-emerald-400' : 'text-gray-400'}>
+                          {paidCount} {paidCount === 1 ? 'Purchase' : 'Purchases'}
+                        </span>
+                      </>
+                    );
+                  })()}
                 </p>
               </div>
 
