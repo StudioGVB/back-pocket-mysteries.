@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { CHRISTMAS_NIGHTMARE_ID, CHRISTMAS_NIGHTMARE_MYSTERY } from '@/data/christmas-nightmare';
 
 export interface StoredRoundSubmission {
   id: string;
@@ -240,7 +241,15 @@ export function cacheMysterySnapshot(mysteryId: string, mysteryData: any): void 
 export function getCachedMysterySnapshot(mysteryId: string): any | null {
   if (!mysteryId) return null;
   const cache = readMysteryCache();
-  const mystery = cache.mysteries[mysteryId] || null;
+  let mystery = cache.mysteries[mysteryId] || null;
+  if (
+    !mystery &&
+    (mysteryId === CHRISTMAS_NIGHTMARE_ID || mysteryId === 'christmas-nightmare')
+  ) {
+    mystery = JSON.parse(JSON.stringify(CHRISTMAS_NIGHTMARE_MYSTERY));
+    cache.mysteries[CHRISTMAS_NIGHTMARE_ID] = mystery;
+    writeMysteryCache(cache);
+  }
   if (!mystery) return null;
 
   // Overlay latest round from lightweight session file

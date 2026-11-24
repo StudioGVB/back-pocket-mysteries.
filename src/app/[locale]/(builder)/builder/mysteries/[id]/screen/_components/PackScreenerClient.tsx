@@ -438,6 +438,8 @@ export function PackScreenerClient({
                 eye_color: friend.eye_color,
                 height: friend.height,
                 ethnicity: friend.ethnicity,
+                standard_character_photo_url: c?.profile_data?.standard_character_photo_url || null,
+                standard_character_photo_hash: c?.profile_data?.standard_character_photo_hash || null,
               },
             };
           })
@@ -464,6 +466,16 @@ export function PackScreenerClient({
               item.id === clue.id ? { ...item, static_image_url: freshUrl } : item
             )
           );
+          if (typeof window !== 'undefined' && !freshUrl.startsWith('data:')) {
+            try {
+              const key = `bpm_screener_clue_images_${mystery.id}`;
+              const existing = JSON.parse(window.localStorage.getItem(key) || '{}');
+              existing[clue.id] = freshUrl;
+              window.localStorage.setItem(key, JSON.stringify(existing));
+            } catch {
+              // ignore storage quota errors
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to regenerate clue photo:', err);
@@ -477,6 +489,23 @@ export function PackScreenerClient({
     },
     [mystery?.id, rawCharacters, friendAssignments, liveFriends, regeneratingClueIds]
   );
+
+  // Restore any persisted screener clue images from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined' || !mystery?.id) return;
+    try {
+      const savedMap = JSON.parse(
+        window.localStorage.getItem(`bpm_screener_clue_images_${mystery.id}`) || '{}'
+      );
+      if (savedMap && typeof savedMap === 'object' && Object.keys(savedMap).length > 0) {
+        setRawClues((prev) =>
+          prev.map((c) => (savedMap[c.id] ? { ...c, static_image_url: savedMap[c.id] } : c))
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }, [mystery?.id]);
 
   const handleGenerateForSelectedCast = useCallback(async () => {
     if (!mystery?.id || isGeneratingCastMedia) return;
@@ -551,13 +580,13 @@ export function PackScreenerClient({
       });
 
       const totalSteps =
-        1 + charsToRegenPortrait.length + visualCluesToRegen.length + audioCluesToRegen.length + 1;
+        1 + charsToRegenPortrait.length + visualCluesToRegen.length + audioCluesToRegen.length;
       let currentStep = 1;
       const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
       setGenerationProgress({
         current: currentStep,
-        total: totalSteps,
+        total: Math.max(1, totalSteps),
         label: 'Locking in selected friends & updating relationships...',
       });
 
@@ -593,7 +622,7 @@ export function PackScreenerClient({
         })
       );
 
-      // 2. STAGE 1: Generate Standard Character Costume Portraits sequentially with a 3s anti-rate-limit breather & 2-attempt retry
+      // 2. STAGE 1: Generate Standard Character Costume Portraits sequentially
       for (let pIdx = 0; pIdx < charsToRegenPortrait.length; pIdx++) {
         const item = charsToRegenPortrait[pIdx];
         currentStep++;
@@ -612,7 +641,7 @@ export function PackScreenerClient({
             item.friend
           );
           if (charRes?.imageUrl) break;
-          if (attempt < 2) await sleep(4000);
+          if (attempt < 2) await sleep(3500);
         }
 
         if (charRes?.imageUrl) {
@@ -642,7 +671,7 @@ export function PackScreenerClient({
         }
 
         if (pIdx < charsToRegenPortrait.length - 1) {
-          await sleep(2500);
+          await sleep(2000);
         }
       }
 
@@ -651,16 +680,28 @@ export function PackScreenerClient({
         friend: a.friend,
       }));
 
-      // 3. STAGE 2: Generate Visual Clue Photos featuring the selected cast's Stage 1 Reference Portraits + Failed Clue Recovery Sweep
+      // 3. STAGE 2: Generate Visual Clue Photos featuring the selected cast's Stage 1 Reference Portraits
       const failedVisualClues: any[] = [];
+      const persistClueImgLocal = (cId: string, url: string) => {
+        if (typeof window === 'undefined' || url.startsWith('data:')) return;
+        try {
+          const key = `bpm_screener_clue_images_${mystery.id}`;
+          const existing = JSON.parse(window.localStorage.getItem(key) || '{}');
+          existing[cId] = url;
+          window.localStorage.setItem(key, JSON.stringify(existing));
+        } catch {
+          // ignore
+        }
+      };
+
       for (let i = 0; i < visualCluesToRegen.length; i++) {
         const clue = visualCluesToRegen[i];
         const clueTitle = stripCustomerFacingTitle(clue.title) || clue.title;
-        currentStep = Math.min(totalSteps - 1, currentStep + 1);
+        currentStep = Math.min(totalSteps, currentStep + 1);
         setGenerationProgress({
           current: currentStep,
           total: totalSteps,
-          label: `Stage 2: Placing cast into visual clue photo (${i + 1}/${visualCluesToRegen.length}): ${clueTitle}...`,
+          label: `Stage 2: Generating crime-scene photo (${i + 1}/${visualCluesToRegen.length}): ${clueTitle}...`,
         });
         setRegeneratingClueIds((prev) => new Set(prev).add(clue.id));
 
@@ -684,6 +725,7 @@ export function PackScreenerClient({
                 item.id === clue.id ? { ...item, static_image_url: freshClueUrl } : item
               )
             );
+            persistClueImgLocal(clue.id, freshClueUrl);
           }
         } catch (err) {
           console.warn('Stage 2 clue generation error:', err);
@@ -700,7 +742,7 @@ export function PackScreenerClient({
         }
 
         if (i < visualCluesToRegen.length - 1) {
-          await sleep(2000);
+          await sleep(1800);
         }
       }
 
@@ -711,7 +753,7 @@ export function PackScreenerClient({
           total: totalSteps,
           label: `Stage 2 Recovery: Retrying ${failedVisualClues.length} crime-scene photo(s)...`,
         });
-        await sleep(4500);
+        await sleep(3500);
         for (const retryClue of failedVisualClues) {
           setRegeneratingClueIds((prev) => new Set(prev).add(retryClue.id));
           try {
@@ -723,7 +765,7 @@ export function PackScreenerClient({
               undefined,
               castOverridesForClues
             );
-            if (retryRes?.imageUrl) {
+            if (retryRes?.imageUrl && !retryRes?.error) {
               const freshClueUrl = retryRes.imageUrl.startsWith('data:')
                 ? retryRes.imageUrl
                 : `${retryRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
@@ -732,9 +774,10 @@ export function PackScreenerClient({
                   item.id === retryClue.id ? { ...item, static_image_url: freshClueUrl } : item
                 )
               );
+              persistClueImgLocal(retryClue.id, freshClueUrl);
             }
           } catch {
-            // Handled by Stage 3.5 QA self-healing gate next
+            // Keep existing clue photo if retry fails
           } finally {
             setRegeneratingClueIds((prev) => {
               const next = new Set(prev);
@@ -742,13 +785,13 @@ export function PackScreenerClient({
               return next;
             });
           }
-          await sleep(2500);
+          await sleep(2000);
         }
       }
 
       // 4. STAGE 3: Regenerate Multi-Speaker Audio Clues with the newly cast friends' names & voices
       for (const audioClue of audioCluesToRegen) {
-        currentStep = Math.min(totalSteps - 1, currentStep + 1);
+        currentStep = Math.min(totalSteps, currentStep + 1);
         const audioTitle = stripCustomerFacingTitle(audioClue.title) || audioClue.title;
         setGenerationProgress({
           current: currentStep,
@@ -780,69 +823,6 @@ export function PackScreenerClient({
             return next;
           });
         }
-      }
-
-      // 5. STAGE 3.5: Pre-Delivery 4-Gate Multimodal AI QA Critic & Self-Healing Bot (Gates 1–4)
-      setGenerationProgress({
-        current: totalSteps,
-        total: totalSteps,
-        label:
-          'Stage 3.5 (4-Gate Customer QA Protocol): Auditing & self-healing portraits, side-by-side clue photos, pronouns & audio...',
-      });
-      try {
-        const qaReport = await auditAndHealCustomerPackAction(
-          mystery.id,
-          castOverridesForClues
-        );
-        setLatestQaReport(qaReport);
-
-        // Apply any self-healed Best-of-N character portraits back to local state immediately
-        if (Array.isArray(qaReport.portraitScores) && qaReport.portraitScores.length > 0) {
-          setRawCharacters((prev) =>
-            prev.map((c) => {
-              const pScore = qaReport.portraitScores.find((ps) => ps.characterId === c.id);
-              if (!pScore?.bestUrl) return c;
-              const freshUrl = pScore.bestUrl.startsWith('data:')
-                ? pScore.bestUrl
-                : `${pScore.bestUrl.split('?')[0]}?t=${Date.now()}`;
-              return {
-                ...c,
-                profile_data: {
-                  ...(c.profile_data || {}),
-                  standard_character_photo_url: freshUrl,
-                  outfit_image_url: freshUrl,
-                },
-              };
-            })
-          );
-        }
-
-        // Apply any self-healed Best-of-N clue photos or re-synthesized audio wiretaps back to local state immediately
-        if (
-          (Array.isArray(qaReport.clueScores) && qaReport.clueScores.length > 0) ||
-          (Array.isArray(qaReport.audioScores) && qaReport.audioScores.length > 0)
-        ) {
-          setRawClues((prev) =>
-            prev.map((item) => {
-              const cScore = qaReport.clueScores?.find((cs) => cs.clueId === item.id);
-              const aScore = qaReport.audioScores?.find((as) => as.clueId === item.id);
-              let nextItem = item;
-              if (cScore?.bestUrl) {
-                const freshImg = cScore.bestUrl.startsWith('data:')
-                  ? cScore.bestUrl
-                  : `${cScore.bestUrl.split('?')[0]}?t=${Date.now()}`;
-                nextItem = { ...nextItem, static_image_url: freshImg };
-              }
-              if (aScore?.bestAudioUrl) {
-                const freshAud = `${aScore.bestAudioUrl.split('?')[0]}?v=${Date.now()}`;
-                nextItem = { ...nextItem, audio_url: freshAud };
-              }
-              return nextItem;
-            })
-          );
-        }
-      } catch (qaErr) {
-        console.warn('Screener 4-Gate QA audit warning:', qaErr);
       }
 
       setHasUnsavedRecast(false);
@@ -970,10 +950,16 @@ export function PackScreenerClient({
 
   const getPortraitUrl = (c: any) => {
     const rawChar = rawCharacters.find((rc) => rc.id === c?.id);
-    const isSameGuestAsRendered =
-      rawChar?.profile_data?.guest_id &&
-      c?.profile_data?.guest_id &&
-      String(rawChar.profile_data.guest_id) === String(c.profile_data.guest_id);
+    const rawGuestId = String(rawChar?.profile_data?.guest_id || '').trim().toLowerCase();
+    const rawGuestName = String(rawChar?.profile_data?.guest_name || '').trim().toLowerCase();
+    const currentGuestId = String(c?.profile_data?.guest_id || '').trim().toLowerCase();
+    const currentGuestName = String(c?.profile_data?.guest_name || '').trim().toLowerCase();
+
+    const hasExplicitRenderedGuest = Boolean(rawGuestId || rawGuestName);
+    const isSameGuestAsRendered = hasExplicitRenderedGuest
+      ? (Boolean(rawGuestId && currentGuestId && rawGuestId === currentGuestId) ||
+          Boolean(rawGuestName && currentGuestName && rawGuestName === currentGuestName))
+      : true;
 
     if (useFriendNames) {
       if (isSameGuestAsRendered && rawChar?.profile_data?.standard_character_photo_url) {
@@ -981,6 +967,9 @@ export function PackScreenerClient({
       }
       if (c?.profile_data?.friend_photo_url) {
         return c.profile_data.friend_photo_url;
+      }
+      if (!isSameGuestAsRendered && c?.assignedFriend?.avatar_url) {
+        return resolveDisplayAvatarUrl(c.assignedFriend.avatar_url);
       }
     }
     return (
@@ -1693,105 +1682,173 @@ export function PackScreenerClient({
 
   return (
     <div className="space-y-6">
-      {/* Top Screener Control Deck */}
-      <div className="rounded-2xl bg-slate-900 text-white p-5 border border-slate-800 shadow-xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[10px] font-black uppercase tracking-widest">
-                🕵️ Solo Playtest & Pack Screener
-              </span>
-              <span className="text-xs text-slate-400 font-semibold">
-                Cast with your friends from My Roster ({friendRoster.length} loaded)
-              </span>
+      {/* Top Screener Control Deck — Streamlined 2-Row Header */}
+      <div className="rounded-2xl bg-slate-900 text-white p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Badge + Active POV Selector */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="px-2.5 py-1 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+              🕵️ Playtest Screener
+            </span>
+
+            <div className="flex items-center gap-2 text-xs relative" data-custom-dropdown>
+              <span className="font-bold text-slate-400">POV:</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenDropdownId(openDropdownId === 'pov' ? null : 'pov')
+                }
+                className="rounded-xl border border-slate-700 hover:border-slate-500 bg-slate-800/90 px-3 py-1.5 text-xs font-black text-white flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <span>
+                  {povChar?.displayName || 'Select Role'}{' '}
+                  {povChar?.is_victim ? '(Victim)' : ''}
+                </span>
+                <svg
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
+                    openDropdownId === 'pov' ? 'rotate-180 text-brand-pink' : ''
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {openDropdownId === 'pov' && (
+                <div className="absolute left-0 top-full mt-1.5 w-64 z-50 rounded-2xl bg-slate-950 text-white border border-slate-800 shadow-2xl p-1.5 space-y-1">
+                  {activeCharacters.map((c) => {
+                    const isSelected = c.id === selectedPovCharId;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPovCharId(c.id);
+                          setOpenDropdownId(null);
+                        }}
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-brand-pink/20 border border-brand-pink/40 text-white'
+                            : 'hover:bg-slate-800 text-slate-200 border border-transparent'
+                        }`}
+                      >
+                        <span className="truncate">
+                          {c.displayName} {c.is_victim ? '💀' : ''}
+                        </span>
+                        {isSelected && (
+                          <span className="text-[10px] font-black text-brand-pink">✓</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Mode Toggles */}
+          {/* Right: Grouped Actions (Single Primary Generate CTA + Compact View/Export Utilities) */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setUseFriendNames((v) => !v)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
-                useFriendNames
-                  ? 'bg-indigo-500/20 border-indigo-400 text-indigo-200'
-                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
-              }`}
-            >
-              {useFriendNames ? '👯 My Friends Roster: ON' : '🏷️ Role Titles Only'}
-            </button>
-
             {useFriendNames && (
-              <button
-                type="button"
-                onClick={handleShuffleFriends}
-                disabled={isGeneratingCastMedia}
-                className="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 transition-all cursor-pointer disabled:opacity-50"
-              >
-                🔀 Shuffle Friends
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleShuffleFriends}
+                  disabled={isGeneratingCastMedia}
+                  title="Shuffle which friends are cast in each role"
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold border bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  🔀 Shuffle
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAddFriendOpen(true)}
+                  title="Add a new friend to your roster"
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold border bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 transition-all cursor-pointer"
+                >
+                  + Friend
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isGeneratingCastMedia}
+                  onClick={() => void handleGenerateForSelectedCast()}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5 ${
+                    hasUnsavedRecast
+                      ? 'bg-gradient-to-r from-brand-pink via-fuchsia-500 to-amber-500 text-white border-white/30 shadow-lg shadow-brand-pink/30 animate-pulse'
+                      : 'bg-brand-pink text-white border-brand-pink hover:opacity-90 shadow-md'
+                  }`}
+                >
+                  {isGeneratingCastMedia ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Generating Cast &amp; Clues...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>✨</span>
+                      <span>
+                        {hasUnsavedRecast
+                          ? 'Generate Cast & Clues (New Cast)'
+                          : 'Generate Cast & Clues'}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </>
             )}
 
-            {useFriendNames && (
-              <button
-                type="button"
-                disabled={isGeneratingCastMedia}
-                onClick={() => void handleGenerateForSelectedCast()}
-                className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5 ${
-                  hasUnsavedRecast
-                    ? 'bg-gradient-to-r from-brand-pink via-fuchsia-500 to-amber-500 text-white border-white/30 shadow-lg shadow-brand-pink/30 animate-pulse'
-                    : 'bg-brand-pink text-white border-brand-pink hover:opacity-90 shadow-md'
-                }`}
-              >
-                {isGeneratingCastMedia ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Generating Cast &amp; Clues...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>✨</span>
-                    <span>
-                      {hasUnsavedRecast
-                        ? 'Generate Clues & Cast for New Friends'
-                        : 'Generate Clues & Cast'}
-                    </span>
-                  </>
-                )}
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setIsAddFriendOpen(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-brand-pink/20 border-brand-pink/50 text-brand-pink hover:bg-brand-pink hover:text-white transition-all cursor-pointer"
-            >
-              + Add Friend
-            </button>
+            <div className="hidden sm:block h-5 w-px bg-slate-800 mx-0.5" />
 
             <button
               type="button"
               onClick={() => setShowCastPanel((v) => !v)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                 showCastPanel
                   ? 'bg-amber-500/20 border-amber-400/60 text-amber-200'
                   : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
               }`}
             >
-              {showCastPanel ? '📸 Cast Reference Strip: ON' : '📸 Show Cast Strip'}
+              {showCastPanel ? '📸 Hide Cast' : '📸 Show Cast'}
             </button>
 
             <button
               type="button"
               onClick={() => setXRayMode((v) => !v)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                 xRayMode
-                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md'
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black shadow-md'
                   : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
               }`}
             >
-              {xRayMode ? '🔬 Admin X-Ray: ON (Spoilers)' : '🙈 Blind Player Mode'}
+              {xRayMode ? '🔬 X-Ray: ON' : '🙈 Blind Mode'}
             </button>
+
+            <a
+              href={`/en/builder/mysteries/${mystery?.id}/compile/print-all`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                if (typeof window !== 'undefined' && mystery?.id) {
+                  try {
+                    window.localStorage.setItem(
+                      `bpm_friend_assignments_${mystery.id}`,
+                      JSON.stringify(friendAssignments)
+                    );
+                  } catch {
+                    // ignore
+                  }
+                }
+              }}
+              title="Opens the Master Pack page in a new tab where you can inspect everything or Save as PDF"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold border bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-1.5"
+            >
+              <span>🖨️</span>
+              <span>Full Pack PDF ↗</span>
+            </a>
 
             <button
               type="button"
@@ -1818,39 +1875,15 @@ export function PackScreenerClient({
                   getPortraitUrl,
                 });
               }}
-              title="Downloads a single self-contained .html file straight to your computer with all friend character dossiers, portraits, relationships, Round 1–3 clues, and the master reveal"
-              className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-white text-slate-950 border-white hover:bg-slate-100 transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+              title="Download offline .HTML file"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-bold border bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white transition-all cursor-pointer"
             >
-              <span>📥</span>
-              <span>Download Offline File (.HTML)</span>
+              📥 .HTML
             </button>
-
-            <a
-              href={`/en/builder/mysteries/${mystery?.id}/compile/print-all`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                if (typeof window !== 'undefined' && mystery?.id) {
-                  try {
-                    window.localStorage.setItem(
-                      `bpm_friend_assignments_${mystery.id}`,
-                      JSON.stringify(friendAssignments)
-                    );
-                  } catch {
-                    // ignore
-                  }
-                }
-              }}
-              title="Opens the live all-in-one Master Pack page in a new tab where you can inspect everything or click Save as PDF (Cmd+P)"
-              className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-1.5"
-            >
-              <span>🖨️</span>
-              <span>View Full Pack &amp; Save PDF ↗</span>
-            </a>
           </div>
         </div>
 
-        {/* Live Cast & Clue Generation Progress Bar */}
+        {/* Single Live Cast & Clue Generation Progress Bar */}
         {generationProgress && (
           <div className="rounded-xl bg-slate-950 border border-brand-pink/50 p-3.5 space-y-2">
             <div className="flex items-center justify-between text-xs font-black">
@@ -1859,7 +1892,11 @@ export function PackScreenerClient({
                 <span>{generationProgress.label}</span>
               </span>
               <span className="text-slate-400 font-mono">
-                Step {generationProgress.current} / {generationProgress.total}
+                Step {generationProgress.current} / {generationProgress.total} (
+                {Math.round(
+                  (generationProgress.current / Math.max(1, generationProgress.total)) * 100
+                )}
+                %)
               </span>
             </div>
             <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -1929,15 +1966,15 @@ export function PackScreenerClient({
         )}
 
         {/* Step Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-800">
           {[
-            { id: 'cast', label: '1. Pre-Party Cast & POV' },
-            { id: 'round1', label: `2. Round 1 (${cluesByRound[1].length} Clues)` },
-            { id: 'round2', label: `3. Round 2 (${cluesByRound[2].length} Clues)` },
-            { id: 'round3', label: `4. Round 3 (${cluesByRound[3].length} Clues)` },
-            { id: 'all_clues', label: `All ${rawClues.length} Clues Grid` },
-            { id: 'reveal', label: '5. Final Solution & Score' },
-            { id: 'qa_20x', label: '🧪 6. 20× Pre-Launch QA' },
+            { id: 'cast', label: '1. Cast & POV' },
+            { id: 'round1', label: `2. Round 1 (${cluesByRound[1].length})` },
+            { id: 'round2', label: `3. Round 2 (${cluesByRound[2].length})` },
+            { id: 'round3', label: `4. Round 3 (${cluesByRound[3].length})` },
+            { id: 'all_clues', label: `All ${rawClues.length} Clues` },
+            { id: 'reveal', label: '5. Final Solution' },
+            { id: 'qa_20x', label: '🧪 6. Pre-Launch QA' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1955,48 +1992,20 @@ export function PackScreenerClient({
         </div>
       </div>
 
-      {/* Pinned Cast Reference Strip (Shows your Friends + their AI Portraits & Role Outfits!) */}
+      {/* Pinned Cast Reference Strip (Clean 1-Line Header without Duplicate Buttons or Progress Bars) */}
       {showCastPanel && (
         <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="text-xs font-black uppercase tracking-wider text-slate-900">
-                📸 Cast Visual Reference Strip (Your Friends Cast in Each Role)
+                📸 Cast Reference Strip ({activeCharacters.length} Suspects)
               </span>
-              {useFriendNames && (
-                <button
-                  type="button"
-                  disabled={isGeneratingCastMedia}
-                  onClick={() => void handleGenerateForSelectedCast()}
-                  className={`px-3.5 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5 ${
-                    hasUnsavedRecast
-                      ? 'bg-gradient-to-r from-brand-pink to-amber-500 text-white shadow-md shadow-brand-pink/25 animate-pulse'
-                      : 'bg-slate-900 hover:bg-brand-pink text-white'
-                  }`}
-                >
-                  {isGeneratingCastMedia ? (
-                    <>
-                      <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Generating Clues &amp; Running 4-Gate QA...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>✨</span>
-                      <span>
-                        {hasUnsavedRecast
-                          ? 'Cast Changed — Click to Generate Clues & Run 4-Gate QA'
-                          : 'Generate Clues & Run 4-Gate QA for Selected Cast'}
-                      </span>
-                    </>
-                  )}
-                </button>
-              )}
 
               {latestQaReport && !isGeneratingCastMedia && (
                 <button
                   type="button"
                   onClick={() => setIsQaDetailsOpen((prev) => !prev)}
-                  className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 ${
                     latestQaReport.passed
                       ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
                       : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'
@@ -2004,96 +2013,28 @@ export function PackScreenerClient({
                 >
                   <span>🛡️</span>
                   <span>
-                    4-Gate QA: {latestQaReport.overallScore}/100{' '}
+                    QA: {latestQaReport.overallScore}/100{' '}
                     {latestQaReport.passed ? '• Passed' : '• Review'}
                   </span>
                   <span>{isQaDetailsOpen ? '▴' : '▾'}</span>
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2 text-xs relative" data-custom-dropdown>
-              <span className="font-bold text-slate-500">Playing POV As:</span>
+
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() =>
-                  setOpenDropdownId(openDropdownId === 'pov' ? null : 'pov')
-                }
-                className="rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-900 flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+                onClick={() => setUseFriendNames((v) => !v)}
+                className={`px-3 py-1 rounded-xl text-[11px] font-bold border transition-all cursor-pointer ${
+                  useFriendNames
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                    : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <span>
-                  {povChar?.displayName || 'Select Role'}{' '}
-                  {povChar?.is_victim ? '(Victim)' : ''}
-                </span>
-                <svg
-                  className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
-                    openDropdownId === 'pov' ? 'rotate-180 text-brand-pink' : ''
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                {useFriendNames ? '👯 Friend Names: ON' : '🏷️ Role Titles Only'}
               </button>
-
-              {openDropdownId === 'pov' && (
-                <div className="absolute right-0 top-full mt-1.5 w-64 z-50 rounded-2xl bg-slate-950 text-white border border-slate-800 shadow-2xl p-1.5 space-y-1">
-                  {activeCharacters.map((c) => {
-                    const isSelected = c.id === selectedPovCharId;
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedPovCharId(c.id);
-                          setOpenDropdownId(null);
-                        }}
-                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-brand-pink/20 border border-brand-pink/40 text-white'
-                            : 'hover:bg-slate-800 text-slate-200 border border-transparent'
-                        }`}
-                      >
-                        <span className="truncate">
-                          {c.displayName} {c.is_victim ? '💀' : ''}
-                        </span>
-                        {isSelected && (
-                          <span className="text-[10px] font-black text-brand-pink">✓</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           </div>
-
-          {isGeneratingCastMedia && generationProgress && (
-            <div className="mb-3 rounded-xl bg-slate-900 text-white px-4 py-3 border border-brand-pink/40 shadow-md space-y-2">
-              <div className="flex items-center justify-between gap-2 text-xs font-black">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-3.5 h-3.5 border-2 border-brand-pink border-t-transparent rounded-full animate-spin shrink-0" />
-                  <span className="truncate text-amber-300">{generationProgress.label}</span>
-                </div>
-                <span className="text-[11px] text-slate-300 shrink-0">
-                  Step {generationProgress.current} of {generationProgress.total} (
-                  {Math.round((generationProgress.current / Math.max(1, generationProgress.total)) * 100)}%)
-                </span>
-              </div>
-              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-brand-pink to-amber-400 transition-all duration-300"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      Math.round((generationProgress.current / Math.max(1, generationProgress.total)) * 100)
-                    )}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
 
           {latestQaReport && isQaDetailsOpen && !isGeneratingCastMedia && (
             <div className="mb-3 rounded-xl bg-slate-950 text-white p-4 border border-emerald-500/30 space-y-3 text-xs">

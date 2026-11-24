@@ -429,16 +429,22 @@ async function getBase64FromUrl(url: string): Promise<string> {
     const commaIndex = url.indexOf(',');
     return url.substring(commaIndex + 1);
   }
+  let fetchUrl = url;
   if (url.startsWith('/')) {
     const cleanRel = url.split('?')[0].replace(/^\/+/, '');
     const localPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', cleanRel);
     if (fs.existsSync(localPath)) {
       return fs.readFileSync(localPath).toString('base64');
     }
+    const siteOrigin = (
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://backpocketmysteries.com')
+    ).replace(/\/$/, '');
+    fetchUrl = `${siteOrigin}${url}`;
   }
-  const response = await fetch(url);
+  const response = await fetch(fetchUrl);
   if (!response.ok) {
-    throw new Error(`Failed to fetch image from URL: ${url}, status: ${response.status}`);
+    throw new Error(`Failed to fetch image from URL: ${fetchUrl}, status: ${response.status}`);
   }
   const arrayBuffer = await response.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
@@ -800,10 +806,10 @@ PHOTOGRAPHY & FRAMING DIRECTIVES:
 
   const activeSupabase = supabase || (await createClient());
 
-  // Upload to Supabase Storage (`character-images` bucket)
+  // Upload to Supabase Storage (`character-images` bucket) with unique timestamp filename to avoid UPDATE RLS conflicts & stale CDN cache
   const fileBuffer = Buffer.from(base64Image, 'base64');
-  const qaSuffix = qaCorrectionDirective ? `-${Date.now().toString(36)}` : '';
-  const shortFileName = `${char.id}-${identityHash.slice(0, 12)}${qaSuffix}.jpg`;
+  const uniqueSuffix = `-${Date.now().toString(36)}`;
+  const shortFileName = `${char.id}-${identityHash.slice(0, 10)}${uniqueSuffix}.jpg`;
   const fileName = `standard-characters/${mystery?.id || 'global'}/${shortFileName}`;
   let finalPhotoUrl = `data:image/jpeg;base64,${base64Image}`;
 
@@ -1591,9 +1597,10 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
       }
 
       if (base64Image) {
-        // Upload scene photo to Supabase Storage for fast loading, with local public/generated-clues fallback
+        // Upload scene photo to Supabase Storage with unique timestamp filename so it never hits UPDATE RLS or stale CDN cache
         const fileBuffer = Buffer.from(base64Image, 'base64');
-        const shortFileName = `${clueId}-${promptHash.slice(0, 12)}.jpg`;
+        const uniqueSuffix = `-${Date.now().toString(36)}`;
+        const shortFileName = `${clueId}-${promptHash.slice(0, 10)}${uniqueSuffix}.jpg`;
         const fileName = `clue-images/${mysteryId}/${shortFileName}`;
         finalImageUrl = `data:image/jpeg;base64,${base64Image}`;
 
