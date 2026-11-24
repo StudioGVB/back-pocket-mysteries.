@@ -10,6 +10,8 @@ const MARKETING_TABLES = new Set([
   'leads',
 ])
 
+const missingMarketingTables = new Set<string>()
+
 function createMarketingFallbackQuery(rawClient: any, table: string) {
   const op: any = {
     table,
@@ -20,7 +22,19 @@ function createMarketingFallbackQuery(rawClient: any, table: string) {
 
   let realBuilder: any = rawClient.from(table)
 
+  const callStoreEndpoint = async () => {
+    const fbRes = await fetch('/api/admin/marketing-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(op),
+    })
+    return await fbRes.json()
+  }
+
   const runWithFallback = async () => {
+    if (missingMarketingTables.has(table)) {
+      return await callStoreEndpoint()
+    }
     try {
       const res = await realBuilder
       if (
@@ -29,21 +43,12 @@ function createMarketingFallbackQuery(rawClient: any, table: string) {
           String(res.error.code || '') === 'PGRST205' ||
           String(res.error.code || '') === '42P01')
       ) {
-        const fbRes = await fetch('/api/admin/marketing-store', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(op),
-        })
-        return await fbRes.json()
+        missingMarketingTables.add(table)
+        return await callStoreEndpoint()
       }
       return res
     } catch {
-      const fbRes = await fetch('/api/admin/marketing-store', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(op),
-      })
-      return await fbRes.json()
+      return await callStoreEndpoint()
     }
   }
 

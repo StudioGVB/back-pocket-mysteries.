@@ -22,6 +22,8 @@ const STORAGE_PATH = "system/marketing-suite-store.json";
 
 const globalForMarketing = globalThis as unknown as {
   __marketingStoreCache?: MarketingStoreData;
+  __marketingStoreLoadedAt?: number;
+  __marketingStoreInflight?: Promise<MarketingStoreData> | null;
 };
 
 function readBundledLeadsList(): any[] {
@@ -130,6 +132,7 @@ export function readLocalMarketingStore(): MarketingStoreData {
 
 export function writeLocalMarketingStore(data: MarketingStoreData): void {
   globalForMarketing.__marketingStoreCache = data;
+  globalForMarketing.__marketingStoreLoadedAt = Date.now();
   if (process.env.NODE_ENV === "development") {
     try {
       const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", STORE_FILENAME);
@@ -158,25 +161,45 @@ async function getWriteStorageSupabase() {
 }
 
 export async function loadMarketingStore(): Promise<MarketingStoreData> {
-  const local = readLocalMarketingStore();
-
-  // Merge any persisted updates from Supabase Storage using cookie-free client (safe inside "use cache")
-  const sb = getReadStorageSupabase();
-  if (sb) {
-    try {
-      const { data: blob } = await sb.storage.from(STORAGE_BUCKET).download(STORAGE_PATH);
-      if (blob) {
-        const parsed = normalizeStore(JSON.parse(await blob.text()), local.leads);
-        const merged = mergeStores(local, parsed);
-        writeLocalMarketingStore(merged);
-        return merged;
-      }
-    } catch {
-      // ignore
-    }
+  const now = Date.now();
+  if (
+    globalForMarketing.__marketingStoreCache &&
+    globalForMarketing.__marketingStoreLoadedAt &&
+    now - globalForMarketing.__marketingStoreLoadedAt < 15_000
+  ) {
+    return readLocalMarketingStore();
   }
 
-  return local;
+  if (globalForMarketing.__marketingStoreInflight) {
+    return globalForMarketing.__marketingStoreInflight;
+  }
+
+  const inflight = (async (): Promise<MarketingStoreData> => {
+    const local = readLocalMarketingStore();
+    const sb = getReadStorageSupabase();
+    if (sb) {
+      try {
+        const { data: blob } = await sb.storage.from(STORAGE_BUCKET).download(STORAGE_PATH);
+        if (blob) {
+          const parsed = normalizeStore(JSON.parse(await blob.text()), local.leads);
+          const merged = mergeStores(local, parsed);
+          writeLocalMarketingStore(merged);
+          return merged;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    globalForMarketing.__marketingStoreLoadedAt = Date.now();
+    return local;
+  })();
+
+  globalForMarketing.__marketingStoreInflight = inflight;
+  try {
+    return await inflight;
+  } finally {
+    globalForMarketing.__marketingStoreInflight = null;
+  }
 }
 
 export async function saveMarketingStore(data: MarketingStoreData): Promise<void> {

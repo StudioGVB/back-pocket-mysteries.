@@ -1,24 +1,18 @@
 import { ImageResponse } from "next/og";
-import { createClient } from "@supabase/supabase-js";
 import { getCardElement, TEMPLATE_COUNT } from "./card-component";
 import { blogPosts } from "@/data/blog-posts";
 import { ACTIVE_MYSTERIES } from "@/data/active-mysteries";
-import { loadMarketingStore } from "@/lib/marketing-store";
+import { loadMarketingStore, readLocalMarketingStore, MarketingStoreData } from "@/lib/marketing-store";
 import fs from "fs";
 import path from "path";
 
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
-
-// Load fonts and brand logos statically (cached in module scope)
+// Load fonts, brand logos, and background data URIs statically (cached in module scope)
 let cachedFontBold: Buffer | null = null;
 let cachedFontBlack: Buffer | null = null;
 let cachedLogoColor: string | undefined;
 let cachedLogoWhite: string | undefined;
+const cachedBgDataUris = new Map<string, string>();
+const cachedCardBuffers = new Map<string, { buf: ArrayBuffer; at: number }>();
 
 function getMontserratBold() {
   if (!cachedFontBold) {
@@ -51,6 +45,56 @@ function getLogoWhiteSrc() {
   return cachedLogoWhite;
 }
 
+function getLocalBgDataUri(bgRelative: string): string | null {
+  const cached = cachedBgDataUris.get(bgRelative);
+  if (cached) return cached;
+
+  let localImgPath = path.join(process.cwd(), "public", bgRelative.replace(/^\//, ""));
+  if (!fs.existsSync(localImgPath)) {
+    localImgPath = path.join(process.cwd(), "public", "blog", "hosting-guide.png");
+  }
+  if (!fs.existsSync(localImgPath)) return null;
+
+  const buf = fs.readFileSync(localImgPath);
+  const isJpeg = buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xd8;
+  const mime = isJpeg ? "image/jpeg" : "image/png";
+  const dataUri = `data:${mime};base64,${buf.toString("base64")}`;
+  if (cachedBgDataUris.size > 48) {
+    const firstKey = cachedBgDataUris.keys().next().value;
+    if (firstKey) cachedBgDataUris.delete(firstKey);
+  }
+  cachedBgDataUris.set(bgRelative, dataUri);
+  return dataUri;
+}
+
+function lookupSlugInStore(cleanSlug: string, store: MarketingStoreData) {
+  const blog =
+    store.blog_posts.find(
+      (p) =>
+        p.slug === cleanSlug ||
+        p.featured_image_url === `/blog/${cleanSlug}.png` ||
+        p.featured_image_url === `/blog/${cleanSlug}.jpg` ||
+        p.featured_image_url === `/blog-images/${cleanSlug}.png` ||
+        p.featured_image_url === `/blog-images/${cleanSlug}.jpg`
+    ) || null;
+
+  const standaloneSocialPost = !blog
+    ? store.social_posts.find((p) => {
+        const sc = (p.slide_content || {}) as any;
+        if (sc.cardSlug === cleanSlug) return true;
+        const cap = store.social_post_captions.find(
+          (c) =>
+            c.post_id === p.id &&
+            Array.isArray(c.media_urls) &&
+            c.media_urls.some((u: string) => u.includes(`/${cleanSlug}`))
+        );
+        return Boolean(cap);
+      }) || null
+    : null;
+
+  return { blog, standaloneSocialPost };
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -63,47 +107,13 @@ export async function GET(
       .replace(/\.png$/, "")
       .replace(/^social-card-/, "");
 
-    const supabase = getSupabase();
-    const store = await loadMarketingStore();
-    const cols = "id, title, featured_image_url, category, publish_date";
+    const searchParams = new URL(request.url).searchParams;
+    const tParam = searchParams.get("t");
 
-    // First try by exact slug in Supabase
-    let blog: any = null;
-    if (supabase) {
-      const { data } = await supabase
-        .from("blog_posts")
-        .select(cols)
-        .eq("slug", cleanSlug)
-        .maybeSingle();
-      if (data) blog = data;
-    }
+    // 1. Check fast in-memory / bundled local store FIRST (0ms, zero network round-trips)
+    let store = readLocalMarketingStore();
+    let { blog, standaloneSocialPost } = lookupSlugInStore(cleanSlug, store);
 
-    // If not found by slug, it might be the short image filename. Try by featured_image_url
-    if (!blog && supabase) {
-      const { data: blogByImg } = await supabase
-        .from("blog_posts")
-        .select(cols)
-        .or(
-          `featured_image_url.eq./blog-images/${cleanSlug}.png,featured_image_url.eq./blog-images/${cleanSlug}.jpg,featured_image_url.eq./blog/${cleanSlug}.png,featured_image_url.eq./blog/${cleanSlug}.jpg`
-        )
-        .maybeSingle();
-      if (blogByImg) blog = blogByImg;
-    }
-
-    // Fallback to marketing-store if table not yet migrated in Supabase
-    if (!blog && store.blog_posts.length > 0) {
-      blog =
-        store.blog_posts.find(
-          (p) =>
-            p.slug === cleanSlug ||
-            p.featured_image_url === `/blog/${cleanSlug}.png` ||
-            p.featured_image_url === `/blog/${cleanSlug}.jpg` ||
-            p.featured_image_url === `/blog-images/${cleanSlug}.png` ||
-            p.featured_image_url === `/blog-images/${cleanSlug}.jpg`
-        ) || null;
-    }
-
-    // Fallback to static blogPosts if not yet in DB
     const staticBlog = !blog
       ? blogPosts.find(
           (p) =>
@@ -112,30 +122,21 @@ export async function GET(
             p.image === `/blog/${cleanSlug}.jpg` ||
             p.image === `/blog-images/${cleanSlug}.png` ||
             p.image === `/blog-images/${cleanSlug}.jpg`
-        )
+        ) || null
       : null;
 
-    // Fallback to Mystery Base Pack (ACTIVE_MYSTERIES) for new mystery pack launch cards
     const mysteryPack =
       !blog && !staticBlog
         ? ACTIVE_MYSTERIES.find((m) => m.slug === cleanSlug || m.id === cleanSlug) || null
         : null;
 
-    // Fallback to standalone social_posts row (e.g. Soft-Launch Intro Post or custom announcements)
-    const standaloneSocialPost =
-      !blog && !staticBlog && !mysteryPack
-        ? store.social_posts.find((p) => {
-            const sc = (p.slide_content || {}) as any;
-            if (sc.cardSlug === cleanSlug) return true;
-            const cap = store.social_post_captions.find(
-              (c) =>
-                c.post_id === p.id &&
-                Array.isArray(c.media_urls) &&
-                c.media_urls.some((u: string) => u.includes(`/${cleanSlug}.`))
-            );
-            return Boolean(cap);
-          }) || null
-        : null;
+    // Only sync from remote Storage if not found in local store OR if a specific ?t= isn't passed and we need latest templateIndex
+    if (!blog && !staticBlog && !mysteryPack && !standaloneSocialPost) {
+      store = await loadMarketingStore();
+      const synced = lookupSlugInStore(cleanSlug, store);
+      blog = synced.blog;
+      standaloneSocialPost = synced.standaloneSocialPost;
+    }
 
     const standaloneSc = (standaloneSocialPost?.slide_content || {}) as any;
 
@@ -147,6 +148,7 @@ export async function GET(
       standaloneSocialPost?.brief ||
       cleanSlug.replace(/-/g, " ");
     const bgRelative =
+      searchParams.get("img") ||
       blog?.featured_image_url ||
       staticBlog?.image ||
       mysteryPack?.coverUrl ||
@@ -156,46 +158,23 @@ export async function GET(
         ? `/blog-images/${cleanSlug}.png`
         : `/blog/hosting-guide.png`);
 
-    // Resolve background image: prefer reading from public/ on disk as data URI for fast, reliable Satori rendering
     const origin = request.url.startsWith("http")
       ? new URL(request.url).origin
       : process.env.NEXT_PUBLIC_SITE_URL || "https://backpocketmysteries.com";
     let bgSrc = bgRelative.startsWith("http") ? bgRelative : `${origin}${bgRelative}`;
 
     if (bgRelative.startsWith("/")) {
-      let localImgPath = path.join(process.cwd(), "public", bgRelative.replace(/^\//, ""));
-      if (!fs.existsSync(localImgPath)) {
-        localImgPath = path.join(process.cwd(), "public", "blog", "hosting-guide.png");
-      }
-      if (fs.existsSync(localImgPath)) {
-        const buf = fs.readFileSync(localImgPath);
-        const ext = path.extname(localImgPath).toLowerCase();
-        const mime = ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : "image/png";
-        bgSrc = `data:${mime};base64,${buf.toString("base64")}`;
-      }
+      const dataUri = getLocalBgDataUri(bgRelative);
+      if (dataUri) bgSrc = dataUri;
     }
 
-    // Optional headline stat, saved templateIndex, and commercial CTA overrides
-    const searchParams = new URL(request.url).searchParams;
     let stat: { value: string; label: string } | null = null;
     let savedTemplateIndex: number | null = null;
     let ctaText: string | null = searchParams.get("cta");
     let kickerText: string | null = searchParams.get("kicker");
 
     if (blog?.id) {
-      let sp: any = null;
-      if (supabase) {
-        const { data } = await supabase
-          .from("social_posts")
-          .select("slide_content")
-          .eq("source_blog_id", blog.id)
-          .limit(1)
-          .maybeSingle();
-        if (data) sp = data;
-      }
-      if (!sp && store.social_posts.length > 0) {
-        sp = store.social_posts.find((p) => p.source_blog_id === blog.id) || null;
-      }
+      const sp = store.social_posts.find((p) => p.source_blog_id === blog.id) || null;
       const sc = sp?.slide_content as any;
       if (sc?.stat?.value && sc?.stat?.label) {
         stat = { value: String(sc.stat.value), label: String(sc.stat.label) };
@@ -244,33 +223,16 @@ export async function GET(
       };
     }
 
-    // Template: ?t=0-7 override for previews (ignore cache-buster timestamps like ?t=Date.now()),
-    // then savedTemplateIndex if manually chosen in Admin, otherwise rotate by publish order.
-    const tParam = searchParams.get("t");
     let templateIndex = 0;
     if (tParam !== null && !Number.isNaN(Number(tParam)) && Number(tParam) >= 0 && Number(tParam) < TEMPLATE_COUNT) {
       templateIndex = Number(tParam);
     } else if (savedTemplateIndex !== null) {
       templateIndex = savedTemplateIndex;
     } else if (blog?.publish_date) {
-      let resolvedCount: number | null = null;
-      if (supabase) {
-        const { count, error: countErr } = await supabase
-          .from("blog_posts")
-          .select("id", { count: "exact", head: true })
-          .lt("publish_date", blog.publish_date);
-        if (!countErr && typeof count === "number") {
-          resolvedCount = count;
-        }
-      }
-      if (resolvedCount !== null) {
-        templateIndex = resolvedCount % TEMPLATE_COUNT;
-      } else {
-        const localCount = store.blog_posts.filter(
-          (p) => p.publish_date && p.publish_date < blog.publish_date
-        ).length;
-        templateIndex = localCount % TEMPLATE_COUNT;
-      }
+      const localCount = store.blog_posts.filter(
+        (p) => p.publish_date && p.publish_date < blog.publish_date
+      ).length;
+      templateIndex = localCount % TEMPLATE_COUNT;
     } else if (staticBlog) {
       const idx = blogPosts.findIndex((p) => p.slug === staticBlog.slug);
       templateIndex = Math.max(0, idx) % TEMPLATE_COUNT;
@@ -279,23 +241,48 @@ export async function GET(
       templateIndex = Math.max(0, idx) % TEMPLATE_COUNT;
     }
 
+    const finalTitle = searchParams.get("title") || titleText;
+    const finalCategory =
+      searchParams.get("category") ||
+      blog?.category ||
+      staticBlog?.tag ||
+      (mysteryPack ? `New Mystery Pack • ${mysteryPack.theme}` : null) ||
+      standaloneSc?.cardCategory ||
+      null;
+
+    // 2. Check rendered PNG buffer cache (instant <5ms response for repeated loads)
+    const cacheKey = JSON.stringify({
+      cleanSlug,
+      templateIndex,
+      finalTitle,
+      finalCategory,
+      bgRelative,
+      stat,
+      ctaText,
+      kickerText,
+    });
+    const cachedPng = cachedCardBuffers.get(cacheKey);
+    if (cachedPng && Date.now() - cachedPng.at < 300_000) {
+      return new Response(cachedPng.buf, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+        },
+      });
+    }
+
     const fontDataBold = getMontserratBold();
     const fontDataBlack = getMontserratBlack();
     const logoColorSrc = getLogoColorSrc();
     const logoWhiteSrc = getLogoWhiteSrc();
 
-    return new ImageResponse(
+    const imgResponse = new ImageResponse(
       getCardElement(
         {
           bgSrc,
-          title: searchParams.get("title") || titleText,
-          category:
-            searchParams.get("category") ||
-            blog?.category ||
-            staticBlog?.tag ||
-            (mysteryPack ? `New Mystery Pack • ${mysteryPack.theme}` : null) ||
-            standaloneSc?.cardCategory ||
-            null,
+          title: finalTitle,
+          category: finalCategory,
           stat,
           ctaText,
           kickerText,
@@ -323,6 +310,21 @@ export async function GET(
         ],
       }
     );
+
+    const pngArrayBuffer = await imgResponse.arrayBuffer();
+    if (cachedCardBuffers.size > 48) {
+      const oldestKey = cachedCardBuffers.keys().next().value;
+      if (oldestKey) cachedCardBuffers.delete(oldestKey);
+    }
+    cachedCardBuffers.set(cacheKey, { buf: pngArrayBuffer, at: Date.now() });
+
+    return new Response(pngArrayBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": "image/png",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+      },
+    });
   } catch (error: any) {
     console.error("Social card generation API error:", error);
     return new Response(`Failed to generate social card: ${error?.message || String(error)}`, { status: 500 });

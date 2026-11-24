@@ -576,16 +576,39 @@ function IgFbPostCard({
     post.slide_content?.linkUrl || post.caption_data?.post_url
   );
 
+  const scAny = (post.slide_content || {}) as Record<string, any>;
+  const fallbackBgUrl =
+    scAny.imageUrl ||
+    (initialImageUrl && !initialImageUrl.includes("/api/social-card/")
+      ? initialImageUrl
+      : cardSlug === "christmas-nightmare"
+      ? "/moodboard/christmas/main-christmas-cabin.jpg"
+      : cardSlug === "love-on-the-rocks"
+      ? "/moodboard/lotr/main-island-villa.jpg"
+      : `/blog-images/${cardSlug}.png`);
+
   const buildCardUrl = (tIndex: number | null) => {
+    const params = new URLSearchParams();
     if (typeof tIndex === "number") {
-      return `/api/social-card/${cardSlug}?t=${tIndex}`;
+      params.set("t", String(tIndex));
+    } else {
+      params.set("v", "auto");
     }
-    return `/api/social-card/${cardSlug}?v=auto`;
+    if (scAny.ctaText) params.set("cta", String(scAny.ctaText));
+    if (scAny.kickerText) params.set("kicker", String(scAny.kickerText));
+    if (scAny.stat?.value && scAny.stat?.label) {
+      params.set("statValue", String(scAny.stat.value));
+      params.set("statLabel", String(scAny.stat.label));
+    }
+    if (scAny.imageUrl) params.set("img", String(scAny.imageUrl));
+    return `/api/social-card/${cardSlug}?${params.toString()}`;
   };
 
   const [imgSrc, setImgSrc] = useState(() => buildCardUrl(selectedTemplate));
+  const [retriedOnce, setRetriedOnce] = useState(false);
 
   useEffect(() => {
+    setRetriedOnce(false);
     setImgSrc(buildCardUrl(selectedTemplate));
   }, [cardSlug, selectedTemplate]);
 
@@ -634,20 +657,29 @@ function IgFbPostCard({
           : "bg-white border-amber-500/35 shadow-xs"
       }`}
     >
-      <div className="flex flex-col lg:flex-row gap-5">
+      <div className="flex flex-col lg:flex-row lg:items-start gap-5">
         {/* Featured 4:5 Social Card Thumbnail */}
         {imgSrc ? (
-          <div className="lg:w-56 aspect-[4/5] rounded-xl overflow-hidden shrink-0 bg-gray-900 border border-gray-200 relative group shadow-sm">
+          <div className="w-full sm:w-56 h-[280px] self-start aspect-[4/5] rounded-xl overflow-hidden shrink-0 bg-gray-900 border border-gray-200 relative group shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
+              key={imgSrc}
               src={imgSrc}
-              alt=""
-              className="w-full h-full object-cover"
+              alt={post.brief}
+              loading="eager"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover block"
               onError={() => {
-                setImgSrc("/blog/hosting-guide.png");
+                if (!retriedOnce) {
+                  setRetriedOnce(true);
+                  const base = buildCardUrl(selectedTemplate);
+                  setImgSrc(`${base}&retry=1`);
+                } else {
+                  setImgSrc(fallbackBgUrl || "/blog/hosting-guide.png");
+                }
               }}
             />
-            <div className="absolute top-2.5 left-2.5 flex gap-1">
+            <div className="absolute top-2.5 left-2.5 flex gap-1 z-10">
               <span className="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold gap-1 px-1.5 py-0.5 rounded shadow-xs">
                 <Instagram className="h-3 w-3" />
                 IG
@@ -659,7 +691,7 @@ function IgFbPostCard({
             </div>
 
             {/* Hover Overlay Actions */}
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3">
+            <div className="absolute inset-0 z-10 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3">
               <button
                 type="button"
                 onClick={() => setShowGalleryModal(true)}
@@ -679,7 +711,7 @@ function IgFbPostCard({
             </div>
           </div>
         ) : (
-          <div className="lg:w-56 aspect-[4/5] rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
+          <div className="w-full sm:w-56 h-[280px] self-start aspect-[4/5] rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
             <ImageIcon className="h-8 w-8 text-gray-300" />
           </div>
         )}
