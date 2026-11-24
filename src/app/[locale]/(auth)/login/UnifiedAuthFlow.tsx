@@ -295,6 +295,26 @@ export default function UnifiedAuthFlow({
         )}
       </div>
 
+      {/* Pre-Launch Note Banner */}
+      {(step === 'email' || step === 'signup') && (
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-brand-dark to-slate-900 text-white border border-brand-pink/30 shadow-lg shadow-brand-pink/5 space-y-2 text-center">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+            <span>🚀</span> We&apos;re So Close to Launch!
+          </div>
+          <p className="text-xs text-slate-200 font-medium leading-relaxed">
+            We&apos;re putting the final finishing touches on our launch mysteries! Public host accounts open very soon — in the meantime, lock in your details below or claim one of our <strong className="text-white font-black">First 50 Free Mystery VIP Spots</strong>.
+          </p>
+          <div className="pt-0.5">
+            <Link
+              href={`/${locale}/free-murder-mystery-game`}
+              className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-brand-pink hover:text-white transition-colors"
+            >
+              🎁 Claim Your Free Mystery VIP Spot (#1–#50) →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Feedback Banners */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-2xl text-center">

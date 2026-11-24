@@ -265,6 +265,31 @@ export async function signup(formData: FormData) {
   const { data: signUpData, error } = await supabase.auth.signUp(data)
 
   if (error) {
+    const isSignupDisabled =
+      (error as any)?.code === 'signup_disabled' ||
+      String(error.message || '').toLowerCase().includes('signups not allowed')
+
+    if (isSignupDisabled) {
+      try {
+        const { submitEmailLead } = await import('@/app/actions/marketing')
+        const vipRes = await submitEmailLead(
+          email,
+          fullName || firstName || undefined,
+          'signup_page_prelaunch'
+        )
+        const rankText = vipRes.vipRank ? ` (VIP Spot #${vipRes.vipRank}/50)` : ''
+        const params = new URLSearchParams({
+          message: `🚀 We are so close to launch! Host accounts open on launch day — we've locked in your VIP Launch Spot${rankText} and emailed your confirmation!`,
+          email,
+          step: 'signup',
+        })
+        if (nextPath) params.set('next', nextPath)
+        return redirect(`/${locale}/login?` + params.toString())
+      } catch {
+        // fallback below
+      }
+    }
+
     const params = new URLSearchParams({
       error: error.message,
       email,
