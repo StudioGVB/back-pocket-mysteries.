@@ -46,7 +46,11 @@ function cleanText(text: string | null | undefined, allCharacters: any[], mode: 
   if (!text) return '';
   const base =
     mode === 'generic'
-      ? replacePlaceholderNamesWithRoles(text, allCharacters)
+      ? hydrateTextWithCharacters(
+          replacePlaceholderNamesWithRoles(text, allCharacters),
+          allCharacters,
+          'generic'
+        )
       : hydrateTextWithCharacters(text, allCharacters, 'print');
 
   return base
