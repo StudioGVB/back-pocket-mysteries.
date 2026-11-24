@@ -2577,7 +2577,7 @@ Respond with valid JSON ONLY:
           })
           .join('\n');
 
-        const criticPrompt = `You are an automated Pre-Delivery Visual QA Critic for Back Pocket Mysteries.
+        const criticPrompt = `You are a strict Pre-Delivery Visual QA Critic for Back Pocket Mysteries.
 ${
   attachedRefLabels.length > 0
     ? `${attachedRefLabels.join('\n')}\nImage #${targetImageIndex} (FINAL IMAGE) is the GENERATED CLUE PHOTOGRAPH to inspect for Clue "${clueObj.title}".`
@@ -2589,20 +2589,21 @@ ${expectedScenePrompt}
 
 ${
   involvedChars.length > 0
-    ? `EXPECTED CHARACTER(S) IN FRAME (${involvedChars.length} person(s)):\n${expectedCastSummary}`
-    : 'PURE FORENSIC PROP / OBJECT SCENE (No specific person required).'
+    ? `EXPECTED CHARACTER(S) IN FRAME (EXACTLY ${involvedChars.length} person(s)):\n${expectedCastSummary}`
+    : 'PURE FORENSIC PROP / OBJECT SCENE (0 people allowed in frame).'
 }
 
-Audit the GENERATED CLUE PHOTOGRAPH (Image #${targetImageIndex}) against these 4 quality criteria:
-1. Subject Count & Gender: Does the clue photo show the expected character(s) and gender(s) for the scene?
-2. Side-by-Side Face & Outfit Match: Do the depicted character(s) match their attached Reference Portrait(s) and physical traits (hair color, glasses/facial hair, skin tone, and costume)?
-3. Scene & Prop Accuracy: Does the setting and key forensic prop/action match the Expected Scene Description?
-4. Clean Photograph Rule: Is the image a single cohesive photograph free of giant gibberish text overlays or broken split comic panels? (Minor stylistic/angle differences are fine and should pass with score >= 85).
+Audit the GENERATED CLUE PHOTOGRAPH (Image #${targetImageIndex}) against these 5 strict criteria:
+1. Exact Subject Count & No Unprompted Bodies (HARD FAIL IF VIOLATED): The photo must contain EXACTLY ${involvedChars.length} main subject(s). If there is an extra person or an unprompted dead body on the floor that is NOT explicitly requested in EXPECTED SCENE DESCRIPTION, score MUST be <= 40 and passed MUST be false.
+2. Zero Cloned / Duplicate Faces (HARD FAIL IF VIOLATED): When 2+ people appear in the scene, each person MUST be a distinct individual matching their respective Reference Portrait. If two people in the photo look like the same person/twin generated twice, score MUST be <= 35 and passed MUST be false.
+3. Side-by-Side Face, Hair & Outfit Match (HARD FAIL IF VIOLATED): Compare each character directly against their attached Reference Image #1..#${attachedRefLabels.length}. Hair color (e.g. blonde vs black), facial hair (clean-shaven vs beard), skin tone, and signature costume color MUST match their Reference Portrait.
+4. Scene & Prop Accuracy: Does the setting and key forensic prop/action match the Expected Scene Description?
+5. Clean Photograph Rule: Single cohesive photograph free of giant gibberish text overlays or split comic panels.
 
 Respond with valid JSON ONLY:
 {
   "score": <number 0-100>,
-  "passed": <true if score >= 82 else false>,
+  "passed": <true if score >= 85 and NO hard-fail rules were violated, else false>,
   "note": "<1 concise sentence explaining what is shown and why it passed or failed>",
   "correctionDirective": "<If passed is false, provide a 1-sentence specific instruction to fix the exact defect on regeneration; if passed is true, return empty string>"
 }`;
