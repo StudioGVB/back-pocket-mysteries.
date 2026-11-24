@@ -135,6 +135,25 @@ function getDefaultSeedDiscounts(): Record<string, DiscountRecord> {
       created_at: start,
       updated_at: start,
     },
+    'test50-checkout-seed': {
+      id: 'test50-checkout-seed',
+      name: 'Founder 50% Off Live Checkout Test Code',
+      code: 'TEST50',
+      auto_apply: false,
+      discount_type: 'percentage',
+      discount_value: 50,
+      applies_to: 'all',
+      target_packages: [],
+      target_mysteries: [],
+      starts_at: start,
+      ends_at: null,
+      usage_limit: 'unlimited',
+      max_uses: null,
+      times_used: 0,
+      is_active: true,
+      created_at: start,
+      updated_at: start,
+    },
   };
 }
 
