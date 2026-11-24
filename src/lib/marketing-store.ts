@@ -155,24 +155,28 @@ export function writeLocalMarketingStore(data: MarketingStoreData): void {
   }
 }
 
-async function getStorageSupabase() {
-  try {
-    const serverClient = await createServerSupabaseClient();
-    if (serverClient) return serverClient;
-  } catch {
-    // outside request scope
-  }
+function getReadStorageSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createSupabaseJsClient(url, key);
 }
 
+async function getWriteStorageSupabase() {
+  try {
+    const serverClient = await createServerSupabaseClient();
+    if (serverClient) return serverClient;
+  } catch {
+    // outside request scope
+  }
+  return getReadStorageSupabase();
+}
+
 export async function loadMarketingStore(): Promise<MarketingStoreData> {
   const local = readLocalMarketingStore();
 
-  // Merge any persisted updates from Supabase Storage (if present)
-  const sb = await getStorageSupabase();
+  // Merge any persisted updates from Supabase Storage using cookie-free client (safe inside "use cache")
+  const sb = getReadStorageSupabase();
   if (sb) {
     try {
       const { data: blob } = await sb.storage.from(STORAGE_BUCKET).download(STORAGE_PATH);
@@ -192,7 +196,7 @@ export async function loadMarketingStore(): Promise<MarketingStoreData> {
 
 export async function saveMarketingStore(data: MarketingStoreData): Promise<void> {
   writeLocalMarketingStore(data);
-  const sb = await getStorageSupabase();
+  const sb = await getWriteStorageSupabase();
   if (sb) {
     try {
       await sb.storage
