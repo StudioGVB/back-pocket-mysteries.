@@ -1314,9 +1314,22 @@ export async function generateClueImageAction(
     }
 
     const clueFormat = (clue as any).format || inferClueFormat(clue);
+    const hasExplicitVisualPrompt = Boolean(promptText?.trim() || clue.generation_prompt?.trim());
+    const isStructuredTextCardWithoutPrompt =
+      !hasExplicitVisualPrompt &&
+      (clueFormat === 'receipt' ||
+        clueFormat === 'handwritten_note' ||
+        clueFormat === 'document' ||
+        clueFormat === 'medical_rx' ||
+        clueFormat === 'call_sheet');
 
-    // Message clues ('chat') and Voice clues ('audio') never need images generated or displayed
-    if (clueFormat === 'chat' || clueFormat === 'audio') {
+    // Message ('chat'), Voice ('audio'), Cyber Terminal ('search_log'), and text-only structured cards never need images generated
+    if (
+      clueFormat === 'chat' ||
+      clueFormat === 'audio' ||
+      clueFormat === 'search_log' ||
+      isStructuredTextCardWithoutPrompt
+    ) {
       await supabase
         .from('clues')
         .update({ static_image_url: null, updated_at: new Date().toISOString() })
@@ -1514,7 +1527,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
       }
     } else if ((clueFormat === 'receipt' || clueFormat === 'document') && charCount === 0) {
       const propScene = hydratedPrompt && hydratedPrompt.length > 6
-        ? `${hydratedPrompt}, alongside a crystal coupe glass with a dark red stain sitting on a vintage mahogany bar counter under warm amber lamplight`
+        ? hydratedPrompt
         : 'a crystal coupe glass with a dark red stain sitting on a vintage mahogany bar counter under warm amber lamplight';
       finalPrompt = `A cinematic forensic prop photograph inside ${mysterySetting}: ${propScene}. Dramatic low-key lighting, 35mm film grain, shallow depth of field, 8k resolution. ${zeroTextRule}`;
     } else {
@@ -2784,7 +2797,7 @@ Respond with valid JSON ONLY:
 
     for (const vClue of visualClues) {
       result.visualCluesAudited += 1;
-      const involved = getInvolvedCharacters(vClue, hydratedCharacters, vClue.generation_prompt).slice(0, 4);
+      const involved = getInvolvedCharacters(vClue, hydratedCharacters, vClue.generation_prompt).slice(0, 6);
 
       // If any involved character had their Stage 1 portrait regenerated in Gate 2, force-regenerate this clue photo first
       let currentImageUrl = vClue.static_image_url || null;

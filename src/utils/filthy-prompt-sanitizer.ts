@@ -83,9 +83,10 @@ const COMPROMISING_VISUAL_REPLACEMENTS: Array<{
   },
 
   // 4. Graphic gore, corpses & weapons -> Atmospheric noir aftermath & tense confrontations
+  // (Never rewrite negated guardrails like "NO dead body", "without a dead body", or "remove the dead body")
   {
     pattern:
-      /\b(bloody\s+corpse|dead\s+body|pool\s+of\s+blood|covered\s+in\s+blood|blood\s+splatter(?:ed)?|slit\s+throat|stab(?:bed|bing)\s+wound|decapitated|mutilated|gory|gore|entrails|autopsy\s+body|bullet\s+hole\s+in\s+head)\b/gi,
+      /(?<!\bno\s+)(?<!\bno\s+unprompted\s+)(?<!\bwithout\s+a\s+)(?<!\bwithout\s+any\s+)(?<!\bremove\s+the\s+)(?<!\bnot\s+depict\s+any\s+)\b(bloody\s+corpse|dead\s+body|pool\s+of\s+blood|covered\s+in\s+blood|blood\s+splatter(?:ed)?|slit\s+throat|stab(?:bed|bing)\s+wound|decapitated|mutilated|gory|gore|entrails|autopsy\s+body|bullet\s+hole\s+in\s+head)\b/gi,
     replacement:
       'dramatic noir crime scene floor with a shattered crystal wine glass, dark ruby-red liquid spilled across the rug, and a dramatic shadow cast across the room',
   },
@@ -152,7 +153,11 @@ export function buildSafetyFallbackImagePrompt(options: {
   } = options;
 
   if (charDescriptions.length >= 2) {
-    return `An overhead security camera angle inside ${mysterySetting}, grainy surveillance footage still showing ${charDescriptions[0]} and ${charDescriptions[1]} caught in a compromising, secretive late-night conversation in a shadowed VIP corner, looking guilty and glancing over their shoulders as if caught in the act, with two champagne glasses on a small table nearby. Gritty noir surveillance aesthetic, high angle, low-key lighting, high contrast, atmospheric shadows, 8k resolution. ${zeroTextRule}${referenceManifest}`;
+    const allSubjects =
+      charDescriptions.length === 2
+        ? `${charDescriptions[0]} and ${charDescriptions[1]}`
+        : `${charDescriptions.slice(0, -1).join(', ')}, and ${charDescriptions[charDescriptions.length - 1]}`;
+    return `An overhead security camera angle inside ${mysterySetting}, grainy surveillance footage still showing ONLY ${allSubjects} caught in a compromising, secretive late-night conversation in a shadowed VIP corner, looking guilty and glancing over their shoulders as if caught in the act, with champagne glasses on a small table nearby. Gritty noir surveillance aesthetic, high angle, low-key lighting, high contrast, atmospheric shadows, 8k resolution. ${zeroTextRule}${referenceManifest}`;
   }
 
   if (charDescriptions.length === 1) {

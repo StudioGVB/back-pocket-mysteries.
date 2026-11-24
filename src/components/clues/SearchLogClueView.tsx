@@ -18,24 +18,6 @@ export function SearchLogClueView({
 
   return (
     <div className="w-full space-y-3">
-      {showImage && clue.static_image_url && (
-        <div
-          className={`relative w-full ${
-            compact ? 'h-32' : 'h-44'
-          } rounded-2xl overflow-hidden border border-cyan-500/20 bg-slate-950`}
-        >
-          <img
-            src={clue.static_image_url}
-            alt={title}
-            className="w-full h-full object-cover opacity-85"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#080d17] via-transparent to-transparent" />
-          <div className="absolute top-2.5 left-3 px-2.5 py-0.5 rounded-full bg-black/75 border border-cyan-400/30 text-[9px] font-black uppercase tracking-widest text-cyan-300 backdrop-blur-md">
-            💻 {parsed.mode === 'audit' ? 'Server Audit Log' : 'Search History Intercept'}
-          </div>
-        </div>
-      )}
-
       {/* Dark Browser / Cyber Terminal Container */}
       <div className="w-full rounded-xl overflow-hidden bg-[#070b14] border border-cyan-500/25 shadow-2xl font-mono text-slate-100">
         {/* Browser Chrome Header with Traffic Light Dots & URL Bar */}
