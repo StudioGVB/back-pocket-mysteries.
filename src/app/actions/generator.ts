@@ -1464,7 +1464,7 @@ export async function generateClueImageAction(
             const phys = (ref.standardPhoto.physicalDesc || '').toLowerCase();
             const hasBeard = /\b(beard|mustache|goatee)\b/i.test(phys) && !/no beard/i.test(phys);
             const hasGlasses = /\b(glasses|spectacles)\b/i.test(phys) && !/no glasses/i.test(phys);
-            const sigColor = extractSignatureColorSummary(ref.standardPhoto.outfit);
+            const sigColor = (ref.char?.profile_data?.color || ref.standardPhoto.outfit || 'signature outfit').trim();
             return `  * Subject #${ref.referenceId} (${zone}): ${name} — ${hasBeard ? 'WITH facial hair/beard' : 'CLEAN-SHAVEN (STRICTLY NO beard/facial hair)'}, ${hasGlasses ? 'WEARING glasses' : 'NO glasses'}, wearing ${sigColor}.`;
           }).join('\n')
         : '';
@@ -1701,14 +1701,15 @@ Image #${targetIdx} (FINAL IMAGE) is the generated clue scene for: "${hydratedPr
 EXPECTED CHARACTERS (EXACTLY ${referenceImages.length} person(s)):
 ${refSummary}
 
-Check Image #${targetIdx} against these 3 hard rules:
+Check Image #${targetIdx} against these 4 hard rules:
 1. Exact Subject Count & No Unprompted Corpse: Does Image #${targetIdx} show EXACTLY ${referenceImages.length} main person(s)${!explicitlyMentionsDeadBody ? ' with NO dead body lying on the floor' : ''}?
-2. Zero Cloned Faces: Are all ${referenceImages.length} person(s) distinct individuals (not the same face/beard duplicated onto two bodies)?
-3. Hair, Beard & Outfit Match: Does each person match their Reference Image's hair color, facial hair (beard vs. clean-shaven), skin tone, and outfit color?
+2. Zero Cloned Faces or Trait Bleed: Are all ${referenceImages.length} person(s) distinct individuals (not the same face duplicated onto two bodies, and clean-shaven subjects do NOT have a beard bled onto them)?
+3. Hair, Beard, Glasses & Outfit Match: Does each person match their Reference Image's hair color, facial hair (beard vs. strictly clean-shaven), glasses (wearing glasses vs. no glasses), skin tone, and signature outfit color?
+4. Single Cohesive Frame: Is it a single realistic photograph (not a split-screen collage or grid of separate portraits)?
 
 Respond with valid JSON ONLY:
 {
-  "passed": <true if all 3 rules pass, else false>,
+  "passed": <true if all 4 rules pass, else false>,
   "correctionDirective": "<If passed is false, write a 1-sentence specific instruction fixing the exact defect; if passed is true, empty string>"
 }`;
           criticParts.push({ text: inlineCriticPrompt });
