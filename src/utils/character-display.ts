@@ -23,6 +23,8 @@ export interface CleanCharacterPresentation {
   blurbParagraphs: string[];
   /** Primary outfit recommendation (matched to assigned guest gender if adaptable) */
   outfitAdvice: string;
+  /** 2-3 distinct wearable outfit options for Look 1, Look 2, Look 3 */
+  outfitOptions: string[];
   /** Optional masculine/feminine outfit variants when character is adaptable */
   outfitVariants?: {
     feminine?: string;
@@ -274,6 +276,54 @@ export function getCleanCharacterPresentation(
     effectiveGender
   ).slice(0, 3);
 
+  // Build 2-3 distinct written outfit options to pair with Look 1, Look 2, Look 3
+  let outfitOptions: string[] = [];
+  if (/Option\s*1\s*[—:-]/i.test(outfitAdvice)) {
+    const parts = outfitAdvice
+      .split(/Option\s*\d+\s*[—:-]\s*/i)
+      .map(s => s.replace(/[;.]\s*$/, '').trim())
+      .filter(Boolean);
+    // If the first chunk was an intro prefix before Option 1 (e.g. "Effortlessly glamorous holiday hostess:"), drop it
+    if (parts.length > 3 || (parts.length >= 3 && parts[0].endsWith(':'))) {
+      outfitOptions = parts.slice(1, 4);
+    } else {
+      outfitOptions = parts.slice(0, 3);
+    }
+  } else {
+    // Strip any leading prefix before a colon (e.g. "Effortlessly glamorous holiday hostess: ...")
+    const bodyAfterColon = outfitAdvice.includes(':')
+      ? outfitAdvice.split(':').slice(1).join(':').trim()
+      : outfitAdvice.trim();
+    const orParts = bodyAfterColon
+      .split(/\s+or\s+|;\s*/i)
+      .map(s => s.replace(/^[,\s]+|[.]+$/g, '').trim())
+      .filter(Boolean);
+    if (orParts.length >= 2) {
+      outfitOptions = orParts.slice(0, 3).map(p => p.charAt(0).toUpperCase() + p.slice(1));
+    }
+    if (outfitOptions.length < 3) {
+      const colorHint = String(profile.color || '').trim();
+      const isFem = effectiveGender === 'female';
+      const fallbackPool = isFem
+        ? [
+            `${colorHint ? `${colorHint} ` : ''}Silk or satin midi dress with statement jewelry and heels`,
+            `Tailored ${colorHint ? `${colorHint.toLowerCase()} ` : ''}velvet jumpsuit or chic blazer with wide-leg trousers`,
+            `Cashmere knit or evening blouse paired with a pleated skirt and bold holiday makeup`,
+          ]
+        : [
+            `Tailored ${colorHint ? `${colorHint.toLowerCase()} ` : ''}velvet or wool dinner blazer over a crisp dress shirt`,
+            `Fine merino or cashmere turtleneck layered under a sharp sports jacket with a dress watch`,
+            `Smart tailored waistcoat or cardigan with dark trousers and polished dress shoes`,
+          ];
+      for (const fb of fallbackPool) {
+        if (outfitOptions.length >= 3) break;
+        if (!outfitOptions.some(existing => existing.toLowerCase() === fb.toLowerCase())) {
+          outfitOptions.push(fb);
+        }
+      }
+    }
+  }
+
   return {
     roleTitle,
     displayName,
@@ -284,6 +334,7 @@ export function getCleanCharacterPresentation(
     shortBlurb,
     blurbParagraphs,
     outfitAdvice,
+    outfitOptions,
     outfitVariants,
     actSummary,
     actBullets,

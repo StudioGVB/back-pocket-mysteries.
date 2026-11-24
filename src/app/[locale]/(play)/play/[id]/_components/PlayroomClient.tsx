@@ -2415,6 +2415,67 @@ export function PlayroomClient({
       </div>
     );
 
+    const hasHostStartedGame = currentRound >= 1;
+    const rawMysteryOverview =
+      (mystery.description || '').trim() ||
+      `You are invited to an interactive evening of suspense, alibis, and hidden motives in ${mystery.title}. Arrive in character, mingle with the other suspects, and piece together the clues when the investigation begins.`;
+    const hydratedMysteryOverview = hydrateTextWithCharacters(
+      rawMysteryOverview,
+      characters,
+      'print'
+    )
+      .replace(/\{\{([A-Za-z0-9\s'._-]+)\}\}/g, '$1')
+      .trim();
+
+    const renderLiveGameStartedBanner = () => {
+      if (!hasHostStartedGame) return null;
+      return (
+        <div className="rounded-3xl bg-gradient-to-r from-brand-pink via-rose-500 to-amber-500 p-0.5 shadow-2xl animate-in fade-in duration-300">
+          <div className="rounded-[22px] bg-slate-950/95 px-5 py-4 sm:px-7 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <span className="relative flex h-3.5 w-3.5 mt-1 sm:mt-0 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-pink opacity-75" />
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-brand-pink" />
+              </span>
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-brand-pink">
+                  Party Night is Live • Round {unlockedClueRound} Active
+                </p>
+                <h2 className="text-base sm:text-lg font-black text-white leading-snug">
+                  Your host has started the mystery! Enter the Live Game now to unlock your secret dossier &amp; clues.
+                </h2>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleTogglePrepMode(false)}
+              className="px-6 py-3.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-lg shadow-brand-pink/30 transition-all shrink-0 cursor-pointer text-center"
+            >
+              Enter Live Party Game Now →
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    const renderMysteryOverviewSection = () => (
+      <div className="p-5 sm:p-6 rounded-2xl bg-slate-950/60 border border-white/10 space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-pink">
+            The Story • Mystery Overview
+          </span>
+          {mystery.theme && (
+            <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-slate-300">
+              {mystery.theme}
+            </span>
+          )}
+        </div>
+        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+          {hydratedMysteryOverview}
+        </p>
+      </div>
+    );
+
     if (!selectedChar) {
       const attendingNames = activeCharacters
         .map(c => parseCharacter(c).guestName || getCleanCharacterPresentation(c, characters, { mode: 'generic' }).roleTitle)
@@ -2442,7 +2503,16 @@ export function PlayroomClient({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {initialIsHost ? (
+                {hasHostStartedGame ? (
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePrepMode(false)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-brand-pink/25 transition-all cursor-pointer"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    <span>Game is Live • Join Party Now →</span>
+                  </button>
+                ) : initialIsHost ? (
                   <button
                     type="button"
                     onClick={() => handleTogglePrepMode(false)}
@@ -2450,20 +2520,14 @@ export function PlayroomClient({
                   >
                     Open Game Night Portal →
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleTogglePrepMode(false)}
-                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-medium transition-colors cursor-pointer"
-                  >
-                    At the party? Enter Live Game →
-                  </button>
-                )}
+                ) : null}
               </div>
             </div>
           </header>
 
           <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
+            {renderLiveGameStartedBanner()}
+
             {/* Editorial Invitation Hero Card */}
             <div className="rounded-3xl bg-slate-900/75 border border-white/10 overflow-hidden shadow-2xl">
               {mysteryCoverUrl && (
@@ -2519,6 +2583,9 @@ export function PlayroomClient({
               {/* TAB 1: THE INVITATION */}
               {prepTab === 'invite' && (
                 <div className="p-6 sm:p-8 space-y-6">
+                  {/* Mystery Overview Story Block */}
+                  {renderMysteryOverviewSection()}
+
                   {/* 2x2 Clean Event Details */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col justify-between gap-1">
@@ -2649,7 +2716,7 @@ export function PlayroomClient({
                         Guest List &amp; Character Assignments
                       </h2>
                       <p className="text-xs text-slate-400">
-                        Tap your name below to view your character outline, costume guide &amp; 3 outfit reference photos.
+                        Tap your name below to view your character outline, costume guide &amp; 3 outfit options.
                       </p>
                     </div>
                   </div>
@@ -2676,6 +2743,11 @@ export function PlayroomClient({
       resolveDisplayAvatarUrl(selectedChar.profile_data?.avatar_url || selectedChar.image_url);
     const isThisCharConfirmed = Boolean(prepConfirmedCharacters[selectedChar.id]);
     const mainGuestTitle = prepCharPres.guestName || prepCharPres.roleTitle;
+    const outfitOptionsCount = Math.max(
+      prepCharPres.outfitReferenceImages?.length || 0,
+      prepCharPres.outfitOptions?.length || 0,
+      3
+    );
 
     return (
       <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans antialiased pb-16">
@@ -2700,7 +2772,16 @@ export function PlayroomClient({
               </span>
             </div>
 
-            {initialIsHost && (
+            {hasHostStartedGame ? (
+              <button
+                type="button"
+                onClick={() => handleTogglePrepMode(false)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-pink hover:opacity-95 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-brand-pink/25 transition-all cursor-pointer"
+              >
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                <span>Game is Live • Join Party Now →</span>
+              </button>
+            ) : initialIsHost ? (
               <button
                 type="button"
                 onClick={() => handleTogglePrepMode(false)}
@@ -2708,11 +2789,13 @@ export function PlayroomClient({
               >
                 Open Game Night Portal →
               </button>
-            )}
+            ) : null}
           </div>
         </header>
 
         <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
+          {renderLiveGameStartedBanner()}
+
           {/* Character Invite Card with Tabs */}
           <div className="rounded-3xl bg-slate-900/75 border border-white/10 overflow-hidden shadow-2xl">
             {/* Top Identity Banner: Guest Name as Main Header, Character Role as Pill */}
@@ -2808,45 +2891,70 @@ export function PlayroomClient({
             <div className="p-6 sm:p-8 space-y-6">
               {prepSheetTab === 'character' && (
                 <>
-                  {/* What to Wear & 3 Outfit Reference Photos */}
+                  {/* What to Wear & 3 Outfit Reference Options */}
                   <div className="space-y-4">
-                    <div>
-                      <h2 className="text-lg font-bold text-white">
-                        What to Wear
-                      </h2>
-                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mt-1">
-                        {prepCharPres.outfitAdvice}
-                      </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h2 className="text-lg font-bold text-white">
+                          What to Wear ({Math.min(3, outfitOptionsCount)} Outfit Options)
+                        </h2>
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mt-1">
+                          {prepCharPres.outfitAdvice}
+                        </p>
+                      </div>
                     </div>
 
-                    {prepCharPres.outfitReferenceImages && prepCharPres.outfitReferenceImages.length > 0 && (
-                      <div className="grid grid-cols-3 gap-3 sm:gap-4 pt-1">
-                        {prepCharPres.outfitReferenceImages.slice(0, 3).map((refUrl, optIdx) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4 pt-1">
+                      {Array.from({ length: Math.min(3, outfitOptionsCount) }, (_, optIdx) => {
+                        const refUrl = prepCharPres.outfitReferenceImages?.[optIdx] || null;
+                        const optionCaption = prepCharPres.outfitOptions?.[optIdx] || null;
+                        return (
                           <div
                             key={optIdx}
-                            onClick={() =>
-                              setLightboxPhoto({
-                                url: refUrl,
-                                title: `${mainGuestTitle} (${prepCharPres.roleTitle}) - Look ${optIdx + 1}`,
-                              })
-                            }
-                            className="rounded-2xl overflow-hidden border border-white/10 bg-slate-950 cursor-pointer group/img shadow-md flex flex-col"
+                            onClick={() => {
+                              if (refUrl) {
+                                setLightboxPhoto({
+                                  url: refUrl,
+                                  title: `${mainGuestTitle} (${prepCharPres.roleTitle}) - Look ${optIdx + 1}`,
+                                  subtitle: optionCaption || undefined,
+                                });
+                              }
+                            }}
+                            className={`rounded-2xl overflow-hidden border border-white/10 bg-slate-950 shadow-md flex flex-col justify-between ${
+                              refUrl ? 'cursor-pointer group/img hover:border-brand-pink/50 transition-all' : ''
+                            }`}
                           >
-                            <div className="aspect-[3/4] w-full overflow-hidden">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={refUrl}
-                                alt={`Look ${optIdx + 1}`}
-                                className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                              />
-                            </div>
-                            <div className="py-2 text-center text-[11px] font-semibold text-slate-300 bg-slate-900/90 border-t border-white/10">
-                              Look {optIdx + 1}
+                            {refUrl && (
+                              <div className="aspect-[3/4] w-full overflow-hidden bg-slate-900">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={refUrl}
+                                  alt={`Look ${optIdx + 1}`}
+                                  className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                                />
+                              </div>
+                            )}
+                            <div className="p-3.5 bg-slate-900/95 border-t border-white/10 space-y-1 flex-grow flex flex-col justify-center">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-black uppercase tracking-wider text-brand-pink">
+                                  Look {optIdx + 1}
+                                </span>
+                                {refUrl && (
+                                  <span className="text-[10px] font-semibold text-slate-400">
+                                    Tap to enlarge
+                                  </span>
+                                )}
+                              </div>
+                              {optionCaption && (
+                                <p className="text-xs font-medium text-slate-200 leading-snug">
+                                  {optionCaption}
+                                </p>
+                              )}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* How to Act */}
@@ -2912,6 +3020,8 @@ export function PlayroomClient({
 
               {prepSheetTab === 'details' && (
                 <div className="space-y-6">
+                  {renderMysteryOverviewSection()}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">

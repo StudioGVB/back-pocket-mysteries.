@@ -325,12 +325,20 @@ export function adaptOutfitReferenceImagesForGuestGender(
   const isFemale = g === 'female' || g === 'f' || g === 'woman' || g === 'feminine';
   const isMale = g === 'male' || g === 'm' || g === 'man' || g === 'masculine';
 
+  // Auto-expand single Christmas Nightmare outfit image (/outfits/christmas/<role>-1.jpg) to all 3 looks
+  let normalizedImages = [...images];
+  const firstImg = String(normalizedImages[0] || '').trim();
+  const xmasSingleMatch = firstImg.match(/^(\/outfits\/christmas\/(husband|wife|sister|mistress|coworker|bestie))-\d+\.jpg$/i);
+  if (xmasSingleMatch && normalizedImages.length < 3) {
+    const basePrefix = xmasSingleMatch[1];
+    normalizedImages = [`${basePrefix}-1.jpg`, `${basePrefix}-2.jpg`, `${basePrefix}-3.jpg`];
+  }
+
   if (!isFemale && !isMale) {
-    return images;
+    return normalizedImages;
   }
 
   // 1. Check for Love On The Rocks dual-gender roles (/outfits/lotr/<role>-(m|f)-<1..3>.jpg)
-  const firstImg = String(images[0] || '').trim();
   const lotrDualMatch = firstImg.match(/^(\/outfits\/lotr\/[a-z-]+)-(?:m|f)-\d+\.jpg$/i);
   if (lotrDualMatch) {
     const prefix = lotrDualMatch[1];
@@ -354,26 +362,36 @@ export function adaptOutfitReferenceImagesForGuestGender(
     }
   }
 
-  // 3. Map individual Christmas Nightmare & individual images
-  const christmasMaleToFemale: Record<string, string> = {
-    '/outfits/christmas/bestie-1.jpg': '/outfits/christmas/sister-1.jpg',
-    '/outfits/christmas/husband-1.jpg': '/outfits/christmas/wife-1.jpg',
-    '/outfits/christmas/coworker-1.jpg': '/outfits/christmas/mistress-1.jpg',
+  // 3. Map Christmas Nightmare & individual images across all 3 looks (-1, -2, -3)
+  const christmasMaleToFemaleRole: Record<string, string> = {
+    bestie: 'sister',
+    husband: 'wife',
+    coworker: 'mistress',
   };
-  const christmasFemaleToMale: Record<string, string> = {
-    '/outfits/christmas/wife-1.jpg': '/outfits/christmas/husband-1.jpg',
-    '/outfits/christmas/sister-1.jpg': '/outfits/christmas/bestie-1.jpg',
-    '/outfits/christmas/mistress-1.jpg': '/outfits/christmas/coworker-1.jpg',
+  const christmasFemaleToMaleRole: Record<string, string> = {
+    wife: 'husband',
+    sister: 'bestie',
+    mistress: 'coworker',
   };
 
-  return images.map(img => {
+  return normalizedImages.map(img => {
     const clean = String(img || '').trim();
+    const xmasMatch = clean.match(/^\/outfits\/christmas\/(husband|wife|sister|mistress|coworker|bestie)-(\d+)\.jpg$/i);
+    if (xmasMatch) {
+      const roleKey = xmasMatch[1].toLowerCase();
+      const num = xmasMatch[2];
+      if (isFemale && christmasMaleToFemaleRole[roleKey]) {
+        return `/outfits/christmas/${christmasMaleToFemaleRole[roleKey]}-${num}.jpg`;
+      }
+      if (isMale && christmasFemaleToMaleRole[roleKey]) {
+        return `/outfits/christmas/${christmasFemaleToMaleRole[roleKey]}-${num}.jpg`;
+      }
+      return clean;
+    }
     if (isFemale) {
-      if (christmasMaleToFemale[clean]) return christmasMaleToFemale[clean];
       return clean.replace(/^(\/outfits\/lotr\/[a-z-]+)-m-(\d+\.jpg)$/i, '$1-f-$2');
     }
     if (isMale) {
-      if (christmasFemaleToMale[clean]) return christmasFemaleToMale[clean];
       return clean.replace(/^(\/outfits\/lotr\/[a-z-]+)-f-(\d+\.jpg)$/i, '$1-m-$2');
     }
     return clean;
