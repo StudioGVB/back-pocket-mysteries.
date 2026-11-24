@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { Resend } from 'resend';
 import { saveDiscountAction } from '@/app/actions/discounts';
@@ -30,6 +31,8 @@ export interface MarketingLeadRecord {
   marketing_consent: boolean;
   created_at: string;
   resend_contact_id?: string | null;
+  country?: string | null;
+  ip_address?: string | null;
 }
 
 export interface UnifiedNewsletterRecipient {
@@ -44,6 +47,132 @@ export interface UnifiedNewsletterRecipient {
   marketing_consent: boolean;
   created_at: string;
   customer_user_id?: string | null;
+  country?: string | null;
+  ip_address?: string | null;
+}
+
+function isoCountryToFlagAndName(countryCode?: string | null, city?: string | null): string | null {
+  const code = (countryCode || '').trim().toUpperCase();
+  if (!code || code.length !== 2 || code === 'XX' || code === 'T1') return null;
+  const flag = String.fromCodePoint(
+    ...code.split('').map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)
+  );
+  let fullName = code;
+  try {
+    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    fullName = regionNames.of(code) || code;
+  } catch {
+    fullName = code;
+  }
+  const cleanCity = city ? city.trim() : '';
+  return cleanCity ? `${flag} ${fullName} (${cleanCity})` : `${flag} ${fullName}`;
+}
+
+/**
+ * Resolves the newsletter subscriber's IP address and country from:
+ * 1. Vercel / Cloudflare Edge geolocation headers (`x-vercel-ip-country`, `x-forwarded-for`, `cf-ipcountry`)
+ * 2. Fast Geo-IP lookup fallback (`ipapi.co` / `ip-api.com`) when headers are absent or on local dev
+ */
+async function detectSubscriberIpAndCountry(): Promise<{
+  ip_address: string | null;
+  country: string | null;
+}> {
+  let rawIp: string | null = null;
+  let countryCode: string | null = null;
+  let city: string | null = null;
+
+  try {
+    const hdrs = await headers();
+    const forwardedFor = hdrs.get('x-forwarded-for');
+    if (forwardedFor) {
+      rawIp = forwardedFor.split(',')[0]?.trim() || null;
+    }
+    if (!rawIp) {
+      rawIp =
+        hdrs.get('x-real-ip')?.trim() ||
+        hdrs.get('cf-connecting-ip')?.trim() ||
+        hdrs.get('x-client-ip')?.trim() ||
+        null;
+    }
+
+    countryCode =
+      hdrs.get('x-vercel-ip-country')?.trim() ||
+      hdrs.get('cf-ipcountry')?.trim() ||
+      null;
+
+    const rawCity = hdrs.get('x-vercel-ip-city')?.trim();
+    if (rawCity) {
+      try {
+        city = decodeURIComponent(rawCity);
+      } catch {
+        city = rawCity;
+      }
+    }
+  } catch {
+    // headers() not available outside request context
+  }
+
+  const isLocalIp =
+    !rawIp ||
+    rawIp === '127.0.0.1' ||
+    rawIp === '::1' ||
+    rawIp.startsWith('192.168.') ||
+    rawIp.startsWith('10.') ||
+    rawIp.startsWith('::ffff:127.');
+
+  let formattedCountry = isoCountryToFlagAndName(countryCode, city);
+
+  // If edge headers didn't give us the country (or we're testing locally without a public IP header),
+  // perform a fast Geo-IP lookup so we still resolve the public IP and country.
+  if (!formattedCountry || isLocalIp) {
+    try {
+      const targetUrl = isLocalIp
+        ? 'http://ip-api.com/json/?fields=status,country,countryCode,city,query'
+        : `http://ip-api.com/json/${encodeURIComponent(rawIp!)}?fields=status,country,countryCode,city,query`;
+      const res = await fetch(targetUrl, {
+        signal: AbortSignal.timeout(1800),
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const geo = await res.json();
+        if (geo && geo.status === 'success') {
+          if (isLocalIp && geo.query) {
+            rawIp = String(geo.query);
+          }
+          if (!formattedCountry && geo.countryCode) {
+            formattedCountry = isoCountryToFlagAndName(geo.countryCode, geo.city || null);
+          }
+        }
+      }
+    } catch {
+      // Fallback to ipapi.co over HTTPS if ip-api is unreachable
+      try {
+        const fallbackUrl = isLocalIp
+          ? 'https://ipapi.co/json/'
+          : `https://ipapi.co/${encodeURIComponent(rawIp!)}/json/`;
+        const res2 = await fetch(fallbackUrl, {
+          signal: AbortSignal.timeout(1800),
+          cache: 'no-store',
+        });
+        if (res2.ok) {
+          const geo2 = await res2.json();
+          if (isLocalIp && geo2?.ip) {
+            rawIp = String(geo2.ip);
+          }
+          if (!formattedCountry && geo2?.country_code) {
+            formattedCountry = isoCountryToFlagAndName(geo2.country_code, geo2.city || null);
+          }
+        }
+      } catch {
+        // ignore geo-ip network errors
+      }
+    }
+  }
+
+  return {
+    ip_address: rawIp,
+    country: formattedCountry,
+  };
 }
 
 interface LeadsStoreData {
@@ -93,19 +222,23 @@ function writeLocalLeadsStore(data: LeadsStoreData): void {
 
 /**
  * Encodes lead metadata into Resend Contact `last_name` field so serverless environments
- * without a `public.leads` table still persist source, timestamp, and promo code state across deploys.
+ * without a `public.leads` table still persist source, timestamp, promo code, country, and IP across deploys.
  */
 function encodeResendLeadMeta(meta: {
   source?: string;
   ts?: string;
   code?: string | null;
   sentAt?: string | null;
+  country?: string | null;
+  ip?: string | null;
 }): string {
   const parts: string[] = [];
   if (meta.source) parts.push(`source:${meta.source}`);
   if (meta.ts) parts.push(`ts:${meta.ts}`);
   if (meta.code) parts.push(`code:${meta.code}`);
   if (meta.sentAt) parts.push(`sent:${meta.sentAt}`);
+  if (meta.country) parts.push(`country:${meta.country.replace(/\|/g, '/')}`);
+  if (meta.ip) parts.push(`ip:${meta.ip.replace(/\|/g, '/')}`);
   return parts.join('|');
 }
 
@@ -114,6 +247,8 @@ function decodeResendLeadMeta(rawLastName?: string | null): {
   ts?: string;
   code?: string;
   sentAt?: string;
+  country?: string;
+  ip?: string;
 } {
   if (!rawLastName || !rawLastName.includes(':')) return {};
   const result: Record<string, string> = {};
@@ -130,6 +265,8 @@ function decodeResendLeadMeta(rawLastName?: string | null): {
     ts: result.ts,
     code: result.code,
     sentAt: result.sent,
+    country: result.country,
+    ip: result.ip,
   };
 }
 
@@ -173,6 +310,8 @@ async function fetchResendAudienceContacts(): Promise<MarketingLeadRecord[]> {
           marketing_consent: r.unsubscribed !== true,
           created_at: createdIso,
           resend_contact_id: String(r.id),
+          country: meta.country || null,
+          ip_address: meta.ip || null,
         } satisfies MarketingLeadRecord;
       });
   } catch {
@@ -186,25 +325,44 @@ async function upsertResendAudienceContact(lead: MarketingLeadRecord): Promise<v
   const audienceId = await resolveResendAudienceId();
   if (!audienceId) return;
 
+  const encodedMeta = encodeResendLeadMeta({
+    source: lead.source,
+    ts: lead.created_at,
+    code: lead.free_mystery_code,
+    sentAt: lead.code_sent_at,
+    country: lead.country,
+    ip: lead.ip_address,
+  });
+
   try {
-    await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: lead.email,
-        first_name: lead.full_name || '',
-        last_name: encodeResendLeadMeta({
-          source: lead.source,
-          ts: lead.created_at,
-          code: lead.free_mystery_code,
-          sentAt: lead.code_sent_at,
+    if (lead.resend_contact_id) {
+      await fetch(`https://api.resend.com/audiences/${audienceId}/contacts/${lead.resend_contact_id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          first_name: lead.full_name || '',
+          last_name: encodedMeta,
+          unsubscribed: !lead.marketing_consent,
         }),
-        unsubscribed: !lead.marketing_consent,
-      }),
-    });
+      });
+    } else {
+      await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: lead.email,
+          first_name: lead.full_name || '',
+          last_name: encodedMeta,
+          unsubscribed: !lead.marketing_consent,
+        }),
+      });
+    }
   } catch {
     // ignore
   }
@@ -264,6 +422,8 @@ export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[
           ? existing.created_at
           : contact.created_at,
       resend_contact_id: contact.resend_contact_id || existing?.resend_contact_id || null,
+      country: existing?.country || contact.country || null,
+      ip_address: existing?.ip_address || contact.ip_address || null,
     });
   }
 
@@ -284,6 +444,8 @@ export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[
       code_sent_at: existing?.code_sent_at || row.code_sent_at || null,
       marketing_consent: row.marketing_consent !== false,
       created_at: row.created_at || existing?.created_at || new Date().toISOString(),
+      country: existing?.country || row.country || null,
+      ip_address: existing?.ip_address || row.ip_address || null,
     });
   }
 
@@ -454,8 +616,19 @@ export async function submitEmailLead(
     return { success: false, error: 'Please enter a valid email address.' };
   }
 
-  const all = await getAllMarketingLeadsAction();
+  const [all, geoInfo] = await Promise.all([
+    getAllMarketingLeadsAction(),
+    detectSubscriberIpAndCountry(),
+  ]);
   const existing = all.find((l) => l.email.toLowerCase() === cleanEmail);
+
+  const resolvedCountry = geoInfo.country || existing?.country || null;
+  const resolvedIp = geoInfo.ip_address || existing?.ip_address || null;
+  const countryAndIpSummary = resolvedCountry
+    ? `${resolvedCountry}${resolvedIp ? ` • IP: ${resolvedIp}` : ''}`
+    : resolvedIp
+    ? `IP: ${resolvedIp}`
+    : 'Unknown location';
 
   const buildAdminLeadAlertPayload = (
     rank: number,
@@ -468,10 +641,10 @@ export async function submitEmailLead(
     to: ['hello@backpocketgames.com', 'hello@studiogvb.com'],
     replyTo: cleanEmail,
     subject: qualifies
-      ? `🎉 Free Mystery VIP Signup #${rank}/50${isRepeat ? ' (Re-checked)' : ''}: ${leadName || cleanEmail}`
-      : `New Launch Waitlist Lead (#${rank}): ${leadName || cleanEmail}`,
+      ? `🎉 Free Mystery VIP Signup #${rank}/50${isRepeat ? ' (Re-checked)' : ''}: ${leadName || cleanEmail}${resolvedCountry ? ` [${resolvedCountry}]` : ''}`
+      : `New Launch Waitlist Lead (#${rank}): ${leadName || cleanEmail}${resolvedCountry ? ` [${resolvedCountry}]` : ''}`,
     html: buildBrandedEmailShell({
-      preheader: `${leadName || cleanEmail} just claimed VIP Spot #${rank} of ${FIRST_50_VIP_CAP} (${remaining} spots left).`,
+      preheader: `${leadName || cleanEmail} (${countryAndIpSummary}) just claimed VIP Spot #${rank} of ${FIRST_50_VIP_CAP} (${remaining} spots left).`,
       kicker: qualifies
         ? `FIRST 50 FREE MYSTERY VIP SPOT #${rank} OF ${FIRST_50_VIP_CAP}`
         : `NEWSLETTER & WAITLIST SIGNUP #${rank}`,
@@ -488,6 +661,12 @@ export async function submitEmailLead(
             <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
               <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Name</span><br/>
               <span style="color:#1e191c;font-size:15px;font-weight:700;">${leadName || 'Not provided (Email-only Lead)'}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+              <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Country &amp; IP Address</span><br/>
+              <span style="color:#1e191c;font-size:14px;font-weight:700;">${countryAndIpSummary}</span>
             </td>
           </tr>
           <tr>
@@ -516,6 +695,19 @@ export async function submitEmailLead(
   });
 
   if (existing) {
+    // Backfill country & IP if not previously recorded
+    if ((!existing.country && resolvedCountry) || (!existing.ip_address && resolvedIp)) {
+      const updatedExisting: MarketingLeadRecord = {
+        ...existing,
+        country: existing.country || resolvedCountry,
+        ip_address: existing.ip_address || resolvedIp,
+      };
+      const store = readLocalLeadsStore();
+      store.leads[cleanEmail] = updatedExisting;
+      writeLocalLeadsStore(store);
+      await upsertResendAudienceContact(updatedExisting);
+    }
+
     const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - all.length);
     try {
       if (process.env.RESEND_API_KEY) {
@@ -572,6 +764,8 @@ export async function submitEmailLead(
     code_sent_at: null,
     marketing_consent: true,
     created_at: nowIso,
+    country: resolvedCountry,
+    ip_address: resolvedIp,
   };
 
   // 1. Save to local persistent store

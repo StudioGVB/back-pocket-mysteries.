@@ -189,6 +189,8 @@ export default function AdminLeadsClient({
       'VIP Rank',
       'Email',
       'Full Name',
+      'Country',
+      'IP Address',
       'First 50 Free Mystery',
       'Free Mystery Code',
       'Code Sent At',
@@ -200,6 +202,8 @@ export default function AdminLeadsClient({
       l.vip_rank || '',
       l.email,
       l.full_name || '',
+      l.country || '',
+      l.ip_address || '',
       l.qualifies_for_free_mystery ? 'YES (First 50 VIP)' : 'No',
       l.free_mystery_code || '',
       l.code_sent_at || '',
@@ -213,6 +217,8 @@ export default function AdminLeadsClient({
         '',
         c.email,
         c.full_name || '',
+        c.country || '',
+        '',
         'No',
         '',
         '',
@@ -258,6 +264,12 @@ export default function AdminLeadsClient({
                 <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
                   <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Name</span><br/>
                   <span style="color:#1e191c;font-size:15px;font-weight:700;">${previewName || 'Testing'}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;">
+                  <span style="color:#71717a;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">Country &amp; IP Address</span><br/>
+                  <span style="color:#1e191c;font-size:14px;font-weight:700;">🇬🇧 United Kingdom (Manchester) • IP: 86.14.210.42</span>
                 </td>
               </tr>
               <tr>
@@ -654,6 +666,9 @@ export default function AdminLeadsClient({
                     Subscriber Email &amp; Name
                   </th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    Country &amp; IP
+                  </th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">
                     Signup Source &amp; Date
                   </th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">
@@ -690,6 +705,17 @@ export default function AdminLeadsClient({
                           <div className="text-xs font-bold text-gray-400">
                             {lead.full_name || 'Email-only newsletter sign-up'}
                           </div>
+                        </td>
+
+                        <td className="px-6 py-5">
+                          <div className="text-xs font-black text-brand-dark">
+                            {lead.country || '—'}
+                          </div>
+                          {lead.ip_address && (
+                            <div className="text-[11px] font-mono font-semibold text-gray-400 mt-0.5">
+                              IP: {lead.ip_address}
+                            </div>
+                          )}
                         </td>
 
                         <td className="px-6 py-5">
@@ -773,7 +799,7 @@ export default function AdminLeadsClient({
                   })
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-8 py-16 text-center text-gray-400 font-bold">
+                    <td colSpan={6} className="px-8 py-16 text-center text-gray-400 font-bold">
                       No newsletter leads in this view yet.
                     </td>
                   </tr>
