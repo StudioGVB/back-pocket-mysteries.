@@ -940,9 +940,9 @@
   "social_posts": [
     {
       "id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
-      "brief": "Soft-Launch Announcement: From Prottack to Back Pocket Mysteries (First 50 VIP Giveaway)",
+      "brief": "OG Announcement #1: From Prottack to Back Pocket Mysteries (First 50 VIP Free Pack Giveaway)",
       "status": "draft",
-      "scheduled_at": "2026-11-23T09:00:00Z",
+      "scheduled_at": "2026-11-24T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -958,11 +958,39 @@
         "cardCategory": "FROM THE CREATORS OF PROTTACK",
         "ctaText": "FIRST 50 PLAY FREE",
         "kickerText": "SOFT LAUNCH ANNOUNCEMENT",
+        "imageUrl": "/blog-images/introducing-back-pocket-mysteries.png",
         "templateIndex": 0
       },
       "error_message": null,
       "created_at": "2026-11-22T17:36:36.733Z",
-      "updated_at": "2026-11-22T17:45:48.535Z"
+      "updated_at": "2026-11-24T15:07:08.849Z"
+    },
+    {
+      "id": "09df2532-17e4-49d0-863d-fdc547010189",
+      "brief": "OG Announcement #2: Back Pocket Mysteries Is Officially Live! (Love On The Rocks & Christmas Nightmare)",
+      "status": "draft",
+      "scheduled_at": "2026-11-24T18:00:00Z",
+      "timezone": "Australia/Sydney",
+      "posted_at": null,
+      "source_blog_id": null,
+      "content_type": "brand_announcement",
+      "slide_content": {
+        "linkUrl": "https://backpocketmysteries.com/en/themes",
+        "stat": {
+          "value": "LIVE NOW",
+          "label": "Custom AI Murder Mystery Packs • Ready In 30 Mins • From $19"
+        },
+        "cardSlug": "back-pocket-mysteries-live",
+        "cardTitle": "WE ARE OFFICIALLY LIVE: Custom Murder Mysteries Starring Your Real Friends",
+        "cardCategory": "OFFICIAL LAUNCH • BACK POCKET MYSTERIES",
+        "ctaText": "BUILD YOUR PARTY →",
+        "kickerText": "PUBLIC CHECKOUT NOW OPEN",
+        "imageUrl": "/blog-images/introducing-back-pocket-mysteries.png",
+        "templateIndex": 2
+      },
+      "error_message": null,
+      "created_at": "2026-11-24T15:07:08.849Z",
+      "updated_at": "2026-11-24T15:07:08.849Z"
     },
     {
       "id": "ef1c4c2a-2c27-4280-abf5-10abd6924d4b",
@@ -1048,7 +1076,7 @@
       "id": "b12f842d-c7e2-40ba-a7a1-c5cc71f1990c",
       "brief": "New Mystery Base Pack Launch: Christmas Nightmare (Holiday Dinner Party)",
       "status": "draft",
-      "scheduled_at": "2026-11-25T09:00:00Z",
+      "scheduled_at": "2026-11-25T18:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -1062,65 +1090,30 @@
       },
       "error_message": null,
       "created_at": "2026-11-24T15:00:52.157Z",
-      "updated_at": "2026-11-24T15:00:52.157Z"
+      "updated_at": "2026-11-24T15:07:40.416Z"
+    },
+    {
+      "id": "0ed5020f-4d18-4a0c-890b-b50cd34136c5",
+      "brief": "New Mystery Base Pack Launch: Love On The Rocks (Reality TV Reunion)",
+      "status": "draft",
+      "scheduled_at": "2026-11-25T09:00:00Z",
+      "timezone": "Australia/Sydney",
+      "posted_at": null,
+      "source_blog_id": null,
+      "content_type": "mystery_pack_launch",
+      "slide_content": {
+        "linkUrl": "https://backpocketmysteries.com/en/themes/love-on-the-rocks",
+        "stat": {
+          "value": "5–12",
+          "label": "Suspects • Reality TV Reunion Murder Mystery Pack"
+        }
+      },
+      "error_message": null,
+      "created_at": "2026-11-24T15:07:40.093Z",
+      "updated_at": "2026-11-24T15:07:40.093Z"
     }
   ],
   "social_post_captions": [
-    {
-      "id": "a04c9d37-e149-4094-a263-108c1f68731a",
-      "post_id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
-      "platform": "linkedin",
-      "caption": "From Prottack to Back Pocket Mysteries: How We Are Re-Engineering the At-Home Murder Mystery Party With Real-Name Hydration and Multimedia Evidence\n\nWhen we first launched our tabletop card game Prottack under Back Pocket Games, our mission was simple: create fast, high-energy social games that get friends off their screens and laughing around the same table. Watching hundreds of game nights unfold taught us something important about how adults socialise today. People are hungry for structured, memorable experiences at home, whether for a birthday dinner, a bachelorette weekend, a Friday office social, or a Saturday night in with six friends.\n\nYet whenever we tried to host a traditional boxed or downloadable murder mystery party, we ran into the exact same wall of friction.\n\nWhy Legacy Murder Mystery Kits Feel Like Homework:\nThe traditional murder mystery format has barely changed since the 1990s. If you buy a standard downloadable PDF kit today, four problems happen immediately:\n1. The Organiser Penalty: The person who buys the kit and cooks the dinner has to read the master setup file, which spoils who the killer is and forces the host to sit on the sidelines as an unpaid referee all night.\n2. Forty Pages of Printing and Cutting: Hosts spend three hours at a printer sorting paper slips into envelopes before guests arrive.\n3. Rigid Guest Counts and Fixed Genders: If a game is written for eight fixed characters and one friend cancels an hour before dinner with a babysitter emergency, a mandatory clue disappears and the plot breaks.\n4. Clunky Fictional Names and Wall-of-Text Fatigue: Guests spend the first hour squinting at name tags trying to remember who is playing Lord Ravenscroft, and by Round 2 nobody wants to read a 500-word paper monologue in a dim dining room.\n\nIntroducing Back Pocket Mysteries:\nOver the past several months, we have been building Back Pocket Mysteries, an interactive digital and printable murder mystery platform engineered to take a host from zero to a fully personalised party in under thirty minutes.\n\nHere are the four core product innovations we built into the platform:\n- Dynamic Real-Name and Inside-Joke Hydration: Instead of forcing guests to memorize awkward fictional names, hosts enter their real guests' first names, select adaptable character genders (Male, Female, or Adaptable), and optionally add friend-group inside jokes or guest selfies. Our hydration engine weaves your real friends' names directly into the character dossiers, text logs, and spoken audio dialogue.\n- Diegetic Multimedia Forensic Clues: Across three progressive rounds, players unlock high-angle grainy CCTV security camera stills stamped with camera metadata, dark-mode smartphone chat threads with Deleted Message Recovered badges, styled toxicology reports, and multi-speaker ElevenLabs audio wiretaps that make the entire dinner table go silent when played aloud.\n- Spoiler-Free Host Mode via a 6-Digit Game PIN: Inspired by the zero-friction onboarding of Kahoot, guests join the live mobile Playroom in ten seconds via a 6-digit PIN in their browser with zero app downloads required. The host's screen acts as a spoiler-free round controller that conceals the killer and upcoming clues behind timed unlocks so the host plays as a full suspect.\n- Elastic Cast Scaling (5 to 16 Suspects) and One-Click Print Studio: Core mandatory roles anchor the murder timeline while expandable suspect roles can be toggled on or off in sixty seconds. Hosts can run the night 100% paper-free on smartphones or print physical character booklets and Polaroid clue cards from our Print Studio.\n\nClaim One of Our First 50 Soft-Launch VIP Spots (100% Free Mystery Pack):\nAs we prepare to open public checkout, we are giving the First 50 members of our community who join our VIP Launch List a 100%-Off Free Mystery Pack code on launch day, plus instant access to test-drive our free mini-mystery experience right now.\n\nJoin the First 50 VIP Launch List here:\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight",
-      "hashtags": [
-        "BackPocketGames",
-        "BackPocketMysteries",
-        "Prottack",
-        "MurderMysteryParty",
-        "GameNight"
-      ],
-      "media_urls": [],
-      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
-      "engagement_data": {},
-      "created_at": "2026-11-22T17:45:48.535Z"
-    },
-    {
-      "id": "a90aca91-873b-4dc0-b15a-774d29e6df08",
-      "post_id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
-      "platform": "instagram",
-      "caption": "👋 If you've been here since our card game Prottack, you already know our obsession at Back Pocket Games: building games that turn a regular night with friends into total, unforgettable chaos 🃏🔥\n\nOver the last few months, we've been quietly building our biggest project yet... and it's finally time to let you in on the secret.\n\n🕵️‍♀️ Meet BACK POCKET MYSTERIES — an interactive murder mystery party builder that puts YOUR actual friend group inside the crime scene!\n\nWe hated how old-school murder mystery kits forced the host to print 40 pages of paper, sit out of the game as a referee, and hand out generic stock characters. So we completely reinvented it:\n\n🎭 Your Friends' Real Names & Inside Jokes Woven In: Every character dossier, alibi, and secret motive is custom-hydrated around your actual guest list (for 5 to 16 players)\n📹 Real Multimedia Forensic Clues: Unlock grainy CCTV security camera stills (CAM 04 // REC), dark-mode recovered group chats & toxicology lab reports on your phones\n🎙️ Playable Audio Wiretaps: Tap play at the dinner table and hear two suspects whispering your actual friend's name in a leaked voice recording\n🥂 Spoiler-Free Host Mode: Our live 6-digit Game PIN controller hides the killer so the host gets to play, sip, and accuse right alongside everyone else\n⚡ Ready in 30 Minutes: Play 100% on phones or print physical dossiers + Polaroid clue cards\n\n🎁 SOFT-LAUNCH VIP GIVEAWAY (FIRST 50 ONLY):\nBefore we open public checkout, the First 50 people to join our VIP Launch List get a complete Custom Murder Mystery Pack 100% FREE on launch day (up to $49 value)!\n\n👇 Tap the link in our bio right now to claim one of the 50 Free VIP spots before they fill up!\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight",
-      "hashtags": [
-        "BackPocketGames",
-        "BackPocketMysteries",
-        "Prottack",
-        "MurderMysteryParty",
-        "GameNight"
-      ],
-      "media_urls": [
-        "/blog-images/introducing-back-pocket-mysteries.png"
-      ],
-      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
-      "engagement_data": {},
-      "created_at": "2026-11-22T17:45:48.535Z"
-    },
-    {
-      "id": "e620caa1-3660-492d-8274-ac99b83ebbf0",
-      "post_id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
-      "platform": "facebook",
-      "caption": "👋 If you've been here since our card game Prottack, you already know our obsession at Back Pocket Games: building games that turn a regular night with friends into total, unforgettable chaos 🃏🔥\n\nOver the last few months, we've been quietly building our biggest project yet... and it's finally time to let you in on the secret.\n\n🕵️‍♀️ Meet BACK POCKET MYSTERIES — an interactive murder mystery party builder that puts YOUR actual friend group inside the crime scene!\n\nWe hated how old-school murder mystery kits forced the host to print 40 pages of paper, sit out of the game as a referee, and hand out generic stock characters. So we completely reinvented it:\n\n🎭 Your Friends' Real Names & Inside Jokes Woven In: Every character dossier, alibi, and secret motive is custom-hydrated around your actual guest list (for 5 to 16 players)\n📹 Real Multimedia Forensic Clues: Unlock grainy CCTV security camera stills (CAM 04 // REC), dark-mode recovered group chats & toxicology lab reports on your phones\n🎙️ Playable Audio Wiretaps: Tap play at the dinner table and hear two suspects whispering your actual friend's name in a leaked voice recording\n🥂 Spoiler-Free Host Mode: Our live 6-digit Game PIN controller hides the killer so the host gets to play, sip, and accuse right alongside everyone else\n⚡ Ready in 30 Minutes: Play 100% on phones or print physical dossiers + Polaroid clue cards\n\n🎁 SOFT-LAUNCH VIP GIVEAWAY (FIRST 50 ONLY):\nBefore we open public checkout, the First 50 people to join our VIP Launch List get a complete Custom Murder Mystery Pack 100% FREE on launch day (up to $49 value)!\n\n👇 Tap the link in our bio right now to claim one of the 50 Free VIP spots before they fill up!\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight",
-      "hashtags": [
-        "BackPocketGames",
-        "BackPocketMysteries",
-        "Prottack",
-        "MurderMysteryParty",
-        "GameNight"
-      ],
-      "media_urls": [
-        "/blog-images/introducing-back-pocket-mysteries.png"
-      ],
-      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
-      "engagement_data": {},
-      "created_at": "2026-11-22T17:45:48.535Z"
-    },
     {
       "id": "9e6e27c2-561a-45b3-82bb-e24260828e86",
       "post_id": "ef1c4c2a-2c27-4280-abf5-10abd6924d4b",
@@ -1342,7 +1335,172 @@
       "created_at": "2026-11-22T17:45:48.535Z"
     },
     {
-      "id": "08131799-1161-4b8f-bd0d-52fce2c76451",
+      "id": "385dd74b-b1eb-408c-ad32-4f39bc29f892",
+      "post_id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
+      "platform": "linkedin",
+      "caption": "From Prottack to Back Pocket Mysteries: How We Are Re-Engineering the At-Home Murder Mystery Party With Real-Name Hydration and Multimedia Evidence\n\nWhen we first launched our tabletop card game Prottack under Back Pocket Games, our mission was simple: create fast, high-energy social games that get friends off their screens and laughing around the same table. Watching hundreds of game nights unfold taught us something important about how adults socialise today. People are hungry for structured, memorable experiences at home, whether for a birthday dinner, a bachelorette weekend, a Friday office social, or a Saturday night in with six friends.\n\nYet whenever we tried to host a traditional boxed or downloadable murder mystery party, we ran into the exact same wall of friction.\n\nWhy Legacy Murder Mystery Kits Feel Like Homework:\nThe traditional murder mystery format has barely changed since the 1990s. If you buy a standard downloadable PDF kit today, four problems happen immediately:\n1. The Organiser Penalty: The person who buys the kit and cooks the dinner has to read the master setup file, which spoils who the killer is and forces the host to sit on the sidelines as an unpaid referee all night.\n2. Forty Pages of Printing and Cutting: Hosts spend three hours at a printer sorting paper slips into envelopes before guests arrive.\n3. Rigid Guest Counts and Fixed Genders: If a game is written for eight fixed characters and one friend cancels an hour before dinner with a babysitter emergency, a mandatory clue disappears and the plot breaks.\n4. Clunky Fictional Names and Wall-of-Text Fatigue: Guests spend the first hour squinting at name tags trying to remember who is playing Lord Ravenscroft, and by Round 2 nobody wants to read a 500-word paper monologue in a dim dining room.\n\nIntroducing Back Pocket Mysteries:\nOver the past several months, we have been building Back Pocket Mysteries, an interactive digital and printable murder mystery platform engineered to take a host from zero to a fully personalised party in under thirty minutes.\n\nHere are the four core product innovations we built into the platform:\n- Dynamic Real-Name and Inside-Joke Hydration: Instead of forcing guests to memorize awkward fictional names, hosts enter their real guests' first names, select adaptable character genders (Male, Female, or Adaptable), and optionally add friend-group inside jokes or guest selfies. Our hydration engine weaves your real friends' names directly into the character dossiers, text logs, and spoken audio dialogue.\n- Diegetic Multimedia Forensic Clues: Across three progressive rounds, players unlock high-angle grainy CCTV security camera stills stamped with camera metadata, dark-mode smartphone chat threads with Deleted Message Recovered badges, styled toxicology reports, and multi-speaker ElevenLabs audio wiretaps that make the entire dinner table go silent when played aloud.\n- Spoiler-Free Host Mode via a 6-Digit Game PIN: Inspired by the zero-friction onboarding of Kahoot, guests join the live mobile Playroom in ten seconds via a 6-digit PIN in their browser with zero app downloads required. The host's screen acts as a spoiler-free round controller that conceals the killer and upcoming clues behind timed unlocks so the host plays as a full suspect.\n- Elastic Cast Scaling (5 to 16 Suspects) and One-Click Print Studio: Core mandatory roles anchor the murder timeline while expandable suspect roles can be toggled on or off in sixty seconds. Hosts can run the night 100% paper-free on smartphones or print physical character booklets and Polaroid clue cards from our Print Studio.\n\nClaim One of Our First 50 Soft-Launch VIP Spots (100% Free Mystery Pack):\nTo celebrate unveiling what we have built, we are giving the First 50 members of our community who join our VIP Launch List a 100%-Off Free Mystery Pack code, plus instant access to test-drive our free mini-mystery experience right now.\n\nJoin the First 50 VIP Launch List here:\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight",
+      "hashtags": [
+        "BackPocketGames",
+        "BackPocketMysteries",
+        "Prottack",
+        "MurderMysteryParty",
+        "GameNight"
+      ],
+      "media_urls": [],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:08.849Z"
+    },
+    {
+      "id": "b7fee61c-b544-4825-bd31-769e33a9ff40",
+      "post_id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
+      "platform": "instagram",
+      "caption": "👋 If you've been here since our card game Prottack, you already know our obsession at Back Pocket Games: building games that turn a regular night with friends into total, unforgettable chaos 🃏🔥\n\nOver the last few months, we've been quietly building our biggest project yet... and it's finally time to let you in on the secret.\n\n🕵️‍♀️ Meet BACK POCKET MYSTERIES: an interactive murder mystery party builder that puts YOUR actual friend group inside the crime scene!\n\nWe hated how old-school murder mystery kits forced the host to print 40 pages of paper, sit out of the game as a referee, and hand out generic stock characters. So we completely reinvented it:\n\n🎭 Your Friends' Real Names & Photos Woven In: Every character dossier, alibi, secret motive, and crime-scene photo is custom-hydrated around your actual guest list\n📹 Real Multimedia Forensic Clues: Unlock grainy CCTV security camera stills, dark-mode recovered group chats & forensic lab reports on your phones\n🎙️ Playable Audio Wiretaps: Tap play at the dinner table and hear two suspects whispering your actual friend's name in a leaked voice recording\n🥂 Spoiler-Free Host Mode: Our live 6-digit Game PIN controller hides the killer so the host gets to play, sip, and accuse right alongside everyone else\n⚡ Ready in 30 Minutes: Play 100% on phones or print physical dossiers + Polaroid clue cards\n\n🎁 SOFT-LAUNCH VIP GIVEAWAY (FIRST 50 ONLY):\nTo celebrate what we've built, the First 50 people to join our VIP Launch List get a complete Custom Murder Mystery Pack 100% FREE (up to $49 value)!\n\n👇 Tap the link in our bio right now to claim one of the 50 Free VIP spots before they fill up!\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight",
+      "hashtags": [
+        "BackPocketGames",
+        "BackPocketMysteries",
+        "Prottack",
+        "MurderMysteryParty",
+        "GameNight"
+      ],
+      "media_urls": [
+        "/api/social-card/introducing-back-pocket-mysteries"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:08.849Z"
+    },
+    {
+      "id": "34319a0a-900c-4967-bc0e-a7de99a01fe7",
+      "post_id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
+      "platform": "facebook",
+      "caption": "👋 If you've been here since our card game Prottack, you already know our obsession at Back Pocket Games: building games that turn a regular night with friends into total, unforgettable chaos 🃏🔥\n\nOver the last few months, we've been quietly building our biggest project yet... and it's finally time to let you in on the secret.\n\n🕵️‍♀️ Meet BACK POCKET MYSTERIES: an interactive murder mystery party builder that puts YOUR actual friend group inside the crime scene!\n\nWe hated how old-school murder mystery kits forced the host to print 40 pages of paper, sit out of the game as a referee, and hand out generic stock characters. So we completely reinvented it:\n\n🎭 Your Friends' Real Names & Photos Woven In: Every character dossier, alibi, secret motive, and crime-scene photo is custom-hydrated around your actual guest list\n📹 Real Multimedia Forensic Clues: Unlock grainy CCTV security camera stills, dark-mode recovered group chats & forensic lab reports on your phones\n🎙️ Playable Audio Wiretaps: Tap play at the dinner table and hear two suspects whispering your actual friend's name in a leaked voice recording\n🥂 Spoiler-Free Host Mode: Our live 6-digit Game PIN controller hides the killer so the host gets to play, sip, and accuse right alongside everyone else\n⚡ Ready in 30 Minutes: Play 100% on phones or print physical dossiers + Polaroid clue cards\n\n🎁 SOFT-LAUNCH VIP GIVEAWAY (FIRST 50 ONLY):\nTo celebrate what we've built, the First 50 people to join our VIP Launch List get a complete Custom Murder Mystery Pack 100% FREE (up to $49 value)!\n\n👇 Tap the link in our bio right now to claim one of the 50 Free VIP spots before they fill up!\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight",
+      "hashtags": [
+        "BackPocketGames",
+        "BackPocketMysteries",
+        "Prottack",
+        "MurderMysteryParty",
+        "GameNight"
+      ],
+      "media_urls": [
+        "/api/social-card/introducing-back-pocket-mysteries"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:08.849Z"
+    },
+    {
+      "id": "09a25728-a13b-4c97-af05-116c6bde12ee",
+      "post_id": "09df2532-17e4-49d0-863d-fdc547010189",
+      "platform": "linkedin",
+      "caption": "We Are Officially Live: Launching Back Pocket Mysteries With Two Flagship Murder Mystery Packs, Identity-Locked Crime Scene Evidence, and Bidirectional Gender-Flex Casting\n\nToday marks a major milestone for Back Pocket Games. After months of engineering, narrative stress-testing, and multimodal quality assurance, Back Pocket Mysteries is officially live and open for public checkout at backpocketmysteries.com.\n\nWhen we set out to build Back Pocket Mysteries, we asked a simple question: What would an at-home murder mystery party look like if it were built with modern generative AI and real-time mobile software rather than a static 1990s PDF?\n\nInstead of forcing an organiser to spend three hours printing and cutting forty pages of paper only to sit out of their own dinner party as a referee, we built an end-to-end custom mystery platform that prepares a personalised three-round investigation in under thirty minutes.\n\nHow the Back Pocket Mysteries Pipeline Works in Production:\n1. Two-Stage Identity-Locked Visual Evidence: When a host enters their guests' first names and uploads optional selfies, our two-stage pipeline first generates an identity-locked costume portrait for each player in their character's festive or red-carpet attire. Stage 2 then uses those locked character references to generate the actual crime-scene evidence: grainy high-angle CCTV security camera stills, upstairs wall-safe break-ins, kitchen bar photographs, and recovered party Polaroids starring your real friends.\n2. Multi-Speaker Audio Wiretaps and Diegetic Mobile Clues: Across three progressive rounds, players unlock dark-mode smartphone chat threads, smart-home power surge logs, coroner toxicology reports, and multi-speaker ElevenLabs audio recordings where suspects argue and whisper your actual guests' names aloud at the dinner table.\n3. Bidirectional Gender-Flex Hydration Engine: Real-world dinner parties and bachelorette weekends rarely match a rigid half-male, half-female character list. Our hydration engine dynamically adapts every role title, third-person pronoun, sibling and spouse relationship noun, and costume description so any pack can be played by a mixed couples table, an all-female group, or an all-male group with zero grammatical friction.\n4. Four-Gate Automated Pre-Delivery QA Certification: Before any customised customer pack unlocks in the Ready Hub, our automated QA auditor verifies zero unhydrated tokens, zero pronoun conflicts, 100% visual and audio asset readiness, and a deterministic Round 3 killer deduction path.\n\nMeet Our Two Flagship Launch Packs Plus Custom Builder (Available Today):\n- Love On The Rocks (5 to 12 Suspects • Reality TV Reunion): Six months after Season 3's biggest dating show finale, the cast reunites at a luxury penthouse until The Star collapses mid-champagne-toast. Perfect for bachelorette weekends, 20s and 30s birthdays, and girls' nights.\n- Christmas Nightmare (6 Suspects • Holiday Dinner Party): Two pairs of next-door childhood siblings reunite for their annual Christmas dinner until an 8:19:12 PM 1,840W power surge plunges the house into darkness and The Husband is found dead in the Christmas tree corner. Built for Friendsmas dinners, couples nights, and winter cabin weekends.\n- Custom Mystery Builder (5 to 16 Suspects • Any Bespoke Theme): Hosts who want a completely original setting built around their friend group's inside jokes, workplace, or birthday milestone can generate a bespoke mystery from scratch in minutes.\n\nWhy Dinner Party Math Favours At-Home Interactive Experiences:\nBooking a private escape room or immersive theatre night for eight to ten friends easily costs $50 to $75 per person before drinks or dinner. With Back Pocket Mysteries, an entire group can play a custom-hydrated three-hour investigation around their own dining table starting from $19 total (roughly $2.50 to $3.15 per guest). Every pack includes one-tap WhatsApp and iMessage character invites, our live 6-digit Game PIN mobile Playroom with Spoiler-Free Host Mode, and a one-click Print Studio for hosts who love physical dossiers and Polaroid clue cards on the table.\n\nExplore our launch packs and build your party at:\nhttps://backpocketmysteries.com/en/themes\n\n#BackPocketMysteries #MurderMysteryParty #LoveOnTheRocks #ChristmasNightmare #PartyHosting",
+      "hashtags": [
+        "BackPocketMysteries",
+        "MurderMysteryParty",
+        "LoveOnTheRocks",
+        "ChristmasNightmare",
+        "PartyHosting"
+      ],
+      "media_urls": [],
+      "post_url": "https://backpocketmysteries.com/en/themes",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:08.849Z"
+    },
+    {
+      "id": "54be8f99-d9dd-41e2-a6b0-d332835d074a",
+      "post_id": "09df2532-17e4-49d0-863d-fdc547010189",
+      "platform": "instagram",
+      "caption": "🚨 WE ARE OFFICIALLY LIVE: Back Pocket Mysteries Is Open! 🕵️‍♀️🥂\n\nAfter months of building, testing, and obsessing over every clue, public checkout for BACK POCKET MYSTERIES is officially open at backpocketmysteries.com!\n\nFor the first time ever, you can take your actual friend group, drop their real names and photos into a murder mystery, and host an unforgettable dinner party in under 30 minutes (from $19 / ~$2.50 per guest):\n\n📸 Custom AI Crime-Scene Photos & CCTV Stills: Upload your friends' selfies and watch them appear inside hallway security camera stills, upstairs safe break-ins, and Polaroid evidence\n🎙️ Multi-Speaker Audio Wiretaps & Recovered DMs: Unlock voice recordings and dark-mode group chats on everyone's phones where suspects call out your real guests by name\n🔄 100% Gender-Flex Casting: Playing with 3M/3F, 4F/2M, or an all-girls bachelorette/Friendsmas group? Every role, pronoun, relationship card, and costume adapts automatically\n🥂 Spoiler-Free Host Mode: Run the 3-round investigation from a live 6-digit Game PIN lobby while playing and sipping right alongside your guests\n\n🔥 OUR FIRST 2 MYSTERY BASE PACKS LIVE NOW:\n1️⃣ Love On The Rocks (5–12 Players): A chaotic, spicy reality-TV reunion penthouse murder\n2️⃣ Christmas Nightmare (6 Players): A cozy, high-drama holiday dinner party whodunit between childhood neighbours\n\n👇 Link in bio to explore our launch packs & put your friends in the crime scene tonight!\nhttps://backpocketmysteries.com/en/themes\n\n#BackPocketMysteries #MurderMysteryParty #LoveOnTheRocks #ChristmasNightmare #PartyHosting",
+      "hashtags": [
+        "BackPocketMysteries",
+        "MurderMysteryParty",
+        "LoveOnTheRocks",
+        "ChristmasNightmare",
+        "PartyHosting"
+      ],
+      "media_urls": [
+        "/api/social-card/back-pocket-mysteries-live"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/themes",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:08.849Z"
+    },
+    {
+      "id": "b71870fd-d822-43ab-af2a-9aa3a18bf727",
+      "post_id": "09df2532-17e4-49d0-863d-fdc547010189",
+      "platform": "facebook",
+      "caption": "🚨 WE ARE OFFICIALLY LIVE: Back Pocket Mysteries Is Open! 🕵️‍♀️🥂\n\nAfter months of building, testing, and obsessing over every clue, public checkout for BACK POCKET MYSTERIES is officially open at backpocketmysteries.com!\n\nFor the first time ever, you can take your actual friend group, drop their real names and photos into a murder mystery, and host an unforgettable dinner party in under 30 minutes (from $19 / ~$2.50 per guest):\n\n📸 Custom AI Crime-Scene Photos & CCTV Stills: Upload your friends' selfies and watch them appear inside hallway security camera stills, upstairs safe break-ins, and Polaroid evidence\n🎙️ Multi-Speaker Audio Wiretaps & Recovered DMs: Unlock voice recordings and dark-mode group chats on everyone's phones where suspects call out your real guests by name\n🔄 100% Gender-Flex Casting: Playing with 3M/3F, 4F/2M, or an all-girls bachelorette/Friendsmas group? Every role, pronoun, relationship card, and costume adapts automatically\n🥂 Spoiler-Free Host Mode: Run the 3-round investigation from a live 6-digit Game PIN lobby while playing and sipping right alongside your guests\n\n🔥 OUR FIRST 2 MYSTERY BASE PACKS LIVE NOW:\n1️⃣ Love On The Rocks (5–12 Players): A chaotic, spicy reality-TV reunion penthouse murder\n2️⃣ Christmas Nightmare (6 Players): A cozy, high-drama holiday dinner party whodunit between childhood neighbours\n\n👇 Link in bio to explore our launch packs & put your friends in the crime scene tonight!\nhttps://backpocketmysteries.com/en/themes\n\n#BackPocketMysteries #MurderMysteryParty #LoveOnTheRocks #ChristmasNightmare #PartyHosting",
+      "hashtags": [
+        "BackPocketMysteries",
+        "MurderMysteryParty",
+        "LoveOnTheRocks",
+        "ChristmasNightmare",
+        "PartyHosting"
+      ],
+      "media_urls": [
+        "/api/social-card/back-pocket-mysteries-live"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/themes",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:08.849Z"
+    },
+    {
+      "id": "6da4830a-fbc0-4947-a9f9-2cd3683eae1f",
+      "post_id": "0ed5020f-4d18-4a0c-890b-b50cd34136c5",
+      "platform": "linkedin",
+      "caption": "Product Launch: How We Designed \"Love On The Rocks\" to Modernize the At-Home Murder Mystery Format for 5 to 12 Players\n\nTraditional boxed murder mystery games were built around a very specific formula: Victorian manor houses, rigid gender ratios, and twenty-page paper scripts that take hours for a host to prepare. While classic period mysteries still have a loyal audience, modern party hosts planning bachelorette weekends, 20s and 30s birthdays, and Friday night socials have been asking for contemporary settings where the evidence looks and sounds like the media they consume every day.\n\nToday we are excited to launch our newest Mystery Base Pack on Back Pocket Mysteries: Love On The Rocks, an interactive reality-TV reunion whodunit engineered for 5 to 12 suspects.\n\nThe Premise and Narrative Architecture:\nSix months after the finale of Season 3's most-watched dating show, the cast, showrunners, and sponsors reunite at a five-star penthouse for the official wrap party. The Star walked away with the crown, the brand deals, and the prize money, leaving a trail of broken alliances and leaked NDAs behind. When The Star collapses mid-champagne-toast in front of rolling cameras, the penthouse goes into lockdown. One suspect planned to kill, another switched the glass, and every guest in the room holds a piece of the timeline.\n\nFour Design Innovations Inside the Pack:\n1. Diegetic Modern Evidence Formats: Instead of handing players generic paragraphs of text, Love On The Rocks delivers clues in the exact formats a reality-TV scandal would produce. Players unlock dark-mode group-chat threads, leaked DM screenshots, backstage multi-speaker audio voice memos, paparazzi security camera stills, and production call sheets directly in their mobile Playroom or as printable Polaroid evidence cards.\n2. Dynamic Guest Personalization: When a host sets up their party, they enter their guests' real names and optional selfies. Our hydration engine weaves every guest's name into the character bios, chat logs, and spoken ElevenLabs audio wiretaps, while incorporating their likeness into the crime scene visual evidence.\n3. Flexible Player Scaling (5 to 12 Suspects): Group sizes for birthday dinners and bachelorette trips change constantly. Love On The Rocks is architected with five core mandatory roles (The Star, The Ex, The Showrunner, The Bombshell, and The Publicist) and seven expandable suspect roles so a last-minute addition or cancellation never breaks the clue logic.\n4. Spoiler-Free Host Participation: In most party kits, the person who buys and organises the game is forced to act as a non-playing referee because they have seen the solution. Our progressive mobile Playroom controller conceals the killer and round reveals behind timed host triggers, allowing the organiser to play as a full suspect alongside their friends.\n\nWhat Is Included in Every Customised Kit:\n- Personalised character dossiers and outfit moodboards tailored to each guest.\n- Three progressive rounds of gossip prompts, alibis, and multimedia forensic clues.\n- Signature cocktail and mocktail recipes alongside a curated reunion party playlist guide.\n- Live mobile lobby for theory tracking, final suspect voting, and end-of-night superlative awards (Best Detective, Master Manipulator, and Best Dressed).\n\nWhy Host Prep Time Matters for Modern Gatherings:\nOur goal with every Back Pocket Mysteries pack is to eliminate the three-hour printing and cutting marathon that stops busy organisers from hosting interactive dinner parties. From entering your guest list to sending out spoiler-free character invites in the group chat, the entire setup takes less than 30 minutes and costs around $2.50 per guest. Whether you are hosting an intimate 6-person apartment dinner or a 12-person weekend away, the entire mystery adapts automatically to your table.\n\nExplore the Love On The Rocks Mystery Base Pack and preview the character line-up:\nhttps://backpocketmysteries.com/en/themes/love-on-the-rocks\n\n#LoveOnTheRocks #BacheloretteParty #MurderMysteryParty #GirlsNightIn #BackPocketMysteries",
+      "hashtags": [
+        "LoveOnTheRocks",
+        "BacheloretteParty",
+        "MurderMysteryParty",
+        "GirlsNightIn",
+        "BackPocketMysteries"
+      ],
+      "media_urls": [],
+      "post_url": "https://backpocketmysteries.com/en/themes/love-on-the-rocks",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:40.093Z"
+    },
+    {
+      "id": "de96b909-dad6-4948-9156-fc995e850ed2",
+      "post_id": "0ed5020f-4d18-4a0c-890b-b50cd34136c5",
+      "platform": "instagram",
+      "caption": "🥂 NEW MYSTERY PACK DROP: Love On The Rocks 🏝️💔\n\nThe cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest reality dating show reunites at a five-star penthouse, until The Star collapses mid-champagne-toast 🍾👀\n\nBuilt for 5 to 12 players (perfect for Bachelorettes, 20s/30s Birthdays & Girls' Nights):\n📱 Leaked DMs, group-chat threads & burner account receipts\n🎙️ Backstage audio voice memos & paparazzi CCTV stills featuring your real friends' names\n💅 Custom Bombshell & VIP roles with It-Girl outfit guides\n🕵️‍♀️ Spoiler-free Host Mode so the host can sip & play along\n\n👇 Link in bio to build your party in 30 minutes\nhttps://backpocketmysteries.com/en/themes/love-on-the-rocks\n\n#LoveOnTheRocks #BacheloretteParty #MurderMysteryParty #GirlsNightIn #BackPocketMysteries",
+      "hashtags": [
+        "LoveOnTheRocks",
+        "BacheloretteParty",
+        "MurderMysteryParty",
+        "GirlsNightIn",
+        "BackPocketMysteries"
+      ],
+      "media_urls": [
+        "/api/social-card/love-on-the-rocks"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/themes/love-on-the-rocks",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:40.093Z"
+    },
+    {
+      "id": "ba57fc18-ede6-423d-8f5e-04457c8e183f",
+      "post_id": "0ed5020f-4d18-4a0c-890b-b50cd34136c5",
+      "platform": "facebook",
+      "caption": "🥂 NEW MYSTERY PACK DROP: Love On The Rocks 🏝️💔\n\nThe cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest reality dating show reunites at a five-star penthouse, until The Star collapses mid-champagne-toast 🍾👀\n\nBuilt for 5 to 12 players (perfect for Bachelorettes, 20s/30s Birthdays & Girls' Nights):\n📱 Leaked DMs, group-chat threads & burner account receipts\n🎙️ Backstage audio voice memos & paparazzi CCTV stills featuring your real friends' names\n💅 Custom Bombshell & VIP roles with It-Girl outfit guides\n🕵️‍♀️ Spoiler-free Host Mode so the host can sip & play along\n\n👇 Link in bio to build your party in 30 minutes\nhttps://backpocketmysteries.com/en/themes/love-on-the-rocks\n\n#LoveOnTheRocks #BacheloretteParty #MurderMysteryParty #GirlsNightIn #BackPocketMysteries",
+      "hashtags": [
+        "LoveOnTheRocks",
+        "BacheloretteParty",
+        "MurderMysteryParty",
+        "GirlsNightIn",
+        "BackPocketMysteries"
+      ],
+      "media_urls": [
+        "/api/social-card/love-on-the-rocks"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/themes/love-on-the-rocks",
+      "engagement_data": {},
+      "created_at": "2026-11-24T15:07:40.093Z"
+    },
+    {
+      "id": "84eaed7e-0303-4479-9152-92d2f678dd83",
       "post_id": "b12f842d-c7e2-40ba-a7a1-c5cc71f1990c",
       "platform": "linkedin",
       "caption": "Product Launch: How We Engineered \"Christmas Nightmare\" as a Gender-Flexible, Multi-Layered Holiday Dinner Party Murder Mystery for 6 Players\n\nEvery December, hosts planning Friendsmas dinners, couples game nights, and holiday cabin weekends run into the same friction with legacy murder mystery kits. Most holiday-themed boxed games rely on campy caricatures, require an exact three-male and three-female guest ratio, and hand players static paper paragraphs that feel disconnected from how modern groups socialize around a dinner table.\n\nToday we are excited to launch our newest Mystery Base Pack on Back Pocket Mysteries: Christmas Nightmare, a high-drama holiday dinner party whodunit architected specifically for a tight-knit table of 6 suspects.\n\nThe Narrative Premise and Table Dynamics:\nThey all grew up together on the same street: two pairs of next-door childhood siblings whose lives have been intertwined since high school. Tonight, beneath the twinkling lights of their annual Christmas dinner party, years of tangled history, secret affairs, and broken marriages finally snap. At 8:19:12 PM, a 1,840W electrical overload plunges the living room into darkness. When the lights come back on, The Husband is discovered dead in the Christmas tree corner amid a spilled crystal cup of spiced eggnog, a scorched wall outlet, and a tangled 25-foot coil of vintage red-and-green tree lights. Every person at the table is family, a childhood neighbour, a spouse, or a secret lover, and every single one of them is hiding a betrayal.\n\nFour Architectural Innovations Inside Christmas Nightmare:\n1. Bidirectional Gender-Flex Casting for Any Group Ratio: While the six canonical roles (The Husband, The Wife, The Sister-in-Law, The Mistress, The Co-Worker, and The Bestie) match a classic 3M/3F dinner table by default, real-world guest lists rarely stay balanced. Our hydration engine dynamically adapts every character title, pronoun, sibling and spouse relationship token, and AI costume portrait so the exact same mystery plays seamlessly with 4F/2M, an all-female 6F Friendsmas group, or an all-male 6M table with zero pronoun conflicts.\n2. Interlocking Three-Round Forensic Deduction (16 Clues): Across three progressive rounds, players cross-reference 16 distinct pieces of multimedia evidence. Round 1 introduces the coat-closet affair, the stocked-versus-empty utility closet shelves, and the 8:19:12 PM smart-home power log while launching two entangled red-herring subplots (an upstairs study safe heist and a spiked eggnog phone-wipe). Round 2 escalates suspicion with nursery-monitor audio recordings, torn bathroom place cards, and hallway breaker-panel CCTV stills. Round 3 delivers four interlocking alibi and coroner clues that cleanly exonerate the four innocent suspects at the exact 8:19:12 PM timestamp while locking in the true killer.\n3. Personalised Visual and Audio Evidence on the Final Mile: When a host enters their six guests' names and optional selfies, our two-stage identity-locked pipeline generates custom costume portraits and crime-scene photographs featuring the actual players inside the upstairs study, at the kitchen bar, and on the hallway security cameras, paired with multi-speaker ElevenLabs audio clips.\n4. Spoiler-Free Host Mode and Pre-Party Clarity: Pre-party character cards share only warm, spoiler-free childhood, high school, and workplace connections so no plot twists leak before dinner begins. During the party, our mobile Playroom conceals the solution behind timed round unlocks so the host can play as a full suspect.\n\nWhat Is Included in Every Customised Kit:\n- Six personalised holiday character dossiers with three festive outfit options per role.\n- Sixteen progressive multimedia clues across chat threads, audio wiretaps, CCTV stills, smart-home logs, and forensic reports.\n- Live mobile Playroom lobby with theory tracking, final suspect voting, and end-of-night superlative awards (Best Detective, Master Manipulator, and Best Dressed).\n\nDesigned for Zero-Stress Holiday Hosting:\nFrom entering your six guests' names to dropping spoiler-free character invites into your group chat, the entire setup takes under 30 minutes and starts from $19 (roughly $3.15 per guest), replacing hours of paper cutting with an unforgettable two-to-three-hour holiday dinner table experience.\n\nExplore the Christmas Nightmare Mystery Base Pack and preview the 6-suspect line-up:\nhttps://backpocketmysteries.com/en/themes/christmas-nightmare\n\n#ChristmasNightmare #ChristmasMurderMystery #FriendsmasParty #MurderMysteryParty #BackPocketMysteries",
@@ -1356,10 +1514,10 @@
       "media_urls": [],
       "post_url": "https://backpocketmysteries.com/en/themes/christmas-nightmare",
       "engagement_data": {},
-      "created_at": "2026-11-24T15:00:52.157Z"
+      "created_at": "2026-11-24T15:07:40.416Z"
     },
     {
-      "id": "104ace1c-2321-4410-baf6-717b2521d36a",
+      "id": "6e6f4289-9af4-44c5-8aab-768b1348aee9",
       "post_id": "b12f842d-c7e2-40ba-a7a1-c5cc71f1990c",
       "platform": "instagram",
       "caption": "🎄 NEW HOLIDAY MYSTERY PACK LIVE: Christmas Nightmare ⚡🍷\n\nTwo pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when an 8:19 PM power surge plunges the living room into darkness and The Husband is found dead in the Christmas tree corner 👀✨\n\nBuilt for 6 players (from $19 / ~$3.15 per guest • 100% Gender-Flex for any group ratio):\n📱 Intercepted lock-screen texts & smart-home 1,840W power surge logs\n🎙️ Upstairs nursery-monitor audio fights & pocket voicemails on guests' phones\n📸 Personalized hallway CCTV stills, safe break-ins & Polaroid evidence starring your real friends\n🥂 Spoiler-free Host Mode so the host can sip mulled wine & play along\n\n👇 Link in bio to customize your Christmas or Friendsmas party in 30 minutes\nhttps://backpocketmysteries.com/en/themes/christmas-nightmare\n\n#ChristmasNightmare #ChristmasMurderMystery #FriendsmasParty #MurderMysteryParty #BackPocketMysteries",
@@ -1375,10 +1533,10 @@
       ],
       "post_url": "https://backpocketmysteries.com/en/themes/christmas-nightmare",
       "engagement_data": {},
-      "created_at": "2026-11-24T15:00:52.157Z"
+      "created_at": "2026-11-24T15:07:40.416Z"
     },
     {
-      "id": "85fed859-f241-4ba2-8983-f46a8450ac40",
+      "id": "1b2f6b88-245a-4a7e-94fa-bfe0f0d840b7",
       "post_id": "b12f842d-c7e2-40ba-a7a1-c5cc71f1990c",
       "platform": "facebook",
       "caption": "🎄 NEW HOLIDAY MYSTERY PACK LIVE: Christmas Nightmare ⚡🍷\n\nTwo pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when an 8:19 PM power surge plunges the living room into darkness and The Husband is found dead in the Christmas tree corner 👀✨\n\nBuilt for 6 players (from $19 / ~$3.15 per guest • 100% Gender-Flex for any group ratio):\n📱 Intercepted lock-screen texts & smart-home 1,840W power surge logs\n🎙️ Upstairs nursery-monitor audio fights & pocket voicemails on guests' phones\n📸 Personalized hallway CCTV stills, safe break-ins & Polaroid evidence starring your real friends\n🥂 Spoiler-free Host Mode so the host can sip mulled wine & play along\n\n👇 Link in bio to customize your Christmas or Friendsmas party in 30 minutes\nhttps://backpocketmysteries.com/en/themes/christmas-nightmare\n\n#ChristmasNightmare #ChristmasMurderMystery #FriendsmasParty #MurderMysteryParty #BackPocketMysteries",
@@ -1394,7 +1552,7 @@
       ],
       "post_url": "https://backpocketmysteries.com/en/themes/christmas-nightmare",
       "engagement_data": {},
-      "created_at": "2026-11-24T15:00:52.157Z"
+      "created_at": "2026-11-24T15:07:40.416Z"
     }
   ],
   "edm_campaigns": [
@@ -1740,6 +1898,83 @@
           }
         },
         {
+          "id": "div-pack-love-on-the-rocks",
+          "type": "divider",
+          "data": {
+            "color": "#e8e8eb",
+            "style": "solid",
+            "margin": 24,
+            "thickness": 1,
+            "sectionStyles": {
+              "backgroundColor": "transparent",
+              "paddingTop": 4,
+              "paddingBottom": 4,
+              "paddingLeft": 16,
+              "paddingRight": 16
+            }
+          }
+        },
+        {
+          "id": "pack-img-love-on-the-rocks",
+          "type": "image",
+          "data": {
+            "src": "https://backpocketmysteries.com/moodboards/love-on-the-rocks/main-cover.png",
+            "alt": "Love On The Rocks",
+            "width": "100%",
+            "align": "center",
+            "linkUrl": "https://backpocketmysteries.com/en/themes/love-on-the-rocks?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_launch",
+            "borderRadius": 8,
+            "sectionStyles": {
+              "backgroundColor": "transparent",
+              "paddingTop": 8,
+              "paddingBottom": 8,
+              "paddingLeft": 16,
+              "paddingRight": 16
+            }
+          }
+        },
+        {
+          "id": "pack-text-love-on-the-rocks",
+          "type": "text",
+          "data": {
+            "content": "<span style='background-color:#1e191c;color:#fe04c6;font-size:11px;font-weight:800;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px;'>🔥 NEW MYSTERY BASE PACK • REALITY TV REUNION</span><h2 style='font-size:20px;font-weight:800;color:#1e191c;margin:4px 0 10px 0;line-height:1.3;'>Love On The Rocks (5–12 Suspects)</h2><p style='margin:0 0 12px 0;color:#4b5563;font-size:15px;line-height:1.6;'>The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest dating show reunites at a luxury penthouse, until The Star collapses mid-champagne-toast.</p><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'><li style='margin-bottom:6px;'><strong>Included:</strong> Custom Bombshell & VIP Character Booklets Named After Your Guests</li><li style='margin-bottom:6px;'><strong>Included:</strong> Personalized Group-Chat Threads, Leaked DMs & Fininsta Posts</li><li style='margin-bottom:6px;'><strong>Included:</strong> Backstage Audio Voice Memos, Paparazzi Stills & Call Sheets</li></ul>",
+            "fontSize": 15,
+            "textAlign": "left",
+            "textColor": "#1e191c",
+            "lineHeight": 1.6,
+            "sectionStyles": {
+              "backgroundColor": "transparent",
+              "paddingTop": 12,
+              "paddingBottom": 8,
+              "paddingLeft": 16,
+              "paddingRight": 16
+            }
+          }
+        },
+        {
+          "id": "pack-cta-love-on-the-rocks",
+          "type": "button",
+          "data": {
+            "text": "Explore New Mystery Pack: Love On The Rocks →",
+            "url": "https://backpocketmysteries.com/en/themes/love-on-the-rocks?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_launch",
+            "backgroundColor": "#1e191c",
+            "textColor": "#ffffff",
+            "borderRadius": 6,
+            "align": "left",
+            "padding": {
+              "x": 24,
+              "y": 12
+            },
+            "sectionStyles": {
+              "backgroundColor": "transparent",
+              "paddingTop": 8,
+              "paddingBottom": 20,
+              "paddingLeft": 16,
+              "paddingRight": 16
+            }
+          }
+        },
+        {
           "id": "footer-text",
           "type": "text",
           "data": {
@@ -1758,14 +1993,14 @@
           }
         }
       ],
-      "html_content": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\"><body style=\"margin:0;padding:0;background-color:#f4f4f5;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f4f4f5;\"><tr><td align=\"center\" style=\"padding:20px 0;\"><table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#ffffff;max-width:600px;\"><tr><td style=\"background-color:#1e191c;padding-top:40px;padding-bottom:32px;padding-left:32px;padding-right:32px;\"><div style=\"color:#ffffff;text-align:left;font-size:16px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.5;margin:0;\"><p style='font-size:12px;font-weight:700;letter-spacing:2px;color:#fe04c6;text-transform:uppercase;margin:0 0 12px 0;'>THE MYSTERY GAZETTE • WEEKLY ROUNDUP</p><h1 style='font-size:26px;font-weight:800;color:#ffffff;margin:0;line-height:1.25;'>Wiretapped Voice Notes & Intimate Dinner Mysteries</h1></div></td></tr><tr><td style=\"background-color:transparent;padding-top:24px;padding-bottom:12px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:16px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.7;margin:0;\"><p style='margin:0 0 14px 0;'>Hi {{first_name}},</p><p style='margin:0;'>Welcome to this week's Back Pocket Mysteries briefing. We're looking at how diegetic audio wiretaps and CCTV stills transform dinner-table immersion, plus how to host a Knives Out-style seated mystery for a small group of 6 to 8 friends.</p></div></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:8px;padding-left:16px;padding-right:16px;\" align=\"center\"><a href=\"https://backpocketmysteries.com/en/blog/multimedia-audio-cctv-clues-murder-mystery-party?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;width:100%;\"><img src=\"https://backpocketmysteries.com/blog-images/multimedia-audio-cctv-clues-murder-mystery-party.png\" alt=\"Audio Wiretaps, CCTV Stills & Chat Logs: How Multimedia Clues Transform Murder Mystery Parties\" style=\"width:100%;max-width:100%;height:auto;border-radius:8px;display:block;\" /></a></td></tr><tr><td style=\"background-color:transparent;padding-top:12px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:15px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><span style='background-color:#fdf2f8;color:#fe04c6;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;'>BEHIND THE MYSTERY</span><h2 style='font-size:20px;font-weight:700;color:#1e191c;margin:4px 0 12px 0;line-height:1.3;'>1. Audio Wiretaps, CCTV Stills & Chat Logs</h2><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'><li style='margin-bottom:8px;'><strong style='color:#fe04c6;'>Multi-Speaker Voice Notes:</strong> Hear suspects whisper your real friends' names on tap.</li><li style='margin-bottom:8px;'><strong style='color:#fe04c6;'>CCTV & Dark-Mode Chats:</strong> High-angle security frames and recovered text threads replace dense paragraphs.</li><li style='margin-bottom:0;'><strong style='color:#fe04c6;'>Hybrid Staging:</strong> Phones act strictly as an evidence locker while interrogation stays face-to-face.</li></ul></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:20px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#fe04c6;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/blog/multimedia-audio-cctv-clues-murder-mystery-party?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Read Guide: Multimedia Audio & CCTV Clues →</a></td></tr></table></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:8px;padding-left:16px;padding-right:16px;\" align=\"center\"><a href=\"https://backpocketmysteries.com/en/blog/small-group-murder-mystery-dinner-party-6-to-8-players?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;width:100%;\"><img src=\"https://backpocketmysteries.com/blog-images/small-group-murder-mystery-dinner-party-6-to-8-players.png\" alt=\"How to Host a Small Group Murder Mystery Dinner Party for 6 to 8 Players\" style=\"width:100%;max-width:100%;height:auto;border-radius:8px;display:block;\" /></a></td></tr><tr><td style=\"background-color:transparent;padding-top:12px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:15px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><span style='background-color:#eef2ff;color:#0d00ff;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;'>HOSTING GUIDES</span><h2 style='font-size:20px;font-weight:700;color:#1e191c;margin:4px 0 12px 0;line-height:1.3;'>2. Hosting a Small-Group Mystery Dinner (6–8 Players)</h2><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'><li style='margin-bottom:8px;'><strong style='color:#0d00ff;'>3 Courses, 3 Rounds:</strong> Align Entrée, Main, and Dessert with your clue unlocks.</li><li style='margin-bottom:8px;'><strong style='color:#0d00ff;'>One-Table Drama:</strong> Every accusation and alibi happens in front of the entire group.</li><li style='margin-bottom:0;'><strong style='color:#0d00ff;'>Dropout-Proof:</strong> Toggle flexible characters and adaptable genders in seconds.</li></ul></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:20px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#0d00ff;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/blog/small-group-murder-mystery-dinner-party-6-to-8-players?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Read Guide: 6–8 Player Dinner Mysteries →</a></td></tr></table></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:14px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><div style='background-color:#fdf2f8;border:1px solid #fbcfe8;border-radius:10px;padding:20px;'><span style='background-color:#fe04c6;color:#ffffff;font-size:11px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;'>PRE-LAUNCH VIP GIVEAWAY</span><h3 style='font-size:18px;font-weight:800;color:#1e191c;margin:4px 0 8px 0;'>🎁 First 50 VIP Sign-Ups Get a Complete Mystery Pack 100% FREE</h3><p style='margin:0;color:#374151;font-size:14px;line-height:1.6;'>We're putting the final touches on the Back Pocket Mysteries builder! Before we open public checkout, the <strong>First 50 people</strong> on our VIP Launch List receive a <strong>100%-Off Free Mystery Code</strong> (up to $49 value) on launch day. Forward this to a friend who loves hosting before the 50 VIP spots fill up!</p></div></div></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:24px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#1e191c;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/free-murder-mystery-game?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Claim Your Free Pre-Launch VIP Spot (First 50) →</a></td></tr></table></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:8px;padding-left:16px;padding-right:16px;\" align=\"center\"><a href=\"https://backpocketmysteries.com/en/themes/christmas-nightmare?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_launch\" target=\"_blank\" style=\"display:inline-block;width:100%;\"><img src=\"https://backpocketmysteries.com/moodboards/christmas-cabin/main-cover.jpg\" alt=\"Christmas Nightmare\" style=\"width:100%;max-width:100%;height:auto;border-radius:8px;display:block;\" /></a></td></tr><tr><td style=\"background-color:transparent;padding-top:12px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:15px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><span style='background-color:#1e191c;color:#fe04c6;font-size:11px;font-weight:800;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px;'>🔥 NEW MYSTERY BASE PACK • HOLIDAY DINNER PARTY</span><h2 style='font-size:20px;font-weight:800;color:#1e191c;margin:4px 0 10px 0;line-height:1.3;'>Christmas Nightmare (6 Suspects)</h2><p style='margin:0 0 12px 0;color:#4b5563;font-size:15px;line-height:1.6;'>Two pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when a sudden 8:19 PM power surge plunges the house into darkness and The Husband is found dead in the Christmas tree corner.</p><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'><li style='margin-bottom:6px;'><strong>Included:</strong> Custom Holiday Character Booklets Named After Your Guests (100% Gender-Flex Ready)</li><li style='margin-bottom:6px;'><strong>Included:</strong> Intercepted Lock-Screen Texts, Smart-Home Power Surge Logs & Nursery-Monitor Audio Clips</li><li style='margin-bottom:6px;'><strong>Included:</strong> Crime Scene Reports, Hallway CCTV Stills & Childhood Polaroid Evidence</li></ul></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:20px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#1e191c;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/themes/christmas-nightmare?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_launch\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Explore New Mystery Pack: Christmas Nightmare →</a></td></tr></table></td></tr><tr><td style=\"background-color:#141115;padding-top:32px;padding-bottom:32px;padding-left:32px;padding-right:32px;\"><div style=\"color:#d1d5db;text-align:center;font-size:13px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.5;margin:0;\"><div style='margin-bottom:12px;'><img src='https://backpocketmysteries.com/logo-horizontal-white.png' width='150' alt='Back Pocket Mysteries' style='display:block;margin:0 auto;max-width:150px;height:auto;' /></div><p style='margin:0 0 12px 0;font-size:12px;color:#a1a1aa;line-height:1.6;max-width:420px;display:inline-block;'>Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 30 minutes.</p><p style='margin:0;font-size:11px;color:#71717a;'>© 2026 Back Pocket Mysteries · <a href='https://backpocketmysteries.com/en' style='color:#fe04c6;text-decoration:none;'>backpocketmysteries.com</a></p></div></td></tr></table></td></tr></table></body></html>",
+      "html_content": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\"><body style=\"margin:0;padding:0;background-color:#f4f4f5;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f4f4f5;\"><tr><td align=\"center\" style=\"padding:20px 0;\"><table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#ffffff;max-width:600px;\"><tr><td style=\"background-color:#1e191c;padding-top:40px;padding-bottom:32px;padding-left:32px;padding-right:32px;\"><div style=\"color:#ffffff;text-align:left;font-size:16px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.5;margin:0;\"><p style='font-size:12px;font-weight:700;letter-spacing:2px;color:#fe04c6;text-transform:uppercase;margin:0 0 12px 0;'>THE MYSTERY GAZETTE • WEEKLY ROUNDUP</p><h1 style='font-size:26px;font-weight:800;color:#ffffff;margin:0;line-height:1.25;'>Wiretapped Voice Notes & Intimate Dinner Mysteries</h1></div></td></tr><tr><td style=\"background-color:transparent;padding-top:24px;padding-bottom:12px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:16px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.7;margin:0;\"><p style='margin:0 0 14px 0;'>Hi {{first_name}},</p><p style='margin:0;'>Welcome to this week's Back Pocket Mysteries briefing. We're looking at how diegetic audio wiretaps and CCTV stills transform dinner-table immersion, plus how to host a Knives Out-style seated mystery for a small group of 6 to 8 friends.</p></div></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:8px;padding-left:16px;padding-right:16px;\" align=\"center\"><a href=\"https://backpocketmysteries.com/en/blog/multimedia-audio-cctv-clues-murder-mystery-party?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;width:100%;\"><img src=\"https://backpocketmysteries.com/blog-images/multimedia-audio-cctv-clues-murder-mystery-party.png\" alt=\"Audio Wiretaps, CCTV Stills & Chat Logs: How Multimedia Clues Transform Murder Mystery Parties\" style=\"width:100%;max-width:100%;height:auto;border-radius:8px;display:block;\" /></a></td></tr><tr><td style=\"background-color:transparent;padding-top:12px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:15px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><span style='background-color:#fdf2f8;color:#fe04c6;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;'>BEHIND THE MYSTERY</span><h2 style='font-size:20px;font-weight:700;color:#1e191c;margin:4px 0 12px 0;line-height:1.3;'>1. Audio Wiretaps, CCTV Stills & Chat Logs</h2><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'><li style='margin-bottom:8px;'><strong style='color:#fe04c6;'>Multi-Speaker Voice Notes:</strong> Hear suspects whisper your real friends' names on tap.</li><li style='margin-bottom:8px;'><strong style='color:#fe04c6;'>CCTV & Dark-Mode Chats:</strong> High-angle security frames and recovered text threads replace dense paragraphs.</li><li style='margin-bottom:0;'><strong style='color:#fe04c6;'>Hybrid Staging:</strong> Phones act strictly as an evidence locker while interrogation stays face-to-face.</li></ul></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:20px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#fe04c6;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/blog/multimedia-audio-cctv-clues-murder-mystery-party?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Read Guide: Multimedia Audio & CCTV Clues →</a></td></tr></table></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:8px;padding-left:16px;padding-right:16px;\" align=\"center\"><a href=\"https://backpocketmysteries.com/en/blog/small-group-murder-mystery-dinner-party-6-to-8-players?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;width:100%;\"><img src=\"https://backpocketmysteries.com/blog-images/small-group-murder-mystery-dinner-party-6-to-8-players.png\" alt=\"How to Host a Small Group Murder Mystery Dinner Party for 6 to 8 Players\" style=\"width:100%;max-width:100%;height:auto;border-radius:8px;display:block;\" /></a></td></tr><tr><td style=\"background-color:transparent;padding-top:12px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:15px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><span style='background-color:#eef2ff;color:#0d00ff;font-size:11px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;'>HOSTING GUIDES</span><h2 style='font-size:20px;font-weight:700;color:#1e191c;margin:4px 0 12px 0;line-height:1.3;'>2. Hosting a Small-Group Mystery Dinner (6–8 Players)</h2><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'><li style='margin-bottom:8px;'><strong style='color:#0d00ff;'>3 Courses, 3 Rounds:</strong> Align Entrée, Main, and Dessert with your clue unlocks.</li><li style='margin-bottom:8px;'><strong style='color:#0d00ff;'>One-Table Drama:</strong> Every accusation and alibi happens in front of the entire group.</li><li style='margin-bottom:0;'><strong style='color:#0d00ff;'>Dropout-Proof:</strong> Toggle flexible characters and adaptable genders in seconds.</li></ul></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:20px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#0d00ff;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/blog/small-group-murder-mystery-dinner-party-6-to-8-players?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Read Guide: 6–8 Player Dinner Mysteries →</a></td></tr></table></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:14px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><div style='background-color:#fdf2f8;border:1px solid #fbcfe8;border-radius:10px;padding:20px;'><span style='background-color:#fe04c6;color:#ffffff;font-size:11px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;'>PRE-LAUNCH VIP GIVEAWAY</span><h3 style='font-size:18px;font-weight:800;color:#1e191c;margin:4px 0 8px 0;'>🎁 First 50 VIP Sign-Ups Get a Complete Mystery Pack 100% FREE</h3><p style='margin:0;color:#374151;font-size:14px;line-height:1.6;'>We're putting the final touches on the Back Pocket Mysteries builder! Before we open public checkout, the <strong>First 50 people</strong> on our VIP Launch List receive a <strong>100%-Off Free Mystery Code</strong> (up to $49 value) on launch day. Forward this to a friend who loves hosting before the 50 VIP spots fill up!</p></div></div></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:24px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#1e191c;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/free-murder-mystery-game?utm_source=edm&utm_medium=email&utm_campaign=weekly_gazette_nov27\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Claim Your Free Pre-Launch VIP Spot (First 50) →</a></td></tr></table></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:8px;padding-left:16px;padding-right:16px;\" align=\"center\"><a href=\"https://backpocketmysteries.com/en/themes/christmas-nightmare?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_launch\" target=\"_blank\" style=\"display:inline-block;width:100%;\"><img src=\"https://backpocketmysteries.com/moodboards/christmas-cabin/main-cover.jpg\" alt=\"Christmas Nightmare\" style=\"width:100%;max-width:100%;height:auto;border-radius:8px;display:block;\" /></a></td></tr><tr><td style=\"background-color:transparent;padding-top:12px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:15px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><span style='background-color:#1e191c;color:#fe04c6;font-size:11px;font-weight:800;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px;'>🔥 NEW MYSTERY BASE PACK • HOLIDAY DINNER PARTY</span><h2 style='font-size:20px;font-weight:800;color:#1e191c;margin:4px 0 10px 0;line-height:1.3;'>Christmas Nightmare (6 Suspects)</h2><p style='margin:0 0 12px 0;color:#4b5563;font-size:15px;line-height:1.6;'>Two pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when a sudden 8:19 PM power surge plunges the house into darkness and The Husband is found dead in the Christmas tree corner.</p><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'><li style='margin-bottom:6px;'><strong>Included:</strong> Custom Holiday Character Booklets Named After Your Guests (100% Gender-Flex Ready)</li><li style='margin-bottom:6px;'><strong>Included:</strong> Intercepted Lock-Screen Texts, Smart-Home Power Surge Logs & Nursery-Monitor Audio Clips</li><li style='margin-bottom:6px;'><strong>Included:</strong> Crime Scene Reports, Hallway CCTV Stills & Childhood Polaroid Evidence</li></ul></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:20px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#1e191c;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/themes/christmas-nightmare?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_launch\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Explore New Mystery Pack: Christmas Nightmare →</a></td></tr></table></td></tr><tr><td style=\"background-color:transparent;padding-top:4px;padding-bottom:4px;padding-left:16px;padding-right:16px;\"><div style=\"padding:24px 0;\"><hr style=\"border:none;border-top:1px solid #e8e8eb;margin:0;\" /></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:8px;padding-left:16px;padding-right:16px;\" align=\"center\"><a href=\"https://backpocketmysteries.com/en/themes/love-on-the-rocks?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_launch\" target=\"_blank\" style=\"display:inline-block;width:100%;\"><img src=\"https://backpocketmysteries.com/moodboards/love-on-the-rocks/main-cover.png\" alt=\"Love On The Rocks\" style=\"width:100%;max-width:100%;height:auto;border-radius:8px;display:block;\" /></a></td></tr><tr><td style=\"background-color:transparent;padding-top:12px;padding-bottom:8px;padding-left:16px;padding-right:16px;\"><div style=\"color:#1e191c;text-align:left;font-size:15px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.6;margin:0;\"><span style='background-color:#1e191c;color:#fe04c6;font-size:11px;font-weight:800;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px;'>🔥 NEW MYSTERY BASE PACK • REALITY TV REUNION</span><h2 style='font-size:20px;font-weight:800;color:#1e191c;margin:4px 0 10px 0;line-height:1.3;'>Love On The Rocks (5–12 Suspects)</h2><p style='margin:0 0 12px 0;color:#4b5563;font-size:15px;line-height:1.6;'>The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest dating show reunites at a luxury penthouse, until The Star collapses mid-champagne-toast.</p><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'><li style='margin-bottom:6px;'><strong>Included:</strong> Custom Bombshell & VIP Character Booklets Named After Your Guests</li><li style='margin-bottom:6px;'><strong>Included:</strong> Personalized Group-Chat Threads, Leaked DMs & Fininsta Posts</li><li style='margin-bottom:6px;'><strong>Included:</strong> Backstage Audio Voice Memos, Paparazzi Stills & Call Sheets</li></ul></div></td></tr><tr><td style=\"background-color:transparent;padding-top:8px;padding-bottom:20px;padding-left:16px;padding-right:16px;\" align=\"left\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"background-color:#1e191c;border-radius:6px;padding:12px 24px;\"><a href=\"https://backpocketmysteries.com/en/themes/love-on-the-rocks?utm_source=edm&utm_medium=email&utm_campaign=mystery_pack_launch\" target=\"_blank\" style=\"display:inline-block;color:#ffffff;font-weight:700;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;text-decoration:none;\">Explore New Mystery Pack: Love On The Rocks →</a></td></tr></table></td></tr><tr><td style=\"background-color:#141115;padding-top:32px;padding-bottom:32px;padding-left:32px;padding-right:32px;\"><div style=\"color:#d1d5db;text-align:center;font-size:13px;font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;line-height:1.5;margin:0;\"><div style='margin-bottom:12px;'><img src='https://backpocketmysteries.com/logo-horizontal-white.png' width='150' alt='Back Pocket Mysteries' style='display:block;margin:0 auto;max-width:150px;height:auto;' /></div><p style='margin:0 0 12px 0;font-size:12px;color:#a1a1aa;line-height:1.6;max-width:420px;display:inline-block;'>Custom-built murder mystery parties with personalized characters, CCTV evidence, and mobile audio clues — sorted in 30 minutes.</p><p style='margin:0;font-size:11px;color:#71717a;'>© 2026 Back Pocket Mysteries · <a href='https://backpocketmysteries.com/en' style='color:#fe04c6;text-decoration:none;'>backpocketmysteries.com</a></p></div></td></tr></table></td></tr></table></body></html>",
       "global_styles_json": {
         "backgroundColor": "#f4f4f5",
         "fontFamily": "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
         "primaryColor": "#fe04c6",
         "contentWidth": 600
       },
-      "updated_at": "2026-11-24T15:00:52.157Z"
+      "updated_at": "2026-11-24T15:07:40.093Z"
     }
   ],
   "edm_events": []
