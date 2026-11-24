@@ -11,6 +11,16 @@ interface DimensionRow {
   key: string;
   visitors: number;
   pageviews?: number;
+  avgViewSeconds?: number;
+}
+
+function formatAvgViewTime(seconds?: number | null): string {
+  const sec = Math.max(0, Math.round(Number(seconds) || 0));
+  if (sec <= 0) return '—';
+  if (sec < 60) return `${sec}s`;
+  const mins = Math.floor(sec / 60);
+  const rem = sec % 60;
+  return rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
 }
 
 export function TrafficTables({
@@ -76,25 +86,29 @@ export function TrafficTables({
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Top Pages</h3>
-              <p className="text-xs font-bold text-gray-400">Live production paths from Vercel Web Analytics</p>
+              <p className="text-xs font-bold text-gray-400">Live production paths &amp; average view time</p>
             </div>
             <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
-              <span>Visitors</span>
-              <span>Views</span>
+              <span className="w-14 text-right">Visitors</span>
+              <span className="w-12 text-right">Views</span>
+              <span className="w-16 text-right">Avg. Time</span>
             </div>
           </div>
           <div className="space-y-3">
             {topPaths.map((item, i) => (
               <div key={i} className="flex justify-between items-center py-2.5 border-b border-gray-50 last:border-0">
-                <span className="text-sm font-bold text-gray-700 truncate max-w-[65%] font-mono">
+                <span className="text-sm font-bold text-gray-700 truncate max-w-[52%] font-mono" title={item.key || '/'}>
                   {item.key || '/'}
                 </span>
-                <div className="flex items-center gap-6">
-                  <span className="text-sm font-black text-brand-dark w-12 text-right">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-black text-brand-dark w-14 text-right">
                     {(item.visitors || 0).toLocaleString()}
                   </span>
                   <span className="text-xs font-bold text-gray-400 w-12 text-right">
                     {(item.pageviews ?? item.visitors ?? 0).toLocaleString()}
+                  </span>
+                  <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg w-16 text-right">
+                    {formatAvgViewTime(item.avgViewSeconds)}
                   </span>
                 </div>
               </div>
@@ -110,11 +124,12 @@ export function TrafficTables({
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Top Countries</h3>
-              <p className="text-xs font-bold text-gray-400">Geographic breakdown of visitors</p>
+              <p className="text-xs font-bold text-gray-400">Geographic breakdown &amp; average view time</p>
             </div>
             <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
-              <span>Visitors</span>
-              <span>Views</span>
+              <span className="w-14 text-right">Visitors</span>
+              <span className="w-12 text-right">Views</span>
+              <span className="w-16 text-right">Avg. Time</span>
             </div>
           </div>
           <div className="space-y-3">
@@ -124,12 +139,15 @@ export function TrafficTables({
                   <span className="text-xl">{getFlagEmoji(item.key)}</span>
                   <span className="text-sm font-bold text-gray-700">{item.key || 'Unknown'}</span>
                 </div>
-                <div className="flex items-center gap-6">
-                  <span className="text-sm font-black text-brand-dark w-12 text-right">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-black text-brand-dark w-14 text-right">
                     {(item.visitors || 0).toLocaleString()}
                   </span>
                   <span className="text-xs font-bold text-gray-400 w-12 text-right">
                     {(item.pageviews ?? item.visitors ?? 0).toLocaleString()}
+                  </span>
+                  <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg w-16 text-right">
+                    {formatAvgViewTime(item.avgViewSeconds)}
                   </span>
                 </div>
               </div>

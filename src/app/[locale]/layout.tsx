@@ -78,6 +78,7 @@ const websiteSchema = {
 
 import { Suspense } from "react";
 import AutoSignInListener from "./(auth)/login/AutoSignInListener";
+import { PageViewDurationTracker } from "@/components/analytics/PageViewDurationTracker";
 
 export default async function RootLayout(props: {
   children: React.ReactNode;
@@ -94,6 +95,7 @@ export default async function RootLayout(props: {
       <body className="min-h-full flex flex-col">
         <Suspense fallback={null}>
           <AutoSignInListener locale={locale} />
+          <PageViewDurationTracker />
         </Suspense>
         {props.children}
         <script
