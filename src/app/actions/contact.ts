@@ -144,6 +144,7 @@ export async function submitContactForm(formData: FormData) {
 }
 
 export async function updateEnquiryStatus(id: string, status: string) {
+  const { revalidatePath } = await import('next/cache');
   const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from('inquiries')
@@ -158,39 +159,51 @@ export async function updateEnquiryStatus(id: string, status: string) {
     return { error: 'Failed to update status.' };
   }
 
+  revalidatePath('/en/admin/enquiries');
+  revalidatePath('/[locale]/admin/enquiries', 'page');
   return { success: true };
 }
 
 export async function bulkUpdateEnquiries(ids: string[], action: 'resolve' | 'delete') {
+  const { revalidatePath } = await import('next/cache');
   const { supabase } = await requireAdmin();
 
+  const realIds = (ids || []).filter((id) => id && !String(id).startsWith('mock-'));
+
   if (action === 'delete') {
-    const { error } = await supabase
-      .from('inquiries')
-      .delete()
-      .in('id', ids);
-    
-    if (error) {
-      if (error.code === 'PGRST205') {
-        return { success: true };
+    if (realIds.length > 0) {
+      const { error } = await supabase
+        .from('inquiries')
+        .delete()
+        .in('id', realIds);
+      
+      if (error) {
+        if (error.code === 'PGRST205') {
+          return { success: true };
+        }
+        console.error('Error deleting enquiries:', error);
+        return { error: 'Failed to delete enquiries.' };
       }
-      console.error('Error deleting enquiries:', error);
-      return { error: 'Failed to delete enquiries.' };
     }
   } else if (action === 'resolve') {
-    const { error } = await supabase
-      .from('inquiries')
-      .update({ status: 'resolved' })
-      .in('id', ids);
+    if (realIds.length > 0) {
+      const { error } = await supabase
+        .from('inquiries')
+        .update({ status: 'resolved' })
+        .in('id', realIds);
 
-    if (error) {
-      if (error.code === 'PGRST205') {
-        return { success: true };
+      if (error) {
+        if (error.code === 'PGRST205') {
+          return { success: true };
+        }
+        console.error('Error resolving enquiries:', error);
+        return { error: 'Failed to resolve enquiries.' };
       }
-      console.error('Error resolving enquiries:', error);
-      return { error: 'Failed to resolve enquiries.' };
     }
   }
 
+  revalidatePath('/en/admin/enquiries');
+  revalidatePath('/[locale]/admin/enquiries', 'page');
   return { success: true };
 }
+

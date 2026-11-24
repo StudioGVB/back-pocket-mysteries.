@@ -1,18 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { updateEnquiryStatus, bulkUpdateEnquiries } from '@/app/actions/contact';
 import { useRouter } from 'next/navigation';
 
 export default function EnquiriesTable({ enquiries }: { enquiries: any[] }) {
+  const [items, setItems] = useState<any[]>(enquiries);
   const [selectedEnquiry, setSelectedEnquiry] = useState<any | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'resolved'>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const router = useRouter();
 
+  useEffect(() => {
+    setItems(enquiries);
+  }, [enquiries]);
+
   // Filter enquiries
-  const filteredEnquiries = enquiries.filter(enquiry => {
+  const filteredEnquiries = items.filter(enquiry => {
     if (filter === 'all') return true;
     return enquiry.status === filter;
   });
@@ -37,9 +42,43 @@ export default function EnquiriesTable({ enquiries }: { enquiries: any[] }) {
   };
 
   const handleBulkAction = async (action: 'resolve' | 'delete') => {
+    const ids = Array.from(selectedIds);
     setLoadingAction(action);
-    await bulkUpdateEnquiries(Array.from(selectedIds), action);
-    setSelectedIds(new Set());
+    const res = await bulkUpdateEnquiries(ids, action);
+    if (!res?.error) {
+      if (action === 'delete') {
+        const idSet = new Set(ids);
+        setItems(prev => prev.filter(item => !idSet.has(item.id)));
+        if (selectedEnquiry && idSet.has(selectedEnquiry.id)) {
+          setSelectedEnquiry(null);
+        }
+      } else if (action === 'resolve') {
+        const idSet = new Set(ids);
+        setItems(prev =>
+          prev.map(item => (idSet.has(item.id) ? { ...item, status: 'resolved' } : item))
+        );
+      }
+      setSelectedIds(new Set());
+    }
+    setLoadingAction(null);
+    router.refresh();
+  };
+
+  const handleSingleDelete = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setLoadingAction(`delete-${id}`);
+    const res = await bulkUpdateEnquiries([id], 'delete');
+    if (!res?.error) {
+      setItems(prev => prev.filter(item => item.id !== id));
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      if (selectedEnquiry?.id === id) {
+        setSelectedEnquiry(null);
+      }
+    }
     setLoadingAction(null);
     router.refresh();
   };
@@ -48,11 +87,14 @@ export default function EnquiriesTable({ enquiries }: { enquiries: any[] }) {
     const newStatus = enquiry.status === 'pending' ? 'resolved' : 'pending';
     setLoadingAction(`status-${enquiry.id}`);
     await updateEnquiryStatus(enquiry.id, newStatus);
-    
+
+    setItems(prev =>
+      prev.map(item => (item.id === enquiry.id ? { ...item, status: newStatus } : item))
+    );
     if (selectedEnquiry?.id === enquiry.id) {
       setSelectedEnquiry({ ...selectedEnquiry, status: newStatus });
     }
-    
+
     setLoadingAction(null);
     router.refresh();
   };
@@ -95,6 +137,7 @@ export default function EnquiriesTable({ enquiries }: { enquiries: any[] }) {
                 <th className="px-4 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Email</th>
                 <th className="px-4 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Message</th>
                 <th className="px-4 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
+                <th className="px-6 py-6 text-right text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -135,11 +178,21 @@ export default function EnquiriesTable({ enquiries }: { enquiries: any[] }) {
                         {enquiry.status || 'Received'}
                       </span>
                     </td>
+                    <td className="px-6 py-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={(e) => handleSingleDelete(enquiry.id, e)}
+                        disabled={loadingAction === `delete-${enquiry.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                      >
+                        🗑️ {loadingAction === `delete-${enquiry.id}` ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-8 py-20 text-center text-gray-400 font-bold">
+                  <td colSpan={7} className="px-8 py-20 text-center text-gray-400 font-bold">
                     No {filter !== 'all' ? filter : ''} enquiries found.
                   </td>
                 </tr>
@@ -257,22 +310,32 @@ export default function EnquiriesTable({ enquiries }: { enquiries: any[] }) {
               )}
             </div>
 
-            <div className="mt-8 pt-8 border-t border-gray-100 flex justify-between items-center">
-              <button
-                onClick={() => handleStatusToggle(selectedEnquiry)}
-                disabled={loadingAction === `status-${selectedEnquiry.id}`}
-                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${
-                  selectedEnquiry.status === 'resolved' 
-                    ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' 
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                } disabled:opacity-50`}
-              >
-                {loadingAction === `status-${selectedEnquiry.id}` 
-                  ? '...' 
-                  : selectedEnquiry.status === 'resolved' 
-                    ? 'Mark as Pending' 
-                    : 'Mark as Resolved'}
-              </button>
+            <div className="mt-8 pt-8 border-t border-gray-100 flex flex-wrap justify-between items-center gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleStatusToggle(selectedEnquiry)}
+                  disabled={loadingAction === `status-${selectedEnquiry.id}`}
+                  className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${
+                    selectedEnquiry.status === 'resolved' 
+                      ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' 
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  } disabled:opacity-50`}
+                >
+                  {loadingAction === `status-${selectedEnquiry.id}` 
+                    ? '...' 
+                    : selectedEnquiry.status === 'resolved' 
+                      ? 'Mark as Pending' 
+                      : 'Mark as Resolved'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSingleDelete(selectedEnquiry.id)}
+                  disabled={loadingAction === `delete-${selectedEnquiry.id}`}
+                  className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  🗑️ {loadingAction === `delete-${selectedEnquiry.id}` ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
               
               <div className="flex gap-3">
                 <button onClick={() => setSelectedEnquiry(null)} className="px-6 py-3 rounded-full font-bold text-sm text-gray-500 hover:bg-gray-100 transition-colors">

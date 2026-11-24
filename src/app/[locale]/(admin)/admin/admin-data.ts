@@ -2,8 +2,12 @@
 'use server';
 
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { cache } from 'react';
+import { revalidatePath } from 'next/cache';
+import { Resend } from 'resend';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/utils/supabase/server';
 import { readLocalAiLogs, StoredAiUsageLog } from '@/utils/ai-logger';
 import { requireAdmin, ADMIN_EMAIL_ALLOWLIST, ADMIN_UID_ALLOWLIST } from '@/utils/admin-auth';
@@ -268,23 +272,248 @@ export const getCustomers = cache(async () => {
     });
 });
 
+export interface InvitedSuperAdminEntry {
+  email: string;
+  name?: string;
+  role: 'superadmin' | 'admin';
+  userId?: string | null;
+  invitedAt: string;
+  invitedBy?: string;
+}
+
+function getLocalSuperAdminInvitesPath(): string {
+  const dir = path.join(/*turbopackIgnore: true*/ process.cwd(), '.local-data');
+  try {
+    if (!fsSync.existsSync(dir)) {
+      fsSync.mkdirSync(dir, { recursive: true });
+    }
+  } catch {}
+  return path.join(dir, 'super-admin-invites.json');
+}
+
+function readLocalEnvVar(key: string): string {
+  const fromProc = process.env[key];
+  if (fromProc && fromProc.trim()) return fromProc.trim();
+  try {
+    const envPath = path.join(/*turbopackIgnore: true*/ process.cwd(), '.env.local');
+    if (fsSync.existsSync(envPath)) {
+      const content = fsSync.readFileSync(envPath, 'utf-8');
+      const regex = new RegExp(`^${key}=(.+)$`, 'm');
+      const m = content.match(regex);
+      if (m) return m[1].trim().replace(/^["']|["']$/g, '');
+    }
+  } catch {}
+  return '';
+}
+
+function getServiceRoleClient() {
+  const url = readLocalEnvVar('NEXT_PUBLIC_SUPABASE_URL');
+  const serviceKey = readLocalEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !serviceKey) return null;
+  try {
+    return createSupabaseClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function loadInvitedSuperAdmins(supabase: any): Promise<InvitedSuperAdminEntry[]> {
+  const byEmail = new Map<string, InvitedSuperAdminEntry>();
+
+  // 1. Read local JSON backup
+  try {
+    const filePath = getLocalSuperAdminInvitesPath();
+    if (fsSync.existsSync(filePath)) {
+      const parsed = JSON.parse(fsSync.readFileSync(filePath, 'utf-8'));
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          const em = String(item?.email || '').toLowerCase().trim();
+          if (em) byEmail.set(em, { ...item, email: em });
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Read platform_settings.config_json.invitedSuperAdmins
+  try {
+    const { data } = await supabase
+      .from('platform_settings')
+      .select('config_json')
+      .eq('id', 'global')
+      .maybeSingle();
+
+    const dbList = data?.config_json?.invitedSuperAdmins;
+    if (Array.isArray(dbList)) {
+      for (const item of dbList) {
+        const em = String(item?.email || '').toLowerCase().trim();
+        if (em) byEmail.set(em, { ...item, email: em });
+      }
+    }
+  } catch {}
+
+  return Array.from(byEmail.values());
+}
+
+async function saveInvitedSuperAdmins(
+  supabase: any,
+  list: InvitedSuperAdminEntry[],
+  updatedByEmail?: string
+): Promise<void> {
+  // 1. Save to local JSON
+  try {
+    const filePath = getLocalSuperAdminInvitesPath();
+    fsSync.writeFileSync(filePath, JSON.stringify(list, null, 2), 'utf-8');
+  } catch {}
+
+  // 2. Save inside platform_settings.config_json.invitedSuperAdmins
+  try {
+    const { data: existing } = await supabase
+      .from('platform_settings')
+      .select('config_json')
+      .eq('id', 'global')
+      .maybeSingle();
+
+    const prevConfig =
+      existing?.config_json && typeof existing.config_json === 'object'
+        ? existing.config_json
+        : {};
+
+    await supabase.from('platform_settings').upsert(
+      {
+        id: 'global',
+        config_json: {
+          ...prevConfig,
+          invitedSuperAdmins: list,
+        },
+        updated_at: new Date().toISOString(),
+        updated_by: updatedByEmail || 'Super Admin',
+      },
+      { onConflict: 'id' }
+    );
+  } catch {}
+}
+
+async function sendSuperAdminInvitationEmail(params: {
+  toEmail: string;
+  recipientName?: string;
+  invitedByEmail?: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const resendKey = readLocalEnvVar('RESEND_API_KEY');
+  if (!resendKey) {
+    return { sent: false, error: 'RESEND_API_KEY not configured' };
+  }
+
+  const siteUrl =
+    readLocalEnvVar('NEXT_PUBLIC_SITE_URL') ||
+    readLocalEnvVar('NEXT_PUBLIC_APP_URL') ||
+    'https://www.backpocketmysteries.com';
+  const adminLoginUrl = `${siteUrl.replace(/\/$/, '')}/en/login?next=/en/admin`;
+
+  const resend = new Resend(resendKey);
+  const greetingName = params.recipientName?.trim() || params.toEmail.split('@')[0];
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; background: #0f0a1c; color: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12);">
+      <div style="padding: 36px 32px; background: linear-gradient(135deg, #160f29 0%, #261447 100%); border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(255, 45, 85, 0.2); color: #ff2d55; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px;">
+          Super Admin Invitation
+        </div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.02em; color: #ffffff;">
+          Welcome to Back Pocket Mysteries Admin
+        </h1>
+      </div>
+      <div style="padding: 32px; background: #ffffff; color: #1e293b; line-height: 1.6; font-size: 15px;">
+        <p style="margin-top: 0; font-weight: 700; color: #0f172a;">Hi ${greetingName},</p>
+        <p>
+          You have been invited by <strong>${params.invitedByEmail || 'Back Pocket Mysteries'}</strong> to join <strong>Back Pocket Mysteries</strong> as a <strong>Super Admin</strong>.
+        </p>
+        <p>
+          Your Super Admin access includes full permissions across the Internal Admin Portal, OG Mystery Base Builder, Studio Builder, Marketing Suite, and Customer Management.
+        </p>
+        <div style="margin: 28px 0; text-align: center;">
+          <a href="${adminLoginUrl}" style="display: inline-block; padding: 14px 28px; border-radius: 999px; background: #ff2d55; color: #ffffff; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none;">
+            Accept Invite &amp; Open Admin Portal &rarr;
+          </a>
+        </div>
+        <p style="font-size: 13px; color: #64748b; background: #f8fafc; padding: 14px 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <strong>How to sign in:</strong> Simply log in (or create your account) using <strong>${params.toEmail}</strong>. Your Super Admin privileges are pre-activated for this email address automatically.
+        </p>
+      </div>
+    </div>
+  `;
+
+  try {
+    const primaryFrom =
+      readLocalEnvVar('RESEND_FROM_EMAIL') || 'Back Pocket Mysteries <support@lancii.com>';
+    let sendRes = await resend.emails.send({
+      from: primaryFrom,
+      to: [params.toEmail],
+      subject: "You've been invited as a Super Admin on Back Pocket Mysteries",
+      html,
+    });
+
+    if (sendRes.error) {
+      sendRes = await resend.emails.send({
+        from: 'Back Pocket Mysteries <support@lancii.com>',
+        to: [params.toEmail],
+        subject: "You've been invited as a Super Admin on Back Pocket Mysteries",
+        html,
+      });
+    }
+
+    if (sendRes.error) {
+      return { sent: false, error: sendRes.error.message };
+    }
+    return { sent: true };
+  } catch (err: any) {
+    return { sent: false, error: err?.message || 'Failed to send invite email' };
+  }
+}
+
 export async function getAdmins() {
   const { supabase, user } = await requireAdmin();
+  const serviceClient = getServiceRoleClient();
+  const dbClient = serviceClient || supabase;
 
-  const { data: rolesData, error: rolesError } = await supabase
-    .from('user_roles')
-    .select('user_id, role')
-    .in('role', ['admin', 'superadmin', 'super_admin']);
+  const [{ data: rolesData, error: rolesError }, invitedList] = await Promise.all([
+    dbClient
+      .from('user_roles')
+      .select('user_id, role')
+      .in('role', ['admin', 'superadmin', 'super_admin']),
+    loadInvitedSuperAdmins(supabase),
+  ]);
 
   if (rolesError) {
     console.error('Error fetching admin roles:', rolesError);
   }
 
-  const adminUserIds = rolesData?.map(r => r.user_id).filter(Boolean) || [];
+  // Optional: Map auth user emails from serviceClient if available
+  const authEmailByUid = new Map<string, string>();
+  const authNameByUid = new Map<string, string>();
+  if (serviceClient) {
+    try {
+      const { data: usersPage } = await serviceClient.auth.admin.listUsers({ perPage: 200 });
+      for (const au of usersPage?.users || []) {
+        if (au.id && au.email) {
+          authEmailByUid.set(au.id, au.email.toLowerCase());
+        }
+        if (au.id && au.user_metadata?.full_name) {
+          authNameByUid.set(au.id, au.user_metadata.full_name);
+        }
+      }
+    } catch {}
+  }
+
+  const adminUserIds = [...new Set([
+    ...(rolesData?.map((r: any) => r.user_id).filter(Boolean) || []),
+    ...ADMIN_UID_ALLOWLIST,
+  ])];
 
   let data: any[] = [];
   if (adminUserIds.length > 0) {
-    const { data: profilesData, error: profilesError } = await supabase
+    const { data: profilesData, error: profilesError } = await dbClient
       .from('profiles')
       .select('*')
       .in('id', adminUserIds)
@@ -293,10 +522,32 @@ export async function getAdmins() {
     if (profilesError) {
       console.error('Error fetching admin profiles:', profilesError);
     } else if (profilesData) {
-      data = profilesData.map(p => ({
-        ...p,
-        user_roles: [{ role: rolesData?.find(r => r.user_id === p.id)?.role || 'admin' }]
-      }));
+      data = profilesData.map((p: any) => {
+        const matchedRole = rolesData?.find((r: any) => r.user_id === p.id)?.role;
+        const resolvedEmail =
+          p.email ||
+          authEmailByUid.get(p.id) ||
+          invitedList.find((inv) => inv.userId === p.id)?.email ||
+          (ADMIN_UID_ALLOWLIST.includes(p.id) ? ADMIN_EMAIL_ALLOWLIST[0] : '');
+        const isProtectedOwner =
+          ADMIN_UID_ALLOWLIST.includes(p.id) ||
+          (resolvedEmail && ADMIN_EMAIL_ALLOWLIST.includes(resolvedEmail.toLowerCase()));
+
+        return {
+          ...p,
+          email: resolvedEmail || null,
+          full_name:
+            p.full_name ||
+            authNameByUid.get(p.id) ||
+            invitedList.find((inv) => inv.email === resolvedEmail)?.name ||
+            resolvedEmail ||
+            'Super Admin',
+          status: 'active',
+          isPendingInvite: false,
+          isProtectedOwner,
+          user_roles: [{ role: isProtectedOwner ? 'superadmin' : matchedRole || 'superadmin' }],
+        };
+      });
     }
   }
 
@@ -305,42 +556,287 @@ export async function getAdmins() {
   if (user) {
     const isAlreadyListed = admins.some((a: any) => a.id === user.id);
     if (!isAlreadyListed) {
-      const { data: profile } = await supabase
+      const { data: profile } = await dbClient
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
-        
+
+      const userEmailLower = (user.email || '').toLowerCase();
+      const isProtectedOwner =
+        ADMIN_UID_ALLOWLIST.includes(user.id) ||
+        ADMIN_EMAIL_ALLOWLIST.includes(userEmailLower);
+
       if (profile) {
         admins.unshift({
           ...profile,
-          user_roles: [{ role: 'superadmin' }]
+          email: user.email || profile.email || null,
+          status: 'active',
+          isPendingInvite: false,
+          isProtectedOwner,
+          user_roles: [{ role: 'superadmin' }],
         });
       } else {
         admins.unshift({
           id: user.id,
+          email: user.email || ADMIN_EMAIL_ALLOWLIST[0],
           full_name: user.user_metadata?.full_name || user.email || 'Gabriella Blyth',
           created_at: new Date().toISOString(),
-          user_roles: [{ role: 'superadmin' }]
+          status: 'active',
+          isPendingInvite: false,
+          isProtectedOwner,
+          user_roles: [{ role: 'superadmin' }],
         });
       }
     }
   }
 
+  // Merge any invited Super Admin emails that haven't appeared in the active profiles list yet
+  const listedEmails = new Set(
+    admins.map((a: any) => String(a.email || '').toLowerCase().trim()).filter(Boolean)
+  );
+  const listedIds = new Set(admins.map((a: any) => a.id));
+
+  for (const inv of invitedList) {
+    const em = inv.email.toLowerCase().trim();
+    if (listedEmails.has(em) || (inv.userId && listedIds.has(inv.userId))) {
+      continue;
+    }
+    admins.push({
+      id: inv.userId || `invite-${em}`,
+      email: em,
+      full_name: inv.name || em.split('@')[0],
+      created_at: inv.invitedAt,
+      invitedAt: inv.invitedAt,
+      invitedBy: inv.invitedBy || 'Super Admin',
+      status: 'pending',
+      isPendingInvite: true,
+      isProtectedOwner: ADMIN_EMAIL_ALLOWLIST.includes(em),
+      user_roles: [{ role: inv.role || 'superadmin' }],
+    });
+  }
+
   return admins;
 }
 
-export async function grantAdminStatus(userId: string, role: string = 'admin') {
-  const { supabase } = await requireAdmin();
+export async function grantAdminStatus(userIdOrEmail: string, role: string = 'superadmin') {
+  const res = await inviteSuperAdminByEmailAction({
+    emailOrId: userIdOrEmail,
+    role: role === 'admin' ? 'admin' : 'superadmin',
+  });
+  if (!res.success) {
+    throw new Error(res.error || 'Failed to grant Super Admin access.');
+  }
+  return res;
+}
 
-  const { error } = await supabase
-    .from('user_roles')
-    .upsert({ 
-      user_id: userId, 
-      role: role.toLowerCase() as any
-    }, { onConflict: 'user_id' });
+export async function inviteSuperAdminByEmailAction(params: {
+  emailOrId: string;
+  name?: string;
+  role?: 'superadmin' | 'admin';
+}): Promise<{
+  success: boolean;
+  status?: 'active' | 'pending';
+  emailSent?: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const { supabase, user } = await requireAdmin();
+    const serviceClient = getServiceRoleClient();
+    const dbClient = serviceClient || supabase;
 
-  if (error) throw new Error(error.message);
+    const rawInput = String(params.emailOrId || '').trim();
+    if (!rawInput) {
+      return { success: false, error: 'Please enter an email address.' };
+    }
+
+    const targetRole = params.role || 'superadmin';
+    const isEmail = rawInput.includes('@');
+
+    if (!isEmail) {
+      // Legacy fallback if someone pasted a User UUID
+      const { error } = await dbClient
+        .from('user_roles')
+        .upsert({ user_id: rawInput, role: targetRole }, { onConflict: 'user_id' });
+      if (error) return { success: false, error: error.message };
+      revalidatePath('/en/admin/settings');
+      revalidatePath('/en/admin/admins');
+      return {
+        success: true,
+        status: 'active',
+        message: 'Super Admin role granted to user ID.',
+      };
+    }
+
+    const cleanEmail = rawInput.toLowerCase();
+    let matchedUserId: string | null = null;
+    let matchedName: string = params.name?.trim() || '';
+
+    // 1. Check if this email already exists in auth.users via service role
+    if (serviceClient) {
+      try {
+        const { data: usersPage } = await serviceClient.auth.admin.listUsers({ perPage: 200 });
+        const foundAuth = (usersPage?.users || []).find(
+          (u: any) => String(u.email || '').toLowerCase().trim() === cleanEmail
+        );
+        if (foundAuth) {
+          matchedUserId = foundAuth.id;
+          if (!matchedName && foundAuth.user_metadata?.full_name) {
+            matchedName = foundAuth.user_metadata.full_name;
+          }
+        }
+      } catch {}
+    }
+
+    // 2. If found an existing user account, immediately upsert user_roles = 'superadmin'
+    if (matchedUserId) {
+      await dbClient
+        .from('user_roles')
+        .upsert({ user_id: matchedUserId, role: targetRole }, { onConflict: 'user_id' });
+    }
+
+    // 3. Save email in invitedSuperAdmins list (both platform_settings and local store)
+    const currentInvites = await loadInvitedSuperAdmins(supabase);
+    const filtered = currentInvites.filter((i) => i.email !== cleanEmail);
+    filtered.unshift({
+      email: cleanEmail,
+      name: matchedName || cleanEmail.split('@')[0],
+      role: targetRole,
+      userId: matchedUserId,
+      invitedAt: new Date().toISOString(),
+      invitedBy: user?.email || 'Super Admin',
+    });
+    await saveInvitedSuperAdmins(supabase, filtered, user?.email);
+
+    // 4. Send branded Super Admin invitation email via Resend
+    const emailRes = await sendSuperAdminInvitationEmail({
+      toEmail: cleanEmail,
+      recipientName: matchedName,
+      invitedByEmail: user?.email || 'Back Pocket Mysteries',
+    });
+
+    revalidatePath('/en/admin/settings');
+    revalidatePath('/en/admin/admins');
+
+    const status = matchedUserId ? 'active' : 'pending';
+    const message = matchedUserId
+      ? `${cleanEmail} is now an active Super Admin${emailRes.sent ? ' and an email notification was sent!' : '!'}`
+      : `Invited ${cleanEmail} as a Super Admin! ${
+          emailRes.sent
+            ? 'An invitation email has been sent — as soon as they log in or sign up, they will have full Super Admin access.'
+            : 'Their email is pre-authorized for full Super Admin access as soon as they sign in.'
+        }`;
+
+    return {
+      success: true,
+      status,
+      emailSent: emailRes.sent,
+      message,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to invite Super Admin.',
+    };
+  }
+}
+
+export async function resendSuperAdminInviteEmailAction(email: string): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const { supabase, user } = await requireAdmin();
+    const cleanEmail = String(email || '').toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      return { success: false, error: 'Valid email address required.' };
+    }
+
+    const invites = await loadInvitedSuperAdmins(supabase);
+    const found = invites.find((i) => i.email === cleanEmail);
+
+    const res = await sendSuperAdminInvitationEmail({
+      toEmail: cleanEmail,
+      recipientName: found?.name,
+      invitedByEmail: user?.email || 'Back Pocket Mysteries',
+    });
+
+    if (!res.sent) {
+      return { success: false, error: res.error || 'Could not send invitation email.' };
+    }
+
+    return {
+      success: true,
+      message: `Resent Super Admin invitation email to ${cleanEmail}.`,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to resend invitation email.',
+    };
+  }
+}
+
+export async function revokeSuperAdminAccessAction(params: {
+  userId?: string;
+  email?: string;
+}): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const { supabase, user } = await requireAdmin();
+    const serviceClient = getServiceRoleClient();
+    const dbClient = serviceClient || supabase;
+
+    const cleanEmail = String(params.email || '').toLowerCase().trim();
+    const targetUserId = String(params.userId || '').trim();
+
+    if (
+      (targetUserId && ADMIN_UID_ALLOWLIST.includes(targetUserId)) ||
+      (cleanEmail && ADMIN_EMAIL_ALLOWLIST.includes(cleanEmail))
+    ) {
+      return {
+        success: false,
+        error: 'The primary owner Super Admin account cannot be revoked.',
+      };
+    }
+
+    if (targetUserId && targetUserId === user?.id) {
+      return {
+        success: false,
+        error: 'You cannot revoke your own Super Admin access.',
+      };
+    }
+
+    if (targetUserId && !targetUserId.startsWith('invite-')) {
+      await dbClient.from('user_roles').delete().eq('user_id', targetUserId);
+    }
+
+    const currentInvites = await loadInvitedSuperAdmins(supabase);
+    const nextInvites = currentInvites.filter((inv) => {
+      if (cleanEmail && inv.email === cleanEmail) return false;
+      if (targetUserId && inv.userId === targetUserId) return false;
+      return true;
+    });
+    await saveInvitedSuperAdmins(supabase, nextInvites, user?.email);
+
+    revalidatePath('/en/admin/settings');
+    revalidatePath('/en/admin/admins');
+
+    return {
+      success: true,
+      message: `Revoked Super Admin access for ${cleanEmail || targetUserId}.`,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to revoke Super Admin access.',
+    };
+  }
 }
 
 export async function getEnquiries() {
@@ -353,16 +849,6 @@ export async function getEnquiries() {
 
   if (error) {
     console.error('Error fetching enquiries:', error);
-    if (error.code === 'PGRST205') {
-      return [{
-        id: 'mock-1',
-        name: 'Jane Doe',
-        email: 'jane.doe@example.com',
-        message: 'Hello! I am very interested in hosting a 1920s Gatsby style murder mystery for my 30th birthday. We expect around 12 guests. Can you let me know if this is something you can customize for us?',
-        status: 'pending',
-        created_at: new Date().toISOString()
-      }];
-    }
     return [];
   }
 
