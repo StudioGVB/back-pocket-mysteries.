@@ -114,47 +114,128 @@ export async function updateMystery(id: string, updates: Partial<Mystery>) {
   return data;
 }
 
+const FX_TO_GBP: Record<string, number> = {
+  GBP: 1,
+  USD: 0.79,
+  EUR: 0.86,
+  AUD: 0.52,
+  CAD: 0.57,
+  NZD: 0.47,
+};
+
+function convertToGbp(rawAmount: any, rawCurrency?: any): number {
+  const num = Number(rawAmount) || 0;
+  const major = num > 100 ? num / 100 : num;
+  const curr = String(rawCurrency || 'GBP').toUpperCase();
+  const rate = FX_TO_GBP[curr] ?? 1;
+  return Number((major * rate).toFixed(2));
+}
+
 export async function getTransactions() {
   const { supabase } = await requireAdmin();
-  const { data, error } = (await supabase
+  const { data: rawOrders, error } = (await supabase
     .from('orders')
-    .select(`
-      *,
-      profiles:user_id (id, full_name, email, avatar_url, avatar_config),
-      mysteries:mystery_id (id, title, theme)
-    `)
+    .select('*')
     .order('created_at', { ascending: false })) as any;
 
   if (error) {
     console.error('Error fetching transactions:', error);
   }
 
-  const dbOrders: any[] = Array.isArray(data) ? data : [];
+  const dbOrders: any[] = Array.isArray(rawOrders) ? rawOrders : [];
+
+  // Fetch profiles, mysteries, and AI usage logs in parallel without brittle FK join syntax
+  const userIds = [...new Set(dbOrders.map((o) => o.user_id).filter(Boolean))];
+  const mysteryIds = [...new Set(dbOrders.map((o) => o.mystery_id).filter(Boolean))];
+
+  const [profilesRes, mysteriesRes, aiLogsRes] = await Promise.all([
+    userIds.length > 0
+      ? supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, avatar_config')
+          .in('id', userIds)
+      : Promise.resolve({ data: [] as any[] }),
+    mysteryIds.length > 0
+      ? supabase.from('mysteries').select('id, title, theme').in('id', mysteryIds)
+      : Promise.resolve({ data: [] as any[] }),
+    (supabase as any)
+      .from('ai_usage_logs')
+      .select('mystery_id, cost_usd')
+      .then((r: any) => r)
+      .catch(() => ({ data: [] as any[] })),
+  ]);
+
+  const profilesMap = new Map<string, any>();
+  for (const p of profilesRes.data || []) {
+    profilesMap.set(p.id, p);
+  }
+
+  const mysteriesMap = new Map<string, any>();
+  for (const m of mysteriesRes.data || []) {
+    mysteriesMap.set(m.id, m);
+  }
+
+  const aiCostGbpByMystery = new Map<string, number>();
+  for (const log of aiLogsRes?.data || []) {
+    if (log?.mystery_id) {
+      const prev = aiCostGbpByMystery.get(log.mystery_id) || 0;
+      aiCostGbpByMystery.set(log.mystery_id, prev + Number(log.cost_usd || 0) * 0.79);
+    }
+  }
+
   const seenMysteryIds = new Set<string>();
 
+  const enrichWithEconomics = (item: any) => {
+    const grossGbp = convertToGbp(item.amount, item.currency);
+    const isPaid = item.status === 'succeeded' || item.status === 'qa_verified';
+    // UK Stripe processing fee default: 1.5% + £0.20 on paid orders
+    const stripeFeeGbp =
+      isPaid && grossGbp > 0 ? Number((grossGbp * 0.015 + 0.2).toFixed(2)) : 0;
+    const aiCostGbp = Number(
+      (item.mystery_id ? aiCostGbpByMystery.get(item.mystery_id) || 0 : 0).toFixed(2)
+    );
+    const netRevenueGbp = isPaid
+      ? Number(Math.max(0, grossGbp - stripeFeeGbp - aiCostGbp).toFixed(2))
+      : 0;
+    return {
+      ...item,
+      grossGbp,
+      stripeFeeGbp,
+      aiCostGbp,
+      netRevenueGbp,
+    };
+  };
+
   const enrichedOrders = dbOrders.map((order: any) => {
-    const mId = order.mystery_id || order.mysteries?.id || null;
+    const mId = order.mystery_id || null;
     if (mId) seenMysteryIds.add(mId);
     const liveSession = mId ? getStoredGameSession(mId) : null;
     const cachedMystery = mId ? getCachedMysterySnapshot(mId) : null;
+    const dbProfile = order.user_id ? profilesMap.get(order.user_id) : null;
+    const dbMystery = mId ? mysteriesMap.get(mId) : null;
 
-    return {
+    return enrichWithEconomics({
       ...order,
       mystery_id: mId,
       mysteries:
-        order.mysteries ||
+        dbMystery ||
         (cachedMystery
           ? { id: mId, title: cachedMystery.title, slug: cachedMystery.slug || mId }
           : null),
-      profiles: order.profiles || {
-        full_name: liveSession?.customerName || 'Host',
-        email: liveSession?.customerEmail || null,
-      },
+      profiles: dbProfile
+        ? {
+            ...dbProfile,
+            email: dbProfile.email || liveSession?.customerEmail || null,
+          }
+        : {
+            full_name: liveSession?.customerName || 'Host',
+            email: liveSession?.customerEmail || null,
+          },
       generationStatus: liveSession?.generationStatus || 'ready',
       generationProgress: liveSession?.generationProgress ?? 100,
       pin: liveSession?.pin || null,
       qaReport: liveSession?.qaReport || null,
-    };
+    });
   });
 
   // Also include any live paid or QA-audited mystery sessions from .live-game-sessions.json not yet in dbOrders
@@ -165,7 +246,7 @@ export async function getTransactions() {
 
   const missingDbMysteryIds: string[] = [];
   for (const session of extraSessions) {
-    if (!getCachedMysterySnapshot(session.mysteryId)) {
+    if (!getCachedMysterySnapshot(session.mysteryId) && !mysteriesMap.has(session.mysteryId)) {
       missingDbMysteryIds.push(session.mysteryId);
     }
   }
@@ -185,32 +266,35 @@ export async function getTransactions() {
     const cachedMystery = getCachedMysterySnapshot(session.mysteryId);
     const mysteryTitle =
       cachedMystery?.title ||
+      mysteriesMap.get(session.mysteryId)?.title ||
       dbMysteryTitlesMap.get(session.mysteryId) ||
       'Custom Mystery Pack';
     const mysterySlug = cachedMystery?.slug || session.mysteryId;
 
-    enrichedOrders.push({
-      id: session.orderId || session.mysteryId,
-      mystery_id: session.mysteryId,
-      user_id: session.paidByUserId || session.hostUserId || null,
-      amount: 19,
-      currency: 'USD',
-      status: session.isPaid ? 'succeeded' : 'qa_verified',
-      created_at: session.paidAt || session.updatedAt || new Date().toISOString(),
-      profiles: {
-        full_name: session.customerName || 'Host',
-        email: session.customerEmail || null,
-      },
-      mysteries: {
-        id: session.mysteryId,
-        title: mysteryTitle,
-        slug: mysterySlug,
-      },
-      generationStatus: session.generationStatus || 'ready',
-      generationProgress: session.generationProgress ?? 100,
-      pin: session.pin || null,
-      qaReport: session.qaReport || null,
-    });
+    enrichedOrders.push(
+      enrichWithEconomics({
+        id: session.orderId || session.mysteryId,
+        mystery_id: session.mysteryId,
+        user_id: session.paidByUserId || session.hostUserId || null,
+        amount: 15,
+        currency: 'GBP',
+        status: session.isPaid ? 'succeeded' : 'qa_verified',
+        created_at: session.paidAt || session.updatedAt || new Date().toISOString(),
+        profiles: {
+          full_name: session.customerName || 'Host',
+          email: session.customerEmail || null,
+        },
+        mysteries: {
+          id: session.mysteryId,
+          title: mysteryTitle,
+          slug: mysterySlug,
+        },
+        generationStatus: session.generationStatus || 'ready',
+        generationProgress: session.generationProgress ?? 100,
+        pin: session.pin || null,
+        qaReport: session.qaReport || null,
+      })
+    );
   }
 
   return enrichedOrders.sort(
