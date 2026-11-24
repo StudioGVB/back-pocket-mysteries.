@@ -472,34 +472,43 @@ export function MysteryReadyHub({
     }
   };
 
+  const stripLeadingEmoji = (str: string) =>
+    str
+      .replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]+\s*/gu, '')
+      .trim();
+
   const buildPartyEventSummaryBlock = () => {
     const lines: string[] = [];
     const formattedDate = formatPartyDateDisplay(partyDate);
     if (formattedDate || arrivalTime) {
       const timePart = arrivalTime
-        ? ` • Arrive at ${arrivalTime}${gameStartTime ? ` (Mystery starts ${gameStartTime})` : ''}`
+        ? ` — Arrival at ${arrivalTime}${gameStartTime ? ` (Mystery begins at ${gameStartTime})` : ''}`
         : '';
-      lines.push(`📅 When: ${formattedDate || 'Party Night'}${timePart}`);
+      lines.push(`Date & Time: ${formattedDate || 'Party Night'}${timePart}`);
     }
     if (location.trim()) {
-      lines.push(`📍 Where: ${location.trim()}`);
+      lines.push(`Location: ${location.trim()}`);
     }
     if (foodAndDrinkVibe) {
-      lines.push(`🍽️ Food & Drinks: ${getFoodVibeDisplay(foodAndDrinkVibe)}`);
+      lines.push(`Food & Drinks: ${stripLeadingEmoji(getFoodVibeDisplay(foodAndDrinkVibe))}`);
     }
     if (hostNotes.trim()) {
-      lines.push(`📝 Host Note: ${hostNotes.trim()}`);
+      lines.push(`Host Note: ${hostNotes.trim()}`);
     }
     if (whatToBringItems.length > 0) {
-      lines.push(`🎒 What to Bring:\n${whatToBringItems.map(i => `  • ${i}`).join('\n')}`);
+      lines.push(
+        `\nWhat to Bring:\n${whatToBringItems
+          .map(i => `- ${stripLeadingEmoji(i)}`)
+          .join('\n')}`
+      );
     }
-    return lines.length > 0 ? `\n${lines.join('\n')}\n` : '';
+    return lines.length > 0 ? `\n\n${lines.join('\n')}\n` : '\n';
   };
 
   const buildGroupChatSelectInvite = () => {
     const url = `${getOrigin()}/${locale}/play/${mystery.id}?prep=1`;
     const partyBlock = buildPartyEventSummaryBlock();
-    return `🕵️‍♀️ You're invited to our Murder Mystery party: "${mystery.title}"!${partyBlock}\n👗 Tap the Pre-Party "First Glance" link below, find your name, and open your character sheet to see Who You Are, Your Outfit Guide, and What to Bring (no login needed, zero game-night spoilers!):\n${url}`;
+    return `You are invited to our murder mystery evening: ${mystery.title}.${partyBlock}\nSelect your name at the link below to view your character dossier, wardrobe guide, and event details before the night begins (no login required, spoiler-free):\n${url}`;
   };
 
   const sentCount = characters.filter(c => sentCharIds.includes(c.id)).length;
@@ -672,9 +681,24 @@ export function MysteryReadyHub({
                 >
                   {copiedId === 'group-select-msg'
                     ? '✓ Group Invite Copied!'
-                    : '📋 Copy Group Invite'}
+                    : 'Copy Group Invite'}
                 </button>
               </div>
+            </div>
+
+            {/* Live Preview of the Invitation Message Sent to the Group */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Invitation Message Preview
+                </span>
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Ready for WhatsApp, iMessage &amp; Email
+                </span>
+              </div>
+              <pre className="text-xs text-slate-700 font-medium whitespace-pre-wrap font-sans leading-relaxed">
+                {buildGroupChatSelectInvite()}
+              </pre>
             </div>
 
             {/* High-Contrast, Razor-Aligned Party Details & "What to Bring" Checklist */}
@@ -963,12 +987,13 @@ export function MysteryReadyHub({
 
               const buildInviteText = () => {
                 const url = buildCharacterUrl();
+                const greeting = guest ? `${guest.name.split(' ')[0]}, you have been cast` : 'You have been cast';
                 const vibeLine =
                   char.actBullets && char.actBullets.length > 0
-                    ? `\n🎭 How to Play Them: ${char.actBullets.map(b => adaptBioForGuestGender(b, guestGender)).join(' • ')}`
+                    ? `\nHow to Play the Role: ${char.actBullets.map(b => adaptBioForGuestGender(b, guestGender)).join(' • ')}`
                     : '';
                 const partyBlock = buildPartyEventSummaryBlock();
-                return `🕵️‍♀️ ${guest ? `Hey ${guest.name}! ` : ''}You're cast in our Murder Mystery party: "${mystery.title}"!${partyBlock}\n🎭 Your Role: ${displayRoleTitle}\n📖 First Glance: ${displayBio}${vibeLine}\n👗 What to Wear: ${outfitText}\n\n🔗 Tap to open your Pre-Party "First Glance" Character & Outfit Sheet (no login needed, zero game-night spoilers):\n${url}`;
+                return `${greeting} as ${displayRoleTitle} for our murder mystery evening: ${mystery.title}.${partyBlock}\nYour Character: ${displayRoleTitle}\nThe Brief: ${displayBio}${vibeLine}\nWardrobe Guide: ${outfitText}\n\nOpen your private character dossier and wardrobe guide below before the night begins (no login required, spoiler-free):\n${url}`;
               };
 
               return (

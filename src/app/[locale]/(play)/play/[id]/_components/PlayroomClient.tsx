@@ -743,8 +743,8 @@ export function PlayroomClient({
       if (preferNativeShare && typeof navigator !== 'undefined' && navigator.share) {
         try {
           await navigator.share({
-            title: `Join ${mystery.title}`,
-            text: `Tap to join our Murder Mystery party! (PIN: ${pin.slice(0, 3)} ${pin.slice(3)} - No login needed)`,
+            title: mystery.title,
+            text: `You are invited to our murder mystery evening: ${mystery.title}. Open your character dossier and live game room below (Game PIN: ${pin.slice(0, 3)} ${pin.slice(3)} — no login required):`,
             url: cleanGuestUrl,
           });
           return;
