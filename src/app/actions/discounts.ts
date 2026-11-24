@@ -116,6 +116,25 @@ function getDefaultSeedDiscounts(): Record<string, DiscountRecord> {
       created_at: start,
       updated_at: start,
     },
+    'sleuth15-review-reward': {
+      id: 'sleuth15-review-reward',
+      name: 'Post-Party Review & Photo Reward 15% Off (Guest-to-Next-Host)',
+      code: 'SLEUTH15',
+      auto_apply: false,
+      discount_type: 'percentage',
+      discount_value: 15,
+      applies_to: 'all',
+      target_packages: [],
+      target_mysteries: [],
+      starts_at: start,
+      ends_at: null,
+      usage_limit: 'one_per_customer',
+      max_uses: null,
+      times_used: 0,
+      is_active: true,
+      created_at: start,
+      updated_at: start,
+    },
   };
 }
 

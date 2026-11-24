@@ -387,4 +387,84 @@ export async function getAllPlatformReviews(
   );
 }
 
+export interface PublicPublishedReview {
+  id: string;
+  name: string;
+  rating: number;
+  cleanComment: string;
+  characterRole?: string;
+  mysteryTitle?: string;
+  photoUrl?: string;
+  createdAt: string;
+}
 
+export async function getPublishedReviewsForPublicDisplay(options?: {
+  mysteryTitle?: string;
+  mysteryId?: string;
+  limit?: number;
+}): Promise<PublicPublishedReview[]> {
+  const all = await getAllPlatformReviews();
+  const published = all.filter((r) => r.status === 'published');
+
+  const formatted: PublicPublishedReview[] = published.map((r) => {
+    const rawText = String(r.review_text || '').trim();
+    const prefixMatch = rawText.match(/^\[([^\]]+)\]\s*(.*)$/);
+    const cleanComment = (prefixMatch ? prefixMatch[2] : rawText).trim() || rawText;
+    let role = r.character_role;
+    let mTitle = r.mystery_title;
+
+    if (prefixMatch && prefixMatch[1]) {
+      const inner = prefixMatch[1];
+      const parts = inner.split('•').map((s: string) => s.trim());
+      for (const p of parts) {
+        if (p.toLowerCase().startsWith('played ')) {
+          role = role || p.replace(/^played\s+/i, '').trim();
+        } else if (!mTitle) {
+          mTitle = p;
+        }
+      }
+    }
+
+    const photoUrl =
+      Array.isArray(r.attachment_urls) && r.attachment_urls.length > 0
+        ? r.attachment_urls[0]
+        : undefined;
+
+    return {
+      id: String(r.id),
+      name: String(r.name || 'Verified Player'),
+      rating: Math.min(5, Math.max(1, Math.round(Number(r.rating) || 5))),
+      cleanComment,
+      characterRole: role,
+      mysteryTitle: mTitle,
+      photoUrl,
+      createdAt: r.created_at || new Date().toISOString(),
+    };
+  });
+
+  if (options?.mysteryTitle || options?.mysteryId) {
+    const targetTitle = (options.mysteryTitle || '').toLowerCase().trim();
+    const isHolidayAlias =
+      targetTitle.includes('christmas') || targetTitle.includes('ho ho homicide');
+
+    const matching = formatted.filter((rev) => {
+      const revTitle = (rev.mysteryTitle || '').toLowerCase().trim();
+      if (!revTitle) return false;
+      if (revTitle === targetTitle) return true;
+      if (
+        isHolidayAlias &&
+        (revTitle.includes('christmas') || revTitle.includes('ho ho homicide'))
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    const limit = options.limit || 9;
+    if (matching.length > 0) {
+      return matching.slice(0, limit);
+    }
+  }
+
+  return options?.limit ? formatted.slice(0, options.limit) : formatted;
+}

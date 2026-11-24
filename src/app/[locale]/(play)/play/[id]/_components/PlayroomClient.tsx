@@ -610,7 +610,50 @@ export function PlayroomClient({
   const reviewPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
+  const [reviewBonusEarned, setReviewBonusEarned] = useState<boolean>(false);
+  const [copiedPromoCode, setCopiedPromoCode] = useState<boolean>(false);
+  const [isStoryCardModalOpen, setIsStoryCardModalOpen] = useState<boolean>(false);
+  const [isExportingStoryCard, setIsExportingStoryCard] = useState<boolean>(false);
+  const [storyCardUsePartyPhoto, setStoryCardUsePartyPhoto] = useState<boolean>(false);
   const [copiedGuestLink, setCopiedGuestLink] = useState<boolean>(false);
+
+  const REVIEW_QUICK_PROMPTS = useMemo(
+    () => [
+      'Best plot twist',
+      'Whole table was crying laughing',
+      'Everyone went all-out on costumes',
+      'Fooled until the final round',
+      'Best dinner party night',
+      'Stayed in character all night',
+    ],
+    []
+  );
+
+  const handleToggleQuickPrompt = useCallback((phrase: string) => {
+    setReviewComment(prev => {
+      const current = prev.trim();
+      if (!current) return `${phrase}.`;
+      if (current.toLowerCase().includes(phrase.toLowerCase())) {
+        const regex = new RegExp(`\\s*${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.?`, 'gi');
+        return current.replace(regex, '').trim();
+      }
+      const sep = current.endsWith('.') || current.endsWith('!') ? ' ' : '. ';
+      return `${current}${sep}${phrase}.`;
+    });
+  }, []);
+
+  const handleCopyRewardPromoCode = useCallback(async () => {
+    const code = 'SLEUTH15';
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(code);
+      }
+    } catch {
+      // fallback
+    }
+    setCopiedPromoCode(true);
+    setTimeout(() => setCopiedPromoCode(false), 2600);
+  }, []);
 
   // Restore review-unlock status for this device/guest if they already left a review tonight
   useEffect(() => {
@@ -623,6 +666,13 @@ export function PlayroomClient({
       const unlocked = window.localStorage.getItem(`bpm_review_unlocked_${mystery.id}`);
       if (unlocked === '1' || params.get('unlocked') === '1') {
         setReviewSubmitted(true);
+      }
+      const bonus = window.localStorage.getItem(`bpm_review_bonus_${mystery.id}`);
+      if (bonus === '1' || params.get('unlocked') === '1') {
+        setReviewBonusEarned(true);
+      }
+      if (params.get('story') === '1') {
+        setIsStoryCardModalOpen(true);
       }
     } catch {
       // ignore
@@ -1289,6 +1339,7 @@ export function PlayroomClient({
     e.preventDefault();
     setIsSubmittingReview(true);
     try {
+      const earnedBonus = Boolean(reviewComment.trim() || reviewPhotoDataUrl);
       const roleLabel = selectedChar ? parseCharacter(selectedChar).archetype : 'Sleuth';
       const res = await submitGuestMysteryReviewAction({
         mysteryId: mystery.id,
@@ -1303,10 +1354,19 @@ export function PlayroomClient({
         setReviews(res.reviews);
       }
       setReviewSubmitted(true);
+      if (earnedBonus) {
+        setReviewBonusEarned(true);
+      }
+      if (reviewPhotoDataUrl) {
+        setStoryCardUsePartyPhoto(true);
+      }
       setRevealSubPage('stats');
       if (typeof window !== 'undefined') {
         try {
           window.localStorage.setItem(`bpm_review_unlocked_${mystery.id}`, '1');
+          if (earnedBonus) {
+            window.localStorage.setItem(`bpm_review_bonus_${mystery.id}`, '1');
+          }
         } catch {
           // ignore
         }
@@ -1315,6 +1375,282 @@ export function PlayroomClient({
       setIsSubmittingReview(false);
     }
   };
+
+  // Compute current player's personal Detective Wrapped summary for the Story Card
+  const myDetectiveSummary = useMemo(() => {
+    const myId = voterId;
+    const myRankIndex = detectiveLeaderboard.findIndex(r => r.voterCharId === myId);
+    const myRow =
+      myRankIndex >= 0
+        ? detectiveLeaderboard[myRankIndex]
+        : detectiveLeaderboard[0] || null;
+    const rankNum = myRankIndex >= 0 ? myRankIndex + 1 : 1;
+
+    const parsedChar = selectedChar ? parseCharacter(selectedChar) : null;
+    const playerName =
+      reviewName.trim() ||
+      voterDisplayName ||
+      myRow?.voterName ||
+      parsedChar?.name ||
+      'Mystery Sleuth';
+    const roleLabel = parsedChar?.archetype || 'Detective';
+    const isPlayerKiller = Boolean(
+      selectedChar && solutionData?.killer?.id && selectedChar.id === solutionData.killer.id
+    );
+
+    const charPres = selectedChar
+      ? getCleanCharacterPresentation(selectedChar, characters, { mode: 'print' })
+      : null;
+    const portraitUrl = selectedChar
+      ? resolveDisplayAvatarUrl(
+          charPres?.characterPhotoUrl ||
+            selectedChar.profile_data?.avatar_url ||
+            selectedChar.image_url
+        )
+      : null;
+
+    let awardLabel = 'DETECTIVE SCORECARD';
+    if (isPlayerKiller) {
+      awardLabel = 'THE TRUE KILLER';
+    } else if (rankNum === 1 && (myRow?.correctVotes || 0) > 0) {
+      awardLabel = 'MASTER DETECTIVE • #1';
+    } else if (myRow?.earliestCorrectRound === 1) {
+      awardLabel = 'CLOCKED KILLER IN ROUND 1';
+    } else if ((myRow?.correctVotes || 0) > 0) {
+      awardLabel = 'NAILED THE KILLER';
+    } else if (myRow) {
+      awardLabel = 'FOOLED BY THE ALIBI';
+    }
+
+    return {
+      playerName,
+      roleLabel,
+      rankNum,
+      awardLabel,
+      correctVotes: myRow?.correctVotes ?? 0,
+      totalVotes: myRow?.totalVotes ?? maxClueRound,
+      accuracyScore: myRow?.accuracyScore ?? 0,
+      accuracyPercent: myRow?.accuracyPercent ?? 0,
+      earliestCorrectRound: myRow?.earliestCorrectRound ?? null,
+      killerName: solutionData?.killer?.name || 'Classified',
+      mostSuspectedName: mostSuspectedList[0]?.suspectName || 'The Suspects',
+      portraitUrl,
+      partyPhotoUrl:
+        reviewPhotoDataUrl ||
+        reviews.find((r: any) => r.photoUrl)?.photoUrl ||
+        '',
+    };
+  }, [
+    voterId,
+    detectiveLeaderboard,
+    selectedChar,
+    parseCharacter,
+    reviewName,
+    voterDisplayName,
+    solutionData,
+    characters,
+    maxClueRound,
+    mostSuspectedList,
+    reviewPhotoDataUrl,
+    reviews,
+  ]);
+
+  // Generate a high-res 1080x1920 vertical PNG story card and trigger native share or file download
+  const handleExportDetectiveStoryCard = useCallback(async () => {
+    if (typeof document === 'undefined') return;
+    setIsExportingStoryCard(true);
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1920;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // 1. Background gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
+      bgGrad.addColorStop(0, '#070b14');
+      bgGrad.addColorStop(0.5, '#0f172a');
+      bgGrad.addColorStop(1, '#090d16');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Subtle magenta top glow
+      const glow = ctx.createRadialGradient(540, 260, 40, 540, 260, 540);
+      glow.addColorStop(0, 'rgba(240, 40, 130, 0.28)');
+      glow.addColorStop(1, 'rgba(240, 40, 130, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, 1080, 900);
+
+      // Border frame
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(48, 48, 984, 1824);
+
+      // 2. Top Kicker & Mystery Title
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f02882';
+      ctx.font = '900 24px system-ui, -apple-system, sans-serif';
+      ctx.fillText('BACK POCKET MYSTERIES • CASE FILE CLOSED', 540, 130);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 54px system-ui, -apple-system, sans-serif';
+      ctx.fillText(mystery.title.toUpperCase().slice(0, 32), 540, 205);
+
+      // 3. Hero Image Box (620x680 centered)
+      const imgX = 230;
+      const imgY = 260;
+      const imgW = 620;
+      const imgH = 680;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, imgW, imgH, 36);
+      ctx.clip();
+
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(imgX, imgY, imgW, imgH);
+
+      const chosenImageSrc =
+        storyCardUsePartyPhoto && myDetectiveSummary.partyPhotoUrl
+          ? myDetectiveSummary.partyPhotoUrl
+          : myDetectiveSummary.portraitUrl || myDetectiveSummary.partyPhotoUrl;
+
+      if (chosenImageSrc) {
+        await new Promise<void>(resolve => {
+          const img = new window.Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            try {
+              const scale = Math.max(imgW / img.width, imgH / img.height);
+              const drawW = img.width * scale;
+              const drawH = img.height * scale;
+              const drawX = imgX + (imgW - drawW) / 2;
+              const drawY = imgY + (imgH - drawH) / 2;
+              ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            } catch {
+              // ignore
+            }
+            resolve();
+          };
+          img.onerror = () => resolve();
+          img.src = chosenImageSrc;
+        });
+      }
+      ctx.restore();
+
+      // Portrait border
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, imgW, imgH, 36);
+      ctx.stroke();
+
+      // 4. Superlative Award Pill overlapping bottom of portrait
+      ctx.fillStyle = '#f02882';
+      ctx.beginPath();
+      ctx.roundRect(250, 905, 580, 68, 34);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 26px system-ui, -apple-system, sans-serif';
+      ctx.fillText(myDetectiveSummary.awardLabel, 540, 948);
+
+      // 5. Player Name & Character Role
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 56px system-ui, -apple-system, sans-serif';
+      ctx.fillText(myDetectiveSummary.playerName.slice(0, 28), 540, 1065);
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '700 32px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`Played ${myDetectiveSummary.roleLabel}`, 540, 1120);
+
+      // 6. 3-Stat Cards
+      const cards = [
+        {
+          label: 'ROUNDS CORRECT',
+          value: `${myDetectiveSummary.correctVotes} / ${myDetectiveSummary.totalVotes}`,
+          sub: `${myDetectiveSummary.accuracyPercent}% Accuracy`,
+        },
+        {
+          label: 'DETECTIVE SCORE',
+          value: `${myDetectiveSummary.accuracyScore} PTS`,
+          sub: `Rank #${myDetectiveSummary.rankNum} at the Table`,
+        },
+        {
+          label: 'THE TRUE KILLER',
+          value: myDetectiveSummary.killerName.slice(0, 22),
+          sub: `Most Suspected: ${myDetectiveSummary.mostSuspectedName.slice(0, 18)}`,
+        },
+      ];
+
+      cards.forEach((c, idx) => {
+        const y = 1190 + idx * 175;
+        ctx.fillStyle = 'rgba(255,255,255,0.04)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(120, y, 840, 150, 24);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '800 22px system-ui, -apple-system, sans-serif';
+        ctx.fillText(c.label, 165, y + 52);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 40px system-ui, -apple-system, sans-serif';
+        ctx.fillText(c.value, 165, y + 108);
+
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#f02882';
+        ctx.font = '700 24px system-ui, -apple-system, sans-serif';
+        ctx.fillText(c.sub, 915, y + 85);
+      });
+
+      // 7. Footer
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '800 26px system-ui, -apple-system, sans-serif';
+      ctx.fillText('BACKPOCKETMYSTERIES.COM', 540, 1810);
+
+      const blob: Blob | null = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      if (!blob) return;
+
+      const fileName = `${mystery.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')}-detective-scorecard.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            title: `${mystery.title} • Detective Scorecard`,
+            text: `My Detective Scorecard from ${mystery.title}!`,
+            files: [file],
+          });
+          return;
+        } catch {
+          // fall back to download
+        }
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExportingStoryCard(false);
+    }
+  }, [mystery.title, myDetectiveSummary, storyCardUsePartyPhoto]);
 
   // Compute round submissions & vote tally for `activeVotingRound`
   const currentRoundSubmissions = useMemo(
@@ -5379,14 +5715,55 @@ export function PlayroomClient({
                       />
                     </div>
 
-                    {/* 3. Optional Comment */}
-                    <div className="space-y-1.5">
+                    {/* Bonus Reward Callout for Adding a Comment or Party Photo */}
+                    <div className="p-3.5 rounded-xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                          Guest-to-Host Bonus Reward
+                        </div>
+                        <p className="text-xs text-slate-200 font-semibold">
+                          Add a comment or party photo below to unlock <strong className="text-amber-300">15% OFF</strong> your next mystery night.
+                        </p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider shrink-0">
+                        {reviewComment.trim() || reviewPhotoDataUrl ? '✓ 15% Unlocked' : '+15% Off'}
+                      </span>
+                    </div>
+
+                    {/* 3. Optional Comment + One-Tap Quick-Prompt Chips (Zero Emojis) */}
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
                           2. Leave a Comment
                         </label>
-                        <span className="text-[10px] font-semibold text-slate-500">Optional</span>
+                        <span className="text-[10px] font-semibold text-slate-500">
+                          Optional • Tap a quick tag or write your own
+                        </span>
                       </div>
+
+                      {/* Emoji-Free Quick-Prompt Chips */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {REVIEW_QUICK_PROMPTS.map(phrase => {
+                          const isSelected = reviewComment
+                            .toLowerCase()
+                            .includes(phrase.toLowerCase());
+                          return (
+                            <button
+                              key={phrase}
+                              type="button"
+                              onClick={() => handleToggleQuickPrompt(phrase)}
+                              className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer border ${
+                                isSelected
+                                  ? 'bg-brand-pink text-white border-brand-pink shadow-sm'
+                                  : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-white/10 hover:border-white/25'
+                              }`}
+                            >
+                              {phrase}
+                            </button>
+                          );
+                        })}
+                      </div>
+
                       <textarea
                         rows={3}
                         value={reviewComment}
@@ -5424,10 +5801,10 @@ export function PlayroomClient({
                             />
                             <div className="min-w-0">
                               <div className="text-xs font-bold text-emerald-300">
-                                ✓ Party Photo Attached
+                                ✓ Party Photo Attached (+15% Off Bonus Unlocked)
                               </div>
                               <p className="text-[11px] text-slate-400 truncate">
-                                Ready to include with your review
+                                Ready to include with your review &amp; Detective Scorecard
                               </p>
                             </div>
                           </div>
@@ -5475,29 +5852,260 @@ export function PlayroomClient({
                 </div>
               </section>
             ) : (
-              /* PAGE 2 (UNLOCKED): PARTY VOTING STATISTICS, WHO VOTED FOR WHO & WHY, LEADERBOARD & SCORECARD */
+              /* PAGE 2 (UNLOCKED): PARTY VOTING STATISTICS, DETECTIVE WRAPPED STORY CARD & 15% OFF REWARD */
               <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Unlocked Confirmation Strip */}
-                <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/35 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-lg">🎉</span>
-                    <div>
-                      <h3 className="text-xs sm:text-sm font-black text-emerald-300">
-                        Thank You for Your {reviewRating}-Star Review! Party Voting Stats Unlocked
+                {/* Top Action Bar: Unlocked Confirmation + Shareable Detective Wrapped Scorecard + 15% OFF Next-Host Reward */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  {/* Left: Shareable "Detective Wrapped" Story Card Trigger */}
+                  <div className="lg:col-span-7 p-5 rounded-3xl bg-gradient-to-br from-brand-pink/20 via-slate-900 to-slate-950 border border-brand-pink/40 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {myDetectiveSummary.portraitUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={myDetectiveSummary.portraitUrl}
+                          alt={myDetectiveSummary.playerName}
+                          className="w-14 h-14 rounded-2xl object-cover object-top border border-white/20 shrink-0 shadow-md"
+                        />
+                      )}
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                            {myDetectiveSummary.awardLabel}
+                          </span>
+                          <span className="text-xs font-bold text-slate-300">
+                            {myDetectiveSummary.correctVotes}/{myDetectiveSummary.totalVotes} Rounds Right
+                          </span>
+                        </div>
+                        <h3 className="text-base sm:text-lg font-black text-white truncate">
+                          {myDetectiveSummary.playerName}&apos;s Detective Wrapped
+                        </h3>
+                        <p className="text-xs text-slate-300">
+                          Save or share your vertical Story Card to the group chat or Instagram.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsStoryCardModalOpen(true)}
+                      className="w-full sm:w-auto shrink-0 px-4 py-3 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs font-black uppercase tracking-wider shadow-lg transition-all cursor-pointer"
+                    >
+                      📲 Share My Scorecard
+                    </button>
+                  </div>
+
+                  {/* Right: 15% OFF Guest-to-Next-Host Reward Code (SLEUTH15) */}
+                  <div className="lg:col-span-5 p-5 rounded-3xl bg-gradient-to-br from-amber-500/15 via-slate-900 to-slate-950 border border-amber-400/35 shadow-xl flex flex-col justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+                          {reviewBonusEarned ? '✓ 15% Off Reward Unlocked' : 'Next-Host Reward'}
+                        </span>
+                        <Link
+                          href={`/${locale}/mysteries`}
+                          className="text-[11px] font-black text-amber-300 hover:underline"
+                        >
+                          Browse Mysteries ↗
+                        </Link>
+                      </div>
+                      <h3 className="text-sm sm:text-base font-black text-white">
+                        Want to Host Your Group&apos;s Next Mystery Night?
                       </h3>
-                      <p className="text-[11px] text-slate-300">
-                        Here is the full breakdown of how everyone voted and why across all rounds.
+                      <p className="text-xs text-slate-300">
+                        Use code <strong className="text-amber-300 font-mono">SLEUTH15</strong> at checkout for 15% off any mystery pack.
                       </p>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/30 font-mono text-sm font-black tracking-widest text-amber-300 text-center">
+                        SLEUTH15
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyRewardPromoCode}
+                        className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          copiedPromoCode
+                            ? 'bg-emerald-500 text-slate-950'
+                            : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                        }`}
+                      >
+                        {copiedPromoCode ? '✓ Copied!' : 'Copy Code'}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setRevealSubPage('solution')}
-                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-[11px] font-bold text-white transition-all cursor-pointer"
-                  >
-                    ← Back to Murder Timeline
-                  </button>
                 </div>
+
+                {/* FULL-SCREEN DETECTIVE WRAPPED STORY CARD MODAL (9:16 VERTICAL PREVIEW + 1080x1920 PNG DOWNLOAD) */}
+                {isStoryCardModalOpen && (
+                  <div
+                    className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150"
+                    onClick={() => setIsStoryCardModalOpen(false)}
+                  >
+                    <div
+                      className="relative w-full max-w-md rounded-3xl bg-slate-950 border border-white/15 p-5 sm:p-6 space-y-4 shadow-2xl max-h-[94vh] overflow-y-auto"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                            9:16 Story &amp; Group-Chat Card
+                          </span>
+                          <h3 className="text-base font-black text-white">
+                            Your Detective Scorecard
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsStoryCardModalOpen(false)}
+                          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-black flex items-center justify-center cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Optional Toggle Between Character Portrait & Uploaded Party Photo */}
+                      {myDetectiveSummary.partyPhotoUrl && myDetectiveSummary.portraitUrl && (
+                        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-white/10">
+                          <button
+                            type="button"
+                            onClick={() => setStoryCardUsePartyPhoto(false)}
+                            className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                              !storyCardUsePartyPhoto
+                                ? 'bg-brand-pink text-white'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            Character Portrait
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStoryCardUsePartyPhoto(true)}
+                            className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                              storyCardUsePartyPhoto
+                                ? 'bg-brand-pink text-white'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            Our Party Photo
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Live 9:16 Story Card Visual Preview */}
+                      <div className="mx-auto w-full max-w-[330px] rounded-[28px] bg-gradient-to-b from-[#070b14] via-[#0f172a] to-[#090d16] border border-white/15 p-5 text-center space-y-4 shadow-2xl relative overflow-hidden">
+                        <div className="space-y-1">
+                          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink">
+                            Back Pocket Mysteries • Case Closed
+                          </div>
+                          <div className="text-lg font-black text-white uppercase tracking-tight">
+                            {mystery.title}
+                          </div>
+                        </div>
+
+                        {/* Hero Portrait / Party Photo */}
+                        <div className="relative mx-auto w-44 h-48 rounded-2xl overflow-hidden bg-slate-900 border border-white/20 shadow-xl">
+                          {storyCardUsePartyPhoto && myDetectiveSummary.partyPhotoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={myDetectiveSummary.partyPhotoUrl}
+                              alt="Party Photo"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : myDetectiveSummary.portraitUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={myDetectiveSummary.portraitUrl}
+                              alt={myDetectiveSummary.playerName}
+                              className="w-full h-full object-cover object-top"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-3xl text-slate-600">
+                              🕵️
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Earned Award Pill */}
+                        <div className="-mt-6 relative z-10">
+                          <span className="inline-block px-3.5 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest shadow-lg">
+                            {myDetectiveSummary.awardLabel}
+                          </span>
+                        </div>
+
+                        {/* Player Name & Role */}
+                        <div className="space-y-0.5">
+                          <div className="text-lg font-black text-white">
+                            {myDetectiveSummary.playerName}
+                          </div>
+                          <div className="text-xs font-bold text-slate-300">
+                            Played {myDetectiveSummary.roleLabel}
+                          </div>
+                        </div>
+
+                        {/* 3-Stat Boxes */}
+                        <div className="space-y-2 text-left">
+                          <div className="px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+                            <div>
+                              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                Rounds Correct
+                              </div>
+                              <div className="text-sm font-black text-white">
+                                {myDetectiveSummary.correctVotes} / {myDetectiveSummary.totalVotes}
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-brand-pink">
+                              {myDetectiveSummary.accuracyPercent}% Accuracy
+                            </span>
+                          </div>
+
+                          <div className="px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+                            <div>
+                              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                Detective Score
+                              </div>
+                              <div className="text-sm font-black text-white">
+                                {myDetectiveSummary.accuracyScore} PTS
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-amber-300">
+                              Rank #{myDetectiveSummary.rankNum} at Table
+                            </span>
+                          </div>
+
+                          <div className="px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+                            <div>
+                              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                The True Killer
+                              </div>
+                              <div className="text-sm font-black text-white">
+                                {myDetectiveSummary.killerName}
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-300">
+                              Case Solved
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          backpocketmysteries.com
+                        </div>
+                      </div>
+
+                      {/* Download / Native Share CTA */}
+                      <button
+                        type="button"
+                        onClick={handleExportDetectiveStoryCard}
+                        disabled={isExportingStoryCard}
+                        className="w-full py-3.5 px-5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-xl transition-all cursor-pointer"
+                      >
+                        {isExportingStoryCard
+                          ? 'Generating 1080×1920 Story Image...'
+                          : '📲 Save / Share Story Image (PNG)'}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* 1. ALL-PLAYERS VOTING STATISTICS, SUSPECT ACCUSATION BREAKDOWN & WHO VOTED FOR WHO */}
                 <section className="bg-slate-900/75 border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6">

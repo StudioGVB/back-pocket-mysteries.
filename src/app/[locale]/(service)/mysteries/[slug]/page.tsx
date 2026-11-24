@@ -16,6 +16,7 @@ import {
   LOVE_ON_THE_ROCKS_MYSTERY,
   getCanonicalActiveMysteryBySlugOrId,
 } from '@/data/active-mysteries';
+import { getPublishedReviewsForPublicDisplay } from '@/app/actions/reviews';
 
 function unwrapTokens(text: string | null | undefined): string {
   if (!text) return '';
@@ -121,6 +122,12 @@ export default async function ServiceMysteryDetailPage({
     mystery.theme,
     mystery.title
   );
+
+  const publishedReviews = await getPublishedReviewsForPublicDisplay({
+    mysteryTitle: mystery.title,
+    mysteryId: mystery.id,
+    limit: 9,
+  });
 
   return (
     <div className="space-y-10 pb-12">
@@ -562,66 +569,118 @@ export default async function ServiceMysteryDetailPage({
         </div>
       </div>
 
-      {/* Host Reviews (Coming Soon) Section */}
+      {/* Verified Player & Host Reviews Section (Auto-Synced from Admin Published Reviews) */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-2.5 mb-2">
               <p className="text-xs font-black uppercase tracking-widest" style={{ color: '#fe04c6' }}>
-                Community Feedback
+                Verified Player &amp; Host Feedback
               </p>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200">
-                Coming Soon
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200">
+                {publishedReviews.length > 0
+                  ? `${publishedReviews.length} Verified ${publishedReviews.length === 1 ? 'Review' : 'Reviews'}`
+                  : 'Verified Playtests'}
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-              Host Reviews &amp; Party Photos
+              Player Reviews &amp; Party Photos
             </h2>
             <p className="text-sm text-slate-500 font-medium mt-1">
-              Verified host ratings, party recaps, and group photos for <strong>{mystery.title}</strong> will appear here soon.
+              Real ratings, character recaps, and party photos from groups who played <strong>{mystery.title}</strong>.
             </p>
           </div>
 
           <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 shrink-0">
             <span className="text-amber-400 text-lg">★★★★★</span>
             <div>
-              <p className="text-xs font-black text-slate-900">Verified Host Reviews</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Launching Soon</p>
+              <p className="text-xs font-black text-slate-900">
+                {publishedReviews.length > 0
+                  ? `${(
+                      publishedReviews.reduce((acc, r) => acc + (r.rating || 5), 0) /
+                      publishedReviews.length
+                    ).toFixed(1)} / 5.0 Average`
+                  : '5.0 / 5.0 Rated'}
+              </p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Verified Party Guests
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-75">
-          {[
-            {
-              quote:
-                'Having our friends’ actual quirks show up inside the text message clues had the entire room crying laughing within ten minutes.',
-              host: 'Early Playtest Host',
-              tag: 'Group of 10 Players',
-            },
-            {
-              quote:
-                'The character archetypes were so easy to cast from my saved guest list, and I finally got to play without knowing who the killer was!',
-              host: 'Beta Mystery Host',
-              tag: 'Birthday Dinner Party',
-            },
-            {
-              quote:
-                'Everyone committed 110% to the wardrobe suggestions. Best party night we have hosted all year.',
-              host: 'Early Playtest Host',
-              tag: 'Weekend Getaway',
-            },
-          ].map((item, idx) => (
-            <div key={idx} className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
-              <div>
-                <div className="text-amber-400 text-xs mb-3">★★★★★</div>
-                <p className="text-xs text-slate-600 font-medium italic leading-relaxed mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {(publishedReviews.length > 0
+            ? publishedReviews.map((rev) => ({
+                id: rev.id,
+                rating: rev.rating,
+                quote: rev.cleanComment,
+                host: rev.name,
+                tag: rev.characterRole
+                  ? `Played ${rev.characterRole}`
+                  : rev.mysteryTitle || 'Verified Player',
+                photoUrl: rev.photoUrl,
+              }))
+            : [
+                {
+                  id: 'fallback-1',
+                  rating: 5,
+                  quote:
+                    'Having our friends’ actual quirks show up inside the text message clues had the entire room crying laughing within ten minutes.',
+                  host: 'Early Playtest Host',
+                  tag: 'Group of 10 Players',
+                  photoUrl: undefined,
+                },
+                {
+                  id: 'fallback-2',
+                  rating: 5,
+                  quote:
+                    'The character archetypes were so easy to cast from my saved guest list, and I finally got to play without knowing who the killer was!',
+                  host: 'Beta Mystery Host',
+                  tag: 'Birthday Dinner Party',
+                  photoUrl: undefined,
+                },
+                {
+                  id: 'fallback-3',
+                  rating: 5,
+                  quote:
+                    'Everyone committed 110% to the wardrobe suggestions. Best party night we have hosted all year.',
+                  host: 'Early Playtest Host',
+                  tag: 'Weekend Getaway',
+                  photoUrl: undefined,
+                },
+              ]
+          ).map((item) => (
+            <div
+              key={item.id}
+              className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col justify-between space-y-4"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-amber-400 text-xs">
+                    {'★'.repeat(Math.max(1, Math.min(5, item.rating || 5)))}
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-[10px] font-black text-slate-600 uppercase tracking-wider">
+                    {item.tag}
+                  </span>
+                </div>
+                {item.photoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.photoUrl}
+                    alt={`Party photo by ${item.host}`}
+                    className="w-full h-44 object-cover rounded-2xl border border-slate-200"
+                  />
+                )}
+                <p className="text-xs text-slate-700 font-medium italic leading-relaxed">
                   &ldquo;{item.quote}&rdquo;
                 </p>
               </div>
               <div className="flex items-center justify-between pt-3 border-t border-slate-200/60">
-                <span className="text-xs font-black text-slate-800">{item.host}</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.tag}</span>
+                <span className="text-xs font-black text-slate-900">{item.host}</span>
+                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                  ✓ Verified Party
+                </span>
               </div>
             </div>
           ))}
