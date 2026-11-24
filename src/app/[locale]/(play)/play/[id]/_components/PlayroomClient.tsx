@@ -5594,7 +5594,9 @@ export function PlayroomClient({
                           </div>
 
                           <div className="space-y-3.5">
-                            {mostSuspectedList.map(item => {
+                            {mostSuspectedList.map((item, sIdx) => {
+                              const resolvedSuspectId =
+                                (item as any).suspectCharId || item.suspectId || `${item.suspectName}-${sIdx}`;
                               const totalCastVotes = Math.max(
                                 1,
                                 mostSuspectedList.reduce((acc, s) => acc + s.count, 0)
@@ -5602,14 +5604,14 @@ export function PlayroomClient({
                               const pct = Math.round((item.count / totalCastVotes) * 100);
                               const isTrueKiller =
                                 solutionData?.killer?.id &&
-                                item.suspectId === solutionData.killer.id;
+                                resolvedSuspectId === solutionData.killer.id;
                               const votersForSuspect = submissions.filter(
-                                s => s.suspectCharId === item.suspectId
+                                s => s.suspectCharId === resolvedSuspectId
                               );
 
                               return (
                                 <div
-                                  key={item.suspectId}
+                                  key={resolvedSuspectId}
                                   className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2"
                                 >
                                   <div className="flex items-center justify-between text-xs sm:text-sm">
