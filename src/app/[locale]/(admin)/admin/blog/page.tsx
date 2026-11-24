@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { InlineDateTimeEditor } from "@/components/admin/InlineDateTimeEditor";
 
 interface BlogPostRow {
   id: string;
@@ -194,6 +195,26 @@ export default function AdminBlogPostsPage() {
       fetchPosts();
     } catch {
       toast.error("Failed to unschedule post");
+    }
+  };
+
+  const handleUpdatePublishDate = async (postId: string, newIsoDate: string) => {
+    try {
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, publish_date: newIsoDate } : p))
+      );
+      const { error } = await supabase
+        .from("blog_posts")
+        .update({
+          publish_date: newIsoDate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", postId);
+      if (error) throw error;
+      toast.success("Blog publish date & time updated!");
+    } catch {
+      toast.error("Failed to update blog publish date");
+      fetchPosts();
     }
   };
 
@@ -533,28 +554,38 @@ export default function AdminBlogPostsPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-xs">
-                        {post.publish_date ? (
-                          <div>
-                            <div className="font-bold text-brand-dark flex items-center gap-1">
-                              <Calendar className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                              {format(new Date(post.publish_date), "MMM d, yyyy")}
+                        <InlineDateTimeEditor
+                          value={post.publish_date || post.created_at}
+                          onSave={(iso) => handleUpdatePublishDate(post.id, iso)}
+                        >
+                          {post.publish_date ? (
+                            <div className="px-1.5 py-1 rounded-lg hover:bg-gray-100">
+                              <div className="font-bold text-brand-dark flex items-center gap-1">
+                                <Calendar className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                {format(new Date(post.publish_date), "MMM d, yyyy")}
+                                <span className="text-[11px] font-normal text-gray-500">
+                                  {format(new Date(post.publish_date), "h:mmaaa")}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-gray-500">
+                                {status === "Scheduled"
+                                  ? "Scheduled launch (double-click to edit)"
+                                  : status === "Draft"
+                                  ? "Target date (double-click to edit)"
+                                  : "Published (double-click to edit)"}
+                              </div>
                             </div>
-                            <div className="text-[11px] text-gray-500">
-                              {status === "Scheduled"
-                                ? "Scheduled launch"
-                                : status === "Draft"
-                                ? "Target date"
-                                : "Published"}
+                          ) : (
+                            <div className="px-1.5 py-1 rounded-lg hover:bg-gray-100">
+                              <div className="font-bold text-brand-dark">
+                                {format(new Date(post.created_at), "MMM d, yyyy")}
+                              </div>
+                              <div className="text-[11px] text-gray-400">
+                                Created (double-click to set date)
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="font-bold text-brand-dark">
-                              {format(new Date(post.created_at), "MMM d, yyyy")}
-                            </div>
-                            <div className="text-[11px] text-gray-400">Created</div>
-                          </div>
-                        )}
+                          )}
+                        </InlineDateTimeEditor>
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5">

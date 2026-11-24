@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   format,
   eachDayOfInterval,
@@ -24,6 +24,8 @@ import { LinkedinIcon as Linkedin, InstagramIcon as Instagram } from "@/componen
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
+import { toLocalDateTimeInputValue } from "@/components/admin/InlineDateTimeEditor";
 
 export interface EdmCampaignCalendarItem {
   id: string;
@@ -193,6 +195,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
         }
         return groups.map((platform) => ({
           id: `${post.id}-${platform}`,
+          postId: post.id as string,
           subject: post.brief,
           type: "social" as const,
           status: post.status,
@@ -212,19 +215,79 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
     }));
   }, [vipLeads]);
 
+  const [edmOverrides, setEdmOverrides] = useState<Record<string, string>>({});
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editingCalendarEvent, setEditingCalendarEvent] = useState<{
+    type: "edm" | "blog" | "social";
+    recordId: string;
+    subject: string;
+    draftDateTime: string;
+  } | null>(null);
+  const [savingCalendarDate, setSavingCalendarDate] = useState(false);
+
+  const handleSaveCalendarEventDate = async () => {
+    if (!editingCalendarEvent || !editingCalendarEvent.draftDateTime) return;
+    const parsed = new Date(editingCalendarEvent.draftDateTime);
+    if (Number.isNaN(parsed.getTime())) {
+      toast.error("Please select a valid date & time");
+      return;
+    }
+    const iso = parsed.toISOString();
+    const supabase = createClient() as any;
+
+    try {
+      setSavingCalendarDate(true);
+      if (editingCalendarEvent.type === "social") {
+        setSocialPosts((prev) =>
+          prev.map((p) => (p.id === editingCalendarEvent.recordId ? { ...p, scheduled_at: iso } : p))
+        );
+        const { error } = await supabase
+          .from("social_posts")
+          .update({ scheduled_at: iso, updated_at: new Date().toISOString() })
+          .eq("id", editingCalendarEvent.recordId);
+        if (error) throw error;
+      } else if (editingCalendarEvent.type === "blog") {
+        setBlogPosts((prev) =>
+          prev.map((b) => (b.id === editingCalendarEvent.recordId ? { ...b, publish_date: iso } : b))
+        );
+        const { error } = await supabase
+          .from("blog_posts")
+          .update({ publish_date: iso, updated_at: new Date().toISOString() })
+          .eq("id", editingCalendarEvent.recordId);
+        if (error) throw error;
+      } else if (editingCalendarEvent.type === "edm") {
+        setEdmOverrides((prev) => ({ ...prev, [editingCalendarEvent.recordId]: iso }));
+        const { error } = await supabase
+          .from("edm_campaigns")
+          .update({ scheduled_at: iso, updated_at: new Date().toISOString() })
+          .eq("id", editingCalendarEvent.recordId);
+        if (error) throw error;
+      }
+      toast.success("Posting date & time updated!");
+      setEditingCalendarEvent(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update posting date & time");
+    } finally {
+      setSavingCalendarDate(false);
+    }
+  };
+
   const displayableCampaigns = useMemo(() => {
-    return campaigns.filter(
-      (c) =>
-        c.status === "scheduled" ||
-        c.status === "sent" ||
-        c.status === "sending" ||
-        (c.status === "draft" && !!c.scheduled_at)
-    );
-  }, [campaigns]);
+    return campaigns
+      .map((c) => (edmOverrides[c.id] ? { ...c, scheduled_at: edmOverrides[c.id] } : c))
+      .filter(
+        (c) =>
+          c.status === "scheduled" ||
+          c.status === "sent" ||
+          c.status === "sending" ||
+          (c.status === "draft" && !!c.scheduled_at)
+      );
+  }, [campaigns, edmOverrides]);
 
   const getEventsForDay = (day: Date) => {
     const list: Array<{
       id: string;
+      recordId?: string;
       subject: string;
       type: "edm" | "onboarding" | "blog" | "social";
       status?: string;
@@ -241,6 +304,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
         if (dateStr && isSameDay(new Date(dateStr), day)) {
           list.push({
             id: c.id,
+            recordId: c.id,
             subject: c.subject,
             type: "edm",
             status: c.status,
@@ -270,6 +334,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
         if (isSameDay(ev.date, day)) {
           list.push({
             id: ev.id,
+            recordId: ev.id,
             subject: ev.subject,
             type: "blog",
             is_draft: ev.is_draft,
@@ -284,6 +349,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
         if (isSameDay(ev.date, day)) {
           list.push({
             id: ev.id,
+            recordId: ev.postId,
             subject: ev.subject,
             type: "social",
             status: ev.status,
@@ -675,20 +741,47 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                                 : isBlog
                                 ? "Blog Post"
                                 : "VIP Lead"
-                            })`}
+                            }) — Double-click to change date & time`}
                             onClick={() => {
-                              if (isEdm && event.campaignId) {
-                                router.push(`/admin/edm/${event.campaignId}`);
-                              } else if (isBlog) {
-                                router.push(`/admin/blog/${event.id}`);
-                              } else if (isSocial) {
-                                router.push(
-                                  isIgFb
-                                    ? "/admin/social/instagram-facebook"
-                                    : "/admin/social/linkedin"
-                                );
-                              } else {
-                                router.push("/admin/leads");
+                              if (clickTimeoutRef.current) {
+                                clearTimeout(clickTimeoutRef.current);
+                              }
+                              clickTimeoutRef.current = setTimeout(() => {
+                                if (isEdm && event.campaignId) {
+                                  router.push(`/admin/edm/${event.campaignId}`);
+                                } else if (isBlog) {
+                                  router.push(`/admin/blog/${event.id}`);
+                                } else if (isSocial) {
+                                  router.push(
+                                    isIgFb
+                                      ? "/admin/social/instagram-facebook"
+                                      : "/admin/social/linkedin"
+                                  );
+                                } else {
+                                  router.push("/admin/leads");
+                                }
+                              }, 220);
+                            }}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              if (clickTimeoutRef.current) {
+                                clearTimeout(clickTimeoutRef.current);
+                                clickTimeoutRef.current = null;
+                              }
+                              if (
+                                (event.type === "edm" ||
+                                  event.type === "blog" ||
+                                  event.type === "social") &&
+                                event.recordId
+                              ) {
+                                setEditingCalendarEvent({
+                                  type: event.type,
+                                  recordId: event.recordId,
+                                  subject: event.subject,
+                                  draftDateTime: toLocalDateTimeInputValue(
+                                    event.date.toISOString()
+                                  ),
+                                });
                               }
                             }}
                             className={cn(
@@ -832,6 +925,74 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                 }}
               />
               <span>VIP Sign-Ups</span>
+            </div>
+            <div className="ml-auto text-[11px] font-bold text-gray-400">
+              💡 Tip: Double-click any post, blog, or EDM to change its posting date &amp; time
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Double-Click Reschedule Date & Time Modal */}
+      {editingCalendarEvent && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setEditingCalendarEvent(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-1">
+              <span className="inline-block px-2.5 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                Reschedule {editingCalendarEvent.type.toUpperCase()}
+              </span>
+              <h3 className="text-base font-black text-brand-dark line-clamp-2">
+                {editingCalendarEvent.subject}
+              </h3>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                New Posting Date &amp; Time
+              </label>
+              <input
+                type="datetime-local"
+                autoFocus
+                value={editingCalendarEvent.draftDateTime}
+                onChange={(e) =>
+                  setEditingCalendarEvent((prev) =>
+                    prev ? { ...prev, draftDateTime: e.target.value } : null
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleSaveCalendarEventDate();
+                  } else if (e.key === "Escape") {
+                    setEditingCalendarEvent(null);
+                  }
+                }}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-brand-dark focus:outline-none focus:border-brand-pink"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditingCalendarEvent(null)}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={savingCalendarDate}
+                onClick={handleSaveCalendarEventDate}
+                className="px-5 py-2 rounded-xl bg-brand-pink text-white text-xs font-black uppercase tracking-wider hover:bg-brand-dark transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {savingCalendarDate ? "Saving..." : "Save Date & Time"}
+              </button>
             </div>
           </div>
         </div>

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import { InlineDateTimeEditor } from "@/components/admin/InlineDateTimeEditor";
 
 interface SocialPostItem {
   id: string;
@@ -148,6 +149,28 @@ export default function LinkedInManagementPage() {
     } catch (err: any) {
       console.error("Failed to update status:", err);
       toast.error(err.message || "Failed to send to Buffer");
+      fetchLinkedInPosts();
+    }
+  };
+
+  const handleUpdateScheduledAt = async (postId: string, newIsoDate: string) => {
+    try {
+      setPosts((prev) =>
+        [...prev]
+          .map((p) => (p.id === postId ? { ...p, scheduled_at: newIsoDate } : p))
+          .sort((a, b) =>
+            (a.scheduled_at || "9999").localeCompare(b.scheduled_at || "9999")
+          )
+      );
+      const { error } = await supabase
+        .from("social_posts")
+        .update({ scheduled_at: newIsoDate, updated_at: new Date().toISOString() })
+        .eq("id", postId);
+      if (error) throw error;
+      toast.success("Posting date & time updated!");
+    } catch (err: any) {
+      console.error("Failed to update scheduled_at:", err);
+      toast.error("Failed to update posting date & time");
       fetchLinkedInPosts();
     }
   };
@@ -347,6 +370,7 @@ export default function LinkedInManagementPage() {
                       copiedId={copiedId}
                       onCopy={handleCopyText}
                       onToggleScheduled={handleToggleScheduled}
+                      onUpdateScheduledAt={handleUpdateScheduledAt}
                     />
                   ))}
                 </div>
@@ -389,6 +413,7 @@ export default function LinkedInManagementPage() {
                       copiedId={copiedId}
                       onCopy={handleCopyText}
                       onToggleScheduled={handleToggleScheduled}
+                      onUpdateScheduledAt={handleUpdateScheduledAt}
                     />
                   ))}
                 </div>
@@ -411,9 +436,16 @@ interface PostCardProps {
     cleanCopy?: string,
     linkUrl?: string
   ) => void;
+  onUpdateScheduledAt: (postId: string, newIsoDate: string) => Promise<void> | void;
 }
 
-function PostCard({ post, copiedId, onCopy, onToggleScheduled }: PostCardProps) {
+function PostCard({
+  post,
+  copiedId,
+  onCopy,
+  onToggleScheduled,
+  onUpdateScheduledAt,
+}: PostCardProps) {
   const isScheduledOrPosted =
     post.status === "scheduled" || post.status === "posted" || post.status === "published";
   const isDraft = post.status === "draft";
@@ -458,23 +490,42 @@ function PostCard({ post, copiedId, onCopy, onToggleScheduled }: PostCardProps) 
                   : "Published"}
               </span>
 
-              {post.scheduled_at && !isDraft && (
-                <span className="text-xs text-gray-500 flex items-center gap-1 font-semibold">
-                  <Calendar className="h-3.5 w-3.5 text-emerald-600" />
-                  Scheduled: {format(new Date(post.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}
-                </span>
+              {!isDraft && (
+                <InlineDateTimeEditor
+                  value={post.scheduled_at}
+                  onSave={(iso) => onUpdateScheduledAt(post.id, iso)}
+                >
+                  <span className="text-xs text-gray-500 flex items-center gap-1 font-semibold px-2 py-0.5 rounded-lg hover:bg-emerald-50">
+                    <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                    {post.scheduled_at
+                      ? `Scheduled: ${format(new Date(post.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}`
+                      : "Double-click to set date & time"}
+                  </span>
+                </InlineDateTimeEditor>
               )}
             </div>
 
-            {post.scheduled_at && isDraft && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-400/50 text-amber-950 font-bold text-sm mb-2">
-                <Calendar className="h-4 w-4 text-amber-600 shrink-0" />
-                <span>
-                  Target Date:{" "}
-                  <span className="text-amber-900 font-extrabold">
-                    {format(new Date(post.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}
-                  </span>
-                </span>
+            {isDraft && (
+              <div className="mb-2">
+                <InlineDateTimeEditor
+                  value={post.scheduled_at}
+                  onSave={(iso) => onUpdateScheduledAt(post.id, iso)}
+                >
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-400/50 text-amber-950 font-bold text-sm hover:bg-amber-500/25 transition-colors">
+                    <Calendar className="h-4 w-4 text-amber-600 shrink-0" />
+                    <span>
+                      Target Date:{" "}
+                      <span className="text-amber-900 font-extrabold">
+                        {post.scheduled_at
+                          ? format(new Date(post.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")
+                          : "Double-click to set date & time"}
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-bold text-amber-700/80 ml-1">
+                      (Double-click to edit)
+                    </span>
+                  </div>
+                </InlineDateTimeEditor>
               </div>
             )}
 

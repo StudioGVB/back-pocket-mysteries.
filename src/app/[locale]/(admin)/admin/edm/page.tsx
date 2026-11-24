@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { InlineDateTimeEditor } from "@/components/admin/InlineDateTimeEditor";
 
 type EdmStatus = "draft" | "scheduled" | "sending" | "sent" | "archived";
 type StatusFilter = "all" | "draft" | "scheduled" | "sending" | "sent" | "archived";
@@ -294,6 +295,26 @@ export default function EdmCampaignsPage() {
     }
   };
 
+  const handleUpdateScheduledAt = async (campaignId: string, newIsoDate: string) => {
+    try {
+      setCampaigns((prev) =>
+        prev.map((c) => (c.id === campaignId ? { ...c, scheduled_at: newIsoDate } : c))
+      );
+      const { error } = await supabase
+        .from("edm_campaigns")
+        .update({
+          scheduled_at: newIsoDate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", campaignId);
+      if (error) throw error;
+      toast.success("EDM scheduled date & time updated!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update scheduled date");
+      fetchCampaigns();
+    }
+  };
+
   const handleArchive = async (id: string) => {
     try {
       const { error } = await supabase
@@ -528,31 +549,38 @@ export default function EdmCampaignsPage() {
                     </td>
                     <td className="py-3.5 px-4">{statusBadge(campaign.status)}</td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      {campaign.scheduled_at ? (
-                        <div>
-                          <div className="flex items-center gap-1.5 text-sm font-bold text-brand-dark">
-                            <Calendar
-                              className={cn(
-                                "h-3.5 w-3.5 shrink-0",
-                                campaign.status === "scheduled"
-                                  ? "text-brand-pink"
-                                  : "text-amber-500"
-                              )}
-                            />
-                            <span>{format(new Date(campaign.scheduled_at), "MMM d, yyyy")}</span>
-                            <span className="text-xs font-normal text-gray-500">
-                              {format(new Date(campaign.scheduled_at), "h:mmaaa")}
-                            </span>
-                          </div>
-                          {campaign.status === "draft" && (
-                            <div className="text-[11px] text-amber-600 font-bold">
-                              Target (Draft)
+                      <InlineDateTimeEditor
+                        value={campaign.scheduled_at || campaign.created_at}
+                        onSave={(iso) => handleUpdateScheduledAt(campaign.id, iso)}
+                      >
+                        {campaign.scheduled_at ? (
+                          <div className="px-1.5 py-1 rounded-lg hover:bg-gray-100">
+                            <div className="flex items-center gap-1.5 text-sm font-bold text-brand-dark">
+                              <Calendar
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0",
+                                  campaign.status === "scheduled"
+                                    ? "text-brand-pink"
+                                    : "text-amber-500"
+                                )}
+                              />
+                              <span>{format(new Date(campaign.scheduled_at), "MMM d, yyyy")}</span>
+                              <span className="text-xs font-normal text-gray-500">
+                                {format(new Date(campaign.scheduled_at), "h:mmaaa")}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">—</span>
-                      )}
+                            <div className="text-[11px] text-amber-600 font-bold">
+                              {campaign.status === "draft"
+                                ? "Target (Double-click to edit)"
+                                : "Double-click to edit"}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 px-1.5 py-1 rounded-lg hover:bg-gray-100 inline-block">
+                            — (Double-click to set)
+                          </span>
+                        )}
+                      </InlineDateTimeEditor>
                     </td>
                     <td className="py-3.5 px-4 text-sm font-semibold">
                       {stats[campaign.id]?.total_sent != null &&
@@ -578,21 +606,28 @@ export default function EdmCampaignsPage() {
                           </div>
                           <div className="text-xs text-gray-400">Sent</div>
                         </div>
-                      ) : campaign.status === "scheduled" && campaign.scheduled_at ? (
-                        <div>
-                          <div className="flex items-center gap-1 text-sm text-brand-pink font-bold">
-                            <Calendar className="h-3.5 w-3.5 shrink-0" />
-                            {format(new Date(campaign.scheduled_at), "MMM d, yyyy")}
-                          </div>
-                          <div className="text-xs text-gray-400">Scheduled</div>
-                        </div>
                       ) : (
-                        <div>
-                          <div className="text-sm font-semibold">
-                            {format(new Date(campaign.created_at), "MMM d, yyyy")}
-                          </div>
-                          <div className="text-xs text-gray-400">Created</div>
-                        </div>
+                        <InlineDateTimeEditor
+                          value={campaign.scheduled_at || campaign.created_at}
+                          onSave={(iso) => handleUpdateScheduledAt(campaign.id, iso)}
+                        >
+                          {campaign.status === "scheduled" && campaign.scheduled_at ? (
+                            <div className="px-1.5 py-1 rounded-lg hover:bg-gray-100">
+                              <div className="flex items-center gap-1 text-sm text-brand-pink font-bold">
+                                <Calendar className="h-3.5 w-3.5 shrink-0" />
+                                {format(new Date(campaign.scheduled_at), "MMM d, yyyy")}
+                              </div>
+                              <div className="text-xs text-gray-400">Scheduled (double-click)</div>
+                            </div>
+                          ) : (
+                            <div className="px-1.5 py-1 rounded-lg hover:bg-gray-100">
+                              <div className="text-sm font-semibold">
+                                {format(new Date(campaign.created_at), "MMM d, yyyy")}
+                              </div>
+                              <div className="text-xs text-gray-400">Created (double-click)</div>
+                            </div>
+                          )}
+                        </InlineDateTimeEditor>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
