@@ -6,7 +6,7 @@ import path from 'path';
 import { cache } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { readLocalAiLogs, StoredAiUsageLog } from '@/utils/ai-logger';
-import { requireAdmin } from '@/utils/admin-auth';
+import { requireAdmin, ADMIN_EMAIL_ALLOWLIST, ADMIN_UID_ALLOWLIST } from '@/utils/admin-auth';
 
 const FX_TO_GBP: Record<string, number> = {
   GBP: 1,
@@ -148,19 +148,57 @@ export async function getLeads() {
 }
 
 export const getCustomers = cache(async () => {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
-  // Fetch all profiles without joining user_roles to avoid RLS/schema errors
-  const { data, error } = (await supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false })) as any;
+  // Fetch all profiles and admin roles in parallel
+  const [{ data, error }, { data: rolesData }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false }) as any,
+    supabase
+      .from('user_roles')
+      .select('user_id, role')
+      .in('role', ['admin', 'superadmin', 'super_admin']),
+  ]);
 
   if (error) {
     console.error('Error fetching customers:', error);
     return [];
   }
-  return data || [];
+
+  const roleByUserId: Record<string, string> = {};
+  for (const r of rolesData || []) {
+    if (r?.user_id && r?.role) {
+      roleByUserId[r.user_id] = String(r.role).toLowerCase().trim();
+    }
+  }
+
+  const currentUserId = user?.id || '';
+  const currentUserEmail = (user?.email || '').toLowerCase().trim();
+
+  return (data || []).map((p: any) => {
+    const emailLower = (p.email || '').toLowerCase().trim();
+    const dbRole = roleByUserId[p.id] || '';
+    const isAllowlistedOwner =
+      ADMIN_UID_ALLOWLIST.includes(p.id) ||
+      (emailLower && ADMIN_EMAIL_ALLOWLIST.includes(emailLower));
+    const isSuperAdmin =
+      isAllowlistedOwner || dbRole === 'superadmin' || dbRole === 'super_admin';
+    const isAdmin = isSuperAdmin || dbRole === 'admin';
+    const isCurrentUser = Boolean(
+      (currentUserId && p.id === currentUserId) ||
+        (currentUserEmail && emailLower && emailLower === currentUserEmail)
+    );
+
+    return {
+      ...p,
+      isCurrentUser,
+      isSuperAdmin,
+      isAdmin,
+      adminRoleLabel: isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : null,
+    };
+  });
 });
 
 export async function getAdmins() {
@@ -547,15 +585,45 @@ export async function getAiCosts(): Promise<StoredAiUsageLog[]> {
 // --- Customer Profile View Data ---
 
 export async function getCustomerProfile(userId: string) {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
+  const { supabase, user } = await requireAdmin();
+  const [{ data, error }, { data: roleData }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle(),
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle(),
+  ]);
 
   if (error) console.error('Error fetching customer profile:', error);
-  return data as any;
+  if (!data) return null;
+
+  const emailLower = ((data as any).email || '').toLowerCase().trim();
+  const dbRole = String((roleData as any)?.role || '').toLowerCase().trim();
+  const isAllowlistedOwner =
+    ADMIN_UID_ALLOWLIST.includes((data as any).id) ||
+    (emailLower && ADMIN_EMAIL_ALLOWLIST.includes(emailLower));
+  const isSuperAdmin =
+    isAllowlistedOwner || dbRole === 'superadmin' || dbRole === 'super_admin';
+  const isAdmin = isSuperAdmin || dbRole === 'admin';
+  const currentUserId = user?.id || '';
+  const currentUserEmail = (user?.email || '').toLowerCase().trim();
+  const isCurrentUser = Boolean(
+    (currentUserId && (data as any).id === currentUserId) ||
+      (currentUserEmail && emailLower && emailLower === currentUserEmail)
+  );
+
+  return {
+    ...(data as any),
+    isCurrentUser,
+    isSuperAdmin,
+    isAdmin,
+    adminRoleLabel: isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : null,
+  };
 }
 
 export async function getCustomerOrders(userId: string) {

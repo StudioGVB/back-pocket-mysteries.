@@ -137,10 +137,24 @@ async function CustomerProfileContent({
             </svg>
           </Link>
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-3xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-1">
                 Customer <span className="text-brand-pink italic">Profile</span>
               </h1>
+              {profile.isCurrentUser && (
+                <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
+                  👤 My Account
+                </span>
+              )}
+              {profile.isSuperAdmin ? (
+                <span className="px-3 py-1 rounded-full bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
+                  🛡️ Super Admin
+                </span>
+              ) : profile.isAdmin ? (
+                <span className="px-3 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
+                  🛡️ Admin
+                </span>
+              ) : null}
               {crm.accountSuspended && (
                 <span className="px-3 py-1 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest">
                   Suspended
@@ -155,6 +169,16 @@ async function CustomerProfileContent({
 
         {/* Status Pills */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {profile.isCurrentUser && (
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-brand-pink/10 text-brand-pink border border-brand-pink/25">
+              👤 Your Account
+            </span>
+          )}
+          {profile.isSuperAdmin && (
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200">
+              🛡️ Super Admin Access
+            </span>
+          )}
           <span
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border ${
               isMemberIn
@@ -187,7 +211,27 @@ async function CustomerProfileContent({
               className="w-20 h-20 rounded-full object-cover mb-4 border-2 border-brand-pink/30 shadow-[0_0_15px_rgba(254,4,198,0.3)] bg-white"
             />
             <h3 className="text-xl font-black uppercase tracking-tight mb-1">{profile.full_name || 'Unknown'}</h3>
-            <p className="text-brand-pink text-[10px] font-black uppercase tracking-widest mb-3">{profile.email}</p>
+            <p className="text-brand-pink text-[10px] font-black uppercase tracking-widest mb-2.5">{profile.email}</p>
+
+            {/* Account Identity & Admin Role Badges */}
+            {(profile.isCurrentUser || profile.isSuperAdmin || profile.isAdmin) && (
+              <div className="flex flex-wrap justify-center gap-1.5 mb-2.5">
+                {profile.isCurrentUser && (
+                  <span className="px-2.5 py-1 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest shadow-sm">
+                    👤 My Account
+                  </span>
+                )}
+                {profile.isSuperAdmin ? (
+                  <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[9px] font-black uppercase tracking-widest">
+                    🛡️ Super Admin
+                  </span>
+                ) : profile.isAdmin ? (
+                  <span className="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[9px] font-black uppercase tracking-widest">
+                    🛡️ Admin
+                  </span>
+                ) : null}
+              </div>
+            )}
 
             {/* Customer CRM Tags */}
             {crm.tags && crm.tags.length > 0 && (
@@ -206,6 +250,37 @@ async function CustomerProfileContent({
             <div className="w-full h-px bg-white/10 my-4"></div>
             
             <div className="w-full text-left space-y-3">
+              <div>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Account Role</p>
+                <p className="text-xs font-bold flex items-center gap-2">
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full ${
+                      profile.isSuperAdmin
+                        ? 'bg-amber-400'
+                        : profile.isAdmin
+                        ? 'bg-indigo-400'
+                        : 'bg-brand-pink'
+                    }`}
+                  />
+                  <span
+                    className={
+                      profile.isSuperAdmin
+                        ? 'text-amber-300'
+                        : profile.isAdmin
+                        ? 'text-indigo-300'
+                        : 'text-gray-200'
+                    }
+                  >
+                    {profile.isSuperAdmin
+                      ? 'Super Admin'
+                      : profile.isAdmin
+                      ? 'Admin'
+                      : 'Customer / Host'}
+                    {profile.isCurrentUser ? ' • My Account (You)' : ''}
+                  </span>
+                </p>
+              </div>
+
               <div>
                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Monthly Membership</p>
                 <p className="text-xs font-bold flex items-center gap-2">

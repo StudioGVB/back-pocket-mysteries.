@@ -102,8 +102,22 @@ async function CustomerList({
                         className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-slate-100 shrink-0"
                       />
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-black text-brand-dark tracking-tight">{user.full_name || 'Anonymous User'}</p>
+                          {user.isCurrentUser && (
+                            <span className="px-2 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest">
+                              👤 My Account
+                            </span>
+                          )}
+                          {user.isSuperAdmin ? (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[9px] font-black uppercase tracking-widest">
+                              🛡️ Super Admin
+                            </span>
+                          ) : user.isAdmin ? (
+                            <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 text-[9px] font-black uppercase tracking-widest">
+                              🛡️ Admin
+                            </span>
+                          ) : null}
                           {userCrm?.tags?.slice(0, 2).map((t: string) => (
                             <span key={t} className="px-2 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink text-[9px] font-black uppercase tracking-widest">
                               {t}
