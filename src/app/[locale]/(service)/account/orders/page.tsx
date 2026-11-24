@@ -324,6 +324,10 @@ export default async function OrdersPage({
         hasGeneratingStories={stories.some(
           (s) => s.generationState?.status === 'generating'
         )}
+        generatingStories={stories
+          .filter((s) => s.generationState?.status === 'generating')
+          .map((s) => ({ id: s.id, title: s.title || 'Murder Mystery' }))}
+        locale={locale}
       />
 
       {stories.length > 0 ? (

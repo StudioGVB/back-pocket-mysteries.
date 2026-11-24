@@ -67,18 +67,21 @@ export default function MysteryGeneratingScreen({
     return () => clearInterval(timer);
   }, [status]);
 
-  // Poll server-side background job every 5 seconds
+  // Drive & poll server-side checkpointed generation step-by-step without overlapping calls
   useEffect(() => {
     if (status === 'ready') return;
     let active = true;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
 
-    const poll = async () => {
+    const runStep = async () => {
+      if (!active) return;
       try {
         const res = await getMysteryGenerationStatusAction({
           mysteryId,
           slug,
           mysteryTitle,
           locale,
+          advanceStep: true,
         });
         if (!active) return;
         if (res.customerEmail) setEmailAddress(res.customerEmail);
@@ -89,6 +92,7 @@ export default function MysteryGeneratingScreen({
           setStepLabel('Package complete & ready in My Mysteries (Stories)!');
           setEmailSentToast(true);
           if (onGenerationReady) onGenerationReady();
+          return;
         } else if (res.status === 'generating') {
           setRemainingSeconds(res.remainingSeconds);
           setProgress(res.progress);
@@ -97,12 +101,15 @@ export default function MysteryGeneratingScreen({
       } catch {
         // ignore transient network errors
       }
+      if (active) {
+        timerId = setTimeout(runStep, 2500);
+      }
     };
 
-    const interval = setInterval(poll, 5000);
+    timerId = setTimeout(runStep, 800);
     return () => {
       active = false;
-      clearInterval(interval);
+      if (timerId) clearTimeout(timerId);
     };
   }, [status, mysteryId, slug, mysteryTitle, locale, onGenerationReady]);
 

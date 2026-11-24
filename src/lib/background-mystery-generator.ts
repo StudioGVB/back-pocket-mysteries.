@@ -2,6 +2,9 @@ import {
   getStoredGameSession,
   updateMysteryGenerationInStore,
   getCachedMysterySnapshot,
+  cacheMysterySnapshot,
+  loadLiveStateFromSupabaseClueCarrier,
+  syncLiveStateToSupabaseClueCarrier,
   StoredGameSession,
 } from '@/lib/live-session-store';
 import {
@@ -13,7 +16,12 @@ import {
   generateClueImageAction,
   auditAndHealCustomerPackAction,
 } from '@/app/actions/generator';
-import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
+import {
+  pregenerateAllAudioCluesForMystery,
+  generateAudioClueAction,
+} from '@/app/actions/audio-generator';
+import { inferClueFormat, stripCustomerFacingTitle } from '@/utils/clue-format';
+import { getCharacterRoleTitle, getCharacterDisplayName } from '@/utils/hydration';
 
 export interface BackgroundGenerationParams {
   mysteryId: string;
@@ -219,6 +227,8 @@ export async function finalizeMysteryGenerationNow(
     });
   }
 
+  await syncLiveStateToSupabaseClueCarrier(params.mysteryId);
+
   let emailSent = false;
   if (resolvedEmail) {
     const emailRes = await sendCustomerMysteryReadyEmail({
@@ -234,6 +244,281 @@ export async function finalizeMysteryGenerationNow(
   }
 
   return { success: true, emailSent };
+}
+
+const activeStepLocks = new Set<string>();
+
+/**
+ * Checkpointed, Serverless-Resilient Step Runner:
+ * Executes exactly ONE uncompleted generation or QA step (~8-12 seconds) per invocation,
+ * saves the checkpoint to Supabase `public.clues` carrier row so it survives across stateless
+ * Vercel serverless containers, and finalizes + emails the customer when 100% of assets & QA pass.
+ */
+export async function advanceMysteryGenerationOneStep(
+  params: BackgroundGenerationParams
+): Promise<{
+  status: 'idle' | 'generating' | 'ready';
+  progress: number;
+  stepLabel: string;
+  didWork: boolean;
+}> {
+  await loadLiveStateFromSupabaseClueCarrier(params.mysteryId);
+  const session = getStoredGameSession(params.mysteryId);
+
+  if (!session || !session.isPaid) {
+    return {
+      status: 'idle',
+      progress: 0,
+      stepLabel: 'Waiting for cast lock & checkout',
+      didWork: false,
+    };
+  }
+
+  if (session.generationStatus === 'ready') {
+    return {
+      status: 'ready',
+      progress: 100,
+      stepLabel: 'Package complete & ready in My Mysteries (Stories)!',
+      didWork: false,
+    };
+  }
+
+  if (activeStepLocks.has(params.mysteryId)) {
+    const live = computeLiveGenerationState(session);
+    return {
+      status: live.status,
+      progress: live.progress,
+      stepLabel: live.stepLabel,
+      didWork: false,
+    };
+  }
+
+  activeStepLocks.add(params.mysteryId);
+  try {
+    const cachedMystery = getCachedMysterySnapshot(params.mysteryId);
+    const characters: any[] = cachedMystery?.characters || [];
+    const activeChars = characters.filter(
+      (c) => c.profile_data?.is_active_in_session !== false
+    );
+    const allClues: any[] = cachedMystery?.clues || [];
+
+    // 1. STAGE 1 CHECKPOINT: Find the first active character missing a Standard Character Reference Portrait
+    const nextCharForPortrait = activeChars.find(
+      (c) =>
+        !c.profile_data?.standard_character_photo_url ||
+        String(c.profile_data.standard_character_photo_url).includes('api.dicebear.com')
+    );
+
+    if (nextCharForPortrait) {
+      const donePortraits = activeChars.filter(
+        (c) =>
+          c.profile_data?.standard_character_photo_url &&
+          !String(c.profile_data.standard_character_photo_url).includes('api.dicebear.com')
+      ).length;
+      const roleTitle = getCharacterRoleTitle(nextCharForPortrait);
+      const guestName = getCharacterDisplayName(nextCharForPortrait);
+      const stepLabel = `Generating character costume portrait (${donePortraits + 1}/${activeChars.length}): ${guestName} (${roleTitle})...`;
+      const pct = Math.min(50, 24 + Math.round(((donePortraits + 1) / Math.max(1, activeChars.length)) * 26));
+
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep: stepLabel,
+        generationProgress: pct,
+      });
+
+      const res = await ensureStandardCharacterPhoto(
+        nextCharForPortrait,
+        cachedMystery || { id: params.mysteryId, theme: 'Murder Mystery' },
+        null,
+        true
+      );
+
+      if (res?.photoUrl && cachedMystery) {
+        const updatedChars = characters.map((c) =>
+          c.id === nextCharForPortrait.id
+            ? {
+                ...c,
+                profile_data: {
+                  ...(c.profile_data || {}),
+                  standard_character_photo_url: res.photoUrl,
+                  standard_character_photo_hash: res.identityHash,
+                  outfit_image_url: res.photoUrl,
+                },
+              }
+            : c
+        );
+        cacheMysterySnapshot(params.mysteryId, {
+          ...cachedMystery,
+          characters: updatedChars,
+        });
+      }
+
+      await syncLiveStateToSupabaseClueCarrier(params.mysteryId);
+      return {
+        status: 'generating',
+        progress: pct,
+        stepLabel,
+        didWork: true,
+      };
+    }
+
+    // 2. STAGE 2 CHECKPOINT: Find the first visual clue that hasn't been generated for this cast yet
+    const visualClues = allClues.filter((c) => {
+      const fmt = c?.format || inferClueFormat(c);
+      if (fmt === 'audio') return false;
+      const hasPrompt = Boolean(c?.generation_prompt || c?.prompt_template);
+      const isVisual =
+        fmt === 'cctv' ||
+        fmt === 'physical_prop' ||
+        fmt === 'social_post' ||
+        Boolean(c?.static_image_url);
+      return c?.id && hasPrompt && isVisual;
+    });
+
+    const nextVisualClue = visualClues.find(
+      (c) => !c.__cast_photo_generated || !c.static_image_url
+    );
+
+    if (nextVisualClue) {
+      const doneVisual = visualClues.filter(
+        (c) => c.__cast_photo_generated && c.static_image_url
+      ).length;
+      const cleanTitle = stripCustomerFacingTitle(nextVisualClue.title) || nextVisualClue.title;
+      const stepLabel = `Placing cast into crime-scene photo (${doneVisual + 1}/${visualClues.length}): ${cleanTitle}...`;
+      const pct = Math.min(75, 50 + Math.round(((doneVisual + 1) / Math.max(1, visualClues.length)) * 25));
+
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep: stepLabel,
+        generationProgress: pct,
+      });
+
+      const clueRes = await generateClueImageAction(
+        nextVisualClue.id,
+        params.mysteryId,
+        nextVisualClue.generation_prompt || nextVisualClue.prompt_template || '',
+        true
+      );
+
+      const latestSnapshot = getCachedMysterySnapshot(params.mysteryId) || cachedMystery;
+      if (latestSnapshot && Array.isArray(latestSnapshot.clues)) {
+        const updatedClues = latestSnapshot.clues.map((c: any) =>
+          c.id === nextVisualClue.id
+            ? {
+                ...c,
+                static_image_url: clueRes?.imageUrl || c.static_image_url,
+                __cast_photo_generated: true,
+              }
+            : c
+        );
+        cacheMysterySnapshot(params.mysteryId, {
+          ...latestSnapshot,
+          clues: updatedClues,
+        });
+      }
+
+      await syncLiveStateToSupabaseClueCarrier(params.mysteryId);
+      return {
+        status: 'generating',
+        progress: pct,
+        stepLabel,
+        didWork: true,
+      };
+    }
+
+    // 3. STAGE 3 CHECKPOINT: Find the first audio clue that hasn't been synthesized for this cast yet
+    const audioClues = allClues.filter((c) => {
+      const fmt = c?.format || inferClueFormat(c);
+      return fmt === 'audio' && Boolean((c?.description || '').trim());
+    });
+
+    const nextAudioClue = audioClues.find(
+      (c) => !c.__cast_audio_generated || !c.audio_url
+    );
+
+    if (nextAudioClue) {
+      const doneAudio = audioClues.filter(
+        (c) => c.__cast_audio_generated && c.audio_url
+      ).length;
+      const cleanTitle = stripCustomerFacingTitle(nextAudioClue.title) || nextAudioClue.title;
+      const stepLabel = `Synthesizing voice wiretap (${doneAudio + 1}/${audioClues.length}): ${cleanTitle}...`;
+      const pct = Math.min(90, 75 + Math.round(((doneAudio + 1) / Math.max(1, audioClues.length)) * 15));
+
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep: stepLabel,
+        generationProgress: pct,
+      });
+
+      const audioRes = await generateAudioClueAction({
+        clueId: nextAudioClue.id,
+        mysteryId: params.mysteryId,
+        transcript: nextAudioClue.description || '',
+        title: nextAudioClue.title,
+      });
+
+      const latestSnapshot = getCachedMysterySnapshot(params.mysteryId) || cachedMystery;
+      if (latestSnapshot && Array.isArray(latestSnapshot.clues)) {
+        const updatedClues = latestSnapshot.clues.map((c: any) =>
+          c.id === nextAudioClue.id
+            ? {
+                ...c,
+                audio_url: audioRes?.audioUrl || c.audio_url,
+                __cast_audio_generated: true,
+              }
+            : c
+        );
+        cacheMysterySnapshot(params.mysteryId, {
+          ...latestSnapshot,
+          clues: updatedClues,
+        });
+      }
+
+      await syncLiveStateToSupabaseClueCarrier(params.mysteryId);
+      return {
+        status: 'generating',
+        progress: pct,
+        stepLabel,
+        didWork: true,
+      };
+    }
+
+    // 4. STAGE 3.5 CHECKPOINT: Run the 4-Gate Multimodal AI QA Critic & Self-Healing Bot if not yet audited
+    const latestSession = getStoredGameSession(params.mysteryId);
+    if (!latestSession?.qaReport) {
+      const stepLabel =
+        'Running 4-Gate AI QA Critic on character portraits, side-by-side clue photos & audio wiretaps...';
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep: stepLabel,
+        generationProgress: 95,
+      });
+
+      const qaReport = await auditAndHealCustomerPackAction(params.mysteryId);
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep: `AI QA Verified (${qaReport.overallScore}/100)! Finalizing Pre-Party Host Hub...`,
+        generationProgress: 99,
+        qaReport,
+      });
+      await syncLiveStateToSupabaseClueCarrier(params.mysteryId);
+    }
+
+    // 5. FINALIZE & EMAIL CUSTOMER
+    await finalizeMysteryGenerationNow(params);
+    return {
+      status: 'ready',
+      progress: 100,
+      stepLabel: 'Package complete & ready in My Mysteries (Stories)!',
+      didWork: true,
+    };
+  } catch (err) {
+    console.warn('[advanceMysteryGenerationOneStep] Step warning:', err);
+    const live = computeLiveGenerationState(getStoredGameSession(params.mysteryId));
+    return {
+      status: live.status,
+      progress: live.progress,
+      stepLabel: live.stepLabel,
+      didWork: false,
+    };
+  } finally {
+    activeStepLocks.delete(params.mysteryId);
+  }
 }
 
 /**
@@ -264,210 +549,17 @@ export function triggerDetachedMysteryGeneration(params: BackgroundGenerationPar
         });
       }
 
-      // 2. STAGE 1: Pre-generate standard character reference photos sequentially with a 3s breather & retry pass
-      const cachedMystery = getCachedMysterySnapshot(params.mysteryId);
-      const characters: any[] = cachedMystery?.characters || [];
-      const activeChars = characters.filter(
-        c => c.profile_data?.is_active_in_session !== false
-      );
-
-      if (activeChars.length > 0) {
-        updateMysteryGenerationInStore(params.mysteryId, {
-          generationStep: `Generating standard character reference portraits (0/${activeChars.length})...`,
-          generationProgress: 28,
-        });
-
-        let completedCount = 0;
-        for (let idx = 0; idx < activeChars.length; idx++) {
-          const char = activeChars[idx];
-          let photoUrl: string | null = null;
-
-          for (let attempt = 1; attempt <= 2; attempt++) {
-            try {
-              const res = await ensureStandardCharacterPhoto(
-                char,
-                cachedMystery || { id: params.mysteryId, theme: 'Murder Mystery' },
-                null,
-                attempt > 1
-              );
-              photoUrl = res?.photoUrl || null;
-              if (photoUrl) break;
-            } catch (err) {
-              console.warn(
-                `[BACKGROUND MYSTERY GENERATOR] Stage 1 portrait attempt ${attempt}/2 failed for ${char.id}:`,
-                err
-              );
-            }
-            if (attempt < 2) {
-              await sleep(5000);
-            }
-          }
-
-          completedCount += 1;
-          const pct = Math.min(52, 28 + Math.round((completedCount / activeChars.length) * 24));
-          updateMysteryGenerationInStore(params.mysteryId, {
-            generationStep: `Generated character reference portrait (${completedCount}/${activeChars.length})...`,
-            generationProgress: pct,
-          });
-
-          // 3-second breather between character portrait requests to prevent Gemini 429 burst limits
-          if (idx < activeChars.length - 1) {
-            await sleep(3000);
-          }
+      // Drive the checkpointed step runner until status === 'ready'
+      for (let stepIdx = 0; stepIdx < 35; stepIdx++) {
+        const stepRes = await advanceMysteryGenerationOneStep(params);
+        if (stepRes.status === 'ready' || stepRes.status === 'idle') {
+          break;
         }
+        await sleep(2500);
       }
-
-      // 2.25 STAGE 2: Pre-generate visual clue scene photos featuring the cast's Standard Character Reference Photos
-      const refreshedMysteryAfterStage1 = getCachedMysterySnapshot(params.mysteryId) || cachedMystery;
-      const allClues: any[] = refreshedMysteryAfterStage1?.clues || [];
-      const visualClues = allClues.filter(
-        c =>
-          c?.id &&
-          c?.generation_prompt &&
-          (/\{\{[^}]+\}\}/.test(c.generation_prompt) ||
-            /\{\{[^}]+\}\}/.test(c.description || '') ||
-            c.format === 'cctv' ||
-            c.format === 'physical_prop' ||
-            c.format === 'social_post')
-      );
-
-      if (visualClues.length > 0) {
-        let clueCount = 0;
-        const failedVisualClues: any[] = [];
-
-        for (let idx = 0; idx < visualClues.length; idx++) {
-          const vClue = visualClues[idx];
-          let generatedOk = false;
-
-          for (let attempt = 1; attempt <= 2; attempt++) {
-            try {
-              const res = await generateClueImageAction(
-                vClue.id,
-                params.mysteryId,
-                vClue.generation_prompt,
-                true
-              );
-              if (res?.imageUrl && !res?.error) {
-                generatedOk = true;
-                break;
-              }
-            } catch (err) {
-              console.warn(
-                `[BACKGROUND MYSTERY GENERATOR] Stage 2 clue image attempt ${attempt}/2 failed for ${vClue.id}:`,
-                err
-              );
-            }
-            if (attempt < 2) {
-              await sleep(5000);
-            }
-          }
-
-          if (!generatedOk) {
-            failedVisualClues.push(vClue);
-          }
-
-          clueCount += 1;
-          const pct = Math.min(72, 52 + Math.round((clueCount / visualClues.length) * 20));
-          updateMysteryGenerationInStore(params.mysteryId, {
-            generationStep: `Placing cast into visual clue & CCTV photos (${clueCount}/${visualClues.length})...`,
-            generationProgress: pct,
-          });
-
-          // 3-second breather between visual clue image calls
-          if (idx < visualClues.length - 1) {
-            await sleep(3000);
-          }
-        }
-
-        // Verification Sweep: If any visual clue hit a temporary quota hiccup, pause 6s and run a dedicated recovery pass
-        if (failedVisualClues.length > 0) {
-          updateMysteryGenerationInStore(params.mysteryId, {
-            generationStep: `Verifying & recovering ${failedVisualClues.length} crime-scene photo(s)...`,
-            generationProgress: 73,
-          });
-          await sleep(6000);
-          for (const retryClue of failedVisualClues) {
-            try {
-              await generateClueImageAction(
-                retryClue.id,
-                params.mysteryId,
-                retryClue.generation_prompt,
-                true
-              );
-            } catch {
-              // Non-fatal after recovery sweep
-            }
-            await sleep(3500);
-          }
-        }
-      }
-
-      // 2.5 STAGE 3: Pre-generate all custom voice recordings / audio clues with cast guest names & accents
-      updateMysteryGenerationInStore(params.mysteryId, {
-        generationStep: 'Synthesizing custom voice memos, accents & round audio clues...',
-        generationProgress: 74,
-      });
-      await pregenerateAllAudioCluesForMystery(params.mysteryId, {
-        forceRegenerate: true,
-        onProgress: (completed, total) => {
-          const pct = Math.min(93, 74 + Math.round((completed / Math.max(1, total)) * 19));
-          updateMysteryGenerationInStore(params.mysteryId, {
-            generationStep: `Synthesized custom voice recording (${completed}/${total})...`,
-            generationProgress: pct,
-          });
-        },
-      });
-
-      // 2.75 STAGE 3.5: Pre-Delivery Automated QA Critic & Self-Healing Bot (Gates 1-4)
-      updateMysteryGenerationInStore(params.mysteryId, {
-        generationStep:
-          'Running automated AI QA Critic on character portraits, visual clues & audio wiretaps...',
-        generationProgress: 94,
-      });
-      try {
-        const qaReport = await auditAndHealCustomerPackAction(params.mysteryId);
-        if (
-          qaReport.visualCluesRegenerated > 0 ||
-          qaReport.portraitsRegenerated > 0 ||
-          qaReport.audioCluesRegenerated > 0 ||
-          qaReport.textIssuesRepaired > 0
-        ) {
-          updateMysteryGenerationInStore(params.mysteryId, {
-            generationStep: `AI QA Bot self-healed ${qaReport.visualCluesRegenerated} visual clue(s), ${qaReport.portraitsRegenerated} portrait(s) & ${qaReport.audioCluesRegenerated} audio wiretap(s) (Score: ${qaReport.overallScore}/100)...`,
-            generationProgress: 97,
-            qaReport,
-          });
-        } else {
-          updateMysteryGenerationInStore(params.mysteryId, {
-            generationStep: `AI QA Verified (${qaReport.overallScore}/100)! Finalizing Pre-Party Host Hub...`,
-            generationProgress: 98,
-            qaReport,
-          });
-        }
-      } catch (qaErr) {
-        console.warn('[BACKGROUND MYSTERY GENERATOR] Non-fatal QA audit error:', qaErr);
-      }
-
-      updateMysteryGenerationInStore(params.mysteryId, {
-        generationStep: 'QA passed! Finalizing Pre-Party Host Hub & sending ready notification...',
-        generationProgress: 99,
-      });
-
-      // 3. Finalize & send the "Your Mystery is Ready!" email as soon as all stages + QA verification finish
-      const latestSession = getStoredGameSession(params.mysteryId);
-      if (latestSession?.generationStatus === 'ready') {
-        return;
-      }
-
-      const existingTimer = activeGenerationTimers.get(params.mysteryId);
-      if (existingTimer) {
-        clearTimeout(existingTimer);
-        activeGenerationTimers.delete(params.mysteryId);
-      }
-
-      await finalizeMysteryGenerationNow(params);
     } catch (err) {
       console.error('[BACKGROUND MYSTERY GENERATOR] Error in detached job:', err);
     }
   })();
 }
+

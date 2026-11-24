@@ -31,6 +31,7 @@ import {
 import {
   checkAndFinalizeGenerationIfDue,
   finalizeMysteryGenerationNow,
+  advanceMysteryGenerationOneStep,
 } from '@/lib/background-mystery-generator';
 import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
 import { isUserAdmin } from '@/utils/admin-auth';
@@ -1444,20 +1445,29 @@ export async function getMysteryGenerationStatusAction(payload: {
   slug?: string;
   mysteryTitle: string;
   locale?: string;
+  advanceStep?: boolean;
 }) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const state = await checkAndFinalizeGenerationIfDue({
+  await loadLiveStateFromSupabaseClueCarrier(payload.mysteryId, supabase);
+
+  const params = {
     mysteryId: payload.mysteryId,
     slug: payload.slug || payload.mysteryId,
     mysteryTitle: payload.mysteryTitle,
     customerEmail: user?.email || null,
     customerName: (user?.user_metadata?.full_name as string) || null,
     locale: payload.locale || 'en',
-  });
+  };
+
+  if (payload.advanceStep !== false) {
+    await advanceMysteryGenerationOneStep(params);
+  }
+
+  const state = await checkAndFinalizeGenerationIfDue(params);
 
   if (state.status === 'ready') {
     try {

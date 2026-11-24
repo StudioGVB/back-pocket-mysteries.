@@ -61,6 +61,7 @@ interface Character {
   gender: string;
   image_url: string | null;
   is_victim?: boolean;
+  plot_role?: string | null;
   profile_data: any;
 }
 
