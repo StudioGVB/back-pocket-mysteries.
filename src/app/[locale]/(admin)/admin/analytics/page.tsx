@@ -11,19 +11,27 @@ import {
 import { TrafficChart } from '@/components/admin/TrafficChart';
 import { TrafficTables } from '@/components/admin/TrafficTables';
 import { AnalyticsNav } from '@/components/admin/AnalyticsNav';
+import {
+  AnalyticsDurationSelector,
+  parseAnalyticsDays,
+} from '@/components/admin/AnalyticsDurationSelector';
 
 export const unstable_instant = false;
 
 export default async function AnalyticsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ days?: string }>;
 }) {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : {};
+  const days = parseAnalyticsDays(sp?.days);
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink mb-1">
             Platform Intelligence
@@ -35,17 +43,15 @@ export default async function AnalyticsPage({
             Live visitor telemetry from Vercel Web Analytics &amp; Google Search Console (zero synthetic data)
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Live Production Data • 30d
-          </span>
-        </div>
+        <Suspense fallback={null}>
+          <AnalyticsDurationSelector currentDays={days} />
+        </Suspense>
       </div>
 
       <AnalyticsNav locale={locale} />
 
       <Suspense
+        key={days}
         fallback={
           <div className="space-y-6">
             <div className="h-[420px] bg-slate-100 animate-pulse rounded-[32px]" />
@@ -56,22 +62,22 @@ export default async function AnalyticsPage({
           </div>
         }
       >
-        <AnalyticsData />
+        <AnalyticsData days={days} />
       </Suspense>
     </div>
   );
 }
 
-async function AnalyticsData() {
+async function AnalyticsData({ days }: { days: number }) {
   const [timeseriesRes, topPaths, topCountries, topReferrers, devices, browsers, gsc] =
     await Promise.all([
-      getAnalyticsTimeseries(30),
-      getTopPaths(30),
-      getTopCountries(30),
-      getTopReferrers(30),
-      getDeviceBreakdown(30),
-      getBrowserBreakdown(30),
-      getGoogleSearchConsoleStats(30),
+      getAnalyticsTimeseries(days),
+      getTopPaths(days),
+      getTopCountries(days),
+      getTopReferrers(days),
+      getDeviceBreakdown(days),
+      getBrowserBreakdown(days),
+      getGoogleSearchConsoleStats(days),
     ]);
 
   return (
@@ -86,7 +92,7 @@ async function AnalyticsData() {
           </p>
         </div>
       ) : (
-        <TrafficChart data={timeseriesRes.data} totals={timeseriesRes.totals} />
+        <TrafficChart data={timeseriesRes.data} totals={timeseriesRes.totals} days={days} />
       )}
 
       <TrafficTables

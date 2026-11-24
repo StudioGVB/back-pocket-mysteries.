@@ -53,10 +53,21 @@ export function TransactionsRevenueChart({
   onSelectDateKey?: (dateKey: string | null) => void;
 }) {
   const [chartType, setChartType] = useState<'bar' | 'area'>('bar');
+  const [durationDays, setDurationDays] = useState<number>(0); // 0 = All Time, or 7, 30, 90, 365
+
+  const durationOptions = [
+    { days: 7, label: '7 Days' },
+    { days: 30, label: '30 Days' },
+    { days: 90, label: '90 Days' },
+    { days: 365, label: 'Last Year' },
+    { days: 0, label: 'All Time' },
+  ];
 
   // Group all paid/active transactions by calendar day (YYYY-MM-DD), sorted chronologically
   const dailyData = useMemo<DailyNetRevenuePoint[]>(() => {
     const map = new Map<string, DailyNetRevenuePoint>();
+    const cutoffMs =
+      durationDays > 0 ? Date.now() - durationDays * 24 * 60 * 60 * 1000 : 0;
 
     for (const tx of transactions) {
       if (!tx.created_at) continue;
@@ -65,6 +76,7 @@ export function TransactionsRevenueChart({
 
       const d = new Date(tx.created_at);
       if (isNaN(d.getTime())) continue;
+      if (cutoffMs > 0 && d.getTime() < cutoffMs) continue;
 
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -99,7 +111,7 @@ export function TransactionsRevenueChart({
     }
 
     return Array.from(map.values()).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
-  }, [transactions]);
+  }, [transactions, durationDays]);
 
   const summary = useMemo(() => {
     const totalNet = dailyData.reduce((acc, d) => acc + d.netRevenue, 0);
@@ -156,29 +168,48 @@ export function TransactionsRevenueChart({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start lg:self-auto bg-slate-100 p-1 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setChartType('bar')}
-            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-              chartType === 'bar'
-                ? 'bg-brand-dark text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            Bar Graph
-          </button>
-          <button
-            type="button"
-            onClick={() => setChartType('area')}
-            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-              chartType === 'area'
-                ? 'bg-brand-pink text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            Area Trend
-          </button>
+        <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto">
+          <div className="inline-flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            {durationOptions.map((opt) => (
+              <button
+                key={opt.days}
+                type="button"
+                onClick={() => setDurationDays(opt.days)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  durationDays === opt.days
+                    ? 'bg-brand-pink text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setChartType('bar')}
+              className={`px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                chartType === 'bar'
+                  ? 'bg-brand-dark text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Bar Graph
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartType('area')}
+              className={`px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                chartType === 'area'
+                  ? 'bg-brand-pink text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Area Trend
+            </button>
+          </div>
         </div>
       </div>
 

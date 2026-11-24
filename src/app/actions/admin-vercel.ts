@@ -91,6 +91,50 @@ export async function saveGoogleSearchConsoleConfigAction(input: {
   }
 }
 
+const VERCEL_HISTORY_PATH = path.join(process.cwd(), 'data', 'vercel-analytics-history.json');
+
+interface DailyTrafficEntry {
+  visitors: number;
+  pageviews: number;
+}
+
+function readVercelHistory(): Record<string, DailyTrafficEntry> {
+  try {
+    if (fs.existsSync(VERCEL_HISTORY_PATH)) {
+      const parsed = JSON.parse(fs.readFileSync(VERCEL_HISTORY_PATH, 'utf8'));
+      if (parsed && typeof parsed === 'object') return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+function saveVercelHistory(points: Array<{ key: string; visitors: number; pageviews: number }>) {
+  try {
+    const store = readVercelHistory();
+    let changed = false;
+    for (const pt of points) {
+      if (!pt.key) continue;
+      const dateKey = pt.key.slice(0, 10);
+      const prev = store[dateKey];
+      const nextV = Math.max(prev?.visitors || 0, Number(pt.visitors) || 0);
+      const nextP = Math.max(prev?.pageviews || 0, Number(pt.pageviews) || 0);
+      if (!prev || prev.visitors !== nextV || prev.pageviews !== nextP) {
+        store[dateKey] = { visitors: nextV, pageviews: nextP };
+        changed = true;
+      }
+    }
+    if (changed) {
+      const dir = path.dirname(VERCEL_HISTORY_PATH);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(VERCEL_HISTORY_PATH, JSON.stringify(store, null, 2), 'utf8');
+    }
+  } catch {
+    // ignore on read-only serverless filesystems
+  }
+}
+
 function getVercelConfig() {
   const token = process.env.VERCEL_ACCESS_TOKEN;
   const projectId = process.env.VERCEL_PROJECT_ID || DEFAULT_PROJECT_ID;
@@ -111,9 +155,11 @@ export async function getVercelTraffic(days = 30) {
   }
 
   try {
+    // Vercel Hobby API grants direct query access up to 31 days; clamp live query window to 30d
+    const apiDays = Math.min(Math.max(1, Number(days) || 30), 30);
     const today = new Date();
     const fromDate = new Date();
-    fromDate.setDate(today.getDate() - days);
+    fromDate.setDate(today.getDate() - apiDays);
 
     const params = new URLSearchParams({
       teamId,
@@ -165,9 +211,11 @@ export async function getAnalyticsTimeseries(days = 30): Promise<{
   }
 
   try {
+    const requestedDays = Math.max(1, Number(days) || 30);
+    const apiDays = Math.min(requestedDays, 30);
     const today = new Date();
     const fromDate = new Date();
-    fromDate.setDate(today.getDate() - days);
+    fromDate.setDate(today.getDate() - apiDays);
 
     const params = new URLSearchParams({
       teamId,
@@ -186,7 +234,7 @@ export async function getAnalyticsTimeseries(days = 30): Promise<{
           next: { revalidate: 300 },
         }
       ),
-      getVercelTraffic(days),
+      getVercelTraffic(apiDays),
     ]);
 
     if (!seriesRes.ok) {
@@ -208,15 +256,57 @@ export async function getAnalyticsTimeseries(days = 30): Promise<{
         visitors: item.visitors || 0,
         pageviews: item.pageviews || 0,
       }));
-      const sumVisitors = mapped.reduce((acc: number, c: any) => acc + c.visitors, 0);
-      const sumPageviews = mapped.reduce((acc: number, c: any) => acc + c.pageviews, 0);
+
+      // Archive daily datapoints locally so >30d views retain historical daily data over time
+      saveVercelHistory(mapped);
+
+      if (requestedDays <= 30) {
+        const sumVisitors = mapped.reduce((acc: number, c: any) => acc + c.visitors, 0);
+        const sumPageviews = mapped.reduce((acc: number, c: any) => acc + c.pageviews, 0);
+        return {
+          isConnected: true,
+          totals: {
+            visitors: countRes.visitors > 0 ? countRes.visitors : sumVisitors,
+            pageviews: countRes.pageViews > 0 ? countRes.pageViews : sumPageviews,
+          },
+          data: mapped,
+        };
+      }
+
+      // Build full requestedDays timeline (e.g. 90d or 365d) combining archived history + live 30d data
+      const historyMap = readVercelHistory();
+      for (const pt of mapped) {
+        if (!pt.key) continue;
+        const dateKey = pt.key.slice(0, 10);
+        historyMap[dateKey] = {
+          visitors: pt.visitors || 0,
+          pageviews: pt.pageviews || 0,
+        };
+      }
+
+      const fullTimeline: Array<{ key: string; visitors: number; pageviews: number }> = [];
+      for (let i = requestedDays; i >= 0; i--) {
+        const d = new Date(today);
+        d.setUTCDate(d.getUTCDate() - i);
+        const dateKey = d.toISOString().slice(0, 10);
+        const entry = historyMap[dateKey];
+        fullTimeline.push({
+          key: `${dateKey}T00:00:00.000Z`,
+          visitors: entry?.visitors || 0,
+          pageviews: entry?.pageviews || 0,
+        });
+      }
+
+      const sumVisitors = fullTimeline.reduce((acc, c) => acc + c.visitors, 0);
+      const sumPageviews = fullTimeline.reduce((acc, c) => acc + c.pageviews, 0);
+
       return {
         isConnected: true,
         totals: {
-          visitors: countRes.visitors > 0 ? countRes.visitors : sumVisitors,
-          pageviews: countRes.pageViews > 0 ? countRes.pageViews : sumPageviews,
+          visitors: Math.max(countRes.visitors, sumVisitors),
+          pageviews: Math.max(countRes.pageViews, sumPageviews),
         },
-        data: mapped,
+        data: fullTimeline,
       };
     }
 
@@ -245,9 +335,10 @@ async function fetchVercelAggregateDimension(
   if (!token) return [];
 
   try {
+    const apiDays = Math.min(Math.max(1, Number(days) || 30), 30);
     const today = new Date();
     const fromDate = new Date();
-    fromDate.setDate(today.getDate() - days);
+    fromDate.setDate(today.getDate() - apiDays);
 
     const params = new URLSearchParams({
       teamId,
