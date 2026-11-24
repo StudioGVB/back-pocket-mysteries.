@@ -39,7 +39,16 @@ export default async function CookiePolicyPage(props: { params: Promise<{ locale
             1. How We Use Cookies &amp; Local Storage
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed">
-            Back Pocket Mysteries uses a minimal set of cookies and browser <code className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">localStorage</code> keys to authenticate your Host account, remember your local currency (<code className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">GBP / USD / EUR / AUD / CAD</code>), and keep players connected to the Live Hosting Playroom during a murder mystery party.
+            Back Pocket Mysteries (operated by <strong>Back Pocket Games</strong>, <strong>ABN 76 756 351 480</strong> —{' '}
+            <a
+              href="https://backpocketgames.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-pink font-bold hover:underline"
+            >
+              backpocketgames.com
+            </a>
+            ) uses a minimal set of cookies and browser <code className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">localStorage</code> keys to authenticate your Host account, remember your local currency (<code className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">GBP / USD / EUR / AUD / CAD</code>), and keep players connected to the Live Hosting Playroom during a murder mystery party.
           </p>
         </section>
 

@@ -92,7 +92,16 @@ export default async function RefundPolicyPage(props: { params: Promise<{ locale
               Need a Refund or Pack Re-Generation?
             </h3>
             <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">
-              Email <span className="text-brand-dark font-bold">hello@backpocketgames.com</span> with your account email and we&apos;ll sort it out right away.
+              Email <span className="text-brand-dark font-bold">hello@backpocketgames.com</span> • Operated by{' '}
+              <a
+                href="https://backpocketgames.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-pink font-bold hover:underline"
+              >
+                Back Pocket Games
+              </a>{' '}
+              (ABN 76 756 351 480).
             </p>
           </div>
           <Link

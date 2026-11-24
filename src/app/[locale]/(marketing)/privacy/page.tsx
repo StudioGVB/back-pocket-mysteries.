@@ -55,7 +55,25 @@ export default async function PrivacyPolicyPage(props: { params: Promise<{ local
             1. Who We Are (Data Controller)
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed">
-            Back Pocket Mysteries (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) is operated by <strong>Back Pocket Games / Studio GVB</strong> and provides an online platform at <code className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">backpocketmysteries.com</code> for creating, customizing, and hosting interactive murder mystery party games. For any privacy or data-protection requests, you can contact our Data Protection Lead directly at{' '}
+            Back Pocket Mysteries (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) is operated by{' '}
+            <strong>Back Pocket Games</strong> (Australian Business Number:{' '}
+            <strong>ABN 76 756 351 480</strong>, registered in Victoria 3925, Australia —{' '}
+            <a
+              href="https://backpocketgames.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-pink font-bold hover:underline"
+            >
+              backpocketgames.com
+            </a>
+            ) and provides an online platform at{' '}
+            <a
+              href="https://backpocketmysteries.com"
+              className="text-brand-dark font-bold hover:underline"
+            >
+              backpocketmysteries.com
+            </a>{' '}
+            for creating, customizing, and hosting interactive murder mystery party games. For any privacy or data-protection requests, you can contact our Data Protection Lead directly at{' '}
             <a href="mailto:hello@backpocketgames.com" className="text-brand-pink font-bold hover:underline">
               hello@backpocketgames.com
             </a>

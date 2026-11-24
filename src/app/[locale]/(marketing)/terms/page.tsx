@@ -41,7 +41,23 @@ export default async function TermsOfServicePage(props: { params: Promise<{ loca
             1. Acceptance of Terms &amp; Age Eligibility
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed">
-            By accessing or purchasing from <strong>Back Pocket Mysteries</strong> (<code className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">backpocketmysteries.com</code>), operated by Back Pocket Games / Studio GVB, you agree to these Terms of Service. You must be at least <strong>18 years of age</strong> to create an account, purchase a mystery pack, or host a game featuring our <em>Spicy</em> or <em>Filthy (18+)</em> content tiers.
+            By accessing or purchasing from <strong>Back Pocket Mysteries</strong> (
+            <a
+              href="https://backpocketmysteries.com"
+              className="text-brand-dark font-bold hover:underline"
+            >
+              backpocketmysteries.com
+            </a>
+            ), operated by <strong>Back Pocket Games</strong> (<strong>ABN 76 756 351 480</strong>, Victoria 3925, Australia —{' '}
+            <a
+              href="https://backpocketgames.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-pink font-bold hover:underline"
+            >
+              backpocketgames.com
+            </a>
+            ), you agree to these Terms of Service. You must be at least <strong>18 years of age</strong> to create an account, purchase a mystery pack, or host a game featuring our <em>Spicy</em> or <em>Filthy (18+)</em> content tiers.
           </p>
         </section>
 
@@ -81,7 +97,16 @@ export default async function TermsOfServicePage(props: { params: Promise<{ loca
             4. Intellectual Property &amp; Personal Event License
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed">
-            All Mystery Base storylines, character archetypes, clue logic, software code, and visual designs are the exclusive intellectual property of Back Pocket Games / Studio GVB. When you purchase a pack, we grant you a non-exclusive, non-transferable license to use the generated materials for private social gatherings, parties, or internal team-building events. You may not resell, redistribute, publish, or commercially exploit our mystery scripts or clue packs without written permission.
+            All Mystery Base storylines, character archetypes, clue logic, software code, and visual designs are the exclusive intellectual property of <strong>Back Pocket Games</strong> (<strong>ABN 76 756 351 480</strong> —{' '}
+            <a
+              href="https://backpocketgames.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-pink font-bold hover:underline"
+            >
+              backpocketgames.com
+            </a>
+            ). When you purchase a pack, we grant you a non-exclusive, non-transferable license to use the generated materials for private social gatherings, parties, or internal team-building events. You may not resell, redistribute, publish, or commercially exploit our mystery scripts or clue packs without written permission.
           </p>
         </section>
 

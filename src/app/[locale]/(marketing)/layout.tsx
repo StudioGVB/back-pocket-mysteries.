@@ -153,7 +153,22 @@ export default async function MarketingLayout(props: {
           </div>
           
           <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8 text-[11px] font-black uppercase tracking-widest text-gray-500">
-            <p>&copy; <CopyrightYear /> {dict.common.footer.rights}</p>
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+              <p>&copy; <CopyrightYear /> {dict.common.footer.rights}</p>
+              <span className="hidden sm:inline text-white/20">•</span>
+              <p className="text-[10px] font-bold text-gray-400">
+                Operated by{' '}
+                <a
+                  href="https://backpocketgames.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:text-brand-pink transition-colors underline underline-offset-4"
+                >
+                  Back Pocket Games
+                </a>{' '}
+                (ABN 76 756 351 480)
+              </p>
+            </div>
             <div className="flex flex-wrap justify-center gap-6 items-center">
               <Link href={`/${locale}/privacy`} className="hover:text-brand-pink transition-colors">Privacy</Link>
               <Link href={`/${locale}/terms`} className="hover:text-brand-pink transition-colors">Terms</Link>
