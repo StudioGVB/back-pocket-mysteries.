@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { resolveDisplayAvatarUrl } from '@/utils/avatar';
-import { parseMysteryImageField } from '@/utils/moodboard';
+import { getEffectiveCoverUrl } from '@/utils/moodboard';
 import {
   hydrateTextWithCharacters,
   getCharacterDisplayName,
@@ -2207,7 +2207,11 @@ export function PlayroomClient({
   // ============================================================================
   // 1. CHARACTER SELECTION LOBBY (CLEAN ARRIVAL HEADER & CHARACTER CLAIM CARDS)
   // ============================================================================
-  const { coverUrl: mysteryCoverUrl } = parseMysteryImageField(mystery.image_url);
+  const mysteryCoverUrl = getEffectiveCoverUrl(
+    mystery.image_url,
+    mystery.theme,
+    mystery.title
+  );
   const claimedCount = Object.keys(claimedCharacters).length;
 
   const stageTimelineSteps =
@@ -2462,16 +2466,19 @@ export function PlayroomClient({
           <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-6 sm:pt-10 space-y-6">
             {/* Editorial Invitation Hero Card */}
             <div className="rounded-3xl bg-slate-900/75 border border-white/10 overflow-hidden shadow-2xl">
-              <div className="relative p-6 sm:p-10 text-center space-y-4 border-b border-white/10">
-                {mysteryCoverUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
+              {mysteryCoverUrl && (
+                <div className="relative w-full h-48 sm:h-64 bg-slate-950 overflow-hidden border-b border-white/10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={mysteryCoverUrl}
                     alt={mystery.title}
-                    className="absolute inset-0 w-full h-full object-cover opacity-15 blur-[2px] pointer-events-none"
+                    className="w-full h-full object-cover object-center"
                   />
-                )}
-                <div className="relative z-10 space-y-3 max-w-2xl mx-auto">
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent pointer-events-none" />
+                </div>
+              )}
+              <div className="relative p-6 sm:p-8 text-center space-y-3 border-b border-white/10">
+                <div className="relative z-10 space-y-2.5 max-w-2xl mx-auto">
                   <span className="inline-block text-[11px] font-bold uppercase tracking-[0.22em] text-brand-pink">
                     You&apos;re Invited • Murder Mystery Party
                   </span>

@@ -15,6 +15,7 @@ import {
   updatePartyEventDetailsAction,
   PartyEventDetails,
 } from '@/app/actions/customer-mystery';
+import { getEffectiveCoverUrl } from '@/utils/moodboard';
 
 export const FOOD_VIBE_OPTIONS = [
   { id: 'full_dinner', label: '🍽️ Full Dinner Provided' },
@@ -506,39 +507,58 @@ export function MysteryReadyHub({
   const completedChecksCount = checkedItems.length;
 
   const formattedDateSummary = formatPartyDateDisplay(partyDate);
+  const mysteryCoverUrl = getEffectiveCoverUrl(
+    mystery.image_url,
+    mystery.theme,
+    mystery.title
+  );
 
   return (
     <div className="space-y-6">
-      {/* 1. CLEAN, MINIMAL TOP HEADER (Title + Metadata on Left, Single Start Game CTA on Right) */}
-      <div className="bg-white border border-slate-200/80 rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200">
-              ✓ Ready to Play
-            </span>
-            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-pink-50 text-brand-pink border border-pink-200">
-              🔒 Spoiler-Free Host Hub
-            </span>
+      {/* 1. TOP HERO CARD WITH MYSTERY PHOTO BANNER */}
+      <div className="bg-white border border-slate-200/80 rounded-[2rem] overflow-hidden shadow-sm">
+        {mysteryCoverUrl && (
+          <div className="relative w-full h-44 sm:h-56 md:h-64 bg-slate-900 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={mysteryCoverUrl}
+              alt={mystery.title}
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
-            {mystery.title}
-          </h1>
-          <p className="text-xs sm:text-sm font-bold text-slate-500">
-            {mystery.theme || 'Murder Mystery'} • {characters.length} Suspects Cast • Send invites ahead of time, then click Start Game on party night
-          </p>
-        </div>
+        )}
 
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <Link
-            href={hostLobbyUrl}
-            className="w-full sm:w-auto px-7 py-4 rounded-2xl text-white text-xs sm:text-sm font-black uppercase tracking-widest text-center transition-all shadow-lg hover:opacity-95"
-            style={{
-              background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
-              boxShadow: '0 10px 25px -8px rgba(254,4,198,0.5)',
-            }}
-          >
-            🚀 Start Game →
-          </Link>
+        <div className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200">
+                ✓ Ready to Play
+              </span>
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-pink-50 text-brand-pink border border-pink-200">
+                🔒 Spoiler-Free Host Hub
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
+              {mystery.title}
+            </h1>
+            <p className="text-xs sm:text-sm font-bold text-slate-500">
+              {mystery.theme || 'Murder Mystery'} • {characters.length} Suspects Cast • Send invites ahead of time, then click Start Game on party night
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Link
+              href={hostLobbyUrl}
+              className="w-full sm:w-auto px-7 py-4 rounded-2xl text-white text-xs sm:text-sm font-black uppercase tracking-widest text-center transition-all shadow-lg hover:opacity-95"
+              style={{
+                background: 'linear-gradient(135deg, #fe04c6 0%, #c026d3 100%)',
+                boxShadow: '0 10px 25px -8px rgba(254,4,198,0.5)',
+              }}
+            >
+              🚀 Start Game →
+            </Link>
+          </div>
         </div>
       </div>
 
