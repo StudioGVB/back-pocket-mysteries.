@@ -717,7 +717,7 @@ export async function ensureStandardCharacterPhoto(
   const safeOutfit = sanitizePromptForImageSafety(upperBodyOutfit);
   const unifiedBackdrop = getCanonicalMysteryPortraitBackdrop(mystery);
 
-  let standardPortraitPrompt = sanitizePromptForImageSafety(`Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (strict WAIST-UP medium studio portrait) that will serve as the master visual identity and costume reference for this character across all scene photos.
+  let standardPortraitPrompt = sanitizePromptForImageSafety(`Create a canonical photorealistic STANDARD CHARACTER REFERENCE PORTRAIT (strict WAIST-UP medium studio portrait, 1:1 full-bleed square canvas) that will serve as the master visual identity and costume reference for this character across all scene photos.
 
 CHARACTER ROLE: "${roleTitle}" (played by ${guestName}) in ${mysteryTheme}.
 ${bioSnippet ? `CHARACTER VIBE / PERSONA: ${bioSnippet}` : ''}
@@ -725,17 +725,18 @@ ${bioSnippet ? `CHARACTER VIBE / PERSONA: ${bioSnippet}` : ''}
 STRICT PHYSICAL APPEARANCE (MUST MATCH EXACTLY):
 - ${physicalDesc || `${genderStr} adult with distinctive natural facial features`}
 - Facial structure: ${bones.faceShape}, ${bones.jawline}, ${bones.cheekbones}, ${bones.noseShape}
-${referenceParts.length > 0 ? '- CRITICAL IDENTITY LOCK: An existing face photo of the guest is attached as Reference Image #1. Preserve the exact same person, facial identity, bone structure, skin tone, eye shape, and hair from Reference Image #1, while re-framing them to the mandatory WAIST-UP medium portrait crop and unified dark backdrop below (do NOT copy the plain white background or tight head-only crop of Reference Image #1).' : ''}
+${referenceParts.length > 0 ? '- CRITICAL IDENTITY LOCK: An existing face photo of the guest is attached as Reference Image #1. Preserve the exact same person, facial identity, bone structure, skin tone, eye shape, and hair from Reference Image #1, while completely REPLACING the background and re-framing them to the mandatory WAIST-UP medium portrait crop and full-bleed 1:1 unified dark candlelit backdrop below (strictly DO NOT copy any white background, white vertical side bars, or narrow aspect ratio from Reference Image #1).' : ''}
 
 LOCKED CANONICAL SIGNATURE COSTUME (MUST WEAR THIS EXACT OUTFIT & COLOR):
 - ${safeOutfit}
 
 MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARACTER CARDS):
-1. STRICT WAIST-UP MEDIUM PORTRAIT CROP: Frame the character from the WAIST / HIP BELT-LINE UP to ~10% headroom above the top of their head. Their face must occupy ~25% of the vertical frame height, centered horizontally, showing their full upper-body torso, shoulders, attire, and waist.
-2. FORBIDDEN CROPS (HARD RULE): Absolutely NO full-body shots, NO legs, NO knees, NO feet, NO shoes, and NO studio floor visible. Also NO tight face-only close-ups (must clearly show upper-body costume down to the waist).
-3. ${unifiedBackdrop}
-4. Shot on 85mm prime lens at f/2.8, cinematic warm key lighting with subtle rim light, photorealistic natural skin texture, 8k resolution.
-5. CRITICAL: Absolutely NO text, NO labels, NO character sheets, NO multiple panels, NO borders, NO illustrations, NO 3D CGI.`);
+1. FULL-BLEED 1:1 SQUARE FRAME (ZERO WHITE SIDE BARS / ZERO BORDERS): The dark background and lighting MUST extend 100% edge-to-edge across the entire square canvas. Strictly NO white vertical letterbox bars on the left or right sides, NO margins, and NO picture frames.
+2. STRICT WAIST-UP MEDIUM PORTRAIT CROP: Frame the character from the WAIST / HIP BELT-LINE UP to ~10% headroom above the top of their head. Their face must occupy ~25% of the vertical frame height, centered horizontally, showing their full upper-body torso, shoulders, attire, and waist.
+3. FORBIDDEN CROPS (HARD RULE): Absolutely NO full-body shots, NO legs, NO thighs, NO knees, NO feet, NO shoes, and NO floor visible. Also NO tight face-only close-ups (must clearly show upper-body costume down to the waist).
+4. ${unifiedBackdrop}
+5. Shot on 85mm prime lens at f/2.8, cinematic warm candlelit key lighting with subtle rim light, photorealistic natural skin texture, 8k resolution.
+6. CRITICAL: Absolutely NO text, NO labels, NO character sheets, NO multiple panels, NO borders, NO illustrations, NO 3D CGI.`);
 
   if (qaCorrectionDirective && qaCorrectionDirective.trim()) {
     standardPortraitPrompt += `\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${sanitizePromptForImageSafety(qaCorrectionDirective.trim())}`;
@@ -823,7 +824,7 @@ MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARAC
 
   // INLINE STAGE 1 PORTRAIT VISION CRITIC GUARDRAIL:
   // Because every Stage 2 clue scene copies this master Reference Portrait, verify its crop, hair/beard/glasses,
-  // outfit color, and dark backdrop before persisting it.
+  // outfit color, full-bleed edges, and unified dark candlelit backdrop before persisting it.
   if (base64Image && !qaCorrectionDirective) {
     try {
       const geminiFlash = new GoogleGenerativeAI(apiKey).getGenerativeModel({
@@ -833,16 +834,18 @@ MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARAC
 Inspect the attached portrait for ${guestName} (${roleTitle}).
 Expected Physical Traits: ${physicalDesc}
 Expected Signature Costume: ${safeOutfit}
+Expected Unified Backdrop: ${unifiedBackdrop}
 
-Check these 4 hard rules:
-1. Waist-Up Framing: Is this a single-person WAIST-UP medium portrait (NO legs, knees, feet, or shoes visible, and not an extreme tight face-only crop)?
-2. Hair, Beard & Glasses Match: Does the subject match the expected gender, hair color/style, facial hair (beard vs. strictly clean-shaven), and glasses (wearing glasses vs. no glasses)?
-3. Signature Costume Match: Does the upper-body outfit color and style match "${safeOutfit}"?
-4. Dark Evening Backdrop: Is the background dark/moody (NOT a plain bright white studio background)?
+Check these 5 hard rules:
+1. Full-Bleed Edge-to-Edge Frame (ZERO White Side Bars): Does the dark background fill 100% of the canvas edge-to-edge with ZERO white/light vertical letterbox bars or borders on the left or right sides?
+2. Strict Waist-Up Framing: Is this a single-person WAIST-UP medium portrait (framed from waist/hip belt-line up; strictly NO full-body shot, NO legs/thighs/knees/shoes, and NOT an extreme face-only crop)?
+3. Unified Dark Candlelit Bokeh Backdrop: Does the background match the dark candlelit room with soft warm golden bokeh lights (strictly NO plain white background, NO green tinsel wall, NO full Christmas tree with presents on the floor)?
+4. Hair, Beard & Glasses Match: Does the subject match the expected gender, hair color/style, facial hair (beard vs. strictly clean-shaven), and glasses (wearing glasses vs. no glasses)?
+5. Signature Costume Match: Does the upper-body outfit color and style match "${safeOutfit}"?
 
 Respond with valid JSON ONLY:
 {
-  "passed": <true if all 4 rules pass, else false>,
+  "passed": <true if all 5 rules pass, else false>,
   "correctionDirective": "<If passed is false, write a 1-sentence specific instruction fixing the exact defect; if passed is true, empty string>"
 }`;
       const cRes = await geminiFlash.generateContent({

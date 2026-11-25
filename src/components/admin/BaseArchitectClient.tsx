@@ -80,9 +80,9 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
     complexity: 'hard',
     murderTimeWindow: '11:28 PM',
     murderWeaponAndMethod:
-      'Heavy cast-iron fireplace poker from the upstairs balcony chiminea: {{The Co-Captain}} struck the first non-fatal blow across {{The Prom Queen}}\'s temple at 11:18 PM in a blind panic over {{The Prom Queen_his}} phone, and {{The Girlfriend}} delivered the fatal blows to {{The Prom Queen_his}} skull at 11:28 PM before hurling {{The Prom Queen_him}} over the second-story balcony railing onto the stone patio below.',
+      'Heavy cast-iron fireplace poker from the upstairs balcony chiminea: {{The Co-Captain}} struck the first non-fatal blow across {{The Prom Queen}}\'s temple at 11:18 PM in a blind panic over {{The Prom Queen_his}} phone, and {{The Girlfriend}} delivered the fatal strike at 11:28 PM before hurling {{The Prom Queen_him}} over the second-story balcony railing onto the stone patio below.',
     killerHowAndWhySummary:
-      '{{The Prom Queen}} strung {{The Co-Captain}} along to steal {{The Co-Captain_his}} and {{The Teammate}}\'s varsity sports-betting ledger, then laughed in {{The Co-Captain}}\'s face in front of {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} and revealed {{The Prom Queen_he}} was secretly sleeping with {{The Girlfriend}}\'s partner {{The Teammate}}—threatening to leak both the explicit tape and the betting ledger at midnight. After {{The Co-Captain}} snapped on the balcony at 11:18 PM and knocked {{The Prom Queen}} unconscious with a cast-iron fireplace poker, {{The Girlfriend}} sent {{The Co-Captain}} inside for a living-room alibi, finished {{The Prom Queen}} off with the poker at 11:28 PM, and threw {{The Prom Queen_him}} off the balcony.',
+      '{{The Prom Queen}} strung {{The Co-Captain}} along to steal {{The Co-Captain_his}} and {{The Teammate}}\'s varsity sports-betting ledger, then laughed in {{The Co-Captain}}\'s face in front of {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} and revealed {{The Prom Queen_he}} was secretly sleeping with {{The Girlfriend}}\'s partner {{The Teammate}}—threatening to leak both the incriminating bedroom voice memo and the betting ledger at midnight. After {{The Co-Captain}} snapped on the balcony at 11:18 PM and knocked {{The Prom Queen}} unconscious with a cast-iron fireplace poker, {{The Girlfriend}} sent {{The Co-Captain}} inside for a living-room alibi, finished {{The Prom Queen}} off with the poker at 11:28 PM, and threw {{The Prom Queen_him}} off the balcony.',
     insideJokesOrProps:
       'Cast-iron fireplace poker, varsity sports-betting ledger, cracked iPhone in the snowbank, ripped varsity chain on the balcony railing.',
     characters: [
@@ -119,7 +119,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         conceptNotes:
           'Co-captains of the varsity sport team with {{The Teammate}}. Siblings with {{The Girlfriend}}. Exes with {{The Bestie}}. Secretly has a huge crush on {{The Prom Queen}}. Friends with {{The Brother}}.',
         motiveOrSecret:
-          'Cornered {{The Prom Queen}} on the upstairs balcony at 11:10 PM to get {{The Co-Captain_his}} stolen sports-betting ledger and phone video back; snapped at 11:18 PM and struck {{The Prom Queen}} with the cast-iron poker before {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} took over and finished the kill.',
+          'Cornered {{The Prom Queen}} on the upstairs balcony at 11:10 PM to get {{The Co-Captain_his}} stolen sports-betting ledger and bedroom voice recording back; snapped at 11:18 PM and struck {{The Prom Queen}} with the cast-iron poker before {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} took over and finished the kill.',
         outfitNotes: 'Uni athletic team letterman bomber, compression shirt & silver whistle chain',
       },
       {
@@ -166,7 +166,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         timeWindow: '9:15 PM',
         phase: 'pre_crime',
         description:
-          '{{The Prom Queen}} uses {{The Co-Captain}}\'s crush on {{The Prom Queen_him}} to lure {{The Co-Captain_him}} into the upstairs cabin bedroom, secretly filming a humiliating 18+ video and stealing the varsity sports-betting ledger from {{The Co-Captain_his}} jacket.',
+          '{{The Prom Queen}} uses {{The Co-Captain}}\'s crush on {{The Prom Queen_him}} to lure {{The Co-Captain_him}} into the upstairs cabin bedroom, secretly recording an incriminating late-night bedroom voice memo and stealing the varsity sports-betting ledger from {{The Co-Captain_his}} jacket.',
       },
       {
         beatNumber: 2,
@@ -174,7 +174,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         timeWindow: '10:15 PM',
         phase: 'pre_crime',
         description:
-          'When {{The Co-Captain}} and {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} confront {{The Prom Queen}} to get the ledger back, {{The Prom Queen}} laughs in {{The Co-Captain}}\'s face, reveals {{The Prom Queen_he}} has been secretly sleeping with {{The Girlfriend}}\'s partner {{The Teammate}}, and threatens to drop the explicit tape and betting ledger to the entire university at midnight.',
+          'When {{The Co-Captain}} and {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} confront {{The Prom Queen}} to get the ledger back, {{The Prom Queen}} laughs in {{The Co-Captain}}\'s face, reveals {{The Prom Queen_he}} has been secretly sleeping with {{The Girlfriend}}\'s partner {{The Teammate}}, and threatens to drop the incriminating bedroom recording and betting ledger to the entire university at midnight.',
       },
       {
         beatNumber: 3,
