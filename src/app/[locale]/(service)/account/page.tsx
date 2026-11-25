@@ -37,11 +37,8 @@ export default async function AccountDashboardPage({
     .eq('user_id', user.id);
 
   // Fetch published mysteries and order counts to rank by most popular selling
-  const { data: publishedMysteries } = await supabase
-    .from('mysteries')
-    .select('id, title, theme, description, image_url, min_players, max_players, complexity')
-    .eq('status', 'published')
-    .order('created_at', { ascending: false });
+  const { getPublishedMysteries } = await import('@/services/mysteries');
+  const publishedMysteries = await getPublishedMysteries();
 
   const { data: allSales } = await supabase
     .from('orders')
@@ -56,7 +53,7 @@ export default async function AccountDashboardPage({
   }, {});
 
   const popularMysteries = (publishedMysteries ?? [])
-    .sort((a, b) => (salesCountMap[b.id] || 0) - (salesCountMap[a.id] || 0))
+    .sort((a: any, b: any) => (salesCountMap[b.id] || 0) - (salesCountMap[a.id] || 0))
     .slice(0, 3);
 
   const { getSubscriberGiftPassStateForUser } = await import('@/app/actions/subscriber-perks');

@@ -238,53 +238,13 @@
     "guests": "{{count}} Guests",
     "bestFor": "Best for",
     "list": {
-      "loveOnTheRocks": {
-        "title": "Love On The Rocks",
-        "desc": "The cameras stopped rolling six months ago, but the drama never did. Tonight, the cast of Season 3's biggest dating show reunites at a luxury penthouse, until The Star collapses mid-champagne-toast.",
+      "christmasNightmare": {
+        "title": "Christmas Nightmare",
+        "desc": "Two pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when a sudden 8:19 PM power surge plunges the house into darkness.",
         "difficulty": "Medium",
-        "category": "Reality TV Reunion",
-        "tone": "Chaotic & Spicy",
-        "bestFor": "Hens Nights, 20s & 30s Birthdays, Girls' Nights & Reality TV Fans"
-      },
-      "inheritance": {
-        "title": "The Inheritance",
-        "desc": "A wealthy patriarch is dead. The family has gathered. The will is missing.",
-        "difficulty": "Easy",
-        "category": "Classic",
-        "tone": "Dramatic",
-        "bestFor": "Dinner Parties"
-      },
-      "galaHeist": {
-        "title": "The Gala Heist",
-        "desc": "A priceless diamond vanishes during a black-tie charity gala.",
-        "difficulty": "Medium",
-        "category": "Noir",
-        "tone": "Sophisticated",
-        "bestFor": "Corporate Events"
-      },
-      "deadSpace": {
-        "title": "Dead Space",
-        "desc": "A locked-room murder on a remote research satellite.",
-        "difficulty": "Hard",
-        "category": "Sci-Fi",
-        "tone": "Tense",
-        "bestFor": "Game Nights"
-      },
-      "speakeasy": {
-        "title": "The Speakeasy Scandal",
-        "desc": "1920s Chicago. Jazz, bootleg gin, and a body in the back room.",
-        "difficulty": "Medium",
-        "category": "Historical",
-        "tone": "Atmospheric",
-        "bestFor": "Themed Parties"
-      },
-      "offTheGrid": {
-        "title": "Off The Grid",
-        "desc": "A weekend wellness retreat turns deadly. Someone brought more than their yoga mat.",
-        "difficulty": "Medium",
-        "category": "Modern",
-        "tone": "Relatable",
-        "bestFor": "Bucks Nights"
+        "category": "Holiday Dinner Party",
+        "tone": "Cozy & Dramatic (Mild)",
+        "bestFor": "Christmas Parties, Friendsmas Dinners, Couples Nights & Tight-Knit Friend Groups"
       }
     },
     "custom": {

@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 const HERO_IMAGES = [
-  { src: '/moodboard/lotr/main-promo-murder.jpg', label: 'Love On The Rocks' },
-  { src: '/moodboard/lotr/hero-cast.jpg', label: 'Reality TV Reunion' },
-  { src: '/moodboard/lotr/penthouse-vibe.jpg', label: 'Penthouse Watch Party' },
+  { src: '/moodboard/lotr/main-promo-murder.jpg', label: 'Custom Cast & Alibis' },
+  { src: '/moodboard/lotr/hero-cast.jpg', label: 'Your Friends in the Story' },
+  { src: '/moodboard/lotr/penthouse-vibe.jpg', label: 'Dinner Party & Drinks' },
   { src: '/moodboard/lotr/caught-on-camera.jpg', label: 'Leaked Receipts & DMs' },
   { src: '/moodboard/lotr/cocktail-hour.jpg', label: 'Drinks & Drama' },
 ];

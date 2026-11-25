@@ -19,19 +19,6 @@ const HOST_TIPS = [
 
 const FALLBACK_POPULAR_THEMES = [
   {
-    id: 'love-on-the-rocks',
-    title: 'Love On The Rocks',
-    theme: 'Reality TV Reunion',
-    description: 'Glitzy penthouse drama, secret alliances, and a poisoned champagne toast while the cameras roll.',
-    image_url: null,
-    min_players: 5,
-    max_players: 12,
-    complexity: 'medium',
-    spice_level: 'Spicy',
-    emoji: '🥂',
-    gradient: 'from-pink-600 to-rose-900',
-  },
-  {
     id: 'christmas-nightmare',
     title: 'Christmas Nightmare',
     theme: 'Holiday Dinner Party',

@@ -3,18 +3,20 @@ import { i18n } from '@/lib/i18n-config'
 import { getPublishedBlogPosts } from '@/lib/blog-repository'
 import { competitors } from '@/data/competitors'
 
-import { ACTIVE_MYSTERIES } from '@/data/active-mysteries'
+import { getPublicMarketingMysteries } from '@/services/mysteries'
 import { OCCASION_SEO_PAGES } from '@/data/occasion-seo-pages'
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://backpocketmysteries.com'
-
-const themeSlugs = ACTIVE_MYSTERIES.map((m) => m.slug)
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const locales = i18n.locales
   const lastModified = new Date()
   const changeFrequency = 'weekly' as const
-  const publishedBlogs = await getPublishedBlogPosts()
+  const [publishedBlogs, publicMysteries] = await Promise.all([
+    getPublishedBlogPosts(),
+    getPublicMarketingMysteries(),
+  ])
+  const themeSlugs = publicMysteries.map((m) => m.slug)
 
   // Base static paths
   const staticPaths = [

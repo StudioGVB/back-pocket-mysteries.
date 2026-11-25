@@ -59,6 +59,7 @@ export interface CanonicalActiveMystery {
   spice_level: string;
   complexity: 'easy' | 'medium' | 'hard';
   difficultyLabel: string;
+  status: 'published' | 'draft' | 'archived';
   min_players: number;
   max_players: number;
   playersLabel: string;
@@ -85,6 +86,7 @@ export const LOVE_ON_THE_ROCKS_MYSTERY: CanonicalActiveMystery = {
   spice_level: 'Spicy',
   complexity: 'medium',
   difficultyLabel: 'Medium',
+  status: 'draft',
   min_players: 5,
   max_players: 12,
   playersLabel: '5–12 Suspects (1–12 Players)',
@@ -569,6 +571,7 @@ export const CHRISTMAS_NIGHTMARE_MYSTERY: CanonicalActiveMystery = {
   spice_level: 'Mild',
   complexity: 'medium',
   difficultyLabel: 'Medium',
+  status: 'published',
   min_players: 6,
   max_players: 6,
   playersLabel: '6 Suspects (6 Players)',
@@ -610,15 +613,27 @@ export const CHRISTMAS_NIGHTMARE_MYSTERY: CanonicalActiveMystery = {
   })),
 };
 
-export const ACTIVE_MYSTERIES: CanonicalActiveMystery[] = [
-  LOVE_ON_THE_ROCKS_MYSTERY,
+export const ALL_CANONICAL_MYSTERIES: CanonicalActiveMystery[] = [
   CHRISTMAS_NIGHTMARE_MYSTERY,
+  LOVE_ON_THE_ROCKS_MYSTERY,
 ];
 
-export function getCanonicalActiveMysteryBySlugOrId(slugOrId: string): CanonicalActiveMystery | null {
+/**
+ * Static default list of canonical mysteries whose default status is 'published'.
+ * For live DB + cache status filtering on marketing pages, use `getPublicMarketingMysteries()` from `@/services/mysteries`.
+ */
+export const ACTIVE_MYSTERIES: CanonicalActiveMystery[] = ALL_CANONICAL_MYSTERIES.filter(
+  (m) => m.status === 'published'
+);
+
+export function getCanonicalActiveMysteryBySlugOrId(
+  slugOrId: string,
+  options?: { includeDrafts?: boolean }
+): CanonicalActiveMystery | null {
   const normalized = (slugOrId || '').trim().toLowerCase();
+  const pool = options?.includeDrafts ? ALL_CANONICAL_MYSTERIES : ACTIVE_MYSTERIES;
   return (
-    ACTIVE_MYSTERIES.find(
+    pool.find(
       (m) =>
         m.slug.toLowerCase() === normalized ||
         m.id.toLowerCase() === normalized ||

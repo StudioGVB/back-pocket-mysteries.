@@ -6,10 +6,8 @@ import { Locale } from '@/lib/i18n-config';
 import JsonLd from '@/components/marketing/JsonLd';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import { MysteryMoodboard } from '@/components/mysteries/MysteryMoodboard';
-import {
-  ACTIVE_MYSTERIES,
-  getCanonicalActiveMysteryBySlugOrId,
-} from '@/data/active-mysteries';
+import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
+import { getPublicMarketingMysteryBySlugOrId } from '@/services/mysteries';
 import { getCleanCharacterPresentation } from '@/utils/character-display';
 
 export async function generateStaticParams() {
@@ -27,7 +25,7 @@ export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await props.params;
-  const mystery = getCanonicalActiveMysteryBySlugOrId(slug);
+  const mystery = await getPublicMarketingMysteryBySlugOrId(slug);
 
   if (!mystery) {
     return {
@@ -46,10 +44,10 @@ export async function generateMetadata(props: {
     keywords: [
       mystery.title,
       `${mystery.title} murder mystery`,
-      'reality tv murder mystery party',
+      'holiday murder mystery party',
+      'christmas murder mystery game',
       'bachelorette murder mystery game',
       'hen party murder mystery kit',
-      'girls night murder mystery',
       'custom murder mystery party',
       'personalized murder mystery dinner party',
     ],
@@ -96,7 +94,7 @@ export default async function ThemeDetailPage(props: {
 }) {
   const { locale, slug } = await props.params;
   const dict = await getDictionary(locale as Locale);
-  const mystery = getCanonicalActiveMysteryBySlugOrId(slug);
+  const mystery = await getPublicMarketingMysteryBySlugOrId(slug);
 
   if (!mystery) {
     return (

@@ -6,7 +6,7 @@ import {
   OCCASION_SEO_PAGES,
   getOccasionSeoPageBySlug,
 } from '@/data/occasion-seo-pages';
-import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
+import { getPublicMarketingMysteries } from '@/services/mysteries';
 import FreeMysteryLeadForm from '@/components/marketing/FreeMysteryLeadForm';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import { Locale } from '@/lib/i18n-config';
@@ -68,6 +68,7 @@ export default async function OccasionSeoLandingPage(props: {
   }
 
   const otherOccasions = OCCASION_SEO_PAGES.filter((p) => p.slug !== pageData.slug);
+  const publicMysteries = await getPublicMarketingMysteries();
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -263,7 +264,7 @@ export default async function OccasionSeoLandingPage(props: {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {ACTIVE_MYSTERIES.map((m) => (
+            {publicMysteries.map((m) => (
               <div
                 key={m.slug}
                 className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm flex flex-col justify-between space-y-4"

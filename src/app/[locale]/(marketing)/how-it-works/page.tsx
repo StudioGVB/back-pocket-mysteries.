@@ -151,7 +151,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                     <div className="relative aspect-[16/10]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src="/moodboard/lotr/main-promo-murder.jpg"
+                        src="/moodboard/christmas/main-promo-murder.jpg"
                         alt="Mystery Theme"
                         className="w-full h-full object-cover"
                       />
@@ -162,7 +162,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                             Human-Crafted Storylines
                           </span>
                           <p className="text-2xl font-black text-white uppercase tracking-tight">
-                            Love On The Rocks
+                            Christmas Nightmare
                           </p>
                         </div>
                         <span className="px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider">

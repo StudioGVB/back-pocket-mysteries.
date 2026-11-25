@@ -6,7 +6,7 @@ import { Locale } from '@/lib/i18n-config';
 import JsonLd from '@/components/marketing/JsonLd';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import { MysteryMoodboard } from '@/components/mysteries/MysteryMoodboard';
-import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
+import { getPublicMarketingMysteries } from '@/services/mysteries';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -23,8 +23,8 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
     keywords: [
       'murder mystery party themes',
       'custom murder mystery game',
-      'reality tv murder mystery party',
-      'love on the rocks murder mystery',
+      'christmas murder mystery party',
+      'holiday murder mystery dinner party',
       'bachelorette murder mystery game',
       'hen party murder mystery kit',
       'personalized murder mystery dinner party',
@@ -38,10 +38,10 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
       type: 'website',
       images: [
         {
-          url: 'https://backpocketmysteries.com/moodboard/lotr/main-promo-murder.jpg',
+          url: 'https://backpocketmysteries.com/moodboard/christmas/main-promo-murder.jpg',
           width: 1200,
           height: 630,
-          alt: 'Love On The Rocks - Reality TV Reunion Murder Mystery Theme',
+          alt: 'Christmas Nightmare - Holiday Dinner Party Murder Mystery Theme',
         },
       ],
     },
@@ -49,7 +49,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://backpocketmysteries.com/moodboard/lotr/main-promo-murder.jpg'],
+      images: ['https://backpocketmysteries.com/moodboard/christmas/main-promo-murder.jpg'],
     },
     alternates: {
       canonical: `https://backpocketmysteries.com/en/themes`,
@@ -64,7 +64,7 @@ export default async function ThemesPage(props: {
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
 
-  const activeMysteries = ACTIVE_MYSTERIES;
+  const activeMysteries = await getPublicMarketingMysteries();
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -402,15 +402,17 @@ export default async function ThemesPage(props: {
               {dict.themes.custom.desc}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href={`/${locale}/themes/love-on-the-rocks`}
-                className="inline-flex items-center gap-4 px-10 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-xl hover:translate-y-[-2px]"
-              >
-                Explore Love On The Rocks
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </Link>
+              {activeMysteries[0] && (
+                <Link
+                  href={`/${locale}/themes/${activeMysteries[0].slug}`}
+                  className="inline-flex items-center gap-4 px-10 py-5 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-xl hover:translate-y-[-2px]"
+                >
+                  Explore {activeMysteries[0].title}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </Link>
+              )}
               <Link
                 href={`/${locale}/how-it-works`}
                 className="inline-flex items-center gap-4 px-10 py-5 bg-brand-dark text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-pink transition-all shadow-xl hover:translate-y-[-2px]"

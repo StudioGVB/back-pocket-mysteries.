@@ -9,7 +9,7 @@ import HeroImageCarousel from '@/components/marketing/HeroImageCarousel';
 import LightsOut from '@/components/marketing/LightsOut';
 import InteractivePackPreview from '@/components/marketing/InteractivePackPreview';
 import HowItWorksVideoShowcase from '@/components/marketing/HowItWorksVideoShowcase';
-import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
+import { getPublicMarketingMysteries } from '@/services/mysteries';
 
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -51,7 +51,8 @@ export default async function HomePage(props: {
   const params = await props.params;
   const locale = params.locale;
   const dict = await getDictionary(locale as Locale);
-  const featuredMystery = ACTIVE_MYSTERIES[0];
+  const publicMysteries = await getPublicMarketingMysteries();
+  const featuredMystery = publicMysteries[0];
 
   const homeStructuredData = [
     {
@@ -87,7 +88,7 @@ export default async function HomePage(props: {
           name: 'How does a custom murder mystery party game work?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'You pick a theme (like Love On The Rocks or Christmas Nightmare), enter your guests’ names, traits, and inside jokes, and our AI story engine generates custom character booklets, alibis, crime scene clues, and an interactive Playroom in ~20 minutes.',
+            text: 'You pick a published theme (like Christmas Nightmare), enter your guests’ names, traits, and inside jokes, and our AI story engine generates custom character booklets, alibis, crime scene clues, and an interactive Playroom in ~20 minutes.',
           },
         },
         {
@@ -687,7 +688,7 @@ export default async function HomePage(props: {
                 quote:
                   '“When my friends opened their dossiers on their phones and saw their actual jobs and our 2023 Portugal trip woven into the alibis, the whole table lost it. Best dinner party we’ve ever hosted.”',
                 author: 'Hannah M.',
-                event: 'Hosted 10-Guest 30th Birthday • Love On The Rocks',
+                event: 'Hosted 6-Guest 30th Birthday • Christmas Nightmare',
                 highlight: '🎭 Custom Inside Jokes + QR Join',
               },
               {

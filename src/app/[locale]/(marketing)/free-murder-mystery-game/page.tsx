@@ -2,7 +2,7 @@ import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import FreeMysteryLeadForm from '@/components/marketing/FreeMysteryLeadForm';
-import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
+import { getPublicMarketingMysteries } from '@/services/mysteries';
 import { OCCASION_SEO_PAGES } from '@/data/occasion-seo-pages';
 
 export async function generateMetadata(props: {
@@ -226,6 +226,7 @@ export default async function FreeMurderMysteryGamePage(props: {
 }) {
   const { locale } = await props.params;
   const pageUrl = `https://backpocketmysteries.com/${locale}/free-murder-mystery-game`;
+  const publicMysteries = await getPublicMarketingMysteries();
 
   const faqEntries = [
     {
@@ -790,7 +791,7 @@ export default async function FreeMurderMysteryGamePage(props: {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {ACTIVE_MYSTERIES.map((m) => (
+            {publicMysteries.map((m) => (
               <div
                 key={m.slug}
                 className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm flex flex-col justify-between space-y-4"

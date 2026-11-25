@@ -34,10 +34,22 @@ import {
   advanceMysteryGenerationOneStep,
 } from '@/lib/background-mystery-generator';
 import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
-import { weavePersonalitiesAndInsideJokesAction } from '@/app/actions/inside-jokes-weaver';
+import {
+  runInsideJokesWeaverInternal,
+  weavePersonalitiesAndInsideJokesAction,
+} from '@/app/actions/inside-jokes-weaver';
 import { isUserAdmin } from '@/utils/admin-auth';
 import { sendHostOwnershipTransferInviteEmail } from '@/utils/purchase-notifications';
 import crypto from 'crypto';
+
+function sanitizeShortField(input: unknown, maxLen: number): string {
+  if (typeof input !== 'string') return '';
+  return input
+    .replace(/<[^>]*>/g, '')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim()
+    .slice(0, maxLen);
+}
 
 export interface RoundSubmission {
   id: string;
@@ -672,7 +684,7 @@ export async function saveCustomerCastAction(
 
   // Pre-generate all audio clues & weave guest personalities/inside jokes in the background
   void pregenerateAllAudioCluesForMystery(mysteryId, { forceRegenerate: true });
-  void weavePersonalitiesAndInsideJokesAction(mysteryId, preservedPartyDetails?.groupInsideJokes);
+  void runInsideJokesWeaverInternal(mysteryId, preservedPartyDetails?.groupInsideJokes);
 
   revalidatePath(`/play/${mysteryId}`);
   if (templateMysteryId) {
@@ -947,6 +959,9 @@ export async function getGameSessionAction(mysteryId: string) {
             event_title: hydrateTextWithCharacters(beat.event_title || '', characters, 'print'),
             description: hydrateTextWithCharacters(beat.description || '', characters, 'print'),
           })),
+        decoyClueIds: mysteryClues
+          .filter((c: any) => c.evidence_status === 'fake' || c.implication_type === 'red_herring')
+          .map((c: any) => c.id),
       }
     : null;
 
@@ -998,18 +1013,27 @@ export async function updatePartyEventDetailsAction(
   ]);
 
   const storedSession = getStoredGameSession(mysteryId);
+  const instanceOwnerFromId = mysteryId.includes('__u_') ? mysteryId.split('__u_')[1] : null;
   const existingHostId =
     session.hostUserId ||
     storedSession?.hostUserId ||
     storedSession?.paidByUserId ||
+    instanceOwnerFromId ||
     null;
 
-  if (user && existingHostId && existingHostId !== user.id && !isAdmin) {
+  // Enforce strict host authentication & ownership when an instance has an owner (or is a purchased mystery)
+  if (!user) {
+    return { error: 'Authentication required to update party details.' };
+  }
+  if (existingHostId && existingHostId !== user.id && !isAdmin) {
     return { error: 'Only the host who owns this mystery instance can update party details.' };
   }
 
   const cleanItems = Array.isArray(details.whatToBringItems)
-    ? details.whatToBringItems.map(item => String(item || '').trim()).filter(Boolean)
+    ? details.whatToBringItems
+        .map(item => sanitizeShortField(item, 120))
+        .filter(Boolean)
+        .slice(0, 16)
     : session.partyDetails?.whatToBringItems || [
         '📱 Charged phone or device (50%+ battery)',
         '👗 Your character outfit & costume vibe',
@@ -1017,7 +1041,34 @@ export async function updatePartyEventDetailsAction(
 
   const updatedDetails: PartyEventDetails = {
     ...(session.partyDetails || {}),
-    ...details,
+    partyDate: sanitizeShortField(
+      details.partyDate ?? session.partyDetails?.partyDate ?? '',
+      40
+    ),
+    arrivalTime: sanitizeShortField(
+      details.arrivalTime ?? session.partyDetails?.arrivalTime ?? '',
+      60
+    ),
+    gameStartTime: sanitizeShortField(
+      details.gameStartTime ?? session.partyDetails?.gameStartTime ?? '',
+      60
+    ),
+    location: sanitizeShortField(
+      details.location ?? session.partyDetails?.location ?? '',
+      180
+    ),
+    hostNotes: sanitizeShortField(
+      details.hostNotes ?? session.partyDetails?.hostNotes ?? '',
+      400
+    ),
+    groupInsideJokes: sanitizeShortField(
+      details.groupInsideJokes ?? session.partyDetails?.groupInsideJokes ?? '',
+      600
+    ),
+    foodAndDrinkVibe: sanitizeShortField(
+      details.foodAndDrinkVibe ?? session.partyDetails?.foodAndDrinkVibe ?? '',
+      60
+    ),
     whatToBringItems: cleanItems,
     updatedAt: new Date().toISOString(),
   };
@@ -1035,12 +1086,14 @@ export async function updatePartyEventDetailsAction(
     if (sibId === mysteryId) continue;
     const sibStored = getStoredGameSession(sibId);
     if (sibStored) {
+      // Only update baseId if it belongs to this same user or has no other host
+      if (sibStored.hostUserId && sibStored.hostUserId !== user.id && !isAdmin) continue;
       saveStoredGameSession(sibId, {
         ...sibStored,
         partyDetails: updatedDetails,
         updatedAt: new Date().toISOString(),
       });
-    } else {
+    } else if (sibId.includes(`__u_${user.id}`)) {
       const pin = await generatePinFromMysteryId(sibId);
       saveStoredGameSession(sibId, {
         mysteryId: sibId,
@@ -1076,6 +1129,10 @@ export async function confirmCharacterPrepReadAction(
   characterId: string,
   guestName?: string
 ) {
+  const cleanCharId = sanitizeShortField(characterId, 100);
+  if (!cleanCharId) {
+    return { error: 'Invalid character ID.' };
+  }
   const supabase = await createClient();
   let { data: characters } = await supabase
     .from('characters')
@@ -1093,9 +1150,9 @@ export async function confirmCharacterPrepReadAction(
   );
 
   const existing = { ...(session.prepConfirmedCharacters || {}) };
-  existing[characterId] = {
+  existing[cleanCharId] = {
     confirmedAt: new Date().toISOString(),
-    guestName: guestName || existing[characterId]?.guestName,
+    guestName: sanitizeShortField(guestName || existing[cleanCharId]?.guestName || '', 60),
   };
 
   session.prepConfirmedCharacters = existing;
@@ -1116,6 +1173,12 @@ export async function claimCharacterInLobbyAction(
   characterId: string | null,
   playerToken: string
 ) {
+  const cleanToken = sanitizeShortField(playerToken, 80);
+  const cleanCharId = characterId ? sanitizeShortField(characterId, 100) : null;
+  if (!cleanToken) {
+    return { error: 'Invalid player token.' };
+  }
+
   const supabase = await createClient();
   let { data: characters } = await supabase
     .from('characters')
@@ -1136,20 +1199,20 @@ export async function claimCharacterInLobbyAction(
 
   // Release any previous character claimed by this same player token
   for (const [cId, info] of Object.entries(claims)) {
-    if (info.token === playerToken) {
+    if (info.token === cleanToken) {
       delete claims[cId];
     }
   }
 
   // Record the character selection if provided
-  if (characterId) {
-    claims[characterId] = {
-      token: playerToken,
+  if (cleanCharId) {
+    claims[cleanCharId] = {
+      token: cleanToken,
       claimedAt: new Date().toISOString(),
     };
     // If this player previously joined as a Guest Detective, remove their detective entry so they aren't double-counted
     session.detectiveGuests = (session.detectiveGuests || []).filter(
-      d => d.token !== playerToken
+      d => d.token !== cleanToken
     );
   }
 
@@ -1189,34 +1252,35 @@ export async function registerDetectiveGuestAction(
     mysteryId
   );
 
-  const stripped = (rawName || '')
+  const cleanToken = sanitizeShortField(playerToken, 80);
+  const stripped = sanitizeShortField(rawName || '', 40)
     .replace(/^🕵️\s*/i, '')
     .replace(/^detective\s+/i, '')
     .trim();
   const cleanName = stripped || 'Guest';
   const displayName = `Detective ${cleanName}`;
   const slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'guest';
-  const detectiveId = playerToken ? `detective-${playerToken}` : `detective-${slug}`;
+  const detectiveId = cleanToken ? `detective-${cleanToken}` : `detective-${slug}`;
 
   // Release any character claim held by this playerToken
   const claims = { ...(session.claimedCharacters || {}) };
-  if (playerToken) {
+  if (cleanToken) {
     for (const [cId, info] of Object.entries(claims)) {
-      if (info.token === playerToken) {
+      if (info.token === cleanToken) {
         delete claims[cId];
       }
     }
   }
   session.claimedCharacters = claims;
 
-  const existingList = (session.detectiveGuests || []).filter(
-    d => d.id !== detectiveId && (!playerToken || d.token !== playerToken)
-  );
+  const existingList = (session.detectiveGuests || [])
+    .filter(d => d.id !== detectiveId && (!cleanToken || d.token !== cleanToken))
+    .slice(-29);
   const detectiveGuest: DetectiveGuestItem = {
     id: detectiveId,
     name: cleanName,
     displayName,
-    token: playerToken || detectiveId,
+    token: cleanToken || detectiveId,
     joinedAt: new Date().toISOString(),
   };
 
@@ -1259,29 +1323,33 @@ export async function submitRoundTheoryAction(
 
   const { session, carrierCharacter } = await readSessionFromCharacters(characters || [], mysteryId);
 
+  const safeRound = Math.max(1, Math.min(5, Math.floor(Number(payload.round) || 1)));
+  const safeVoterId = sanitizeShortField(payload.voterCharId, 100);
+  const safeSuspectId = sanitizeShortField(payload.suspectCharId, 100);
+
   // Replace existing submission from the same voter in the same round, or append
   const filtered = session.submissions.filter(
-    s => !(s.round === payload.round && s.voterCharId === payload.voterCharId)
+    s => !(s.round === safeRound && s.voterCharId === safeVoterId)
   );
 
   const cleanTags: Record<string, 'key' | 'red_herring' | 'alibi'> = {};
   const hasClueTagsPayload = Boolean(payload.clueTags && typeof payload.clueTags === 'object');
   if (hasClueTagsPayload && payload.clueTags) {
-    for (const [k, v] of Object.entries(payload.clueTags)) {
+    for (const [k, v] of Object.entries(payload.clueTags).slice(0, 40)) {
       if (v === 'key' || v === 'red_herring' || v === 'alibi') {
-        cleanTags[k] = v;
+        cleanTags[sanitizeShortField(k, 80)] = v;
       }
     }
   }
 
   const newEntry: RoundSubmission = {
-    id: `${payload.round}-${payload.voterCharId}-${Date.now()}`,
-    round: payload.round,
-    voterCharId: payload.voterCharId,
-    voterName: payload.voterName,
-    suspectCharId: payload.suspectCharId,
-    suspectName: payload.suspectName,
-    reason: payload.reason.trim() || 'Acting suspicious!',
+    id: `${safeRound}-${safeVoterId}-${Date.now()}`,
+    round: safeRound,
+    voterCharId: safeVoterId,
+    voterName: sanitizeShortField(payload.voterName, 80) || 'Sleuth',
+    suspectCharId: safeSuspectId,
+    suspectName: sanitizeShortField(payload.suspectName, 80) || 'Suspect',
+    reason: sanitizeShortField(payload.reason, 500) || 'Acting suspicious!',
     submittedAt: new Date().toISOString(),
     ...(hasClueTagsPayload ? { clueTags: cleanTags } : {}),
   };

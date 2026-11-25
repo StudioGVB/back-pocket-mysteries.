@@ -125,8 +125,8 @@ const MINI_CASES: MiniCase[] = [
     id: 'villa-poolside',
     caseNumber: 'CASE FILE #02',
     title: 'The Deleted Villa Infinity-Pool Alibi',
-    themeBadge: 'Inspired by Love On The Rocks',
-    themeSlug: 'love-on-the-rocks',
+    themeBadge: 'Bonus 60-Second Detective Case',
+    themeSlug: 'christmas-nightmare',
     victimLine:
       'ricky Vance (The Show Producer) was struck with a golden microphone trophy by the Villa Firepit at 10:15 PM.',
     timeWindow: 'Crime Window: 10:12 PM – 10:17 PM',

@@ -48,6 +48,20 @@ export async function updatePublishingAction(
     return { error: error.message };
   }
 
+  try {
+    const { getCachedMysterySnapshot, cacheMysterySnapshot } = await import('@/lib/live-session-store');
+    const cached = getCachedMysterySnapshot(mysteryId);
+    if (cached) {
+      cacheMysterySnapshot(mysteryId, {
+        ...cached,
+        status,
+        updated_at: new Date().toISOString(),
+      });
+    }
+  } catch {
+    // Non-fatal
+  }
+
   revalidatePath(`/builder/mysteries/${mysteryId}/status`);
   revalidatePath('/', 'layout');
   return { success: true };

@@ -1767,6 +1767,27 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
     return { error: error.message };
   }
 
+  try {
+    const { getCachedMysterySnapshot, cacheMysterySnapshot } = await import('@/lib/live-session-store');
+    const cached = getCachedMysterySnapshot(id);
+    if (cached) {
+      cacheMysterySnapshot(id, {
+        ...cached,
+        title,
+        theme,
+        description,
+        min_players,
+        max_players: pkgInfo.requiredCharacters,
+        complexity,
+        spice_level,
+        status,
+        updated_at: new Date().toISOString(),
+      });
+    }
+  } catch {
+    // Non-fatal
+  }
+
   revalidatePath(`/builder/mysteries/${id}`);
   revalidatePath(`/builder/mysteries/${id}/core`);
   revalidatePath(`/builder/mysteries/${id}/characters`);
