@@ -78,12 +78,12 @@ Whenever creating, editing, hydrating, or stress-testing any Mystery Base Pack, 
 <!-- END:mystery-architecture-and-qa-rules -->
 
 <!-- BEGIN:vercel-deploy-batching-rules -->
-# 15-Minute Vercel Deployment Batching & Quota Protection Rules
+# 8-Minute Vercel Deployment Batching & Quota Protection Rules
 
-1. **Batch Remote Pushes to Once Every 15 Minutes (`<= 96 deploys/day`):**
+1. **Batch Remote Pushes to Once Every 8 Minutes (`480s`):**
    - Always commit code locally (`git add ... && git commit -m "..."`) and verify on `http://localhost:3033`.
-   - `.git/hooks/pre-push` enforces a **15-minute cooldown (900s)** between remote `git push origin main` calls so Vercel Hobby never hits the `100 deployments / 24h` (`api-deployments-free-per-day`) limit.
-   - If `.git/hooks/pre-push` reports that the 15-minute cooldown is active, do **not** bypass it unless the user explicitly asks to deploy live immediately (`FORCE_PUSH=1 git push origin main`).
+   - `.git/hooks/pre-push` enforces an **8-minute cooldown (480s)** between remote `git push origin main` calls to batch Vercel deployments cleanly.
+   - If `.git/hooks/pre-push` reports that the 8-minute cooldown is active, do **not** bypass it unless the user explicitly asks to deploy live immediately (`FORCE_PUSH=1 git push origin main`).
 2. **Single Production Branch (`main` Only):**
    - Never push to `v1-mvp-launch` (`git push origin main:v1-mvp-launch` is blocked by `.git/hooks/pre-push` and disabled in [`vercel.json`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/vercel.json)).
 <!-- END:vercel-deploy-batching-rules -->
