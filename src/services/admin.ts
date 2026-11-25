@@ -1,7 +1,18 @@
 import fs from 'fs';
 import path from 'path';
 import { Database } from '@/types/database';
-import { ensureChristmasNightmareCanon, replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
+import { replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
+import {
+  CHRISTMAS_NIGHTMARE_DESCRIPTION,
+  CHRISTMAS_NIGHTMARE_THEME,
+  CHRISTMAS_NIGHTMARE_TITLE,
+  isChristmasNightmareMystery,
+} from '@/data/christmas-nightmare';
+import {
+  CHRISTMAS_CABIN_MOODBOARD,
+  CHRISTMAS_MAIN_COVER_URL,
+  serializeMysteryImageField,
+} from '@/utils/moodboard';
 import { requireAdmin } from '@/utils/admin-auth';
 import {
   getAllStoredGameSessions,
@@ -12,25 +23,57 @@ import {
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type MysteryInsert = Database['public']['Tables']['mysteries']['Insert'];
 
+const qaSummaryMemoryCache = new Map<string, { mtimeMs: number; summary: any }>();
+
 function readLightweightQaSummary(mysteryId: string) {
   try {
     const qaPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'data', 'mystery-qa-runs', `${mysteryId}.json`);
-    if (!fs.existsSync(qaPath)) return null;
+    const stat = fs.statSync(qaPath);
+    const cached = qaSummaryMemoryCache.get(mysteryId);
+    if (cached && cached.mtimeMs === stat.mtimeMs) {
+      return cached.summary;
+    }
     const raw = JSON.parse(fs.readFileSync(qaPath, 'utf8'));
     const pr = raw?.performanceReview;
     if (!pr) return null;
     const checklist = Array.isArray(pr.preLaunchChecklist) ? pr.preLaunchChecklist : [];
     const passedBoxes = checklist.filter((b: any) => b.passed).length;
-    return {
+    const summary = {
       overallReadinessScore: Number(pr.overallReadinessScore || 0),
       certificationStatus: pr.certificationStatus as 'certified' | 'needs_tuning' | 'blocked',
       passedBoxes,
       totalBoxes: checklist.length || 7,
       completedRunsCount: Number(raw.completedRunsCount || 0),
     };
+    qaSummaryMemoryCache.set(mysteryId, { mtimeMs: stat.mtimeMs, summary });
+    return summary;
   } catch {
     return null;
   }
+}
+
+function normalizeMysteryCardSummary(m: any) {
+  if (!m || !isChristmasNightmareMystery(m.title, m.theme)) {
+    return m;
+  }
+  const needsImageUpgrade =
+    !m.image_url ||
+    String(m.image_url).startsWith('data:image/') ||
+    !String(m.image_url).includes('#moodboard=');
+
+  return {
+    ...m,
+    title: CHRISTMAS_NIGHTMARE_TITLE,
+    theme: CHRISTMAS_NIGHTMARE_THEME,
+    description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
+    min_players: 6,
+    max_players: 6,
+    complexity: 'medium',
+    spice_level: 'mild',
+    image_url: needsImageUpgrade
+      ? serializeMysteryImageField(CHRISTMAS_MAIN_COVER_URL, CHRISTMAS_CABIN_MOODBOARD)
+      : m.image_url,
+  };
 }
 
 export async function getMysteries() {
@@ -71,7 +114,7 @@ export async function getMysteries() {
   }
 
   return filteredRows.map((m: any) => {
-    const upgraded = ensureChristmasNightmareCanon(m);
+    const upgraded = normalizeMysteryCardSummary(m);
     const qaSummary = readLightweightQaSummary(upgraded.id);
     return {
       ...upgraded,

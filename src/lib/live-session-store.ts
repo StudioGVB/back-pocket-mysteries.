@@ -118,38 +118,59 @@ const MYSTERY_CACHE_FILENAME = '.live-mystery-cache.json';
 
 const globalForCache = globalThis as unknown as {
   __liveMysteryCache?: MysteryCacheData;
+  __liveMysteryCacheMtime?: number;
+  __liveSessionsCache?: SessionsFileData;
+  __liveSessionsCacheMtime?: number;
+  __cwdWritableChecked?: boolean;
+  __cwdIsWritable?: boolean;
 };
 
 function getFilePath(filename: string): string {
   const cwdPath = path.join(/*turbopackIgnore: true*/ process.cwd(), filename);
-  try {
-    fs.accessSync(process.cwd(), fs.constants.W_OK);
-    return cwdPath;
-  } catch {
-    return path.join('/tmp', filename);
+  if (!globalForCache.__cwdWritableChecked) {
+    globalForCache.__cwdWritableChecked = true;
+    try {
+      fs.accessSync(process.cwd(), fs.constants.W_OK);
+      globalForCache.__cwdIsWritable = true;
+    } catch {
+      globalForCache.__cwdIsWritable = false;
+    }
   }
+  return globalForCache.__cwdIsWritable ? cwdPath : path.join('/tmp', filename);
 }
 
 function readSessionsFile(): SessionsFileData {
   const filePath = getFilePath(SESSIONS_FILENAME);
   try {
-    if (fs.existsSync(filePath)) {
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw);
-      return {
-        sessions: parsed.sessions || {},
-      };
+    const stat = fs.statSync(filePath);
+    if (
+      globalForCache.__liveSessionsCache &&
+      globalForCache.__liveSessionsCacheMtime === stat.mtimeMs
+    ) {
+      return globalForCache.__liveSessionsCache;
     }
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    const data: SessionsFileData = {
+      sessions: parsed.sessions || {},
+    };
+    globalForCache.__liveSessionsCache = data;
+    globalForCache.__liveSessionsCacheMtime = stat.mtimeMs;
+    return data;
   } catch {
-    // Ignore corrupted cache
+    if (globalForCache.__liveSessionsCache) {
+      return globalForCache.__liveSessionsCache;
+    }
   }
   return { sessions: {} };
 }
 
 function writeSessionsFile(data: SessionsFileData): void {
+  globalForCache.__liveSessionsCache = data;
   const filePath = getFilePath(SESSIONS_FILENAME);
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    globalForCache.__liveSessionsCacheMtime = fs.statSync(filePath).mtimeMs;
   } catch {
     // Non-fatal in read-only environments
   }
@@ -158,15 +179,21 @@ function writeSessionsFile(data: SessionsFileData): void {
 function readMysteryCache(): MysteryCacheData {
   const filePath = getFilePath(MYSTERY_CACHE_FILENAME);
   try {
-    if (fs.existsSync(filePath)) {
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw);
-      globalForCache.__liveMysteryCache = {
-        mysteries: parsed.mysteries || {},
-        relationships: parsed.relationships || {},
-      };
+    const stat = fs.statSync(filePath);
+    if (
+      globalForCache.__liveMysteryCache &&
+      globalForCache.__liveMysteryCacheMtime === stat.mtimeMs
+    ) {
       return globalForCache.__liveMysteryCache;
     }
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    globalForCache.__liveMysteryCache = {
+      mysteries: parsed.mysteries || {},
+      relationships: parsed.relationships || {},
+    };
+    globalForCache.__liveMysteryCacheMtime = stat.mtimeMs;
+    return globalForCache.__liveMysteryCache;
   } catch {
     if (globalForCache.__liveMysteryCache) {
       return globalForCache.__liveMysteryCache;
@@ -183,6 +210,7 @@ function writeMysteryCache(data: MysteryCacheData): void {
   const filePath = getFilePath(MYSTERY_CACHE_FILENAME);
   try {
     fs.writeFileSync(filePath, JSON.stringify(data), 'utf-8');
+    globalForCache.__liveMysteryCacheMtime = fs.statSync(filePath).mtimeMs;
   } catch {
     // Non-fatal
   }

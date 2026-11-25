@@ -178,6 +178,19 @@ function maxCutoffIso(aIso: string, bIso?: string | null): string {
   return new Date(Math.max(aMs, bMs)).toISOString();
 }
 
+let cachedSidebarNotificationPool: {
+  fetchedAt: number;
+  activeOrders: any[];
+  activeProfiles: any[];
+  activeEnquiries: any[];
+  safeLeads: any[];
+  safeReviews: any[];
+  safeTickets: any[];
+  seenState: AdminNotificationsSeenState;
+} | null = null;
+
+const SIDEBAR_NOTIFICATION_CACHE_TTL_MS = 25000;
+
 export async function markAdminSectionSeenAction(
   section: AdminNotificationSection,
   timestampIso?: string
@@ -185,6 +198,12 @@ export async function markAdminSectionSeenAction(
   const { supabase } = await requireAdmin();
   const clientMs = toEpochMs(timestampIso);
   const ts = new Date(Math.max(Date.now(), clientMs)).toISOString();
+  if (cachedSidebarNotificationPool) {
+    cachedSidebarNotificationPool.seenState = {
+      ...cachedSidebarNotificationPool.seenState,
+      [section]: ts,
+    };
+  }
   await saveAdminNotificationsSeen(supabase, { [section]: ts });
   return { success: true, timestamp: ts };
 }
@@ -201,40 +220,76 @@ export async function getAdminSidebarNotificationCountsAction(
   unseenDashboardCount: number;
 }> {
   try {
-    const { supabase } = await requireAdmin();
-    const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
-    const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
-    const { getAllPlatformReviews } = await import('@/app/actions/reviews');
-    const { getAllAdminTicketsAction } = await import('@/app/actions/tickets');
+    let activeOrders: any[];
+    let activeProfiles: any[];
+    let activeEnquiries: any[];
+    let safeLeads: any[];
+    let safeReviews: any[];
+    let safeTickets: any[];
+    let seenState: AdminNotificationsSeenState;
 
-    const [
-      ordersRes,
-      profilesRes,
-      enquiriesRes,
-      crmMap,
-      leads,
-      reviews,
-      tickets,
-      seenState,
-    ] = await Promise.all([
-      supabase.from('orders').select('id, created_at, status').eq('status', 'succeeded'),
-      supabase.from('profiles').select('id, full_name, avatar_config, created_at'),
-      supabase.from('inquiries').select('id, created_at'),
-      getAllCustomerCrmData(),
-      getAllMarketingLeadsAction(),
-      getAllPlatformReviews(supabase).catch(() => []),
-      getAllAdminTicketsAction().catch(() => []),
-      loadAdminNotificationsSeen(supabase),
-    ]);
+    const now = Date.now();
+    if (
+      cachedSidebarNotificationPool &&
+      now - cachedSidebarNotificationPool.fetchedAt < SIDEBAR_NOTIFICATION_CACHE_TTL_MS
+    ) {
+      ({
+        activeOrders,
+        activeProfiles,
+        activeEnquiries,
+        safeLeads,
+        safeReviews,
+        safeTickets,
+        seenState,
+      } = cachedSidebarNotificationPool);
+    } else {
+      const { supabase } = await requireAdmin();
+      const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
+      const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
+      const { getAllPlatformReviews } = await import('@/app/actions/reviews');
+      const { getAllAdminTicketsAction } = await import('@/app/actions/tickets');
 
-    const activeOrders = ordersRes.data || [];
-    const activeProfiles = (profilesRes.data || []).filter(
-      (p: any) => !isProfileDeleted(p, crmMap[p.id])
-    );
-    const activeEnquiries = enquiriesRes.data || [];
-    const safeLeads = Array.isArray(leads) ? leads : [];
-    const safeReviews = Array.isArray(reviews) ? reviews : [];
-    const safeTickets = Array.isArray(tickets) ? tickets : [];
+      const [
+        ordersRes,
+        profilesRes,
+        enquiriesRes,
+        crmMap,
+        leads,
+        reviews,
+        tickets,
+        loadedSeenState,
+      ] = await Promise.all([
+        supabase.from('orders').select('id, created_at, status').eq('status', 'succeeded'),
+        supabase.from('profiles').select('id, full_name, avatar_config, created_at'),
+        supabase.from('inquiries').select('id, created_at'),
+        getAllCustomerCrmData(),
+        getAllMarketingLeadsAction(),
+        getAllPlatformReviews(supabase).catch(() => []),
+        getAllAdminTicketsAction().catch(() => []),
+        loadAdminNotificationsSeen(supabase),
+      ]);
+
+      activeOrders = ordersRes.data || [];
+      activeProfiles = (profilesRes.data || []).filter(
+        (p: any) => !isProfileDeleted(p, crmMap[p.id])
+      );
+      activeEnquiries = enquiriesRes.data || [];
+      safeLeads = Array.isArray(leads) ? leads : [];
+      safeReviews = Array.isArray(reviews) ? reviews : [];
+      safeTickets = Array.isArray(tickets) ? tickets : [];
+      seenState = loadedSeenState;
+
+      cachedSidebarNotificationPool = {
+        fetchedAt: now,
+        activeOrders,
+        activeProfiles,
+        activeEnquiries,
+        safeLeads,
+        safeReviews,
+        safeTickets,
+        seenState,
+      };
+    }
 
     const cutoffs: Record<AdminNotificationSection, string> = {
       dashboard: resolveBaselineCutoff(cookiesOverride?.dashboard, seenState.dashboard),
