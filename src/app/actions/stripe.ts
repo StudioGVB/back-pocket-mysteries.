@@ -68,13 +68,18 @@ async function resolveAuthoritativeTier(
         (await getPublishedMysteryByIdOrSlug(lookupKey)) ||
         (await getMysteryById(lookupKey));
       if (mystery) {
-        const maxPlayers =
-          (mystery as any).max_players ||
-          (Array.isArray((mystery as any).characters)
-            ? (mystery as any).characters.length
-            : undefined);
-        if (typeof maxPlayers === 'number' && maxPlayers > 0) {
-          return getTierForPlayerCount(maxPlayers);
+        const rawChars = Array.isArray((mystery as any).characters)
+          ? (mystery as any).characters
+          : [];
+        const activeChars = rawChars.filter(
+          (c: any) => (c.profile_data as any)?.is_active_in_session !== false
+        );
+        const activeCount =
+          activeChars.length > 0
+            ? activeChars.length
+            : (mystery as any).max_players || rawChars.length;
+        if (typeof activeCount === 'number' && activeCount > 0) {
+          return getTierForPlayerCount(activeCount);
         }
       }
     }

@@ -386,7 +386,7 @@ export default function First50WaitlistBanner({
                     {resultInfo.qualifiesForFreeMystery ? (
                       <>
                         You secured <strong className="text-white">Spot #{resultInfo.vipRank} of 50</strong>. We&apos;ll email your{' '}
-                        <strong className="text-brand-pink">100% Free Custom Murder Mystery code</strong> on launch day.
+                        <strong className="text-brand-pink">100% Free 6-Player Custom Murder Mystery code</strong> on launch day.
                       </>
                     ) : (
                       <>
@@ -419,12 +419,12 @@ export default function First50WaitlistBanner({
                   <div className="space-y-1.5">
                     <h2 className="text-2xl sm:text-[28px] font-black uppercase tracking-tight leading-[1.08]">
                       First 50 Sign-Ups Get a{' '}
-                      <span className="text-brand-pink italic">Free Mystery</span>
+                      <span className="text-brand-pink italic">Free 6-Player Mystery</span>
                     </h2>
                     <p className="text-xs text-slate-300 font-medium leading-relaxed">
                       Join our founding host list and get a{' '}
-                      <strong className="text-white font-bold">100% Free Custom Murder Mystery Pack</strong>{' '}
-                      (worth £25) when we launch.
+                      <strong className="text-white font-bold">100% Free 6-Player Custom Murder Mystery Pack</strong>{' '}
+                      (Basic Tier • worth $19 / £15) when we launch.
                     </p>
                   </div>
 

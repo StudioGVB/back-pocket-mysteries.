@@ -48,7 +48,7 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
           qualifies
             ? ` with <strong>Founding Host Spot #${vipRank} of ${vipCap}</strong>.`
             : `.`
-        }</p><p style='margin:0;color:#374151;line-height:1.75;'>Because you joined among our first ${vipCap} founding hosts, you have locked in a <strong>100% FREE Custom Murder Mystery Game Pack</strong> (up to $49 value) the moment public doors open.</p>`,
+        }</p><p style='margin:0;color:#374151;line-height:1.75;'>Because you joined among our first ${vipCap} founding hosts, you have locked in a <strong>100% FREE 6-Player Custom Murder Mystery Game Pack</strong> (Basic Tier • $19 / £15 value) the moment public doors open.</p>`,
         fontSize: 15,
         textAlign: "left",
         textColor: "#1e191c",
@@ -66,7 +66,7 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "vip-pass-card",
       type: "text",
       data: {
-        content: `<div style='background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;border-radius:12px;padding:24px;text-align:left;'><p style='margin:0 0 6px 0;color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;'>FOUNDING HOST CREDENTIAL</p><h2 style='margin:0 0 8px 0;color:#ffffff;font-size:20px;font-weight:900;'>1× Complete Murder Mystery Pack (100% Complimentary)</h2><p style='margin:0 0 16px 0;color:#a1a1aa;font-size:13px;line-height:1.6;'>Your single-use 100%-Off Promo Code is reserved under this email address and will be dispatched directly to your inbox on Launch Day.</p><span style='display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;padding:6px 14px;border-radius:999px;'>SPOT #${vipRank} OF ${vipCap} CONFIRMED ✓</span></div>`,
+        content: `<div style='background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;border-radius:12px;padding:24px;text-align:left;'><p style='margin:0 0 6px 0;color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:2.2px;text-transform:uppercase;'>FOUNDING HOST CREDENTIAL</p><h2 style='margin:0 0 8px 0;color:#ffffff;font-size:20px;font-weight:900;'>1× Free 6-Player Murder Mystery Pack (Basic Tier • 100% Off)</h2><p style='margin:0 0 16px 0;color:#a1a1aa;font-size:13px;line-height:1.6;'>Your single-use 100%-Off Promo Code (valid for any 6-Player / 4–6 suspect Basic Pack) is reserved under this email address and will be dispatched directly to your inbox on Launch Day.</p><span style='display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;padding:6px 14px;border-radius:999px;'>SPOT #${vipRank} OF ${vipCap} CONFIRMED ✓</span></div>`,
         fontSize: 14,
         textAlign: "left",
         textColor: "#ffffff",
@@ -84,7 +84,7 @@ export function buildVipWelcomeEmailBlocks(params: VipWelcomeEmailParams = {}) {
       id: "what-to-expect",
       type: "text",
       data: {
-        content: `<h3 style='font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#1e191c;margin:0 0 14px 0;'>Inside Your Complimentary Mystery Pack:</h3><table role='presentation' width='100%' cellspacing='0' cellpadding='0' border='0'><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>01 · Your Friends Cast in the Story (4–16 Players):</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.</td></tr><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>02 · Spoiler-Free Host Mode:</strong> Run the rounds from your phone via a 6-digit Game PIN lobby without ever seeing the killer—so you play as a full suspect.</td></tr><tr><td style='padding:10px 0;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>03 · Ready in ~20 Mins (100% Online Mobile Lobby):</strong> Play live on phones, tablets, or laptops via your 6-digit Game PIN — zero printing or paper envelopes required.</td></tr></table>`,
+        content: `<h3 style='font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#1e191c;margin:0 0 14px 0;'>Inside Your Complimentary 6-Player Mystery Pack:</h3><table role='presentation' width='100%' cellspacing='0' cellpadding='0' border='0'><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>01 · Your Friends Cast in the Story (Up to 6 Players):</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.</td></tr><tr><td style='padding:10px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>02 · Spoiler-Free Host Mode:</strong> Run the rounds from your phone via a 6-digit Game PIN lobby without ever seeing the killer—so you play as a full suspect.</td></tr><tr><td style='padding:10px 0;color:#374151;font-size:14px;line-height:1.65;'><strong style='color:#1e191c;'>03 · Ready in ~20 Mins (100% Online Mobile Lobby):</strong> Play live on phones, tablets, or laptops via your 6-digit Game PIN — zero printing or paper envelopes required.</td></tr></table>`,
         fontSize: 14,
         textAlign: "left",
         textColor: "#1e191c",
@@ -157,7 +157,7 @@ export function buildVipWelcomeEmailHtml(params: VipWelcomeEmailParams = {}): st
     <p style="margin:0 0 24px 0;color:#374151;">
       ${
         qualifies
-          ? `Because you joined among our first ${vipCap} founding hosts, you have locked in a <strong>100% FREE Custom Murder Mystery Game Pack</strong> (up to $49 value) the moment we open public checkout.`
+          ? `Because you joined among our first ${vipCap} founding hosts, you have locked in a <strong>100% FREE 6-Player Custom Murder Mystery Game Pack</strong> (Basic Tier • $19 / £15 value) the moment we open public checkout.`
           : `You will be the very first to receive early access, behind-the-scenes mystery previews, and launch-day perks.`
       }
     </p>
@@ -168,10 +168,10 @@ export function buildVipWelcomeEmailHtml(params: VipWelcomeEmailParams = {}): st
         FOUNDING HOST CREDENTIAL
       </p>
       <h2 style="margin:0 0 8px 0;color:#ffffff;font-size:20px;font-weight:900;">
-        1× Complete Murder Mystery Pack (100% Complimentary)
+        1× Free 6-Player Murder Mystery Pack (Basic Tier • 100% Off)
       </h2>
       <p style="margin:0 0 16px 0;color:#a1a1aa;font-size:13px;line-height:1.6;">
-        Your personal single-use 100%-Off Promo Code is reserved under this email address and will be dispatched directly to your inbox on Launch Day.
+        Your personal single-use 100%-Off Promo Code (valid for any 6-Player / 4–6 suspect Basic Pack) is reserved under this email address and will be dispatched directly to your inbox on Launch Day.
       </p>
       <span style="display:inline-block;background-color:#fe04c6;color:#ffffff;font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;padding:6px 14px;border-radius:999px;">
         SPOT #${vipRank} OF ${vipCap} CONFIRMED ✓
@@ -179,12 +179,12 @@ export function buildVipWelcomeEmailHtml(params: VipWelcomeEmailParams = {}): st
     </div>
 
     <h3 style="font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:#1e191c;margin:0 0 12px 0;">
-      Inside Your Complimentary Mystery Pack
+      Inside Your Complimentary 6-Player Mystery Pack
     </h3>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #f4f4f5;color:#374151;font-size:14px;line-height:1.65;">
-          <strong style="color:#1e191c;">01 · Your Friends Cast in the Story (4–16 Players):</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.
+          <strong style="color:#1e191c;">01 · Your Friends Cast in the Story (Up to 6 Players):</strong> Real guest names, traits, and inside jokes woven into custom character dossiers, CCTV stills, and multi-speaker audio wiretaps.
         </td>
       </tr>
       <tr>
@@ -202,12 +202,12 @@ export function buildVipWelcomeEmailHtml(params: VipWelcomeEmailParams = {}): st
 
   return buildBrandedEmailShell({
     preheader: qualifies
-      ? `VIP Founding Host Spot #${vipRank} of ${vipCap} is confirmed — your 100% Free Murder Mystery Pack is reserved.`
+      ? `VIP Founding Host Spot #${vipRank} of ${vipCap} is confirmed — your 100% Free 6-Player Murder Mystery Pack is reserved.`
       : `Welcome to the Back Pocket Mysteries VIP Launch List.`,
     kicker: qualifies
       ? `FIRST ${vipCap} VIP FOUNDING HOST • SPOT #${vipRank} OF ${vipCap}`
       : `VIP LAUNCH WAITLIST • OFFICIAL CONFIRMATION`,
-    headline: `You're In — Your Free Mystery Spot Is Locked In.`,
+    headline: `You're In — Your Free 6-Player Mystery Spot Is Locked In.`,
     bodyHtml,
     ctaText: 'Explore Our Mystery Themes →',
     ctaUrl: 'https://backpocketmysteries.com/en/themes?utm_source=edm&utm_medium=email&utm_campaign=vip_welcome_youre_in',

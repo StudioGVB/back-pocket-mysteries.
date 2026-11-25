@@ -679,7 +679,7 @@ export async function validatePromoCodeAction(params: {
     };
   }
 
-  // 3B. Verify First 50 VIP codes (`VIP50-XX-XXXX`): single-use (`max_uses: 1`) + locked to the VIP subscriber's email
+  // 3B. Verify First 50 VIP codes (`VIP50-XX-XXXX`): single-use (`max_uses: 1`), locked to the VIP subscriber's email, and strictly limited to the 6-Player Basic Package (`basic`)
   if (cleanCode.startsWith('VIP50-')) {
     try {
       const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
@@ -708,13 +708,13 @@ export async function validatePromoCodeAction(params: {
           const nowIso = new Date().toISOString();
           match = {
             id: `vip50-${leadWithCode.vip_rank}`,
-            name: `First 50 VIP Free Mystery (#${leadWithCode.vip_rank} - ${leadWithCode.full_name || leadWithCode.email})`,
+            name: `First 50 VIP Free 6-Player Mystery (#${leadWithCode.vip_rank} - ${leadWithCode.full_name || leadWithCode.email})`,
             code: cleanCode,
             auto_apply: false,
             discount_type: 'percentage',
             discount_value: 100,
-            applies_to: 'all',
-            target_packages: [],
+            applies_to: 'packages',
+            target_packages: ['basic'],
             target_mysteries: [],
             starts_at: leadWithCode.created_at || nowIso,
             ends_at: null,
@@ -725,17 +725,21 @@ export async function validatePromoCodeAction(params: {
             created_at: leadWithCode.created_at || nowIso,
             updated_at: nowIso,
           };
-        } else {
-          // Force strict single-use on all VIP50 codes even if edited
-          match = {
-            ...match,
-            usage_limit: 'max_uses',
-            max_uses: 1,
-          };
         }
       }
     } catch {
       // ignore
+    }
+
+    // Force strict single-use and 6-player Basic Package ('basic') restriction on all VIP50-* codes
+    if (match) {
+      match = {
+        ...match,
+        applies_to: 'packages',
+        target_packages: ['basic'],
+        usage_limit: 'max_uses',
+        max_uses: 1,
+      };
     }
   }
 
@@ -781,6 +785,18 @@ export async function validatePromoCodeAction(params: {
   });
 
   if (!applies) {
+    if (
+      cleanCode.startsWith('VIP50-') ||
+      (match.applies_to === 'packages' &&
+        match.target_packages.length === 1 &&
+        match.target_packages[0] === 'basic')
+    ) {
+      return {
+        valid: false,
+        error:
+          'Free VIP Mystery Passes are valid for a 6-Player (Basic) Mystery Pack only. Switch to a 6-player cast to redeem your free pack!',
+      };
+    }
     return {
       valid: false,
       error: 'This discount code does not apply to the selected murder mystery package.',

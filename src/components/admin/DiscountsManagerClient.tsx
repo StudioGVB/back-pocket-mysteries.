@@ -461,7 +461,7 @@ export default function DiscountsManagerClient({
             </span>
           </h2>
           <p className="text-xs text-slate-300 font-medium leading-relaxed">
-            Your 100%-off admin/testing code automatically rotates every 24 hours so coupon extensions like Honey can never leak a permanent free code. For your <strong>First 50 VIP Signups</strong>, each subscriber receives a unique, single-use (1 redemption max), email-locked <code className="text-emerald-400 font-mono">VIP50-XX-XXXX</code> code in <strong>Newsletter &amp; VIP Leads</strong>.
+            Your 100%-off admin/testing code automatically rotates every 24 hours so coupon extensions like Honey can never leak a permanent free code. For your <strong>First 50 VIP Signups</strong>, each subscriber receives a unique, single-use (1 redemption max), email-locked <code className="text-emerald-400 font-mono">VIP50-XX-XXXX</code> code valid strictly for a <strong>6-Player (Basic) Mystery Pack</strong> in <strong>Newsletter &amp; VIP Leads</strong>.
           </p>
         </div>
 

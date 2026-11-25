@@ -155,7 +155,7 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
         <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-md mx-auto">
           {resultInfo.qualifiesForFreeMystery ? (
             <>
-              Congratulations! You locked in <strong className="text-white">Spot #{resultInfo.vipRank} of 50</strong>. We&apos;ve added you to our Founding VIP list and will email your <strong className="text-brand-pink">100% Free Custom Murder Mystery Game Pack code</strong> as soon as we launch.
+              Congratulations! You locked in <strong className="text-white">Spot #{resultInfo.vipRank} of 50</strong>. We&apos;ve added you to our Founding VIP list and will email your <strong className="text-brand-pink">100% Free 6-Player Custom Murder Mystery Game Pack code</strong> as soon as we launch.
             </>
           ) : (
             <>
@@ -187,10 +187,10 @@ export default function FreeMysteryLeadForm({ locale }: { locale: string }) {
             Limited Founding Host Giveaway
           </div>
           <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight leading-tight">
-            Claim Your <span className="text-brand-pink italic">Free</span> Custom Murder Mystery
+            Claim Your <span className="text-brand-pink italic">Free 6-Player</span> Custom Murder Mystery
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-            Sign up below to lock in one of the first 50 VIP spots. No credit card required—we&apos;ll email your 100%-off game pack code on launch day.
+            Sign up below to lock in one of the first 50 VIP spots. No credit card required—we&apos;ll email your single-use 100%-off 6-player game pack code on launch day.
           </p>
         </div>
 

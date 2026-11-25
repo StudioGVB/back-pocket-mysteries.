@@ -11,9 +11,9 @@ export async function generateMetadata(props: {
   const { locale } = await props.params;
   const canonicalUrl = `https://backpocketmysteries.com/${locale}/free-murder-mystery-game`;
   const title =
-    'Free Custom Murder Mystery Game (First 50 VIP Giveaway) | 100% Online Digital Party Kit';
+    'Free 6-Player Custom Murder Mystery Game (First 50 VIP Giveaway) | 100% Online Digital Party Kit';
   const description =
-    'Claim a 100% FREE Custom Murder Mystery Game Pack (worth up to £45 / $55 for 4–16 players). Human-written murder mystery plots personalised around your actual friends by AI. Live mobile Playroom (6-digit PIN), spoiler-free for the host.';
+    'Claim a 100% FREE 6-Player Custom Murder Mystery Game Pack (Basic Tier • worth £15 / $19 for up to 6 players). Human-written murder mystery plots personalised around your actual friends by AI. Live mobile Playroom (6-digit PIN), spoiler-free for the host.';
 
   return {
     title,
@@ -62,7 +62,7 @@ export async function generateMetadata(props: {
           url: '/og-image.png',
           width: 1200,
           height: 630,
-          alt: 'Free Custom Murder Mystery Game — First 50 VIP Founding Host Giveaway | Back Pocket Mysteries',
+          alt: 'Free 6-Player Custom Murder Mystery Game — First 50 VIP Founding Host Giveaway | Back Pocket Mysteries',
         },
       ],
     },
@@ -86,16 +86,16 @@ const HOW_IT_WORKS_STEPS = [
   {
     step: '02',
     badge: 'Launch Day Inbox Delivery',
-    title: 'Receive Your 100%-Off Voucher Code',
+    title: 'Receive Your 100%-Off 6-Player Voucher',
     description:
-      'The moment we open our doors for launch, everyone in Spots #1 to #50 receives a unique single-use 100%-off Founding Host promo code by email—no credit card, subscription, or hidden checkout fee required.',
+      'The moment we open our doors for launch, everyone in Spots #1 to #50 receives a unique single-use 100%-off Founding Host promo code by email (locked to your email address)—no credit card or subscription required.',
   },
   {
     step: '03',
     badge: 'Redeem Whenever You Host',
-    title: 'Pick Any Theme & Personalise Your Cast',
+    title: 'Pick Any Theme & Cast Up to 6 Players',
     description:
-      'You do not need your party date or guest list ready today. When you are ready to host, choose any Mystery Base Pack, enter 4 to 16 guests with their personalities or inside jokes, and apply your 100%-off code at checkout.',
+      'You do not need your party date or guest list ready today. When you are ready to host, choose any Mystery Base Pack, enter up to 6 guests (4–6 players) with their personalities or inside jokes, and apply your 100%-off code at checkout.',
   },
   {
     step: '04',
@@ -109,10 +109,10 @@ const HOW_IT_WORKS_STEPS = [
 const PRIZE_INCLUSIONS = [
   {
     icon: '🎟️',
-    title: 'Any Group Tier (4 to 16 Players)',
-    valueTag: 'Up to £45 / $55 Value',
+    title: '6-Player Basic Pack (4–6 Players)',
+    valueTag: '£15 / $19 Value • 100% Off',
     description:
-      'Your Founding Host code unlocks any tier—Basic (4–6 players), Premium (4–10 players), or Grand (4–16 players)—at 100% off.',
+      'Your single-use Founding Host code unlocks any 6-Player (Basic Tier, 4–6 suspects) custom mystery pack at 100% off (1 free pack per VIP email).',
   },
   {
     icon: '🕵️‍♀️',
@@ -154,28 +154,28 @@ const PRIZE_INCLUSIONS = [
 const PLAYER_COUNT_GUIDES = [
   {
     players: '4–6 Players',
-    tier: 'Basic Tier (Included Free)',
+    tier: 'Basic Tier (100% Free with VIP Pass)',
     idealFor: 'Intimate Dinner Parties, Double Dates & Flatmate Nights',
     summary:
-      'Every guest is a core suspect with deep interlocking motives, zero filler roles, and tight table-wide interrogation across 3 rounds of evidence.',
+      'Included 100% free with your First 50 VIP Founding Host code! Every guest is a core suspect with deep interlocking motives, zero filler roles, and tight table-wide interrogation across 3 rounds of evidence.',
   },
   {
     players: '6–8 Players',
-    tier: 'Premium Tier (Included Free)',
+    tier: 'Premium Tier (£20 / $25)',
     idealFor: 'Classic Dinner Party Tables & Birthday Dinners',
     summary:
-      'The sweet spot for dinner table murder mysteries: adds secondary alibis, secret alliances, and digital forensic evidence.',
+      'Hosting a larger group? Our Premium Tier expands the table up to 10 players with secondary alibis, secret alliances, and additional digital forensic evidence.',
   },
   {
     players: '8–12 Players',
-    tier: 'Premium / Grand Tier (Included Free)',
+    tier: 'Premium / Grand Tier',
     idealFor: 'House Parties, Hen & Stag Nights, Milestone Birthdays',
     summary:
       'Expands the suspect pool with rival factions, side-room gossip prompts, and chronological timeline gaps for energetic mingling.',
   },
   {
     players: '12–16 Players',
-    tier: 'Grand Tier (Included Free)',
+    tier: 'Grand Tier (£25 / $33)',
     idealFor: 'Large House Parties, Holiday Events & Team Socials',
     summary:
       'Our full 16-suspect ensemble cast with live Room Cast directory, QR party join, and automated detective superlative awards at the end of the night.',
@@ -190,8 +190,8 @@ const COMPARISON_ROWS = [
     boxedKit: '✕ Fixed pre-printed characters',
   },
   {
-    feature: 'Complete Game & Killer Reveal Included Free',
-    bpm: '✓ Full 3-round game + final reveal (First 50 VIP)',
+    feature: 'Complete 6-Player Game & Killer Reveal Included Free',
+    bpm: '✓ Full 3-round 6-player game + final reveal (First 50 VIP)',
     genericFree: '✕ Often a 4-page teaser with paywalled ending',
     boxedKit: '✓ Included (Costs £25–£50+)',
   },
@@ -202,8 +202,8 @@ const COMPARISON_ROWS = [
     boxedKit: '✕ Often spoils the killer in the host manual',
   },
   {
-    feature: 'Dynamic Player Count (4 to 16 Players)',
-    bpm: '✓ Scales to your exact headcount (4–16 guests)',
+    feature: 'Flexible 4–6 Player Cast (Basic Pack Included Free)',
+    bpm: '✓ Adapts seamlessly to 4, 5, or 6 players',
     genericFree: '✕ Breaks if 1 guest cancels last minute',
     boxedKit: '✕ Rigid headcount (usually 6 or 8 exact)',
   },
@@ -230,11 +230,15 @@ export default async function FreeMurderMysteryGamePage(props: {
   const faqEntries = [
     {
       name: 'How do I get a free custom murder mystery game?',
-      text: 'The first 50 people who join the Back Pocket Mysteries pre-launch VIP email list receive a single-use 100%-off promo code on launch day good for one complete custom murder mystery party pack (worth up to £45 / $55 USD for 4 to 16 players).',
+      text: 'The first 50 people who join the Back Pocket Mysteries pre-launch VIP email list receive a single-use 100%-off promo code on launch day good for one complete 6-Player (Basic Tier, 4–6 suspects) custom murder mystery party pack (worth £15 / $19 USD).',
     },
     {
-      name: 'Is this a full free murder mystery game for adults or just a sample?',
-      text: 'It is a 100% complete, full-tier custom murder mystery game pack—never a sample or teaser. Your Founding Host voucher unlocks every round of clues, all custom character dossiers, audio briefings, the 100% online live mobile Playroom, and the final killer reveal.',
+      name: 'What are the limitations on the First 50 Free Murder Mystery pass?',
+      text: 'Each First 50 VIP Founding Host code is valid for 1 free 6-Player (Basic Tier • up to 6 players / 5–6 suspects) custom murder mystery pack. Codes are single-use (1 redemption per winner) and locked to the email address used to claim your VIP spot.',
+    },
+    {
+      name: 'Is this a full 6-player murder mystery game for adults or just a sample?',
+      text: 'It is a 100% complete, full 3-round 6-player custom murder mystery game pack—never a sample or teaser. Your Founding Host voucher unlocks every round of clues, all custom character dossiers, audio briefings, the 100% online live mobile Playroom, and the final killer reveal.',
     },
     {
       name: 'How do I know if I made the First 50?',
@@ -242,11 +246,7 @@ export default async function FreeMurderMysteryGamePage(props: {
     },
     {
       name: 'Do I need to know my party date or guest list right now?',
-      text: 'No! Claiming your spot today simply reserves your 100%-off Founding Host voucher code. Once we email your code on launch day, you can redeem it whenever you are ready to host and enter your guests’ names, traits, and inside jokes at that time.',
-    },
-    {
-      name: 'Can I use the free code for a 6-player, 8-player, 10-player, or 16-player murder mystery?',
-      text: 'Yes. Your First 50 Founding Host code works on any group size tier from 4 to 16 players—including Basic (4–6 players), Premium (4–10 players), and Grand (4–16 players)—and dynamically adapts the suspect cast to your exact headcount.',
+      text: 'No! Claiming your spot today simply reserves your 100%-off Founding Host voucher code. Once we email your code on launch day, you can redeem it whenever you are ready to host and enter your 4 to 6 guests’ names, traits, and inside jokes at that time.',
     },
     {
       name: 'How does the custom AI + human-authored murder mystery builder work?',
@@ -391,24 +391,24 @@ export default async function FreeMurderMysteryGamePage(props: {
               </div>
 
               <h1 className="text-4xl sm:text-5xl xl:text-6xl font-black tracking-tighter text-brand-dark uppercase leading-[0.98]">
-                Get a <span className="text-brand-pink italic">Free Custom Murder Mystery</span> Game Pack
+                Get a <span className="text-brand-pink italic">Free 6-Player Murder Mystery</span> Game Pack
               </h1>
 
               <p className="text-lg sm:text-xl text-gray-600 font-medium leading-relaxed max-w-2xl">
                 Looking for a <strong className="text-brand-dark">free custom murder mystery game</strong> for your next dinner party? Every mystery at <strong className="text-brand-dark">Back Pocket Mysteries</strong> is written by a human author for watertight clue logic—then personalised around your actual friends by our AI engine. To celebrate our launch, the{' '}
-                <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete custom murder mystery party kit (worth up to £45 / $55 for 4–16 players) <strong className="text-brand-dark">100% free</strong>.
+                <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete 6-Player (Basic Tier) custom murder mystery party kit (worth £15 / $19 for 4–6 players) <strong className="text-brand-dark">100% free</strong>.
               </p>
 
               {/* Quick Value Pills */}
               <div className="flex flex-wrap gap-2.5 pt-1">
                 <span className="px-3.5 py-1.5 rounded-full bg-brand-dark text-white text-[11px] font-black uppercase tracking-wider">
-                  ✓ 100% Free Custom Game Pack Voucher
+                  ✓ 100% Free 6-Player Game Pack
                 </span>
                 <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-brand-dark text-[11px] font-black uppercase tracking-wider">
-                  ✓ Valid for 4–16 Players (Up to Grand Tier)
+                  ✓ Valid for 4–6 Players (Basic Tier)
                 </span>
                 <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-brand-dark text-[11px] font-black uppercase tracking-wider">
-                  ✓ 100% Online Live Mobile Playroom
+                  ✓ 1 Single-Use Pack Per Email
                 </span>
                 <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-brand-dark text-[11px] font-black uppercase tracking-wider">
                   ✓ No Credit Card Required
@@ -530,13 +530,13 @@ export default async function FreeMurderMysteryGamePage(props: {
         <div className="container mx-auto px-6 max-w-6xl space-y-12">
           <div className="text-center space-y-4">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-brand-pink">
-              Full Commercial Game Pack • Zero Restrictions
+              Full 6-Player Commercial Game Pack • Zero Teaser Cutoffs
             </p>
             <h2 className="text-3xl sm:text-5xl font-black text-brand-dark uppercase tracking-tight">
-              What&apos;s Included in Your Free Custom Murder Mystery Kit?
+              What&apos;s Included in Your Free 6-Player Custom Murder Mystery Kit?
             </h2>
             <p className="text-gray-500 font-medium max-w-2xl mx-auto">
-              Unlike free sample scripts that cut out half the suspects or hide the solution behind a paywall, our First 50 VIP Founding Hosts receive a full-tier custom mystery game pack (worth up to £45 / $55 USD).
+              Unlike free sample scripts that cut out half the suspects or hide the solution behind a paywall, our First 50 VIP Founding Hosts receive a complete 6-Player (Basic Tier • worth £15 / $19 USD) custom mystery game pack.
             </p>
           </div>
 
@@ -625,13 +625,13 @@ export default async function FreeMurderMysteryGamePage(props: {
         <div className="container mx-auto px-6 max-w-6xl space-y-12">
           <div className="text-center space-y-3 max-w-3xl mx-auto">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-brand-pink">
-              Flexible Headcount • 4 to 16 Suspects
+              6-Player Basic Pack Free • Larger Tiers Available
             </p>
             <h2 className="text-3xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight">
-              Free Custom Murder Mystery Games for Any Group Size (4–16 Players)
+              Custom Murder Mystery Games for 4–6 Players (Free VIP Tier) &amp; Up to 16 Players
             </h2>
             <p className="text-sm text-gray-500 font-medium leading-relaxed">
-              Whether you are searching for a <strong className="text-brand-dark">free murder mystery game for 6 players</strong> around a small dining table or a <strong className="text-brand-dark">16-player house party mystery</strong>, your First 50 Founding Host voucher scales to your exact guest list:
+              Your First 50 VIP Founding Host voucher unlocks our <strong className="text-brand-dark">6-Player (4–6 suspects) Basic Mystery Pack 100% free</strong>, while larger dinner party and house party tiers scale all the way up to 16 suspects:
             </p>
           </div>
 
@@ -684,7 +684,7 @@ export default async function FreeMurderMysteryGamePage(props: {
               </div>
               <div className="space-y-1">
                 <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">
-                  100% Free Custom Mystery Pack
+                  100% Free 6-Player Mystery Pack
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 font-medium">
                   Automatically awarded to the first 50 email sign-ups before launch.
@@ -694,13 +694,13 @@ export default async function FreeMurderMysteryGamePage(props: {
                 <li className="flex items-start gap-2.5">
                   <span className="text-brand-pink font-black">✓</span>
                   <span>
-                    <strong className="text-white">100%-Off Promo Code</strong> emailed on launch day (up to £45 / $55 value)
+                    <strong className="text-white">100%-Off Promo Code</strong> emailed on launch day (£15 / $19 value)
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-brand-pink font-black">✓</span>
                   <span>
-                    Valid on <strong className="text-white">any group size tier</strong> from 4 to 16 players (Basic, Premium, or Grand)
+                    Valid on a <strong className="text-white">6-Player (Basic Tier • 4–6 suspects) Mystery Pack</strong> (1 single-use pack per VIP email)
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">

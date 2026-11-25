@@ -927,15 +927,15 @@ export async function adminSendFreeMysteryCodeToLeadAction(leadEmail: string): P
   const rankTag = String(target.vip_rank || 1).padStart(2, '0');
   const code = target.free_mystery_code || `VIP50-${rankTag}-${suffix}`;
 
-  // Register a 100% off single-use discount code in the Discounts Store
+  // Register a 100% off single-use 6-Player (Basic) discount code in the Discounts Store
   await saveDiscountAction({
-    name: `First 50 VIP Free Mystery (#${target.vip_rank} - ${target.full_name || cleanEmail})`,
+    name: `First 50 VIP Free 6-Player Mystery (#${target.vip_rank} - ${target.full_name || cleanEmail})`,
     code,
     auto_apply: false,
     discount_type: 'percentage',
     discount_value: 100,
-    applies_to: 'all',
-    target_packages: [],
+    applies_to: 'packages',
+    target_packages: ['basic'],
     target_mysteries: [],
     starts_at: new Date().toISOString(),
     ends_at: null,
@@ -960,26 +960,26 @@ export async function adminSendFreeMysteryCodeToLeadAction(leadEmail: string): P
       await resend.emails.send({
         from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
         to: cleanEmail,
-        subject: `🎁 Your FREE Murder Mystery Code is Here! (VIP #${target.vip_rank}/50)`,
+        subject: `🎁 Your FREE 6-Player Murder Mystery Code is Here! (VIP #${target.vip_rank}/50)`,
         html: buildBrandedEmailShell({
-          preheader: `Your 100%-Off Founding Host VIP code (${code}) is ready to redeem.`,
+          preheader: `Your 100%-Off Founding Host VIP code (${code}) for a 6-Player Mystery Pack is ready to redeem.`,
           kicker: `FIRST 50 VIP FOUNDING HOST • SPOT #${target.vip_rank} OF 50`,
-          headline: `We're Live — Claim Your Complimentary Mystery Pack.`,
+          headline: `We're Live — Claim Your Complimentary 6-Player Mystery Pack.`,
           bodyHtml: `
             <p style="margin:0 0 14px 0;font-size:16px;font-weight:700;color:#1e191c;">Hi ${firstName},</p>
             <p style="margin:0 0 24px 0;color:#374151;">
-              Thank you for being one of the first 50 founding hosts on the Back Pocket Mysteries launch list. Below is your personal single-use code for a <strong>100% FREE Custom Murder Mystery Game Pack</strong>:
+              Thank you for being one of the first 50 founding hosts on the Back Pocket Mysteries launch list. Below is your personal single-use code for a <strong>100% FREE 6-Player Custom Murder Mystery Game Pack (Basic Tier)</strong>:
             </p>
             <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
-              <p style="color:#fe04c6;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2.2px;margin:0 0 8px 0;">YOUR 100% OFF VIP PROMO CODE</p>
+              <p style="color:#fe04c6;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2.2px;margin:0 0 8px 0;">YOUR 100% OFF VIP 6-PLAYER PROMO CODE</p>
               <p style="color:#ffffff;font-size:28px;font-weight:900;font-family:monospace;letter-spacing:3px;margin:0 0 8px 0;">${code}</p>
-              <p style="color:#a1a1aa;font-size:12px;margin:0;">Valid for 1 complete custom mystery package on backpocketmysteries.com</p>
+              <p style="color:#a1a1aa;font-size:12px;margin:0;">Valid for 1 complete 6-Player (Basic) custom mystery package • Single-use • Locked to your email</p>
             </div>
             <p style="margin:0;color:#52525b;font-size:14px;line-height:1.6;">
-              Click the button below to create your account or apply your code directly at checkout.
+              Click the button below to create your account, cast up to 6 players, and apply your code directly at checkout.
             </p>
           `,
-          ctaText: 'Redeem Your Free Mystery →',
+          ctaText: 'Redeem Your Free 6-Player Mystery →',
           ctaUrl: `https://backpocketmysteries.com/en/login?promo=${encodeURIComponent(code)}&step=signup`,
         }),
       });

@@ -84,7 +84,7 @@ export default async function CheckoutPage(props: {
       ? parsedGuests
       : activeCharacters.length || rawCharacters.length || 6
 
-  const tier = getTierForPlayerCount(mystery.max_players || rawCharacters.length || guests)
+  const tier = getTierForPlayerCount(guests)
   const cookieCurrency = cookieStore.get('NEXT_CURRENCY')?.value
   const countryCode = headerStore.get('x-vercel-ip-country')
   const currency = resolveCurrency(countryCode, cookieCurrency, locale)
