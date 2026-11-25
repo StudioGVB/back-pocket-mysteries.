@@ -4391,17 +4391,17 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             {
               num: 2 as const,
               title: '2. Beat-by-Beat Core Clues',
-              sub: `${selectedCoreClues.length} / 10 Core Clues`,
+              sub: `${selectedCoreClues.length} Core Clues (1–2 / Beat)`,
             },
             {
               num: 3 as const,
               title: '3. Red Herrings & Motives',
-              sub: `${selectedRedHerringClues.length} / 6 Decoy Clues`,
+              sub: `${selectedRedHerringClues.length} Decoy Clues & Cast Balance`,
             },
             {
               num: 4 as const,
               title: '4. Sort Rounds & Save Base',
-              sub: `${totalSelectedCluesCount} / 16 Total Clues`,
+              sub: `${totalSelectedCluesCount} Total Clues`,
             },
           ].map((item) => {
             const active = step === item.num;
@@ -4410,7 +4410,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 key={item.num}
                 type="button"
                 onClick={() => {
-                  if (item.num === 3 && selectedCoreClues.length >= 6) {
+                  if (item.num === 3 && selectedCoreClues.length >= Math.max(1, blueprint.beats.length)) {
                     handleMoveToRedHerrings(false);
                   } else {
                     setStep(item.num);
@@ -4948,13 +4948,14 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 </h2>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-800">
-                {selectedCoreClues.length} / 10 Picked
+                {selectedCoreClues.length} Clues Picked
               </span>
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed">
-              Click a beat below to see its 5 suggested clues on the right. Pick at least{' '}
-              <strong>2 clues per beat</strong>.
+              Click a beat below to see its 5 suggested clues on the right. Pick{' '}
+              <strong>1 standalone clue</strong> (if it carries the whole beat) or{' '}
+              <strong>2 complementary clues</strong>.
             </p>
 
             <div className="space-y-2.5">
@@ -4963,8 +4964,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 const pickedInBeat = cands.filter((c) => c.decision === 'yes');
                 const pickedCount = pickedInBeat.length;
                 const isCurrent = activeBeatNumber === b.beatNumber;
-                const isComplete = pickedCount >= 2;
                 const beatCov = analyzeBeatSelectionCoverage(b, cands, blueprint.id);
+                const isComplete = pickedCount >= 1 && beatCov.isWholeBeatCovered;
+                const hasPartialPick = pickedCount >= 1 && !beatCov.isWholeBeatCovered;
 
                 return (
                   <button
@@ -4974,9 +4976,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     className={`w-full p-4 rounded-2xl border-2 text-left transition-all cursor-pointer space-y-2 ${
                       isCurrent
                         ? 'border-brand-pink bg-pink-50/40 shadow-sm'
-                        : isComplete && beatCov.isWholeBeatCovered
+                        : isComplete
                           ? 'border-emerald-200 bg-emerald-50/30 hover:border-emerald-300'
-                          : isComplete
+                          : hasPartialPick
                             ? 'border-amber-300 bg-amber-50/30 hover:border-amber-400'
                             : 'border-slate-200 bg-slate-50/60 hover:bg-slate-100'
                     }`}
@@ -4991,20 +4993,18 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       </span>
                       <span
                         className={`text-[10px] px-2.5 py-0.5 rounded-full font-black ${
-                          isComplete && beatCov.isWholeBeatCovered
+                          isComplete
                             ? 'bg-emerald-600 text-white'
-                            : isComplete
+                            : hasPartialPick
                               ? 'bg-amber-500 text-white'
-                              : pickedCount === 1
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-slate-200 text-slate-700'
+                              : 'bg-slate-200 text-slate-700'
                         }`}
                       >
-                        {isComplete && beatCov.isWholeBeatCovered
-                          ? `✓ 100% Covered (${pickedCount}/2)`
-                          : isComplete
-                            ? `⚠️ ${beatCov.uncoveredSubFacts.length} Gap (${pickedCount}/2)`
-                            : `${pickedCount}/2 Picked`}
+                        {isComplete
+                          ? `✓ 100% Covered (${pickedCount} ${pickedCount === 1 ? 'Clue' : 'Clues'})`
+                          : hasPartialPick
+                            ? `⚠️ ${beatCov.uncoveredSubFacts.length} Gap (${pickedCount} ${pickedCount === 1 ? 'Clue' : 'Clues'})`
+                            : '0 Picked (1–2 Clues)'}
                       </span>
                     </div>
 
@@ -5032,12 +5032,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               <button
                 type="button"
                 onClick={() => handleMoveToRedHerrings(true)}
-                disabled={isGeneratingSubplots || selectedCoreClues.length < 6}
+                disabled={isGeneratingSubplots || selectedCoreClues.length < Math.max(1, blueprint.beats.length)}
                 className="w-full py-3 rounded-2xl text-xs font-black uppercase tracking-wider bg-brand-pink hover:bg-pink-600 text-white shadow-sm transition disabled:opacity-40 cursor-pointer"
               >
                 {isGeneratingSubplots
                   ? 'Freshly Generating Red Herrings...'
-                  : `Done Beats (${selectedCoreClues.length}/10): Fresh Build Red Herrings →`}
+                  : `Done Beats (${selectedCoreClues.length} Clues): Fresh Build Red Herrings →`}
               </button>
               <button
                 type="button"
@@ -5051,7 +5051,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
           {/* RIGHT WORKSPACE: FOCUSED SINGLE-BEAT CLUE PICKER (8 Columns) */}
           <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
-            {/* Pinned Beat Context Header + Live 2-Clue Beat Coverage & Gap Analyzer */}
+            {/* Pinned Beat Context Header + Live Adaptive 1-to-2 Clue Beat Coverage Analyzer */}
             {activeBeat && (
               <div className="rounded-2xl bg-slate-50 border-2 border-slate-200 p-5 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -5069,14 +5069,16 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-black ${
-                      activeBeatSelectedCount >= 2 && activeBeatCoverage?.isWholeBeatCovered
+                      activeBeatSelectedCount >= 1 && activeBeatCoverage?.isWholeBeatCovered
                         ? 'bg-emerald-600 text-white'
-                        : activeBeatSelectedCount >= 2
+                        : activeBeatSelectedCount >= 1
                           ? 'bg-amber-500 text-white'
                           : 'bg-slate-200 text-slate-800'
                     }`}
                   >
-                    {activeBeatSelectedCount} of 2 Clues Selected for Beat #{activeBeat.beatNumber}
+                    {activeBeatSelectedCount >= 1 && activeBeatCoverage?.isWholeBeatCovered
+                      ? `✓ Beat #${activeBeat.beatNumber} 100% Covered (${activeBeatSelectedCount} ${activeBeatSelectedCount === 1 ? 'Clue' : 'Clues'})`
+                      : `${activeBeatSelectedCount} ${activeBeatSelectedCount === 1 ? 'Clue' : 'Clues'} Selected for Beat #${activeBeat.beatNumber}`}
                   </span>
                 </div>
 
@@ -5091,14 +5093,14 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 </div>
 
                 {/* ========================================================= */}
-                {/* LIVE 2-CLUE BEAT COVERAGE & GAP ANALYZER                  */}
+                {/* LIVE ADAPTIVE BEAT COVERAGE & GAP ANALYZER (1-3 PARTS)    */}
                 {/* ========================================================= */}
                 {activeBeatCoverage && activeBeatCandidates.length > 0 && (
                   <div
                     className={`rounded-2xl border-2 p-4 space-y-3 transition ${
                       activeBeatCoverage.isWholeBeatCovered
                         ? 'bg-emerald-50/70 border-emerald-400'
-                        : activeBeatSelectedCount >= 2
+                        : activeBeatSelectedCount >= 1
                           ? 'bg-amber-50/80 border-amber-400'
                           : 'bg-white border-slate-200'
                     }`}
@@ -5106,25 +5108,29 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black uppercase tracking-wider text-slate-900">
-                          🧩 Beat #{activeBeat.beatNumber} Sub-Fact Coverage &amp; Gap Check
+                          🧩 Beat #{activeBeat.beatNumber} Key Point Coverage
                         </span>
                         <span
                           className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${
                             activeBeatCoverage.isWholeBeatCovered
                               ? 'bg-emerald-600 text-white'
-                              : activeBeatSelectedCount >= 2
+                              : activeBeatSelectedCount >= 1
                                 ? 'bg-amber-600 text-white'
                                 : 'bg-slate-100 text-slate-700 border border-slate-200'
                           }`}
                         >
                           {activeBeatCoverage.coveredCount} / {activeBeatCoverage.subFacts.length}{' '}
-                          Beat Sub-Facts Covered ({activeBeatCoverage.coveragePct}%)
+                          {activeBeatCoverage.subFacts.length === 1 ? 'Beat Part' : 'Beat Parts'} Covered ({activeBeatCoverage.coveragePct}%)
                         </span>
                       </div>
 
-                      {activeBeatCoverage.poolGapSubFacts.length === 0 ? (
+                      {activeBeatCoverage.subFacts.length === 1 ? (
                         <span className="text-[11px] font-bold text-emerald-700">
-                          ✓ All 3 Sub-Facts Covered Across the 5 Suggested Clues
+                          ✓ Straightforward 1-Part Beat — Any Single Clue Below Carries 100% of This Beat
+                        </span>
+                      ) : activeBeatCoverage.poolGapSubFacts.length === 0 ? (
+                        <span className="text-[11px] font-bold text-emerald-700">
+                          ✓ Carry With 1 Standalone Clue or Pair 2 Complementary Clues
                         </span>
                       ) : (
                         <span className="text-[11px] font-bold text-amber-800">
@@ -5133,8 +5139,16 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       )}
                     </div>
 
-                    {/* 3 Sub-Fact Checklist Pills */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    {/* Dynamic 1, 2, or 3 Sub-Fact Checklist Pills */}
+                    <div
+                      className={`grid grid-cols-1 ${
+                        activeBeatCoverage.subFacts.length === 1
+                          ? 'md:grid-cols-1'
+                          : activeBeatCoverage.subFacts.length === 2
+                            ? 'md:grid-cols-2'
+                            : 'md:grid-cols-3'
+                      } gap-2`}
+                    >
                       {activeBeatCoverage.subFactStatuses.map((st, sIdx) => (
                         <div
                           key={st.fact}
@@ -5147,7 +5161,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           <div className="flex items-start gap-1.5 font-bold">
                             <span>{st.isCoveredBySelected ? '✅' : '⚪'}</span>
                             <span>
-                              Part {sIdx + 1}:{' '}
+                              {activeBeatCoverage.subFacts.length === 1
+                                ? 'Core Beat Action: '
+                                : `Part ${sIdx + 1}: `}
                               <HighlightedMysteryText
                                 text={st.fact}
                                 characters={blueprint.characters}
@@ -5175,67 +5191,67 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       ))}
                     </div>
 
-                    {/* Combination Verdict & 1-Click Fix if 2 Clues Overlap and Leave a Gap */}
+                    {/* Combination Verdict & 1-Click Fix */}
                     {activeBeatSelectedCount === 0 && (
                       <div className="text-xs text-slate-600 font-medium">
-                        💡 Pick your first clue below. Each clue covers <strong>2 of the 3</strong>{' '}
-                        parts of Beat #{activeBeat.beatNumber}, and we&apos;ll highlight which
-                        second clue completes <strong>100% of the Beat</strong>.
+                        {activeBeatCoverage.subFacts.length === 1 ? (
+                          <>
+                            💡 This is a straightforward 1-part beat — picking{' '}
+                            <strong>any 1 clue below</strong> covers 100% of Beat #
+                            {activeBeat.beatNumber} without overkill!
+                          </>
+                        ) : (
+                          <>
+                            💡 Pick <strong>1 standalone clue</strong> (marked{' '}
+                            <span className="text-emerald-700 font-bold">
+                              🎯 Carries Whole Beat
+                            </span>
+                            ) to carry Beat #{activeBeat.beatNumber} in a single clue, OR pair{' '}
+                            <strong>2 complementary clues</strong> from different formats.
+                          </>
+                        )}
                       </div>
                     )}
 
-                    {activeBeatSelectedCount === 1 && (
-                      <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-3.5 py-2.5 text-xs text-indigo-950 flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          🎯 <strong>1 of 2 Clues Picked:</strong> Your first clue covers{' '}
-                          <strong>{activeBeatCoverage.coveredCount}/3</strong> of Beat #
-                          {activeBeat.beatNumber}. Remaining gap to cover:{' '}
+                    {activeBeatSelectedCount >= 1 && activeBeatCoverage.isWholeBeatCovered && (
+                      <div className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-2">
+                        <span>
+                          ✅ Whole Beat Covered (100% with {activeBeatSelectedCount}{' '}
+                          {activeBeatSelectedCount === 1 ? 'Clue' : 'Clues'}):{' '}
+                          {activeBeatCoverage.selectedMeta
+                            .map((m) => `Option #${m.optionNum}`)
+                            .join(' + ')}{' '}
+                          fully explains Beat #{activeBeat.beatNumber}!
+                          {activeBeatSelectedCount === 1
+                            ? ' No 2nd clue needed unless you want extra corroboration.'
+                            : ''}
+                        </span>
+                      </div>
+                    )}
+
+                    {activeBeatSelectedCount >= 1 && !activeBeatCoverage.isWholeBeatCovered && (
+                      <div className="rounded-xl bg-amber-100 border border-amber-300 px-4 py-3 text-xs text-amber-950 space-y-2">
+                        <div className="font-bold">
+                          ⚠️ <strong>Remaining Part in Beat #{activeBeat.beatNumber}:</strong> Your
+                          current selection covers{' '}
+                          <strong>
+                            {activeBeatCoverage.coveredCount}/{activeBeatCoverage.subFacts.length}
+                          </strong>{' '}
+                          parts, leaving{' '}
                           <strong className="underline">
                             <HighlightedMysteryText
                               text={activeBeatCoverage.uncoveredSubFacts.join(' & ')}
                               characters={blueprint.characters}
                               className="inline"
                             />
-                          </strong>
-                          . Pair with{' '}
+                          </strong>{' '}
+                          uncovered. Pair with{' '}
                           <strong>
                             {activeBeatCoverage.complementaryOptions
                               .map((o) => `Option #${o.optionNum}`)
                               .join(' or ')}
                           </strong>{' '}
-                          for 100% Beat Coverage!
-                        </div>
-                      </div>
-                    )}
-
-                    {activeBeatSelectedCount >= 2 && activeBeatCoverage.isWholeBeatCovered && (
-                      <div className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-2">
-                        <span>
-                          ✅ Whole Beat Covered (100%): The combination of{' '}
-                          {activeBeatCoverage.selectedMeta
-                            .map((m) => `Option #${m.optionNum}`)
-                            .join(' + ')}{' '}
-                          covers every part of Beat #{activeBeat.beatNumber} with zero plot gaps!
-                        </span>
-                      </div>
-                    )}
-
-                    {activeBeatSelectedCount >= 2 && !activeBeatCoverage.isWholeBeatCovered && (
-                      <div className="rounded-xl bg-amber-100 border border-amber-300 px-4 py-3 text-xs text-amber-950 space-y-2">
-                        <div className="font-bold">
-                          ⚠️ <strong>Beat Gap Detected in Your 2 Chosen Clues:</strong> Both{' '}
-                          {activeBeatCoverage.selectedMeta
-                            .map((m) => `Option #${m.optionNum}`)
-                            .join(' and ')}{' '}
-                          cover the same parts of the beat, leaving a gap:{' '}
-                          <strong className="underline">
-                            <HighlightedMysteryText
-                              text={activeBeatCoverage.uncoveredSubFacts.join(' & ')}
-                              characters={blueprint.characters}
-                              className="inline"
-                            />
-                          </strong>{' '}
-                          is not explained by this pair!
+                          (or swap to a 1-clue standalone option) for 100% Beat Coverage!
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {activeBeatCoverage.recommendedSwap && (
@@ -5278,8 +5294,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
                 <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs text-slate-500">
-                    Select at least <strong>2 complementary clues below</strong> to cover 100% of
-                    Beat #{activeBeat.beatNumber}.
+                    Pick <strong>1 standalone clue</strong> or <strong>2 complementary clues</strong>{' '}
+                    to cover Beat #{activeBeat.beatNumber}.
                   </span>
                   <button
                     type="button"
@@ -5303,8 +5319,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   {activeBeatNumber}...
                 </div>
                 <p className="text-xs text-slate-500">
-                  Crafting in-world dialogue, forensic details, per-clue strength analysis, and
-                  sub-fact coverage...
+                  Crafting standalone 1-clue options and complementary 2-clue options...
                 </p>
               </div>
             ) : activeBeatCandidates.length === 0 ? (
@@ -5360,6 +5375,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           )
                           .map((other) => other.optionNum)
                       : [];
+
+                  const totalBeatParts = activeBeatCoverage?.subFacts.length || 1;
 
                   return (
                     <div
@@ -5424,6 +5441,20 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase border ${covMeta.strengthBadgeStyle}`}
                             >
                               💪 {covMeta.strengthTier}
+                            </span>
+                          )}
+
+                          {covMeta && (
+                            <span
+                              className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase border ${
+                                covMeta.carriesWholeBeat
+                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200'
+                              }`}
+                            >
+                              {covMeta.carriesWholeBeat
+                                ? '🎯 Carries Whole Beat (1 Clue Needed)'
+                                : `🧩 Covers ${covMeta.coveredSubFacts.length}/${totalBeatParts} Parts`}
                             </span>
                           )}
 
@@ -5492,7 +5523,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-[11px] font-black text-emerald-800">
-                              ✓ Beat Parts Covered ({covMeta.coveredSubFacts.length}/3):
+                              ✓ Beat {totalBeatParts === 1 ? 'Part' : 'Parts'} Covered (
+                              {covMeta.coveredSubFacts.length}/{totalBeatParts}):
                             </span>
                             {covMeta.coveredSubFacts.map((sf) => (
                               <span
@@ -5509,10 +5541,10 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                             ))}
                           </div>
 
-                          {covMeta.missingSubFacts.length > 0 && (
+                          {covMeta.missingSubFacts.length > 0 ? (
                             <div className="text-[11px] text-amber-900 pt-1 border-t border-slate-200/80">
                               <span className="font-black text-amber-800">
-                                ⚠️ Gap in Beat #{activeBeatNumber} If Picked Alone:
+                                ⚠️ Partial Beat Clue If Picked Alone:
                               </span>{' '}
                               Doesn&apos;t cover{' '}
                               <strong className="underline">
@@ -5533,6 +5565,11 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                   to cover the whole beat.
                                 </>
                               )}
+                            </div>
+                          ) : (
+                            <div className="text-[11px] text-emerald-800 font-bold pt-1 border-t border-slate-200/80">
+                              🎯 Carries 100% of Beat #{activeBeatNumber} on its own — no 2nd clue
+                              required!
                             </div>
                           )}
                         </div>
@@ -5653,12 +5690,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             {renderFiveBeatCoverageSummaryBar()}
 
             {allSelectedClues.length >= 2 &&
-              renderSuspectHeatAndSpotlightPanel(allSelectedClues)}
-
-            {allSelectedClues.length >= 2 &&
               renderMediaMixBreakdownPanel(
                 allSelectedClues,
-                'Full Pack Media Mix & Rebalance Suggestions'
+                'Core Beat Clues Media Mix & Rebalance Suggestions'
               )}
 
             {/* Bottom Single-Beat Action Bar */}
@@ -5686,12 +5720,13 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   type="button"
                   onClick={() => handleSelectBeatTab(activeBeatNumber + 1)}
                   className={`px-6 py-3 rounded-2xl text-sm font-black transition cursor-pointer ${
-                    activeBeatSelectedCount >= 2 && activeBeatCoverage?.isWholeBeatCovered
+                    activeBeatSelectedCount >= 1 && activeBeatCoverage?.isWholeBeatCovered
                       ? 'bg-brand-pink hover:bg-pink-600 text-white shadow-sm'
                       : 'bg-slate-900 text-white hover:bg-slate-800'
                   }`}
                 >
-                  Lock Beat #{activeBeatNumber} ({activeBeatSelectedCount}/2 •{' '}
+                  Lock Beat #{activeBeatNumber} ({activeBeatSelectedCount}{' '}
+                  {activeBeatSelectedCount === 1 ? 'Clue' : 'Clues'} •{' '}
                   {activeBeatCoverage?.coveragePct || 0}% Beat Covered) &amp; Continue to Beat #
                   {activeBeatNumber + 1} →
                 </button>
@@ -5699,12 +5734,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 <button
                   type="button"
                   onClick={() => handleMoveToRedHerrings(true)}
-                  disabled={isGeneratingSubplots || selectedCoreClues.length < 6}
+                  disabled={isGeneratingSubplots || selectedCoreClues.length < Math.max(1, blueprint.beats.length)}
                   className="px-6 py-3 rounded-2xl text-sm font-black bg-brand-pink hover:bg-pink-600 text-white shadow-sm transition disabled:opacity-40 cursor-pointer"
                 >
                   {isGeneratingSubplots
                     ? 'Freshly Generating Red Herrings From Your Clues...'
-                    : `Finish Beats (${selectedCoreClues.length}/10) & Fresh Generate Red Herrings →`}
+                    : `Finish Beats (${selectedCoreClues.length} Clues) & Fresh Generate Red Herrings →`}
                 </button>
               )}
             </div>
