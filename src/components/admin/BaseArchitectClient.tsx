@@ -2180,17 +2180,38 @@ function normalizeProjectCluesMediaAndPrompts(proj: OgProjectWorkspace): OgProje
   };
 }
 
-const STORAGE_KEY = 'bpm_og_projects_list_v3';
+const STORAGE_KEY = 'bpm_og_projects_list_v4';
 
 function ensureCheerCampPresetInList(list: OgProjectWorkspace[]): OgProjectWorkspace[] {
-  const hasCheerCamp = list.some(
-    (p) =>
+  const freshCheer = normalizeProjectCluesMediaAndPrompts(createInitialCheerCampProject());
+  let foundCheer = false;
+
+  const upgraded = list.map((p) => {
+    const isCheer =
       p.id === 'og-proj-cheer-camp' ||
       p.blueprint?.id === 'cheer-camp-getaway' ||
-      p.blueprint?.title?.toLowerCase() === 'cheer camp getaway'
-  );
-  if (hasCheerCamp) return list;
-  return [normalizeProjectCluesMediaAndPrompts(createInitialCheerCampProject()), ...list];
+      p.blueprint?.title?.toLowerCase().includes('cheer camp');
+
+    if (!isCheer) return p;
+    foundCheer = true;
+
+    const hasCanonicalBeat2 = p.blueprint?.beats?.[1]?.description?.includes('CO-CAPTAIN');
+    const hasCanonicalClues = Boolean(p.beatCluesMap?.[1]?.some((c) => c.id === 'cheer-b1-c1'));
+
+    if (!hasCanonicalBeat2 || !hasCanonicalClues) {
+      return {
+        ...freshCheer,
+        id: p.id || freshCheer.id,
+        step: p.step || 1,
+        subplots: p.subplots && p.subplots.length > 0 ? p.subplots : freshCheer.subplots,
+        transferredMysteryId: p.transferredMysteryId || null,
+      };
+    }
+    return p;
+  });
+
+  if (foundCheer) return upgraded;
+  return [freshCheer, ...upgraded];
 }
 
 export function BaseArchitectClient({ locale }: { locale: string }) {
@@ -2257,7 +2278,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     let loadedLocal = false;
     try {
       const saved =
-        localStorage.getItem(STORAGE_KEY) || localStorage.getItem('bpm_og_projects_list_v2');
+        localStorage.getItem(STORAGE_KEY) ||
+        localStorage.getItem('bpm_og_projects_list_v3') ||
+        localStorage.getItem('bpm_og_projects_list_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -2473,6 +2496,39 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     setProjects((prev) => [newProj, ...prev]);
     setActiveProjectId(newProj.id);
     setActiveBeatNumber(1);
+  };
+
+  const handleCreateCheerCampProject = () => {
+    const freshCheer = normalizeProjectCluesMediaAndPrompts(createInitialCheerCampProject());
+    const existing = projects.find(
+      (p) =>
+        p.id === 'og-proj-cheer-camp' ||
+        p.blueprint?.id === 'cheer-camp-getaway' ||
+        p.blueprint?.title?.toLowerCase().includes('cheer camp')
+    );
+    if (existing) {
+      const upgraded: OgProjectWorkspace = {
+        ...freshCheer,
+        id: existing.id,
+        step: existing.step || 1,
+        subplots:
+          existing.subplots && existing.subplots.length > 0
+            ? existing.subplots
+            : freshCheer.subplots,
+        transferredMysteryId: existing.transferredMysteryId || null,
+      };
+      setProjects((prev) => prev.map((p) => (p.id === existing.id ? upgraded : p)));
+      setActiveProjectId(existing.id);
+      setActiveBeatNumber(1);
+      setShowLoadMenu(false);
+      setStatusToast('Loaded "Cheer Camp Getaway" (5 Beats, Mistaken-Sister Twist & 25 Clues).');
+      return;
+    }
+    setProjects((prev) => [freshCheer, ...prev]);
+    setActiveProjectId(freshCheer.id);
+    setActiveBeatNumber(1);
+    setShowLoadMenu(false);
+    setStatusToast('Loaded "Cheer Camp Getaway" (5 Beats, Mistaken-Sister Twist & 25 Clues).');
   };
 
   const handleDeleteProject = (projId: string, e: React.MouseEvent) => {
@@ -3938,6 +3994,14 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleCreateCheerCampProject}
+              className="px-4 py-2.5 rounded-2xl bg-pink-50 hover:bg-pink-100 text-brand-pink border border-pink-200 text-xs font-black uppercase tracking-wider shadow-sm transition cursor-pointer"
+            >
+              📣 Open &ldquo;Cheer Camp Getaway&rdquo;
+            </button>
+
             <label className="cursor-pointer px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-black uppercase tracking-wider shadow-sm transition flex items-center gap-2">
               <span>{isUploadingDiagram ? 'Reading Diagram...' : '📷 New From Diagram Image'}</span>
               <input
@@ -3962,6 +4026,18 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3 py-1.5">
                     Import Existing Mystery Base
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateCheerCampProject}
+                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-pink-50 text-xs flex items-center justify-between gap-2 cursor-pointer border-b border-slate-100"
+                  >
+                    <span className="font-bold text-brand-pink truncate">
+                      📣 Cheer Camp Getaway (5 Beats)
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-100 text-brand-pink">
+                      Spicy
+                    </span>
+                  </button>
                   {isLoadingDrafts ? (
                     <div className="text-xs text-slate-400 p-3">Loading...</div>
                   ) : draftList.length === 0 ? (
@@ -4025,10 +4101,17 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           <div className="bg-white rounded-3xl sm:rounded-[32px] border border-gray-100 shadow-sm overflow-hidden p-8 sm:p-16 text-center space-y-4">
             <h3 className="text-lg font-black text-brand-dark">No Active OG Projects Yet</h3>
             <p className="text-gray-400 text-sm max-w-md mx-auto">
-              Start a new mystery project from a relationship diagram or load the Unibreak at the
-              Cabin 5-beat blueprint.
+              Start a new mystery project from a relationship diagram or load the Cheer Camp Getaway
+              or Unibreak at the Cabin 5-beat blueprint.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleCreateCheerCampProject}
+                className="px-5 py-2.5 rounded-2xl bg-pink-50 hover:bg-pink-100 text-brand-pink border border-pink-200 text-xs font-black uppercase tracking-wider transition cursor-pointer"
+              >
+                📣 Load &ldquo;Cheer Camp Getaway&rdquo;
+              </button>
               <button
                 type="button"
                 onClick={handleCreateUnibreakProject}
@@ -4225,6 +4308,15 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {blueprint.id !== 'cheer-camp-getaway' && (
+              <button
+                type="button"
+                onClick={handleCreateCheerCampProject}
+                className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-black bg-pink-50 hover:bg-pink-100 text-brand-pink border border-pink-200 transition cursor-pointer"
+              >
+                📣 Open Cheer Camp Getaway
+              </button>
+            )}
             <label className="cursor-pointer px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
               {isUploadingDiagram ? 'Reading Diagram...' : '📷 Update From Diagram'}
               <input
