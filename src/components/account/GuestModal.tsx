@@ -290,11 +290,30 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   };
 
   const handleSave = async () => {
+    const cleanFirst = firstName.trim();
+    const cleanLast = lastName.trim();
+    if (!cleanFirst) {
+      setActiveTab('basics');
+      setNameError('Please enter your guest’s first name.');
+      return;
+    }
+    if (!cleanLast) {
+      setActiveTab('basics');
+      setNameError(
+        'Please enter your guest’s last name too — this helps tell apart guests with the same first name and weaves their surname into clues & dossiers!'
+      );
+      return;
+    }
+    setNameError('');
+    const fullGuestName = `${cleanFirst} ${cleanLast}`;
+
     setIsSaving(true);
     try {
       await onSave({
         id: initialData?.id || Date.now().toString(),
-        name: name || 'Unknown Guest',
+        name: fullGuestName,
+        first_name: cleanFirst,
+        last_name: cleanLast,
         email,
         gender,
         age,
@@ -458,15 +477,58 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
           <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 md:p-8">
             {activeTab === 'basics' && (
               <div className={`space-y-5 sm:space-y-6 transition-all duration-200 ${isEthnicityDropdownOpen ? 'pb-52' : ''}`}>
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Guest Name</label>
-                  <input 
-                    type="text" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Uncle John"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all"
-                  />
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                        First Name <span className="text-brand-pink">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          // If user pastes "Sarah Jenkins" into empty First Name when Last Name is empty, auto-split
+                          if (!lastName && val.includes(' ') && val.trim().split(/\s+/).length >= 2) {
+                            const parts = val.trim().split(/\s+/);
+                            setFirstName(parts[0]);
+                            setLastName(parts.slice(1).join(' '));
+                          } else {
+                            setFirstName(val);
+                          }
+                          if (nameError) setNameError('');
+                        }}
+                        placeholder="e.g. Sarah"
+                        className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all ${
+                          nameError && !firstName.trim() ? 'border-red-400 bg-red-50/40' : 'border-slate-200'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                        Last Name <span className="text-brand-pink">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => {
+                          setLastName(e.target.value);
+                          if (nameError) setNameError('');
+                        }}
+                        placeholder="e.g. Jenkins"
+                        className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all ${
+                          nameError && !lastName.trim() ? 'border-red-400 bg-red-50/40' : 'border-slate-200'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                  {nameError ? (
+                    <p className="text-xs font-bold text-red-500">{nameError}</p>
+                  ) : (
+                    <p className="text-[11px] font-semibold text-slate-400">
+                      💡 Entering last names prevents confusion if two guests share a first name (e.g. two Sarahs) and weaves their surname into dossiers, police reports &amp; clues.
+                    </p>
+                  )}
                 </div>
 
                 {/* Ephemeral AI Photo-to-Trait Auto-Filler */}
