@@ -26,6 +26,8 @@ import {
 } from '@/lib/live-session-store';
 import {
   ACTIVE_MYSTERIES,
+  ALL_CANONICAL_MYSTERIES,
+  CanonicalActiveMystery,
   LOVE_ON_THE_ROCKS_MYSTERY,
   getCanonicalActiveMysteryBySlugOrId,
 } from '@/data/active-mysteries';
@@ -149,7 +151,6 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
 
   const isBaseChristmasTemplate = mysteryId === '61196e53-09c3-427f-8862-30151f2ca75b';
   const SUPERSEDED_CHRISTMAS_PORTRAIT_HASHES = [
-    '28ec1e5263c3',
     '20058bab3911',
     'b06f3ace7cdf',
     '63aa0e7355d6',
@@ -157,8 +158,6 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     'd468b1b12c33',
     '1dcd5acb69d9',
   ];
-  const ALEX_HUSBAND_PORTRAIT =
-    'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-b90b57ad1e85.jpg';
   const LUKE_HUSBAND_PORTRAIT =
     'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg';
 
@@ -174,6 +173,8 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       delete baseSpecProfile.standard_character_photo_url;
       delete baseSpecProfile.outfit_image_url;
       delete baseSpecProfile.avatar_url;
+      delete baseSpecProfile.guest_id;
+      delete baseSpecProfile.guest_name;
     }
 
     const existingGuestName = String(existingProfile.guest_name || '').trim().toLowerCase();
@@ -184,14 +185,13 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
           String(existingProfile.standard_character_photo_url || '').includes(h) ||
           String(existingProfile.outfit_image_url || '').includes(h) ||
           String(existingProfile.avatar_url || '').includes(h)
-      ) &&
-      !(spec.key === 'husband' && existingGuestName === 'luke');
+      );
 
     const isHusbandAlexMismatch =
       isBaseChristmasTemplate &&
       spec.key === 'husband' &&
-      existingGuestName === 'alex' &&
-      String(existingProfile.standard_character_photo_url || '').includes('28ec1e5263c3');
+      (existingGuestName === 'alex' ||
+        String(existingProfile.standard_character_photo_url || '').includes('b90b57ad1e85'));
 
     const isHusbandLukeMismatch =
       isBaseChristmasTemplate &&
@@ -209,16 +209,20 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       outfit_reference_images: spec.profile_data.outfit_reference_images,
       act_summary: spec.profile_data.act_summary,
       act_bullets: spec.profile_data.act_bullets,
-      ...(hasSupersededPortrait || isHusbandAlexMismatch
+      ...(hasSupersededPortrait
         ? {
-            standard_character_photo_url:
-              spec.key === 'husband' ? ALEX_HUSBAND_PORTRAIT : spec.profile_data.standard_character_photo_url,
-            outfit_image_url:
-              spec.key === 'husband' ? ALEX_HUSBAND_PORTRAIT : spec.profile_data.outfit_image_url,
+            standard_character_photo_url: spec.profile_data.standard_character_photo_url,
+            outfit_image_url: spec.profile_data.outfit_image_url,
           }
         : {}),
-      ...(isHusbandLukeMismatch
+      ...(isHusbandAlexMismatch || isHusbandLukeMismatch
         ? {
+            guest_id: '0370c2e5-a829-4b37-9eff-8251c337aa34',
+            guest_name: 'Luke',
+            gender: 'male',
+            eye_color: 'Blue',
+            height: 'Very Tall',
+            avatar_url: spec.profile_data.avatar_url,
             standard_character_photo_url: LUKE_HUSBAND_PORTRAIT,
             outfit_image_url: LUKE_HUSBAND_PORTRAIT,
           }
@@ -449,6 +453,12 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       '9d445ddd408d',
       '0eefa60444a8',
       'c105d7a3c582',
+      '51a87e7b96f1',
+      '9dcdbd61ef87',
+      '358cd121a6c5',
+      '7b350e41e42b',
+      '00cc6f5af6b0',
+      'mwvwkbo7',
     ];
 
     // Sync clues if present
@@ -655,6 +665,10 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     }
   }
 
+  if (mysteryId) {
+    cacheMysterySnapshot(mysteryId, mystery);
+  }
+
   return mystery;
 }
 
@@ -759,11 +773,91 @@ export function replacePlaceholderNamesWithRoles(
   return stripEmDashes(result);
 }
 
+/**
+ * Authoritative resolver for whether a Mystery Base Pack is currently Posted Publicly (`status === 'published'`).
+ * Checks:
+ * 1. Live Supabase `mysteries` row status (if accessible)
+ * 2. `.live-mystery-cache.json` cached status (updated immediately when Builder saves Draft / Live / Archived)
+ * 3. Canonical default status (`canonical.status === 'published'`)
+ * Never returns any customer-cloned instance (`__u_`).
+ */
+export async function getPublicMarketingMysteries(): Promise<CanonicalActiveMystery[]> {
+  const supabase = await createClient();
+  const slugify = (s: string) =>
+    String(s || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
+  const dbStatusById = new Map<string, string>();
+  const dbStatusBySlug = new Map<string, string>();
+
+  try {
+    const { data: rows } = await supabase
+      .from('mysteries')
+      .select('id, title, status');
+    for (const r of rows || []) {
+      if (!r?.id || String(r.id).includes('__u_')) continue;
+      if (r.status) {
+        dbStatusById.set(String(r.id).toLowerCase(), String(r.status));
+        const sl = slugify(r.title || '');
+        if (sl && !dbStatusBySlug.has(sl)) {
+          dbStatusBySlug.set(sl, String(r.status));
+        }
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  const cachedList = getAllCachedMysteries();
+  const cachedStatusById = new Map<string, string>();
+  const cachedStatusBySlug = new Map<string, string>();
+  for (const cm of cachedList) {
+    if (!cm?.id || String(cm.id).includes('__u_') || cm.template_mystery_id) continue;
+    if (cm.status) {
+      cachedStatusById.set(String(cm.id).toLowerCase(), String(cm.status));
+      const sl = slugify(cm.title || '');
+      if (sl && !cachedStatusBySlug.has(sl)) {
+        cachedStatusBySlug.set(sl, String(cm.status));
+      }
+    }
+  }
+
+  return ALL_CANONICAL_MYSTERIES.filter((canon) => {
+    const idKey = canon.id.toLowerCase();
+    const slugKey = canon.slug.toLowerCase();
+    const authoritativeStatus =
+      dbStatusById.get(idKey) ||
+      cachedStatusById.get(idKey) ||
+      dbStatusBySlug.get(slugKey) ||
+      cachedStatusBySlug.get(slugKey) ||
+      canon.status;
+    return authoritativeStatus === 'published';
+  });
+}
+
+export async function getPublicMarketingMysteryBySlugOrId(
+  slugOrId: string
+): Promise<CanonicalActiveMystery | null> {
+  const normalized = (slugOrId || '').trim().toLowerCase();
+  if (!normalized) return null;
+  const publishedList = await getPublicMarketingMysteries();
+  return (
+    publishedList.find(
+      (m) =>
+        m.slug.toLowerCase() === normalized ||
+        m.id.toLowerCase() === normalized ||
+        m.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === normalized
+    ) || null
+  );
+}
+
 export async function getPublishedMysteries() {
   const supabase = await createClient();
   const { data, error } = (await supabase
     .from('mysteries')
-    .select('*, characters(name, is_victim, profile_data)')
+    .select('*, characters(id, name, gender, is_victim, plot_role, archetype, is_mandatory, profile_data)')
     .eq('status', 'published')
     .order('created_at', { ascending: false })) as any;
 
@@ -771,17 +865,61 @@ export async function getPublishedMysteries() {
     console.error('Error fetching published mysteries:', error);
   }
 
-  const dbPublished = (data || []).map((m: any) => {
-    const upgraded = ensureRealityPromoCover(m, supabase);
+  const publishedCanon = await getPublicMarketingMysteries();
+  const byId = new Map<string, any>();
+  const seenSlugs = new Set<string>();
+  const slugify = (s: string) =>
+    String(s || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
+  // 1. Add DB published base packs (excluding customer clones)
+  for (const m of data || []) {
+    if (!m?.id || String(m.id).includes('__u_') || (m as any).template_mystery_id) continue;
+    const cachedSnap = getCachedMysterySnapshot(m.id);
+    if (cachedSnap && cachedSnap.status && cachedSnap.status !== 'published') {
+      continue;
+    }
+    const sl = slugify(m.title || '');
+    if (sl && seenSlugs.has(sl)) continue;
+    if (sl) seenSlugs.add(sl);
+
+    const upgraded = ensureChristmasNightmareCanon(ensureRealityPromoCover(m, supabase), supabase);
     const chars = normalizeCharacterList(upgraded.characters || []);
-    return {
+    byId.set(m.id, {
       ...upgraded,
+      status: 'published',
       characters: chars,
       description: replacePlaceholderNamesWithRoles(upgraded.description, chars),
-    };
-  });
+    });
+  }
 
-  return dbPublished;
+  // 2. Ensure all canonical published packs (e.g. Christmas Nightmare) are present even for anonymous visitors
+  for (const canon of publishedCanon) {
+    const sl = slugify(canon.title || canon.slug);
+    if (byId.has(canon.id) || (sl && seenSlugs.has(sl))) continue;
+    if (sl) seenSlugs.add(sl);
+
+    const cachedSnap = getCachedMysterySnapshot(canon.id);
+    const sourceObj = cachedSnap && cachedSnap.status === 'published' ? cachedSnap : canon;
+    const upgraded = ensureChristmasNightmareCanon(
+      ensureRealityPromoCover({
+        ...sourceObj,
+        id: canon.id,
+        status: 'published',
+      })
+    );
+    const chars = normalizeCharacterList(upgraded.characters || []);
+    byId.set(canon.id, {
+      ...upgraded,
+      status: 'published',
+      characters: chars,
+      description: replacePlaceholderNamesWithRoles(upgraded.description, chars),
+    });
+  }
+
+  return Array.from(byId.values());
 }
 
 export async function getPublishedMysteryByIdOrSlug(idOrSlug: string) {
@@ -805,16 +943,48 @@ export async function getPublishedMysteryByIdOrSlug(idOrSlug: string) {
       .select('*')
       .order('created_at', { ascending: false });
 
-    mystery = (allMysteries || []).find(
-      (m: any) => slugify(m.title || '') === idOrSlug.toLowerCase()
-    ) || null;
+    mystery =
+      (allMysteries || []).find(
+        (m: any) =>
+          !String(m.id || '').includes('__u_') &&
+          slugify(m.title || '') === idOrSlug.toLowerCase() &&
+          m.status === 'published'
+      ) ||
+      (allMysteries || []).find(
+        (m: any) =>
+          !String(m.id || '').includes('__u_') &&
+          slugify(m.title || '') === idOrSlug.toLowerCase()
+      ) ||
+      null;
+  }
+
+  // If DB returned a base template row that is NOT published (e.g. 'draft' or 'archived'), block public access
+  const isCustomerInstance = String(idOrSlug).includes('__u_');
+  if (mystery && !isCustomerInstance && mystery.status && mystery.status !== 'published') {
+    return null;
   }
 
   if (!mystery) {
     const cached = isUuid
       ? getCachedMysterySnapshot(idOrSlug)
-      : getAllCachedMysteries().find((m: any) => slugify(m.title || '') === idOrSlug.toLowerCase()) || null;
+      : getAllCachedMysteries().find(
+          (m: any) =>
+            !String(m.id || '').includes('__u_') &&
+            slugify(m.title || '') === idOrSlug.toLowerCase() &&
+            m.status === 'published'
+        ) ||
+        getAllCachedMysteries().find(
+          (m: any) =>
+            !String(m.id || '').includes('__u_') &&
+            slugify(m.title || '') === idOrSlug.toLowerCase()
+        ) ||
+        null;
+
     if (cached) {
+      // Only return cached base mystery if it is published (or is a customer's isolated session instance)
+      if (!isCustomerInstance && cached.status && cached.status !== 'published') {
+        return null;
+      }
       const upgradedCached = ensureChristmasNightmareCanon(ensureRealityPromoCover(cached));
       const cleanChars = normalizeCharacterList(upgradedCached.characters || []);
       return {
@@ -824,7 +994,7 @@ export async function getPublishedMysteryByIdOrSlug(idOrSlug: string) {
       };
     }
 
-    const canonical = getCanonicalActiveMysteryBySlugOrId(idOrSlug);
+    const canonical = await getPublicMarketingMysteryBySlugOrId(idOrSlug);
     if (canonical) {
       const upgradedCanonical = ensureChristmasNightmareCanon(
         ensureRealityPromoCover({
@@ -843,7 +1013,7 @@ export async function getPublishedMysteryByIdOrSlug(idOrSlug: string) {
     return null;
   }
 
-  mystery = ensureRealityPromoCover(mystery, supabase);
+  mystery = ensureChristmasNightmareCanon(ensureRealityPromoCover(mystery, supabase), supabase);
 
   const { data: characters } = await supabase
     .from('characters')
@@ -853,7 +1023,10 @@ export async function getPublishedMysteryByIdOrSlug(idOrSlug: string) {
     .order('is_mandatory', { ascending: false })
     .order('created_at', { ascending: true });
 
-  const charList = normalizeCharacterList(characters || [], supabase);
+  const charList = normalizeCharacterList(
+    characters && characters.length > 0 ? characters : mystery.characters || [],
+    supabase
+  );
 
   return {
     ...mystery,
@@ -1404,13 +1577,13 @@ export const getMysteryById = cache(async (id: string) => {
       return christmasBase;
     }
 
-    const canonical = getCanonicalActiveMysteryBySlugOrId(templateLookupId);
+    const canonical = getCanonicalActiveMysteryBySlugOrId(templateLookupId, { includeDrafts: true });
     if (canonical) {
       const upgradedCanonical = ensureChristmasNightmareCanon(
         ensureRealityPromoCover({
           ...canonical,
           id,
-          status: 'published',
+          status: canonical.status || 'draft',
           current_round: liveCarrier?.current_round ?? 0,
           plot_beats:
             canonical.id === '69b65a91-1cc2-4267-94a4-59297428af28'

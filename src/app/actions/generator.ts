@@ -661,11 +661,10 @@ export async function ensureStandardCharacterPhoto(
   const identityHash = computeCharacterIdentityHash(char, mystery);
 
   const existingStandardUrl = profile.standard_character_photo_url || rawProfile.standard_character_photo_url;
-  const existingHash = profile.standard_character_photo_hash || rawProfile.standard_character_photo_hash;
 
-  // Reuse existing standard character photo only when not force-regenerating AND any stored identityHash matches the current guest+outfit
-  const isHashMismatch = Boolean(existingHash && existingHash !== identityHash);
-  if (!forceRegenerate && existingStandardUrl && !isHashMismatch) {
+  // Reuse existing standard character photo whenever not explicitly force-regenerating
+  // (Guest swaps already clear standard_character_photo_url or pass forceRegenerate = true)
+  if (!forceRegenerate && existingStandardUrl) {
     return {
       photoUrl: existingStandardUrl,
       identityHash,
@@ -1536,7 +1535,7 @@ export async function generateClueImageAction(
     const explicitlyMentionsDeadBody = /\b(dead|corpse|lifeless|murdered body|strangled|body on the floor)\b/i.test(basePrompt);
     const livePartySceneRule =
       !explicitlyMentionsDeadBody && referenceImages.length > 0
-        ? `\nLIVE PARTY SCENE RULE (CRITICAL): All ${referenceImages.length} depicted character(s) are alive, conscious, and unharmed. Do NOT depict any dead bodies, people lying on the floor, or blood.`
+        ? `\nLIVE PARTY SCENE RULE (CRITICAL): All ${referenceImages.length} depicted character(s) are standing or seated upright, alert, and actively engaged in the scene. Nobody is lying on the floor or collapsed.`
         : '';
 
     const antiCloneRule =
@@ -1701,18 +1700,21 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
                   outErr = '';
                   break;
                 }
-                const finishReason = data.candidates?.[0]?.finishReason || '';
+                const finishReason = data.candidates?.[0]?.finishReason || 'UNKNOWN';
+                outErr = `Gemini returned no image (finishReason=${finishReason})`;
                 console.warn(
-                  `[GEMINI IMAGE WARNING] No base64 image in response (finishReason=${finishReason}) on attempt ${attempt}/4. Switching to compromising-noir safety fallback prompt...`,
+                  `[GEMINI IMAGE WARNING] No base64 image in response (finishReason=${finishReason}) on attempt ${attempt}/4.`,
                   responseText.slice(0, 300)
                 );
-                currentPrompt = buildSafetyFallbackImagePrompt({
-                  mysterySetting,
-                  clueFormat,
-                  charDescriptions: charDescriptionsList,
-                  referenceManifest,
-                  zeroTextRule,
-                });
+                if (attempt >= 3) {
+                  currentPrompt = buildSafetyFallbackImagePrompt({
+                    mysterySetting,
+                    clueFormat,
+                    charDescriptions: charDescriptionsList,
+                    referenceManifest,
+                    zeroTextRule,
+                  });
+                }
               } catch {
                 console.error(
                   `[GEMINI IMAGE ERROR] Failed to parse JSON response on attempt ${attempt}/4:`,
