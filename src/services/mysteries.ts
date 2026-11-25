@@ -157,9 +157,16 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     '0b6e029e9a8d',
     'd468b1b12c33',
     '1dcd5acb69d9',
+    '28ec1e5263c3',
+    '42f5b08d02',
+    '3840fd006ed6',
+    'c2f4839cd4a1',
+    '775b43936533',
+    'warmwaistup1',
+    'goldwaistup1',
   ];
   const LUKE_HUSBAND_PORTRAIT =
-    'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg';
+    '/generated-avatars/da18ef00-ecdc-41e7-8c71-97d78046e43b-synced-candlelit.jpg';
 
   // Sync characters + motives
   const canonicalChars = CHRISTMAS_NIGHTMARE_CHARACTERS.map((spec) => {
@@ -215,6 +222,8 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
         ? {
             standard_character_photo_url: spec.profile_data.standard_character_photo_url,
             outfit_image_url: spec.profile_data.outfit_image_url,
+            avatar_url: spec.profile_data.avatar_url,
+            friend_photo_url: spec.profile_data.standard_character_photo_url,
           }
         : {}),
       ...(isHusbandAlexMismatch || isHusbandLukeMismatch
