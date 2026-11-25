@@ -832,7 +832,7 @@ async function loadMergedGa4Config(): Promise<StoredGa4Config> {
   let measurementId =
     localGa4?.measurementId ||
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
-    '';
+    'G-VW0PRLFNL4';
   let propertyId =
     localGa4?.propertyId ||
     process.env.GA4_PROPERTY_ID ||
@@ -867,8 +867,8 @@ async function loadMergedGa4Config(): Promise<StoredGa4Config> {
 
     const cfg = data?.config_json;
     if (cfg && typeof cfg === 'object') {
-      if (!measurementId && cfg.gaMeasurementId) {
-        measurementId = String(cfg.gaMeasurementId).trim();
+      if (cfg.googleAnalyticsId || cfg.gaMeasurementId) {
+        measurementId = String(cfg.googleAnalyticsId || cfg.gaMeasurementId).trim();
       }
       if (cfg.ga4Config && typeof cfg.ga4Config === 'object') {
         const dbGa = cfg.ga4Config;
@@ -884,7 +884,7 @@ async function loadMergedGa4Config(): Promise<StoredGa4Config> {
   propertyId = propertyId.replace(/^properties\//i, '').trim();
 
   return {
-    measurementId: measurementId.trim(),
+    measurementId: (measurementId || 'G-VW0PRLFNL4').trim(),
     propertyId,
     clientEmail: clientEmail.trim(),
     privateKey: privateKey.trim(),
@@ -900,9 +900,13 @@ export async function getActiveGaMeasurementId(): Promise<string> {
   try {
     const { getPlatformSettingsAction } = await import('@/app/actions/platform-settings');
     const settings = (await getPlatformSettingsAction()) as any;
-    return (settings?.googleAnalyticsId || settings?.gaMeasurementId || '').trim();
+    return (
+      settings?.googleAnalyticsId ||
+      settings?.gaMeasurementId ||
+      'G-VW0PRLFNL4'
+    ).trim();
   } catch {
-    return '';
+    return 'G-VW0PRLFNL4';
   }
 }
 

@@ -140,7 +140,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   facebookUrl: 'https://facebook.com/backpocketmysteries',
   linkedinUrl: 'https://linkedin.com/company/back-pocket-games',
   tiktokUrl: 'https://tiktok.com/@backpocketmysteries',
-  googleAnalyticsId: '',
+  googleAnalyticsId: 'G-VW0PRLFNL4',
   metaPixelId: '',
 
   // Metadata

@@ -88,8 +88,8 @@ export default async function RootLayout(props: {
   const locale = params.locale;
   const gaId =
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
-    (await getActiveGaMeasurementId().catch(() => "")) ||
-    "";
+    (await getActiveGaMeasurementId().catch(() => "G-VW0PRLFNL4")) ||
+    "G-VW0PRLFNL4";
 
   return (
     <html

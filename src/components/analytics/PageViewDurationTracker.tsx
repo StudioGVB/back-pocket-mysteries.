@@ -28,7 +28,7 @@ export function isOwnerAnalyticsExcluded(): boolean {
 export function setOwnerAnalyticsExcluded(excluded: boolean): void {
   if (typeof window === 'undefined') return;
   try {
-    const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+    const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-VW0PRLFNL4';
     if (excluded) {
       window.localStorage.setItem(OWNER_ANALYTICS_STORAGE_KEY, '1');
       document.cookie = `${OWNER_ANALYTICS_COOKIE_NAME}=1; path=/; max-age=31536000; SameSite=Lax`;
@@ -70,7 +70,7 @@ export function PageViewDurationTracker() {
       }
 
       if (isOwnerAnalyticsExcluded()) {
-        const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+        const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-VW0PRLFNL4';
         if (gaId) {
           (window as unknown as Record<string, unknown>)[`ga-disable-${gaId}`] = true;
         }
