@@ -1,9 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import {
+  getAdminSidebarNotificationCountsAction,
+  markAdminSectionSeenAction,
+} from '@/app/[locale]/(admin)/admin/admin-data';
 
 interface NavItem {
   id: string;
@@ -12,6 +16,36 @@ interface NavItem {
   exact?: boolean;
   matchPrefixes?: string[];
   icon: React.ReactNode;
+  badgeCount?: number;
+  onSelectSection?: () => void;
+}
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function writeSeenTimestamp(cookieName: string, storageKey: string, iso: string) {
+  if (typeof window === 'undefined') return;
+  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${cookieName}=${encodeURIComponent(iso)};expires=${expires};path=/`;
+  try {
+    window.localStorage.setItem(storageKey, iso);
+  } catch {}
+}
+
+function readSeenTimestamp(cookieName: string, storageKey: string): string | null {
+  if (typeof window === 'undefined') return null;
+  const fromCookie = readCookie(cookieName);
+  let fromStorage: string | null = null;
+  try {
+    fromStorage = window.localStorage.getItem(storageKey);
+  } catch {}
+  if (fromCookie && fromStorage) {
+    return fromCookie > fromStorage ? fromCookie : fromStorage;
+  }
+  return fromCookie || fromStorage || null;
 }
 
 export function AdminSidebar() {
@@ -20,6 +54,71 @@ export function AdminSidebar() {
   const localePrefix = `/${localeMatch ? localeMatch[1] : 'en'}`;
   // Normalize locale prefix (e.g. /en/admin/... -> /admin/...)
   const cleanPath = pathname.replace(/^\/(en|fr)(?=\/admin)/, '');
+
+  const [unseenCustomersCount, setUnseenCustomersCount] = useState(0);
+  const [unseenLeadsCount, setUnseenLeadsCount] = useState(0);
+  const [unseenDashboardCount, setUnseenDashboardCount] = useState(0);
+
+  const markSectionSeen = useCallback((section: 'dashboard' | 'customers' | 'leads') => {
+    const nowIso = new Date().toISOString();
+    if (section === 'customers') {
+      setUnseenCustomersCount(0);
+      writeSeenTimestamp('admin_users_last_seen', 'bpm_admin_users_last_seen', nowIso);
+    } else if (section === 'leads') {
+      setUnseenLeadsCount(0);
+      writeSeenTimestamp('admin_leads_last_seen', 'bpm_admin_leads_last_seen', nowIso);
+    } else if (section === 'dashboard') {
+      setUnseenDashboardCount(0);
+      writeSeenTimestamp('admin_dashboard_last_view', 'bpm_admin_dashboard_last_view', nowIso);
+    }
+    markAdminSectionSeenAction(section, nowIso).catch(() => {});
+  }, []);
+
+  const refreshCounts = useCallback(async () => {
+    const counts = await getAdminSidebarNotificationCountsAction({
+      dashboard: readSeenTimestamp('admin_dashboard_last_view', 'bpm_admin_dashboard_last_view'),
+      customers: readSeenTimestamp('admin_users_last_seen', 'bpm_admin_users_last_seen'),
+      leads: readSeenTimestamp('admin_leads_last_seen', 'bpm_admin_leads_last_seen'),
+    });
+
+    const onUsersPage = cleanPath === '/admin/users' || cleanPath.startsWith('/admin/users/');
+    const onLeadsPage = cleanPath === '/admin/leads' || cleanPath.startsWith('/admin/leads/');
+    const onDashPage = cleanPath === '/admin';
+
+    setUnseenCustomersCount(onUsersPage ? 0 : counts.unseenCustomersCount);
+    setUnseenLeadsCount(onLeadsPage ? 0 : counts.unseenLeadsCount);
+    setUnseenDashboardCount(onDashPage ? 0 : counts.unseenDashboardCount);
+  }, [cleanPath]);
+
+  // Auto-clear section badge as soon as the admin lands on that page
+  useEffect(() => {
+    if (cleanPath === '/admin/users' || cleanPath.startsWith('/admin/users/')) {
+      markSectionSeen('customers');
+    } else if (cleanPath === '/admin/leads' || cleanPath.startsWith('/admin/leads/')) {
+      markSectionSeen('leads');
+    }
+    refreshCounts();
+  }, [cleanPath, markSectionSeen, refreshCounts]);
+
+  // Listen for custom seen events from DashboardTracker / DashboardSignupsWidget + poll every 45s
+  useEffect(() => {
+    const handleCustomSeen = (e: Event) => {
+      const ev = e as CustomEvent<{ section?: 'dashboard' | 'customers' | 'leads' }>;
+      if (ev.detail?.section === 'dashboard') {
+        setUnseenDashboardCount(0);
+      } else if (ev.detail?.section === 'customers') {
+        setUnseenCustomersCount(0);
+      } else if (ev.detail?.section === 'leads') {
+        setUnseenLeadsCount(0);
+      }
+    };
+    window.addEventListener('bpm:admin-section-seen', handleCustomSeen);
+    const interval = setInterval(refreshCounts, 45000);
+    return () => {
+      window.removeEventListener('bpm:admin-section-seen', handleCustomSeen);
+      clearInterval(interval);
+    };
+  }, [refreshCounts]);
 
   const isItemActive = (item: NavItem) => {
     if (item.exact) {
@@ -38,6 +137,7 @@ export function AdminSidebar() {
     label: 'Dashboard',
     href: '/admin',
     exact: true,
+    badgeCount: unseenDashboardCount,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="15" rx="1"/></svg>
     ),
@@ -91,6 +191,8 @@ export function AdminSidebar() {
       label: 'Customers',
       href: '/admin/users',
       matchPrefixes: ['/admin/users'],
+      badgeCount: unseenCustomersCount,
+      onSelectSection: () => markSectionSeen('customers'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       ),
@@ -100,6 +202,8 @@ export function AdminSidebar() {
       label: 'Leads',
       href: '/admin/leads',
       matchPrefixes: ['/admin/leads'],
+      badgeCount: unseenLeadsCount,
+      onSelectSection: () => markSectionSeen('leads'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
       ),
@@ -207,18 +311,28 @@ export function AdminSidebar() {
 
   const renderNavItem = (item: NavItem) => {
     const active = isItemActive(item);
+    const hasBadge = !active && typeof item.badgeCount === 'number' && item.badgeCount > 0;
     return (
       <li key={item.id}>
         <Link
           href={`${localePrefix}${item.href}`}
-          className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all text-[13px] font-bold ${
+          onClick={() => item.onSelectSection?.()}
+          className={`flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl transition-all text-[13px] font-bold ${
             active
               ? 'bg-brand-pink text-white shadow-md shadow-brand-pink/25'
               : 'text-slate-300 hover:bg-white/10 hover:text-white'
           }`}
         >
-          <span className="shrink-0">{item.icon}</span>
-          <span className="truncate">{item.label}</span>
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="shrink-0">{item.icon}</span>
+            <span className="truncate">{item.label}</span>
+          </span>
+          {hasBadge && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider shrink-0 shadow-sm shadow-brand-pink/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              +{item.badgeCount}
+            </span>
+          )}
         </Link>
       </li>
     );

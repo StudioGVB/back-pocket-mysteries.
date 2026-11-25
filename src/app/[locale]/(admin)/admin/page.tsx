@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { getAdminStats, getRecentTransactions, getTopMysteries } from './admin-data';
 import { getAnalyticsTimeseries } from '@/app/actions/admin-vercel';
 import { DashboardTrafficWidget } from '@/components/admin/DashboardTrafficWidget';
+import { DashboardSignupsWidget } from '@/components/admin/DashboardSignupsWidget';
 import { cookies } from 'next/headers';
-import { DashboardTracker } from './DashboardTracker';
 import { getUserDisplayAvatarUrl } from '@/utils/avatar';
 
 export const unstable_instant = false;
@@ -16,7 +16,7 @@ export default async function AdminDashboard({
 }) {
   return (
     <div className="space-y-8">
-      {/* Stats Grid */}
+      {/* Stats Grid + Sign-Ups & Newsletter Growth Widget */}
       <Suspense fallback={<StatsGridSkeleton />}>
         <DashboardStats />
       </Suspense>
@@ -45,31 +45,94 @@ async function DashboardStats() {
   const lastViewStr = cookieStore.get('admin_dashboard_last_view')?.value;
   const stats = await getAdminStats(lastViewStr);
   const statConfig = [
-    { label: 'Total Revenue', value: `£${stats.totalRevenue.toLocaleString()}`, color: 'brand-pink' },
-    { label: 'Mystery Sales', value: stats.salesCount.toString(), color: 'brand-blue' },
-    { label: 'Active Users', value: stats.activeUsers.toString(), color: 'brand-dark', badge: stats.newUsersCount > 0 ? `${stats.newUsersCount} New` : null },
-    { label: 'Avg. Order Val', value: `£${stats.avgOrderVal.toFixed(2)}`, color: 'gray-500' },
+    {
+      label: 'Total Revenue',
+      value: `£${stats.totalRevenue.toLocaleString()}`,
+      href: '/en/admin/transactions',
+      badge: null,
+      urgent: false,
+    },
+    {
+      label: 'Mystery Sales',
+      value: stats.salesCount.toString(),
+      href: '/en/admin/transactions',
+      badge: null,
+      urgent: false,
+    },
+    {
+      label: 'Customer Sign-Ups',
+      value: stats.activeUsers.toString(),
+      href: '/en/admin/users',
+      badge:
+        stats.newUsersCount > 0
+          ? `+${stats.newUsersCount} New`
+          : `+${stats.customerPeriods.week} this wk`,
+      urgent: stats.newUsersCount > 0,
+    },
+    {
+      label: 'Newsletter & VIPs',
+      value: stats.totalLeads.toString(),
+      href: '/en/admin/leads',
+      badge:
+        stats.newLeadsCount > 0
+          ? `+${stats.newLeadsCount} New`
+          : `+${stats.leadPeriods.week} this wk`,
+      urgent: stats.newLeadsCount > 0,
+    },
+    {
+      label: 'Avg. Order Val',
+      value: `£${stats.avgOrderVal.toFixed(2)}`,
+      href: '/en/admin/balance-sheet',
+      badge: null,
+      urgent: false,
+    },
   ];
 
   return (
-    <>
-      <DashboardTracker />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
         {statConfig.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-            <div className="flex justify-between items-start mb-2">
-              <p className="text-xs font-black uppercase tracking-widest text-gray-400">{stat.label}</p>
+          <Link
+            key={i}
+            href={stat.href}
+            className={`bg-white p-6 rounded-[28px] border shadow-sm hover:shadow-xl transition-all duration-300 block ${
+              stat.urgent
+                ? 'border-brand-pink/50 ring-2 ring-brand-pink/15'
+                : 'border-gray-100'
+            }`}
+          >
+            <div className="flex justify-between items-start gap-2 mb-2">
+              <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                {stat.label}
+              </p>
               {stat.badge && (
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink bg-brand-pink/10 px-2 py-1 rounded-full">{stat.badge}</span>
+                <span
+                  className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shrink-0 ${
+                    stat.urgent
+                      ? 'bg-brand-pink text-white shadow-sm shadow-brand-pink/30 animate-pulse'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {stat.badge}
+                </span>
               )}
             </div>
             <div className="flex items-baseline gap-2">
               <h3 className="text-3xl font-black text-brand-dark">{stat.value}</h3>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
-    </>
+
+      <DashboardSignupsWidget
+        newUsersCount={stats.newUsersCount}
+        newLeadsCount={stats.newLeadsCount}
+        unseenCustomers={stats.unseenCustomers}
+        unseenLeads={stats.unseenLeads}
+        customerPeriods={stats.customerPeriods}
+        leadPeriods={stats.leadPeriods}
+      />
+    </div>
   );
 }
 

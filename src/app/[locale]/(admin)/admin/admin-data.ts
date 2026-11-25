@@ -39,29 +39,245 @@ function isProfileDeleted(profile: any, crm?: any): boolean {
   return false;
 }
 
+export interface AdminNotificationsSeenState {
+  dashboard?: string;
+  customers?: string;
+  leads?: string;
+}
+
+function getLocalNotificationsSeenPath(): string {
+  const dir = path.join(/*turbopackIgnore: true*/ process.cwd(), '.local-data');
+  try {
+    if (!fsSync.existsSync(dir)) {
+      fsSync.mkdirSync(dir, { recursive: true });
+    }
+  } catch {}
+  return path.join(dir, 'admin-notifications-seen.json');
+}
+
+async function loadAdminNotificationsSeen(supabase: any): Promise<AdminNotificationsSeenState> {
+  const result: AdminNotificationsSeenState = {};
+
+  // 1. Read local JSON file
+  try {
+    const filePath = getLocalNotificationsSeenPath();
+    if (fsSync.existsSync(filePath)) {
+      const parsed = JSON.parse(fsSync.readFileSync(filePath, 'utf-8'));
+      if (parsed && typeof parsed === 'object') {
+        Object.assign(result, parsed);
+      }
+    }
+  } catch {}
+
+  // 2. Read platform_settings.config_json.adminNotificationsLastSeen
+  try {
+    const { data } = await supabase
+      .from('platform_settings')
+      .select('config_json')
+      .eq('id', 'global')
+      .maybeSingle();
+    const dbSeen = data?.config_json?.adminNotificationsLastSeen;
+    if (dbSeen && typeof dbSeen === 'object') {
+      for (const key of ['dashboard', 'customers', 'leads'] as const) {
+        const val = dbSeen[key];
+        if (typeof val === 'string' && (!result[key] || val > result[key]!)) {
+          result[key] = val;
+        }
+      }
+    }
+  } catch {}
+
+  return result;
+}
+
+async function saveAdminNotificationsSeen(
+  supabase: any,
+  updates: Partial<AdminNotificationsSeenState>
+): Promise<AdminNotificationsSeenState> {
+  const current = await loadAdminNotificationsSeen(supabase);
+  const next: AdminNotificationsSeenState = {
+    ...current,
+    ...updates,
+  };
+
+  try {
+    const filePath = getLocalNotificationsSeenPath();
+    fsSync.writeFileSync(filePath, JSON.stringify(next, null, 2), 'utf-8');
+  } catch {}
+
+  try {
+    const { data: existing } = await supabase
+      .from('platform_settings')
+      .select('config_json')
+      .eq('id', 'global')
+      .maybeSingle();
+    const prevConfig =
+      existing?.config_json && typeof existing.config_json === 'object'
+        ? existing.config_json
+        : {};
+    await supabase.from('platform_settings').upsert(
+      {
+        id: 'global',
+        config_json: {
+          ...prevConfig,
+          adminNotificationsLastSeen: next,
+        },
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    );
+  } catch {}
+
+  return next;
+}
+
+function resolveBaselineCutoff(cookieIso?: string | null, storedIso?: string | null): string {
+  // Pick the most recent seen timestamp if either exists; otherwise default to 7 days ago
+  const candidates = [cookieIso, storedIso].filter(
+    (s): s is string => typeof s === 'string' && s.length > 0 && !Number.isNaN(Date.parse(s))
+  );
+  if (candidates.length > 0) {
+    return candidates.sort().reverse()[0];
+  }
+  return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+}
+
+export async function markAdminSectionSeenAction(
+  section: 'dashboard' | 'customers' | 'leads',
+  timestampIso?: string
+): Promise<{ success: boolean; timestamp: string }> {
+  const { supabase } = await requireAdmin();
+  const ts = timestampIso || new Date().toISOString();
+  await saveAdminNotificationsSeen(supabase, { [section]: ts });
+  return { success: true, timestamp: ts };
+}
+
+export async function getAdminSidebarNotificationCountsAction(cookiesOverride?: {
+  dashboard?: string | null;
+  customers?: string | null;
+  leads?: string | null;
+}): Promise<{
+  unseenCustomersCount: number;
+  unseenLeadsCount: number;
+  unseenDashboardCount: number;
+}> {
+  try {
+    const { supabase } = await requireAdmin();
+    const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
+    const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
+
+    const [profilesRes, crmMap, leads, seenState] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, avatar_config, created_at'),
+      getAllCustomerCrmData(),
+      getAllMarketingLeadsAction(),
+      loadAdminNotificationsSeen(supabase),
+    ]);
+
+    const activeProfiles = (profilesRes.data || []).filter(
+      (p: any) => !isProfileDeleted(p, crmMap[p.id])
+    );
+
+    const customersCutoff = resolveBaselineCutoff(
+      cookiesOverride?.customers,
+      seenState.customers
+    );
+    const leadsCutoff = resolveBaselineCutoff(cookiesOverride?.leads, seenState.leads);
+    const dashboardCutoff = resolveBaselineCutoff(
+      cookiesOverride?.dashboard,
+      seenState.dashboard
+    );
+
+    const unseenCustomersCount = activeProfiles.filter(
+      (p: any) => p.created_at && p.created_at > customersCutoff
+    ).length;
+
+    const unseenLeadsCount = (leads || []).filter(
+      (l: any) => l.created_at && l.created_at > leadsCutoff
+    ).length;
+
+    const unseenDashCustomers = activeProfiles.filter(
+      (p: any) => p.created_at && p.created_at > dashboardCutoff
+    ).length;
+    const unseenDashLeads = (leads || []).filter(
+      (l: any) => l.created_at && l.created_at > dashboardCutoff
+    ).length;
+
+    return {
+      unseenCustomersCount,
+      unseenLeadsCount,
+      unseenDashboardCount: unseenDashCustomers + unseenDashLeads,
+    };
+  } catch {
+    return {
+      unseenCustomersCount: 0,
+      unseenLeadsCount: 0,
+      unseenDashboardCount: 0,
+    };
+  }
+}
+
 export const getAdminStats = cache(async (lastViewStr?: string) => {
   const { supabase } = await requireAdmin();
   const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
+  const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
 
-  const [ordersRes, profilesRes, crmMap] = await Promise.all([
+  const [ordersRes, profilesRes, crmMap, leadsList, seenState] = await Promise.all([
     supabase
       .from('orders')
       .select('amount, currency, status')
       .eq('status', 'succeeded'),
     supabase
       .from('profiles')
-      .select('id, full_name, avatar_config, created_at'),
+      .select('id, full_name, email, avatar_config, created_at')
+      .order('created_at', { ascending: false }),
     getAllCustomerCrmData(),
+    getAllMarketingLeadsAction(),
+    loadAdminNotificationsSeen(supabase),
   ]);
 
   const orders = ordersRes.data;
   const activeProfiles = (profilesRes.data || []).filter(
     (p: any) => !isProfileDeleted(p, crmMap[p.id])
   );
-  const usersCount = activeProfiles.length;
-  const newUsersCount = lastViewStr
-    ? activeProfiles.filter((p: any) => p.created_at && p.created_at >= lastViewStr).length
-    : 0;
+  const safeLeads = Array.isArray(leadsList) ? leadsList : [];
+
+  const dashboardCutoff = resolveBaselineCutoff(lastViewStr, seenState.dashboard);
+
+  const unseenCustomers = activeProfiles.filter(
+    (p: any) => p.created_at && p.created_at > dashboardCutoff
+  );
+  const unseenLeads = safeLeads
+    .filter((l: any) => l.created_at && l.created_at > dashboardCutoff)
+    .sort((a: any, b: any) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+  const nowMs = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const countWithinDays = (items: any[], days: number) => {
+    const cutoffMs = nowMs - days * dayMs;
+    return items.filter((item) => {
+      if (!item?.created_at) return false;
+      const t = Date.parse(item.created_at);
+      return !Number.isNaN(t) && t >= cutoffMs;
+    }).length;
+  };
+
+  const customerPeriods = {
+    today: countWithinDays(activeProfiles, 1),
+    week: countWithinDays(activeProfiles, 7),
+    month: countWithinDays(activeProfiles, 30),
+    quarter: countWithinDays(activeProfiles, 90),
+    year: countWithinDays(activeProfiles, 365),
+    allTime: activeProfiles.length,
+  };
+
+  const leadPeriods = {
+    today: countWithinDays(safeLeads, 1),
+    week: countWithinDays(safeLeads, 7),
+    month: countWithinDays(safeLeads, 30),
+    quarter: countWithinDays(safeLeads, 90),
+    year: countWithinDays(safeLeads, 365),
+    allTime: safeLeads.length,
+  };
 
   const totalRevenue =
     orders?.reduce(
@@ -74,9 +290,28 @@ export const getAdminStats = cache(async (lastViewStr?: string) => {
   return {
     totalRevenue: Number(totalRevenue.toFixed(2)),
     salesCount,
-    activeUsers: usersCount || 0,
-    newUsersCount,
+    activeUsers: activeProfiles.length,
+    newUsersCount: unseenCustomers.length,
+    totalLeads: safeLeads.length,
+    newLeadsCount: unseenLeads.length,
     avgOrderVal,
+    dashboardCutoff,
+    unseenCustomers: unseenCustomers.slice(0, 5).map((u: any) => ({
+      id: u.id,
+      name: u.full_name || u.email || 'New Customer',
+      email: u.email || null,
+      created_at: u.created_at,
+    })),
+    unseenLeads: unseenLeads.slice(0, 5).map((l: any) => ({
+      id: l.id,
+      name: l.full_name || l.email?.split('@')[0] || 'Subscriber',
+      email: l.email,
+      vip_rank: l.vip_rank,
+      country: l.country || null,
+      created_at: l.created_at,
+    })),
+    customerPeriods,
+    leadPeriods,
   };
 });
 
