@@ -729,54 +729,44 @@ function buildDefaultDetailedPhotoPrompt(clueTitle: string, clueDesc: string, sp
   return `Close-up 50mm f/1.8 macro forensic crime-scene photograph of ${cleanTitle} (${cleanDesc}). Shot at a 45-degree tabletop angle with shallow depth of field focusing on the physical evidence texture and forensic trace. ${mood}, photorealistic 8k, strictly zero readable text or phone screens.`;
 }
 
-const UNIBREAK_BEAT_SUBFACTS: Record<number, [string, string, string]> = {
+const UNIBREAK_BEAT_SUBFACTS: Record<number, string[]> = {
   1: [
     'Upstairs Bedroom Lure (9:15 PM)',
-    'Stolen Varsity Betting Ledger From Jacket',
-    '$42k Point-Shaving & $25k Debt Leverage',
+    'Stolen $42k Varsity Betting Ledger From Jacket',
   ],
   2: [
-    '{{The Girlfriend}} Discovers Bedroom Hookup (10:15 PM)',
-    'Sibling Cover-Up Pact ({{The Girlfriend}} & {{The Co-Captain}})',
-    'Shared Target Shift Onto {{The Prom Queen}}',
+    '{{The Prom Queen}} Exposes {{The Teammate}} Affair to {{The Girlfriend}} (10:15 PM)',
+    'Midnight Campus Leak Ultimatum',
   ],
   3: [
-    'Isolated 2nd-Story Balcony Confrontation (11:10 PM)',
-    'Physical Struggle & Ripped Gold Chain / Torn Velvet',
-    'Live Blackmail Upload Threat by {{The Prom Queen}}',
+    '11:10 PM Upstairs Balcony Struggle Over Phone & Clawed Neck',
   ],
   4: [
-    'Cast-Iron Chiminea Poker First Strike (11:18 PM)',
-    'Non-Fatal Temple Knockout (Victim Still Breathing)',
-    "Victim's Phone Locks on Balcony Timber Deck",
+    '11:18 PM First Strike With Cast-Iron Chiminea Poker',
+    'Non-Fatal Knockout on Balcony Deck (Victim Still Breathing)',
   ],
   5: [
-    '{{The Girlfriend}} Sends {{The Co-Captain}} Inside for Alibi',
-    'Fatal Second Poker Strike & Smashed Phone (11:28 PM)',
-    '2nd-Story Balcony Push Onto Stone Patio',
+    '{{The Girlfriend}} Sends {{The Co-Captain}} Inside for 11:25 PM Alibi',
+    'Fatal 11:28 PM Second Poker Strike & Smashed Phone',
+    '2nd-Story Balcony Drop Onto Stone Patio',
   ],
 };
 
-const CHEER_CAMP_BEAT_SUBFACTS: Record<number, [string, string, string]> = {
+const CHEER_CAMP_BEAT_SUBFACTS: Record<number, string[]> = {
   1: [
     '{{The Co-Captain}} Catches {{The Bestie}} & {{The Tumbler}} Dating (9:45 PM)',
     'Midnight Blackmail Threat to Tell {{The Head Flyer}}',
-    'Ex-Hookup Bad Blood Between {{The Co-Captain}} & {{The Bestie}}',
   ],
   2: [
     'Hot-Tub Exit & Borrowed "CO-CAPTAIN" Hooded Jacket (10:45 PM)',
     '{{The Co-Captain}}\'s Unlocked Phone Left Inside Jacket Pocket',
-    'Sister Silhouette Mix-Up ({{The Cheer Captain}} Dressed as {{The Co-Captain}})',
   ],
   3: [
-    '11:10 PM Burner Trap Text Sent by {{The Bestie}} to {{The Co-Captain}}\'s Phone',
-    '11:15 PM Boathouse Deck Lure Timestamp',
-    '{{The Cheer Captain}} Reads Trap Text From Borrowed Jacket Pocket',
+    '11:10 PM Burner Trap Text Luring {{The Cheer Captain}} (in "CO-CAPTAIN" Hoodie) to Boathouse',
   ],
   4: [
-    '{{The Cheer Captain}} Pulls Up "CO-CAPTAIN" Hood & Walks to Boathouse (11:15 PM)',
-    '{{The Bestie}} Takes Heavy Brass Nationals Trophy From Lodge Case',
-    'Ambush Set for {{The Co-Captain}} on Dark Lakeside Deck',
+    '{{The Cheer Captain}} Walks to Boathouse Deck in "CO-CAPTAIN" Hoodie (11:15 PM)',
+    '{{The Bestie}} Takes Heavy Brass Nationals Trophy for Ambush',
   ],
   5: [
     'Fatal Brass Trophy Strike From Behind at 11:24 PM',
@@ -789,7 +779,7 @@ function getBeatSubFactsForBeat(
   beat: BlueprintBeatInput,
   blueprintId?: string,
   candidates?: SuggestedClueCandidate[]
-): [string, string, string] {
+): string[] {
   if (blueprintId === 'unibreak-at-the-cabin' && UNIBREAK_BEAT_SUBFACTS[beat.beatNumber]) {
     return UNIBREAK_BEAT_SUBFACTS[beat.beatNumber];
   }
@@ -808,32 +798,44 @@ function getBeatSubFactsForBeat(
       }
     }
   }
-  if (uniqueFromCandidates.length >= 3) {
-    return [uniqueFromCandidates[0], uniqueFromCandidates[1], uniqueFromCandidates[2]];
+  if (uniqueFromCandidates.length >= 1) {
+    return uniqueFromCandidates.slice(0, 3);
   }
   if (CHEER_CAMP_BEAT_SUBFACTS[beat.beatNumber] && blueprintId?.includes('cheer')) {
     return CHEER_CAMP_BEAT_SUBFACTS[beat.beatNumber];
   }
-  if (UNIBREAK_BEAT_SUBFACTS[beat.beatNumber]) {
+  if (UNIBREAK_BEAT_SUBFACTS[beat.beatNumber] && blueprintId?.includes('unibreak')) {
     return UNIBREAK_BEAT_SUBFACTS[beat.beatNumber];
   }
-  return [
-    `Timestamp & Presence (${beat.timeWindow})`,
-    `Physical Action & Evidence (${beat.title})`,
-    `Motive Escalation & Suspect Impact`,
-  ];
+  // Dynamically infer 1, 2, or 3 natural parts from the beat description clauses (never forcing 3 parts if 1 or 2 make sense)
+  const clauses = String(beat.description || '')
+    .split(/(?:;\s*|\.\s+|,\s+(?:and|while|before|after|sparking|revealing|causing)\s+)/i)
+    .map((s) => s.trim().replace(/\.$/, ''))
+    .filter((s) => s.length >= 12);
+
+  if (clauses.length <= 1) {
+    return [`${beat.title} (${beat.timeWindow})`];
+  }
+  if (clauses.length === 2) {
+    return [
+      clauses[0].length > 68 ? `${clauses[0].slice(0, 65)}...` : clauses[0],
+      clauses[1].length > 68 ? `${clauses[1].slice(0, 65)}...` : clauses[1],
+    ];
+  }
+  return clauses.slice(0, 3).map((cl) => (cl.length > 68 ? `${cl.slice(0, 65)}...` : cl));
 }
 
 function getClueCoverageMetadata(
   clue: SuggestedClueCandidate,
   optionIdx: number,
-  subFacts: [string, string, string]
+  subFacts: string[]
 ): {
   strengthTier: ClueStrengthTier;
   strengthBadgeStyle: string;
   strengthSummary: string;
   coveredSubFacts: string[];
   missingSubFacts: string[];
+  carriesWholeBeat: boolean;
 } {
   const isPhoto = isPhotoClueFormat(clue.format);
   const strengthTier: ClueStrengthTier =
@@ -855,7 +857,6 @@ function getClueCoverageMetadata(
           ? 'bg-amber-100 text-amber-900 border-amber-200'
           : 'bg-purple-100 text-purple-800 border-purple-200';
 
-  // Determine which 2 of the 3 Beat Sub-Facts this option covers
   let coveredSubFacts: string[] = [];
   if (Array.isArray(clue.coveredBeatPoints) && clue.coveredBeatPoints.length > 0) {
     const matched = subFacts.filter((sf) =>
@@ -870,21 +871,36 @@ function getClueCoverageMetadata(
       coveredSubFacts = matched;
     }
   }
+
   if (coveredSubFacts.length === 0) {
-    // Deterministic 2-of-3 coverage pairing so complementary options cover 100% of the Beat:
-    // Option #1 & #4 -> Sub-Fact 1 + Sub-Fact 2
-    // Option #2 & #5 -> Sub-Fact 2 + Sub-Fact 3
-    // Option #3      -> Sub-Fact 1 + Sub-Fact 3
-    if (optionIdx % 3 === 0) {
-      coveredSubFacts = [subFacts[0], subFacts[1]];
-    } else if (optionIdx % 3 === 1) {
-      coveredSubFacts = [subFacts[1], subFacts[2]];
+    if (subFacts.length <= 1) {
+      // Single-part straightforward beat: every option carries 100% of the beat on its own
+      coveredSubFacts = [...subFacts];
+    } else if (subFacts.length === 2) {
+      // 2-part beat: Options #1, #2, and #5 carry the whole beat alone; Options #3 & #4 cover individual parts for 2-clue splits
+      if (optionIdx === 0 || optionIdx === 1 || optionIdx === 4) {
+        coveredSubFacts = [subFacts[0], subFacts[1]];
+      } else if (optionIdx === 2) {
+        coveredSubFacts = [subFacts[0]];
+      } else {
+        coveredSubFacts = [subFacts[1]];
+      }
     } else {
-      coveredSubFacts = [subFacts[0], subFacts[2]];
+      // 3-part beat: Options #1 and #5 carry the whole beat alone; Options #2, #3, #4 cover complementary pairs
+      if (optionIdx === 0 || optionIdx === 4) {
+        coveredSubFacts = [...subFacts];
+      } else if (optionIdx === 1) {
+        coveredSubFacts = [subFacts[0], subFacts[1]];
+      } else if (optionIdx === 2) {
+        coveredSubFacts = [subFacts[1], subFacts[2]];
+      } else {
+        coveredSubFacts = [subFacts[0], subFacts[2]];
+      }
     }
   }
 
   const missingSubFacts = subFacts.filter((sf) => !coveredSubFacts.includes(sf));
+  const carriesWholeBeat = missingSubFacts.length === 0;
 
   const defaultStrengthSummary =
     strengthTier === 'Forensic Anchor'
@@ -901,6 +917,7 @@ function getClueCoverageMetadata(
     strengthSummary: clue.strengthSummary || defaultStrengthSummary,
     coveredSubFacts,
     missingSubFacts,
+    carriesWholeBeat,
   };
 }
 
@@ -935,12 +952,13 @@ function analyzeBeatSelectionCoverage(
   });
 
   const coveredCount = subFactStatuses.filter((s) => s.isCoveredBySelected).length;
-  const coveragePct = Math.round((coveredCount / subFacts.length) * 100);
+  const coveragePct = Math.round((coveredCount / Math.max(1, subFacts.length)) * 100);
   const uncoveredSubFacts = subFactStatuses
     .filter((s) => !s.isCoveredBySelected)
     .map((s) => s.fact);
   const poolGapSubFacts = subFactStatuses.filter((s) => s.isPoolGap).map((s) => s.fact);
-  const isWholeBeatCovered = selectedMeta.length >= 2 && coveredCount === subFacts.length;
+  // A beat is 100% covered as soon as 1+ selected clue(s) cover all natural parts of the beat!
+  const isWholeBeatCovered = selectedMeta.length >= 1 && coveredCount === subFacts.length;
 
   // Find which unselected options cover the remaining uncovered sub-facts
   const complementaryOptions = candidateMeta.filter(
@@ -949,8 +967,6 @@ function analyzeBeatSelectionCoverage(
       uncoveredSubFacts.some((uf) => m.coveredSubFacts.includes(uf))
   );
 
-  // If 2+ clues are selected and there is STILL an uncovered sub-fact (meaning the user picked 2 overlapping clues),
-  // compute a 1-click swap recommendation!
   let recommendedSwap: {
     dropClueId: string;
     dropOptionNum: number;
@@ -960,9 +976,10 @@ function analyzeBeatSelectionCoverage(
     missingFact: string;
   } | null = null;
 
-  if (selectedMeta.length >= 2 && uncoveredSubFacts.length > 0 && complementaryOptions.length > 0) {
+  if (selectedMeta.length >= 1 && uncoveredSubFacts.length > 0 && complementaryOptions.length > 0) {
     const redundantPick = selectedMeta[selectedMeta.length - 1];
-    const bestReplacement = complementaryOptions[0];
+    const bestReplacement =
+      complementaryOptions.find((co) => co.carriesWholeBeat) || complementaryOptions[0];
     recommendedSwap = {
       dropClueId: redundantPick.clue.id,
       dropOptionNum: redundantPick.optionNum,
@@ -2703,7 +2720,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     setStep(2);
     setActiveBeatNumber(1);
     setStatusToast(
-      'Locked 5-Beat Plot & converted all characters to {{The Archetype}} tokens! Now pick your 2 favorite clues for Beat #1.'
+      'Locked 5-Beat Plot & converted all characters to {{The Archetype}} tokens! Pick 1–2 clues per beat (1 clue if it carries the whole beat, or 2 complementary clues).'
     );
 
     if (!beatCluesMap[1] || beatCluesMap[1].length === 0) {
@@ -2745,7 +2762,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         setStatusToast(
           customGapFocus
             ? `Generated ${res.candidates.length} fresh clues targeting the missing Beat #${targetBeatNum} gap ("${customGapFocus}")!`
-            : `Suggested ${res.candidates.length} clues for Beat #${targetBeatNum} (${bpToUse.spiceLevel} spice). Select at least 2 clues.`
+            : `Suggested ${res.candidates.length} clues for Beat #${targetBeatNum} (${bpToUse.spiceLevel} spice). Pick 1 standalone clue or 2 complementary clues.`
         );
       }
     } catch (err: any) {
@@ -2816,9 +2833,10 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
   const handleMoveToRedHerrings = async (forceRefresh: boolean = false) => {
     setErrorMessage(null);
-    if (selectedCoreClues.length < 6) {
+    const minRequiredCoreClues = Math.max(1, blueprint.beats.length);
+    if (selectedCoreClues.length < minRequiredCoreClues) {
       setErrorMessage(
-        `Please select at least 2 clues per beat (currently ${selectedCoreClues.length}/10 Core Clues selected) before building Red Herrings.`
+        `Please select at least 1 clue per beat (currently ${selectedCoreClues.length} Core Clues selected across ${blueprint.beats.length} beats) before building Red Herrings.`
       );
       return;
     }
@@ -3352,7 +3370,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     });
 
     const fullyCoveredBeatsCount = beatSummaries.filter(
-      (bs) => bs.pickedCount >= 2 && bs.cov.isWholeBeatCovered
+      (bs) => bs.pickedCount >= 1 && bs.cov.isWholeBeatCovered
     ).length;
 
     return (
@@ -3364,8 +3382,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               {blueprint.beats.length} Beats at 100%)
             </h3>
             <p className="text-[11px] text-slate-500">
-              Check all 5 beats at a glance before generating Red Herrings. Click any beat below to
-              inspect or fix gaps.
+              Check all 5 beats at a glance before generating Red Herrings. Straightforward beats can be carried by 1 clue; multi-part beats can use 1 standalone clue or 2 complementary clues.
             </p>
           </div>
           {fullyCoveredBeatsCount === blueprint.beats.length && (
@@ -3378,8 +3395,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
           {beatSummaries.map(({ beat, pickedCount, cov }) => {
             const isFocused = activeBeatNumber === beat.beatNumber;
-            const isFull = pickedCount >= 2 && cov.isWholeBeatCovered;
-            const hasGap = pickedCount >= 2 && !cov.isWholeBeatCovered;
+            const isFull = pickedCount >= 1 && cov.isWholeBeatCovered;
+            const hasGap = pickedCount >= 1 && !cov.isWholeBeatCovered;
+            const partsLabel = cov.subFacts.length === 1 ? 'Part' : 'Parts';
 
             return (
               <button
@@ -3410,19 +3428,19 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     }`}
                   >
                     {isFull
-                      ? '✓ 100%'
+                      ? `✓ 100% (${pickedCount})`
                       : hasGap
                         ? `⚠️ ${cov.coveragePct}%`
-                        : `${pickedCount}/2`}
+                        : '0 Picked'}
                   </span>
                 </div>
                 <div className="text-[11px] font-bold text-slate-800 truncate">{beat.title}</div>
                 <div className="text-[10px] text-slate-500">
                   {isFull
-                    ? '3/3 Sub-Facts Covered'
+                    ? `${cov.subFacts.length}/${cov.subFacts.length} ${partsLabel} (${pickedCount} ${pickedCount === 1 ? 'Clue' : 'Clues'})`
                     : hasGap
-                      ? `Gap: ${cov.uncoveredSubFacts[0] || '1 Missing Fact'}`
-                      : `${cov.coveredCount}/3 Sub-Facts (${pickedCount}/2 Picked)`}
+                      ? `Gap: ${cov.uncoveredSubFacts[0] || '1 Missing Part'}`
+                      : `${cov.subFacts.length} ${partsLabel} • Pick 1–2 Clues`}
                 </div>
               </button>
             );

@@ -3243,24 +3243,24 @@ MANDATORY FORMAT, SPICE & PHOTO-VS-TEXT RULES:
    - If Mild: romantic affair tension with 100% clean PG-13 dialogue (0 cussing).
    - If Clean: 100% SFW high-stakes murder/blackmail with 0 romance affairs and 0 profanity.
 3. **DOUBLE-MEANING / AMBIGUOUS HOOK (IDEAL!):** Wherever possible, write the clue so that while it genuinely proves part of Beat #${targetBeat.beatNumber}, it ALSO has an ambiguous double meaning that could make one of the innocent suspects look suspicious (and explain that in "doubleMeaningNote").
-4. **BEAT SUB-FACTS, CLUE STRENGTH & GAP COVERAGE (CRITICAL!):**
-   - Break Beat #${targetBeat.beatNumber} ("${targetBeat.title}: ${targetBeat.description}") into **3 essential Beat Sub-Facts** ("beatSubFacts"):
-     1. A short label for **Who/Where & Timestamp** (e.g. "Upstairs Bedroom Lure at ${targetBeat.timeWindow}")
-     2. A short label for **The Physical Action / Object / Weapon** (e.g. "Stolen Varsity Betting Ledger")
-     3. A short label for **The Motive / Stakes / Aftermath** (e.g. "$42k Point-Shaving & Blackmail Leverage")
+4. **NATURAL BEAT PARTS (1, 2, OR 3 PARTS — WHATEVER MAKES SENSE) & 1-CLUE vs. 2-CLUE COVERAGE:**
+   - Break Beat #${targetBeat.beatNumber} ("${targetBeat.title}: ${targetBeat.description}") into **1, 2, or at most 3 natural Beat Parts** ("beatSubFacts") — ONLY as many parts as the beat genuinely needs!
+     • If Beat #${targetBeat.beatNumber} is a single straightforward event/action, use **1 or 2 Beat Parts** (do NOT invent artificial 3rd parts).
+     • Only use **3 Beat Parts** if the beat genuinely combines 3 distinct narrative actions.
+   - Across the 5 suggested clue candidates:
+     • **Options #1 and #2 MUST be "Full-Beat Standalone Clues"** that carry **100% of Beat #${targetBeat.beatNumber} in a single clue** ("coveredBeatPoints" includes ALL strings in "beatSubFacts", and "unaddressedBeatGap" is "") so if the beat is straightforward, the creator can pick **just 1 clue** without redundant overkill!
+     • **Options #3, #4, and #5** can either be alternative Full-Beat clues or focused partial clues (covering 1–2 parts of a multi-part beat) for creators who prefer to split a complex beat across 2 complementary clues.
    - For each of the 5 suggested clues, specify:
      - "strengthTier": "Forensic Anchor" | "Timeline & Alibi Lock" | "Motive & Escalation Proof" | "Double-Meaning Misdirection"
      - "strengthSummary": 1 punchy sentence explaining what specific investigative strength this clue adds to the mystery.
-     - "coveredBeatPoints": Array of 2 of the exact 3 "beatSubFacts" strings that this single clue proves (design the 5 options so that picking any complementary pair covers all 3 "beatSubFacts"!).
-     - "unaddressedBeatGap": 1 concise sentence explaining what single gap in Beat #${targetBeat.beatNumber} this clue leaves uncovered on its own so the creator knows what second clue to pair with it.
+     - "coveredBeatPoints": Array of the exact "beatSubFacts" strings that this clue proves (all of them if this single clue carries the whole beat, or the specific subset it proves).
+     - "unaddressedBeatGap": "" if this single clue covers the whole beat on its own; otherwise 1 concise sentence explaining what remaining part of Beat #${targetBeat.beatNumber} to pair it with.
 5. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names.
 
 Return strict JSON:
 {
   "beatSubFacts": [
-    "Sub-Fact 1 short label (4-7 words)",
-    "Sub-Fact 2 short label (4-7 words)",
-    "Sub-Fact 3 short label (4-7 words)"
+    "Natural Beat Part 1 short label (4-7 words)"
   ],
   "clues": [
     {
@@ -3274,8 +3274,8 @@ Return strict JSON:
       "doubleMeaningNote": "How this clue also looks ambiguous or suspicious toward an innocent suspect's motive.",
       "strengthTier": "Forensic Anchor" | "Timeline & Alibi Lock" | "Motive & Escalation Proof" | "Double-Meaning Misdirection",
       "strengthSummary": "What specific investigative strength this clue adds to the pack.",
-      "coveredBeatPoints": ["Sub-Fact 1 short label (4-7 words)", "Sub-Fact 2 short label (4-7 words)"],
-      "unaddressedBeatGap": "What part of Beat #${targetBeat.beatNumber} this single clue doesn't cover on its own.",
+      "coveredBeatPoints": ["Natural Beat Part 1 short label (4-7 words)"],
+      "unaddressedBeatGap": "Leave empty '' if this clue carries the whole beat alone, or note what remaining part a 2nd clue should cover.",
       "involvedRoles": ["The Role A", "The Role B"]
     }
   ]
@@ -3287,17 +3287,17 @@ Return strict JSON:
       featureName: 'architect_suggest_beat_clues',
     });
     const PHOTO_FORMATS = new Set<ClueFormat>(['physical_prop', 'cctv']);
-    const defaultSubFacts: [string, string, string] =
-      Array.isArray(parsed.beatSubFacts) && parsed.beatSubFacts.length >= 3
-        ? [
-            String(parsed.beatSubFacts[0]).trim(),
-            String(parsed.beatSubFacts[1]).trim(),
-            String(parsed.beatSubFacts[2]).trim(),
-          ]
+    const parsedSubFacts = Array.isArray(parsed.beatSubFacts)
+      ? parsed.beatSubFacts
+          .map((s: any) => String(s || '').trim())
+          .filter(Boolean)
+          .slice(0, 3)
+      : [];
+    const defaultSubFacts: string[] =
+      parsedSubFacts.length > 0
+        ? parsedSubFacts
         : [
-            `Timestamp & Presence (${targetBeat.timeWindow})`,
-            `Physical Action & Evidence (${targetBeat.title})`,
-            `Motive Stakes & Suspect Escalation`,
+            `${targetBeat.title} (${targetBeat.timeWindow})`,
           ];
 
     const VALID_STRENGTH_TIERS: ClueStrengthTier[] = [
@@ -3312,11 +3312,15 @@ Return strict JSON:
         const fmt = (c.format as ClueFormat) || 'physical_prop';
         const isPhoto = PHOTO_FORMATS.has(fmt);
         const fallbackCovered =
-          idx % 3 === 0
-            ? [defaultSubFacts[0], defaultSubFacts[1]]
-            : idx % 3 === 1
-              ? [defaultSubFacts[1], defaultSubFacts[2]]
-              : [defaultSubFacts[0], defaultSubFacts[2]];
+          defaultSubFacts.length === 1 || idx === 0 || idx === 1
+            ? [...defaultSubFacts]
+            : defaultSubFacts.length === 2
+              ? [defaultSubFacts[idx % 2]]
+              : idx % 3 === 0
+                ? [defaultSubFacts[0], defaultSubFacts[1]]
+                : idx % 3 === 1
+                  ? [defaultSubFacts[1], defaultSubFacts[2]]
+                  : [defaultSubFacts[0], defaultSubFacts[2]];
         const rawCovered = Array.isArray(c.coveredBeatPoints)
           ? c.coveredBeatPoints.map((s: any) => String(s || '').trim()).filter(Boolean)
           : [];
@@ -3365,10 +3369,10 @@ Return strict JSON:
           ).trim(),
           coveredBeatPoints,
           unaddressedBeatGap: String(
-            c.unaddressedBeatGap ||
-              (missingFromThisClue.length > 0
-                ? `Doesn't directly prove "${missingFromThisClue.join(' & ')}" on its own — pair with a complementary clue.`
-                : `Pair with a second clue from a different medium to corroborate Beat #${beatNumber}.`)
+            missingFromThisClue.length === 0
+              ? ''
+              : c.unaddressedBeatGap ||
+                  `Doesn't directly prove "${missingFromThisClue.join(' & ')}" on its own — pair with a complementary clue if you want a 2-clue split.`
           ).trim(),
           involvedRoles: Array.isArray(c.involvedRoles) ? c.involvedRoles : [],
           isRedHerring: false,

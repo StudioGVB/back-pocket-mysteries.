@@ -547,14 +547,9 @@ export async function generateGuestAvatarAction(
       }
     }
 
-    // Axis 7: Distinct Expression & Camera Micro-Pose
-    const expressionAndPoses = [
-      'smiling warmly directly at the camera with a natural, joyful toothy grin showing upper teeth and crinkling smiling eyes',
-      'flashing a big, genuine, friendly toothy smile directly toward the camera with relaxed shoulders',
-      'posed in a natural editorial three-quarter angle with a warm, confident toothy smile and direct eye contact',
-      'caught in a warm, candid smiling expression showing a bright toothy grin and approachable energy',
-    ];
-    const chosenExpressionPose = expressionAndPoses[(slot + (subHash % 2)) % expressionAndPoses.length];
+    // Axis 7: Uniform Front-On Camera Pose & Warm Smile (Guarantees 100% consistent roster headshots)
+    const chosenExpressionPose =
+      'facing directly front-on toward the camera (0-degree straight-on frontal angle, shoulders square and centered, head facing straight ahead with direct eye contact and a warm, friendly, natural toothy smile — strictly NO side profile, NO three-quarter shoulder turns, and NO looking over the shoulder)';
 
     // Axis 8: Distinct Studio Top Color & Neckline (Breaks identical black crew-neck clones!)
     const femTopWardrobe = [
@@ -601,7 +596,7 @@ export async function generateGuestAvatarAction(
       ? `\n- PRIMARY LIKENESS BLUEPRINT (HIGHEST PRIORITY — MATCH THIS EXACTLY): ${rawLikenessNotes}`
       : '';
 
-    const prompt = `A clean, shoulders-up editorial casting headshot photograph of a ${subjectNoun} who is ${ageYearsDesc}, photographed against a completely plain, solid, seamless pure white/light-grey studio background (#F4F4F4).
+    const prompt = `A clean, uniform front-on shoulders-up editorial casting headshot photograph of a ${subjectNoun} who is ${ageYearsDesc}, photographed against a completely plain, solid, seamless pure white/light-grey studio background (#F4F4F4).
 CRITICAL LIKENESS & HAIR FIDELITY DIRECTIVE: You MUST faithfully render the exact hair color (${hairColor}), hair texture (${rawHairTexture}), haircut shape (${hairStyle}), and facial structure specified below.${likenessDirective}
 - Gender: ${genderLabel}
 - Cultural / Regional Facial Phenotype: ${phenotypeNuance}
@@ -615,9 +610,9 @@ CRITICAL LIKENESS & HAIR FIDELITY DIRECTIVE: You MUST faithfully render the exac
 - Distinctive Features: ${distinctiveFeatures}
 - Accessories / Eyewear: ${accessories}
 - Height: ${height}
-- Expression & Camera Pose: The subject is ${chosenExpressionPose}.
+- MANDATORY UNIFORM CAMERA POSE & ANGLE: The subject is ${chosenExpressionPose}.
 - Wardrobe: Wearing ${chosenTopWardrobe} (NO suits, NO blazers, NO formal costumes).
-The framing MUST show everything from the chest/shoulders up, including the full top of their hair, centered in the frame. Dimensional portrait studio lighting (85mm f/2.0 lens, sharp focus on the eyes, natural skin texture with visible pores).${genderGuardrail} CRITICAL BACKGROUND RULE: The background MUST be 100% plain solid white or very light neutral studio paper with ZERO outdoor scenery, ZERO props. CRITICAL REALISM RULE: Real DSLR live-action photograph, zero CGI, zero 3D render, zero illustration.${regenSalt}`;
+The framing MUST show everything from the chest/shoulders up, including the full top of their hair, centered symmetrically in the frame facing straight ahead. Dimensional portrait studio lighting (85mm f/2.0 lens, sharp focus on the eyes, natural skin texture with visible pores).${genderGuardrail} CRITICAL BACKGROUND RULE: The background MUST be 100% plain solid white or very light neutral studio paper with ZERO outdoor scenery, ZERO props. CRITICAL REALISM RULE: Real DSLR live-action photograph, zero CGI, zero 3D render, zero illustration.${regenSalt}`;
 
     const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
 

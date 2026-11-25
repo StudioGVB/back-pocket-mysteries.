@@ -249,6 +249,26 @@ const LEGACY_CLONE_AVATAR_REPLACEMENTS: Array<{ match: string; replacement: stri
     match: '0370c2e5-a829-4b37-9eff-8251c337aa34-a35700fa222e4d08',
     replacement: '/generated-avatars/0370c2e5-a829-4b37-9eff-8251c337aa34-luke-golden.jpg',
   },
+  {
+    match: 'f460c1c6-4019-4c4f-a204-4f60f4c70ae9-2f5e63f14bbb7b5d',
+    replacement: '/generated-avatars/charley-haywood-front.jpg',
+  },
+  {
+    match: 'c3411bf0-6c26-45b4-b743-af9e0d365c44-de05418f9ee49522',
+    replacement: '/generated-avatars/vic-wayne-front.jpg',
+  },
+  {
+    match: '83836dda-1625-48e6-8b13-5128d1435df5-2e57646841b96699',
+    replacement: '/generated-avatars/jason-dhillon-front.jpg',
+  },
+  {
+    match: '83836dda-1625-48e6-8b13-5128d1435df5-b8f2b4b83b1d322a',
+    replacement: '/generated-avatars/jason-dhillon-front.jpg',
+  },
+  {
+    match: '83836dda-1625-48e6-8b13-5128d1435df5-835bfdf5a66e1c29',
+    replacement: '/generated-avatars/jason-dhillon-front.jpg',
+  },
 ];
 
 export function upgradeLegacyCloneAvatarUrl(guest: {

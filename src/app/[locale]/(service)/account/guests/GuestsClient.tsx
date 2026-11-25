@@ -820,6 +820,14 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
         </div>
       )}
 
+      {/* Subtle Grey AI Portrait & Biometric Privacy Compliance Notice */}
+      <div className="mt-10 pt-6 border-t border-slate-200/60 text-center max-w-3xl mx-auto px-4">
+        <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
+          <strong className="font-semibold text-slate-500">Why we use AI-generated portraits:</strong>{' '}
+          To protect your guests&apos; biometric privacy, image rights, and personal data under global privacy and AI likeness laws (including GDPR, CCPA, and the Australian Privacy Principles), Back Pocket Mysteries never stores, hosts, or generates deepfakes from real photographs of your guests. Any photo used with our optional trait scanner is analyzed ephemerally in memory only to select general appearance checkboxes and is immediately deleted. All roster avatars and mystery character portraits are original, fictional AI-generated illustrations created solely for your private game.
+        </p>
+      </div>
+
       <GuestModal 
         isOpen={isAddModalOpen || editingGuest !== null} 
         onClose={() => { setIsAddModalOpen(false); setEditingGuest(null); }} 
