@@ -139,6 +139,21 @@ export async function POST(req: NextRequest) {
       imageBase64 = dataUriMatch[2];
     }
 
+    const ALLOWED_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']);
+    if (!ALLOWED_MIMES.has(mimeType.toLowerCase())) {
+      return NextResponse.json(
+        { error: 'Unsupported image format. Please upload a JPEG, PNG, or WebP photo.' },
+        { status: 400 }
+      );
+    }
+
+    if (imageBase64.length > 8 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'Image is too large. Please upload a photo under 6 MB.' },
+        { status: 413 }
+      );
+    }
+
     const prompt = `Analyze the person in this reference photo and map their visible physical appearance traits to the exact allowed option values below so our form checkboxes can be auto-selected.
 If multiple people are visible, focus on the most prominent/centered face.
 If a trait (like eye color or build) is partially obscured, make your best natural inference from the visible cues.

@@ -523,7 +523,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     ],
     recommendedThemeSlug: 'christmas-nightmare',
     groupSizeLabel: '6 Core Characters (+ Unlimited Free Extra Detectives)',
-    prepTimeLabel: 'Basic Tier ($19 / £15) • Ready in ~20 Mins',
+    prepTimeLabel: 'Basic Tier • Ready in ~20 Mins',
     whyTitle: 'Why 6 Players Is the Ultimate Dinner Table Detective Count',
     whyParagraphs: [
       'Six players is the golden number for an intimate dinner party—everyone sits around one table, hears every accusation, and gets caught in real-time contradictions. Yet most boxed murder mystery kits require 8 to 12 people and force the host to sit out as a referee.',
@@ -541,7 +541,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
           'Don’t have an even 3-male / 3-female split? Our Bidirectional Gender-Flex engine adapts titles, pronouns, and outfits to your exact 6 guests.',
       },
       {
-        title: 'Only ~$3 / £2.50 Per Guest (Flat $19 / £15 Pack)',
+        title: 'Flat One-Time Package Price ($0 Per-Guest Add-On Fees)',
         description:
           'One flat price covers the entire 6-player custom mystery with zero per-player add-on fees and zero subscriptions.',
       },

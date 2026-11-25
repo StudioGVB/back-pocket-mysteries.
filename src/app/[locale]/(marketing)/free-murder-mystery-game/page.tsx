@@ -2,6 +2,8 @@ import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import FreeMysteryLeadForm from '@/components/marketing/FreeMysteryLeadForm';
+import PriceDisplay from '@/components/marketing/PriceDisplay';
+import { Locale } from '@/lib/i18n-config';
 import { getPublicMarketingMysteries } from '@/services/mysteries';
 import { OCCASION_SEO_PAGES } from '@/data/occasion-seo-pages';
 
@@ -13,7 +15,7 @@ export async function generateMetadata(props: {
   const title =
     'Free 6-Player Custom Murder Mystery Game (First 50 VIP Giveaway) | 100% Online Digital Party Kit';
   const description =
-    'Claim a 100% FREE 6-Player Custom Murder Mystery Game Pack (Basic Tier • worth £15 / $19 for up to 6 players). Human-written murder mystery plots personalised around your actual friends by AI. Live mobile Playroom (6-digit PIN), spoiler-free for the host.';
+    'Claim a 100% FREE 6-Player Custom Murder Mystery Game Pack (Basic Tier • for up to 6 players). Human-written murder mystery plots personalised around your actual friends by AI. Live mobile Playroom (6-digit PIN), spoiler-free for the host.';
 
   return {
     title,
@@ -110,7 +112,8 @@ const PRIZE_INCLUSIONS = [
   {
     icon: '🎟️',
     title: '6-Player Basic Pack (4–6 Players)',
-    valueTag: '£15 / $19 Value • 100% Off',
+    valueTagTier: 'basic' as const,
+    valueTagSuffix: ' Value • 100% Off',
     description:
       'Your single-use Founding Host code unlocks any 6-Player (Basic Tier, 4–6 suspects) custom mystery pack at 100% off (1 free pack per VIP email).',
   },
@@ -155,13 +158,15 @@ const PLAYER_COUNT_GUIDES = [
   {
     players: '4–6 Players',
     tier: 'Basic Tier (100% Free with VIP Pass)',
+    priceTier: null,
     idealFor: 'Intimate Dinner Parties, Double Dates & Flatmate Nights',
     summary:
       'Included 100% free with your First 50 VIP Founding Host code! Every guest is a core suspect with deep interlocking motives, zero filler roles, and tight table-wide interrogation across 3 rounds of evidence.',
   },
   {
     players: '6–8 Players',
-    tier: 'Premium Tier (£20 / $25)',
+    tier: 'Premium Tier',
+    priceTier: 'premium' as const,
     idealFor: 'Classic Dinner Party Tables & Birthday Dinners',
     summary:
       'Hosting a larger group? Our Premium Tier expands the table up to 10 players with secondary alibis, secret alliances, and additional digital forensic evidence.',
@@ -169,13 +174,15 @@ const PLAYER_COUNT_GUIDES = [
   {
     players: '8–12 Players',
     tier: 'Premium / Grand Tier',
+    priceTier: null,
     idealFor: 'House Parties, Hen & Stag Nights, Milestone Birthdays',
     summary:
       'Expands the suspect pool with rival factions, side-room gossip prompts, and chronological timeline gaps for energetic mingling.',
   },
   {
     players: '12–16 Players',
-    tier: 'Grand Tier (£25 / $33)',
+    tier: 'Grand Tier',
+    priceTier: 'grand' as const,
     idealFor: 'Large House Parties, Holiday Events & Team Socials',
     summary:
       'Our full 16-suspect ensemble cast with live Room Cast directory, QR party join, and automated detective superlative awards at the end of the night.',
@@ -193,7 +200,7 @@ const COMPARISON_ROWS = [
     feature: 'Complete 6-Player Game & Killer Reveal Included Free',
     bpm: '✓ Full 3-round 6-player game + final reveal (First 50 VIP)',
     genericFree: '✕ Often a 4-page teaser with paywalled ending',
-    boxedKit: '✓ Included (Costs £25–£50+)',
+    boxedKit: '✓ Included (Paid store-bought kit)',
   },
   {
     feature: 'Host Can Play Without Knowing the Murderer',
@@ -231,7 +238,7 @@ export default async function FreeMurderMysteryGamePage(props: {
   const faqEntries = [
     {
       name: 'How do I get a free custom murder mystery game?',
-      text: 'The first 50 people who join the Back Pocket Mysteries pre-launch VIP email list receive a single-use 100%-off promo code on launch day good for one complete 6-Player (Basic Tier, 4–6 suspects) custom murder mystery party pack (worth £15 / $19 USD).',
+      text: 'The first 50 people who join the Back Pocket Mysteries pre-launch VIP email list receive a single-use 100%-off promo code on launch day good for one complete 6-Player (Basic Tier, 4–6 suspects) custom murder mystery party pack.',
     },
     {
       name: 'What are the limitations on the First 50 Free Murder Mystery pass?',
@@ -397,7 +404,7 @@ export default async function FreeMurderMysteryGamePage(props: {
 
               <p className="text-lg sm:text-xl text-gray-600 font-medium leading-relaxed max-w-2xl">
                 Looking for a <strong className="text-brand-dark">free custom murder mystery game</strong> for your next dinner party? Every mystery at <strong className="text-brand-dark">Back Pocket Mysteries</strong> is written by a human author for watertight clue logic—then personalised around your actual friends by our AI engine. To celebrate our launch, the{' '}
-                <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete 6-Player (Basic Tier) custom murder mystery party kit (worth £15 / $19 for 4–6 players) <strong className="text-brand-dark">100% free</strong>.
+                <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete 6-Player (Basic Tier) custom murder mystery party kit (valued at <PriceDisplay tier="basic" locale={locale as Locale} /> for 4–6 players) <strong className="text-brand-dark">100% free</strong>.
               </p>
 
               {/* Quick Value Pills */}
@@ -537,7 +544,7 @@ export default async function FreeMurderMysteryGamePage(props: {
               What&apos;s Included in Your Free 6-Player Custom Murder Mystery Kit?
             </h2>
             <p className="text-gray-500 font-medium max-w-2xl mx-auto">
-              Unlike free sample scripts that cut out half the suspects or hide the solution behind a paywall, our First 50 VIP Founding Hosts receive a complete 6-Player (Basic Tier • worth £15 / $19 USD) custom mystery game pack.
+              Unlike free sample scripts that cut out half the suspects or hide the solution behind a paywall, our First 50 VIP Founding Hosts receive a complete 6-Player (Basic Tier • valued at <PriceDisplay tier="basic" locale={locale as Locale} />) custom mystery game pack.
             </p>
           </div>
 
@@ -551,7 +558,14 @@ export default async function FreeMurderMysteryGamePage(props: {
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-3xl">{item.icon}</span>
                     <span className="px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
-                      {item.valueTag}
+                      {'valueTagTier' in item && item.valueTagTier ? (
+                        <>
+                          <PriceDisplay tier={item.valueTagTier} locale={locale as Locale} />
+                          {item.valueTagSuffix}
+                        </>
+                      ) : (
+                        item.valueTag
+                      )}
                     </span>
                   </div>
                   <h3 className="text-lg font-black uppercase text-brand-dark">
@@ -645,6 +659,13 @@ export default async function FreeMurderMysteryGamePage(props: {
                 <div className="space-y-2.5">
                   <span className="inline-block px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
                     {g.tier}
+                    {g.priceTier && (
+                      <>
+                        {' ('}
+                        <PriceDisplay tier={g.priceTier} locale={locale as Locale} />
+                        {')'}
+                      </>
+                    )}
                   </span>
                   <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">
                     {g.players}
@@ -695,7 +716,7 @@ export default async function FreeMurderMysteryGamePage(props: {
                 <li className="flex items-start gap-2.5">
                   <span className="text-brand-pink font-black">✓</span>
                   <span>
-                    <strong className="text-white">100%-Off Promo Code</strong> emailed on launch day (£15 / $19 value)
+                    <strong className="text-white">100%-Off Promo Code</strong> emailed on launch day (<PriceDisplay tier="basic" locale={locale as Locale} /> value)
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">

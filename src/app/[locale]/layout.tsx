@@ -78,7 +78,6 @@ const websiteSchema = {
 import { Suspense } from "react";
 import AutoSignInListener from "./(auth)/login/AutoSignInListener";
 import { PageViewDurationTracker } from "@/components/analytics/PageViewDurationTracker";
-import { getActiveGaMeasurementId } from "@/app/actions/admin-vercel";
 
 export default async function RootLayout(props: {
   children: React.ReactNode;
@@ -86,10 +85,7 @@ export default async function RootLayout(props: {
 }) {
   const params = await props.params;
   const locale = params.locale;
-  const gaId =
-    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
-    (await getActiveGaMeasurementId().catch(() => "G-VW0PRLFNL4")) ||
-    "G-VW0PRLFNL4";
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-VW0PRLFNL4";
 
   return (
     <html

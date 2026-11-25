@@ -782,7 +782,10 @@ export function replacePlaceholderNamesWithRoles(
  * Never returns any customer-cloned instance (`__u_`).
  */
 export async function getPublicMarketingMysteries(): Promise<CanonicalActiveMystery[]> {
-  const supabase = await createClient();
+  'use cache';
+  const { cacheLife } = await import('next/cache');
+  cacheLife('minutes');
+
   const slugify = (s: string) =>
     String(s || '')
       .toLowerCase()
@@ -793,16 +796,23 @@ export async function getPublicMarketingMysteries(): Promise<CanonicalActiveMyst
   const dbStatusBySlug = new Map<string, string>();
 
   try {
-    const { data: rows } = await supabase
-      .from('mysteries')
-      .select('id, title, status');
-    for (const r of rows || []) {
-      if (!r?.id || String(r.id).includes('__u_')) continue;
-      if (r.status) {
-        dbStatusById.set(String(r.id).toLowerCase(), String(r.status));
-        const sl = slugify(r.title || '');
-        if (sl && !dbStatusBySlug.has(sl)) {
-          dbStatusBySlug.set(sl, String(r.status));
+    const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const sbKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (sbUrl && sbKey) {
+      const { createClient: createAnonClient } = await import('@supabase/supabase-js');
+      const supabase = createAnonClient(sbUrl, sbKey);
+      const { data: rows } = await supabase
+        .from('mysteries')
+        .select('id, title, status');
+      for (const r of rows || []) {
+        if (!r?.id || String(r.id).includes('__u_')) continue;
+        if (r.status) {
+          dbStatusById.set(String(r.id).toLowerCase(), String(r.status));
+          const sl = slugify(r.title || '');
+          if (sl && !dbStatusBySlug.has(sl)) {
+            dbStatusBySlug.set(sl, String(r.status));
+          }
         }
       }
     }
