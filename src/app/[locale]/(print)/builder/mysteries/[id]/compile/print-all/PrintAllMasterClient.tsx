@@ -153,21 +153,32 @@ export default function PrintAllMasterClient({
     );
   };
 
+  const tierRounds =
+    (mystery?.max_players || activeCharacters.length) <= 6
+      ? 3
+      : (mystery?.max_players || activeCharacters.length) <= 10
+      ? 4
+      : 5;
+  const activeRoundNumbers = useMemo(() => {
+    const highestInClues = rawClues.reduce(
+      (acc: number, c: any) =>
+        c?.round_number && Number(c.round_number) <= 5 ? Math.max(acc, Number(c.round_number)) : acc,
+      tierRounds
+    );
+    const total = Math.max(tierRounds, highestInClues);
+    return Array.from({ length: total }, (_, idx) => idx + 1);
+  }, [rawClues, tierRounds]);
+
   const cluesByRound = useMemo(() => {
-    const r1 = shuffleRoundCluesDeterministically(
-      rawClues.filter((c) => (c.round_number || 1) === 1),
-      1
-    );
-    const r2 = shuffleRoundCluesDeterministically(
-      rawClues.filter((c) => c.round_number === 2),
-      2
-    );
-    const r3 = shuffleRoundCluesDeterministically(
-      rawClues.filter((c) => c.round_number === 3),
-      3
-    );
-    return { 1: r1, 2: r2, 3: r3 };
-  }, [rawClues]);
+    const grouped: Record<number, any[]> = {};
+    for (const rNum of activeRoundNumbers) {
+      grouped[rNum] = shuffleRoundCluesDeterministically(
+        rawClues.filter((c) => Number(c.round_number || 1) === rNum),
+        rNum
+      );
+    }
+    return grouped;
+  }, [rawClues, activeRoundNumbers]);
 
   const getPortraitUrl = (c: any) => {
     const pd = c?.profile_data || {};
@@ -233,18 +244,18 @@ export default function PrintAllMasterClient({
             <a href="#section-characters" className="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-white">
               2. Characters ({activeCharacters.length})
             </a>
-            <a href="#section-round-1" className="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-white">
-              3. Round 1 ({cluesByRound[1].length})
-            </a>
-            <a href="#section-round-2" className="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-white">
-              4. Round 2 ({cluesByRound[2].length})
-            </a>
-            <a href="#section-round-3" className="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-white">
-              5. Round 3 ({cluesByRound[3].length})
-            </a>
+            {activeRoundNumbers.map((rNum, idx) => (
+              <a
+                key={rNum}
+                href={`#section-round-${rNum}`}
+                className="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-white"
+              >
+                {idx + 3}. Round {rNum} ({(cluesByRound[rNum] || []).length})
+              </a>
+            ))}
             {includeXRaySpoilers && (
               <a href="#section-solution" className="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 hover:text-white">
-                6. Master Reveal
+                {activeRoundNumbers.length + 3}. Master Reveal
               </a>
             )}
           </div>
@@ -319,7 +330,7 @@ export default function PrintAllMasterClient({
                 👥 Cast: {activeCharacters.length} Suspects
               </span>
               <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 print:bg-slate-100 print:text-slate-800">
-                🔍 Clues: {rawClues.length} Total (R1: {cluesByRound[1].length} • R2: {cluesByRound[2].length} • R3: {cluesByRound[3].length})
+                🔍 Clues: {rawClues.length} Total ({activeRoundNumbers.map((rNum) => `R${rNum}: ${(cluesByRound[rNum] || []).length}`).join(' • ')})
               </span>
               {includeXRaySpoilers && victimChar && (
                 <span className="px-3 py-1.5 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/30 print:bg-pink-50 print:text-pink-800">
@@ -607,8 +618,8 @@ export default function PrintAllMasterClient({
           </div>
         </section>
 
-        {/* SECTION 3: ROUNDS 1, 2 & 3 CLUES */}
-        {([1, 2, 3] as const).map((roundNum) => {
+        {/* SECTION 3: ROUND CLUES (3, 4, OR 5 ROUNDS BY TIER) */}
+        {activeRoundNumbers.map((roundNum) => {
           const roundClues = cluesByRound[roundNum] || [];
           return (
             <section

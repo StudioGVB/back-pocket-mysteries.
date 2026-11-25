@@ -1511,6 +1511,8 @@ function overlayLiveCarrierCharacters(targetCharacters: any[], carrierCharacters
         ...(mPd.guest_id ? { guest_id: mPd.guest_id } : {}),
         ...(mPd.guest_name ? { guest_name: mPd.guest_name } : {}),
         ...(mPd.name ? { name: mPd.name } : {}),
+        ...(mPd.first_name ? { first_name: mPd.first_name } : {}),
+        ...(mPd.last_name ? { last_name: mPd.last_name } : {}),
         ...(mPd.gender ? { gender: mPd.gender } : {}),
         ...(mPd.accent ? { accent: mPd.accent } : {}),
         ...(mPd.age ? { age: mPd.age } : {}),

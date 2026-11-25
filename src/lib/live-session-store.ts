@@ -892,6 +892,8 @@ export function ensureIsolatedCustomerMysteryInstance(
       delete rawPd.guest_id;
       delete rawPd.guest_name;
       delete rawPd.name;
+      delete rawPd.first_name;
+      delete rawPd.last_name;
       delete rawPd.guest_bio;
       delete rawPd.is_linked;
       delete rawPd.__game_session;
