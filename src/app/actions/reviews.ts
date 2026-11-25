@@ -408,6 +408,26 @@ export async function getAllPlatformReviews(
         // ignore malformed row
       }
     }
+  // 2b. Read all Supabase characters.profile_data.__game_session carrier rows (written by submitGuestMysteryReviewAction)
+  try {
+    const { data: charCarriers } = await supabase
+      .from('characters')
+      .select('id, mystery_id, profile_data')
+      .eq('is_victim', true);
+
+    for (const cRow of charCarriers || []) {
+      const sessObj = cRow?.profile_data?.__game_session;
+      if (!sessObj || !Array.isArray(sessObj.reviews)) continue;
+      const sessionHostMeta = {
+        hostUserId: sessObj.hostUserId || sessObj.paidByUserId,
+        hostName: sessObj.customerName,
+        hostEmail: sessObj.customerEmail,
+        sessionPin: sessObj.pin,
+      };
+      for (const rev of sessObj.reviews) {
+        ingestGuestReview(rev, cRow.mystery_id, undefined, sessionHostMeta);
+      }
+    }
   } catch {
     // non-fatal
   }

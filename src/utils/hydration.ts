@@ -1356,7 +1356,7 @@ export function tokenizeTextWithCharacterRoles(
   charList.forEach((char) => {
     const roleTitle = getCharacterRoleTitle(char);
     if (!roleTitle) return;
-    getCharacterCandidateKeys(char).forEach((k) => {
+    getCharacterCandidateKeys(char, charList).forEach((k) => {
       aliasToRole.set(k.toLowerCase(), roleTitle);
     });
   });
@@ -1410,9 +1410,11 @@ export function tokenizeTextWithCharacterRoles(
 
 /**
  * Returns all candidate aliases for a character (roleTitle, roleTitle without 'The ',
- * assigned guest full name, first name, last name, legacy base name, and legacy nicknames).
+ * assigned guest full name, unique first name, legacy base name, and legacy nicknames).
+ * Never adds bare shared surnames (so married couples or siblings with the same last name never collide)
+ * or bare duplicate first names (so two guests named Sarah never match each other's single first name).
  */
-export function getCharacterCandidateKeys(char: any): string[] {
+export function getCharacterCandidateKeys(char: any, allCharacters?: any[]): string[] {
   if (!char) return [];
   const parts = (char.name || '').split('|');
   const rawBase = (parts[0] || '').trim();
@@ -1421,6 +1423,17 @@ export function getCharacterCandidateKeys(char: any): string[] {
   const roleTitleWithoutThe = roleTitle.replace(/^The\s+/i, '').trim();
   const baseRoleWithoutThe = baseRoleTitle.replace(/^The\s+/i, '').trim();
   const nameParts = getCharacterNameParts(char);
+
+  const isDuplicateFirst =
+    nameParts.hasRealGuest &&
+    Array.isArray(allCharacters) &&
+    allCharacters.filter((other) => {
+      const op = getCharacterNameParts(other);
+      return (
+        op.hasRealGuest &&
+        op.firstName.toLowerCase() === nameParts.firstName.toLowerCase()
+      );
+    }).length > 1;
 
   const keys = new Set<string>();
   if (roleTitle) keys.add(roleTitle);
@@ -1438,8 +1451,9 @@ export function getCharacterCandidateKeys(char: any): string[] {
   }
   if (nameParts.hasRealGuest) {
     if (nameParts.fullName.length >= 2) keys.add(nameParts.fullName);
-    if (nameParts.firstName.length >= 2) keys.add(nameParts.firstName);
-    if (nameParts.lastName.length >= 2) keys.add(nameParts.lastName);
+    if (!isDuplicateFirst && nameParts.firstName.length >= 2) {
+      keys.add(nameParts.firstName);
+    }
   }
 
   Object.entries(LEGACY_PLACEHOLDER_TO_ROLE).forEach(([legacyKey, mappedRole]) => {
@@ -1481,27 +1495,46 @@ export function findInvolvedCharactersInText(text: string, characters: any[]): a
   };
 
   // 1. Check explicit {{VICTIM}}, {{KILLER}}, {{ASSISTANT}} tokens
-  if (/\{\{\s*(?:the\s+)?victim\s*\}\}/i.test(text)) {
+  if (/\{\{\s*(?:the\s+)?victim\s*(?:_[a-zA-Z]+)?\s*\}\}/i.test(text)) {
     const victim = characters.find((c) => c.is_victim || c.plot_role === 'victim');
     if (victim) addChar(victim);
   }
-  if (/\{\{\s*(?:the\s+)?killer\s*\}\}/i.test(text)) {
+  if (/\{\{\s*(?:the\s+)?killer\s*(?:_[a-zA-Z]+)?\s*\}\}/i.test(text)) {
     const killer = characters.find((c) => c.plot_role === 'killer');
     if (killer) addChar(killer);
   }
-  if (/\{\{\s*(?:the\s+)?(?:assistant|accomplice)\s*\}\}/i.test(text)) {
+  if (/\{\{\s*(?:the\s+)?(?:assistant|accomplice)\s*(?:_[a-zA-Z]+)?\s*\}\}/i.test(text)) {
     const assistant = characters.find((c) => c.plot_role === 'assistant');
     if (assistant) addChar(assistant);
   }
 
-  // 2. Check all character aliases (both inside {{...}} and as word-bounded phrases)
+  // 2. Check explicit {{...}} tokens and multi-word full names / role titles first,
+  // masking matched multi-word full names so a single-word first name (e.g. "Taylor" from "Taylor Smith")
+  // never falsely matches another guest's surname (e.g. "Alex Taylor").
+  let remainingTextForSingleWordCheck = text;
   for (const char of characters) {
-    const aliases = getCharacterCandidateKeys(char);
+    const np = getCharacterNameParts(char);
+    if (np.hasRealGuest && np.fullName.includes(' ')) {
+      const escapedFull = escapeRegExp(np.fullName);
+      const fullWordRegex = new RegExp(`(?:^|[^a-zA-Z0-9])(${escapedFull})(?=$|[^a-zA-Z0-9])`, 'gi');
+      if (fullWordRegex.test(remainingTextForSingleWordCheck)) {
+        addChar(char);
+        remainingTextForSingleWordCheck = remainingTextForSingleWordCheck.replace(
+          fullWordRegex,
+          ' ___MATCHED_GUEST___ '
+        );
+      }
+    }
+  }
+
+  // 3. Check all character aliases (inside {{...}} on original text, and word-bounded on masked text)
+  for (const char of characters) {
+    const aliases = getCharacterCandidateKeys(char, characters);
     for (const alias of aliases) {
       const escaped = escapeRegExp(alias);
       const tokenRegex = new RegExp(`\\{\\{\\s*${escaped}(?:_[a-zA-Z]+)?\\s*\\}\\}`, 'i');
       const wordRegex = new RegExp(`(?:^|[^a-zA-Z0-9])${escaped}(?=$|[^a-zA-Z0-9])`, 'i');
-      if (tokenRegex.test(text) || wordRegex.test(text)) {
+      if (tokenRegex.test(text) || wordRegex.test(remainingTextForSingleWordCheck)) {
         addChar(char);
         break;
       }
@@ -1517,12 +1550,23 @@ export function replacePlaceholderNamesWithRoles(
 ): string {
   if (!text) return '';
   let result = text;
+  const charList = Array.isArray(characters) ? characters : [];
 
-  (characters || []).forEach((char: any) => {
+  const firstNameCounts = new Map<string, number>();
+  charList.forEach((c: any) => {
+    const np = getCharacterNameParts(c);
+    if (np.hasRealGuest && np.firstName) {
+      const fk = np.firstName.toLowerCase();
+      firstNameCounts.set(fk, (firstNameCounts.get(fk) || 0) + 1);
+    }
+  });
+
+  // Pass 1: Replace legacy base tokens/names and multi-word full guest names across ALL characters first
+  charList.forEach((char: any) => {
     const parts = (char.name || '').split('|');
     const baseName = (parts[0] || '').trim();
     const roleTitle = getCharacterRoleTitle(char);
-    const guestName = ((char.profile_data as any)?.guest_name || (char.profile_data as any)?.name || '').trim();
+    const nameParts = getCharacterNameParts(char);
 
     if (baseName) {
       const tokenRegex = new RegExp(`\\{\\{\\s*${escapeRegExp(baseName)}\\s*\\}\\}`, 'gi');
@@ -1532,9 +1576,28 @@ export function replacePlaceholderNamesWithRoles(
       result = result.replace(wordRegex, roleTitle);
     }
 
-    if (guestName && guestName.toLowerCase() !== roleTitle.toLowerCase()) {
-      const guestRegex = new RegExp(`\\b${escapeRegExp(guestName)}\\b`, 'gi');
-      result = result.replace(guestRegex, roleTitle);
+    if (nameParts.hasRealGuest && nameParts.fullName.toLowerCase() !== roleTitle.toLowerCase()) {
+      const fullRegex = new RegExp(`\\b${escapeRegExp(nameParts.fullName)}\\b`, 'gi');
+      result = result.replace(fullRegex, roleTitle);
+    }
+  });
+
+  // Pass 2: Replace unique single-word first names across ALL characters
+  charList.forEach((char: any) => {
+    const roleTitle = getCharacterRoleTitle(char);
+    const nameParts = getCharacterNameParts(char);
+    const isDuplicateFirst =
+      nameParts.hasRealGuest &&
+      (firstNameCounts.get(nameParts.firstName.toLowerCase()) || 0) > 1;
+
+    if (
+      nameParts.hasRealGuest &&
+      !isDuplicateFirst &&
+      nameParts.firstName.length >= 2 &&
+      nameParts.firstName.toLowerCase() !== roleTitle.toLowerCase()
+    ) {
+      const firstRegex = new RegExp(`\\b${escapeRegExp(nameParts.firstName)}\\b`, 'gi');
+      result = result.replace(firstRegex, roleTitle);
     }
   });
 

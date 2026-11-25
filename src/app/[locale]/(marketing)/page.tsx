@@ -737,6 +737,35 @@ export default async function HomePage(props: {
         </div>
       </section>
 
+      {/* Play Online With Friends (Zoom, FaceTime, Discord & Long-Distance) Spotlight */}
+      <section className="py-8 bg-white">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="rounded-[2.5rem] bg-slate-50 border-2 border-brand-dark shadow-[8px_8px_0px_#120914] p-8 sm:p-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex flex-wrap items-center gap-2 px-3.5 py-1 rounded-full bg-brand-dark text-white text-[10px] font-black uppercase tracking-widest">
+                <span>🌍 100% Digital • Play From Anywhere in the World</span>
+                <span className="text-white/30">•</span>
+                <span className="text-brand-pink">Zoom • FaceTime • Discord • Hybrid</span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight leading-tight">
+                Friends in Different Cities? Play Live <span className="text-brand-pink italic">Over Video Call.</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-600 font-semibold leading-relaxed">
+                Because Back Pocket Mysteries runs inside a real-time cloud Playroom, your friends can connect on Zoom, FaceTime, Discord, or Google Meet from any country—or join your living room dinner party remotely on an iPad—while every clue, voice memo, and voting round syncs live on everyone&apos;s phone.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <Link
+                href={`/${locale}/play-online`}
+                className="px-7 py-4 bg-brand-dark hover:bg-brand-pink text-white rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-lg"
+              >
+                See How Online Play Works →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* First 50 Founding Host Giveaway Spotlight Banner */}
       <section className="pt-4 pb-8 bg-white">
         <div className="container mx-auto px-6 max-w-6xl">

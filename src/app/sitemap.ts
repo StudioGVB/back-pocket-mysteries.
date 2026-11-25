@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     '',
     '/custom-murder-mystery',
+    '/play-online',
     '/free-murder-mystery-game',
     '/mini-mystery',
     '/themes',
@@ -46,7 +47,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const priority =
         path === ''
           ? 1.0
-          : path === '/free-murder-mystery-game' || path === '/custom-murder-mystery'
+          : path === '/free-murder-mystery-game' ||
+            path === '/custom-murder-mystery' ||
+            path === '/play-online'
           ? 0.95
           : 0.85
       sitemapEntries.push({

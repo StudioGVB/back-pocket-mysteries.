@@ -487,16 +487,18 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
                         type="text"
                         value={firstName}
                         onChange={(e) => {
-                          const val = e.target.value;
-                          // If user pastes "Sarah Jenkins" into empty First Name when Last Name is empty, auto-split
-                          if (!lastName && val.includes(' ') && val.trim().split(/\s+/).length >= 2) {
-                            const parts = val.trim().split(/\s+/);
+                          setFirstName(e.target.value);
+                          if (nameError) setNameError('');
+                        }}
+                        onPaste={(e) => {
+                          const pasted = e.clipboardData?.getData('text')?.trim() || '';
+                          if (!lastName && pasted.includes(' ') && pasted.split(/\s+/).length >= 2) {
+                            e.preventDefault();
+                            const parts = pasted.split(/\s+/);
                             setFirstName(parts[0]);
                             setLastName(parts.slice(1).join(' '));
-                          } else {
-                            setFirstName(val);
+                            if (nameError) setNameError('');
                           }
-                          if (nameError) setNameError('');
                         }}
                         placeholder="e.g. Sarah"
                         className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink outline-none transition-all ${

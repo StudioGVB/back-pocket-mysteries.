@@ -98,6 +98,13 @@ export default function MobileNav({ locale, dict }: MobileNavProps) {
                   {dict.common.themes}
                 </Link>
                 <Link
+                  href={`/${locale}/play-online`}
+                  onClick={closeMenu}
+                  className="py-1.5 hover:text-brand-pink transition-all w-fit"
+                >
+                  🌍 Play Online (Zoom / FaceTime)
+                </Link>
+                <Link
                   href={`/${locale}/pricing`}
                   onClick={closeMenu}
                   className="py-1.5 hover:text-brand-pink transition-all w-fit"

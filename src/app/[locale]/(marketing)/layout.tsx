@@ -54,9 +54,10 @@ export default async function MarketingLayout(props: {
             />
           </Link>
           
-          <nav className="hidden lg:flex items-center gap-7 text-xs font-black uppercase tracking-[0.15em] text-brand-dark/60">
+          <nav className="hidden lg:flex items-center gap-6 text-xs font-black uppercase tracking-[0.15em] text-brand-dark/60">
             <Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.howItWorks}</Link>
             <Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.themes}</Link>
+            <Link href={`/${locale}/play-online`} className="hover:text-brand-pink transition-all hover:scale-110">Play Online</Link>
             <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.pricing}</Link>
             <Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.faq}</Link>
             <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.contact}</Link>
@@ -111,6 +112,7 @@ export default async function MarketingLayout(props: {
               <h4 className="font-black text-white mb-8 uppercase tracking-[0.2em] text-[10px]">{dict.common.product}</h4>
               <ul className="space-y-4 text-sm font-bold text-gray-400">
                 <li><Link href={`/${locale}/custom-murder-mystery`} className="text-brand-pink hover:text-white transition-colors">Custom Murder Mystery</Link></li>
+                <li><Link href={`/${locale}/play-online`} className="text-sky-400 hover:text-white transition-colors">🌍 Play Online (Zoom &amp; FaceTime)</Link></li>
                 <li><Link href={`/${locale}/free-murder-mystery-game`} className="text-white hover:text-brand-pink transition-colors">🎁 Free Murder Mystery Game</Link></li>
                 <li><Link href={`/${locale}/mini-mystery`} className="text-emerald-400 hover:text-white transition-colors">🕵️‍♀️ 60-Sec Mini-Mystery Quiz</Link></li>
                 <li><Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-colors">{dict.common.themes}</Link></li>

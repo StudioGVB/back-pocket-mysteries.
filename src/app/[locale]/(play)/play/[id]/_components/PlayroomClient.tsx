@@ -1783,10 +1783,10 @@ export function PlayroomClient({
   // Helper to format current stage pill label
   const currentStageLabel = useMemo(() => {
     if (currentRound <= 0) return 'Lobby';
-    if (currentRound >= 5) return 'Reveal';
+    if (currentRound >= revealStageRound) return 'Reveal';
     if (isGuessStep) return `Guess ${unlockedClueRound}`;
     return `Round ${unlockedClueRound}`;
-  }, [currentRound, isGuessStep, unlockedClueRound]);
+  }, [currentRound, isGuessStep, unlockedClueRound, revealStageRound]);
 
   // Dynamic Guest Objective & Spoiler-Free Host Read-Aloud Script for the current half-step
   const stageGuidance = useMemo(() => {
@@ -1802,7 +1802,7 @@ export function PlayroomClient({
           '"Welcome everyone! Tap your character on your phone to read your secret backstory and connections—keep your secrets hidden! Mingle in character for a few minutes before our first evidence drop."',
       };
     }
-    if (currentRound >= 5) {
+    if (currentRound >= revealStageRound) {
       return {
         badge: '🏆 Final Stage • Grand Reveal',
         guestHeadline: 'Final Detective Leaderboard, Awards & True Timeline',
@@ -1840,7 +1840,7 @@ export function PlayroomClient({
           ? `"A crime has been committed! Round 1 evidence (${roundClueCount} clues) just dropped on your phones. Swipe through the clues, play any voice memos, tag Key evidence or Decoys in your notebook, and start questioning each other!"`
           : `"Breaking news—Round ${unlockedClueRound} evidence (${roundClueCount} new clues) just dropped on everyone’s phones! Check the new timestamps against everyone’s alibis and confront your top suspects!"`,
     };
-  }, [currentRound, isGuessStep, unlockedClueRound, maxClueRound, clues]);
+  }, [currentRound, isGuessStep, unlockedClueRound, maxClueRound, revealStageRound, clues]);
 
   // Advance the game to the next logical half-step with one click ("Next" button)
   const nextStepInfo = useMemo(() => {
@@ -1872,13 +1872,14 @@ export function PlayroomClient({
         canAdvance: true,
       };
     }
-    if (currentRound >= 5 && revealMode === 'hidden') {
+    if (currentRound >= revealStageRound && revealMode === 'hidden') {
       return { label: 'Next: Solution →', fullLabel: 'Share Final Solution →', canAdvance: true };
     }
     return { label: '✓ Complete', fullLabel: 'Game Complete', canAdvance: false };
   }, [
     currentRound,
     maxClueRound,
+    revealStageRound,
     isGuessStep,
     unlockedClueRound,
     revealMode,
@@ -1904,12 +1905,12 @@ export function PlayroomClient({
     if (currentRound <= 0) {
       await handleHostSetRound(1);
     } else if (isGuessStep && unlockedClueRound >= maxClueRound) {
-      // Jump straight from the final Guess round (e.g. 3.5 on a 3-round mystery) to 5 (Reveal)
-      await handleHostSetRound(5);
+      // Jump straight from the final Guess round (e.g. 3.5 on a 3-round mystery) to revealStageRound (Reveal)
+      await handleHostSetRound(revealStageRound);
     } else if (currentRound >= 1 && currentRound < maxClueRound + 0.5) {
       const nextStep = Number((currentRound + 0.5).toFixed(1));
       await handleHostSetRound(nextStep);
-    } else if (currentRound >= 5 && revealMode === 'hidden') {
+    } else if (currentRound >= revealStageRound && revealMode === 'hidden') {
       await handleHostSetRevealMode('shared_with_guests');
     } else {
       setIsHostPanelOpen(true);
@@ -2338,30 +2339,13 @@ export function PlayroomClient({
   const renderHostControlsModal = () => {
     if (!isHostPanelOpen) return null;
     const claimedCount = Object.keys(claimedCharacters).length;
-    const flowSteps =
-      maxClueRound === 3
-        ? [
-            { r: 0, label: '1. Lobby' },
-            { r: 1, label: '2. Round 1' },
-            { r: 1.5, label: '3. Guess 1' },
-            { r: 2, label: '4. Round 2' },
-            { r: 2.5, label: '5. Guess 2' },
-            { r: 3, label: '6. Round 3' },
-            { r: 3.5, label: '7. Guess 3' },
-            { r: 5, label: '8. Reveal' },
-          ]
-        : [
-            { r: 0, label: '1. Lobby' },
-            { r: 1, label: '2. Round 1' },
-            { r: 1.5, label: '3. Guess 1' },
-            { r: 2, label: '4. Round 2' },
-            { r: 2.5, label: '5. Guess 2' },
-            { r: 3, label: '6. Round 3' },
-            { r: 3.5, label: '7. Guess 3' },
-            { r: 4, label: '8. Round 4' },
-            { r: 4.5, label: '9. Guess 4' },
-            { r: 5, label: '10. Reveal' },
-          ];
+    const flowSteps: { r: number; label: string }[] = [{ r: 0, label: '1. Lobby' }];
+    let stageNum = 2;
+    for (let roundIdx = 1; roundIdx <= maxClueRound; roundIdx++) {
+      flowSteps.push({ r: roundIdx, label: `${stageNum++}. Round ${roundIdx}` });
+      flowSteps.push({ r: roundIdx + 0.5, label: `${stageNum++}. Guess ${roundIdx}` });
+    }
+    flowSteps.push({ r: revealStageRound, label: `${stageNum}. Reveal` });
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
@@ -2546,8 +2530,8 @@ export function PlayroomClient({
             </div>
           )}
 
-          {/* Round 5 Reveal Mode Control */}
-          {currentRound === 5 && (
+          {/* Reveal Mode Control */}
+          {currentRound >= revealStageRound && (
             <div className="bg-slate-950/90 border border-brand-pink/40 rounded-xl p-4 space-y-3">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
@@ -2691,30 +2675,27 @@ export function PlayroomClient({
   );
   const claimedCount = Object.keys(claimedCharacters).length;
 
-  const stageTimelineSteps =
-    maxClueRound === 3
-      ? [
-          { r: 0, short: 'Lobby', label: '1. Lobby' },
-          { r: 1, short: 'R1 Clues', label: '2. Round 1' },
-          { r: 1.5, short: 'Vote 1', label: '3. Vote 1' },
-          { r: 2, short: 'R2 Clues', label: '4. Round 2' },
-          { r: 2.5, short: 'Vote 2', label: '5. Vote 2' },
-          { r: 3, short: 'R3 Clues', label: '6. Round 3' },
-          { r: 3.5, short: 'Final Vote', label: '7. Final Vote' },
-          { r: 5, short: 'Reveal', label: '8. Reveal' },
-        ]
-      : [
-          { r: 0, short: 'Lobby', label: '1. Lobby' },
-          { r: 1, short: 'R1', label: '2. Round 1' },
-          { r: 1.5, short: 'Vote 1', label: '3. Vote 1' },
-          { r: 2, short: 'R2', label: '4. Round 2' },
-          { r: 2.5, short: 'Vote 2', label: '5. Vote 2' },
-          { r: 3, short: 'R3', label: '6. Round 3' },
-          { r: 3.5, short: 'Vote 3', label: '7. Vote 3' },
-          { r: 4, short: 'R4', label: '8. Round 4' },
-          { r: 4.5, short: 'Final Vote', label: '9. Final Vote' },
-          { r: 5, short: 'Reveal', label: '10. Reveal' },
-        ];
+  const stageTimelineSteps: { r: number; short: string; label: string }[] = [
+    { r: 0, short: 'Lobby', label: '1. Lobby' },
+  ];
+  let timelineStageIdx = 2;
+  for (let roundIdx = 1; roundIdx <= maxClueRound; roundIdx++) {
+    stageTimelineSteps.push({
+      r: roundIdx,
+      short: maxClueRound === 3 ? `R${roundIdx} Clues` : `R${roundIdx}`,
+      label: `${timelineStageIdx++}. Round ${roundIdx}`,
+    });
+    stageTimelineSteps.push({
+      r: roundIdx + 0.5,
+      short: roundIdx === maxClueRound ? 'Final Vote' : `Vote ${roundIdx}`,
+      label: `${timelineStageIdx++}. ${roundIdx === maxClueRound ? 'Final Vote' : `Vote ${roundIdx}`}`,
+    });
+  }
+  stageTimelineSteps.push({
+    r: revealStageRound,
+    short: 'Reveal',
+    label: `${timelineStageIdx}. Reveal`,
+  });
 
   // ============================================================================
   // 0. PRE-PARTY INVITATION & GUEST PORTAL (?prep=1)
@@ -4332,7 +4313,7 @@ export function PlayroomClient({
                     </button>
                   )}
 
-                {currentRound === 5 && (
+                {currentRound >= revealStageRound && (
                   <button
                     type="button"
                     onClick={() =>

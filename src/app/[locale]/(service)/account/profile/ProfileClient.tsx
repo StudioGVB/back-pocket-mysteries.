@@ -382,14 +382,14 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
                   <input
                     className={inputClass}
                     value={firstName}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (!lastName && val.includes(' ') && val.trim().split(/\s+/).length >= 2) {
-                        const parts = val.trim().split(/\s+/);
+                    onChange={e => setFirstName(e.target.value)}
+                    onPaste={e => {
+                      const pasted = e.clipboardData?.getData('text')?.trim() || '';
+                      if (!lastName && pasted.includes(' ') && pasted.split(/\s+/).length >= 2) {
+                        e.preventDefault();
+                        const parts = pasted.split(/\s+/);
                         setFirstName(parts[0]);
                         setLastName(parts.slice(1).join(' '));
-                      } else {
-                        setFirstName(val);
                       }
                     }}
                     placeholder="Gabriella"

@@ -642,6 +642,31 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                 </div>
               </div>
             </div>
+
+            {/* BENTO 5 (12 Cols — Global Online & Video Call Play): Play Over Zoom, FaceTime, Discord or Hybrid */}
+            <div className="lg:col-span-12 bg-brand-dark text-white rounded-[2.5rem] p-8 sm:p-10 border-2 border-brand-dark shadow-[8px_8px_0px_#e91e63] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+              <div className="space-y-3 max-w-2xl">
+                <div className="inline-flex flex-wrap items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/15 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                  <span>🌍 Play From Anywhere in the World</span>
+                  <span className="text-white/30">•</span>
+                  <span className="text-emerald-400">Zoom • FaceTime • Discord • Hybrid</span>
+                </div>
+                <h3 className="text-2xl sm:text-4xl font-black uppercase tracking-tight leading-tight">
+                  Friends in Different Cities? Play Together <span className="text-brand-pink italic">Live Over Video Call.</span>
+                </h3>
+                <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed">
+                  Because our Playroom is 100% digital and real-time synced, your group can hop on Zoom, FaceTime, Discord, or Google Meet from anywhere in the world—or call remote friends into your living room on an iPad—while every clue, voice memo, and voting round unlocks simultaneously on everyone&apos;s phone.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <Link
+                  href={`/${locale}/play-online`}
+                  className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-brand-pink text-white text-xs font-black uppercase tracking-widest hover:bg-white hover:text-brand-dark transition-all shadow-xl"
+                >
+                  <span>How Online Play Works →</span>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
