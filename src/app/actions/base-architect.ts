@@ -2847,7 +2847,7 @@ Return strict JSON:
                   : [],
               isRedHerring: true,
               subplotId: subId,
-              decision: cIdx < 2 ? 'yes' : 'pending',
+              decision: 'pending',
             };
           }
         );
@@ -2882,8 +2882,9 @@ Return strict JSON:
 
     // =========================================================================
     // POST-GENERATION DETERMINISTIC CHARACTER BALANCE ENFORCER
-    // Guarantees every primary character (especially under-featured suspects like {{The Bestie}})
-    // appears in at least 4 of the 16 selected clues!
+    // Ensures every under-featured primary character (like {{The Bestie}}) is woven
+    // into at least 2 of the 3 Red-Herring storylines and their candidate decoy clues
+    // so whichever 2 clues the user picks, every character reaches 4+ clues!
     // =========================================================================
     const victimRole =
       blueprint.characters.find((c) => c.plotRole === 'victim')?.roleTitle || 'The Prom Queen';
@@ -2891,26 +2892,23 @@ Return strict JSON:
     for (const audit of characterCoreAudit) {
       if (audit.character.plotRole === 'victim') continue;
       const roleTitle = audit.cleanRole;
-      const getSelectedDecoyClues = () =>
-        subplots.flatMap((s) => s.decoyClues.filter((dc) => dc.decision === 'yes'));
+      const deficit = Math.max(0, MIN_TARGET_CLUES_PER_CHAR - audit.coreAppearances);
 
-      let totalForChar = [
-        ...selectedCoreClues,
-        ...getSelectedDecoyClues(),
-      ].filter((cl) => doesClueInvolveRole(cl, roleTitle)).length;
+      if (deficit > 0) {
+        let subplotsTouched = 0;
+        const targetSubplotsToFeature = deficit >= 2 ? 2 : 1;
 
-      if (totalForChar < MIN_TARGET_CLUES_PER_CHAR) {
-        // Weave this under-featured character into subplots & decoy clues that don't yet include them
         for (const sub of subplots) {
-          if (totalForChar >= MIN_TARGET_CLUES_PER_CHAR) break;
-
-          if (
-            !sub.involvedRoles.some(
-              (r) => r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === roleTitle.toLowerCase()
-            )
-          ) {
-            sub.involvedRoles = [...sub.involvedRoles, roleTitle];
+          const alreadyInSub = sub.involvedRoles.some(
+            (r) => r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === roleTitle.toLowerCase()
+          );
+          if (alreadyInSub) {
+            subplotsTouched++;
+            continue;
           }
+          if (subplotsTouched >= targetSubplotsToFeature) break;
+
+          sub.involvedRoles = [...sub.involvedRoles, roleTitle];
           if (!sub.summary.toLowerCase().includes(roleTitle.toLowerCase())) {
             sub.summary = `${sub.summary} {{${roleTitle}}} is also entangled in this cover-up (${
               audit.character.motiveOrSecret || `hiding a fierce grudge against {{${victimRole}}}`
@@ -2931,12 +2929,9 @@ Return strict JSON:
                 .filter((r) => r !== roleTitle)
                 .map((r) => `{{${r}}}`)
                 .join(' & ')}.`;
-              if (dc.decision === 'yes') {
-                totalForChar++;
-              }
-              if (totalForChar >= MIN_TARGET_CLUES_PER_CHAR) break;
             }
           }
+          subplotsTouched++;
         }
       }
     }

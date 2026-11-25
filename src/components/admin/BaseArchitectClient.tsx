@@ -2078,7 +2078,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         }));
         setSubplotCustomNote('');
         setStatusToast(
-          `Freshly generated 3 Red-Herring Plotlines & 6 Red-Herring Clues directly from your ${selectedCoreClues.length} selected Beat Clues!`
+          `Freshly generated 3 Red-Herring Storylines from your ${selectedCoreClues.length} Real Clues! Review Part 1 (Real Clues & Double Meaning) and pick the new Fake Clue ideas in Part 2.`
         );
       }
     } catch (err: any) {
@@ -4928,95 +4928,304 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   })}
                 </div>
 
-                {/* Right Panel: Focused Single Red Herring Plotline + Motive + 4 Clue Options */}
-                {activeSubplot && (
-                  <div className="lg:col-span-8 space-y-4">
-                    <div className="rounded-2xl bg-slate-50 border-2 border-slate-200 p-5 space-y-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-black bg-brand-pink text-white">
-                          {activeSubplot.involvedRoles.join(' ↔ ')}
-                        </span>
-                        <span className="text-xs font-black text-slate-700">
-                          {
-                            activeSubplot.decoyClues.filter((dc) => dc.decision === 'yes')
-                              .length
-                          }{' '}
-                          of 2 Clues Selected
-                        </span>
-                      </div>
-                      <h3 className="text-lg font-black text-slate-900">
-                        <HighlightedMysteryText
-                          text={activeSubplot.title}
-                          characters={blueprint.characters}
-                        />
-                      </h3>
-                      <div className="text-sm text-slate-800 leading-relaxed">
-                        <strong className="text-slate-900">Suspect Motive &amp; Secret Scheme:</strong>{' '}
-                        <HighlightedMysteryText
-                          text={activeSubplot.summary}
-                          characters={blueprint.characters}
-                          className="inline"
-                        />
-                      </div>
+                {/* Right Panel: Focused Single Red Herring Plotline -> (1) Real Clues We Already Have & Double-Meaning Input -> (2) Unselected New Fake Clue Ideas */}
+                {activeSubplot &&
+                  (() => {
+                    // Find which of the user's 10 Selected Real Clues tie into this Red Herring Storyline
+                    const linkedTitlesLower = (activeSubplot.linkedCoreClueTitles || []).map((t) =>
+                      t.toLowerCase().trim()
+                    );
+                    const subRolesLower = (activeSubplot.involvedRoles || []).map((r) =>
+                      r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase()
+                    );
 
-                      {activeSubplot.linkedCoreClueTitles &&
-                        activeSubplot.linkedCoreClueTitles.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                            <span className="text-[11px] font-black uppercase text-indigo-800">
-                              🎯 Hooks Into Your Selected Beat Clues:
+                    const tiedRealClues = selectedCoreClues.filter((rc) => {
+                      const titleMatch = linkedTitlesLower.some(
+                        (lt) =>
+                          lt === rc.title.toLowerCase().trim() ||
+                          rc.title.toLowerCase().includes(lt) ||
+                          lt.includes(rc.title.toLowerCase())
+                      );
+                      if (titleMatch) return true;
+
+                      const roleMatch = (rc.involvedRoles || []).some((r) =>
+                        subRolesLower.includes(
+                          r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase()
+                        )
+                      );
+                      const textMatch = subRolesLower.some((sr) =>
+                        `${rc.title} ${rc.description} ${rc.doubleMeaningNote || ''}`
+                          .toLowerCase()
+                          .includes(sr)
+                      );
+                      return roleMatch || textMatch;
+                    });
+
+                    const realCluesToShow =
+                      tiedRealClues.length > 0
+                        ? tiedRealClues
+                        : selectedCoreClues.slice(0, 2);
+
+                    const unlinkedRealClues = selectedCoreClues.filter(
+                      (rc) => !realCluesToShow.some((shown) => shown.id === rc.id)
+                    );
+
+                    const pickedInThisSubCount = activeSubplot.decoyClues.filter(
+                      (dc) => dc.decision === 'yes'
+                    ).length;
+
+                    return (
+                      <div className="lg:col-span-8 space-y-5">
+                        {/* Storyline Motive Header */}
+                        <div className="rounded-2xl bg-slate-50 border-2 border-slate-200 p-5 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="px-3 py-1 rounded-full text-xs font-black bg-brand-pink text-white">
+                              {activeSubplot.involvedRoles.join(' ↔ ')}
                             </span>
-                            {activeSubplot.linkedCoreClueTitles.map((title) => (
-                              <span
-                                key={title}
-                                className="px-2.5 py-0.5 rounded-lg bg-indigo-100 border border-indigo-300 text-[11px] font-bold text-indigo-950"
-                              >
-                                🔗{' '}
-                                <HighlightedMysteryText
-                                  text={title}
-                                  characters={blueprint.characters}
-                                  className="inline"
-                                />
-                              </span>
-                            ))}
+                            <span className="text-xs font-black text-slate-700">
+                              {realCluesToShow.length} Linked Real Clues + {pickedInThisSubCount} New
+                              Fake Clues Added
+                            </span>
                           </div>
-                        )}
-
-                      {activeSubplot.doubleMeaningCoreClueHook && (
-                        <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-3.5 py-2.5 text-xs text-indigo-950">
-                          <strong className="text-indigo-800">
-                            🔗 Double-Meaning Tie-In to Your Selected Beat Clues:
-                          </strong>{' '}
-                          <HighlightedMysteryText
-                            text={activeSubplot.doubleMeaningCoreClueHook}
-                            characters={blueprint.characters}
-                            className="inline"
-                          />
+                          <h3 className="text-lg font-black text-slate-900">
+                            <HighlightedMysteryText
+                              text={activeSubplot.title}
+                              characters={blueprint.characters}
+                            />
+                          </h3>
+                          <div className="text-sm text-slate-800 leading-relaxed">
+                            <strong className="text-slate-900">
+                              Suspect Motive &amp; Secret Scheme:
+                            </strong>{' '}
+                            <HighlightedMysteryText
+                              text={activeSubplot.summary}
+                              characters={blueprint.characters}
+                              className="inline"
+                            />
+                          </div>
+                          {activeSubplot.doubleMeaningCoreClueHook && (
+                            <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-3.5 py-2.5 text-xs text-indigo-950">
+                              <strong className="text-indigo-800">
+                                🔗 Overarching Double-Meaning Strategy:
+                              </strong>{' '}
+                              <HighlightedMysteryText
+                                text={activeSubplot.doubleMeaningCoreClueHook}
+                                characters={blueprint.characters}
+                                className="inline"
+                              />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <div className="space-y-3">
-                      {activeSubplot.decoyClues.map((dc, dIdx) => {
-                        const isPicked = dc.decision === 'yes';
-                        const isPhotoFormat = isPhotoClueFormat(dc.format);
-                        const mediumType = getClueMediumCategory(dc.format);
-                        const rhStrengthTier: ClueStrengthTier =
-                          dc.strengthTier || 'Double-Meaning Misdirection';
-
-                        return (
-                          <div
-                            key={dc.id}
-                            className={`rounded-2xl border-2 p-5 space-y-3 transition ${
-                              isPicked
-                                ? 'bg-emerald-50/40 border-emerald-500 shadow-sm'
-                                : 'bg-white border-slate-200 hover:border-slate-300'
-                            }`}
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[220px]">
-                                <span className="text-xs font-black text-slate-400">
-                                  Option #{dIdx + 1}
+                        {/* ===================================================== */}
+                        {/* PART 1: REAL CLUES WE ALREADY HAVE (DOUBLE MEANING)   */}
+                        {/* ===================================================== */}
+                        <div className="rounded-2xl bg-indigo-50/40 border-2 border-indigo-200 p-5 space-y-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-black uppercase">
+                                  Part 1 • Existing Real Clues
                                 </span>
+                                <h4 className="text-sm font-black text-indigo-950">
+                                  Real Clues You Already Selected That Feed This Red Herring (
+                                  {realCluesToShow.length})
+                                </h4>
+                              </div>
+                              <p className="text-xs text-indigo-900/80 mt-0.5">
+                                These real Beat Clues are <strong>already in your 10-clue pack</strong>.
+                                Edit their Double-Meaning Note below (or click{' '}
+                                <strong>+ Frame Suspect</strong>) so they do double-duty for this Red
+                                Herring storyline!
+                              </p>
+                            </div>
+
+                            {unlinkedRealClues.length > 0 && (
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  const targetId = e.target.value;
+                                  const found = selectedCoreClues.find((c) => c.id === targetId);
+                                  if (!found) return;
+                                  setSubplots((prev) =>
+                                    prev.map((s, idx) =>
+                                      idx === activeSubplotIndex
+                                        ? {
+                                            ...s,
+                                            linkedCoreClueTitles: Array.from(
+                                              new Set([
+                                                ...(s.linkedCoreClueTitles || []),
+                                                found.title,
+                                              ])
+                                            ),
+                                          }
+                                        : s
+                                    )
+                                  );
+                                }}
+                                className="rounded-xl bg-white border border-indigo-300 px-3 py-1.5 text-xs font-bold text-indigo-900 cursor-pointer"
+                              >
+                                <option value="">+ Link Another Real Clue to This Storyline...</option>
+                                {unlinkedRealClues.map((uc) => (
+                                  <option key={uc.id} value={uc.id}>
+                                    Beat #{uc.beatNumber}: {uc.title}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+
+                          <div className="space-y-3">
+                            {realCluesToShow.map((rc) => {
+                              const bNum = rc.beatNumber || 1;
+                              return (
+                                <div
+                                  key={rc.id}
+                                  className="rounded-xl bg-white border border-indigo-200 p-4 space-y-2.5 shadow-2xs"
+                                >
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black uppercase">
+                                        ✓ Real Clue (Beat #{bNum} • {rc.timestampLabel})
+                                      </span>
+                                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">
+                                        {rc.format}
+                                      </span>
+                                      <span className="text-sm font-black text-slate-900">
+                                        {rc.title}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      {activeSubplot.involvedRoles.map((role) => (
+                                        <button
+                                          key={role}
+                                          type="button"
+                                          disabled={injectingTwistClueId === rc.id}
+                                          onClick={() =>
+                                            handleInjectDoubleMeaningSuspect(bNum, rc, role)
+                                          }
+                                          className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-900 hover:text-white border border-indigo-200 text-[11px] font-black transition cursor-pointer disabled:opacity-50"
+                                        >
+                                          {injectingTwistClueId === rc.id
+                                            ? 'Weaving...'
+                                            : `🎭 Weave ${role} Into This Real Clue`}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Real Clue Text (Editable if you want to tweak the wording right here!) */}
+                                  <div>
+                                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                                      Real Clue Content (Click to Edit):
+                                    </div>
+                                    <RichTokenEditableBox
+                                      value={rc.description}
+                                      onChange={(val) =>
+                                        updateBeatClueField(bNum, rc.id, { description: val })
+                                      }
+                                      characters={blueprint.characters}
+                                      minRows={2}
+                                    />
+                                  </div>
+
+                                  {/* Editable Double-Meaning Input for this Real Clue */}
+                                  <div className="rounded-xl bg-indigo-50/70 border border-indigo-200 p-3 space-y-1.5">
+                                    <div className="text-[11px] font-black text-indigo-900">
+                                      🔗 Double-Meaning Input (How This Real Clue Also Points to{' '}
+                                      {activeSubplot.involvedRoles.join(' & ')}):
+                                    </div>
+                                    <RichTokenEditableBox
+                                      value={
+                                        rc.doubleMeaningNote ||
+                                        `Also looks suspicious toward ${activeSubplot.involvedRoles
+                                          .map((r) => `{{${r}}}`)
+                                          .join(' & ')} because of their secret motive.`
+                                      }
+                                      onChange={(val) =>
+                                        updateBeatClueField(bNum, rc.id, {
+                                          doubleMeaningNote: val,
+                                        })
+                                      }
+                                      characters={blueprint.characters}
+                                      minRows={2}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* ===================================================== */}
+                        {/* PART 2: NEW FAKE RED-HERRING CLUE IDEAS (UNSELECTED)  */}
+                        {/* ===================================================== */}
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-md bg-brand-pink text-white text-[10px] font-black uppercase">
+                                  Part 2 • New Fake Clue Ideas
+                                </span>
+                                <h4 className="text-sm font-black text-slate-900">
+                                  New Fake Red-Herring Clue Ideas to Add to This Storyline (
+                                  {pickedInThisSubCount} / 2 Picked)
+                                </h4>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                All new fake clue ideas below start unselected. Pick the ones you
+                                want to add on top of your Real Clues above (aim for ~2 per
+                                storyline, 6 total).
+                              </p>
+                            </div>
+
+                            {pickedInThisSubCount > 0 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSubplots((prev) =>
+                                    prev.map((s, idx) =>
+                                      idx === activeSubplotIndex
+                                        ? {
+                                            ...s,
+                                            decoyClues: s.decoyClues.map((dc) => ({
+                                              ...dc,
+                                              decision: 'pending',
+                                            })),
+                                          }
+                                        : s
+                                    )
+                                  )
+                                }
+                                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+                              >
+                                ↺ Unselect All in This Storyline
+                              </button>
+                            )}
+                          </div>
+
+                          {activeSubplot.decoyClues.map((dc, dIdx) => {
+                            const isPicked = dc.decision === 'yes';
+                            const isPhotoFormat = isPhotoClueFormat(dc.format);
+                            const mediumType = getClueMediumCategory(dc.format);
+                            const rhStrengthTier: ClueStrengthTier =
+                              dc.strengthTier || 'Double-Meaning Misdirection';
+
+                            return (
+                              <div
+                                key={dc.id}
+                                className={`rounded-2xl border-2 p-5 space-y-3 transition ${
+                                  isPicked
+                                    ? 'bg-emerald-50/40 border-emerald-500 shadow-sm'
+                                    : 'bg-white border-slate-200 hover:border-slate-300'
+                                }`}
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[220px]">
+                                    <span className="text-xs font-black text-slate-400">
+                                      New Idea #{dIdx + 1}
+                                    </span>
                                 <select
                                   value={dc.format}
                                   onChange={(e) => {
@@ -5085,7 +5294,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                     : 'bg-slate-900 text-white hover:bg-brand-pink'
                                 }`}
                               >
-                                {isPicked ? '✓ Selected' : '+ Select Clue'}
+                                {isPicked ? '✓ Added to Storyline' : '+ Add Clue Idea to Storyline'}
                               </button>
                             </div>
 
@@ -5146,7 +5355,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       })}
                     </div>
                   </div>
-                )}
+                    );
+                  })()}
               </div>
             )}
 
