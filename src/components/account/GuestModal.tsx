@@ -136,9 +136,18 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
                 undefined,
               accessories: url.searchParams.get('accessories') || undefined,
               build: url.searchParams.get('build') || undefined,
-              distinctiveFeatures: url.searchParams.get('distinctiveFeatures')
-                ? url.searchParams.get('distinctiveFeatures')!.split(',').filter(Boolean)
-                : undefined,
+              distinctiveFeatures: (() => {
+                const rawDf = url.searchParams.get('distinctiveFeatures')
+                  ? url.searchParams.get('distinctiveFeatures')!.split(',').filter(Boolean)
+                  : [];
+                if (
+                  url.searchParams.get('accessories') === 'prescription01' &&
+                  !rawDf.includes('Glasses')
+                ) {
+                  rawDf.push('Glasses');
+                }
+                return rawDf.length > 0 ? rawDf : undefined;
+              })(),
               likenessNotes: url.searchParams.get('likenessNotes') || undefined,
               accent: url.searchParams.get('accent') || initialAccent,
               age: (url.searchParams.get('age') as any) || initialAge,

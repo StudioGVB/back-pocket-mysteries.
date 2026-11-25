@@ -110,6 +110,25 @@ export function computeAvatarPhysicalSignature(
     try {
       const u = new URL(configOrUrl);
       const p = u.searchParams;
+      const rawFeats = (p.get('distinctiveFeatures') || '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+      const hasGlassesParam =
+        p.get('accessories') === 'prescription01' ||
+        rawFeats.some(f => f.toLowerCase() === 'glasses');
+      const normalizedFeats = rawFeats
+        .filter(f => f.toLowerCase() !== 'glasses')
+        .map(f => f.toLowerCase())
+        .sort()
+        .join(',');
+      const rawTop = (p.get('top') || '').toLowerCase();
+      const normalizedTop =
+        rawTop === 'none' ||
+        p.get('topProbability') === '0' ||
+        (p.get('hairLength') || '').toLowerCase() === 'bald'
+          ? 'none'
+          : rawTop;
       return [
         (extra?.gender || '').toLowerCase(),
         (p.get('age') || 'young').toLowerCase(),
@@ -119,15 +138,15 @@ export function computeAvatarPhysicalSignature(
         (p.get('hairLength') || '').toLowerCase(),
         (p.get('hairTexture') || '').toLowerCase(),
         (p.get('hairStyle') || '').toLowerCase(),
-        (p.get('top') || '').toLowerCase(),
+        normalizedTop,
         (extra?.eyeColor || p.get('eyeColor') || '').toLowerCase(),
         (p.get('faceShape') || '').toLowerCase(),
-        (p.get('facialHair') || '').toLowerCase(),
+        (p.get('facialHairStyle') || p.get('facialHair') || '').toLowerCase(),
         (p.get('build') || '').toLowerCase(),
         (extra?.height || p.get('height') || '').toLowerCase(),
-        (p.get('accessories') || '').toLowerCase(),
-        (p.get('distinctiveFeatures') || '').toLowerCase(),
-        (p.get('likenessNotes') || '').toLowerCase(),
+        hasGlassesParam ? 'prescription01' : '',
+        normalizedFeats,
+        (p.get('likenessNotes') || '').trim().toLowerCase(),
       ].join('|');
     } catch {
       return configOrUrl;
@@ -135,9 +154,22 @@ export function computeAvatarPhysicalSignature(
   }
 
   const c = configOrUrl as Partial<AvatarConfig>;
-  const feats = Array.isArray(c.distinctiveFeatures)
-    ? [...c.distinctiveFeatures].sort().join(',')
-    : '';
+  const rawObjFeats = Array.isArray(c.distinctiveFeatures)
+    ? c.distinctiveFeatures.map(f => String(f).trim()).filter(Boolean)
+    : [];
+  const hasGlassesObj =
+    c.accessories === 'prescription01' ||
+    rawObjFeats.some(f => f.toLowerCase() === 'glasses');
+  const normalizedObjFeats = rawObjFeats
+    .filter(f => f.toLowerCase() !== 'glasses')
+    .map(f => f.toLowerCase())
+    .sort()
+    .join(',');
+  const rawObjTop = (c.top || '').toLowerCase();
+  const normalizedObjTop =
+    rawObjTop === 'none' || (c.hairLength || '').toLowerCase() === 'bald'
+      ? 'none'
+      : rawObjTop;
   return [
     (extra?.gender || '').toLowerCase(),
     (c.age || 'young').toLowerCase(),
@@ -147,14 +179,14 @@ export function computeAvatarPhysicalSignature(
     (c.hairLength || '').toLowerCase(),
     (c.hairTexture || '').toLowerCase(),
     (c.hairStyle || '').toLowerCase(),
-    (c.top || '').toLowerCase(),
+    normalizedObjTop,
     (extra?.eyeColor || c.eyeColor || '').toLowerCase(),
     (c.faceShape || '').toLowerCase(),
     (c.facialHair || '').toLowerCase(),
     (c.build || '').toLowerCase(),
     (extra?.height || c.height || '').toLowerCase(),
-    (c.accessories || '').toLowerCase(),
-    feats.toLowerCase(),
+    hasGlassesObj ? 'prescription01' : '',
+    normalizedObjFeats,
     (c.likenessNotes || '').trim().toLowerCase(),
   ].join('|');
 }
@@ -185,6 +217,13 @@ export function buildAvatarUrl(
         ? 'beardMedium'
         : config.facialHair;
 
+  const cleanFeats = Array.isArray(config.distinctiveFeatures)
+    ? [...config.distinctiveFeatures]
+        .map((f: string) => String(f).trim())
+        .filter((f: string) => f && f !== 'Glasses')
+        .sort()
+    : [];
+
   let url =
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed || 'player')}` +
     `&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=transparent` +
@@ -197,7 +236,7 @@ export function buildAvatarUrl(
     `${config.faceShape ? `&faceShape=${encodeURIComponent(config.faceShape)}` : ''}` +
     `${config.height ? `&height=${encodeURIComponent(config.height)}` : ''}` +
     `${config.ethnicity ? `&ethnicity=${encodeURIComponent(config.ethnicity)}` : ''}` +
-    `${config.distinctiveFeatures && config.distinctiveFeatures.length > 0 ? `&distinctiveFeatures=${encodeURIComponent(config.distinctiveFeatures.filter((f: string) => f !== 'Glasses').join(','))}` : ''}` +
+    `${cleanFeats.length > 0 ? `&distinctiveFeatures=${encodeURIComponent(cleanFeats.join(','))}` : ''}` +
     `${config.hairLength ? `&hairLength=${encodeURIComponent(config.hairLength)}` : ''}` +
     `${config.hairTexture ? `&hairTexture=${encodeURIComponent(config.hairTexture)}` : ''}` +
     `${config.hairStyle ? `&hairStyle=${encodeURIComponent(config.hairStyle)}` : ''}` +

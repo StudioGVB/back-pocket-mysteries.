@@ -17,10 +17,15 @@ import {
   CheckCircle2,
   Square,
   ArrowLeft,
+  RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { InlineDateTimeEditor } from "@/components/admin/InlineDateTimeEditor";
+import {
+  computeRefreshedFutureSchedule,
+  isScheduledDateInPast,
+} from "@/utils/marketing-schedule-refresh";
 
 interface SocialPostItem {
   id: string;
@@ -47,6 +52,7 @@ export default function LinkedInManagementPage() {
   const supabase = useMemo(() => createClient() as any, []);
   const [posts, setPosts] = useState<SocialPostItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshingDates, setRefreshingDates] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "to_schedule" | "scheduled">("all");
@@ -137,12 +143,22 @@ export default function LinkedInManagementPage() {
           throw new Error(result.error || "Failed to schedule with Buffer");
         }
 
+        const effectiveScheduledAt = result.scheduledAt || post.scheduled_at;
+
         await supabase
           .from("social_posts")
-          .update({ status: "scheduled", updated_at: new Date().toISOString() })
+          .update({
+            status: "scheduled",
+            scheduled_at: effectiveScheduledAt,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", postId);
         setPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, status: "scheduled" } : p))
+          prev.map((p) =>
+            p.id === postId
+              ? { ...p, status: "scheduled", scheduled_at: effectiveScheduledAt }
+              : p
+          )
         );
         toast.success(result.message || "Sent to Buffer successfully! Marked as scheduled.");
       }
@@ -172,6 +188,64 @@ export default function LinkedInManagementPage() {
       console.error("Failed to update scheduled_at:", err);
       toast.error("Failed to update posting date & time");
       fetchLinkedInPosts();
+    }
+  };
+
+  const pastDueDraftCount = useMemo(() => {
+    return posts.filter(
+      (p) => p.status === "draft" && isScheduledDateInPast(p.scheduled_at)
+    ).length;
+  }, [posts]);
+
+  const handleRefreshPastDates = async () => {
+    try {
+      setRefreshingDates(true);
+      const { updates, pastDueCount } = computeRefreshedFutureSchedule(posts);
+      if (updates.length === 0) {
+        toast.info("All To Schedule posts already have future target dates!");
+        return;
+      }
+
+      const updateMap = new Map(updates.map((u) => [u.id, u.newScheduledAt]));
+      const nowIso = new Date().toISOString();
+
+      setPosts((prev) =>
+        [...prev]
+          .map((p) =>
+            updateMap.has(p.id)
+              ? { ...p, scheduled_at: updateMap.get(p.id) || p.scheduled_at }
+              : p
+          )
+          .sort((a, b) =>
+            (a.scheduled_at || "9999").localeCompare(b.scheduled_at || "9999")
+          )
+      );
+
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("social_posts")
+          .update({
+            scheduled_at: u.newScheduledAt,
+            updated_at: nowIso,
+          })
+          .eq("id", u.id);
+        if (error) throw error;
+      }
+
+      const firstNewDate = updates[0]?.newScheduledAt
+        ? format(new Date(updates[0].newScheduledAt), "EEE, MMM d 'at' h:mm a")
+        : "";
+      toast.success(
+        `Reassigned ${updates.length} post date(s) to the future${
+          pastDueCount > 0 ? ` (${pastDueCount} past-due)` : ""
+        }${firstNewDate ? ` — starting ${firstNewDate}` : ""}!`
+      );
+    } catch (err: any) {
+      console.error("Failed to refresh past dates:", err);
+      toast.error("Failed to reassign past dates");
+      fetchLinkedInPosts();
+    } finally {
+      setRefreshingDates(false);
     }
   };
 
@@ -217,6 +291,29 @@ export default function LinkedInManagementPage() {
           <p className="text-gray-500 text-xs font-bold">
             Review long-form LinkedIn updates, copy text, and push to Buffer when ready
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            type="button"
+            onClick={handleRefreshPastDates}
+            disabled={refreshingDates || toSchedulePosts.length === 0}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs disabled:opacity-50 ${
+              pastDueDraftCount > 0
+                ? "bg-brand-pink text-white hover:bg-brand-pink/90 shadow-brand-pink/20"
+                : "bg-white border border-gray-200 text-brand-dark hover:bg-gray-50"
+            }`}
+            title="Reassign any past-due target dates to upcoming future dates in chronological order"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshingDates ? "animate-spin" : ""}`} />
+            <span>
+              {refreshingDates
+                ? "Reassigning Dates..."
+                : pastDueDraftCount > 0
+                ? `Refresh Past Dates (${pastDueDraftCount})`
+                : "Refresh Past Dates"}
+            </span>
+          </button>
         </div>
       </div>
 

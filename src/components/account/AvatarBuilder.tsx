@@ -78,8 +78,25 @@ export const deriveDiceBearTop = (length?: string, texture?: string, g?: string)
 };
 
 export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) {
+  const HAIR_AND_FACE_KEYS = new Set<keyof AvatarConfig>([
+    'hairColor',
+    'hairLength',
+    'hairTexture',
+    'hairStyle',
+    'facialHair',
+    'eyeColor',
+    'faceShape',
+    'skinColor',
+  ]);
+
   const updateConfig = (key: keyof AvatarConfig, value: string | undefined) => {
-    onChange({ ...config, [key]: value });
+    const next: AvatarConfig = { ...config, [key]: value };
+    // If the user manually changes a hair or face trait button, clear any stale photo-scanned likenessNotes
+    // that might contradict their new manual selection (e.g. changing from short bob to Long hair).
+    if (key !== 'likenessNotes' && HAIR_AND_FACE_KEYS.has(key) && config.likenessNotes) {
+      next.likenessNotes = undefined;
+    }
+    onChange(next);
   };
 
   const skinColors = [
@@ -171,7 +188,13 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
     const l = length !== undefined ? length : currentLength;
     const t = texture !== undefined ? texture : (config.hairTexture || 'Straight');
     const top = deriveDiceBearTop(l, t, gender);
-    onChange({ ...config, hairLength: l, hairTexture: t, top });
+    onChange({
+      ...config,
+      hairLength: l,
+      hairTexture: t,
+      top,
+      likenessNotes: undefined,
+    });
   };
 
   const facialHairOptions = [
@@ -210,11 +233,21 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
 
   const toggleDistinctiveFeature = (feature: string) => {
     const current = config.distinctiveFeatures || [];
-    if (current.includes(feature)) {
-      onChange({ ...config, distinctiveFeatures: current.filter(f => f !== feature) });
-    } else {
-      onChange({ ...config, distinctiveFeatures: [...current, feature] });
-    }
+    const isRemoving = current.includes(feature);
+    const nextFeatures = isRemoving
+      ? current.filter(f => f !== feature)
+      : [...current, feature];
+    const nextAccessories =
+      feature === 'Glasses'
+        ? isRemoving
+          ? undefined
+          : 'prescription01'
+        : config.accessories;
+    onChange({
+      ...config,
+      distinctiveFeatures: nextFeatures,
+      accessories: nextAccessories,
+    });
   };
 
   return (

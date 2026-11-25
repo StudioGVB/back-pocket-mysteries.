@@ -77,9 +77,12 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
   const [funFacts, setFunFacts] = useState(profile?.fun_facts ?? '');
   const [dietary, setDietary] = useState<string[]>(profile?.dietary_needs ?? []);
   const [charPrefs] = useState<string[]>(profile?.character_preferences ?? []);
-  const [gender, setGender] = useState<'Masculine' | 'Feminine'>(() =>
-    profile?.pronouns?.toLowerCase().includes('he/him') ? 'Masculine' : 'Feminine'
-  );
+  const [gender, setGender] = useState<'Masculine' | 'Feminine' | 'Neutral'>(() => {
+    const p = (profile?.pronouns || '').toLowerCase();
+    if (p.includes('he/him')) return 'Masculine';
+    if (p.includes('they') || p.includes('any')) return 'Neutral';
+    return 'Feminine';
+  });
 
   const initialMergedAvatar: AvatarConfig = useMemo(() => {
     const raw = (profile?.avatar_config as AvatarConfig) ?? DEFAULT_AVATAR;
@@ -98,31 +101,32 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
   }, [profile]);
 
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(initialMergedAvatar);
-  const [savedPhysicalSig, setSavedPhysicalSig] = useState<string>(() =>
-    computeAvatarPhysicalSignature({
-      gender:
-        profile?.pronouns?.toLowerCase().includes('he/him')
-          ? 'male'
-          : 'female',
+  const [savedPhysicalSig, setSavedPhysicalSig] = useState<string>(() => {
+    const p = (profile?.pronouns || '').toLowerCase();
+    const gNorm = p.includes('he/him') ? 'male' : p.includes('they') || p.includes('any') ? 'neutral' : 'female';
+    return computeAvatarPhysicalSignature({
+      gender: gNorm,
       avatar_config: initialMergedAvatar,
-    })
-  );
+    });
+  });
 
-  const currentPhysicalSig = useMemo(
-    () =>
-      computeAvatarPhysicalSignature({
-        gender:
-          gender === 'Masculine' || pronouns.toLowerCase().includes('he/him')
-            ? 'male'
-            : 'female',
-        avatar_config: avatarConfig,
-      }),
-    [gender, pronouns, avatarConfig]
-  );
+  const currentPhysicalSig = useMemo(() => {
+    const p = pronouns.toLowerCase();
+    const gNorm =
+      gender === 'Masculine' || p.includes('he/him')
+        ? 'male'
+        : gender === 'Neutral' || p.includes('they/them') || p === 'any'
+        ? 'neutral'
+        : 'female';
+    return computeAvatarPhysicalSignature({
+      gender: gNorm,
+      avatar_config: avatarConfig,
+    });
+  }, [gender, pronouns, avatarConfig]);
 
   const hasPhysicalChanges = currentPhysicalSig !== savedPhysicalSig;
 
-  const handleGenderChange = (g: 'Masculine' | 'Feminine') => {
+  const handleGenderChange = (g: 'Masculine' | 'Feminine' | 'Neutral') => {
     setGender(g);
     setAvatarConfig(prev => {
       const defaultLength = g === 'Feminine' ? 'Long' : 'Short';
@@ -133,7 +137,7 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
         hairLength: length,
         hairTexture: texture,
         top: deriveDiceBearTop(length, texture, g),
-        facialHair: g === 'Masculine' ? prev.facialHair : undefined,
+        facialHair: g !== 'Feminine' ? prev.facialHair : undefined,
       };
     });
   };
@@ -180,12 +184,16 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
         ...(result.aiPhotoUrl ? { aiPhotoUrl: result.aiPhotoUrl } : {}),
       };
       setAvatarConfig(updatedConfig);
+      const p = pronouns.toLowerCase();
+      const gNorm =
+        gender === 'Masculine' || p.includes('he/him')
+          ? 'male'
+          : gender === 'Neutral' || p.includes('they/them') || p === 'any'
+          ? 'neutral'
+          : 'female';
       setSavedPhysicalSig(
         computeAvatarPhysicalSignature({
-          gender:
-            gender === 'Masculine' || pronouns.toLowerCase().includes('he/him')
-              ? 'male'
-              : 'female',
+          gender: gNorm,
           avatar_config: updatedConfig,
         })
       );

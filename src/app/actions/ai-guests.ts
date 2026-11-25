@@ -590,10 +590,17 @@ export async function generateGuestAvatarAction(
     let genderLabel = guestData.gender || 'unspecified';
     let subjectNoun = 'individual';
     let genderGuardrail = '';
+    const isLongMaleHair =
+      isMasculine &&
+      (rawHairLength === 'Long' ||
+        rawHairLength === 'Very Long' ||
+        rawHairLength === 'Shoulder-Length');
     if (isMasculine) {
       genderLabel = 'Male (Man, explicitly masculine facial structure)';
       subjectNoun = 'man';
-      genderGuardrail = ` CRITICAL FOR MALE SUBJECT: The subject MUST be an unmistakably masculine ${ageYearsDesc} man with male facial bone structure, masculine brow ridge, strong masculine jaw, no makeup, and a men's haircut. Do NOT generate feminine features or women's long hairstyles.`;
+      genderGuardrail = isLongMaleHair
+        ? ` CRITICAL FOR MALE SUBJECT: The subject MUST be an unmistakably masculine ${ageYearsDesc} man with male facial bone structure, masculine brow ridge, strong masculine jaw, no makeup, and masculine ${rawHairLength.toLowerCase()} hair (${hairStyle}). Do NOT generate feminine facial features.`
+        : ` CRITICAL FOR MALE SUBJECT: The subject MUST be an unmistakably masculine ${ageYearsDesc} man with male facial bone structure, masculine brow ridge, strong masculine jaw, no makeup, and a men's haircut. Do NOT generate feminine features or women's long hairstyles.`;
     } else if (isFeminine) {
       genderLabel = 'Female (Woman)';
       subjectNoun = 'woman';
@@ -602,28 +609,40 @@ export async function generateGuestAvatarAction(
       subjectNoun = 'person';
     }
 
+    const explicitFacialHair =
+      !facialHair || facialHair === 'none'
+        ? 'Strictly clean-shaven face (ZERO beard, ZERO mustache, ZERO stubble)'
+        : `${facialHair} (MANDATORY: clearly visible ${facialHair} matching their hair color)`;
+
+    const hasGlassesSelected =
+      String(accessories).toLowerCase().includes('glasses') ||
+      String(distinctiveFeatures).toLowerCase().includes('glasses');
+    const explicitEyewear = hasGlassesSelected
+      ? 'Wearing clear-lens prescription eyeglasses framing the eyes (MANDATORY: must wear eyeglasses, NO dark sunglasses)'
+      : 'Strictly NO glasses and NO eyewear';
+
     const regenSalt = options?.forceRegenerate ? ` (Unique Variation Seed: ${Date.now() % 10000})` : '';
     const likenessDirective = rawLikenessNotes
-      ? `\n- PRIMARY LIKENESS BLUEPRINT (HIGHEST PRIORITY — MATCH THIS EXACTLY): ${rawLikenessNotes}`
+      ? `\n- ADDITIONAL FACIAL LIKENESS NOTES (Use for facial bone structure & expression, while strictly obeying the explicit Hair Length, Hair Color, Hair Texture, Facial Hair, and Eyewear fields below if they differ): ${rawLikenessNotes}`
       : '';
 
     const prompt = `A clean, uniform front-on shoulders-up editorial casting headshot photograph of a ${subjectNoun} who is ${ageYearsDesc}, photographed against a completely plain, solid, seamless pure white/light-grey studio background (#F4F4F4).
-CRITICAL LIKENESS & HAIR FIDELITY DIRECTIVE: You MUST faithfully render the exact hair color (${hairColor}), hair texture (${rawHairTexture}), haircut shape (${hairStyle}), and facial structure specified below.${likenessDirective}
+CRITICAL LIKENESS & HAIR FIDELITY DIRECTIVE: You MUST faithfully render the exact hair length & haircut shape (${hairStyle}), hair color (${hairColor}), hair texture (${rawHairTexture}), facial hair (${explicitFacialHair}), and eyewear (${explicitEyewear}) specified below.${likenessDirective}
 - Gender: ${genderLabel}
 - Cultural / Regional Facial Phenotype: ${phenotypeNuance}
 - Macro Facial Bone Structure & Jawline: ${uniqueFacialStructure}
 - Eye Color & Shape: ${eyeColor}
-- Hair Length, Cut & Texture (MANDATORY): ${hairStyle}${hairStylingVariation ? ` — SPECIFIC STYLING: ${hairStylingVariation}` : ''}
-- Hair Color & Shade (MANDATORY): ${hairColor}
+- Hair Length, Cut & Texture (HIGHEST PRIORITY — MANDATORY): ${hairStyle}${hairStylingVariation ? ` — SPECIFIC STYLING: ${hairStylingVariation}` : ''}
+- Hair Color & Shade (HIGHEST PRIORITY — MANDATORY): ${hairColor}
 - Skin Complexion: ${skinColor}
-- Facial Hair: ${facialHair}
+- Facial Hair (MANDATORY): ${explicitFacialHair}
+- Eyewear / Glasses (MANDATORY): ${explicitEyewear}
 - Build / Body Type: ${build}
 - Distinctive Features: ${distinctiveFeatures}
-- Accessories / Eyewear: ${accessories}
 - Height: ${height}
 - MANDATORY UNIFORM CAMERA POSE & ANGLE: The subject is ${chosenExpressionPose}.
 - Wardrobe: Wearing ${chosenTopWardrobe} (NO suits, NO blazers, NO formal costumes).
-The framing MUST show everything from the chest/shoulders up, including the full top of their hair, centered symmetrically in the frame facing straight ahead. Dimensional portrait studio lighting (85mm f/2.0 lens, sharp focus on the eyes, natural skin texture with visible pores).${genderGuardrail} CRITICAL BACKGROUND RULE: The background MUST be 100% plain solid white or very light neutral studio paper with ZERO outdoor scenery, ZERO props. CRITICAL REALISM RULE: Real DSLR live-action photograph, zero CGI, zero 3D render, zero illustration.${regenSalt}`;
+The framing MUST show everything from the chest/shoulders up, including the full top of their hair, centered symmetrically in the frame facing straight ahead. Dimensional portrait studio lighting (85mm f/2.0 lens, sharp focus on the eyes, natural skin texture with visible pores).${genderGuardrail} CRITICAL BACKGROUND RULE: The background MUST be 100% plain solid white or very light neutral studio paper (#F4F4F4) with ZERO outdoor scenery, ZERO props. CRITICAL REALISM RULE: Real DSLR live-action photograph, zero CGI, zero 3D render, zero illustration.${regenSalt}`;
 
     const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
 

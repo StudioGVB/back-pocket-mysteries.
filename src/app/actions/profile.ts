@@ -35,6 +35,7 @@ function pronounsToGender(pronouns?: string | null): string {
   const p = String(pronouns || '').toLowerCase();
   if (p.includes('she')) return 'female';
   if (p.includes('he')) return 'male';
+  if (p.includes('they') || p === 'any') return 'neutral';
   return 'female';
 }
 

@@ -24,10 +24,15 @@ import {
   Sparkles,
   Maximize2,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { InlineDateTimeEditor } from "@/components/admin/InlineDateTimeEditor";
+import {
+  computeRefreshedFutureSchedule,
+  isScheduledDateInPast,
+} from "@/utils/marketing-schedule-refresh";
 
 const TEMPLATE_LABELS = [
   "1. Noir Editorial",
@@ -67,6 +72,7 @@ export default function InstagramFacebookManagementPage() {
   const supabase = useMemo(() => createClient() as any, []);
   const [posts, setPosts] = useState<SocialPostItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshingDates, setRefreshingDates] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "to_schedule" | "scheduled">("all");
@@ -158,12 +164,22 @@ export default function InstagramFacebookManagementPage() {
           throw new Error(result.error || "Failed to schedule with Buffer");
         }
 
+        const effectiveScheduledAt = result.scheduledAt || post.scheduled_at;
+
         await supabase
           .from("social_posts")
-          .update({ status: "scheduled", updated_at: new Date().toISOString() })
+          .update({
+            status: "scheduled",
+            scheduled_at: effectiveScheduledAt,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", postId);
         setPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, status: "scheduled" } : p))
+          prev.map((p) =>
+            p.id === postId
+              ? { ...p, status: "scheduled", scheduled_at: effectiveScheduledAt }
+              : p
+          )
         );
         toast.success(result.message || "Sent to Buffer successfully! Marked as scheduled.");
       }
@@ -193,6 +209,64 @@ export default function InstagramFacebookManagementPage() {
       console.error("Failed to update scheduled_at:", err);
       toast.error("Failed to update posting date & time");
       fetchPosts();
+    }
+  };
+
+  const pastDueDraftCount = useMemo(() => {
+    return posts.filter(
+      (p) => p.status === "draft" && isScheduledDateInPast(p.scheduled_at)
+    ).length;
+  }, [posts]);
+
+  const handleRefreshPastDates = async () => {
+    try {
+      setRefreshingDates(true);
+      const { updates, pastDueCount } = computeRefreshedFutureSchedule(posts);
+      if (updates.length === 0) {
+        toast.info("All To Schedule posts already have future target dates!");
+        return;
+      }
+
+      const updateMap = new Map(updates.map((u) => [u.id, u.newScheduledAt]));
+      const nowIso = new Date().toISOString();
+
+      setPosts((prev) =>
+        [...prev]
+          .map((p) =>
+            updateMap.has(p.id)
+              ? { ...p, scheduled_at: updateMap.get(p.id) || p.scheduled_at }
+              : p
+          )
+          .sort((a, b) =>
+            (a.scheduled_at || "9999").localeCompare(b.scheduled_at || "9999")
+          )
+      );
+
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("social_posts")
+          .update({
+            scheduled_at: u.newScheduledAt,
+            updated_at: nowIso,
+          })
+          .eq("id", u.id);
+        if (error) throw error;
+      }
+
+      const firstNewDate = updates[0]?.newScheduledAt
+        ? format(new Date(updates[0].newScheduledAt), "EEE, MMM d 'at' h:mm a")
+        : "";
+      toast.success(
+        `Reassigned ${updates.length} post date(s) to the future${
+          pastDueCount > 0 ? ` (${pastDueCount} past-due)` : ""
+        }${firstNewDate ? ` — starting ${firstNewDate}` : ""}!`
+      );
+    } catch (err: any) {
+      console.error("Failed to refresh past dates:", err);
+      toast.error("Failed to reassign past dates");
+      fetchPosts();
+    } finally {
+      setRefreshingDates(false);
     }
   };
 
@@ -238,6 +312,29 @@ export default function InstagramFacebookManagementPage() {
           <p className="text-gray-500 text-xs font-bold">
             Schedule upcoming IG &amp; FB updates, preview 8-template social cards, copy captions without raw URLs, and push to Buffer
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            type="button"
+            onClick={handleRefreshPastDates}
+            disabled={refreshingDates || toSchedulePosts.length === 0}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs disabled:opacity-50 ${
+              pastDueDraftCount > 0
+                ? "bg-brand-pink text-white hover:bg-brand-pink/90 shadow-brand-pink/20"
+                : "bg-white border border-gray-200 text-brand-dark hover:bg-gray-50"
+            }`}
+            title="Reassign any past-due target dates to upcoming future dates in chronological order"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshingDates ? "animate-spin" : ""}`} />
+            <span>
+              {refreshingDates
+                ? "Reassigning Dates..."
+                : pastDueDraftCount > 0
+                ? `Refresh Past Dates (${pastDueDraftCount})`
+                : "Refresh Past Dates"}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -362,7 +459,7 @@ export default function InstagramFacebookManagementPage() {
           {/* SECTION 1: TO SCHEDULE */}
           {(activeTab === "all" || activeTab === "to_schedule") && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-amber-500" />
                   <h2 className="font-bold text-base text-brand-dark flex items-center gap-2">
@@ -372,9 +469,23 @@ export default function InstagramFacebookManagementPage() {
                     </span>
                   </h2>
                 </div>
-                <span className="text-xs text-gray-500 font-medium">
-                  Click Mark Scheduled to push to Buffer and move down
-                </span>
+                <div className="flex items-center gap-3">
+                  {pastDueDraftCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleRefreshPastDates}
+                      disabled={refreshingDates}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-black transition-colors cursor-pointer disabled:opacity-50"
+                      title="Reassign all past-due dates to upcoming future dates"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${refreshingDates ? "animate-spin" : ""}`} />
+                      <span>Reassign {pastDueDraftCount} Past Date(s) to Future</span>
+                    </button>
+                  )}
+                  <span className="text-xs text-gray-500 font-medium">
+                    Click Mark Scheduled to push to Buffer and move down
+                  </span>
+                </div>
               </div>
 
               {filteredToSchedule.length === 0 ? (
@@ -397,6 +508,8 @@ export default function InstagramFacebookManagementPage() {
                       onCopy={handleCopyText}
                       onToggleScheduled={handleToggleScheduled}
                       onUpdateScheduledAt={handleUpdateScheduledAt}
+                      onRefreshPastDates={handleRefreshPastDates}
+                      refreshingDates={refreshingDates}
                       onSelectTemplate={async (postId, templateIndex) => {
                         const target = posts.find((p) => p.id === postId);
                         const nextSlideContent = {
@@ -464,6 +577,8 @@ export default function InstagramFacebookManagementPage() {
                       onCopy={handleCopyText}
                       onToggleScheduled={handleToggleScheduled}
                       onUpdateScheduledAt={handleUpdateScheduledAt}
+                      onRefreshPastDates={handleRefreshPastDates}
+                      refreshingDates={refreshingDates}
                       onSelectTemplate={async (postId, templateIndex) => {
                         const target = posts.find((p) => p.id === postId);
                         const nextSlideContent = {
@@ -511,6 +626,8 @@ interface IgFbPostCardProps {
     imgSrc?: string
   ) => void;
   onUpdateScheduledAt: (postId: string, newIsoDate: string) => Promise<void> | void;
+  onRefreshPastDates?: () => Promise<void> | void;
+  refreshingDates?: boolean;
   onSelectTemplate: (postId: string, templateIndex: number | null) => void;
 }
 
@@ -520,6 +637,8 @@ function IgFbPostCard({
   onCopy,
   onToggleScheduled,
   onUpdateScheduledAt,
+  onRefreshPastDates,
+  refreshingDates,
   onSelectTemplate,
 }: IgFbPostCardProps) {
   const [copiedTitle, setCopiedTitle] = useState(false);
@@ -532,6 +651,7 @@ function IgFbPostCard({
   const isScheduledOrPosted =
     post.status === "scheduled" || post.status === "posted" || post.status === "published";
   const isDraft = post.status === "draft";
+  const isPastDue = isDraft && isScheduledDateInPast(post.scheduled_at);
   const rawCopy = post.caption_data?.caption || post.slide_content?.postCopy || post.brief;
   const initialImageUrl =
     (post.caption_data?.media_urls && post.caption_data.media_urls[0]) || "";
@@ -737,6 +857,12 @@ function IgFbPostCard({
                     : "Published"}
                 </span>
 
+                {isPastDue && (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-700 border border-rose-300">
+                    Date Passed
+                  </span>
+                )}
+
                 {!isDraft && (
                   <InlineDateTimeEditor
                     value={post.scheduled_at}
@@ -752,9 +878,9 @@ function IgFbPostCard({
                 )}
               </div>
 
-              {/* Target Date Banner (Double-click to edit) */}
+              {/* Target Date Banner (Double-click to edit) + Quick Refresh Button if Date Passed */}
               {isDraft && (
-                <div className="mb-2">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
                   <InlineDateTimeEditor
                     value={post.scheduled_at}
                     onSave={(iso) => onUpdateScheduledAt(post.id, iso)}
@@ -774,6 +900,19 @@ function IgFbPostCard({
                       </span>
                     </div>
                   </InlineDateTimeEditor>
+
+                  {isPastDue && onRefreshPastDates && (
+                    <button
+                      type="button"
+                      onClick={onRefreshPastDates}
+                      disabled={refreshingDates}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-pink hover:bg-brand-pink/90 text-white text-xs font-black transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                      title="Reassign past dates to upcoming future slots"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${refreshingDates ? "animate-spin" : ""}`} />
+                      <span>Refresh to Future Date</span>
+                    </button>
+                  )}
                 </div>
               )}
 
