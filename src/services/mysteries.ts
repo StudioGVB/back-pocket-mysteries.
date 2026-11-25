@@ -1864,8 +1864,30 @@ export const getMysteryById = cache(async (id: string) => {
     loadLiveStateFromSupabaseClueCarrier(id, supabase),
   ]);
 
+  const loadCloudArchitectSnapshot = async (lookupId: string) => {
+    try {
+      const { data: settingsRow } = await (supabase as any)
+        .from('platform_settings')
+        .select('config_json')
+        .eq('id', 'global')
+        .maybeSingle();
+      const entry = settingsRow?.config_json?.architectSyncedMysteries?.[lookupId];
+      if (entry?.mystery) {
+        cacheMysterySnapshot(lookupId, entry.mystery);
+        if (Array.isArray(entry.relationships) && entry.relationships.length > 0) {
+          cacheRelationshipsSnapshot(lookupId, entry.relationships);
+        }
+        return entry.mystery;
+      }
+    } catch {}
+    return null;
+  };
+
   if (error || !data) {
-    const cached = getCachedMysterySnapshot(id);
+    let cached = getCachedMysterySnapshot(id);
+    if (!cached) {
+      cached = await loadCloudArchitectSnapshot(id);
+    }
     if (cached) {
       if (liveCarrier?.characters?.length) {
         cached.characters = overlayLiveCarrierCharacters(cached.characters || [], liveCarrier.characters);
@@ -1873,7 +1895,7 @@ export const getMysteryById = cache(async (id: string) => {
       if (Array.isArray(cached.clues)) {
         cached.clues = cached.clues.filter((c: any) => !isLiveCarrierClue(c));
       }
-      return ensureChristmasNightmareCanon(cached, supabase);
+      return ensureUnibreakCabinCanon(ensureChristmasNightmareCanon(cached, supabase), supabase);
     }
 
     const templateLookupId = liveCarrier?.templateMysteryId || id;
@@ -1958,12 +1980,31 @@ export const getMysteryById = cache(async (id: string) => {
     data.clues = data.clues.filter((c: any) => !isLiveCarrierClue(c));
   }
 
-  const cachedSnapshot = getCachedMysterySnapshot(id);
+  let cachedSnapshot = getCachedMysterySnapshot(id);
+  if (
+    !cachedSnapshot &&
+    (!Array.isArray(data.characters) ||
+      data.characters.length === 0 ||
+      !Array.isArray(data.clues) ||
+      data.clues.length === 0)
+  ) {
+    cachedSnapshot = await loadCloudArchitectSnapshot(id);
+  }
   if (cachedSnapshot) {
-    if (Array.isArray(data.characters) && Array.isArray(cachedSnapshot.characters)) {
+    if (!Array.isArray(data.characters) || data.characters.length === 0) {
+      data.characters = cachedSnapshot.characters || [];
+    } else if (Array.isArray(cachedSnapshot.characters)) {
       data.characters = overlayLiveCarrierCharacters(data.characters, cachedSnapshot.characters);
     }
-    if (Array.isArray(data.clues) && Array.isArray(cachedSnapshot.clues)) {
+    if (!Array.isArray(data.plot_beats) || data.plot_beats.length === 0) {
+      data.plot_beats = cachedSnapshot.plot_beats || [];
+    }
+    if (!Array.isArray(data.subplots) || data.subplots.length === 0) {
+      data.subplots = cachedSnapshot.subplots || [];
+    }
+    if (!Array.isArray(data.clues) || data.clues.length === 0) {
+      data.clues = cachedSnapshot.clues || [];
+    } else if (Array.isArray(cachedSnapshot.clues)) {
       data.clues = data.clues.map((dbClue: any) => {
         const cachedClue = cachedSnapshot.clues.find((cc: any) => cc?.id === dbClue?.id);
         if (cachedClue?.static_image_url) {
