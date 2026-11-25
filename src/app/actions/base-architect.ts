@@ -2224,4 +2224,464 @@ Return strict JSON:
   }
 }
 
+/**
+ * STAGE 2: Beat-by-Beat Core Clue Suggester
+ * Given a specific Story Beat (Beat 1..5), suggests 5 distinct Core Clue options that explain or prove
+ * this specific beat, calibrated strictly to the mystery's Spice Level (dialogue + photo/generation prompt)
+ * and optionally embedding a double-meaning hook that could also look suspicious toward an innocent suspect.
+ */
+export async function suggestCluesForSingleBeatAction(params: {
+  blueprint: MysteryBlueprintInput;
+  beatNumber: number;
+  existingSelectedClues?: SuggestedClueCandidate[];
+  customDirection?: string;
+}): Promise<{
+  success: boolean;
+  candidates?: SuggestedClueCandidate[];
+  error?: string;
+}> {
+  await requireAdmin();
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
+
+  const { blueprint, beatNumber, existingSelectedClues = [], customDirection } = params;
+  const targetBeat =
+    blueprint.beats.find((b) => b.beatNumber === beatNumber) || blueprint.beats[0];
+  if (!targetBeat) {
+    return { success: false, error: `Beat #${beatNumber} not found in blueprint.` };
+  }
+
+  const spiceDirective = getSpiceRubricDirective(blueprint.spiceLevel);
+  const tokenDirective = getGenderFlexTokenDirective(blueprint.characters);
+  const maxAllowedRound = getPackageRoundsForCount(blueprint.characters?.length);
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const prompt = `You are the Master Forensic Clue & Spice Designer for Back Pocket Mysteries.
+We are building the Core Murder Clues BEAT-BY-BEAT.
+Right now, the creator has selected **BEAT #${targetBeat.beatNumber}: "${targetBeat.title}" (${targetBeat.timeWindow})**.
+Suggest **5 distinct, high-impact Core Clue candidates** that explain, reveal, or forensically prove what happened in **BEAT #${targetBeat.beatNumber}** — so the creator can pick their favorite 2 clues for this beat!
+
+MYSTERY CONTEXT:
+- Title: "${blueprint.title}" (${blueprint.theme})
+- Setting: ${blueprint.settingDescription}
+- Murder Time Window: ${blueprint.murderTimeWindow}
+- Murder Weapon & Method: ${blueprint.murderWeaponAndMethod}
+- True Killer & How/Why: ${blueprint.killerHowAndWhySummary}
+
+ALL 5 CORE BEATS (FOR CONTEXT):
+${blueprint.beats
+  .map(
+    (b) =>
+      `- Beat #${b.beatNumber} (${b.timeWindow} • ${b.title}): ${b.description}${
+        b.beatNumber === targetBeat.beatNumber ? '  <-- [FOCUS ALL 5 CLUES ON THIS BEAT]' : ''
+      }`
+  )
+  .join('\n')}
+
+CHARACTER CAST & MOTIVES:
+${blueprint.characters
+  .map(
+    (c) =>
+      `- {{${c.roleTitle}}} (${c.plotRole.toUpperCase()} • ${c.defaultGender}): ${c.conceptNotes} | Motive/Secret: ${c.motiveOrSecret}`
+  )
+  .join('\n')}
+
+${
+  existingSelectedClues.length > 0
+    ? `ALREADY SELECTED CLUES FROM OTHER BEATS (DO NOT DUPLICATE):
+${existingSelectedClues.map((c) => `- [Beat #${c.beatNumber || '?'} • ${c.format}] ${c.title}: ${c.description}`).join('\n')}`
+    : ''
+}
+
+${
+  customDirection && customDirection.trim()
+    ? `CREATOR'S SPECIFIC REQUEST FOR THIS BEAT'S CLUES:
+"${customDirection.trim()}"`
+    : ''
+}
+
+${spiceDirective}
+
+${tokenDirective}
+
+MANDATORY SPICE & DOUBLE-MEANING CLUE RULES:
+1. Every clue's "description" (the in-world dialogue, chat thread, note, receipt, or forensic observation) AND "generationPrompt" (the AI visual photo/evidence prompt) MUST explicitly reflect the **${blueprint.spiceLevel.toUpperCase()}** spice level:
+   - If Filthy: raw 18+ after-dark dialogue, F-bombs ("fuck", "fucking"), scandalous bedroom/balcony tension, moody after-dark noir photography prompt.
+   - If Spicy: sharp cussing ("bitch", "shit", "wtf"), catfight/scandal tension, dramatic noir evidence photo prompt.
+   - If Mild: romantic affair tension with 100% clean PG-13 dialogue (0 cussing).
+   - If Clean: 100% SFW high-stakes murder/blackmail with 0 romance affairs and 0 profanity.
+2. Provide a variety of formats across the 5 options ("chat", "search_log", "social_post", "handwritten_note", "receipt", "medical_record", "official_document", "physical_prop").
+3. **DOUBLE-MEANING / AMBIGUOUS HOOK (IDEAL!):** Wherever possible, write the clue so that while it genuinely proves part of Beat #${targetBeat.beatNumber}, it ALSO has an ambiguous double meaning that could make one of the innocent suspects look suspicious (and explain that in "doubleMeaningNote").
+4. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names like Leah, Stacy, Seb, James, Mia, or Josh.
+
+Return strict JSON:
+{
+  "clues": [
+    {
+      "title": "Punchy in-world clue title",
+      "format": "chat" | "search_log" | "social_post" | "handwritten_note" | "receipt" | "medical_record" | "official_document" | "physical_prop",
+      "roundNumber": 1 | 2 | 3,
+      "timestampLabel": "${targetBeat.timeWindow}",
+      "description": "Full in-world clue text/dialogue calibrated to ${blueprint.spiceLevel} spice using {{Role}} tokens.",
+      "generationPrompt": "Photorealistic cinematic evidence photo prompt matching ${blueprint.spiceLevel} mood/drama (NO text inside image).",
+      "pointsTo": "How this clue explains Beat #${targetBeat.beatNumber}.",
+      "doubleMeaningNote": "How this clue also looks ambiguous or suspicious toward an innocent suspect's motive.",
+      "involvedRoles": ["The Role A", "The Role B"]
+    }
+  ]
+}`;
+
+    const res = await model.generateContent(prompt);
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'architect_suggest_beat_clues',
+      usageMetadata: res.response.usageMetadata,
+    });
+
+    const parsed = extractJsonObject(res.response.text());
+    const candidates: SuggestedClueCandidate[] = (parsed.clues || []).map(
+      (c: any, idx: number) => ({
+        id: `beat-${beatNumber}-clue-${Date.now()}-${idx}`,
+        title: String(c.title || `Beat #${beatNumber} Clue ${idx + 1}`).trim(),
+        format: (c.format as ClueFormat) || 'physical_prop',
+        roundNumber: Math.max(
+          1,
+          Math.min(maxAllowedRound, Number(c.roundNumber) || Math.min(maxAllowedRound, Math.ceil(beatNumber / 2)))
+        ) as ArchitectRoundNumber,
+        timestampLabel: String(c.timestampLabel || targetBeat.timeWindow || '10:00 PM'),
+        description: String(c.description || '').trim(),
+        generationPrompt: String(c.generationPrompt || c.description || '').trim(),
+        pointsTo: String(c.pointsTo || `Proves Beat #${beatNumber}.`).trim(),
+        doubleMeaningNote: String(c.doubleMeaningNote || '').trim(),
+        involvedRoles: Array.isArray(c.involvedRoles) ? c.involvedRoles : [],
+        isRedHerring: false,
+        beatNumber,
+        decision: 'pending',
+      })
+    );
+
+    return {
+      success: true,
+      candidates,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || `Failed to suggest clues for Beat #${beatNumber}.`,
+    };
+  }
+}
+
+/**
+ * STAGE 3: Red Herring & Double-Meaning Builder
+ * Creates 3 entangled Red-Herring Plotlines tying together the Innocent Suspects (and Accomplice/Victim),
+ * showing each character's motive, how their motive ties into the already-selected 10 Core Clues
+ * (double-meaning / ambiguity), and suggesting 4 Red Herring Clues per plotline so the user can pick ~2 each
+ * (~6 Red Herring Clues total).
+ */
+export async function suggestRedHerringPlotlinesWithCluesAction(params: {
+  blueprint: MysteryBlueprintInput;
+  selectedCoreClues: SuggestedClueCandidate[];
+  customDirection?: string;
+}): Promise<{
+  success: boolean;
+  subplots?: SuggestedRedHerringSubplot[];
+  error?: string;
+}> {
+  await requireAdmin();
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
+
+  const { blueprint, selectedCoreClues, customDirection } = params;
+  const spiceDirective = getSpiceRubricDirective(blueprint.spiceLevel);
+  const tokenDirective = getGenderFlexTokenDirective(blueprint.characters);
+  const maxAllowedRound = getPackageRoundsForCount(blueprint.characters?.length);
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const prompt = `You are the Master Red-Herring & Double-Meaning Architect for Back Pocket Mysteries.
+The creator has locked in their **10 Core Murder Clues** across the 5 Core Story Beats.
+Now we need to build **3 entangled Red-Herring Plotlines** for the Innocent Suspects so the creator can see each suspect's motive, see how it ties into the real clues via double-meaning, and pick **2 Red-Herring Clues per plotline (6 Red-Herring Clues total)** to complete their 16-clue mystery!
+
+MYSTERY CONTEXT:
+- Title: "${blueprint.title}" (${blueprint.theme})
+- Spice Level: ${blueprint.spiceLevel}
+- Murder Time Window: ${blueprint.murderTimeWindow}
+- Murder Weapon & Method: ${blueprint.murderWeaponAndMethod}
+- True Killer & How/Why: ${blueprint.killerHowAndWhySummary}
+
+CHARACTER CAST & MOTIVES:
+${blueprint.characters
+  .map(
+    (c) =>
+      `- {{${c.roleTitle}}} (${c.plotRole.toUpperCase()} • ${c.defaultGender}): ${c.conceptNotes} | Motive/Secret: ${c.motiveOrSecret}`
+  )
+  .join('\n')}
+
+LOCKED-IN 10 CORE MURDER CLUES:
+${selectedCoreClues
+  .map(
+    (c, idx) =>
+      `${idx + 1}. [Beat #${c.beatNumber || '?'} • ${c.timestampLabel} • ${c.format}] "${c.title}": ${c.description}`
+  )
+  .join('\n')}
+
+${
+  customDirection && customDirection.trim()
+    ? `CREATOR'S SPECIFIC REQUEST FOR RED HERRINGS:
+"${customDirection.trim()}"`
+    : ''
+}
+
+${spiceDirective}
+
+${tokenDirective}
+
+RED-HERRING & DOUBLE-MEANING RULES:
+1. Create **3 distinct Red-Herring Plotlines**, each tying together **2+ characters** (focusing on the Innocent Suspects so every innocent character has a strong, incriminating motive for wanting the Victim dead or covering up a scandal with another suspect).
+2. For each Red-Herring Plotline, include:
+   - "title": Punchy subplot title using {{The Role}} tokens.
+   - "involvedRoles": The 2–3 character role titles entangled in this subplot.
+   - "summary": Clear explanation of their motive against the Victim and their secret side-scheme.
+   - "doubleMeaningCoreClueHook": Explicitly name 1 or 2 of the **Locked-In 10 Core Murder Clues** above and explain how that real clue looks ambiguous or double-meaning toward THIS red-herring motive!
+   - "decoyClues": Suggest **4 distinct Red-Herring Clue options** for this plotline (the creator will pick their favorite 2). Every clue's "description" and "generationPrompt" MUST be strictly calibrated to the **${blueprint.spiceLevel.toUpperCase()}** spice level!
+3. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names.
+
+Return strict JSON:
+{
+  "subplots": [
+    {
+      "title": "e.g. {{The Bestie}} & {{The Teammate}}: The $18,000 Workplace Skim & Blackmail",
+      "involvedRoles": ["The Bestie", "The Teammate"],
+      "theme": "Embezzlement & Secret Hookup Cover-Up",
+      "summary": "Why these characters had a fierce motive to silence the Victim and what they were doing during the murder window.",
+      "doubleMeaningCoreClueHook": "Ties directly into Core Clue '[Title]' because...",
+      "step1TriggerR1": "Early suspicion trigger",
+      "step2EscalationR2": "Mid-game escalation",
+      "step3AlibiHoleR3": "How their alibi is finally explained",
+      "backstoryAdditions": {
+        "The Bestie": "Extra backstory detail",
+        "The Teammate": "Extra backstory detail"
+      },
+      "decoyClues": [
+        {
+          "title": "Red herring clue title",
+          "format": "chat" | "search_log" | "social_post" | "handwritten_note" | "receipt" | "medical_record" | "official_document" | "physical_prop",
+          "roundNumber": 1 | 2 | 3,
+          "timestampLabel": "e.g. 10:45 PM",
+          "description": "In-world clue text calibrated to ${blueprint.spiceLevel} spice using {{Role}} tokens.",
+          "generationPrompt": "Photorealistic evidence photo prompt calibrated to ${blueprint.spiceLevel} mood (NO text in image).",
+          "pointsTo": "Why this makes {{The Role}} look guilty (or clears their alibi later).",
+          "involvedRoles": ["The Bestie", "The Teammate"]
+        }
+      ]
+    }
+  ]
+}`;
+
+    const res = await model.generateContent(prompt);
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'architect_suggest_red_herring_plotlines',
+      usageMetadata: res.response.usageMetadata,
+    });
+
+    const parsed = extractJsonObject(res.response.text());
+    const subplots: SuggestedRedHerringSubplot[] = (parsed.subplots || []).map(
+      (s: any, idx: number) => {
+        const subId = `rh-plot-${Date.now()}-${idx}`;
+        const decoyClues: SuggestedClueCandidate[] = (s.decoyClues || []).map(
+          (c: any, cIdx: number) => ({
+            id: `${subId}-clue-${cIdx}`,
+            title: String(c.title || `Red Herring Clue #${cIdx + 1}`).trim(),
+            format: (c.format as ClueFormat) || 'chat',
+            roundNumber: Math.max(
+              1,
+              Math.min(maxAllowedRound, Number(c.roundNumber) || (cIdx % maxAllowedRound) + 1)
+            ) as ArchitectRoundNumber,
+            timestampLabel: String(c.timestampLabel || '10:30 PM'),
+            description: String(c.description || '').trim(),
+            generationPrompt: String(c.generationPrompt || c.description || '').trim(),
+            pointsTo: String(c.pointsTo || 'Red-herring motive & misdirection clue.').trim(),
+            involvedRoles: Array.isArray(c.involvedRoles)
+              ? c.involvedRoles
+              : Array.isArray(s.involvedRoles)
+                ? s.involvedRoles
+                : [],
+            isRedHerring: true,
+            subplotId: subId,
+            // Pre-select the first 2 clues per subplot so 3 subplots x 2 = 6 Red Herring clues ready out of the box!
+            decision: cIdx < 2 ? 'yes' : 'pending',
+          })
+        );
+
+        return {
+          id: subId,
+          title: String(s.title || `Red Herring Plotline #${idx + 1}`).trim(),
+          involvedRoles: Array.isArray(s.involvedRoles) ? s.involvedRoles : [],
+          theme: String(s.theme || 'Suspect Motive & Cover-Up').trim(),
+          summary: String(s.summary || '').trim(),
+          doubleMeaningCoreClueHook: String(s.doubleMeaningCoreClueHook || '').trim(),
+          step1TriggerR1: String(s.step1TriggerR1 || '').trim(),
+          step2EscalationR2: String(s.step2EscalationR2 || '').trim(),
+          step3AlibiHoleR3: String(s.step3AlibiHoleR3 || '').trim(),
+          backstoryAdditions:
+            s.backstoryAdditions && typeof s.backstoryAdditions === 'object'
+              ? s.backstoryAdditions
+              : {},
+          decoyClues,
+          decision: 'yes',
+        };
+      }
+    );
+
+    return {
+      success: true,
+      subplots,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to generate red-herring plotlines.',
+    };
+  }
+}
+
+/**
+ * STAGE 4: Smart Complexity-Based Round Sorter
+ * Sorts the 16 selected clues (10 Core + 6 Red Herring) into Rounds (e.g. Rounds 1, 2, 3 for Basic)
+ * based on dramatic investigation complexity & reveal pacing (NOT chronological timeline order!).
+ */
+export async function sortCluesIntoRoundsByComplexityAction(params: {
+  blueprint: MysteryBlueprintInput;
+  selectedCoreClues: SuggestedClueCandidate[];
+  selectedRedHerringClues: SuggestedClueCandidate[];
+}): Promise<{
+  success: boolean;
+  sortedCoreClues?: SuggestedClueCandidate[];
+  sortedRedHerringClues?: SuggestedClueCandidate[];
+  roundStrategySummary?: Record<number, string>;
+  error?: string;
+}> {
+  await requireAdmin();
+  const { blueprint, selectedCoreClues, selectedRedHerringClues } = params;
+  const totalRounds = getPackageRoundsForCount(blueprint.characters?.length);
+  const allClues = [...selectedCoreClues, ...selectedRedHerringClues];
+  if (allClues.length === 0) {
+    return { success: false, error: 'No clues selected to sort.' };
+  }
+
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const prompt = `You are the Master Game Pacing & Complexity Architect for Back Pocket Mysteries.
+We have ${allClues.length} total clues (${selectedCoreClues.length} Core Murder Clues + ${selectedRedHerringClues.length} Red-Herring Clues).
+Sort these ${allClues.length} clues across **Rounds 1 to ${totalRounds}** based on **INVESTIGATIVE COMPLEXITY & DRAMATIC REVEAL PACING** — NOT chronological clock order!
+
+ROUND SORTING STRATEGY (${totalRounds} ROUNDS):
+- **Round 1 (Opening Misdirection & Double-Meaning Setup — ~5-6 clues):**
+  Put noisy Red-Herring motive triggers AND early ambiguous/double-meaning Core Clues here so >=75% of early table suspicion points toward innocent decoys while hiding key setup facts in plain sight.
+- **Round 2 (Escalation, Weapon Trail & Alibi Cracks — ~5-6 clues):**
+  Expose deeper secrets, show physical evidence from the struggle/weapon, and start cracking alibis without giving away the final smoking gun yet.
+- **Round ${totalRounds} (The Interlocking Smoking Gun & Decoy Exoneration — ~5-6 clues):**
+  Hold back the decisive forensic/timeline smoking-gun clues that unmask the True Killer (and Accomplice, if any) ONLY when cross-referenced with Round 1 & Round 2 clues, plus the alibi proof that clears the loudest red herring.
+
+MYSTERY KILLER & METHOD:
+- True Killer & How/Why: ${blueprint.killerHowAndWhySummary}
+- Weapon & Method: ${blueprint.murderWeaponAndMethod}
+
+CLUES TO SORT:
+${allClues
+  .map(
+    (c) =>
+      `- ID: "${c.id}" | [${c.isRedHerring ? 'RED HERRING' : `CORE BEAT #${c.beatNumber || '?'}`} • ${c.timestampLabel} • ${c.format}] "${c.title}": ${c.description}`
+  )
+  .join('\n')}
+
+Return strict JSON mapping every clue ID to its optimal roundNumber (1..${totalRounds}) and a 1-sentence reason:
+{
+  "roundStrategySummary": {
+    "1": "1-sentence summary of what Round 1 achieves at the table.",
+    "2": "1-sentence summary of what Round 2 achieves at the table.",
+    "${totalRounds}": "1-sentence summary of how Round ${totalRounds} locks the killer solution."
+  },
+  "assignments": [
+    {
+      "id": "exact clue ID",
+      "roundNumber": 1
+    }
+  ]
+}`;
+
+    const res = await model.generateContent(prompt);
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'architect_sort_clues_by_complexity',
+      usageMetadata: res.response.usageMetadata,
+    });
+
+    const parsed = extractJsonObject(res.response.text());
+    const assignmentMap = new Map<string, ArchitectRoundNumber>();
+    if (Array.isArray(parsed.assignments)) {
+      for (const a of parsed.assignments) {
+        if (a?.id && a?.roundNumber) {
+          const r = Math.max(1, Math.min(totalRounds, Number(a.roundNumber) || 1)) as ArchitectRoundNumber;
+          assignmentMap.set(String(a.id), r);
+        }
+      }
+    }
+
+    const sortedCoreClues = selectedCoreClues.map((c, idx) => ({
+      ...c,
+      roundNumber:
+        assignmentMap.get(c.id) ||
+        ((Math.min(totalRounds, Math.floor((idx / Math.max(1, selectedCoreClues.length)) * totalRounds) + 1)) as ArchitectRoundNumber),
+    }));
+
+    const sortedRedHerringClues = selectedRedHerringClues.map((c, idx) => ({
+      ...c,
+      roundNumber:
+        assignmentMap.get(c.id) ||
+        (((idx % totalRounds) + 1) as ArchitectRoundNumber),
+    }));
+
+    return {
+      success: true,
+      sortedCoreClues,
+      sortedRedHerringClues,
+      roundStrategySummary: parsed.roundStrategySummary || {},
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to sort clues into rounds.',
+    };
+  }
+}
+
+
 
