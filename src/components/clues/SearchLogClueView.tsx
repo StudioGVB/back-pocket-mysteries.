@@ -1,20 +1,27 @@
 'use client';
 
 import React from 'react';
-import { parseSearchLogClue, stripCustomerFacingTitle } from '@/utils/clue-format';
+import {
+  extractPrimaryClueTimestamp,
+  parseSearchLogClue,
+  stripCustomerFacingTitle,
+} from '@/utils/clue-format';
 import { ClueViewProps } from './ChatClueView';
 
 export function SearchLogClueView({
   clue,
   hydratedTitle,
   hydratedDescription,
-  compact = false,
-  showImage = true,
 }: ClueViewProps) {
   const rawTitle = hydratedTitle || clue.title || 'Digital Intercept Log';
   const title = stripCustomerFacingTitle(rawTitle) || 'Digital Intercept Log';
   const rawText = hydratedDescription ?? clue.description ?? '';
   const parsed = parseSearchLogClue(title, rawText);
+  const detectedTimestamp = extractPrimaryClueTimestamp(
+    title,
+    rawText,
+    clue.internal_notes
+  );
 
   return (
     <div className="w-full space-y-3">
@@ -31,6 +38,11 @@ export function SearchLogClueView({
             <span className="text-emerald-400 shrink-0">🔒</span>
             <span className="truncate">{parsed.deviceOrUrl}</span>
           </div>
+          {detectedTimestamp && (
+            <span className="px-2 py-0.5 rounded bg-amber-400/15 border border-amber-400/35 text-[9px] font-mono font-black uppercase tracking-wider text-amber-300 shrink-0">
+              🕒 {detectedTimestamp}
+            </span>
+          )}
         </div>
 
         <div className="p-4 space-y-3">

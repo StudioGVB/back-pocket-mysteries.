@@ -1,41 +1,28 @@
 'use client';
 
 import React from 'react';
-import { parseSocialClue, stripCustomerFacingTitle } from '@/utils/clue-format';
+import {
+  extractPrimaryClueTimestamp,
+  parseSocialClue,
+  stripCustomerFacingTitle,
+} from '@/utils/clue-format';
 import { ClueViewProps } from './ChatClueView';
 
 export function SocialClueView({
   clue,
   hydratedTitle,
   hydratedDescription,
-  compact = false,
-  showImage = true,
 }: ClueViewProps) {
   const rawTitle = hydratedTitle || clue.title || 'Social Media Post';
   const title = stripCustomerFacingTitle(rawTitle) || 'Social Media Post';
   const rawText = hydratedDescription ?? clue.description ?? '';
   const parsed = parseSocialClue(title, rawText);
+  const detectedTimestamp =
+    extractPrimaryClueTimestamp(title, rawText, clue.internal_notes) ||
+    parsed.draftTime;
 
   return (
     <div className="w-full space-y-3">
-      {showImage && clue.static_image_url && (
-        <div
-          className={`relative w-full ${
-            compact ? 'h-32' : 'h-44'
-          } rounded-2xl overflow-hidden border border-pink-500/20 bg-slate-950`}
-        >
-          <img
-            src={clue.static_image_url}
-            alt={title}
-            className="w-full h-full object-cover opacity-85"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b0d14] via-transparent to-transparent" />
-          <div className="absolute top-2.5 left-3 px-2.5 py-0.5 rounded-full bg-black/75 border border-pink-500/30 text-[9px] font-black uppercase tracking-widest text-pink-300 backdrop-blur-md">
-            📱 {parsed.isDraft ? 'Unposted Social Draft' : 'Social Profile Capture'}
-          </div>
-        </div>
-      )}
-
       {/* Instagram / TikTok Dark-Mode App Container */}
       <div className="w-full rounded-2xl overflow-hidden bg-[#0b0d14] border border-slate-800/90 shadow-2xl font-sans text-slate-100">
         {/* Top App Bar */}
@@ -58,15 +45,22 @@ export function SocialClueView({
             </div>
           </div>
 
-          <span
-            className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 ${
-              parsed.isDraft
-                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                : 'bg-pink-500/15 text-pink-300 border border-pink-500/30'
-            }`}
-          >
-            {parsed.isDraft ? 'DRAFT' : 'FOLLOWING'}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {detectedTimestamp && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/35 text-[9px] font-mono font-black uppercase tracking-wider text-amber-300">
+                🕒 {detectedTimestamp}
+              </span>
+            )}
+            <span
+              className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                parsed.isDraft
+                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                  : 'bg-pink-500/15 text-pink-300 border border-pink-500/30'
+              }`}
+            >
+              {parsed.isDraft ? 'DRAFT' : 'FOLLOWING'}
+            </span>
+          </div>
         </div>
 
         <div className="p-4 space-y-3">

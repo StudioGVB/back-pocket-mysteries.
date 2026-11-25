@@ -209,6 +209,24 @@ export function AudioClueView({
     setCurrentTime(newTime);
   };
 
+  const handleSeekBarIndex = (barIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const el = audioRef.current;
+    if (!el || !hasAudio) {
+      void togglePlay(e);
+      return;
+    }
+    const ratio = Math.max(
+      0,
+      Math.min(1, barIndex / Math.max(1, WAVEFORM_BARS.length - 1))
+    );
+    const targetDuration =
+      el.duration && Number.isFinite(el.duration) ? el.duration : totalSeconds;
+    const newTime = ratio * targetDuration;
+    el.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
   const effectiveDuration =
     audioDuration && Number.isFinite(audioDuration) && audioDuration > 0
       ? audioDuration
@@ -224,6 +242,109 @@ export function AudioClueView({
     const rem = safeSecs % 60;
     return `${mins}:${rem < 10 ? '0' : ''}${rem}`;
   };
+
+  const detectedTimestamp = useMemo(() => {
+    const combined = `${rawTitle}\n${rawTranscript}\n${clue.internal_notes || ''}`;
+    const m = combined.match(/\b(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\b/i);
+    return m ? m[1].toUpperCase().replace(/\s+/g, ' ').trim() : null;
+  }, [rawTitle, rawTranscript, clue.internal_notes]);
+
+  const structuredDialogueLines = useMemo(() => {
+    const toneStyleMap: Record<string, { label: string; badgeClass: string }> = {
+      whispers: {
+        label: '🤫 WHISPERS',
+        badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30',
+      },
+      whispering: {
+        label: '🤫 WHISPERS',
+        badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30',
+      },
+      angry: {
+        label: '😡 ANGRY',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-400/30',
+      },
+      furious: {
+        label: '😡 FURIOUS',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-400/30',
+      },
+      shouting: {
+        label: '📢 SHOUTING',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-400/30',
+      },
+      laughs: {
+        label: '😂 LAUGHS',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+      },
+      laughing: {
+        label: '😂 LAUGHS',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+      },
+      sarcastic: {
+        label: '😒 SARCASTIC',
+        badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-400/30',
+      },
+      annoyed: {
+        label: '😤 ANNOYED',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+      },
+      panicked: {
+        label: '😰 PANICKED',
+        badgeClass: 'bg-orange-500/20 text-orange-300 border-orange-400/30',
+      },
+      nervous: {
+        label: '😰 NERVOUS',
+        badgeClass: 'bg-orange-500/20 text-orange-300 border-orange-400/30',
+      },
+      crying: {
+        label: '😢 CRYING',
+        badgeClass: 'bg-sky-500/20 text-sky-300 border-sky-400/30',
+      },
+    };
+
+    const rawLines = (transcript || rawTranscript || '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    return rawLines.map((line) => {
+      // Stage direction line like "[Heavy metallic thud on timber deck]"
+      if (/^\[[^\]]+\]$/.test(line)) {
+        return {
+          type: 'stage' as const,
+          text: line.replace(/^\[|\]$/g, '').trim(),
+        };
+      }
+
+      const speakerMatch = line.match(/^([^:]{2,42}):\s*(.+)$/);
+      if (!speakerMatch) {
+        return {
+          type: 'plain' as const,
+          text: line,
+        };
+      }
+
+      const speaker = speakerMatch[1].trim();
+      let content = speakerMatch[2].trim().replace(/^["“]|["”]$/g, '').trim();
+
+      let toneBadge: { label: string; badgeClass: string } | null = null;
+      const toneMatch = content.match(/^\[([a-zA-Z\s_-]{2,20})\]\s*(.*)$/);
+      if (toneMatch) {
+        const rawTone = toneMatch[1].trim().toLowerCase();
+        content = toneMatch[2].trim();
+        toneBadge = toneStyleMap[rawTone] || {
+          label: `🎭 ${rawTone.toUpperCase()}`,
+          badgeClass: 'bg-slate-800 text-slate-300 border-slate-700',
+        };
+      }
+
+      return {
+        type: 'dialogue' as const,
+        speaker,
+        toneBadge,
+        text: content,
+      };
+    });
+  }, [transcript, rawTranscript]);
 
   return (
     <div className="w-full rounded-2xl overflow-hidden bg-[#0c1220] border border-slate-800 shadow-xl text-slate-100 font-sans">
@@ -252,7 +373,7 @@ export function AudioClueView({
 
       {/* Voice Memo Player & Transcript Card */}
       <div className="p-4 space-y-3.5">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="text-[10px] font-mono uppercase tracking-widest text-blue-400 flex items-center gap-1.5">
               <span
@@ -281,9 +402,16 @@ export function AudioClueView({
             </div>
           </div>
 
-          <span className="text-[11px] font-mono font-bold text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
-            {formatTime(currentTime)} / {formatTime(totalSeconds)}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {detectedTimestamp && (
+              <span className="px-2 py-1 rounded-lg bg-amber-400/15 border border-amber-400/35 text-[10px] font-mono font-black text-amber-300 uppercase tracking-wider">
+                🕒 {detectedTimestamp}
+              </span>
+            )}
+            <span className="text-[11px] font-mono font-bold text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+              {formatTime(currentTime)} / {formatTime(totalSeconds)}
+            </span>
+          </div>
         </div>
 
         {/* Character / Guest Names Only (never show internal voice model names) */}
@@ -330,11 +458,15 @@ export function AudioClueView({
               )}
             </button>
 
-            {/* Animated CSS Waveform Equalizer + Scrubber */}
+            {/* Animated CSS Waveform Equalizer + Per-Bar Click-to-Scrub */}
             <div
               onClick={hasAudio ? handleSeek : togglePlay}
               className="flex-grow flex items-center gap-1 h-9 cursor-pointer select-none"
-              title={hasAudio ? 'Click to seek audio' : 'Click to play audio'}
+              title={
+                hasAudio
+                  ? 'Tap any bar on the waveform to scrub/rewind audio'
+                  : 'Click to play audio'
+              }
             >
               {WAVEFORM_BARS.map((height, i) => {
                 const barPct = (i / WAVEFORM_BARS.length) * 100;
@@ -347,18 +479,25 @@ export function AudioClueView({
                   : height;
 
                 return (
-                  <div
+                  <button
                     key={i}
-                    className="flex-grow rounded-full transition-all duration-150"
-                    style={{
-                      height: `${activeHeight}%`,
-                      backgroundColor: isPlayed
-                        ? '#3b82f6'
-                        : isPlaying
-                        ? 'rgba(96, 165, 250, 0.45)'
-                        : 'rgba(148, 163, 184, 0.28)',
-                    }}
-                  />
+                    type="button"
+                    onClick={(e) => handleSeekBarIndex(i, e)}
+                    aria-label={`Seek to ${Math.round(barPct)}%`}
+                    className="flex-grow h-full flex items-center group cursor-pointer focus:outline-none"
+                  >
+                    <span
+                      className="w-full rounded-full transition-all duration-150 group-hover:scale-y-110 group-hover:bg-cyan-400"
+                      style={{
+                        height: `${activeHeight}%`,
+                        backgroundColor: isPlayed
+                          ? '#3b82f6'
+                          : isPlaying
+                          ? 'rgba(96, 165, 250, 0.45)'
+                          : 'rgba(148, 163, 184, 0.28)',
+                      }}
+                    />
+                  </button>
                 );
               })}
             </div>
@@ -382,7 +521,7 @@ export function AudioClueView({
           )}
         </div>
 
-        {/* Collapsible "Read Transcript" Drawer */}
+        {/* Collapsible "Read Transcript" Drawer with Styled Speaker Rows & Tone Badges */}
         <div className="border-t border-slate-800/80 pt-2.5">
           <button
             type="button"
@@ -402,8 +541,58 @@ export function AudioClueView({
           </button>
 
           {showTranscript && (
-            <div className="mt-2.5 p-3.5 rounded-xl bg-slate-950/90 border border-slate-800/80 text-xs font-medium text-slate-200 leading-relaxed whitespace-pre-line animate-in fade-in duration-200">
-              {transcript || rawTranscript || 'No audio transcript available.'}
+            <div className="mt-2.5 p-3 rounded-xl bg-slate-950/90 border border-slate-800/80 space-y-2.5 animate-in fade-in duration-200">
+              {structuredDialogueLines.length === 0 ? (
+                <div className="text-xs text-slate-400 italic">
+                  No audio transcript available.
+                </div>
+              ) : (
+                structuredDialogueLines.map((row, idx) => {
+                  if (row.type === 'stage') {
+                    return (
+                      <div
+                        key={idx}
+                        className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-bold text-amber-300 flex items-center gap-1.5"
+                      >
+                        <span>🔊</span>
+                        <span>{row.text}</span>
+                      </div>
+                    );
+                  }
+                  if (row.type === 'plain') {
+                    return (
+                      <p
+                        key={idx}
+                        className="text-xs font-medium text-slate-200 leading-relaxed"
+                      >
+                        {row.text}
+                      </p>
+                    );
+                  }
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-lg bg-slate-900/80 border border-slate-800/90 p-2.5 space-y-1"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-blue-300">
+                          🎙️ {row.speaker}
+                        </span>
+                        {row.toneBadge && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${row.toneBadge.badgeClass}`}
+                          >
+                            {row.toneBadge.label}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium text-slate-100 leading-relaxed">
+                        &ldquo;{row.text}&rdquo;
+                      </p>
+                    </div>
+                  );
+                })
+              )}
             </div>
           )}
         </div>

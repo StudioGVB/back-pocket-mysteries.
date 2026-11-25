@@ -1,40 +1,81 @@
 'use client';
 
 import React from 'react';
-import { parseCallSheetClue, stripCustomerFacingTitle } from '@/utils/clue-format';
+import {
+  extractPrimaryClueTimestamp,
+  parseCallSheetClue,
+  stripCustomerFacingTitle,
+} from '@/utils/clue-format';
 import { ClueViewProps } from './ChatClueView';
+
+function inferClipboardThemeHeader(title: string, rawText: string): {
+  kicker: string;
+  badge: string;
+} {
+  const combined = `${title} ${rawText}`.toLowerCase();
+  if (
+    combined.includes('cheer') ||
+    combined.includes('varsity') ||
+    combined.includes('flyer') ||
+    combined.includes('nationals') ||
+    combined.includes('stunt') ||
+    combined.includes('routine')
+  ) {
+    return {
+      kicker: 'VARSITY SQUAD LINEUP & DIRECTIVE',
+      badge: 'SQUAD ONLY',
+    };
+  }
+  if (
+    combined.includes('circus') ||
+    combined.includes('ringmaster') ||
+    combined.includes('trapeze') ||
+    combined.includes('backstage') ||
+    combined.includes('stagehand') ||
+    combined.includes('rigging')
+  ) {
+    return {
+      kicker: 'PRODUCTION CREW DIRECTIVE',
+      badge: 'CREW ONLY',
+    };
+  }
+  if (
+    combined.includes('cabin') ||
+    combined.includes('lodge') ||
+    combined.includes('hotel') ||
+    combined.includes('resort') ||
+    combined.includes('villa') ||
+    combined.includes('guest')
+  ) {
+    return {
+      kicker: 'VENUE & STAFF CLIPBOARD LOG',
+      badge: 'STAFF ONLY',
+    };
+  }
+  return {
+    kicker: 'OFFICIAL SCHEDULE & CLIPBOARD',
+    badge: 'CONFIDENTIAL',
+  };
+}
 
 export function CallSheetClueView({
   clue,
   hydratedTitle,
   hydratedDescription,
-  compact = false,
-  showImage = true,
 }: ClueViewProps) {
-  const rawTitle = hydratedTitle || clue.title || 'Production Call Sheet';
-  const title = stripCustomerFacingTitle(rawTitle) || 'Production Call Sheet';
+  const rawTitle = hydratedTitle || clue.title || 'Official Schedule & Clipboard';
+  const title = stripCustomerFacingTitle(rawTitle) || 'Official Schedule & Clipboard';
   const rawText = hydratedDescription ?? clue.description ?? '';
   const parsed = parseCallSheetClue(title, rawText);
+  const { kicker, badge } = inferClipboardThemeHeader(title, rawText);
+  const detectedTimestamp = extractPrimaryClueTimestamp(
+    title,
+    rawText,
+    clue.internal_notes
+  );
 
   return (
     <div className="w-full space-y-3">
-      {showImage && clue.static_image_url && (
-        <div
-          className={`relative w-full ${
-            compact ? 'h-32' : 'h-44'
-          } rounded-2xl overflow-hidden border border-amber-500/20 bg-slate-950`}
-        >
-          <img
-            src={clue.static_image_url}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2.5 left-3 px-2.5 py-0.5 rounded-full bg-black/75 border border-amber-400/30 text-[9px] font-black uppercase tracking-widest text-amber-300 backdrop-blur-md">
-            📋 Backstage Call Sheet
-          </div>
-        </div>
-      )}
-
       {/* Wooden/Metal Clipboard Container */}
       <div className="w-full rounded-2xl bg-[#3d2b1f] p-2.5 border border-amber-900/50 shadow-2xl">
         {/* Metallic Clipboard Clip at Top */}
@@ -47,15 +88,22 @@ export function CallSheetClueView({
           <div className="border-b-2 border-stone-900 pb-2 flex items-start justify-between gap-2">
             <div>
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-red-700">
-                PRODUCTION CREW DIRECTIVE
+                {kicker}
               </div>
               <div className="text-xs font-black uppercase text-stone-950 mt-0.5 break-words">
                 {parsed.headerTitle}
               </div>
             </div>
-            <span className="px-2 py-0.5 bg-red-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xs shrink-0">
-              CREW ONLY
-            </span>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <span className="px-2 py-0.5 bg-red-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xs">
+                {badge}
+              </span>
+              {detectedTimestamp && (
+                <span className="px-2 py-0.5 bg-amber-200/90 border border-amber-500/60 text-stone-950 text-[9px] font-mono font-black uppercase tracking-wider rounded-xs">
+                  🕒 {detectedTimestamp}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Bullet Directives */}
@@ -83,11 +131,11 @@ export function CallSheetClueView({
 
           {/* Pinned Yellow Sticky Note at Bottom */}
           {parsed.stickyNote && (
-            <div className="mt-3 -rotate-1 rounded-md bg-[#fef08a] border border-yellow-400/90 p-3.5 shadow-md text-stone-900 font-serif italic">
+            <div className="mt-3 -rotate-1 rounded-md bg-[#fef08a] border border-yellow-400/90 p-3.5 shadow-md text-stone-900 font-['Caveat','Bradley_Hand','Segoe_Print',cursive,serif] italic">
               <div className="text-[9px] font-mono font-black uppercase tracking-widest text-amber-900/70 not-italic mb-1">
                 📌 Handwritten Sticky Note Attached:
               </div>
-              <p className="text-xs leading-relaxed break-words">
+              <p className="text-sm leading-relaxed break-words">
                 &ldquo;{parsed.stickyNote}&rdquo;
               </p>
               {parsed.stickyAuthor && (
@@ -102,3 +150,4 @@ export function CallSheetClueView({
     </div>
   );
 }
+

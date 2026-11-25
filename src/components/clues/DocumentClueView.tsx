@@ -1,20 +1,27 @@
 'use client';
 
 import React from 'react';
-import { parseDocumentClue, stripCustomerFacingTitle } from '@/utils/clue-format';
+import {
+  extractPrimaryClueTimestamp,
+  parseDocumentClue,
+  stripCustomerFacingTitle,
+} from '@/utils/clue-format';
 import { ClueViewProps } from './ChatClueView';
 
 export function DocumentClueView({
   clue,
   hydratedTitle,
   hydratedDescription,
-  compact = false,
-  showImage = true,
 }: ClueViewProps) {
   const rawTitle = hydratedTitle || clue.title || 'Evidence Document';
   const title = stripCustomerFacingTitle(rawTitle) || 'Evidence Document';
   const rawText = hydratedDescription ?? clue.description ?? '';
   const parsed = parseDocumentClue(title, rawText);
+  const detectedTimestamp = extractPrimaryClueTimestamp(
+    title,
+    rawText,
+    clue.internal_notes
+  );
 
   const bodyLines = parsed.body
     .split(/\r?\n/)
@@ -31,20 +38,6 @@ export function DocumentClueView({
 
   return (
     <div className="w-full space-y-3">
-      {/* Optional Atmospheric Crime Scene Photo */}
-      {showImage && clue.static_image_url && (
-        <div className={`relative w-full ${compact ? 'h-36' : 'aspect-square'} rounded-2xl overflow-hidden border border-white/10 bg-slate-950`}>
-          <img
-            src={clue.static_image_url}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2.5 left-3 px-2.5 py-0.5 rounded-full bg-black/65 border border-white/10 text-[9px] font-black uppercase tracking-widest text-amber-200 backdrop-blur-md">
-            📑 Case File Exhibit
-          </div>
-        </div>
-      )}
-
       {/* Forensic Case-File Container */}
       <div className="relative w-full rounded-xl overflow-hidden bg-[#f8f5ec] text-stone-900 border-2 border-stone-300 shadow-xl p-4 font-mono">
         {/* Rotated (-12deg) Semi-Transparent Red Watermark Stamp */}
@@ -62,10 +55,15 @@ export function DocumentClueView({
               {parsed.subject}
             </div>
           </div>
-          <div className="text-right shrink-0">
+          <div className="text-right shrink-0 flex flex-col items-end gap-1">
             <span className="inline-block bg-stone-900 text-amber-50 text-[9px] font-black px-2 py-0.5 rounded-xs tracking-widest">
               {parsed.caseRef}
             </span>
+            {detectedTimestamp && (
+              <span className="inline-block bg-amber-300/90 border border-amber-600/50 text-stone-950 text-[9px] font-mono font-black px-2 py-0.5 rounded-xs tracking-wider uppercase">
+                🕒 {detectedTimestamp}
+              </span>
+            )}
           </div>
         </div>
 

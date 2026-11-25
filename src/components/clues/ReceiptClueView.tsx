@@ -1,19 +1,23 @@
 'use client';
 
 import React from 'react';
-import { parseReceiptClue } from '@/utils/clue-format';
+import {
+  extractPrimaryClueTimestamp,
+  parseReceiptClue,
+} from '@/utils/clue-format';
 import { ClueViewProps } from './ChatClueView';
 
 export function ReceiptClueView({
   clue,
   hydratedTitle,
   hydratedDescription,
-  compact = false,
-  showImage = true,
 }: ClueViewProps) {
   const title = hydratedTitle || clue.title || 'Transaction Receipt';
   const rawText = hydratedDescription ?? clue.description ?? '';
   const parsed = parseReceiptClue(title, rawText);
+  const detectedTimestamp =
+    extractPrimaryClueTimestamp(title, rawText, clue.internal_notes) ||
+    parsed.timestamp;
 
   const sawtoothTopStyle: React.CSSProperties = {
     backgroundImage:
@@ -31,20 +35,6 @@ export function ReceiptClueView({
 
   return (
     <div className="w-full space-y-3">
-      {/* Optional Atmospheric Crime Scene Prop Photo */}
-      {showImage && clue.static_image_url && (
-        <div className={`relative w-full ${compact ? 'h-32' : 'h-44'} rounded-2xl overflow-hidden border border-white/10 bg-slate-950`}>
-          <img
-            src={clue.static_image_url}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2.5 left-3 px-2.5 py-0.5 rounded-full bg-black/65 border border-white/10 text-[9px] font-black uppercase tracking-widest text-amber-300 backdrop-blur-md">
-            🧾 Crime Scene Prop
-          </div>
-        </div>
-      )}
-
       {/* Thermal Receipt Paper Container */}
       <div className="relative w-full filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)]">
         {/* Top Jagged Sawtooth Edge */}
@@ -53,12 +43,17 @@ export function ReceiptClueView({
         {/* Receipt Body */}
         <div className="bg-amber-50 text-stone-900 px-5 py-4 font-mono text-xs selection:bg-amber-200">
           {/* Merchant Header */}
-          <div className="text-center space-y-0.5">
+          <div className="text-center space-y-1">
             <div className="text-sm font-black tracking-widest uppercase text-stone-950">
               {parsed.merchant}
             </div>
-            <div className="text-[10px] text-stone-600 uppercase tracking-wider">
-              {parsed.receiptNumber} • {parsed.timestamp}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-stone-600 uppercase tracking-wider">
+              <span>{parsed.receiptNumber}</span>
+              {detectedTimestamp && (
+                <span className="px-2 py-0.5 rounded bg-amber-300/80 border border-amber-600/40 text-stone-950 font-black">
+                  🕒 {detectedTimestamp}
+                </span>
+              )}
             </div>
           </div>
 

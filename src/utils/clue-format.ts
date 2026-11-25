@@ -1669,5 +1669,18 @@ export function shuffleCluesAcrossRounds<
   return flattened;
 }
 
-
-
+/**
+ * Extracts the primary clock timestamp (e.g. "11:10 PM", "9:45 PM", "10:45:18 PM")
+ * from a clue's title or description so every clue card can surface a high-contrast
+ * "🕒 HH:MM PM" timeline badge in its header.
+ */
+export function extractPrimaryClueTimestamp(
+  title?: string | null,
+  description?: string | null,
+  internalNotes?: string | null
+): string | null {
+  const combined = `${title || ''}\n${description || ''}\n${internalNotes || ''}`;
+  const match = combined.match(/\b(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\b/i);
+  if (!match) return null;
+  return match[1].toUpperCase().replace(/\s+/g, ' ').trim();
+}

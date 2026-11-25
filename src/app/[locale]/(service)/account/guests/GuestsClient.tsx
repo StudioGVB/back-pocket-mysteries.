@@ -143,21 +143,21 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
   };
 
   return (
-    <div className="bg-white border border-slate-100 p-5 sm:p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200/80 transition-all duration-300 relative overflow-hidden">
+    <div className="bg-white border border-slate-100 p-4 sm:p-5 rounded-[1.75rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200/80 transition-all duration-300 relative overflow-hidden">
       {pendingInvite && (
-        <div className="absolute top-0 left-0 w-full bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest px-5 py-2 flex justify-between items-center z-10">
+        <div className=" -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 mb-4 bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest px-4 py-2 flex flex-wrap justify-between items-center gap-2 z-10">
           <span>Invite Pending</span>
-          <div className="flex gap-2.5 items-center">
+          <div className="flex gap-2 items-center">
             <button
               onClick={handleCopyPendingLink}
-              className="px-2 py-0.5 rounded-md bg-amber-950/10 hover:bg-amber-950/20 text-amber-950 font-black transition-colors flex items-center gap-1"
+              className="px-2 py-0.5 rounded-md bg-amber-950/10 hover:bg-amber-950/20 text-amber-950 font-black transition-colors flex items-center gap-1 cursor-pointer"
               title="Copy invite link"
             >
               {copiedBanner ? '✓ Copied' : '🔗 Copy Link'}
             </button>
             <Countdown expiresAt={pendingInvite.expires_at} />
             {onCancelInvite && (
-              <button onClick={onCancelInvite} className="hover:text-white transition-colors" title="Cancel Invite">
+              <button onClick={onCancelInvite} className="hover:text-white transition-colors cursor-pointer" title="Cancel Invite">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             )}
@@ -165,9 +165,9 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
         </div>
       )}
 
-      {/* Main Profile Header: Large Glanceable Portrait + Clean Info & Action Column */}
-      <div className={`flex items-start gap-4 sm:gap-5 mb-5 ${pendingInvite ? 'mt-6' : ''}`}>
-        {/* Larger 96px-112px Portrait Container */}
+      {/* Main Profile Header: Large Glanceable Portrait + Uncramped Right Column */}
+      <div className="flex items-start gap-3.5 sm:gap-4 mb-4">
+        {/* Glanceable 80px-96px Portrait Container */}
         <button
           type="button"
           onClick={onEdit}
@@ -175,7 +175,7 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
           className="relative shrink-0 group/avatar cursor-pointer focus:outline-none"
         >
           {displayAvatar ? (
-            <div className="w-24 h-24 sm:w-28 sm:h-28 bg-slate-100 rounded-2xl sm:rounded-3xl flex items-center justify-center overflow-hidden border-2 border-white ring-1 ring-slate-200/70 shadow-md group-hover/avatar:ring-brand-pink/50 transition-all">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white ring-1 ring-slate-200/70 shadow-md group-hover/avatar:ring-brand-pink/50 transition-all">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={displayAvatar}
@@ -189,7 +189,7 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
             </div>
           ) : (
             <div
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl flex items-center justify-center text-2xl font-black text-white border-2 border-white shadow-md"
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center text-2xl font-black text-white border-2 border-white shadow-md"
               style={{ background: '#fe04c6' }}
             >
               {initials}
@@ -198,15 +198,15 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
 
           {/* Subtle hover edit pill on portrait */}
           {!isGenerating && (
-            <span className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full bg-slate-900/75 text-white text-[9px] font-black uppercase tracking-wider opacity-0 group-hover/avatar:opacity-100 transition-opacity backdrop-blur-xs">
+            <span className="absolute bottom-1 right-1 px-2 py-0.5 rounded-full bg-slate-900/75 text-white text-[9px] font-black uppercase tracking-wider opacity-0 group-hover/avatar:opacity-100 transition-opacity backdrop-blur-xs">
               Edit
             </span>
           )}
 
           {/* Loading Overlay */}
           {isGenerating && (
-            <div className="absolute inset-0 bg-slate-900/65 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center border-2 border-white backdrop-blur-sm z-10 shadow-lg">
-              <svg className="animate-spin h-6 w-6 text-brand-pink mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <div className="absolute inset-0 bg-slate-900/65 rounded-2xl flex flex-col items-center justify-center border-2 border-white backdrop-blur-sm z-10 shadow-lg">
+              <svg className="animate-spin h-5 w-5 text-brand-pink mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -215,65 +215,66 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
           )}
         </button>
 
-        {/* Right Info Column: Action Toolbar on Top + Full Uncramped Name + Identity & Appearance Pills */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between min-h-[6rem] sm:min-h-[7rem]">
-          <div>
-            {/* Top Row: Quick Action Icons pushed cleanly to top-right above/beside title */}
-            <div className="flex items-start justify-between gap-2">
-              <h3
-                onClick={onEdit}
-                className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug cursor-pointer hover:text-brand-pink transition-colors"
-              >
-                {guest.name}
-              </h3>
-              <div className="flex items-center gap-0.5 shrink-0 -mt-0.5 -mr-1">
-                {onShare && (
-                  <button
-                    onClick={onShare}
-                    className="text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors p-1.5 cursor-pointer"
-                    title="Invite guest via link or email"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                  </button>
-                )}
-                {onEdit && (
-                  <button
-                    onClick={onEdit}
-                    className="text-slate-300 hover:text-brand-pink hover:bg-pink-50 rounded-lg transition-colors p-1.5 cursor-pointer"
-                    title="Edit profile & avatar"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                )}
-                {onRemove && (
-                  <button
-                    onClick={onRemove}
-                    className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors p-1.5 cursor-pointer"
-                    title="Delete guest"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                  </button>
-                )}
-              </div>
-            </div>
+        {/* Right Info Column: Dedicated Top Utility Row (Gender + Action Icons) -> Full-Width Name -> Appearance */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Row 1: Gender Pill on Left + Always-Visible Action Buttons on Right (never collides with long names) */}
+          <div className="flex items-center justify-between gap-1.5 mb-1">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 shrink-0">
+              {guest.gender || 'Unspecified'}
+            </span>
 
-            {/* Identity & Accent Badges */}
-            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
-                {guest.gender || 'Unspecified'}
-              </span>
-              {accent && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
-                  <span>🎙️</span>
-                  <span>{accent}</span>
-                </span>
+            <div className="flex items-center gap-0.5 shrink-0">
+              {onShare && (
+                <button
+                  onClick={onShare}
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                  title="Invite guest via link or email"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                </button>
+              )}
+              {onEdit && (
+                <button
+                  onClick={onEdit}
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-brand-pink hover:bg-pink-50 rounded-lg transition-colors cursor-pointer"
+                  title="Edit profile & avatar"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              )}
+              {onRemove && (
+                <button
+                  onClick={onRemove}
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  title="Delete guest"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
               )}
             </div>
           </div>
 
-          {/* Quick-Glance Appearance Summary Line */}
+          {/* Row 2: Full-Width Guest Name (100% of column width so it never pushes icons off) */}
+          <h3
+            onClick={onEdit}
+            className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug break-words cursor-pointer hover:text-brand-pink transition-colors"
+          >
+            {guest.name}
+          </h3>
+
+          {/* Row 3: Optional Voice Accent Badge */}
+          {accent && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                <span>🎙️</span>
+                <span>{accent}</span>
+              </span>
+            </div>
+          )}
+
+          {/* Row 4: Full Appearance Summary (wraps cleanly, never truncated) */}
           {appearanceSummary && (
-            <p className="text-[11px] font-semibold text-slate-400 truncate mt-2">
+            <p className="text-[11px] font-semibold text-slate-400 leading-snug mt-1.5 break-words">
               {appearanceSummary}
             </p>
           )}
@@ -281,12 +282,12 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
       </div>
 
       {/* Bottom Traits & Quirks Section */}
-      <div className="mt-auto pt-3.5 border-t border-slate-100/80 flex flex-wrap items-center gap-2">
+      <div className="mt-auto pt-3 border-t border-slate-100/80 flex flex-wrap items-center gap-1.5">
         {guest.traits && guest.traits.length > 0 ? (
           guest.traits.map((trait, idx) => (
             <span
               key={idx}
-              className="px-3 py-1 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-200/70"
+              className="px-2.5 py-1 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200/70"
             >
               {trait}
             </span>
@@ -310,49 +311,52 @@ function LinkedGuestCard({ guest, onUnlink }: { guest: LinkedGuest; onUnlink?: (
   const avatar = resolveDisplayAvatarUrl(rawAvatar) || rawAvatar;
   const initials = guest.name.charAt(0).toUpperCase();
   return (
-    <div className="relative group rounded-[2rem] p-[3px] flex flex-col">
+    <div className="relative group rounded-[1.75rem] p-[3px] flex flex-col">
       {/* Animated rainbow background */}
-      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 animate-pulse opacity-70 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute inset-0 rounded-[1.75rem] bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 animate-pulse opacity-70 group-hover:opacity-100 transition-opacity" />
       {/* Inner card */}
-      <div className="relative bg-white p-5 sm:p-6 rounded-[calc(2rem-3px)] h-full flex flex-col hover:shadow-xl transition-all duration-300 overflow-hidden">
-        {/* Linked badge */}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: 'rgba(254,4,198,0.08)' }}>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          <span className="text-[10px] font-black" style={{ color: '#fe04c6' }}>Linked</span>
-        </div>
-
-        <div className="flex items-start gap-4 sm:gap-5 mb-5 pr-16">
+      <div className="relative bg-white p-4 sm:p-5 rounded-[calc(1.75rem-3px)] h-full flex flex-col hover:shadow-xl transition-all duration-300 overflow-hidden">
+        <div className="flex items-start gap-3.5 sm:gap-4 mb-4">
           {avatar ? (
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-white ring-1 ring-slate-200/70 shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-white ring-1 ring-slate-200/70 shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatar} alt={guest.name} className="w-full h-full object-cover object-top" />
             </div>
           ) : (
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl flex items-center justify-center text-2xl font-black text-white border-2 border-white shadow-md flex-shrink-0" style={{ background: '#fe04c6' }}>
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center text-2xl font-black text-white border-2 border-white shadow-md flex-shrink-0" style={{ background: '#fe04c6' }}>
               {initials}
             </div>
           )}
-          <div className="min-w-0 pt-1">
-            <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug">{guest.name}</h3>
+          <div className="flex-1 min-w-0 flex flex-col">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(254,4,198,0.08)' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <span className="text-[10px] font-black" style={{ color: '#fe04c6' }}>Linked</span>
+              </div>
+              {onUnlink && (
+                <button
+                  onClick={onUnlink}
+                  className="text-[10px] font-bold text-slate-300 hover:text-red-500 transition-colors cursor-pointer shrink-0"
+                  title="Unlink guest"
+                >
+                  Unlink
+                </button>
+              )}
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug break-words">{guest.name}</h3>
             {guest.profile?.pronouns && <p className="text-xs font-bold text-slate-400 mt-1">{guest.profile.pronouns}</p>}
-            {guest.profile?.location && <p className="text-xs text-slate-400 mt-0.5">{guest.profile.location}</p>}
+            {guest.profile?.location && <p className="text-xs text-slate-400 mt-0.5 break-words">{guest.profile.location}</p>}
           </div>
         </div>
 
         {guest.profile?.character_preferences && guest.profile.character_preferences.length > 0 && (
-          <div className="mt-auto pt-3.5 border-t border-slate-100/80 flex flex-wrap gap-2">
+          <div className="mt-auto pt-3 border-t border-slate-100/80 flex flex-wrap gap-1.5">
             {guest.profile.character_preferences.slice(0, 3).map((p, idx) => (
-              <span key={idx} className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-100" style={{ background: 'rgba(254,4,198,0.05)', color: '#fe04c6' }}>
+              <span key={idx} className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-100" style={{ background: 'rgba(254,4,198,0.05)', color: '#fe04c6' }}>
                 {p}
               </span>
             ))}
           </div>
-        )}
-
-        {onUnlink && (
-          <button onClick={onUnlink} className="mt-4 text-xs font-bold text-slate-300 hover:text-red-400 transition-colors text-left">
-            Unlink guest
-          </button>
         )}
       </div>
     </div>
@@ -885,7 +889,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
                 <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Linked Accounts</h2>
                 <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ background: 'rgba(254,4,198,0.1)', color: '#fe04c6' }}>{linkedGuests.length}</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-4 sm:gap-5">
                 {linkedGuests.map(g => (
                   <LinkedGuestCard key={g.id} guest={g} onUnlink={() => handleUnlink(g.connectionId)} />
                 ))}
@@ -900,7 +904,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
                 <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Standalone Invites</h2>
                 <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#d97706' }}>{pendingInvites.filter(i => !i.manual_guest_id).length}</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-4 sm:gap-5">
                 {pendingInvites.filter(i => !i.manual_guest_id).map(invite => (
                   <PendingCard key={invite.id} invite={invite} locale={locale} onCancel={() => handleCancelInvite(invite.id)} />
                 ))}
@@ -915,7 +919,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
                 <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Saved Guests</h2>
                 <span className="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{guests.length}</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-4 sm:gap-5">
                 {guests.map(g => {
                   const pendingInvite = pendingInvites.find(inv => inv.manual_guest_id === g.id);
                   return (

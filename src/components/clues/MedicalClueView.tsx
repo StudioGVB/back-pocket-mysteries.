@@ -1,40 +1,30 @@
 'use client';
 
 import React from 'react';
-import { parseMedicalClue, stripCustomerFacingTitle } from '@/utils/clue-format';
+import {
+  extractPrimaryClueTimestamp,
+  parseMedicalClue,
+  stripCustomerFacingTitle,
+} from '@/utils/clue-format';
 import { ClueViewProps } from './ChatClueView';
 
 export function MedicalClueView({
   clue,
   hydratedTitle,
   hydratedDescription,
-  compact = false,
-  showImage = true,
 }: ClueViewProps) {
   const rawTitle = hydratedTitle || clue.title || 'Prescription Record';
   const title = stripCustomerFacingTitle(rawTitle) || 'Prescription Record';
   const rawText = hydratedDescription ?? clue.description ?? '';
   const parsed = parseMedicalClue(title, rawText);
+  const detectedTimestamp = extractPrimaryClueTimestamp(
+    title,
+    rawText,
+    clue.internal_notes
+  );
 
   return (
     <div className="w-full space-y-3">
-      {showImage && clue.static_image_url && (
-        <div
-          className={`relative w-full ${
-            compact ? 'h-36' : 'aspect-square'
-          } rounded-2xl overflow-hidden border border-amber-500/20 bg-slate-950`}
-        >
-          <img
-            src={clue.static_image_url}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2.5 left-3 px-2.5 py-0.5 rounded-full bg-black/75 border border-amber-400/30 text-[9px] font-black uppercase tracking-widest text-amber-300 backdrop-blur-md">
-            💊 Medical / Rx Exhibit
-          </div>
-        </div>
-      )}
-
       {/* Pharmacy Prescription Bottle Label */}
       <div className="w-full rounded-xl overflow-hidden bg-white text-stone-900 border-2 border-amber-600/60 shadow-xl font-sans">
         {/* Top Clinical Pharmacy Header */}
@@ -50,9 +40,16 @@ export function MedicalClueView({
               </div>
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded bg-stone-950 text-amber-300 text-[9px] font-mono font-black uppercase tracking-wider shrink-0">
-            CONTROLLED
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {detectedTimestamp && (
+              <span className="px-2 py-0.5 rounded bg-stone-900 text-amber-300 text-[9px] font-mono font-black uppercase tracking-wider">
+                🕒 {detectedTimestamp}
+              </span>
+            )}
+            <span className="px-2 py-0.5 rounded bg-stone-950 text-amber-300 text-[9px] font-mono font-black uppercase tracking-wider">
+              CONTROLLED
+            </span>
+          </div>
         </div>
 
         <div className="p-4 space-y-3">
