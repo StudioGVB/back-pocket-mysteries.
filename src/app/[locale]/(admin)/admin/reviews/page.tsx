@@ -105,7 +105,7 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
   const [mysteriesRes, ordersRes, profilesRes, metaMap] = await Promise.all([
     supabase
       .from('mysteries')
-      .select('id, title, theme, status')
+      .select('id, title, theme, status, created_by')
       .order('created_at', { ascending: false }),
     supabase
       .from('orders')
@@ -117,6 +117,7 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
 
   const dbMysteries = mysteriesRes.data || [];
   const mysteryTitleById = new Map<string, string>();
+  const hostUserIdByMysteryId = new Map<string, string>();
   const baseTitleSet = new Set<string>();
 
   for (const canonical of ALL_CANONICAL_MYSTERIES || []) {
@@ -129,20 +130,41 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
         mysteryTitleById.set(m.id, normalized);
       }
     }
+    if (m.id && m.created_by) {
+      hostUserIdByMysteryId.set(m.id, m.created_by);
+    }
   }
 
   const allReviews = await getAllPlatformReviews(supabase, mysteryTitleById);
 
+  const profileById = new Map<string, { id: string; fullName: string; email: string }>();
   const profileNameById = new Map<string, string>();
+  const profileByNameLower = new Map<string, { id: string; fullName: string; email: string }>();
+
   for (const p of profilesRes.data || []) {
-    if (p.id && p.full_name) {
-      profileNameById.set(p.id, String(p.full_name).toLowerCase().trim());
+    if (p.id) {
+      const fullName = String(p.full_name || '').trim();
+      const email = String(p.email || '').trim();
+      const entry = {
+        id: p.id,
+        fullName: fullName || (email ? email.split('@')[0] : 'Customer'),
+        email,
+      };
+      profileById.set(p.id, entry);
+      if (fullName) {
+        const lower = fullName.toLowerCase();
+        profileNameById.set(p.id, lower);
+        profileByNameLower.set(lower, entry);
+      }
     }
   }
 
   const ordersByReviewerName = new Map<string, string>();
   const completedOrders = ordersRes.data || [];
   for (const o of completedOrders) {
+    if (o.mystery_id && o.user_id) {
+      hostUserIdByMysteryId.set(o.mystery_id, o.user_id);
+    }
     const pName = o.user_id ? profileNameById.get(o.user_id) : null;
     const mTitle = o.mystery_id ? mysteryTitleById.get(o.mystery_id) : null;
     if (pName && mTitle) {
@@ -152,10 +174,53 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
 
   const knownBases = Array.from(baseTitleSet);
 
-  const enrichedReviews = allReviews.map((r: any) => ({
-    ...r,
-    mysteryBaseTitle: inferMysteryBaseForReview(r, metaMap, knownBases, ordersByReviewerName),
-  }));
+  const enrichedReviews = allReviews.map((r: any) => {
+    const mysteryId = String(r.mystery_id || '').trim();
+    const cloneUserId = mysteryId.includes('__u_') ? mysteryId.split('__u_')[1] : undefined;
+    const resolvedHostUserId =
+      r.host_user_id ||
+      cloneUserId ||
+      (mysteryId ? hostUserIdByMysteryId.get(mysteryId) : undefined);
+
+    const hostProfile = resolvedHostUserId ? profileById.get(resolvedHostUserId) : undefined;
+
+    // Also check if the reviewer's own name matches a registered customer profile
+    const rawReviewerName = String(r.name || '')
+      .replace(/\s*\([^)]*\)\s*$/, '')
+      .trim()
+      .toLowerCase();
+    const directCustomerProfile = rawReviewerName
+      ? profileByNameLower.get(rawReviewerName)
+      : undefined;
+
+    const hostCustomerName =
+      r.host_name ||
+      hostProfile?.fullName ||
+      directCustomerProfile?.fullName ||
+      undefined;
+    const hostCustomerEmail =
+      r.host_email ||
+      hostProfile?.email ||
+      directCustomerProfile?.email ||
+      undefined;
+
+    const isSamePersonAsHost =
+      Boolean(
+        hostCustomerName &&
+          rawReviewerName &&
+          hostCustomerName.toLowerCase().trim() === rawReviewerName
+      ) || Boolean(!r.is_guest_review && directCustomerProfile && !hostProfile);
+
+    return {
+      ...r,
+      mysteryBaseTitle: inferMysteryBaseForReview(r, metaMap, knownBases, ordersByReviewerName),
+      hostCustomerName,
+      hostCustomerEmail,
+      hostUserId: resolvedHostUserId || directCustomerProfile?.id,
+      sessionPin: r.session_pin || undefined,
+      reviewerRelation: isSamePersonAsHost ? 'host' : r.is_guest_review ? 'guest' : hostCustomerName ? 'guest' : 'direct',
+    };
+  });
 
   return (
     <ReviewsTable

@@ -148,7 +148,9 @@ export default function ReviewsTable({
         const matchName = String(review.name || '').toLowerCase().includes(q);
         const matchText = String(review.review_text || '').toLowerCase().includes(q);
         const matchBase = String(review.mysteryBaseTitle || '').toLowerCase().includes(q);
-        if (!matchName && !matchText && !matchBase) return false;
+        const matchHostName = String(review.hostCustomerName || '').toLowerCase().includes(q);
+        const matchHostEmail = String(review.hostCustomerEmail || '').toLowerCase().includes(q);
+        if (!matchName && !matchText && !matchBase && !matchHostName && !matchHostEmail) return false;
       }
       return true;
     });

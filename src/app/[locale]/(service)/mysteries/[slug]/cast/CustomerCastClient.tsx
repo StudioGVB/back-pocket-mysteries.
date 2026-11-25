@@ -1458,7 +1458,7 @@ export default function CustomerCastClient({
                     </div>
 
                     <p className="text-xs text-slate-300 font-medium leading-relaxed">
-                      Hosting a party with {minRoles === maxRoles ? `${maxRoles}` : `${minRoles}–${maxRoles}`} people? Each guest gets their own custom character booklet, outfit guide, and secret alibi to act out across 3 rounds.
+                      Hosting a party with {minRoles === maxRoles ? `${maxRoles}` : `${minRoles}–${maxRoles}`} people? Each guest gets their own custom character booklet, outfit guide, and secret alibi to act out across {PLAYER_TIER_LIMITS[getTierForPlayerCount(maxRoles)].requiredRounds} rounds.
                     </p>
                   </div>
 

@@ -63,8 +63,13 @@ interface ProfileClientProps {
 }
 
 export default function ProfileClient({ user, profile, onClose, onSaved }: ProfileClientProps) {
-  const [fullName, setFullName] = useState(
-    profile?.full_name?.trim() || user.name?.trim() || 'Gabriella Blyth'
+  const initialFull = profile?.full_name?.trim() || user.name?.trim() || 'Gabriella Blyth';
+  const initialTokens = initialFull.split(/\s+/).filter(Boolean);
+  const [firstName, setFirstName] = useState(initialTokens[0] || '');
+  const [lastName, setLastName] = useState(initialTokens.slice(1).join(' ') || '');
+  const fullName = useMemo(
+    () => [firstName.trim(), lastName.trim()].filter(Boolean).join(' '),
+    [firstName, lastName]
   );
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [location, setLocation] = useState(profile?.location ?? '');
@@ -368,15 +373,37 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
         <div className="p-4 sm:p-8">
           {activeTab === 'info' ? (
             <div className="space-y-5 sm:space-y-6">
-              {/* Basic */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Basic: First Name, Last Name & Location */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Your Full Name (Host)</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                    First Name (Host) <span className="text-brand-pink">*</span>
+                  </label>
                   <input
                     className={inputClass}
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    placeholder="Gabriella Blyth"
+                    value={firstName}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (!lastName && val.includes(' ') && val.trim().split(/\s+/).length >= 2) {
+                        const parts = val.trim().split(/\s+/);
+                        setFirstName(parts[0]);
+                        setLastName(parts.slice(1).join(' '));
+                      } else {
+                        setFirstName(val);
+                      }
+                    }}
+                    placeholder="Gabriella"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                    Last Name (Host) <span className="text-brand-pink">*</span>
+                  </label>
+                  <input
+                    className={inputClass}
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    placeholder="Blyth"
                   />
                 </div>
                 <div>

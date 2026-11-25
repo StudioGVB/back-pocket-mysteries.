@@ -80,7 +80,7 @@ export default async function MiniMysteryPage(props: {
             name: 'How is a full Back Pocket Mystery party game different from the 60-second mini case?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Our full 3-round party packs cast 4 to 16 of your real friends into the story with their actual names, inside jokes, custom AI costume portraits, CCTV stills, and multi-speaker ElevenLabs audio wiretaps inside a live 6-digit PIN mobile Playroom.',
+              text: 'Our full multi-round party packs (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds) cast 4 to 16 of your real friends into the story with their actual names, inside jokes, custom AI costume portraits, CCTV stills, and multi-speaker ElevenLabs audio wiretaps inside a live 6-digit PIN mobile Playroom.',
             },
           },
         ],
@@ -126,7 +126,7 @@ export default async function MiniMysteryPage(props: {
                 Want Your Real Friends Inside the Crime Scene?
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-brand-dark uppercase tracking-tight">
-                Turn Your Next Dinner Party Into a 3-Round <span className="text-brand-pink italic">Live Investigation.</span>
+                Turn Your Next Dinner Party Into a Multi-Round <span className="text-brand-pink italic">Live Investigation.</span>
               </h2>
               <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed">
                 In a full Back Pocket Mystery, those leaked group chats, CCTV photos, and voice-acted audio wiretaps are generated around <strong>your actual guest list</strong>—with their real names, inside jokes, and a live 6-digit Game PIN lobby from just <strong><PriceDisplay tier="basic" locale={locale as Locale} /></strong>.

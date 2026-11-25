@@ -455,7 +455,7 @@ export default function MiniMysteryInteractiveClient({ locale }: { locale: strin
                 href={`/${locale}/themes/${currentCase.themeSlug}`}
                 className="px-6 py-3 rounded-full bg-brand-pink text-white font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-dark transition-all"
               >
-                Cast Your Friends in This Full 3-Round Mystery →
+                Cast Your Friends in This Full Custom Mystery →
               </Link>
               <button
                 type="button"

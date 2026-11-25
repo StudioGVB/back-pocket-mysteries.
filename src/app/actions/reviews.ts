@@ -310,11 +310,18 @@ export async function getAllPlatformReviews(
   const ingestGuestReview = (
     rev: StoredGuestReview,
     fallbackMysteryId?: string,
-    fallbackMysteryTitle?: string
+    fallbackMysteryTitle?: string,
+    sessionHostMeta?: {
+      hostUserId?: string;
+      hostName?: string;
+      hostEmail?: string;
+      sessionPin?: string;
+    }
   ) => {
     if (!rev || !rev.id || metaMap[rev.id]?.deleted) return;
     const mId = rev.mysteryId || fallbackMysteryId || '';
     const baseId = mId.includes('__u_') ? mId.split('__u_')[0] : mId;
+    const userIdFromCloneKey = mId.includes('__u_') ? mId.split('__u_')[1] : undefined;
     const cachedSnap = getCachedMysterySnapshot(mId) || getCachedMysterySnapshot(baseId);
     const resolvedMysteryTitle =
       metaMap[rev.id]?.mysteryTitle ||
@@ -329,6 +336,29 @@ export async function getAllPlatformReviews(
       ? `[Played ${rev.characterRole}${resolvedMysteryTitle ? ` • ${resolvedMysteryTitle}` : ''}] ${rev.comment}`
       : rev.comment;
 
+    const hostUserId =
+      rev.hostUserId ||
+      sessionHostMeta?.hostUserId ||
+      userIdFromCloneKey ||
+      cachedSnap?.created_by ||
+      existing?.host_user_id ||
+      undefined;
+    const hostName =
+      rev.hostName ||
+      sessionHostMeta?.hostName ||
+      existing?.host_name ||
+      undefined;
+    const hostEmail =
+      rev.hostEmail ||
+      sessionHostMeta?.hostEmail ||
+      existing?.host_email ||
+      undefined;
+    const sessionPin =
+      rev.sessionPin ||
+      sessionHostMeta?.sessionPin ||
+      existing?.session_pin ||
+      undefined;
+
     byId.set(rev.id, {
       ...(existing || {}),
       id: rev.id,
@@ -342,6 +372,11 @@ export async function getAllPlatformReviews(
       mystery_id: mId,
       mystery_title: resolvedMysteryTitle,
       character_role: rev.characterRole,
+      host_user_id: hostUserId,
+      host_name: hostName,
+      host_email: hostEmail,
+      session_pin: sessionPin,
+      is_guest_review: true,
       created_at: rev.createdAt || existing?.created_at || new Date().toISOString(),
     });
   };
@@ -358,9 +393,16 @@ export async function getAllPlatformReviews(
       try {
         const parsed =
           typeof row.description === 'string' ? JSON.parse(row.description) : row.description;
-        const sessionReviews: StoredGuestReview[] = parsed?.session?.reviews || parsed?.reviews || [];
+        const sessObj = parsed?.session || parsed || {};
+        const sessionReviews: StoredGuestReview[] = sessObj?.reviews || [];
+        const sessionHostMeta = {
+          hostUserId: sessObj?.hostUserId || sessObj?.paidByUserId,
+          hostName: sessObj?.customerName,
+          hostEmail: sessObj?.customerEmail,
+          sessionPin: sessObj?.pin,
+        };
         for (const rev of sessionReviews) {
-          ingestGuestReview(rev, row.mystery_id, parsed?.title);
+          ingestGuestReview(rev, row.mystery_id, parsed?.title, sessionHostMeta);
         }
       } catch {
         // ignore malformed row
@@ -374,8 +416,14 @@ export async function getAllPlatformReviews(
   try {
     const localSessions = getAllStoredGameSessions();
     for (const sess of localSessions) {
+      const sessionHostMeta = {
+        hostUserId: sess.hostUserId || sess.paidByUserId,
+        hostName: sess.customerName,
+        hostEmail: sess.customerEmail,
+        sessionPin: sess.pin,
+      };
       for (const rev of sess.reviews || []) {
-        ingestGuestReview(rev, sess.mysteryId);
+        ingestGuestReview(rev, sess.mysteryId, undefined, sessionHostMeta);
       }
     }
   } catch {

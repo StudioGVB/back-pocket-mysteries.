@@ -37,7 +37,7 @@ export const faqsData: FAQ[] = [
   {
     category: "What We Do",
     q: "Is this suitable for a dinner party?",
-    a: "Absolutely! Our mysteries are structured into 3 dramatic rounds plus the Final Accusation & Reveal, which map seamlessly to arrival drinks, starter, main course, and dessert."
+    a: "Absolutely! Our mysteries are structured into 3 to 5 dramatic rounds (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds) plus the Final Accusation & Reveal, which map seamlessly to arrival drinks, starter, main course, and dessert."
   },
   {
     category: "What We Do",
@@ -79,12 +79,12 @@ export const faqsData: FAQ[] = [
   {
     category: "Pricing & Purchasing",
     q: "How much does a custom mystery cost?",
-    a: "We charge a single flat one-time price per event based on the mystery's character cast bracket: Basic (up to 6 characters), Premium (up to 10 characters), or Grand (up to 16 characters). There are $0 per-player add-on fees and no subscriptions required."
+    a: "We charge a single flat one-time price per event based on the mystery's character cast bracket: Basic (up to 6 characters • 3 rounds), Premium (up to 10 characters • 4 rounds), or Grand (up to 16 characters • 5 rounds). There are $0 per-player add-on fees and no subscriptions required."
   },
   {
     category: "Pricing & Purchasing",
     q: "What is the difference between Basic, Premium, and Grand tiers?",
-    a: "Every tier includes 100% of our features — human-written plot architecture, AI guest personalization, interactive text/CCTV/audio clues, Kahoot-style live mobile lobby, and Spoiler-Free Host Mode. The tiers simply correspond to the number of character roles in the story: Basic (up to 6 characters), Premium (up to 10 characters), or Grand (up to 16 characters)."
+    a: "Every tier includes 100% of our features — human-written plot architecture, AI guest personalization, interactive text/CCTV/audio clues, Kahoot-style live mobile lobby, and Spoiler-Free Host Mode. The tiers scale the character cast and number of investigation rounds to match your group size: Basic (up to 6 characters • 3 rounds), Premium (up to 10 characters • 4 rounds), or Grand (up to 16 characters • 5 rounds)."
   },
   {
     category: "Pricing & Purchasing",
@@ -136,7 +136,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Gameplay & Hosting",
     q: "How long does a game typically last?",
-    a: "Every mystery typically lasts 1.5 to 3 hours across 3 investigation rounds plus the Final Accusation & Reveal - regardless of whether you choose Basic (up to 6 characters), Premium (up to 10 characters), or Grand (up to 16 characters)."
+    a: "Every mystery typically lasts 1.5 to 3 hours across its investigation rounds plus the Final Accusation & Reveal — whether you choose Basic (up to 6 characters • 3 rounds), Premium (up to 10 characters • 4 rounds), or Grand (up to 16 characters • 5 rounds)."
   },
   {
     category: "Gameplay & Hosting",
@@ -146,7 +146,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Gameplay & Hosting",
     q: "How many rounds are there?",
-    a: "Our games are structured into 3 investigation rounds plus the Final Reveal: Round 1 (Introductions, Motives & The Incident), Round 2 (Crime Scene & Leaked Evidence), Round 3 (Deep Secrets & Final Interrogations), and the Final Vote & Reveal."
+    a: "The number of investigation rounds depends on the Mystery Base package tier: Basic mysteries (up to 6 characters) have 3 rounds, Premium mysteries (up to 10 characters) have 4 rounds, and Grand mysteries (up to 16 characters) have 5 rounds — each followed by the Final Accusation Vote & Killer Reveal."
   },
   {
     category: "Gameplay & Hosting",
@@ -161,7 +161,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Gameplay & Hosting",
     q: "What if someone figures it out in the first 5 minutes?",
-    a: "They won't! Critical evidence is gated behind the 3-round structure. Even if they have a strong suspicion, they won't have the decisive forensic proof until Round 3."
+    a: "They won't! Critical evidence is gated round by round (across 3 rounds in Basic, 4 rounds in Premium, or 5 rounds in Grand). Even if they have a strong suspicion early on, they won't have the decisive forensic proof until the final investigation round."
   },
   {
     category: "Gameplay & Hosting",
@@ -265,7 +265,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Delivery & Setup",
     q: "Will I get to see the files before the party?",
-    a: "Yes, as the host you have full access to your Ready Hub and materials, while Spoiler-Free Host Mode keeps the killer's identity and Round 1–3 clues locked until you start the game!"
+    a: "Yes, as the host you have full access to your Ready Hub and materials, while Spoiler-Free Host Mode keeps the killer's identity and round-by-round clues locked until you start the game!"
   },
 
   // Themes & Content
@@ -287,7 +287,7 @@ export const faqsData: FAQ[] = [
   {
     category: "Gameplay & Hosting",
     q: "How does the Host PIN and live round controller work?",
-    a: "When you are ready to start your party, unlock the Host Controls using your Host PIN. Advancing from Round 1 to Round 2 and Round 3 unlocks the corresponding clues, audio voice notes, and secret prompts for your guests in real time."
+    a: "When you are ready to start your party, unlock the Host Controls using your Host PIN. Advancing through each round (3 rounds on Basic, 4 on Premium, or 5 on Grand) unlocks the corresponding clues, audio voice notes, and secret prompts for your guests in real time."
   },
   {
     category: "Customization",

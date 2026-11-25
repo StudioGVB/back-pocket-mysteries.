@@ -24,6 +24,10 @@ export interface StoredGuestReview {
   comment: string;
   photoUrl?: string;
   status?: 'pending' | 'published';
+  hostUserId?: string;
+  hostName?: string;
+  hostEmail?: string;
+  sessionPin?: string;
   createdAt: string;
 }
 

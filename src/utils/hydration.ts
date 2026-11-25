@@ -495,6 +495,76 @@ export function getCharacterPrefix(char: any): string {
 }
 
 /**
+ * Splits a full guest name (e.g. "Sarah Jenkins") into firstName, lastName, and fullName.
+ */
+export function splitGuestNameParts(rawName?: string | null): {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+} {
+  const cleaned = String(rawName || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) {
+    return { firstName: '', lastName: '', fullName: '' };
+  }
+  const parts = cleaned.split(' ');
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: '', fullName: parts[0] };
+  }
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(' '),
+    fullName: cleaned,
+  };
+}
+
+/**
+ * Extracts structured first name, last name, and full name for an assigned guest on a character.
+ */
+export function getCharacterNameParts(char: any): {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  hasRealGuest: boolean;
+} {
+  if (!char) {
+    return { firstName: '', lastName: '', fullName: 'The Suspect', hasRealGuest: false };
+  }
+  const profile = char.profile_data || {};
+  const roleTitle = getCharacterRoleTitle(char);
+  const rawGuestName = String(profile.guest_name || profile.name || '').trim();
+
+  if (!rawGuestName || rawGuestName.toLowerCase() === roleTitle.toLowerCase()) {
+    return {
+      firstName: roleTitle,
+      lastName: '',
+      fullName: roleTitle,
+      hasRealGuest: false,
+    };
+  }
+
+  const parsed = splitGuestNameParts(rawGuestName);
+  const explicitFirst = String(profile.first_name || '').trim();
+  const explicitLast = String(profile.last_name || '').trim();
+
+  const firstName = explicitFirst || parsed.firstName || rawGuestName;
+  const lastName =
+    explicitLast ||
+    (explicitFirst && rawGuestName.toLowerCase().startsWith(explicitFirst.toLowerCase())
+      ? rawGuestName.slice(explicitFirst.length).trim()
+      : parsed.lastName);
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || rawGuestName;
+
+  return {
+    firstName,
+    lastName,
+    fullName,
+    hasRealGuest: true,
+  };
+}
+
+/**
  * Returns true if a real guest/friend from the user's roster is assigned to this character.
  */
 export function hasAssignedGuest(char: any): boolean {
@@ -509,38 +579,75 @@ export function hasAssignedGuest(char: any): boolean {
 
 /**
  * Returns the name to display for a character across the UI and clues:
- * - If a friend/guest is tagged to the character, returns that friend's name (e.g. "Elia", "Scarlett").
+ * - If a friend/guest is tagged to the character, returns that friend's full name (e.g. "Sarah Jenkins").
+ * - Supports format: 'full' (default), 'first', 'last', or 'disambiguated' (First Name unless 2+ guests share that first name).
  * - If no friend is tagged yet, returns the character's Role / Title (e.g. "The Star", "The Sister") - NEVER a fake name.
  */
 export function getCharacterDisplayName(
   char: any,
-  options?: { includePrefix?: boolean }
+  options?: {
+    includePrefix?: boolean;
+    format?: 'full' | 'first' | 'last' | 'disambiguated';
+    allCharacters?: any[];
+  }
 ): string {
   if (!char) return 'The Suspect';
-  const profile = char.profile_data || {};
   const roleTitle = getCharacterRoleTitle(char);
-  const guestName = String(profile.guest_name || profile.name || '').trim();
   const prefix = options?.includePrefix ? getCharacterPrefix(char) : '';
+  const parts = getCharacterNameParts(char);
 
-  if (guestName && guestName.toLowerCase() !== roleTitle.toLowerCase()) {
-    return prefix ? `${prefix} ${guestName}` : guestName;
+  if (parts.hasRealGuest) {
+    const fmt = options?.format || 'full';
+    let chosen = parts.fullName;
+
+    if (fmt === 'first') {
+      chosen = parts.firstName || parts.fullName;
+    } else if (fmt === 'last') {
+      chosen = parts.lastName || parts.firstName || parts.fullName;
+    } else if (fmt === 'disambiguated' && Array.isArray(options?.allCharacters)) {
+      const sameFirstCount = options!.allCharacters.filter((other) => {
+        const otherParts = getCharacterNameParts(other);
+        return (
+          otherParts.hasRealGuest &&
+          otherParts.firstName.toLowerCase() === parts.firstName.toLowerCase()
+        );
+      }).length;
+      chosen = sameFirstCount > 1 ? parts.fullName : parts.firstName || parts.fullName;
+    }
+
+    return prefix ? `${prefix} ${chosen}` : chosen;
   }
 
   return prefix ? `${prefix} ${roleTitle}` : roleTitle;
 }
 
 /**
- * Returns the uppercase initial for a character based on the assigned guest's name
- * (e.g. "P" when Sienna is played by Polly, "G" when Gabby is played by Gabby).
- * If no guest is assigned yet, falls back to the initial of the character's role title (without "The ").
+ * Returns the uppercase initial(s) for a character based on the assigned guest's name.
+ * If allCharacters is provided and two guests share the same first initial (e.g. Sarah Jenkins & Sophie Patel),
+ * automatically disambiguates using both initials ("S.J." vs "S.P.") when a last name is present.
  */
-export function getCharacterInitial(char: any): string {
+export function getCharacterInitial(char: any, allCharacters?: any[]): string {
   if (!char) return '?';
-  const profile = char.profile_data || {};
-  const guestName = String(profile.guest_name || profile.name || '').trim();
-  if (guestName) {
-    const firstAlpha = guestName.match(/[A-Za-z]/);
-    if (firstAlpha) return firstAlpha[0].toUpperCase();
+  const parts = getCharacterNameParts(char);
+  if (parts.hasRealGuest && parts.firstName) {
+    const firstAlpha = parts.firstName.match(/[A-Za-z]/);
+    if (firstAlpha) {
+      const fInit = firstAlpha[0].toUpperCase();
+      if (parts.lastName && Array.isArray(allCharacters) && allCharacters.length > 1) {
+        const sameInitCount = allCharacters.filter((other) => {
+          const op = getCharacterNameParts(other);
+          const m = op.firstName?.match(/[A-Za-z]/);
+          return op.hasRealGuest && m && m[0].toUpperCase() === fInit;
+        }).length;
+        if (sameInitCount > 1) {
+          const lastAlpha = parts.lastName.match(/[A-Za-z]/);
+          if (lastAlpha) {
+            return `${fInit}.${lastAlpha[0].toUpperCase()}.`;
+          }
+        }
+      }
+      return fInit;
+    }
   }
   const roleTitle = getCharacterRoleTitle(char).replace(/^The\s+/i, '').trim();
   const roleAlpha = roleTitle.match(/[A-Za-z]/);
@@ -858,10 +965,28 @@ export function hydrateTextWithCharacters(
 
   // Map all aliases (roleTitle, legacy baseName, nicknames) -> substitution value
   const tokenMap = new Map<string, string>();
+  const subsequentTokenMap = new Map<string, string>();
+  const tokenToCharKey = new Map<string, string>();
   const wordAliasMap = new Map<string, string>();
   const handleMap = new Map<string, string>();
 
-  charList.forEach((char) => {
+  // Count first-name and full-name frequencies across assigned guests to auto-disambiguate duplicates
+  const firstNameCounts = new Map<string, number>();
+  const fullNameCounts = new Map<string, number>();
+  charList.forEach((c) => {
+    const np = getCharacterNameParts(c);
+    if (np.hasRealGuest && np.firstName) {
+      const fk = np.firstName.toLowerCase();
+      firstNameCounts.set(fk, (firstNameCounts.get(fk) || 0) + 1);
+    }
+    if (np.hasRealGuest && np.fullName) {
+      const flk = np.fullName.toLowerCase();
+      fullNameCounts.set(flk, (fullNameCounts.get(flk) || 0) + 1);
+    }
+  });
+
+  charList.forEach((char, charIdx) => {
+    const charKey = String(char.id || char.name || charIdx);
     const parts = (char.name || '').split('|');
     const rawBase = (parts[0] || '').trim();
     const roleTitle = getCharacterRoleTitle(char);
@@ -870,15 +995,47 @@ export function hydrateTextWithCharacters(
     const roleAlpha = roleTitleWithoutThe.match(/[A-Za-z]/);
     const roleInitial = roleAlpha ? roleAlpha[0].toUpperCase() : '?';
 
-    const displayName = mode === 'role' ? roleTitle : getCharacterDisplayName(char);
-    const charInitial = mode === 'role' ? roleInitial : getCharacterInitial(char);
+    const nameParts = getCharacterNameParts(char);
+    const isDuplicateFirst =
+      nameParts.hasRealGuest &&
+      (firstNameCounts.get(nameParts.firstName.toLowerCase()) || 0) > 1;
+    const isDuplicateFull =
+      nameParts.hasRealGuest &&
+      (fullNameCounts.get(nameParts.fullName.toLowerCase()) || 0) > 1;
+
+    const fullDisplayName =
+      mode === 'role'
+        ? roleTitle
+        : isDuplicateFull
+        ? `${getCharacterDisplayName(char, { format: 'full' })} (${roleTitleWithoutThe})`
+        : getCharacterDisplayName(char, { format: 'full' });
+
+    const firstDisplayName =
+      mode === 'role'
+        ? roleTitle
+        : isDuplicateFirst
+        ? fullDisplayName
+        : getCharacterDisplayName(char, { format: 'first' });
+
+    const lastDisplayName =
+      mode === 'role'
+        ? roleTitle
+        : getCharacterDisplayName(char, { format: 'last' });
+
+    const charInitial =
+      mode === 'role' ? roleInitial : getCharacterInitial(char, charList);
     const pronouns = getCharacterPronouns(char);
     const guestName = String(char.profile_data?.guest_name || char.profile_data?.name || '').trim();
 
-    const substitution =
+    const firstMentionSubstitution =
       mode === 'ai'
-        ? buildAiReplacementForCharacter(char, displayName, charToRefIdMap)
-        : displayName;
+        ? buildAiReplacementForCharacter(char, fullDisplayName, charToRefIdMap)
+        : fullDisplayName;
+
+    const subsequentMentionSubstitution =
+      mode === 'ai'
+        ? firstMentionSubstitution
+        : firstDisplayName;
 
     const candidateKeys = new Set<string>();
     const fullRoleTitlesForChar = new Set<string>();
@@ -904,6 +1061,9 @@ export function hydrateTextWithCharacters(
     }
     if (guestName && guestName.length >= 2) {
       candidateKeys.add(guestName);
+    }
+    if (nameParts.hasRealGuest && nameParts.firstName.length >= 2 && !isDuplicateFirst) {
+      candidateKeys.add(nameParts.firstName);
     }
     const originalRoleTitle = String(
       char.originalRoleTitle || char.profile_data?.original_role_title || ''
@@ -941,7 +1101,18 @@ export function hydrateTextWithCharacters(
     candidateKeys.forEach((key) => {
       const lower = key.toLowerCase();
       const isFemaleChar = pronouns.he === 'she';
-      tokenMap.set(lower, substitution);
+      tokenMap.set(lower, firstMentionSubstitution);
+      subsequentTokenMap.set(lower, subsequentMentionSubstitution);
+      tokenToCharKey.set(lower, charKey);
+
+      tokenMap.set(`${lower}_full`, fullDisplayName);
+      tokenMap.set(`${lower}_fullname`, fullDisplayName);
+      tokenMap.set(`${lower}_first`, firstDisplayName);
+      tokenMap.set(`${lower}_firstname`, firstDisplayName);
+      tokenMap.set(`${lower}_last`, lastDisplayName);
+      tokenMap.set(`${lower}_lastname`, lastDisplayName);
+      tokenMap.set(`${lower}_surname`, lastDisplayName);
+
       tokenMap.set(`${lower}_initial`, charInitial);
       tokenMap.set(`${lower} initial`, charInitial);
       tokenMap.set(`${lower}_he`, pronouns.he);
@@ -952,7 +1123,7 @@ export function hydrateTextWithCharacters(
       tokenMap.set(`${lower}_spouse`, isFemaleChar ? 'wife' : 'husband');
       tokenMap.set(`${lower}_inlaw`, isFemaleChar ? 'sister-in-law' : 'brother-in-law');
       tokenMap.set(`${lower}_himself`, isFemaleChar ? 'herself' : 'himself');
-      handleMap.set(lower, toHandleSlug(displayName));
+      handleMap.set(lower, toHandleSlug(fullDisplayName));
 
       // Register single-word or legacy placeholder names for unwrapped word-boundary replacement
       const isLegacyName =
@@ -965,7 +1136,7 @@ export function hydrateTextWithCharacters(
           lower !== roleTitle.toLowerCase());
 
       if (isLegacyName) {
-        wordAliasMap.set(lower, displayName);
+        wordAliasMap.set(lower, firstDisplayName);
       }
     });
 
@@ -973,6 +1144,14 @@ export function hydrateTextWithCharacters(
       // In 'role' mode, replace any assigned guest name or alternate role title with the canonical roleTitle
       if (guestName && guestName.length >= 2 && guestName.toLowerCase() !== roleTitle.toLowerCase()) {
         wordAliasMap.set(guestName.toLowerCase(), roleTitle);
+      }
+      if (
+        nameParts.hasRealGuest &&
+        nameParts.firstName.length >= 2 &&
+        !isDuplicateFirst &&
+        nameParts.firstName.toLowerCase() !== roleTitle.toLowerCase()
+      ) {
+        wordAliasMap.set(nameParts.firstName.toLowerCase(), roleTitle);
       }
       fullRoleTitlesForChar.forEach((rt) => {
         if (rt.toLowerCase().startsWith('the ')) {
@@ -983,7 +1162,7 @@ export function hydrateTextWithCharacters(
       // In 'print' mode (Customer Reveal, Print Outs, Playroom), replace unwrapped Role Titles ("The Star", "The Superfan", etc.) with the customer's guest name
       fullRoleTitlesForChar.forEach((rt) => {
         if (rt.toLowerCase().startsWith('the ')) {
-          wordAliasMap.set(rt.toLowerCase(), displayName);
+          wordAliasMap.set(rt.toLowerCase(), fullDisplayName);
         }
       });
     }
@@ -1000,36 +1179,57 @@ export function hydrateTextWithCharacters(
     return alpha ? alpha[0].toUpperCase() : '?';
   };
 
-  if (victim) {
-    const disp = mode === 'role' ? getCharacterRoleTitle(victim) : getCharacterDisplayName(victim);
-    const sub =
+  const registerGenericRoleAliases = (c: any, aliases: string[], idxKey: string) => {
+    const np = getCharacterNameParts(c);
+    const isDupFirst =
+      np.hasRealGuest && (firstNameCounts.get(np.firstName.toLowerCase()) || 0) > 1;
+    const fullDisp =
+      mode === 'role'
+        ? getCharacterRoleTitle(c)
+        : getCharacterDisplayName(c, { format: 'full' });
+    const firstDisp =
+      mode === 'role'
+        ? getCharacterRoleTitle(c)
+        : isDupFirst
+        ? fullDisp
+        : getCharacterDisplayName(c, { format: 'first' });
+    const lastDisp =
+      mode === 'role'
+        ? getCharacterRoleTitle(c)
+        : getCharacterDisplayName(c, { format: 'last' });
+    const subFirst =
       mode === 'ai'
-        ? buildAiReplacementForCharacter(victim, disp, charToRefIdMap)
-        : disp;
-    tokenMap.set('victim', sub);
-    tokenMap.set('the victim', sub);
-    tokenMap.set('victim_initial', mode === 'role' ? getRoleInitial(victim) : getCharacterInitial(victim));
-    handleMap.set('victim', toHandleSlug(disp));
+        ? buildAiReplacementForCharacter(c, fullDisp, charToRefIdMap)
+        : fullDisp;
+    const subNext = mode === 'ai' ? subFirst : firstDisp;
+    const init =
+      mode === 'role' ? getRoleInitial(c) : getCharacterInitial(c, charList);
+    const cKey = String(c.id || c.name || idxKey);
+
+    for (const al of aliases) {
+      tokenMap.set(al, subFirst);
+      subsequentTokenMap.set(al, subNext);
+      tokenToCharKey.set(al, cKey);
+      tokenMap.set(`${al}_full`, fullDisp);
+      tokenMap.set(`${al}_fullname`, fullDisp);
+      tokenMap.set(`${al}_first`, firstDisp);
+      tokenMap.set(`${al}_firstname`, firstDisp);
+      tokenMap.set(`${al}_last`, lastDisp);
+      tokenMap.set(`${al}_lastname`, lastDisp);
+      tokenMap.set(`${al}_surname`, lastDisp);
+      tokenMap.set(`${al}_initial`, init);
+      handleMap.set(al, toHandleSlug(fullDisp));
+    }
+  };
+
+  if (victim) {
+    registerGenericRoleAliases(victim, ['victim', 'the victim'], 'victim');
   }
   if (killer) {
-    const disp = mode === 'role' ? getCharacterRoleTitle(killer) : getCharacterDisplayName(killer);
-    const sub =
-      mode === 'ai'
-        ? buildAiReplacementForCharacter(killer, disp, charToRefIdMap)
-        : disp;
-    tokenMap.set('killer', sub);
-    tokenMap.set('the killer', sub);
-    tokenMap.set('killer_initial', mode === 'role' ? getRoleInitial(killer) : getCharacterInitial(killer));
+    registerGenericRoleAliases(killer, ['killer', 'the killer'], 'killer');
   }
   if (assistant) {
-    const disp = mode === 'role' ? getCharacterRoleTitle(assistant) : getCharacterDisplayName(assistant);
-    const sub =
-      mode === 'ai'
-        ? buildAiReplacementForCharacter(assistant, disp, charToRefIdMap)
-        : disp;
-    tokenMap.set('assistant', sub);
-    tokenMap.set('the accomplice', sub);
-    tokenMap.set('assistant_initial', mode === 'role' ? getRoleInitial(assistant) : getCharacterInitial(assistant));
+    registerGenericRoleAliases(assistant, ['assistant', 'the accomplice'], 'assistant');
   }
 
   // 1. Hydrate @handles and emails that embed a character token or legacy name (e.g. @gabby4ever_edits, @{{Gabby}}4ever_edits, jeremy.p@lotv.tv)
@@ -1053,13 +1253,24 @@ export function hydrateTextWithCharacters(
     );
   }
 
-  // 2. Hydrate all explicit {{Token}} occurrences (up to 2 passes so nested tokens inside outfit_advice in 'ai' mode also resolve)
+  // 2. Hydrate all explicit {{Token}} occurrences:
+  // In 'print' mode, the 1st mention of a character in a text block uses their Full Name ("Sarah Jenkins"),
+  // and 2nd+ mentions of that character in the same block use their First Name ("Sarah") unless two guests share a first name!
+  const mentionedCharKeys = new Set<string>();
   const resolveExplicitTokens = (input: string, usePlainNameForNested = false) =>
     input.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (fullMatch, inner) => {
       const cleanInner = String(inner).trim();
       const lower = cleanInner.toLowerCase();
       if (tokenMap.has(lower)) {
-        const val = tokenMap.get(lower)!;
+        let val = tokenMap.get(lower)!;
+        const cKey = tokenToCharKey.get(lower);
+        if (mode === 'print' && cKey && subsequentTokenMap.has(lower)) {
+          if (mentionedCharKeys.has(cKey)) {
+            val = subsequentTokenMap.get(lower)!;
+          } else {
+            mentionedCharKeys.add(cKey);
+          }
+        }
         if (/_(?:He|Him|His|Hes|Sibling|Spouse|Inlaw|Himself)$/.test(cleanInner) && val.length > 0) {
           return val.charAt(0).toUpperCase() + val.slice(1);
         }
@@ -1150,10 +1361,10 @@ export function tokenizeTextWithCharacterRoles(
     });
   });
 
-  // Protect suffix tokens (e.g. {{The Ex_Initial}}, {{Dane_Initial}}, {{Gabby_his}}) before hydration
+  // Protect suffix tokens (e.g. {{The Ex_Initial}}, {{Dane_Initial}}, {{Gabby_his}}, {{The Wife_last}}) before hydration
   const savedSuffixTokens: string[] = [];
   const protectedText = stripEmDashes(text).replace(
-    /\{\{\s*([^}]+?)(?:_|\s+)(Initial|he|him|his|hes|sibling|spouse|inlaw|himself)\s*\}\}/gi,
+    /\{\{\s*([^}]+?)(?:_|\s+)(Initial|he|him|his|hes|sibling|spouse|inlaw|himself|first|firstname|last|lastname|surname|full|fullname)\s*\}\}/gi,
     (_, rawBase, suffix) => {
       const cleanBase = String(rawBase).trim();
       const canonicalRole = aliasToRole.get(cleanBase.toLowerCase()) || cleanBase;
@@ -1199,7 +1410,7 @@ export function tokenizeTextWithCharacterRoles(
 
 /**
  * Returns all candidate aliases for a character (roleTitle, roleTitle without 'The ',
- * assigned guest name, legacy base name, and legacy nicknames).
+ * assigned guest full name, first name, last name, legacy base name, and legacy nicknames).
  */
 export function getCharacterCandidateKeys(char: any): string[] {
   if (!char) return [];
@@ -1209,8 +1420,7 @@ export function getCharacterCandidateKeys(char: any): string[] {
   const baseRoleTitle = getBaseCharacterRoleTitle(char);
   const roleTitleWithoutThe = roleTitle.replace(/^The\s+/i, '').trim();
   const baseRoleWithoutThe = baseRoleTitle.replace(/^The\s+/i, '').trim();
-  const profile = char.profile_data || {};
-  const guestName = String(profile.guest_name || profile.name || '').trim();
+  const nameParts = getCharacterNameParts(char);
 
   const keys = new Set<string>();
   if (roleTitle) keys.add(roleTitle);
@@ -1226,8 +1436,10 @@ export function getCharacterCandidateKeys(char: any): string[] {
     const extraNicknames = LEGACY_NICKNAMES_BY_BASE[rawBase.toLowerCase()] || [];
     extraNicknames.forEach((nick) => keys.add(nick));
   }
-  if (guestName && guestName.length >= 2) {
-    keys.add(guestName);
+  if (nameParts.hasRealGuest) {
+    if (nameParts.fullName.length >= 2) keys.add(nameParts.fullName);
+    if (nameParts.firstName.length >= 2) keys.add(nameParts.firstName);
+    if (nameParts.lastName.length >= 2) keys.add(nameParts.lastName);
   }
 
   Object.entries(LEGACY_PLACEHOLDER_TO_ROLE).forEach(([legacyKey, mappedRole]) => {

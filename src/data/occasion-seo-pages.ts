@@ -133,14 +133,14 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       {
         title: 'Works Over Dinner or Drinks',
         description:
-          'Structured into 3 easy rounds (Mingling, Investigation, and Final Accusations) that flow naturally alongside a 3-course dinner or casual buffet and drinks.',
+          'Structured into 3 to 5 rounds (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds) that flow naturally alongside dinner or casual buffet and drinks.',
       },
     ],
     faqs: [
       {
         question: 'How long does a birthday murder mystery party take to play?',
         answer:
-          'Most groups play across 2 to 3 hours alongside dinner and drinks. Each of the 3 rounds takes about 35–45 minutes, followed by final voting and the big killer reveal.',
+          'Most groups play across 2 to 3 hours alongside dinner and drinks. Depending on your package tier (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds), each round takes about 30–40 minutes, followed by final voting and the big killer reveal.',
       },
       {
         question: 'Can we customize the characters around the birthday person?',
@@ -172,7 +172,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     ],
     recommendedThemeSlug: 'christmas-nightmare',
     groupSizeLabel: 'Up to 16 Dinner Guests',
-    prepTimeLabel: 'Zero-Prep Host Mode • 3 Guided Rounds',
+    prepTimeLabel: 'Zero-Prep Host Mode • 3 to 5 Guided Rounds',
     whyTitle: 'Designed for Modern Adult Dinner Parties (Not Cheesy 1990s Board Games)',
     whyParagraphs: [
       'Most downloadable murder mystery games feel like dusty 40-page scripts written in 1998 where guests have to read awkward paragraphs word-for-word. Back Pocket Mysteries replaces stiff script-reading with natural conversation objectives, juicy secrets, and visual crime-scene evidence.',
@@ -180,9 +180,9 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     ],
     highlights: [
       {
-        title: '3 Rounds Timed to Your Courses',
+        title: '3 to 5 Rounds Timed to Your Courses',
         description:
-          'Round 1 pairs with starters/aperitifs, Round 2 unfolds over the main course as new visual and audio evidence drops, and Round 3 wraps up over dessert with final accusations.',
+          'Basic packs run 3 rounds, Premium packs run 4 rounds, and Grand packs run 5 rounds—pairing seamlessly with arrival drinks, starters, mains, and dessert before final accusations.',
       },
       {
         title: 'Choose Your Spice & Tone Level',
@@ -353,7 +353,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     whyTitle: 'How Our Bidirectional Gender-Flex Casting Solves the All-Female Party Problem',
     whyParagraphs: [
       'Almost every off-the-shelf murder mystery kit is hardcoded for a rigid 50/50 male-female split. If you are hosting a girls’ night in, a birthday dinner, or a bachelorette weekend, half your friends are usually stuck reading male pronouns and wearing awkward masculine costumes.',
-      'Back Pocket Mysteries was architected from the ground up with Bidirectional Gender-Flex Hydration. When you cast an all-female group (or 5 women and 1 man), our engine automatically flexes gendered titles (e.g., The Brother-in-Law becomes The Sister-in-Law), updates every third-person pronoun and relationship token across all 3 rounds of clues, and generates chic feminine AI costume portraits for every guest.',
+      'Back Pocket Mysteries was architected from the ground up with Bidirectional Gender-Flex Hydration. When you cast an all-female group (or 5 women and 1 man), our engine automatically flexes gendered titles (e.g., The Brother-in-Law becomes The Sister-in-Law), updates every third-person pronoun and relationship token across every round of clues (3 rounds in Basic, 4 in Premium, 5 in Grand), and generates chic feminine AI costume portraits for every guest.',
     ],
     highlights: [
       {
@@ -473,14 +473,14 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     ],
     highlights: [
       {
-        title: 'Synchronized Round 1, 2 & 3 Evidence Drops',
+        title: 'Synchronized Multi-Round Evidence Drops (3–5 Rounds)',
         description:
-          'When the host advances the round, every player’s phone or laptop browser unlocks the new forensic clues, audio briefings, and accusation prompts in real time.',
+          'When the host advances the round (across 3 rounds in Basic, 4 in Premium, or 5 in Grand), every player’s phone or laptop browser unlocks the new forensic clues, audio briefings, and accusation prompts in real time.',
       },
       {
         title: 'Built-In Detective Notebook & Live Voting',
         description:
-          'Players can tag clues, cross-reference suspect bios, and cast their final Round 3 killer vote right inside the browser before the dramatic animated reveal.',
+          'Players can tag clues, cross-reference suspect bios, and cast their final killer vote right inside the browser before the dramatic animated reveal.',
       },
       {
         title: 'Works In-Person OR Over Zoom / Discord / Teams',
@@ -613,7 +613,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       {
         question: 'How long does an 8-player murder mystery take to play?',
         answer:
-          'Typically 90 to 150 minutes across 3 rounds, timed naturally around drinks or a 3-course dinner.',
+          'Typically 90 to 150 minutes across 4 investigation rounds (on our Premium Tier), timed naturally around drinks or dinner.',
       },
     ],
   },
@@ -621,11 +621,11 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     slug: 'murder-mystery-game-for-10-players',
     navLabel: '10-Player Murder Mystery Games',
     emoji: '🔟',
-    badge: 'Premium Tier • Up to 10 Custom Characters',
+    badge: 'Premium Tier • Up to 10 Custom Characters • 4 Rounds',
     title: 'Murder Mystery Games',
     titleHighlight: 'for 10 Players',
     subtitle:
-      'Built for lively 10-player dinner parties, milestone birthdays, and hen weekends. Ten custom-named characters, entangled rival factions, leaked group-chat screenshots, CCTV evidence, and multi-speaker audio wiretaps.',
+      'Built for lively 10-player dinner parties, milestone birthdays, and hen weekends. Ten custom-named characters, entangled rival factions, leaked group-chat screenshots, CCTV evidence, and multi-speaker audio wiretaps across 4 rounds.',
     metaTitle:
       'Murder Mystery Games for 10 Players (Custom & 100% Online) | Back Pocket Mysteries',
     metaDescription:
@@ -638,11 +638,11 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     ],
     recommendedThemeSlug: 'christmas-nightmare',
     groupSizeLabel: 'Up to 10 Custom Characters (+ Unlimited Extra Detectives)',
-    prepTimeLabel: 'Premium Tier • 100% Online Mobile Playroom',
+    prepTimeLabel: 'Premium Tier • 4 Investigation Rounds • 100% Online Mobile Playroom',
     whyTitle: 'High-Energy Mingling & Rival Alliances for 10 Players',
     whyParagraphs: [
       'At 10 players, a murder mystery transforms from a single-table conversation into a full-room social deduction event where guests pull each other aside to compare alibis, trade leaked text screenshots, and verify timestamps.',
-      'Our Premium Tier weaves all 10 of your guests’ real names, traits, and inside jokes into an interlocking web of motives and red herrings—delivered 100% paperlessly to every guest’s phone via your 6-digit Game PIN.',
+      'Our Premium Tier weaves all 10 of your guests’ real names, traits, and inside jokes into an interlocking web of motives and red herrings across 4 structured rounds—delivered 100% paperlessly to every guest’s phone via your 6-digit Game PIN.',
     ],
     highlights: [
       {
@@ -651,14 +651,14 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
           'Every guest receives a pre-party invite link with their character backstory and outfit guide, plus round-by-round secrets and talking points on party night.',
       },
       {
-        title: 'Synchronized Mobile Clue Drops',
+        title: 'Synchronized 4-Round Mobile Clue Drops',
         description:
-          'No shouting over a noisy 10-person room to hand out paper slips—when Round 2 and Round 3 unlock, everyone’s phones chime with the new CCTV and audio wiretap evidence.',
+          'No shouting over a noisy 10-person room to hand out paper slips—as each of the 4 rounds unlocks, everyone’s phones chime with the new CCTV and audio wiretap evidence.',
       },
       {
         title: 'Live Accusation Tally & Superlative Awards',
         description:
-          'At the end of Round 3, all 10 players lock in their killer vote and motive on their phones before the dramatic final reveal.',
+          'At the end of Round 4, all 10 players lock in their killer vote and motive on their phones before the dramatic final reveal.',
       },
     ],
     faqs: [
@@ -678,11 +678,11 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     slug: 'murder-mystery-game-for-12-to-16-players',
     navLabel: 'Large Group (12–16+ Players)',
     emoji: '🥂',
-    badge: 'Grand Tier • 12, 14, 16+ Player House Parties & Getaways',
+    badge: 'Grand Tier • 12, 14, 16+ Player House Parties & Getaways • 5 Rounds',
     title: 'Large Group Murder Mystery',
     titleHighlight: 'Games (12–16+ Players)',
     subtitle:
-      'Hosting a big house party, weekend Airbnb getaway, hen party, or team social for 12 to 16+ people? Our Grand Tier scales up to 16 custom suspect roles—plus unlimited extra friends can join free as named Guest Detectives.',
+      'Hosting a big house party, weekend Airbnb getaway, hen party, or team social for 12 to 16+ people? Our Grand Tier scales up to 16 custom suspect roles across 5 investigation rounds—plus unlimited extra friends can join free as named Guest Detectives.',
     metaTitle:
       'Large Group Murder Mystery Games for 12, 14 & 16+ Players | Back Pocket Mysteries',
     metaDescription:
@@ -696,11 +696,11 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     ],
     recommendedThemeSlug: 'christmas-nightmare',
     groupSizeLabel: 'Up to 16 Suspects + Unlimited Free Extra Detectives',
-    prepTimeLabel: 'Grand Tier • Zero Printing Required',
+    prepTimeLabel: 'Grand Tier • 5 Investigation Rounds • Zero Printing Required',
     whyTitle: 'How to Run a 12-to-16+ Person Murder Mystery Without Chaos',
     whyParagraphs: [
       'Anyone who has tried to run a traditional paper murder mystery for 14 or 16 people knows the nightmare: 80 pages of printing, 48 paper clue slips to sort into envelopes, and guests constantly asking "Wait, who is Lord Pemberton again?"',
-      'Back Pocket Mysteries eliminates large-group chaos completely. First, every character is named after your real guests (`Sarah | The Bombshell`, `Marcus | The Producer`), and the live Room Cast directory on every phone shows each guest’s photo and role. Second, our 6-digit Game PIN Playroom pushes Round 1, 2, and 3 clues to all 16+ phones simultaneously.',
+      'Back Pocket Mysteries eliminates large-group chaos completely. First, every character is named after your real guests (`Sarah | The Bombshell`, `Marcus | The Producer`), and the live Room Cast directory on every phone shows each guest’s photo and role. Second, our 6-digit Game PIN Playroom pushes all 5 rounds of clues to all 16+ phones simultaneously.',
     ],
     highlights: [
       {

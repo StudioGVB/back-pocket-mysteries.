@@ -9,6 +9,7 @@ import { MysteryMoodboard } from '@/components/mysteries/MysteryMoodboard';
 import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
 import { getPublicMarketingMysteryBySlugOrId } from '@/services/mysteries';
 import { getCleanCharacterPresentation } from '@/utils/character-display';
+import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 
 export async function generateStaticParams() {
   const locales = ['en'];
@@ -117,6 +118,8 @@ export default async function ThemeDetailPage(props: {
       </div>
     );
   }
+
+  const packageInfo = getPackageInfoForMaxPlayers(mystery.max_players);
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -423,7 +426,7 @@ export default async function ThemeDetailPage(props: {
               <div className="p-4 rounded-2xl bg-slate-50">
                 <p className="text-xs font-black text-slate-900 mb-1">2. Personalize Every Role</p>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Their real names, pronouns, portraits, and real-life quirks are woven directly into the character booklets and 3 rounds of evidence.
+                  Their real names, pronouns, portraits, and real-life quirks are woven directly into the character booklets and {packageInfo.requiredRounds} rounds of evidence.
                 </p>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50">

@@ -10,6 +10,7 @@ import {
   adaptOutfitForGuestGender,
   adaptBioForGuestGender,
   adaptOutfitReferenceImagesForGuestGender,
+  splitGuestNameParts,
 } from '@/utils/hydration';
 import { getMysteryById, normalizePlotBeats } from '@/services/mysteries';
 import {
@@ -70,6 +71,9 @@ export type PartyEventDetails = StoredPartyEventDetails;
 export interface GameSessionMeta {
   pin: string;
   hostUserId?: string;
+  paidByUserId?: string;
+  customerName?: string;
+  customerEmail?: string;
   currentRound?: number;
   activeCharacterIds: string[];
   claimedCharacters: Record<string, { token: string; claimedAt: string }>;
@@ -541,9 +545,12 @@ export async function saveCustomerCastAction(
       }
 
       const resolvedGender = assignedGuest.gender || char.gender || 'adaptable';
+      const parsedName = splitGuestNameParts(assignedGuest.name);
       nextProfile.guest_id = assignedGuest.id;
-      nextProfile.guest_name = assignedGuest.name;
-      nextProfile.name = assignedGuest.name;
+      nextProfile.guest_name = parsedName.fullName || assignedGuest.name;
+      nextProfile.name = parsedName.fullName || assignedGuest.name;
+      nextProfile.first_name = parsedName.firstName;
+      nextProfile.last_name = parsedName.lastName;
       nextProfile.gender = resolvedGender;
       nextProfile.accent =
         assignedGuest.accent ||
@@ -600,6 +607,8 @@ export async function saveCustomerCastAction(
       delete nextProfile.guest_id;
       delete nextProfile.guest_name;
       delete nextProfile.name;
+      delete nextProfile.first_name;
+      delete nextProfile.last_name;
     }
 
     if (char.id === carrierId) {
@@ -1520,20 +1529,7 @@ export async function submitGuestMysteryReviewAction(payload: {
     resolvedPhotoUrl = rawPhoto;
   }
 
-  const reviewEntry: GuestReviewItem = {
-    id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    mysteryId: payload.mysteryId,
-    mysteryTitle: payload.mysteryTitle,
-    playerName: cleanName,
-    characterRole: payload.characterRole || 'Sleuth',
-    rating,
-    comment: cleanComment || `Loved playing ${payload.mysteryTitle}!`,
-    ...(resolvedPhotoUrl ? { photoUrl: resolvedPhotoUrl } : {}),
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-  };
-
-  // 1. Save into live session & character JSONB so reviews always persist even if public.reviews table is unmigrated
+  // 1. Load live session & characters first so we can link this guest review directly to the Party Host customer
   let { data: characters } = await supabase
     .from('characters')
     .select('*')
@@ -1548,6 +1544,69 @@ export async function submitGuestMysteryReviewAction(payload: {
     characters || [],
     payload.mysteryId
   );
+
+  // Resolve Party Host customer details from session, mysteryId suffix, mystery creator, or order
+  let resolvedHostUserId: string | undefined =
+    session.hostUserId ||
+    session.paidByUserId ||
+    (payload.mysteryId.includes('__u_') ? payload.mysteryId.split('__u_')[1] : undefined);
+  let resolvedHostName: string | undefined = session.customerName;
+  let resolvedHostEmail: string | undefined = session.customerEmail;
+
+  try {
+    if (!resolvedHostUserId) {
+      const { data: mysRow } = await supabase
+        .from('mysteries')
+        .select('created_by')
+        .eq('id', payload.mysteryId)
+        .single();
+      if (mysRow?.created_by) {
+        resolvedHostUserId = mysRow.created_by;
+      }
+    }
+    if (!resolvedHostUserId) {
+      const { data: ordRow } = await supabase
+        .from('orders')
+        .select('user_id')
+        .eq('mystery_id', payload.mysteryId)
+        .limit(1)
+        .maybeSingle();
+      if (ordRow?.user_id) {
+        resolvedHostUserId = ordRow.user_id;
+      }
+    }
+    if (resolvedHostUserId && (!resolvedHostName || !resolvedHostEmail)) {
+      const { data: hostProfile } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', resolvedHostUserId)
+        .maybeSingle();
+      if (hostProfile) {
+        resolvedHostName = resolvedHostName || hostProfile.full_name || undefined;
+        resolvedHostEmail = resolvedHostEmail || hostProfile.email || undefined;
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  const reviewEntry: GuestReviewItem = {
+    id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    mysteryId: payload.mysteryId,
+    mysteryTitle: payload.mysteryTitle,
+    playerName: cleanName,
+    characterRole: payload.characterRole || 'Sleuth',
+    rating,
+    comment: cleanComment || `Loved playing ${payload.mysteryTitle}!`,
+    ...(resolvedPhotoUrl ? { photoUrl: resolvedPhotoUrl } : {}),
+    ...(resolvedHostUserId ? { hostUserId: resolvedHostUserId } : {}),
+    ...(resolvedHostName ? { hostName: resolvedHostName } : {}),
+    ...(resolvedHostEmail ? { hostEmail: resolvedHostEmail } : {}),
+    ...(session?.pin ? { sessionPin: session.pin } : {}),
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  };
+
   session.reviews = [reviewEntry, ...(session.reviews || [])];
   await writeSessionToCarrier(supabase, payload.mysteryId, carrierCharacter, session);
 
@@ -1580,6 +1639,12 @@ export async function submitGuestMysteryReviewAction(payload: {
       const safeRole = escapeHtml(payload.characterRole || 'Sleuth');
       const safeTitle = escapeHtml(payload.mysteryTitle || 'Murder Mystery');
       const safeComment = escapeHtml(reviewEntry.comment).replace(/\n/g, '<br/>');
+      const hostDisplay =
+        resolvedHostName || resolvedHostEmail
+          ? `${resolvedHostName ? escapeHtml(resolvedHostName) : ''}${
+              resolvedHostEmail ? ` (${escapeHtml(resolvedHostEmail)})` : ''
+            }`.trim()
+          : '';
 
       let emailAttachments: Array<{ filename: string; content: Buffer }> | undefined;
       if (rawPhoto && rawPhoto.startsWith('data:image/')) {
@@ -1602,6 +1667,10 @@ export async function submitGuestMysteryReviewAction(payload: {
           ? `<div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;"><strong style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Attached Party Photo</strong><br/><span style="color:#333;font-size:13px;">Included as an attachment on this email.</span></div>`
           : '';
 
+      const hostHtml = hostDisplay
+        ? `<p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Party Host Customer</strong><br/><span style="color: #1a1a1a; font-size: 14px; font-weight: bold;">👑 ${hostDisplay}</span></p>`
+        : '';
+
       await resend.emails.send({
         from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
         to: 'Hello@backpocketgames.com',
@@ -1615,6 +1684,7 @@ export async function submitGuestMysteryReviewAction(payload: {
             </div>
             <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
               <p style="margin: 0 0 10px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Player &amp; Role</strong><br/><span style="color: #1a1a1a; font-size: 16px; font-weight: bold;">${safeName}</span> <span style="color:#666;font-size:13px;">(Played ${safeRole} in ${safeTitle})</span></p>
+              ${hostHtml}
               <p style="margin: 0 0 15px 0;"><strong style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Rating</strong><br/><span style="color: #F02882; font-size: 16px; font-weight: bold;">${'★'.repeat(rating)} (${rating}/5 Stars)</span></p>
               <div style="background-color: #f5f5f5; padding: 16px; border-radius: 6px; border-left: 3px solid #F02882;">
                 <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6; font-style: italic;">"${safeComment}"</p>

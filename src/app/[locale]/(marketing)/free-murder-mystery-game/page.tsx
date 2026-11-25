@@ -157,7 +157,7 @@ const PRIZE_INCLUSIONS = [
 const PLAYER_COUNT_GUIDES = [
   {
     players: '4–6 Players',
-    tier: 'Basic Tier (100% Free with VIP Pass)',
+    tier: 'Basic Tier • 3 Rounds (100% Free with VIP Pass)',
     priceTier: null,
     idealFor: 'Intimate Dinner Parties, Double Dates & Flatmate Nights',
     summary:
@@ -165,27 +165,27 @@ const PLAYER_COUNT_GUIDES = [
   },
   {
     players: '6–8 Players',
-    tier: 'Premium Tier',
+    tier: 'Premium Tier • 4 Rounds',
     priceTier: 'premium' as const,
     idealFor: 'Classic Dinner Party Tables & Birthday Dinners',
     summary:
-      'Hosting a larger group? Our Premium Tier expands the table up to 10 players with secondary alibis, secret alliances, and additional digital forensic evidence.',
+      'Hosting a larger group? Our Premium Tier expands the table up to 10 players across 4 investigation rounds with secondary alibis, secret alliances, and additional digital forensic evidence.',
   },
   {
     players: '8–12 Players',
-    tier: 'Premium / Grand Tier',
+    tier: 'Premium / Grand Tier • 4–5 Rounds',
     priceTier: null,
     idealFor: 'House Parties, Hen & Stag Nights, Milestone Birthdays',
     summary:
-      'Expands the suspect pool with rival factions, side-room gossip prompts, and chronological timeline gaps for energetic mingling.',
+      'Expands the suspect pool across 4 to 5 investigation rounds (Premium = 4 rounds, Grand = 5 rounds) with rival factions, side-room gossip prompts, and chronological timeline gaps for energetic mingling.',
   },
   {
     players: '12–16 Players',
-    tier: 'Grand Tier',
+    tier: 'Grand Tier • 5 Rounds',
     priceTier: 'grand' as const,
     idealFor: 'Large House Parties, Holiday Events & Team Socials',
     summary:
-      'Our full 16-suspect ensemble cast with live Room Cast directory, QR party join, and automated detective superlative awards at the end of the night.',
+      'Our full 16-suspect ensemble cast across 5 investigation rounds with live Room Cast directory, QR party join, and automated detective superlative awards at the end of the night.',
   },
 ];
 
