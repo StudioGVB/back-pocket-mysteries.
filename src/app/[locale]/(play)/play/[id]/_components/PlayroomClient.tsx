@@ -5375,12 +5375,17 @@ export function PlayroomClient({
                 <section className="bg-slate-900/75 border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-7">
                   {solutionData ? (
                 (() => {
-                  const realMurderClues = clues.filter(
-                    c => c.evidence_status !== 'fake' && c.implication_type !== 'red_herring'
+                  const decoyIdSet = new Set<string>(
+                    Array.isArray((solutionData as any)?.decoyClueIds)
+                      ? (solutionData as any).decoyClueIds
+                      : []
                   );
-                  const decoyClues = clues.filter(
-                    c => c.evidence_status === 'fake' || c.implication_type === 'red_herring'
-                  );
+                  const isDecoyClue = (c: any) =>
+                    decoyIdSet.has(c.id) ||
+                    c.evidence_status === 'fake' ||
+                    c.implication_type === 'red_herring';
+                  const realMurderClues = clues.filter(c => !isDecoyClue(c));
+                  const decoyClues = clues.filter(c => isDecoyClue(c));
                   const beatsList: any[] = Array.isArray(solutionData.plotBeats)
                     ? solutionData.plotBeats
                     : [];

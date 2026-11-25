@@ -303,10 +303,10 @@ export async function advanceMysteryGenerationOneStep(
         generationStep: stepLabel,
         generationProgress: 22,
       });
-      const { weavePersonalitiesAndInsideJokesAction } = await import(
+      const { runInsideJokesWeaverInternal } = await import(
         '@/app/actions/inside-jokes-weaver'
       );
-      await weavePersonalitiesAndInsideJokesAction(params.mysteryId);
+      await runInsideJokesWeaverInternal(params.mysteryId);
       updateMysteryGenerationInStore(params.mysteryId, {
         insideJokesWeaved: true,
         generationProgress: 24,
