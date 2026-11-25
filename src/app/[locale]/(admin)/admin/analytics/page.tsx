@@ -7,9 +7,11 @@ import {
   getDeviceBreakdown,
   getBrowserBreakdown,
   getGoogleSearchConsoleStats,
+  getGoogleAnalytics4RealtimeAndGeoStats,
 } from '@/app/actions/admin-vercel';
 import { TrafficChart } from '@/components/admin/TrafficChart';
 import { TrafficTables } from '@/components/admin/TrafficTables';
+import { Ga4LiveGlobalMapPanel } from '@/components/admin/Ga4LiveGlobalMapPanel';
 import { AnalyticsNav } from '@/components/admin/AnalyticsNav';
 import { AnalyticsDurationSelector } from '@/components/admin/AnalyticsDurationSelector';
 import { parseAnalyticsDays } from '@/components/admin/analytics-duration-utils';
@@ -39,7 +41,7 @@ export default async function AnalyticsPage({
             Traffic &amp; SEO Analytics
           </h1>
           <p className="text-xs font-semibold text-gray-400 mt-1">
-            Live visitor telemetry from Vercel Web Analytics &amp; Google Search Console (zero synthetic data)
+            Live visitor telemetry from Google Analytics 4 (GA4), Vercel Web Analytics &amp; Google Search Console
           </p>
         </div>
         <Suspense fallback={null}>
@@ -55,6 +57,7 @@ export default async function AnalyticsPage({
         key={days}
         fallback={
           <div className="space-y-6">
+            <div className="h-[360px] bg-slate-100 animate-pulse rounded-[32px]" />
             <div className="h-[420px] bg-slate-100 animate-pulse rounded-[32px]" />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="h-[280px] bg-slate-100 animate-pulse rounded-[32px]" />
@@ -70,29 +73,64 @@ export default async function AnalyticsPage({
 }
 
 async function AnalyticsData({ days }: { days: number }) {
-  const [timeseriesRes, topPaths, topCountries, topReferrers, devices, browsers, gsc] =
-    await Promise.all([
-      getAnalyticsTimeseries(days).catch(() => ({
-        isConnected: false,
-        totals: { visitors: 0, pageviews: 0 },
-        data: [],
-      })),
-      getTopPaths(days).catch(() => []),
-      getTopCountries(days).catch(() => []),
-      getTopReferrers(days).catch(() => []),
-      getDeviceBreakdown(days).catch(() => []),
-      getBrowserBreakdown(days).catch(() => []),
-      getGoogleSearchConsoleStats(days).catch(() => ({
-        isConnected: false,
-        siteUrl: 'sc-domain:backpocketmysteries.com',
-        totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 },
-        topQueries: [],
-        topPages: [],
-      })),
-    ]);
+  const [
+    timeseriesRes,
+    topPaths,
+    topCountries,
+    topReferrers,
+    devices,
+    browsers,
+    gsc,
+    ga4,
+  ] = await Promise.all([
+    getAnalyticsTimeseries(days).catch(() => ({
+      isConnected: false,
+      totals: { visitors: 0, pageviews: 0 },
+      data: [],
+    })),
+    getTopPaths(days).catch(() => []),
+    getTopCountries(days).catch(() => []),
+    getTopReferrers(days).catch(() => []),
+    getDeviceBreakdown(days).catch(() => []),
+    getBrowserBreakdown(days).catch(() => []),
+    getGoogleSearchConsoleStats(days).catch(() => ({
+      isConnected: false,
+      siteUrl: 'sc-domain:backpocketmysteries.com',
+      totals: { clicks: 0, impressions: 0, ctr: 0, position: 0 },
+      topQueries: [],
+      topPages: [],
+    })),
+    getGoogleAnalytics4RealtimeAndGeoStats(days).catch(() => ({
+      isConnected: false,
+      hasTrackingTagOnly: false,
+      measurementId: '',
+      propertyId: '',
+      clientEmail: '',
+      realtime: {
+        activeUsersLast30Min: 0,
+        activeLocations: [],
+        activePages: [],
+        devices: [],
+      },
+      historicalGeo: [],
+      totals: {
+        activeUsers: 0,
+        sessions: 0,
+        pageviews: 0,
+        avgEngagementSeconds: 0,
+      },
+    })),
+  ]);
 
   return (
     <>
+      {/* Global Visitor Map & GA4 Real-Time Live Stream */}
+      <Ga4LiveGlobalMapPanel
+        ga4={ga4}
+        vercelCountries={topCountries}
+        days={days}
+      />
+
       {!timeseriesRes.isConnected ? (
         <div className="bg-amber-50 border border-amber-200 rounded-[32px] p-8 text-amber-900">
           <h3 className="text-lg font-black uppercase tracking-tight mb-1">

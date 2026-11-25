@@ -900,7 +900,7 @@ export async function getActiveGaMeasurementId(): Promise<string> {
   try {
     const { getPlatformSettingsAction } = await import('@/app/actions/platform-settings');
     const settings = (await getPlatformSettingsAction()) as any;
-    return (settings?.gaMeasurementId || '').trim();
+    return (settings?.googleAnalyticsId || settings?.gaMeasurementId || '').trim();
   } catch {
     return '';
   }
