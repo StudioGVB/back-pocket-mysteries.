@@ -35,10 +35,16 @@ export interface CanonicalChristmasCharacter {
     outfit_reference_images: string[];
     avatar_url: string;
     standard_character_photo_url?: string;
+    standard_character_photo_hash?: string;
+    guest_id?: string;
+    guest_name?: string;
+    eye_color?: string;
+    height?: string;
     outfit_image_url?: string;
     act_summary: string;
     act_bullets: string[];
     traits: string[];
+    [key: string]: unknown;
   };
   motive?: {
     legacyId?: string;
@@ -69,9 +75,13 @@ export const CHRISTMAS_NIGHTMARE_CHARACTERS: CanonicalChristmasCharacter[] = [
         '/outfits/christmas/husband-2.jpg',
         '/outfits/christmas/husband-3.jpg',
       ],
-      standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-b90b57ad1e85.jpg',
-      outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-b90b57ad1e85.jpg',
-      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=TheHusband&eyebrows=default&eyes=default&mouth=smile&clothesColor=991b1b&backgroundColor=transparent&top=shortWaved&hairColor=282828&skinColor=ffe0bd&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2Fstandard-characters%2F61196e53-09c3-427f-8862-30151f2ca75b%2Fda18ef00-ecdc-41e7-8c71-97d78046e43b-b90b57ad1e85.jpg',
+      guest_id: '0370c2e5-a829-4b37-9eff-8251c337aa34',
+      guest_name: 'Luke',
+      eye_color: 'Blue',
+      height: 'Very Tall',
+      standard_character_photo_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg',
+      outfit_image_url: 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg',
+      avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Luke&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=transparent&top=shortFlat&hairColor=d6b370&hatColor=d6b370&skinColor=ffe0bd&facialHairProbability=0&accessoriesProbability=0&build=Average&aiPhotoUrl=https%3A%2F%2Ftlmgiveaotdhhvhebwvc.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fcharacter-images%2F0370c2e5-a829-4b37-9eff-8251c337aa34-2bf6d5bf0afbd2f035beba3503d89b0715244bba9ce52d769847659687fdce22.jpg',
       act_summary: 'Act like the charming, larger-than-life host of the annual Christmas dinner who loves holding court with old high school friends and childhood neighbours.',
       act_bullets: [
         'Toast loudly to growing up on the same street and keeping the old high school crew together.',

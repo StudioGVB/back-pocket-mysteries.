@@ -13,6 +13,7 @@ import { TrafficTables } from '@/components/admin/TrafficTables';
 import { AnalyticsNav } from '@/components/admin/AnalyticsNav';
 import { AnalyticsDurationSelector } from '@/components/admin/AnalyticsDurationSelector';
 import { parseAnalyticsDays } from '@/components/admin/analytics-duration-utils';
+import { OwnerDeviceExclusionBanner } from '@/components/analytics/PageViewDurationTracker';
 
 export const unstable_instant = false;
 
@@ -28,7 +29,7 @@ export default async function AnalyticsPage({
   const days = parseAnalyticsDays(sp?.days);
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-12">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink mb-1">
@@ -45,6 +46,8 @@ export default async function AnalyticsPage({
           <AnalyticsDurationSelector currentDays={days} />
         </Suspense>
       </div>
+
+      <OwnerDeviceExclusionBanner />
 
       <AnalyticsNav locale={locale} />
 

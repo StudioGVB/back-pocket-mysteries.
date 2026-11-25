@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { i18n, type Locale } from "@/lib/i18n-config";
 import { GoogleAnalytics } from '@next/third-parties/google';
-import { Analytics } from '@vercel/analytics/react';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -86,6 +85,7 @@ export default async function RootLayout(props: {
 }) {
   const params = await props.params;
   const locale = params.locale;
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "";
 
   return (
     <html
@@ -93,6 +93,11 @@ export default async function RootLayout(props: {
       className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var g=${JSON.stringify(gaId)};var s=new URLSearchParams(window.location.search);if(s.get('exclude_me')==='1'||/^\\/(en|es|fr|de|it)?\\/?(admin|builder)(\\/|$)/.test(window.location.pathname)){localStorage.setItem('bpm_owner_exclude_analytics','1');document.cookie='bpm_owner_exclude=1; path=/; max-age=31536000; SameSite=Lax';}else if(s.get('exclude_me')==='0'){localStorage.removeItem('bpm_owner_exclude_analytics');document.cookie='bpm_owner_exclude=; path=/; max-age=0; SameSite=Lax';}if((localStorage.getItem('bpm_owner_exclude_analytics')==='1'||document.cookie.indexOf('bpm_owner_exclude=1')!==-1)&&g){window['ga-disable-'+g]=true;}}catch(e){}})();`,
+          }}
+        />
         <Suspense fallback={null}>
           <AutoSignInListener locale={locale} />
           <PageViewDurationTracker />
@@ -106,8 +111,7 @@ export default async function RootLayout(props: {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID as string} />
-        <Analytics />
+        {gaId && <GoogleAnalytics gaId={gaId} />}
       </body>
     </html>
   );

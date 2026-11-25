@@ -43,6 +43,7 @@ export interface StoredPartyEventDetails {
   hostNotes?: string;
   foodAndDrinkVibe?: string;
   whatToBringItems?: string[];
+  groupInsideJokes?: string;
   updatedAt?: string;
 }
 
@@ -82,6 +83,7 @@ export interface StoredGameSession {
   generationReadyAt?: string;
   generationStep?: string;
   generationProgress?: number;
+  insideJokesWeaved?: boolean;
   customerEmail?: string;
   customerName?: string;
   readyEmailSent?: boolean;
@@ -399,6 +401,7 @@ export function updateMysteryGenerationInStore(
       | 'generationReadyAt'
       | 'generationStep'
       | 'generationProgress'
+      | 'insideJokesWeaved'
       | 'customerEmail'
       | 'customerName'
       | 'readyEmailSent'
