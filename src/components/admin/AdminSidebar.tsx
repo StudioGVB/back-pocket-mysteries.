@@ -93,6 +93,8 @@ export function AdminSidebar() {
   const localePrefix = `/${localeMatch ? localeMatch[1] : 'en'}`;
   // Normalize locale prefix (e.g. /en/admin/... -> /admin/...)
   const cleanPath = pathname.replace(/^\/(en|fr)(?=\/admin)/, '');
+  const cleanPathRef = React.useRef(cleanPath);
+  cleanPathRef.current = cleanPath;
 
   const [counts, setCounts] = useState({
     transactions: 0,
@@ -108,13 +110,16 @@ export function AdminSidebar() {
     const nowIso = new Date().toISOString();
     setCounts((prev) => ({ ...prev, [section]: 0 }));
     writeSeenTimestamp(section, nowIso);
-    markAdminSectionSeenAction(section, nowIso)
-      .then((res) => {
-        if (res?.timestamp) {
-          writeSeenTimestamp(section, res.timestamp);
-        }
-      })
-      .catch(() => {});
+    // Defer the background server action slightly so it never contends with Next.js route transitions
+    setTimeout(() => {
+      markAdminSectionSeenAction(section, nowIso)
+        .then((res) => {
+          if (res?.timestamp) {
+            writeSeenTimestamp(section, res.timestamp);
+          }
+        })
+        .catch(() => {});
+    }, 600);
   }, []);
 
   const refreshCounts = useCallback(async () => {
@@ -128,8 +133,9 @@ export function AdminSidebar() {
       tickets: readSeenTimestamp('tickets'),
     });
 
+    const activeCleanPath = cleanPathRef.current;
     const isAt = (prefix: string) =>
-      cleanPath === prefix || cleanPath.startsWith(`${prefix}/`);
+      activeCleanPath === prefix || activeCleanPath.startsWith(`${prefix}/`);
 
     setCounts({
       transactions: isAt('/admin/transactions') ? 0 : res.unseenTransactionsCount,
@@ -138,11 +144,11 @@ export function AdminSidebar() {
       enquiries: isAt('/admin/enquiries') ? 0 : res.unseenEnquiriesCount,
       reviews: isAt('/admin/reviews') ? 0 : res.unseenReviewsCount,
       tickets: isAt('/admin/tickets') ? 0 : res.unseenTicketsCount,
-      dashboard: cleanPath === '/admin' ? 0 : res.unseenDashboardCount,
+      dashboard: activeCleanPath === '/admin' ? 0 : res.unseenDashboardCount,
     });
-  }, [cleanPath]);
+  }, []);
 
-  // Auto-clear section badge as soon as the admin lands on that page
+  // Auto-clear section badge locally as soon as the admin lands on that page (without re-fetching all counts on every click)
   useEffect(() => {
     const isAt = (prefix: string) =>
       cleanPath === prefix || cleanPath.startsWith(`${prefix}/`);
@@ -153,12 +159,14 @@ export function AdminSidebar() {
     else if (isAt('/admin/enquiries')) markSectionSeen('enquiries');
     else if (isAt('/admin/reviews')) markSectionSeen('reviews');
     else if (isAt('/admin/tickets')) markSectionSeen('tickets');
+  }, [cleanPath, markSectionSeen]);
 
-    refreshCounts();
-  }, [cleanPath, markSectionSeen, refreshCounts]);
-
-  // Listen for custom seen events from DashboardSignupsWidget + poll every 45s
+  // Fetch initial counts after initial page paint + poll every 45s
   useEffect(() => {
+    const initialTimer = setTimeout(() => {
+      refreshCounts();
+    }, 350);
+
     const handleCustomSeen = (e: Event) => {
       const ev = e as CustomEvent<{ section?: AdminNotificationSection }>;
       const sec = ev.detail?.section;
@@ -169,6 +177,7 @@ export function AdminSidebar() {
     window.addEventListener('bpm:admin-section-seen', handleCustomSeen);
     const interval = setInterval(refreshCounts, 45000);
     return () => {
+      clearTimeout(initialTimer);
       window.removeEventListener('bpm:admin-section-seen', handleCustomSeen);
       clearInterval(interval);
     };

@@ -40,9 +40,9 @@ const DEFAULT_COLORS = [
 ];
 
 const PACKAGE_TIERS = [
-  { label: 'Basic (6 Players • 3 Rounds)', players: 6, rounds: 3 },
-  { label: 'Premium (10 Players • 4 Rounds)', players: 10, rounds: 4 },
-  { label: 'Grand (16 Players • 5 Rounds)', players: 16, rounds: 5 },
+  { label: 'Basic Package', players: 6, rounds: 3, sub: '4–6 Players • 3 Rounds' },
+  { label: 'Premium Package', players: 10, rounds: 4, sub: '4–10 Players • 4 Rounds' },
+  { label: 'Grand Package', players: 16, rounds: 5, sub: '4–16 Players • 5 Rounds' },
 ] as const;
 
 const SPICE_OPTIONS: {
@@ -51,8 +51,8 @@ const SPICE_OPTIONS: {
   sub: string;
 }[] = [
   { level: 'Clean', label: '✨ Clean', sub: 'SFW • 0 affairs, 0 swearing' },
-  { level: 'Mild', label: '🌶️ Mild', sub: 'Affairs allowed • PG-13 dialogue' },
-  { level: 'Spicy', label: '🌶️🌶️ Spicy', sub: 'Swearing, catfights & scandals' },
+  { level: 'Mild', label: '🌶️ Mild', sub: 'Affairs • PG-13 dialogue' },
+  { level: 'Spicy', label: '🌶️🌶️ Spicy', sub: 'Swearing & scandals' },
   { level: 'Filthy', label: '🔥🔥🔥 Filthy', sub: '18+ After-Dark & F-bombs' },
 ];
 
@@ -91,9 +91,9 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         plotRole: 'victim',
         color: 'Hot Pink',
         conceptNotes:
-          'Archetype for Leah (Prom queen). Siblings with {{The Brother}}. Best friends with {{The Bestie}}. Secret romance with {{The Teammate}}. Sworn enemies with {{The Girlfriend}}. Object of {{The Co-Captain}}\'s obsessive crush.',
+          'Siblings with {{The Brother}}. Best friends with {{The Bestie}}. Secret romance with {{The Teammate}}. Sworn enemies with {{The Girlfriend}}. Object of {{The Co-Captain}}\'s obsessive crush.',
         motiveOrSecret:
-          'The Victim. Used {{The Co-Captain}}\'s crush on {{The Prom Queen_him}} to steal the varsity sports-betting ledger from {{The Co-Captain_his}} jacket, while secretly hooking up with {{The Girlfriend}}\'s partner {{The Teammate}} and threatening to leak both at midnight.',
+          'Used {{The Co-Captain}}\'s crush on {{The Prom Queen_him}} to steal the varsity sports-betting ledger from {{The Co-Captain_his}} jacket, while secretly hooking up with {{The Girlfriend}}\'s partner {{The Teammate}} and threatening to leak both at midnight.',
         outfitNotes: 'Faux-fur aprés-ski crop jacket, satin slip top & rhinestone tiara headband',
       },
       {
@@ -103,9 +103,9 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         plotRole: 'killer',
         color: 'Crimson Red',
         conceptNotes:
-          'Archetype for Stacy. Dating {{The Teammate}}. Siblings with {{The Co-Captain}}. Sworn enemies with {{The Prom Queen}}. Friends with {{The Bestie}} and {{The Brother}}.',
+          'Dating {{The Teammate}}. Siblings with {{The Co-Captain}}. Sworn enemies with {{The Prom Queen}}. Friends with {{The Bestie}} and {{The Brother}}.',
         motiveOrSecret:
-          'The Killer. Found {{The Girlfriend_his}} {{The Co-Captain_sibling}} {{The Co-Captain}} panicking over a bleeding, semi-conscious {{The Prom Queen}} on the balcony at 11:25 PM; sent {{The Co-Captain}} inside for an alibi, delivered the fatal blows with the cast-iron poker at 11:28 PM, and hurled {{The Prom Queen}} off the balcony.',
+          'Found {{The Girlfriend_his}} {{The Co-Captain_sibling}} {{The Co-Captain}} panicking over a bleeding, semi-conscious {{The Prom Queen}} on the balcony at 11:25 PM; sent {{The Co-Captain}} inside for an alibi, delivered the fatal blows with the cast-iron poker at 11:28 PM, and hurled {{The Prom Queen}} off the balcony.',
         outfitNotes: 'Sleek crimson velvet tracksuit, gold hoop earrings & dark berry lipstick',
       },
       {
@@ -115,9 +115,9 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         plotRole: 'assistant',
         color: 'Electric Cyan',
         conceptNotes:
-          'Archetype for Seb. Co-captains of the varsity sport team with {{The Teammate}}. Siblings with {{The Girlfriend}}. Exes with {{The Bestie}}. Secretly has a huge crush on {{The Prom Queen}}. Friends with {{The Brother}}.',
+          'Co-captains of the varsity sport team with {{The Teammate}}. Siblings with {{The Girlfriend}}. Exes with {{The Bestie}}. Secretly has a huge crush on {{The Prom Queen}}. Friends with {{The Brother}}.',
         motiveOrSecret:
-          'The Secret Accomplice. Cornered {{The Prom Queen}} on the upstairs balcony at 11:10 PM to get {{The Co-Captain_his}} stolen sports-betting ledger and phone video back; snapped at 11:18 PM and struck {{The Prom Queen}} with the cast-iron poker before {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} took over and finished the kill.',
+          'Cornered {{The Prom Queen}} on the upstairs balcony at 11:10 PM to get {{The Co-Captain_his}} stolen sports-betting ledger and phone video back; snapped at 11:18 PM and struck {{The Prom Queen}} with the cast-iron poker before {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} took over and finished the kill.',
         outfitNotes: 'Uni athletic team letterman bomber, compression shirt & silver whistle chain',
       },
       {
@@ -127,7 +127,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         plotRole: 'innocent',
         color: 'Cobalt Blue',
         conceptNotes:
-          'Archetype for James. Dating {{The Girlfriend}} while having a filthy secret romance with {{The Prom Queen}}. Co-captains of the sport team with {{The Co-Captain}}. Besties with {{The Brother}}. Works together with {{The Bestie}}.',
+          'Dating {{The Girlfriend}} while having a filthy secret romance with {{The Prom Queen}}. Co-captains of the sport team with {{The Co-Captain}}. Besties with {{The Brother}}. Works together with {{The Bestie}}.',
         motiveOrSecret:
           'Secretly sleeping with {{The Prom Queen}} behind {{The Girlfriend}}\'s and {{The Brother}}\'s backs, implicated in the varsity betting ledger with {{The Co-Captain}}, and skimming cash at work with {{The Bestie}}.',
         outfitNotes: 'Open flannel overshirt, fitted black tee, gold watch & varsity ring',
@@ -139,7 +139,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         plotRole: 'innocent',
         color: 'Rose Gold',
         conceptNotes:
-          'Archetype for Mia. Best friends with {{The Prom Queen}}. Exes with {{The Co-Captain}}. Works together with {{The Teammate}}. Friends with {{The Brother}} and {{The Girlfriend}}.',
+          'Best friends with {{The Prom Queen}}. Exes with {{The Co-Captain}}. Works together with {{The Teammate}}. Friends with {{The Brother}} and {{The Girlfriend}}.',
         motiveOrSecret:
           'Bitter that her best friend {{The Prom Queen}} toyed with her ex {{The Co-Captain}}, and terrified because {{The Prom Queen}} found receipts proving {{The Bestie}} and {{The Teammate}} skimmed $18,000 where they work together.',
         outfitNotes: 'Oversized metallic puffer vest, black bodycon mini dress & shearling boots',
@@ -151,7 +151,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         plotRole: 'innocent',
         color: 'Sapphire Blue',
         conceptNotes:
-          'Archetype for Josh. Siblings with {{The Prom Queen}}. Besties with {{The Teammate}}. Friends with {{The Bestie}}, {{The Co-Captain}}, and {{The Girlfriend}}.',
+          'Siblings with {{The Prom Queen}}. Besties with {{The Teammate}}. Friends with {{The Bestie}}, {{The Co-Captain}}, and {{The Girlfriend}}.',
         motiveOrSecret:
           'Secretly blew $25,000 from his and {{The Prom Queen}}\'s family cabin trust fund on underground bets and weekend party favors, and fought furiously with {{The Prom Queen}} when {{The Prom Queen_he}} threatened to cut him off.',
         outfitNotes: 'Vintage varsity fleece jacket, backwards cap & heavy silver chain',
@@ -217,7 +217,6 @@ function convertRealNamesToArchetypeTokens(bp: MysteryBlueprintInput): MysteryBl
     [/\bJosh\b/gi, '{{The Brother}}'],
   ];
 
-  // Also check if any character conceptNotes has "Diagram: Name" or "Archetype for Name"
   for (const ch of bp.characters) {
     const cleanRole = ch.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
     const m = ch.conceptNotes.match(/(?:Diagram|Archetype for):\s*([A-Za-z]+)/i);
@@ -228,12 +227,10 @@ function convertRealNamesToArchetypeTokens(bp: MysteryBlueprintInput): MysteryBl
 
   const scrub = (txt: string): string => {
     let out = txt || '';
-    // Remove "Diagram: Name." or "Archetype for Name." prefixes
     out = out.replace(/(?:Diagram|Archetype for):\s*[^.]+\.\s*/gi, '');
     for (const [rx, token] of nameToTokenPairs) {
       out = out.replace(rx, token);
     }
-    // Collapse accidental double tokens like "{{The Girlfriend}} ({{The Girlfriend}})"
     out = out.replace(/(\{\{[^}]+\}\})\s*\(\1\)/g, '$1');
     return out.trim();
   };
@@ -323,7 +320,7 @@ function createBlankBlueprint(): MysteryBlueprintInput {
   };
 }
 
-const STORAGE_KEY = 'bpm_beat_by_beat_architect_v4';
+const STORAGE_KEY = 'bpm_clean_architect_v5';
 
 export function BaseArchitectClient({ locale }: { locale: string }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -336,13 +333,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const [beatCluesMap, setBeatCluesMap] = useState<Record<number, SuggestedClueCandidate[]>>({});
   const [beatCustomNote, setBeatCustomNote] = useState<string>('');
 
-  // Stage 3: Red Herring Plotlines (each has motive, doubleMeaningCoreClueHook, and 4 decoyClues where user picks ~2)
+  // Stage 3: Red Herring Plotlines
   const [subplots, setSubplots] = useState<SuggestedRedHerringSubplot[]>([]);
   const [subplotCustomNote, setSubplotCustomNote] = useState<string>('');
 
   // Stage 4: Round sorting strategy & assembled full base
   const [roundStrategySummary, setRoundStrategySummary] = useState<Record<number, string>>({});
-  const [hasSortedRounds, setHasSortedRounds] = useState<boolean>(false);
   const [assembled, setAssembled] = useState<AssembledFullMysteryBase | null>(null);
   const [transferredMysteryId, setTransferredMysteryId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -391,7 +387,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           setSubplots(parsed.subplots || []);
           setAssembled(parsed.assembled || null);
           setRoundStrategySummary(parsed.roundStrategySummary || {});
-          setHasSortedRounds(Boolean(parsed.hasSortedRounds));
           setStep(parsed.step || 1);
         }
       }
@@ -414,13 +409,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           subplots,
           assembled,
           roundStrategySummary,
-          hasSortedRounds,
         })
       );
     } catch {
       // Ignore storage error
     }
-  }, [step, blueprint, beatCluesMap, subplots, assembled, roundStrategySummary, hasSortedRounds, hydrated]);
+  }, [step, blueprint, beatCluesMap, subplots, assembled, roundStrategySummary, hydrated]);
 
   const totalRounds = getRoundsForCount(blueprint.characters.length);
 
@@ -511,19 +505,17 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     });
   };
 
-  // Load "Unibreak at the Cabin" preset in 1 click
   const handleLoadUnibreakPreset = () => {
     setBlueprint(createUnibreakCabinBlueprint());
     setBeatCluesMap({});
     setSubplots([]);
     setAssembled(null);
-    setHasSortedRounds(false);
     setTransferredMysteryId(null);
     setActiveBeatNumber(1);
     setStep(1);
     setErrorMessage(null);
     setStatusToast(
-      '🌲 Loaded "Unibreak at the Cabin" (Filthy • 6 Archetypes + 5 Locked Core Murder Beats)!'
+      'Loaded "Unibreak at the Cabin" (Filthy • 6 Archetypes + 5 Locked Core Murder Beats).'
     );
   };
 
@@ -532,7 +524,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     setBeatCluesMap({});
     setSubplots([]);
     setAssembled(null);
-    setHasSortedRounds(false);
     setTransferredMysteryId(null);
     setActiveBeatNumber(1);
     setStep(1);
@@ -540,7 +531,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     setStatusToast('Started a fresh 6-player, 5-beat mystery blueprint.');
   };
 
-  // Upload diagram screenshot (PNG/JPG)
   const handleDiagramUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -566,7 +556,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       } else {
         setBlueprint(res.blueprint);
         setStatusToast(
-          `📷 Parsed diagram "${res.blueprint.title}" (${res.blueprint.characters.length} characters & relationships)!`
+          `Parsed diagram "${res.blueprint.title}" (${res.blueprint.characters.length} characters & relationships).`
         );
       }
     } catch (err: any) {
@@ -577,7 +567,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }
   };
 
-  // Auto-Suggest Murder & 5 Core Story Beats
   const handleSuggestBeats = async () => {
     setErrorMessage(null);
     setIsSuggestingBeats(true);
@@ -594,7 +583,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           killerHowAndWhySummary: res.killerHowAndWhySummary || prev.killerHowAndWhySummary,
           beats: res.beats && res.beats.length > 0 ? res.beats : prev.beats,
         }));
-        setStatusToast('✨ Generated Murder Method & 5 Core Murder Story Beats!');
+        setStatusToast('Generated Murder Method & 5 Core Murder Story Beats.');
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error suggesting story beats.');
@@ -603,7 +592,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }
   };
 
-  // STAGE 1 -> STAGE 2: Approve 5-Beat Plot, Convert Real Names -> Archetypes, and Suggest Clues for Beat #1
   const handleApprovePlotAndStartBeatClues = async () => {
     setErrorMessage(null);
     if (!blueprint.title.trim()) {
@@ -615,7 +603,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     setStep(2);
     setActiveBeatNumber(1);
     setStatusToast(
-      '✓ Locked 5-Beat Plot & converted all character names to {{The Archetype}} tokens! Now pick at least 2 clues for Beat #1.'
+      'Locked 5-Beat Plot & converted all characters to {{The Archetype}} tokens! Now pick at least 2 clues for Beat #1.'
     );
 
     if (!beatCluesMap[1] || beatCluesMap[1].length === 0) {
@@ -623,7 +611,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }
   };
 
-  // STAGE 2: Suggest 5 Clues for a Specific Beat (Beat 1..5)
   const handleSuggestCluesForBeat = async (
     targetBeatNum: number,
     overrideBlueprint?: MysteryBlueprintInput
@@ -651,7 +638,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         }));
         setBeatCustomNote('');
         setStatusToast(
-          `✨ Suggested ${res.candidates.length} clues for Beat #${targetBeatNum} (${bpToUse.spiceLevel} spice)! Select at least 2 clues.`
+          `Suggested ${res.candidates.length} clues for Beat #${targetBeatNum} (${bpToUse.spiceLevel} spice). Select at least 2 clues.`
         );
       }
     } catch (err: any) {
@@ -693,7 +680,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }));
   };
 
-  // STAGE 2 -> STAGE 3: Generate Red Herring Plotlines + Motives + Double-Meaning Tie-Ins + 6 Red Herring Clues
   const handleMoveToRedHerrings = async (forceRefresh: boolean = false) => {
     setErrorMessage(null);
     if (selectedCoreClues.length < 6) {
@@ -719,7 +705,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         setSubplots(res.subplots);
         setSubplotCustomNote('');
         setStatusToast(
-          '✨ Built 3 Red-Herring Plotlines with suspect motives, double-meaning ties to your real clues, and 6 pre-selected Red Herring clues!'
+          'Built 3 Red-Herring Plotlines with suspect motives, double-meaning ties to your real clues, and 6 pre-selected Red Herring clues.'
         );
       }
     } catch (err: any) {
@@ -765,7 +751,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     );
   };
 
-  // STAGE 3 -> STAGE 4: Smart Sort All 16 Clues into Rounds by Complexity + Suggest Complexity Level
   const handleSortCluesIntoRoundsAndReview = async () => {
     setErrorMessage(null);
     if (selectedCoreClues.length === 0) {
@@ -788,7 +773,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       if (!res.success || !res.sortedCoreClues || !res.sortedRedHerringClues) {
         setErrorMessage(res.error || 'Failed to sort clues into rounds.');
       } else {
-        // Apply sorted round numbers back to beatCluesMap and subplots
         const roundById = new Map<string, ArchitectRoundNumber>();
         for (const c of [...res.sortedCoreClues, ...res.sortedRedHerringClues]) {
           roundById.set(c.id, c.roundNumber);
@@ -814,9 +798,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         );
 
         setRoundStrategySummary(res.roundStrategySummary || {});
-        setHasSortedRounds(true);
         setStatusToast(
-          `✨ Sorted all ${selectedCoreClues.length + selectedRedHerringClues.length} clues across Rounds 1–${totalRounds} by investigative complexity! Recommended Complexity: ${difficultyRec.recommendedTier.toUpperCase()}.`
+          `Sorted all ${selectedCoreClues.length + selectedRedHerringClues.length} clues across Rounds 1–${totalRounds} by investigative complexity. Recommended Complexity: ${difficultyRec.recommendedTier.toUpperCase()}.`
         );
       }
     } catch (err: any) {
@@ -826,12 +809,10 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }
   };
 
-  // STAGE 4: Turn Into Full Mystery Base (Assemble Dossiers, Relationships & Save to Mystery Bases)
   const handleTurnIntoMysteryBase = async () => {
     setErrorMessage(null);
     setIsAssembling(true);
     try {
-      // Build active subplots containing only the selected ('yes') decoy clues
       const activeSubplots: SuggestedRedHerringSubplot[] = subplots
         .map((s) => ({
           ...s,
@@ -853,7 +834,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
       setAssembled(res.assembled);
 
-      // Immediately save to Mystery Bases (Draft) so it's a 1-click "Turn Into Base" experience
       setIsTransferring(true);
       const transferRes = await transferBlueprintToDraftMysteryBaseAction({
         assembled: res.assembled,
@@ -863,7 +843,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       } else {
         setTransferredMysteryId(transferRes.mysteryId);
         setStatusToast(
-          `🎉 Created "${res.assembled.title}" (${difficultyRec.recommendedTier.toUpperCase()} • ${res.assembled.clues.length} clues) in Mystery Bases!`
+          `Created "${res.assembled.title}" (${difficultyRec.recommendedTier.toUpperCase()} • ${res.assembled.clues.length} clues) in Mystery Bases!`
         );
       }
     } catch (err: any) {
@@ -884,7 +864,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         setErrorMessage(res.error || 'Failed to auto-fix issues.');
       } else {
         setAssembled(res.assembled);
-        setStatusToast(`🛠️ Fixed: ${(res.fixesApplied || []).join(' • ')}`);
+        setStatusToast(`Fixed: ${(res.fixesApplied || []).join(' • ')}`);
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error running auto-fix.');
@@ -893,7 +873,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }
   };
 
-  // Load existing draft base from Supabase
   const handleToggleLoadMenu = async () => {
     const next = !showLoadMenu;
     setShowLoadMenu(next);
@@ -919,7 +898,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         setErrorMessage(res.error || 'Failed to load mystery base.');
       } else {
         setBlueprint(res.blueprint);
-        // Bucket loaded core clues across beats 1..5
         const grouped: Record<number, SuggestedClueCandidate[]> = {};
         (res.coreClues || []).forEach((c, idx) => {
           const bNum = c.beatNumber || (idx % Math.max(1, res.blueprint!.beats.length)) + 1;
@@ -932,7 +910,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         setTransferredMysteryId(mysteryId);
         setShowLoadMenu(false);
         setStep(1);
-        setStatusToast(`📂 Loaded "${res.blueprint.title}" into OG Base Builder.`);
+        setStatusToast(`Loaded "${res.blueprint.title}" into OG Base Builder.`);
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error loading mystery base.');
@@ -956,39 +934,40 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   );
 
   return (
-    <div className="min-h-screen bg-[#0b0a0e] text-stone-100 pb-24">
-      {/* Top Bar */}
-      <div className="border-b border-stone-800/80 bg-[#121017]/95 sticky top-0 z-30 backdrop-blur">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/${locale}/admin/mysteries`}
-              className="text-xs font-medium text-stone-400 hover:text-stone-200 px-2.5 py-1.5 rounded-lg border border-stone-800 hover:border-stone-700 transition"
-            >
-              ← Back to Mysteries
-            </Link>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                <span>OG Base Builder</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                  5-Beat → 16-Clue Flow
-                </span>
-              </h1>
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+      {/* On-Brand Clean Page Header */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Link
+                href={`/${locale}/admin/mysteries`}
+                className="text-xs font-bold text-slate-400 hover:text-slate-700 transition"
+              >
+                ← Mystery Bases
+              </Link>
+              <span className="text-slate-300">/</span>
+              <span className="text-xs font-black uppercase tracking-widest text-brand-pink">
+                OG Base Builder
+              </span>
             </div>
+            <h1 className="text-2xl font-black text-brand-dark tracking-tight mt-1">
+              {blueprint.title || 'New Mystery Base'}
+            </h1>
           </div>
 
-          {/* Quick Presets & Diagram Upload */}
+          {/* Clean Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleLoadUnibreakPreset}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-pink-500/15 hover:bg-pink-500/25 text-pink-200 border border-pink-500/30 transition"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-pink-50 hover:bg-pink-100 text-brand-pink border border-pink-200 transition cursor-pointer"
             >
-              🌲 Load &ldquo;Unibreak at the Cabin&rdquo; (5 Beats)
+              Load &ldquo;Unibreak at the Cabin&rdquo;
             </button>
 
-            <label className="cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition">
-              {isUploadingDiagram ? '📷 Reading Diagram...' : '📷 Upload Diagram Image'}
+            <label className="cursor-pointer px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+              {isUploadingDiagram ? 'Reading Diagram...' : 'Upload Diagram Image'}
               <input
                 type="file"
                 accept="image/*"
@@ -1002,29 +981,29 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               <button
                 type="button"
                 onClick={handleToggleLoadMenu}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-300 border border-stone-800 transition"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition cursor-pointer"
               >
-                📂 Load Existing
+                Load Existing
               </button>
               {showLoadMenu && (
-                <div className="absolute right-0 mt-2 w-72 rounded-xl bg-[#181520] border border-stone-700 shadow-2xl p-2 z-40 max-h-80 overflow-y-auto">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 px-2 py-1">
-                    Load Existing Base
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-40 max-h-80 overflow-y-auto">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3 py-1.5">
+                    Existing Mystery Bases
                   </div>
                   {isLoadingDrafts ? (
-                    <div className="text-xs text-stone-400 p-3">Loading bases...</div>
+                    <div className="text-xs text-slate-400 p-3">Loading...</div>
                   ) : draftList.length === 0 ? (
-                    <div className="text-xs text-stone-400 p-3">No existing bases found.</div>
+                    <div className="text-xs text-slate-400 p-3">No bases found.</div>
                   ) : (
                     draftList.map((d) => (
                       <button
                         key={d.id}
                         type="button"
                         onClick={() => handleLoadExistingBase(d.id)}
-                        className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-stone-800 text-xs flex items-center justify-between gap-2"
+                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-xs flex items-center justify-between gap-2 cursor-pointer"
                       >
-                        <span className="font-medium text-stone-200 truncate">{d.title}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-stone-800 text-stone-400">
+                        <span className="font-bold text-slate-800 truncate">{d.title}</span>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                           {d.spiceLevel}
                         </span>
                       </button>
@@ -1037,28 +1016,31 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             <button
               type="button"
               onClick={handleStartBlank}
-              className="text-xs font-medium px-2.5 py-1.5 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-900 transition"
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-700 transition cursor-pointer"
             >
-              Reset Blank
+              Reset
             </button>
           </div>
         </div>
 
-        {/* Clean 4-Stage Navigation Bar */}
-        <div className="max-w-5xl mx-auto px-6 pb-3 flex items-center gap-2 overflow-x-auto">
+        {/* Clean 4-Step Segmented Stepper */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">
           {[
-            { num: 1 as const, label: '1. Lock 5-Beat Plot & Archetypes' },
+            { num: 1 as const, title: '1. Plot & Archetypes', sub: '5 Core Beats & Cast' },
             {
               num: 2 as const,
-              label: `2. Beat-by-Beat Core Clues (${selectedCoreClues.length}/10)`,
+              title: '2. Beat Clues',
+              sub: `${selectedCoreClues.length} / 10 Core Clues`,
             },
             {
               num: 3 as const,
-              label: `3. Red Herrings & Motives (${selectedRedHerringClues.length}/6)`,
+              title: '3. Red Herrings',
+              sub: `${selectedRedHerringClues.length} / 6 Decoy Clues`,
             },
             {
               num: 4 as const,
-              label: `4. Sort Rounds & Turn Into Base (${totalSelectedCluesCount}/16 Clues)`,
+              title: '4. Sort Rounds & Save',
+              sub: `${totalSelectedCluesCount} / 16 Total Clues`,
             },
           ].map((item) => {
             const active = step === item.num;
@@ -1067,214 +1049,219 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 key={item.num}
                 type="button"
                 onClick={() => setStep(item.num)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap ${
+                className={`p-3 rounded-2xl text-left border transition-all cursor-pointer ${
                   active
-                    ? 'bg-amber-500 text-stone-950 shadow-sm'
-                    : 'bg-stone-900/90 text-stone-400 hover:text-stone-200 border border-stone-800'
+                    ? 'bg-brand-pink text-white border-brand-pink shadow-sm'
+                    : 'bg-slate-50/80 hover:bg-slate-100 text-slate-700 border-slate-200/70'
                 }`}
               >
-                {item.label}
+                <div className="text-xs font-black tracking-tight">{item.title}</div>
+                <div
+                  className={`text-[11px] mt-0.5 ${
+                    active ? 'text-pink-100 font-medium' : 'text-slate-400'
+                  }`}
+                >
+                  {item.sub}
+                </div>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Main Content Container */}
-      <div className="max-w-5xl mx-auto px-6 pt-6 space-y-6">
-        {/* Notifications */}
-        {errorMessage && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-xs text-red-200 flex items-center justify-between">
-            <span>⚠️ {errorMessage}</span>
-            <button
-              type="button"
-              onClick={() => setErrorMessage(null)}
-              className="text-red-300 hover:text-white ml-4 font-bold"
-            >
-              ✕
-            </button>
-          </div>
-        )}
+      {/* Feedback Alerts */}
+      {errorMessage && (
+        <div className="rounded-2xl bg-red-50 border border-red-200 px-5 py-3.5 text-xs font-medium text-red-700 flex items-center justify-between">
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="text-red-500 hover:text-red-800 ml-4 font-bold cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-        {statusToast && (
-          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-2.5 text-xs text-emerald-200 flex items-center justify-between">
-            <span>{statusToast}</span>
-            <button
-              type="button"
-              onClick={() => setStatusToast(null)}
-              className="text-emerald-300 hover:text-white ml-4 font-bold"
-            >
-              ✕
-            </button>
-          </div>
-        )}
+      {statusToast && (
+        <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-5 py-3.5 text-xs font-medium text-emerald-800 flex items-center justify-between">
+          <span>{statusToast}</span>
+          <button
+            type="button"
+            onClick={() => setStatusToast(null)}
+            className="text-emerald-600 hover:text-emerald-900 ml-4 font-bold cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-        {/* ================================================================= */}
-        {/* STAGE 1: LOCK 5-BEAT PLOT & CONVERT REAL NAMES TO ARCHETYPES      */}
-        {/* ================================================================= */}
-        {step === 1 && (
-          <div className="space-y-6">
-            {/* Card 1: Mystery Title, Package Size & Spice Level */}
-            <div className="rounded-2xl bg-[#15131b] border border-stone-800/90 p-6 space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-base font-bold text-white">1. Mystery Title & Spice Level</h2>
-                  <p className="text-xs text-stone-400">
-                    The Spice Level directly controls the dialogue, drama, and AI photo generation
-                    prompts for every clue.
-                  </p>
-                </div>
-                <span className="text-xs px-2.5 py-1 rounded-full bg-stone-900 border border-stone-800 text-stone-300">
-                  {blueprint.characters.length} Players • {totalRounds} Rounds •{' '}
-                  <strong className="text-pink-300">{blueprint.spiceLevel}</strong>
-                </span>
+      {/* ================================================================= */}
+      {/* STAGE 1: LOCK 5-BEAT PLOT & CONVERT REAL NAMES TO ARCHETYPES      */}
+      {/* ================================================================= */}
+      {step === 1 && (
+        <div className="space-y-6">
+          {/* Section 1: Mystery Basics */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
+                  1. Mystery Basics & Spice Level
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  The Spice Level sets the tone for all clue dialogue, drama, and AI evidence
+                  photos.
+                </p>
               </div>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
+                {blueprint.characters.length} Players • {totalRounds} Rounds
+              </span>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                    Mystery Title
-                  </label>
-                  <input
-                    type="text"
-                    value={blueprint.title}
-                    onChange={(e) => updateBlueprint({ title: e.target.value })}
-                    placeholder="e.g. Unibreak at the Cabin"
-                    className="w-full rounded-xl bg-stone-900/90 border border-stone-700/80 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                    Setting / Theme Tagline
-                  </label>
-                  <input
-                    type="text"
-                    value={blueprint.theme}
-                    onChange={(e) => updateBlueprint({ theme: e.target.value })}
-                    placeholder="e.g. Rowdy Uni Break Ski & Mountain Cabin Getaway"
-                    className="w-full rounded-xl bg-stone-900/90 border border-stone-700/80 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  Mystery Title
+                </label>
+                <input
+                  type="text"
+                  value={blueprint.title}
+                  onChange={(e) => updateBlueprint({ title: e.target.value })}
+                  placeholder="e.g. Unibreak at the Cabin"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-brand-pink"
+                />
               </div>
-
-              {/* Package Tier & Spice Selector */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                    Package Size & Rounds
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {PACKAGE_TIERS.map((tier) => {
-                      const active = blueprint.characters.length === tier.players;
-                      return (
-                        <button
-                          key={tier.players}
-                          type="button"
-                          onClick={() => handleSetPackagePlayerCount(tier.players)}
-                          className={`px-3 py-2 rounded-xl text-left border transition ${
-                            active
-                              ? 'bg-amber-500/15 border-amber-500 text-amber-200'
-                              : 'bg-stone-900/60 border-stone-800 text-stone-400 hover:text-stone-200'
-                          }`}
-                        >
-                          <div className="text-xs font-bold">{tier.players} Players</div>
-                          <div className="text-[10px] opacity-80">{tier.rounds} Rounds</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                    Spice Level (Controls Clue Dialogue & Photo Prompts)
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {SPICE_OPTIONS.map((sp) => {
-                      const active = blueprint.spiceLevel === sp.level;
-                      return (
-                        <button
-                          key={sp.level}
-                          type="button"
-                          onClick={() => updateBlueprint({ spiceLevel: sp.level })}
-                          className={`px-2.5 py-2 rounded-xl text-left border transition ${
-                            active
-                              ? 'bg-pink-500/20 border-pink-500 text-pink-200'
-                              : 'bg-stone-900/60 border-stone-800 text-stone-400 hover:text-stone-200'
-                          }`}
-                        >
-                          <div className="text-xs font-bold">{sp.label}</div>
-                          <div className="text-[10px] opacity-75 truncate">{sp.sub}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  Setting / Theme Tagline
+                </label>
+                <input
+                  type="text"
+                  value={blueprint.theme}
+                  onChange={(e) => updateBlueprint({ theme: e.target.value })}
+                  placeholder="e.g. Rowdy Uni Break Ski & Mountain Cabin Getaway"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-brand-pink"
+                />
               </div>
             </div>
 
-            {/* Card 2: Characters Named by Archetype (Not Real Names) */}
-            <div className="rounded-2xl bg-[#15131b] border border-stone-800/90 p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-base font-bold text-white">
-                    2. Character Archetypes ({blueprint.characters.length})
-                  </h2>
-                  <p className="text-xs text-stone-400">
-                    Characters are named by role archetype (e.g.{' '}
-                    <code className="text-amber-300">{'{{The Prom Queen}}'}</code>,{' '}
-                    <code className="text-amber-300">{'{{The Girlfriend}}'}</code>) rather than real
-                    names. When you click Approve below, any remaining real names are automatically
-                    converted into archetype tokens.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="px-2.5 py-1 rounded-full border bg-sky-500/15 border-sky-500/40 text-sky-200">
-                    Victim: {victimCount}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full border bg-rose-500/15 border-rose-500/40 text-rose-200">
-                    Killer: {killerCount}
-                  </span>
-                  {assistantCount > 0 && (
-                    <span className="px-2.5 py-1 rounded-full border bg-amber-500/15 border-amber-500/40 text-amber-200">
-                      Accomplice: {assistantCount}
-                    </span>
-                  )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">
+                  Package Size & Rounds
+                </label>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {PACKAGE_TIERS.map((tier) => {
+                    const active = blueprint.characters.length === tier.players;
+                    return (
+                      <button
+                        key={tier.players}
+                        type="button"
+                        onClick={() => handleSetPackagePlayerCount(tier.players)}
+                        className={`p-3 rounded-xl text-left border-2 transition cursor-pointer ${
+                          active
+                            ? 'border-brand-pink bg-pink-50/50 text-brand-pink'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="text-xs font-black">{tier.players} Players</div>
+                        <div className="text-[11px] text-slate-500">{tier.rounds} Rounds</div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {blueprint.characters.map((char, idx) => {
-                  const isVictim = char.plotRole === 'victim';
-                  const isKiller = char.plotRole === 'killer';
-                  const isAssistant = char.plotRole === 'assistant';
-                  const borderClass = isVictim
-                    ? 'border-sky-500/60 bg-sky-950/15'
-                    : isKiller
-                      ? 'border-rose-500/60 bg-rose-950/15'
-                      : isAssistant
-                        ? 'border-amber-500/60 bg-amber-950/15'
-                        : 'border-stone-800 bg-stone-900/50';
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">
+                  Spice Level
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {SPICE_OPTIONS.map((sp) => {
+                    const active = blueprint.spiceLevel === sp.level;
+                    return (
+                      <button
+                        key={sp.level}
+                        type="button"
+                        onClick={() => updateBlueprint({ spiceLevel: sp.level })}
+                        className={`p-3 rounded-xl text-left border-2 transition cursor-pointer ${
+                          active
+                            ? 'border-brand-pink bg-pink-50/50 text-brand-pink'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="text-xs font-black">{sp.label}</div>
+                        <div className="text-[10px] text-slate-500 truncate mt-0.5">{sp.sub}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
 
-                  return (
-                    <div
-                      key={char.id}
-                      className={`rounded-xl border p-4 space-y-3 transition ${borderClass}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="text-xs font-bold text-stone-400">#{idx + 1}</span>
-                          <input
-                            type="text"
-                            value={char.roleTitle}
-                            onChange={(e) =>
-                              updateCharacter(char.id, { roleTitle: e.target.value })
-                            }
-                            placeholder="The Archetype Role"
-                            className="flex-1 rounded-lg bg-stone-950/80 border border-stone-700/80 px-2.5 py-1.5 text-sm font-bold text-white focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
+          {/* Section 2: Character Archetypes */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
+                  2. Character Archetypes ({blueprint.characters.length})
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Characters are named by role archetype (e.g.{' '}
+                  <code className="text-brand-pink font-semibold">{'{{The Prom Queen}}'}</code>) so
+                  any real names used during brainstorming are replaced automatically.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold">
+                <span className="px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+                  Victim: {victimCount}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  Killer: {killerCount}
+                </span>
+                {assistantCount > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    Accomplice: {assistantCount}
+                  </span>
+                )}
+              </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {blueprint.characters.map((char, idx) => {
+                const isVictim = char.plotRole === 'victim';
+                const isKiller = char.plotRole === 'killer';
+                const isAssistant = char.plotRole === 'assistant';
+
+                const cardBorder = isVictim
+                  ? 'border-sky-200 bg-sky-50/30'
+                  : isKiller
+                    ? 'border-rose-200 bg-rose-50/30'
+                    : isAssistant
+                      ? 'border-amber-200 bg-amber-50/30'
+                      : 'border-slate-200 bg-slate-50/50';
+
+                return (
+                  <div
+                    key={char.id}
+                    className={`rounded-2xl border p-4 space-y-3 transition ${cardBorder}`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                        <span className="text-xs font-black text-slate-400">#{idx + 1}</span>
+                        <input
+                          type="text"
+                          value={char.roleTitle}
+                          onChange={(e) =>
+                            updateCharacter(char.id, { roleTitle: e.target.value })
+                          }
+                          placeholder="The Archetype Role"
+                          className="flex-1 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-pink"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
                         <select
                           value={char.defaultGender}
                           onChange={(e) =>
@@ -1282,13 +1269,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               defaultGender: e.target.value as 'female' | 'male' | 'adaptable',
                             })
                           }
-                          className={`rounded-lg px-2 py-1.5 text-xs font-semibold border focus:outline-none ${
-                            char.defaultGender === 'female'
-                              ? 'bg-pink-500/20 border-pink-500/40 text-pink-200'
-                              : char.defaultGender === 'male'
-                                ? 'bg-blue-500/20 border-blue-500/40 text-blue-200'
-                                : 'bg-stone-800 border-stone-700 text-stone-200'
-                          }`}
+                          className="rounded-xl bg-white border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-brand-pink"
                         >
                           <option value="female">♀ Female</option>
                           <option value="male">♂ Male</option>
@@ -1302,929 +1283,898 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               plotRole: e.target.value as CharacterPlotRole,
                             })
                           }
-                          className={`rounded-lg px-2.5 py-1.5 text-xs font-bold uppercase border focus:outline-none ${
+                          className={`rounded-xl px-2.5 py-1.5 text-xs font-bold border focus:outline-none ${
                             isVictim
-                              ? 'bg-sky-500/20 border-sky-500/50 text-sky-200'
+                              ? 'bg-sky-100 border-sky-300 text-sky-800'
                               : isKiller
-                                ? 'bg-rose-500/20 border-rose-500/50 text-rose-200'
+                                ? 'bg-rose-100 border-rose-300 text-rose-800'
                                 : isAssistant
-                                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-200'
-                                  : 'bg-stone-800 border-stone-700 text-stone-300'
+                                  ? 'bg-amber-100 border-amber-300 text-amber-800'
+                                  : 'bg-white border-slate-200 text-slate-700'
                           }`}
                         >
-                          <option value="victim">💀 Victim</option>
-                          <option value="killer">🔪 Killer</option>
-                          <option value="assistant">🤝 Accomplice</option>
-                          <option value="innocent">🕵️ Suspect</option>
+                          <option value="victim">Victim</option>
+                          <option value="killer">Killer</option>
+                          <option value="assistant">Accomplice</option>
+                          <option value="innocent">Suspect</option>
                         </select>
                       </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-stone-400 mb-1">
-                          Relationships & Connections
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={char.conceptNotes}
-                          onChange={(e) =>
-                            updateCharacter(char.id, { conceptNotes: e.target.value })
-                          }
-                          className="w-full rounded-lg bg-stone-950/70 border border-stone-800 px-2.5 py-1.5 text-xs text-stone-200 focus:outline-none focus:border-amber-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-stone-400 mb-1">
-                          Core Motive / Secret
-                        </label>
-                        <input
-                          type="text"
-                          value={char.motiveOrSecret}
-                          onChange={(e) =>
-                            updateCharacter(char.id, { motiveOrSecret: e.target.value })
-                          }
-                          className="w-full rounded-lg bg-stone-950/70 border border-stone-800 px-2.5 py-1.5 text-xs text-stone-200 focus:outline-none focus:border-amber-500"
-                        />
-                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* Card 3: The Murder & 5 Core Plot Beats */}
-            <div className="rounded-2xl bg-[#15131b] border border-stone-800/90 p-6 space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold text-white">
-                    3. How the Murder Went Down & 5 Core Plot Beats
-                  </h2>
-                  <p className="text-xs text-stone-400">
-                    Each of these 5 beats will get its own 2 Core Clues in Stage 2 (5 Beats × 2
-                    Clues = 10 Core Clues).
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSuggestBeats}
-                  disabled={isSuggestingBeats}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 transition disabled:opacity-50"
-                >
-                  {isSuggestingBeats
-                    ? '✨ Brainstorming 5 Beats...'
-                    : '✨ Auto-Suggest Murder & 5 Core Beats'}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1">
-                    Fatal Murder Time
-                  </label>
-                  <input
-                    type="text"
-                    value={blueprint.murderTimeWindow}
-                    onChange={(e) => updateBlueprint({ murderTimeWindow: e.target.value })}
-                    placeholder="11:28 PM"
-                    className="w-full rounded-xl bg-stone-900 border border-stone-700/80 px-3 py-2 text-xs text-white"
-                  />
-                </div>
-                <div className="md:col-span-3">
-                  <label className="block text-xs font-semibold text-stone-300 mb-1">
-                    Murder Weapon & Method
-                  </label>
-                  <input
-                    type="text"
-                    value={blueprint.murderWeaponAndMethod}
-                    onChange={(e) => updateBlueprint({ murderWeaponAndMethod: e.target.value })}
-                    className="w-full rounded-xl bg-stone-900 border border-stone-700/80 px-3 py-2 text-xs text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-300 mb-1">
-                  How & Why the Killer (& Accomplice) Did It
-                </label>
-                <textarea
-                  rows={2}
-                  value={blueprint.killerHowAndWhySummary}
-                  onChange={(e) => updateBlueprint({ killerHowAndWhySummary: e.target.value })}
-                  className="w-full rounded-xl bg-stone-900 border border-stone-700/80 px-3 py-2 text-xs text-white"
-                />
-              </div>
-
-              {/* 5 Core Story Beat Rows */}
-              <div className="space-y-2.5">
-                <label className="block text-xs font-semibold text-stone-300">
-                  5 Core Murder Plot Beats (0 Red-Herring Spoilers Here)
-                </label>
-                {blueprint.beats.map((beat) => (
-                  <div
-                    key={beat.beatNumber}
-                    className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start rounded-xl bg-stone-900/60 border border-stone-800 p-3"
-                  >
-                    <div className="sm:col-span-2 flex items-center gap-2">
-                      <span className="text-xs font-bold text-amber-400 whitespace-nowrap">
-                        Beat {beat.beatNumber}
-                      </span>
-                      <input
-                        type="text"
-                        value={beat.timeWindow}
-                        onChange={(e) =>
-                          updateBeat(beat.beatNumber, { timeWindow: e.target.value })
-                        }
-                        className="w-full rounded-lg bg-stone-950 border border-stone-800 px-2 py-1 text-xs text-stone-200"
-                      />
-                    </div>
-                    <div className="sm:col-span-3">
-                      <input
-                        type="text"
-                        value={beat.title}
-                        onChange={(e) => updateBeat(beat.beatNumber, { title: e.target.value })}
-                        placeholder="Beat title"
-                        className="w-full rounded-lg bg-stone-950 border border-stone-800 px-2.5 py-1 text-xs font-semibold text-white"
-                      />
-                    </div>
-                    <div className="sm:col-span-7">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        Relationships & Connections
+                      </label>
                       <textarea
                         rows={2}
-                        value={beat.description}
+                        value={char.conceptNotes}
                         onChange={(e) =>
-                          updateBeat(beat.beatNumber, { description: e.target.value })
+                          updateCharacter(char.id, { conceptNotes: e.target.value })
                         }
-                        placeholder="What happens in this beat..."
-                        className="w-full rounded-lg bg-stone-950 border border-stone-800 px-2.5 py-1 text-xs text-stone-300"
+                        className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-700 leading-relaxed focus:outline-none focus:border-brand-pink"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        Motive / Secret
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={char.motiveOrSecret}
+                        onChange={(e) =>
+                          updateCharacter(char.id, { motiveOrSecret: e.target.value })
+                        }
+                        className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-700 leading-relaxed focus:outline-none focus:border-brand-pink"
                       />
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </div>
+          </div>
 
-              {/* Approve & Lock Archetypes CTA */}
-              <div className="pt-3 border-t border-stone-800 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-stone-400">
-                  Approving converts any real names (Leah, Stacy, Seb, James, Mia, Josh) into{' '}
-                  <code className="text-amber-300">{'{{The Archetype}}'}</code> tokens and opens
-                  the Beat-by-Beat Clue Picker.
+          {/* Section 3: How the Murder Went Down & 5 Core Plot Beats */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
+                  3. The Murder & 5 Core Plot Beats
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Lock in how the murder went down across 5 beats. In Step 2, you&apos;ll select 2
+                  clues for each beat (10 Core Clues total).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSuggestBeats}
+                disabled={isSuggestingBeats}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition disabled:opacity-50 cursor-pointer"
+              >
+                {isSuggestingBeats
+                  ? 'Suggesting 5 Beats...'
+                  : '✨ Auto-Suggest Murder & 5 Core Beats'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  Murder Time
+                </label>
+                <input
+                  type="text"
+                  value={blueprint.murderTimeWindow}
+                  onChange={(e) => updateBlueprint({ murderTimeWindow: e.target.value })}
+                  placeholder="11:28 PM"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-brand-pink"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  Murder Weapon & Method
+                </label>
+                <input
+                  type="text"
+                  value={blueprint.murderWeaponAndMethod}
+                  onChange={(e) => updateBlueprint({ murderWeaponAndMethod: e.target.value })}
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-brand-pink"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                How & Why the Killer (& Accomplice) Did It
+              </label>
+              <textarea
+                rows={2}
+                value={blueprint.killerHowAndWhySummary}
+                onChange={(e) => updateBlueprint({ killerHowAndWhySummary: e.target.value })}
+                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800 leading-relaxed focus:bg-white focus:outline-none focus:border-brand-pink"
+              />
+            </div>
+
+            {/* 5 Core Story Beat Cards */}
+            <div className="space-y-3 pt-2">
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400">
+                5 Core Story Beats
+              </label>
+              {blueprint.beats.map((beat) => (
+                <div
+                  key={beat.beatNumber}
+                  className="rounded-2xl bg-slate-50/80 border border-slate-200/80 p-4 space-y-2"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="px-2.5 py-1 rounded-lg bg-brand-pink/10 text-brand-pink text-xs font-black">
+                      Beat #{beat.beatNumber}
+                    </span>
+                    <input
+                      type="text"
+                      value={beat.timeWindow}
+                      onChange={(e) =>
+                        updateBeat(beat.beatNumber, { timeWindow: e.target.value })
+                      }
+                      className="w-28 rounded-xl bg-white border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-700"
+                    />
+                    <input
+                      type="text"
+                      value={beat.title}
+                      onChange={(e) => updateBeat(beat.beatNumber, { title: e.target.value })}
+                      placeholder="Beat title"
+                      className="flex-1 min-w-[200px] rounded-xl bg-white border border-slate-200 px-3 py-1 text-xs font-bold text-slate-900"
+                    />
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={beat.description}
+                    onChange={(e) =>
+                      updateBeat(beat.beatNumber, { description: e.target.value })
+                    }
+                    placeholder="What happens in this beat..."
+                    className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-700 leading-relaxed focus:outline-none focus:border-brand-pink"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom Approve CTA */}
+            <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">
+                Approving locks your 5 beats, converts all names to archetype tokens, and starts
+                Beat #1 clues.
+              </p>
+              <button
+                type="button"
+                onClick={handleApprovePlotAndStartBeatClues}
+                disabled={isGeneratingBeatClues}
+                className="px-6 py-3 rounded-2xl text-sm font-black bg-brand-pink hover:bg-pink-600 text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
+              >
+                {isGeneratingBeatClues
+                  ? 'Loading Beat #1 Clues...'
+                  : 'Approve Plot & Pick Clues Beat-by-Beat →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* STAGE 2: BEAT-BY-BEAT CORE CLUE PICKER (5 BEATS x 2 = 10 CLUES)   */}
+      {/* ================================================================= */}
+      {step === 2 && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
+                  Step 2: Pick 2 Clues Per Beat ({selectedCoreClues.length} / 10 Selected)
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Select a beat below, review the 5 suggested clues (written for{' '}
+                  <strong className="text-brand-pink">{blueprint.spiceLevel}</strong> spice), and
+                  pick at least <strong>2 clues</strong> per beat.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                ← Back to 5-Beat Plot
+              </button>
+            </div>
+
+            {/* 5 Beat Tabs */}
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+              {blueprint.beats.map((b) => {
+                const cands = beatCluesMap[b.beatNumber] || [];
+                const pickedCount = cands.filter((c) => c.decision === 'yes').length;
+                const isCurrent = activeBeatNumber === b.beatNumber;
+                const isComplete = pickedCount >= 2;
+
+                return (
+                  <button
+                    key={b.beatNumber}
+                    type="button"
+                    onClick={() => handleSelectBeatTab(b.beatNumber)}
+                    className={`p-3.5 rounded-2xl border-2 text-left transition cursor-pointer ${
+                      isCurrent
+                        ? 'border-brand-pink bg-pink-50/40'
+                        : isComplete
+                          ? 'border-emerald-200 bg-emerald-50/40 hover:border-emerald-300'
+                          : 'border-slate-200 bg-slate-50/60 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs font-black">
+                      <span className={isCurrent ? 'text-brand-pink' : 'text-slate-800'}>
+                        Beat #{b.beatNumber}
+                      </span>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          isComplete
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {pickedCount}/2
+                      </span>
+                    </div>
+                    <div className="text-xs font-bold truncate mt-1 text-slate-800">{b.title}</div>
+                    <div className="text-[11px] text-slate-400">{b.timeWindow}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Beat Summary Banner */}
+            {activeBeat && (
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-1 flex-1 min-w-[260px]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-brand-pink/10 text-brand-pink">
+                      Beat #{activeBeat.beatNumber} • {activeBeat.timeWindow}
+                    </span>
+                    <h3 className="text-sm font-black text-slate-900">{activeBeat.title}</h3>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {activeBeat.description}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleSuggestCluesForBeat(activeBeat.beatNumber)}
+                  disabled={isGeneratingBeatClues}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition whitespace-nowrap cursor-pointer"
+                >
+                  {isGeneratingBeatClues
+                    ? `Suggesting Beat #${activeBeat.beatNumber} Clues...`
+                    : `🔄 Suggest 5 Fresh Clues`}
+                </button>
+              </div>
+            )}
+
+            {/* Clue Candidates List */}
+            {isGeneratingBeatClues && activeBeatCandidates.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-12 text-center space-y-2">
+                <div className="text-sm font-black text-slate-800">
+                  Writing 5 {blueprint.spiceLevel}-Spice Clues for Beat #{activeBeatNumber}...
+                </div>
+                <p className="text-xs text-slate-500">
+                  Crafting dialogue, forensic details, double-meaning hooks, and photo prompts...
+                </p>
+              </div>
+            ) : activeBeatCandidates.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-10 text-center space-y-3">
+                <p className="text-sm font-semibold text-slate-600">
+                  No clues suggested for Beat #{activeBeatNumber} yet.
                 </p>
                 <button
                   type="button"
-                  onClick={handleApprovePlotAndStartBeatClues}
+                  onClick={() => handleSuggestCluesForBeat(activeBeatNumber)}
                   disabled={isGeneratingBeatClues}
-                  className="px-6 py-3 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-stone-950 shadow-lg transition disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl text-xs font-black bg-brand-pink text-white cursor-pointer"
                 >
-                  {isGeneratingBeatClues
-                    ? '✨ Locking Archetypes & Loading Beat #1 Clues...'
-                    : '✓ Approve 5-Beat Plot & Build Clues Beat-by-Beat →'}
+                  ✨ Suggest 5 Clues for Beat #{activeBeatNumber}
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================= */}
-        {/* STAGE 2: BEAT-BY-BEAT CORE CLUE PICKER (5 BEATS x 2 = 10 CLUES)   */}
-        {/* ================================================================= */}
-        {step === 2 && (
-          <div className="space-y-5">
-            <div className="rounded-2xl bg-[#15131b] border border-stone-800/90 p-6 space-y-5">
-              {/* Top Header */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold text-white">
-                    Stage 2: Pick 2 Clues Per Beat ({selectedCoreClues.length}/10 Core Clues
-                    Selected)
-                  </h2>
-                  <p className="text-xs text-stone-400">
-                    Click a beat below, review the 4–6 suggested clues calibrated to{' '}
-                    <strong className="text-pink-300">{blueprint.spiceLevel}</strong> spice, and
-                    select at least <strong>2 clues</strong> per beat. Unselected clues are ignored.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-xs text-stone-400 hover:text-stone-200"
-                >
-                  ← Back to 5-Beat Plot
-                </button>
-              </div>
-
-              {/* 5 Beat Selector Pills */}
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-                {blueprint.beats.map((b) => {
-                  const cands = beatCluesMap[b.beatNumber] || [];
-                  const pickedCount = cands.filter((c) => c.decision === 'yes').length;
-                  const isCurrent = activeBeatNumber === b.beatNumber;
-                  const isComplete = pickedCount >= 2;
-
+            ) : (
+              <div className="space-y-3">
+                {activeBeatCandidates.map((clue) => {
+                  const isSelected = clue.decision === 'yes';
                   return (
-                    <button
-                      key={b.beatNumber}
-                      type="button"
-                      onClick={() => handleSelectBeatTab(b.beatNumber)}
-                      className={`p-3 rounded-xl border text-left transition ${
-                        isCurrent
-                          ? 'bg-amber-500/15 border-amber-500 text-white shadow-md'
-                          : isComplete
-                            ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-200 hover:bg-emerald-950/30'
-                            : 'bg-stone-900/70 border-stone-800 text-stone-400 hover:text-stone-200'
+                    <div
+                      key={clue.id}
+                      className={`rounded-2xl border-2 p-4 transition space-y-3 ${
+                        isSelected
+                          ? 'bg-emerald-50/40 border-emerald-500 shadow-sm'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span>Beat #{b.beatNumber}</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                            isComplete
-                              ? 'bg-emerald-500 text-stone-950 font-bold'
-                              : 'bg-stone-800 text-stone-300'
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+                          <select
+                            value={clue.format}
+                            onChange={(e) =>
+                              updateBeatClueField(activeBeatNumber, clue.id, {
+                                format: e.target.value as ClueFormat,
+                              })
+                            }
+                            className="rounded-xl bg-slate-100 border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-700"
+                          >
+                            {CLUE_FORMAT_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.shortLabel}
+                              </option>
+                            ))}
+                          </select>
+
+                          <input
+                            type="text"
+                            value={clue.title}
+                            onChange={(e) =>
+                              updateBeatClueField(activeBeatNumber, clue.id, {
+                                title: e.target.value,
+                              })
+                            }
+                            className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-900 focus:bg-white"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleBeatClueSelection(activeBeatNumber, clue.id)}
+                          className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                         >
-                          {pickedCount}/2 picked
-                        </span>
+                          {isSelected ? '✓ Selected' : '+ Select Clue'}
+                        </button>
                       </div>
-                      <div className="text-[11px] font-medium truncate mt-1 text-stone-200">
-                        {b.title}
+
+                      <textarea
+                        rows={2}
+                        value={clue.description}
+                        onChange={(e) =>
+                          updateBeatClueField(activeBeatNumber, clue.id, {
+                            description: e.target.value,
+                          })
+                        }
+                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-800 leading-relaxed focus:bg-white"
+                      />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2 text-slate-600">
+                          <span className="font-bold text-slate-800">How it explains Beat #{activeBeatNumber}:</span>{' '}
+                          {clue.pointsTo}
+                          {clue.doubleMeaningNote && (
+                            <div className="mt-1 text-indigo-700 font-medium">
+                              <strong>Double-Meaning Hook:</strong> {clue.doubleMeaningNote}
+                            </div>
+                          )}
+                        </div>
+                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2 text-slate-500">
+                          <span className="font-bold text-slate-700">
+                            AI Evidence Photo Prompt ({blueprint.spiceLevel}):
+                          </span>
+                          <input
+                            type="text"
+                            value={clue.generationPrompt}
+                            onChange={(e) =>
+                              updateBeatClueField(activeBeatNumber, clue.id, {
+                                generationPrompt: e.target.value,
+                              })
+                            }
+                            className="w-full bg-transparent text-xs text-slate-600 focus:outline-none mt-0.5"
+                          />
+                        </div>
                       </div>
-                      <div className="text-[10px] opacity-70">{b.timeWindow}</div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
+            )}
 
-              {/* Active Beat Banner */}
-              {activeBeat && (
-                <div className="rounded-xl bg-stone-900/90 border border-amber-500/30 p-4 flex flex-wrap items-start justify-between gap-4">
-                  <div className="space-y-1 flex-1 min-w-[260px]">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">
-                        Beat #{activeBeat.beatNumber} • {activeBeat.timeWindow}
-                      </span>
-                      <h3 className="text-sm font-bold text-white">{activeBeat.title}</h3>
-                    </div>
-                    <p className="text-xs text-stone-300 leading-relaxed">
-                      {activeBeat.description}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSuggestCluesForBeat(activeBeat.beatNumber)}
-                    disabled={isGeneratingBeatClues}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-800 hover:bg-stone-700 text-amber-200 border border-stone-700 transition whitespace-nowrap"
-                  >
-                    {isGeneratingBeatClues
-                      ? `✨ Suggesting Beat #${activeBeat.beatNumber} Clues...`
-                      : `🔄 Suggest 5 Fresh Clues for Beat #${activeBeat.beatNumber}`}
-                  </button>
-                </div>
-              )}
-
-              {/* Clue Candidates for Active Beat */}
-              {isGeneratingBeatClues && activeBeatCandidates.length === 0 ? (
-                <div className="rounded-xl bg-stone-900/60 border border-stone-800 p-10 text-center space-y-2">
-                  <div className="text-sm font-bold text-amber-300">
-                    ✨ Writing 5 {blueprint.spiceLevel}-Spice Clues for Beat #{activeBeatNumber}...
-                  </div>
-                  <p className="text-xs text-stone-400">
-                    Crafting dialogue, forensic details, double-meaning hooks, and AI photo
-                    prompts...
-                  </p>
-                </div>
-              ) : activeBeatCandidates.length === 0 ? (
-                <div className="rounded-xl bg-stone-900/60 border border-stone-800 p-8 text-center space-y-3">
-                  <p className="text-sm text-stone-300">
-                    No clues suggested for Beat #{activeBeatNumber} yet.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => handleSuggestCluesForBeat(activeBeatNumber)}
-                    disabled={isGeneratingBeatClues}
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-stone-950"
-                  >
-                    ✨ Suggest 5 Clues for Beat #{activeBeatNumber}
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {activeBeatCandidates.map((clue) => {
-                    const isSelected = clue.decision === 'yes';
-                    return (
-                      <div
-                        key={clue.id}
-                        className={`rounded-xl border p-4 transition space-y-2.5 ${
-                          isSelected
-                            ? 'bg-emerald-950/20 border-emerald-500/60 shadow-md'
-                            : 'bg-stone-900/50 border-stone-800 hover:border-stone-700'
-                        }`}
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 flex-1 min-w-[240px]">
-                            <select
-                              value={clue.format}
-                              onChange={(e) =>
-                                updateBeatClueField(activeBeatNumber, clue.id, {
-                                  format: e.target.value as ClueFormat,
-                                })
-                              }
-                              className="rounded-lg bg-stone-950 border border-stone-700 px-2 py-1 text-xs font-semibold text-amber-300"
-                            >
-                              {CLUE_FORMAT_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.shortLabel}
-                                </option>
-                              ))}
-                            </select>
-
-                            <input
-                              type="text"
-                              value={clue.title}
-                              onChange={(e) =>
-                                updateBeatClueField(activeBeatNumber, clue.id, {
-                                  title: e.target.value,
-                                })
-                              }
-                              className="flex-1 rounded-lg bg-stone-950/80 border border-stone-800 px-2.5 py-1 text-xs font-bold text-white"
-                            />
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => toggleBeatClueSelection(activeBeatNumber, clue.id)}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition ${
-                              isSelected
-                                ? 'bg-emerald-500 text-stone-950 shadow-sm'
-                                : 'bg-stone-800 text-stone-300 hover:bg-stone-700'
-                            }`}
-                          >
-                            {isSelected ? '✓ Selected for Beat #' + activeBeatNumber : '+ Select Clue'}
-                          </button>
-                        </div>
-
-                        <textarea
-                          rows={2}
-                          value={clue.description}
-                          onChange={(e) =>
-                            updateBeatClueField(activeBeatNumber, clue.id, {
-                              description: e.target.value,
-                            })
-                          }
-                          className="w-full rounded-lg bg-stone-950/70 border border-stone-800 px-2.5 py-1.5 text-xs text-stone-200"
-                        />
-
-                        {/* Double-meaning note + AI photo prompt */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
-                          <div className="rounded-lg bg-stone-950/60 border border-stone-800/80 px-2.5 py-1.5 text-stone-300">
-                            <span className="font-bold text-amber-300">🎯 Beat Proof:</span>{' '}
-                            {clue.pointsTo}
-                            {clue.doubleMeaningNote && (
-                              <div className="mt-1 text-purple-300">
-                                <span className="font-bold">🔗 Double-Meaning Hook:</span>{' '}
-                                {clue.doubleMeaningNote}
-                              </div>
-                            )}
-                          </div>
-                          <div className="rounded-lg bg-stone-950/60 border border-stone-800/80 px-2.5 py-1.5 text-stone-400">
-                            <span className="font-bold text-pink-300">
-                              📷 {blueprint.spiceLevel} Photo Prompt:
-                            </span>{' '}
-                            <input
-                              type="text"
-                              value={clue.generationPrompt}
-                              onChange={(e) =>
-                                updateBeatClueField(activeBeatNumber, clue.id, {
-                                  generationPrompt: e.target.value,
-                                })
-                              }
-                              className="w-full bg-transparent text-stone-300 focus:outline-none mt-0.5"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Bottom Bar: Optional custom direction + Next Beat / Next Stage CTA */}
-              <div className="pt-3 border-t border-stone-800 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-                  <input
-                    type="text"
-                    value={beatCustomNote}
-                    onChange={(e) => setBeatCustomNote(e.target.value)}
-                    placeholder={`Optional: ask for a specific clue idea for Beat #${activeBeatNumber}...`}
-                    className="flex-1 rounded-xl bg-stone-900 border border-stone-700 px-3 py-2 text-xs text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleSuggestCluesForBeat(activeBeatNumber)}
-                    disabled={isGeneratingBeatClues}
-                    className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-stone-200 whitespace-nowrap"
-                  >
-                    + Suggest More
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {activeBeatNumber < blueprint.beats.length && (
-                    <button
-                      type="button"
-                      onClick={() => handleSelectBeatTab(activeBeatNumber + 1)}
-                      className={`px-5 py-2.5 rounded-xl text-xs font-bold transition ${
-                        activeBeatSelectedCount >= 2
-                          ? 'bg-amber-500 text-stone-950 shadow-md'
-                          : 'bg-stone-800 text-stone-200 hover:bg-stone-700'
-                      }`}
-                    >
-                      Next: Beat #{activeBeatNumber + 1} →
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => handleMoveToRedHerrings(false)}
-                    disabled={isGeneratingSubplots || selectedCoreClues.length < 6}
-                    className="px-6 py-3 rounded-xl text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-lg transition disabled:opacity-40"
-                  >
-                    {isGeneratingSubplots
-                      ? '✨ Building Red Herrings...'
-                      : `Done Beats (${selectedCoreClues.length}/10): Build Red Herrings →`}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================= */}
-        {/* STAGE 3: RED HERRINGS, MOTIVES & DOUBLE-MEANING CLUES (~6 CLUES)  */}
-        {/* ================================================================= */}
-        {step === 3 && (
-          <div className="space-y-5">
-            <div className="rounded-2xl bg-[#15131b] border border-stone-800/90 p-6 space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold text-white">
-                    Stage 3: Red Herring Motives & Clues ({selectedRedHerringClues.length}/6 Red
-                    Herring Clues Selected)
-                  </h2>
-                  <p className="text-xs text-stone-400">
-                    Each plotline ties together multiple suspects, shows their motive, highlights
-                    how it hooks into your 10 real clues via double meaning, and lets you pick{' '}
-                    <strong>~2 clues per plotline (6 total)</strong>.
-                  </p>
-                </div>
+            {/* Bottom Navigation */}
+            <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+                <input
+                  type="text"
+                  value={beatCustomNote}
+                  onChange={(e) => setBeatCustomNote(e.target.value)}
+                  placeholder={`Ask for a specific clue idea for Beat #${activeBeatNumber}...`}
+                  className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800 focus:bg-white"
+                />
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
-                  className="text-xs text-stone-400 hover:text-stone-200"
+                  onClick={() => handleSuggestCluesForBeat(activeBeatNumber)}
+                  disabled={isGeneratingBeatClues}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 whitespace-nowrap cursor-pointer"
                 >
-                  ← Back to Beat Clues
+                  + Suggest More
                 </button>
               </div>
 
-              {isGeneratingSubplots && subplots.length === 0 ? (
-                <div className="rounded-xl bg-stone-900/60 border border-stone-800 p-10 text-center space-y-2">
-                  <div className="text-sm font-bold text-amber-300">
-                    ✨ Designing Entangled Red-Herring Plotlines & Double-Meaning Tie-Ins...
-                  </div>
-                  <p className="text-xs text-stone-400">
-                    Connecting innocent suspect motives to your 10 Core Clues with{' '}
-                    {blueprint.spiceLevel}-spice dialogue...
-                  </p>
-                </div>
-              ) : subplots.length === 0 ? (
-                <div className="rounded-xl bg-stone-900/70 border border-stone-800 p-8 text-center space-y-3">
-                  <p className="text-sm text-stone-300">No red-herring plotlines generated yet.</p>
+              <div className="flex items-center gap-2.5">
+                {activeBeatNumber < blueprint.beats.length && (
                   <button
                     type="button"
-                    onClick={() => handleMoveToRedHerrings(true)}
-                    disabled={isGeneratingSubplots}
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-stone-950"
+                    onClick={() => handleSelectBeatTab(activeBeatNumber + 1)}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${
+                      activeBeatSelectedCount >= 2
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
                   >
-                    ✨ Generate Red-Herring Plotlines & Clues
+                    Next: Beat #{activeBeatNumber + 1} →
                   </button>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  {subplots.map((sub, sIdx) => {
-                    const pickedInSub = sub.decoyClues.filter((dc) => dc.decision === 'yes').length;
-                    return (
-                      <div
-                        key={sub.id}
-                        className="rounded-2xl border border-stone-800 bg-stone-900/50 p-5 space-y-4"
-                      >
-                        {/* Subplot Header: Characters, Motive & Double-Meaning Core Clue Tie-In */}
-                        <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-stone-800">
-                          <div className="space-y-1.5 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-purple-500/20 text-purple-200 border border-purple-500/30">
-                                Red Herring #{sIdx + 1}
-                              </span>
-                              <h3 className="text-sm font-bold text-white">{sub.title}</h3>
-                              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                                {sub.involvedRoles.join(' ↔ ')}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-stone-200 leading-relaxed">
-                              <strong className="text-amber-300">Suspect Motive & Scheme:</strong>{' '}
-                              {sub.summary}
-                            </p>
-
-                            {sub.doubleMeaningCoreClueHook && (
-                              <div className="rounded-lg bg-purple-950/30 border border-purple-500/30 px-3 py-2 text-xs text-purple-200">
-                                <strong>🔗 Double-Meaning Tie-In to Your Real Clues:</strong>{' '}
-                                {sub.doubleMeaningCoreClueHook}
-                              </div>
-                            )}
-                          </div>
-
-                          <span
-                            className={`text-xs font-bold px-3 py-1 rounded-full ${
-                              pickedInSub >= 2
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                : 'bg-stone-800 text-stone-300'
-                            }`}
-                          >
-                            {pickedInSub} Clues Picked
-                          </span>
-                        </div>
-
-                        {/* Suggested Clues for this Red Herring Plotline (Pick ~2) */}
-                        <div className="space-y-2.5">
-                          <div className="text-xs font-semibold text-stone-400">
-                            Suggested Clues for This Red Herring (Select ~2):
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {sub.decoyClues.map((dc) => {
-                              const isPicked = dc.decision === 'yes';
-                              return (
-                                <div
-                                  key={dc.id}
-                                  className={`rounded-xl border p-3.5 space-y-2 transition ${
-                                    isPicked
-                                      ? 'bg-emerald-950/20 border-emerald-500/60'
-                                      : 'bg-stone-950/60 border-stone-800 opacity-75 hover:opacity-100'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[11px] font-bold text-amber-300 uppercase">
-                                      {dc.format}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleRedHerringClueSelection(sub.id, dc.id)}
-                                      className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                                        isPicked
-                                          ? 'bg-emerald-500 text-stone-950'
-                                          : 'bg-stone-800 text-stone-300 hover:bg-stone-700'
-                                      }`}
-                                    >
-                                      {isPicked ? '✓ Selected' : '+ Select'}
-                                    </button>
-                                  </div>
-
-                                  <input
-                                    type="text"
-                                    value={dc.title}
-                                    onChange={(e) =>
-                                      updateRedHerringClueField(sub.id, dc.id, {
-                                        title: e.target.value,
-                                      })
-                                    }
-                                    className="w-full rounded-lg bg-stone-900 border border-stone-800 px-2.5 py-1 text-xs font-bold text-white"
-                                  />
-
-                                  <textarea
-                                    rows={2}
-                                    value={dc.description}
-                                    onChange={(e) =>
-                                      updateRedHerringClueField(sub.id, dc.id, {
-                                        description: e.target.value,
-                                      })
-                                    }
-                                    className="w-full rounded-lg bg-stone-900 border border-stone-800 px-2.5 py-1.5 text-xs text-stone-200"
-                                  />
-
-                                  <div className="text-[10px] text-stone-400">
-                                    📷 <span className="text-pink-300">Photo Prompt:</span>{' '}
-                                    {dc.generationPrompt}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Bottom Bar */}
-              <div className="pt-3 border-t border-stone-800 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-                  <input
-                    type="text"
-                    value={subplotCustomNote}
-                    onChange={(e) => setSubplotCustomNote(e.target.value)}
-                    placeholder="Optional: ask for a specific red herring angle..."
-                    className="flex-1 rounded-xl bg-stone-900 border border-stone-700 px-3 py-2 text-xs text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleMoveToRedHerrings(true)}
-                    disabled={isGeneratingSubplots}
-                    className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-stone-200 whitespace-nowrap"
-                  >
-                    {isGeneratingSubplots ? 'Regenerating...' : '🔄 Regenerate Red Herrings'}
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSortCluesIntoRoundsAndReview}
-                  disabled={isSortingRounds || selectedRedHerringClues.length < 2}
-                  className="px-6 py-3 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-stone-950 shadow-lg transition disabled:opacity-50"
-                >
-                  {isSortingRounds
-                    ? '✨ Sorting 16 Clues Into Rounds...'
-                    : `Next: Sort All ${totalSelectedCluesCount} Clues Into Rounds →`}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================= */}
-        {/* STAGE 4: COMPLEXITY ROUND SORTER (16 CLUES) & TURN INTO BASE      */}
-        {/* ================================================================= */}
-        {step === 4 && (
-          <div className="space-y-5">
-            {/* Complexity & Turn Into Base Banner */}
-            <div className="rounded-2xl bg-[#15131b] border border-stone-800/90 p-6 space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-800">
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <h2 className="text-lg font-bold text-white">{blueprint.title}</h2>
-                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      Suggested Complexity: {difficultyRec.recommendedTier.toUpperCase()} (
-                      {difficultyRec.score}/10)
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-pink-500/20 text-pink-200 border border-pink-500/30">
-                      {blueprint.spiceLevel} Spice
-                    </span>
-                  </div>
-                  <p className="text-xs text-stone-400">
-                    {selectedCoreClues.length} Core Clues + {selectedRedHerringClues.length} Red
-                    Herring Clues = <strong>{totalSelectedCluesCount} Total Clues</strong> sorted
-                    across <strong>{totalRounds} Rounds</strong> by investigative complexity (not
-                    just clock order).
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={handleSortCluesIntoRoundsAndReview}
-                    disabled={isSortingRounds}
-                    className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700"
-                  >
-                    {isSortingRounds ? '✨ Re-Sorting...' : '🔀 Re-Sort Rounds by Complexity'}
-                  </button>
-
-                  {transferredMysteryId ? (
-                    <Link
-                      href={`/${locale}/builder/mysteries/${transferredMysteryId}`}
-                      className="px-6 py-3 rounded-xl text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-lg transition"
-                    >
-                      🎉 Open in Mystery Builder →
-                    </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleTurnIntoMysteryBase}
-                      disabled={isAssembling || isTransferring || totalSelectedCluesCount === 0}
-                      className="px-6 py-3 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-stone-950 shadow-lg transition disabled:opacity-50"
-                    >
-                      {isAssembling || isTransferring
-                        ? '🚀 Turning Into Mystery Base...'
-                        : '🚀 Turn Into Mystery Base →'}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* If assembled, show proofreader checks & tabs */}
-              {assembled && (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap gap-2">
-                    {assembled.proofreadReport.checks.map((chk) => (
-                      <span
-                        key={chk.id}
-                        title={chk.detail}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg border ${
-                          chk.passed
-                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
-                            : 'bg-amber-500/15 border-amber-500/40 text-amber-200'
-                        }`}
-                      >
-                        {chk.passed ? '✓' : '⚠️'} {chk.label}
-                      </span>
-                    ))}
-                  </div>
-                  {assembled.proofreadReport.checks.some((c) => !c.passed) && (
-                    <button
-                      type="button"
-                      onClick={handleAutoFixIssues}
-                      disabled={isAutoFixing}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-200 border border-amber-500/40"
-                    >
-                      {isAutoFixing ? '🛠️ Fixing...' : '🛠️ 1-Click Auto-Fix'}
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* View Tabs */}
-              <div className="flex items-center gap-2 border-b border-stone-800 pb-2">
-                <button
-                  type="button"
-                  onClick={() => setReviewTab('rounds')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
-                    reviewTab === 'rounds'
-                      ? 'bg-stone-800 text-white'
-                      : 'text-stone-400 hover:text-stone-200'
-                  }`}
-                >
-                  Clues Sorted by Round ({totalSelectedCluesCount})
-                </button>
-                {assembled && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setReviewTab('characters')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
-                        reviewTab === 'characters'
-                          ? 'bg-stone-800 text-white'
-                          : 'text-stone-400 hover:text-stone-200'
-                      }`}
-                    >
-                      Character Dossiers ({assembled.characters.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReviewTab('relationships')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
-                        reviewTab === 'relationships'
-                          ? 'bg-stone-800 text-white'
-                          : 'text-stone-400 hover:text-stone-200'
-                      }`}
-                    >
-                      Relationships ({assembled.relationships.length})
-                    </button>
-                  </>
                 )}
-              </div>
 
-              {/* Rounds View */}
-              {reviewTab === 'rounds' && (
-                <div className="space-y-4">
-                  {Array.from({ length: totalRounds }, (_, i) => i + 1).map((rNum) => {
-                    const roundClues = allSelectedClues.filter((c) => c.roundNumber === rNum);
-                    return (
-                      <div
-                        key={rNum}
-                        className="rounded-xl bg-stone-900/60 border border-stone-800 p-4 space-y-3"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                            Round {rNum} ({roundClues.length} Clues)
+                <button
+                  type="button"
+                  onClick={() => handleMoveToRedHerrings(false)}
+                  disabled={isGeneratingSubplots || selectedCoreClues.length < 6}
+                  className="px-6 py-3 rounded-2xl text-sm font-black bg-brand-pink hover:bg-pink-600 text-white shadow-sm transition disabled:opacity-40 cursor-pointer"
+                >
+                  {isGeneratingSubplots
+                    ? 'Building Red Herrings...'
+                    : `Next: Build Red Herrings (${selectedCoreClues.length}/10) →`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* STAGE 3: RED HERRINGS, MOTIVES & DOUBLE-MEANING CLUES (~6 CLUES)  */}
+      {/* ================================================================= */}
+      {step === 3 && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
+                  Step 3: Red Herring Motives & Clues ({selectedRedHerringClues.length} / 6 Selected)
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Review each innocent suspect plotline, see how their motive hooks into your real
+                  clues, and pick <strong>2 clues per plotline (6 total)</strong>.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                ← Back to Beat Clues
+              </button>
+            </div>
+
+            {isGeneratingSubplots && subplots.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-12 text-center space-y-2">
+                <div className="text-sm font-black text-slate-800">
+                  Designing Entangled Red-Herring Plotlines & Double-Meaning Tie-Ins...
+                </div>
+                <p className="text-xs text-slate-500">
+                  Connecting innocent suspect motives to your 10 Core Clues...
+                </p>
+              </div>
+            ) : subplots.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-10 text-center space-y-3">
+                <p className="text-sm font-semibold text-slate-600">
+                  No red-herring plotlines generated yet.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleMoveToRedHerrings(true)}
+                  disabled={isGeneratingSubplots}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black bg-brand-pink text-white cursor-pointer"
+                >
+                  ✨ Generate Red-Herring Plotlines & Clues
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {subplots.map((sub, sIdx) => {
+                  const pickedInSub = sub.decoyClues.filter((dc) => dc.decision === 'yes').length;
+                  return (
+                    <div
+                      key={sub.id}
+                      className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 space-y-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-200">
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              Red Herring #{sIdx + 1}
+                            </span>
+                            <h3 className="text-sm font-black text-slate-900">{sub.title}</h3>
+                            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200">
+                              {sub.involvedRoles.join(' ↔ ')}
+                            </span>
                           </div>
-                          {roundStrategySummary[rNum] && (
-                            <div className="text-xs text-stone-400 italic">
-                              {roundStrategySummary[rNum]}
+
+                          <p className="text-xs text-slate-700 leading-relaxed">
+                            <strong className="text-slate-900">Suspect Motive & Scheme:</strong>{' '}
+                            {sub.summary}
+                          </p>
+
+                          {sub.doubleMeaningCoreClueHook && (
+                            <div className="rounded-xl bg-indigo-50/70 border border-indigo-200/80 px-3.5 py-2 text-xs text-indigo-900">
+                              <strong>Double-Meaning Tie-In to Your Real Clues:</strong>{' '}
+                              {sub.doubleMeaningCoreClueHook}
                             </div>
                           )}
                         </div>
 
-                        {roundClues.length === 0 ? (
-                          <div className="text-xs text-stone-500">
-                            No clues assigned to Round {rNum} yet. Click &ldquo;Re-Sort Rounds by
-                            Complexity&rdquo; above.
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {roundClues.map((rc) => (
-                              <div
-                                key={rc.id}
-                                className="rounded-lg bg-stone-950/70 border border-stone-800/80 p-3 text-xs space-y-1"
-                              >
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-white">{rc.title}</span>
-                                    <span className="text-stone-400">
-                                      ({rc.format} • {rc.timestampLabel})
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                                        rc.isRedHerring
-                                          ? 'bg-purple-500/20 text-purple-200'
-                                          : 'bg-emerald-500/20 text-emerald-200'
-                                      }`}
-                                    >
-                                      {rc.isRedHerring
-                                        ? 'Red Herring Clue'
-                                        : `Core Beat #${rc.beatNumber || '?'}`}
-                                    </span>
+                        <span
+                          className={`text-xs font-black px-3 py-1 rounded-full ${
+                            pickedInSub >= 2
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {pickedInSub} Picked
+                        </span>
+                      </div>
 
-                                    <select
-                                      value={rc.roundNumber}
-                                      onChange={(e) => {
-                                        const newR = Number(
-                                          e.target.value
-                                        ) as ArchitectRoundNumber;
-                                        if (rc.isRedHerring && rc.subplotId) {
-                                          updateRedHerringClueField(rc.subplotId, rc.id, {
-                                            roundNumber: newR,
-                                          });
-                                        } else if (rc.beatNumber) {
-                                          updateBeatClueField(rc.beatNumber, rc.id, {
-                                            roundNumber: newR,
-                                          });
-                                        }
-                                      }}
-                                      className="rounded bg-stone-900 border border-stone-700 px-1.5 py-0.5 text-[11px] text-amber-300"
-                                    >
-                                      {Array.from({ length: totalRounds }, (_, idx) => idx + 1).map(
-                                        (rOpt) => (
-                                          <option key={rOpt} value={rOpt}>
-                                            Move to R{rOpt}
-                                          </option>
-                                        )
-                                      )}
-                                    </select>
-                                  </div>
-                                </div>
-                                <p className="text-stone-300">{rc.description}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {sub.decoyClues.map((dc) => {
+                          const isPicked = dc.decision === 'yes';
+                          return (
+                            <div
+                              key={dc.id}
+                              className={`rounded-2xl border-2 p-4 space-y-2.5 transition ${
+                                isPicked
+                                  ? 'bg-white border-emerald-500 shadow-sm'
+                                  : 'bg-white/70 border-slate-200 opacity-80 hover:opacity-100'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-black text-slate-500 uppercase">
+                                  {dc.format}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleRedHerringClueSelection(sub.id, dc.id)}
+                                  className={`px-3.5 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                                    isPicked
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  {isPicked ? '✓ Selected' : '+ Select'}
+                                </button>
                               </div>
-                            ))}
+
+                              <input
+                                type="text"
+                                value={dc.title}
+                                onChange={(e) =>
+                                  updateRedHerringClueField(sub.id, dc.id, {
+                                    title: e.target.value,
+                                  })
+                                }
+                                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-900"
+                              />
+
+                              <textarea
+                                rows={2}
+                                value={dc.description}
+                                onChange={(e) =>
+                                  updateRedHerringClueField(sub.id, dc.id, {
+                                    description: e.target.value,
+                                  })
+                                }
+                                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5 text-xs text-slate-700 leading-relaxed"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+                <input
+                  type="text"
+                  value={subplotCustomNote}
+                  onChange={(e) => setSubplotCustomNote(e.target.value)}
+                  placeholder="Optional: ask for a specific red herring angle..."
+                  className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleMoveToRedHerrings(true)}
+                  disabled={isGeneratingSubplots}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 whitespace-nowrap cursor-pointer"
+                >
+                  {isGeneratingSubplots ? 'Regenerating...' : '🔄 Regenerate'}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSortCluesIntoRoundsAndReview}
+                disabled={isSortingRounds || selectedRedHerringClues.length < 2}
+                className="px-6 py-3 rounded-2xl text-sm font-black bg-brand-pink hover:bg-pink-600 text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
+              >
+                {isSortingRounds
+                  ? 'Sorting 16 Clues Into Rounds...'
+                  : `Next: Sort All ${totalSelectedCluesCount} Clues Into Rounds →`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* STAGE 4: COMPLEXITY ROUND SORTER (16 CLUES) & TURN INTO BASE      */}
+      {/* ================================================================= */}
+      {step === 4 && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h2 className="text-lg font-black text-brand-dark">{blueprint.title}</h2>
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase bg-amber-50 text-amber-800 border border-amber-200">
+                    Suggested Complexity: {difficultyRec.recommendedTier.toUpperCase()} (
+                    {difficultyRec.score}/10)
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-pink-50 text-brand-pink border border-pink-200">
+                    {blueprint.spiceLevel} Spice
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  {selectedCoreClues.length} Core Clues + {selectedRedHerringClues.length} Red
+                  Herring Clues = <strong>{totalSelectedCluesCount} Total Clues</strong> sorted
+                  across <strong>{totalRounds} Rounds</strong> by investigative complexity.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleSortCluesIntoRoundsAndReview}
+                  disabled={isSortingRounds}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+                >
+                  {isSortingRounds ? 'Re-Sorting...' : '🔀 Re-Sort Rounds'}
+                </button>
+
+                {transferredMysteryId ? (
+                  <Link
+                    href={`/${locale}/builder/mysteries/${transferredMysteryId}`}
+                    className="px-6 py-3 rounded-2xl text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
+                  >
+                    Open in Mystery Builder →
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleTurnIntoMysteryBase}
+                    disabled={isAssembling || isTransferring || totalSelectedCluesCount === 0}
+                    className="px-6 py-3 rounded-2xl text-sm font-black bg-brand-pink hover:bg-pink-600 text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {isAssembling || isTransferring
+                      ? 'Turning Into Mystery Base...'
+                      : '🚀 Turn Into Mystery Base →'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {assembled && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {assembled.proofreadReport.checks.map((chk) => (
+                    <span
+                      key={chk.id}
+                      title={chk.detail}
+                      className={`text-[11px] font-semibold px-3 py-1 rounded-full border ${
+                        chk.passed
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                          : 'bg-amber-50 border-amber-200 text-amber-800'
+                      }`}
+                    >
+                      {chk.passed ? '✓' : '⚠️'} {chk.label}
+                    </span>
+                  ))}
+                </div>
+                {assembled.proofreadReport.checks.some((c) => !c.passed) && (
+                  <button
+                    type="button"
+                    onClick={handleAutoFixIssues}
+                    disabled={isAutoFixing}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 cursor-pointer"
+                  >
+                    {isAutoFixing ? 'Fixing...' : '🛠️ 1-Click Auto-Fix'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <button
+                type="button"
+                onClick={() => setReviewTab('rounds')}
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  reviewTab === 'rounds'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Clues by Round ({totalSelectedCluesCount})
+              </button>
+              {assembled && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setReviewTab('characters')}
+                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      reviewTab === 'characters'
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Character Dossiers ({assembled.characters.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReviewTab('relationships')}
+                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      reviewTab === 'relationships'
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Relationships ({assembled.relationships.length})
+                  </button>
+                </>
+              )}
+            </div>
+
+            {reviewTab === 'rounds' && (
+              <div className="space-y-4">
+                {Array.from({ length: totalRounds }, (_, i) => i + 1).map((rNum) => {
+                  const roundClues = allSelectedClues.filter((c) => c.roundNumber === rNum);
+                  return (
+                    <div
+                      key={rNum}
+                      className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-xs font-black uppercase tracking-wider text-brand-pink">
+                          Round {rNum} ({roundClues.length} Clues)
+                        </div>
+                        {roundStrategySummary[rNum] && (
+                          <div className="text-xs text-slate-500">
+                            {roundStrategySummary[rNum]}
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
 
-              {/* Assembled Character Dossiers Tab */}
-              {assembled && reviewTab === 'characters' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {assembled.characters.map((ch) => (
-                    <div
-                      key={ch.id}
-                      className="rounded-xl bg-stone-900/60 border border-stone-800 p-4 space-y-2 text-xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-white">{ch.roleTitle}</span>
-                        <span className="uppercase text-[10px] font-bold px-2 py-0.5 rounded bg-stone-800 text-amber-300">
-                          {ch.plotRole} • {ch.defaultGender}
-                        </span>
-                      </div>
-                      <p className="text-stone-300 leading-relaxed">{ch.bio}</p>
-                      <div className="text-stone-400 pt-1">
-                        <strong>Outfit:</strong> {ch.outfitAdvice}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      {roundClues.length === 0 ? (
+                        <div className="text-xs text-slate-400">
+                          No clues in Round {rNum} yet. Click &ldquo;Re-Sort Rounds&rdquo; above.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {roundClues.map((rc) => (
+                            <div
+                              key={rc.id}
+                              className="rounded-xl bg-white border border-slate-200 p-3.5 text-xs space-y-1.5"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-slate-900">{rc.title}</span>
+                                  <span className="text-slate-400">
+                                    ({rc.format} • {rc.timestampLabel})
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${
+                                      rc.isRedHerring
+                                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    }`}
+                                  >
+                                    {rc.isRedHerring
+                                      ? 'Red Herring'
+                                      : `Core Beat #${rc.beatNumber || '?'}`}
+                                  </span>
 
-              {/* Assembled Relationships Tab */}
-              {assembled && reviewTab === 'relationships' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {assembled.relationships.map((rel, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl bg-stone-900/60 border border-stone-800 p-3.5 text-xs space-y-1"
-                    >
-                      <div className="font-bold text-amber-300">
-                        {rel.roleA} ↔ {rel.roleB}
-                      </div>
-                      <p className="text-stone-300">{rel.notes}</p>
+                                  <select
+                                    value={rc.roundNumber}
+                                    onChange={(e) => {
+                                      const newR = Number(
+                                        e.target.value
+                                      ) as ArchitectRoundNumber;
+                                      if (rc.isRedHerring && rc.subplotId) {
+                                        updateRedHerringClueField(rc.subplotId, rc.id, {
+                                          roundNumber: newR,
+                                        });
+                                      } else if (rc.beatNumber) {
+                                        updateBeatClueField(rc.beatNumber, rc.id, {
+                                          roundNumber: newR,
+                                        });
+                                      }
+                                    }}
+                                    className="rounded-lg bg-slate-100 border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-700"
+                                  >
+                                    {Array.from({ length: totalRounds }, (_, idx) => idx + 1).map(
+                                      (rOpt) => (
+                                        <option key={rOpt} value={rOpt}>
+                                          Round {rOpt}
+                                        </option>
+                                      )
+                                    )}
+                                  </select>
+                                </div>
+                              </div>
+                              <p className="text-slate-600 leading-relaxed">{rc.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {assembled && reviewTab === 'characters' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {assembled.characters.map((ch) => (
+                  <div
+                    key={ch.id}
+                    className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-black text-slate-900">{ch.roleTitle}</span>
+                      <span className="uppercase text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
+                        {ch.plotRole} • {ch.defaultGender}
+                      </span>
+                    </div>
+                    <p className="text-slate-600 leading-relaxed">{ch.bio}</p>
+                    <div className="text-slate-500 pt-1">
+                      <strong className="text-slate-700">Outfit:</strong> {ch.outfitAdvice}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {assembled && reviewTab === 'relationships' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {assembled.relationships.map((rel, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-xs space-y-1"
+                  >
+                    <div className="font-black text-slate-900">
+                      {rel.roleA} ↔ {rel.roleB}
+                    </div>
+                    <p className="text-slate-600 leading-relaxed">{rel.notes}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
