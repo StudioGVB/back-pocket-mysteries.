@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Bell,
   Users,
@@ -131,6 +132,10 @@ export function DashboardSignupsWidget({
   reviewPeriods = EMPTY_PERIODS,
   ticketPeriods = EMPTY_PERIODS,
 }: DashboardSignupsWidgetProps) {
+  const pathname = usePathname() || '';
+  const localeMatch = pathname.match(/^\/(en|fr)(?=\/|$)/);
+  const localePrefix = `/${localeMatch ? localeMatch[1] : 'en'}`;
+
   const totalNewTraction =
     newOrdersCount +
     newUsersCount +
@@ -145,17 +150,27 @@ export function DashboardSignupsWidget({
 
   const persistDashboardSeen = useCallback(() => {
     const nowIso = new Date().toISOString();
-    if (typeof window !== 'undefined') {
+    const saveLocal = (iso: string) => {
+      if (typeof window === 'undefined') return;
       const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
-      document.cookie = `admin_dashboard_last_view=${encodeURIComponent(nowIso)};expires=${expires};path=/`;
+      document.cookie = `admin_dashboard_last_view=${encodeURIComponent(iso)};expires=${expires};path=/`;
       try {
-        window.localStorage.setItem('bpm_admin_dashboard_last_view', nowIso);
+        window.localStorage.setItem('bpm_admin_dashboard_last_view', iso);
       } catch {}
+    };
+    saveLocal(nowIso);
+    if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('bpm:admin-section-seen', { detail: { section: 'dashboard' } })
       );
     }
-    markAdminSectionSeenAction('dashboard', nowIso).catch(() => {});
+    markAdminSectionSeenAction('dashboard', nowIso)
+      .then((res) => {
+        if (res?.timestamp) {
+          saveLocal(res.timestamp);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Automatically record that the dashboard has been viewed so next visit has 0 urgency,
@@ -190,7 +205,7 @@ export function DashboardSignupsWidget({
     {
       id: 'customers',
       label: 'Customer Sign-Ups',
-      href: '/en/admin/users',
+      href: `${localePrefix}/admin/users`,
       icon: <Users className="w-4 h-4" />,
       iconBg: isUrgent ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700',
       unseenCount: newUsersCount,
@@ -199,7 +214,7 @@ export function DashboardSignupsWidget({
     {
       id: 'leads',
       label: 'Newsletter & VIPs',
-      href: '/en/admin/leads',
+      href: `${localePrefix}/admin/leads`,
       icon: <Mail className="w-4 h-4" />,
       iconBg: isUrgent ? 'bg-brand-pink/25 text-brand-pink' : 'bg-brand-pink/10 text-brand-pink',
       unseenCount: newLeadsCount,
@@ -208,7 +223,7 @@ export function DashboardSignupsWidget({
     {
       id: 'enquiries',
       label: 'Contact Enquiries',
-      href: '/en/admin/enquiries',
+      href: `${localePrefix}/admin/enquiries`,
       icon: <MessageSquare className="w-4 h-4" />,
       iconBg: isUrgent ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-100 text-indigo-700',
       unseenCount: newEnquiriesCount,
@@ -217,7 +232,7 @@ export function DashboardSignupsWidget({
     {
       id: 'reviews',
       label: 'Customer Reviews',
-      href: '/en/admin/reviews',
+      href: `${localePrefix}/admin/reviews`,
       icon: <Star className="w-4 h-4" />,
       iconBg: isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-100 text-amber-700',
       unseenCount: newReviewsCount,
@@ -226,7 +241,7 @@ export function DashboardSignupsWidget({
     {
       id: 'tickets',
       label: 'Support Tickets',
-      href: '/en/admin/tickets',
+      href: `${localePrefix}/admin/tickets`,
       icon: <LifeBuoy className="w-4 h-4" />,
       iconBg: isUrgent ? 'bg-sky-500/20 text-sky-300' : 'bg-sky-100 text-sky-700',
       unseenCount: newTicketsCount,
@@ -235,6 +250,7 @@ export function DashboardSignupsWidget({
   ];
 
   const hasUnseenPreviews =
+    newOrdersCount > 0 ||
     unseenCustomers.length > 0 ||
     unseenLeads.length > 0 ||
     unseenEnquiries.length > 0 ||
@@ -339,10 +355,32 @@ export function DashboardSignupsWidget({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {newOrdersCount > 0 && (
+              <Link
+                href={`${localePrefix}/admin/transactions`}
+                className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
+                      Order
+                    </span>
+                    <p className="text-xs font-black text-white truncate">
+                      +{newOrdersCount} New Paid {newOrdersCount === 1 ? 'Order' : 'Orders'}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-300 truncate mt-0.5">
+                    Click to view in Transactions
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 shrink-0">View →</span>
+              </Link>
+            )}
+
             {unseenCustomers.slice(0, 2).map((c) => (
               <Link
                 key={`cust-${c.id}`}
-                href={`/en/admin/users/${c.id}`}
+                href={`${localePrefix}/admin/users/${c.id}`}
                 className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
               >
                 <div className="min-w-0">
@@ -365,7 +403,7 @@ export function DashboardSignupsWidget({
             {unseenLeads.slice(0, 2).map((l) => (
               <Link
                 key={`lead-${l.id}`}
-                href="/en/admin/leads"
+                href={`${localePrefix}/admin/leads`}
                 className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
               >
                 <div className="min-w-0">
@@ -386,7 +424,7 @@ export function DashboardSignupsWidget({
             {unseenEnquiries.slice(0, 2).map((e) => (
               <Link
                 key={`enq-${e.id}`}
-                href="/en/admin/enquiries"
+                href={`${localePrefix}/admin/enquiries`}
                 className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
               >
                 <div className="min-w-0">
@@ -407,7 +445,7 @@ export function DashboardSignupsWidget({
             {unseenReviews.slice(0, 2).map((r) => (
               <Link
                 key={`rev-${r.id}`}
-                href="/en/admin/reviews"
+                href={`${localePrefix}/admin/reviews`}
                 className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
               >
                 <div className="min-w-0">
@@ -430,7 +468,7 @@ export function DashboardSignupsWidget({
             {unseenTickets.slice(0, 2).map((t) => (
               <Link
                 key={`tkt-${t.id}`}
-                href="/en/admin/tickets"
+                href={`${localePrefix}/admin/tickets`}
                 className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
               >
                 <div className="min-w-0">

@@ -154,15 +154,28 @@ async function saveAdminNotificationsSeen(
   return next;
 }
 
+function toEpochMs(iso?: string | null): number {
+  if (!iso || typeof iso !== 'string') return 0;
+  const parsed = Date.parse(iso);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 function resolveBaselineCutoff(cookieIso?: string | null, storedIso?: string | null): string {
-  // Pick the most recent seen timestamp if either exists; otherwise default to 7 days ago
+  // Pick the most recent seen timestamp by epoch ms if either exists; otherwise default to 7 days ago
   const candidates = [cookieIso, storedIso].filter(
-    (s): s is string => typeof s === 'string' && s.length > 0 && !Number.isNaN(Date.parse(s))
+    (s): s is string => typeof s === 'string' && s.length > 0 && toEpochMs(s) > 0
   );
   if (candidates.length > 0) {
-    return candidates.sort().reverse()[0];
+    candidates.sort((a, b) => toEpochMs(b) - toEpochMs(a));
+    return new Date(toEpochMs(candidates[0])).toISOString();
   }
   return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function maxCutoffIso(aIso: string, bIso?: string | null): string {
+  const aMs = toEpochMs(aIso);
+  const bMs = toEpochMs(bIso);
+  return new Date(Math.max(aMs, bMs)).toISOString();
 }
 
 export async function markAdminSectionSeenAction(
@@ -170,7 +183,8 @@ export async function markAdminSectionSeenAction(
   timestampIso?: string
 ): Promise<{ success: boolean; timestamp: string }> {
   const { supabase } = await requireAdmin();
-  const ts = timestampIso || new Date().toISOString();
+  const clientMs = toEpochMs(timestampIso);
+  const ts = new Date(Math.max(Date.now(), clientMs)).toISOString();
   await saveAdminNotificationsSeen(supabase, { [section]: ts });
   return { success: true, timestamp: ts };
 }
@@ -232,11 +246,13 @@ export async function getAdminSidebarNotificationCountsAction(
       tickets: resolveBaselineCutoff(cookiesOverride?.tickets, seenState.tickets),
     };
 
-    const countAfter = (items: any[], cutoff: string, dateField = 'created_at') =>
-      items.filter((item) => {
+    const countAfter = (items: any[], cutoff: string, dateField = 'created_at') => {
+      const cutoffMs = toEpochMs(cutoff);
+      return items.filter((item) => {
         const ts = item?.[dateField] || item?.createdAt;
-        return typeof ts === 'string' && ts > cutoff;
+        return toEpochMs(ts) > cutoffMs;
       }).length;
+    };
 
     const unseenTransactionsCount = countAfter(activeOrders, cutoffs.transactions);
     const unseenCustomersCount = countAfter(activeProfiles, cutoffs.customers);
@@ -245,13 +261,14 @@ export async function getAdminSidebarNotificationCountsAction(
     const unseenReviewsCount = countAfter(safeReviews, cutoffs.reviews);
     const unseenTicketsCount = countAfter(safeTickets, cutoffs.tickets);
 
+    // An item only triggers the Dashboard badge if it is newer than BOTH the last Dashboard visit AND that section's own visit
     const unseenDashboardCount =
-      countAfter(activeOrders, cutoffs.dashboard) +
-      countAfter(activeProfiles, cutoffs.dashboard) +
-      countAfter(safeLeads, cutoffs.dashboard) +
-      countAfter(activeEnquiries, cutoffs.dashboard) +
-      countAfter(safeReviews, cutoffs.dashboard) +
-      countAfter(safeTickets, cutoffs.dashboard);
+      countAfter(activeOrders, maxCutoffIso(cutoffs.dashboard, cutoffs.transactions)) +
+      countAfter(activeProfiles, maxCutoffIso(cutoffs.dashboard, cutoffs.customers)) +
+      countAfter(safeLeads, maxCutoffIso(cutoffs.dashboard, cutoffs.leads)) +
+      countAfter(activeEnquiries, maxCutoffIso(cutoffs.dashboard, cutoffs.enquiries)) +
+      countAfter(safeReviews, maxCutoffIso(cutoffs.dashboard, cutoffs.reviews)) +
+      countAfter(safeTickets, maxCutoffIso(cutoffs.dashboard, cutoffs.tickets));
 
     return {
       unseenTransactionsCount,
@@ -323,20 +340,22 @@ export const getAdminStats = cache(async (lastViewStr?: string) => {
 
   const dashboardCutoff = resolveBaselineCutoff(lastViewStr, seenState.dashboard);
 
-  const filterUnseen = (items: any[]) =>
-    items.filter((item) => {
+  const filterUnseen = (items: any[], sectionSeenIso?: string | null) => {
+    const cutoffMs = toEpochMs(maxCutoffIso(dashboardCutoff, sectionSeenIso));
+    return items.filter((item) => {
       const ts = item?.created_at || item?.createdAt;
-      return typeof ts === 'string' && ts > dashboardCutoff;
+      return toEpochMs(ts) > cutoffMs;
     });
+  };
 
-  const unseenOrders = filterUnseen(orders);
-  const unseenCustomers = filterUnseen(activeProfiles);
-  const unseenLeads = filterUnseen(safeLeads).sort((a: any, b: any) =>
-    (b.created_at || '').localeCompare(a.created_at || '')
+  const unseenOrders = filterUnseen(orders, seenState.transactions);
+  const unseenCustomers = filterUnseen(activeProfiles, seenState.customers);
+  const unseenLeads = filterUnseen(safeLeads, seenState.leads).sort((a: any, b: any) =>
+    toEpochMs(b.created_at) - toEpochMs(a.created_at)
   );
-  const unseenEnquiries = filterUnseen(safeEnquiries);
-  const unseenReviews = filterUnseen(safeReviews);
-  const unseenTickets = filterUnseen(safeTickets);
+  const unseenEnquiries = filterUnseen(safeEnquiries, seenState.enquiries);
+  const unseenReviews = filterUnseen(safeReviews, seenState.reviews);
+  const unseenTickets = filterUnseen(safeTickets, seenState.tickets);
 
   const nowMs = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;

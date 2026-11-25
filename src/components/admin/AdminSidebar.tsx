@@ -80,7 +80,9 @@ function readSeenTimestamp(section: AdminNotificationSection): string | null {
     fromStorage = window.localStorage.getItem(storage);
   } catch {}
   if (fromCookie && fromStorage) {
-    return fromCookie > fromStorage ? fromCookie : fromStorage;
+    const cookieMs = Date.parse(fromCookie) || 0;
+    const storageMs = Date.parse(fromStorage) || 0;
+    return cookieMs >= storageMs ? fromCookie : fromStorage;
   }
   return fromCookie || fromStorage || null;
 }
@@ -106,7 +108,13 @@ export function AdminSidebar() {
     const nowIso = new Date().toISOString();
     setCounts((prev) => ({ ...prev, [section]: 0 }));
     writeSeenTimestamp(section, nowIso);
-    markAdminSectionSeenAction(section, nowIso).catch(() => {});
+    markAdminSectionSeenAction(section, nowIso)
+      .then((res) => {
+        if (res?.timestamp) {
+          writeSeenTimestamp(section, res.timestamp);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const refreshCounts = useCallback(async () => {
