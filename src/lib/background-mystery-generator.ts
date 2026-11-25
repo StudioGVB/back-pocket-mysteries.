@@ -295,6 +295,31 @@ export async function advanceMysteryGenerationOneStep(
 
   activeStepLocks.add(params.mysteryId);
   try {
+    // 0. STAGE 0 CHECKPOINT: Weave group inside jokes & guest personality quirks into Zones 1, 2 & 3
+    if (!session.insideJokesWeaved) {
+      const stepLabel =
+        'Weaving your group’s inside jokes & guest personalities into character sheets, banter missions & chat clues...';
+      updateMysteryGenerationInStore(params.mysteryId, {
+        generationStep: stepLabel,
+        generationProgress: 22,
+      });
+      const { weavePersonalitiesAndInsideJokesAction } = await import(
+        '@/app/actions/inside-jokes-weaver'
+      );
+      await weavePersonalitiesAndInsideJokesAction(params.mysteryId);
+      updateMysteryGenerationInStore(params.mysteryId, {
+        insideJokesWeaved: true,
+        generationProgress: 24,
+      });
+      await syncLiveStateToSupabaseClueCarrier(params.mysteryId);
+      return {
+        status: 'generating',
+        progress: 24,
+        stepLabel,
+        didWork: true,
+      };
+    }
+
     const cachedMystery = getCachedMysterySnapshot(params.mysteryId);
     const characters: any[] = cachedMystery?.characters || [];
     const activeChars = characters.filter(

@@ -34,6 +34,7 @@ import {
   advanceMysteryGenerationOneStep,
 } from '@/lib/background-mystery-generator';
 import { pregenerateAllAudioCluesForMystery } from '@/app/actions/audio-generator';
+import { weavePersonalitiesAndInsideJokesAction } from '@/app/actions/inside-jokes-weaver';
 import { isUserAdmin } from '@/utils/admin-auth';
 import { sendHostOwnershipTransferInviteEmail } from '@/utils/purchase-notifications';
 import crypto from 'crypto';
@@ -622,7 +623,12 @@ export async function saveCustomerCastAction(
     .eq('id', mysteryId);
 
   // Sync server-side cache and cross-container `public.clues` carrier for unauthenticated guests
+  const preservedPartyDetails = existingStored?.partyDetails || liveCarrier?.session?.partyDetails;
+  const preservedPrepConfirmations =
+    existingStored?.prepConfirmedCharacters || liveCarrier?.session?.prepConfirmedCharacters;
+
   saveStoredGameSession(mysteryId, {
+    ...(existingStored || {}),
     mysteryId,
     templateMysteryId: templateMysteryId || undefined,
     pin,
@@ -630,6 +636,8 @@ export async function saveCustomerCastAction(
     currentRound: 0,
     activeCharacterIds,
     claimedCharacters: {},
+    ...(preservedPartyDetails ? { partyDetails: preservedPartyDetails } : {}),
+    ...(preservedPrepConfirmations ? { prepConfirmedCharacters: preservedPrepConfirmations } : {}),
     submissions: [],
     sharedTheoryRounds: [],
     revealMode: 'hidden',
@@ -643,6 +651,7 @@ export async function saveCustomerCastAction(
     mystery: resolvedMysteryObj,
     characters: updatedCharObjects,
     session: {
+      ...(existingStored || {}),
       mysteryId,
       templateMysteryId: templateMysteryId || undefined,
       pin,
@@ -650,6 +659,8 @@ export async function saveCustomerCastAction(
       currentRound: 0,
       activeCharacterIds,
       claimedCharacters: {},
+      ...(preservedPartyDetails ? { partyDetails: preservedPartyDetails } : {}),
+      ...(preservedPrepConfirmations ? { prepConfirmedCharacters: preservedPrepConfirmations } : {}),
       submissions: [],
       sharedTheoryRounds: [],
       revealMode: 'hidden',
@@ -659,8 +670,9 @@ export async function saveCustomerCastAction(
     templateMysteryId,
   });
 
-  // Pre-generate all audio clues in the background with the newly locked cast names & accents
+  // Pre-generate all audio clues & weave guest personalities/inside jokes in the background
   void pregenerateAllAudioCluesForMystery(mysteryId, { forceRegenerate: true });
+  void weavePersonalitiesAndInsideJokesAction(mysteryId, preservedPartyDetails?.groupInsideJokes);
 
   revalidatePath(`/play/${mysteryId}`);
   if (templateMysteryId) {

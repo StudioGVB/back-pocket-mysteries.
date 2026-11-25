@@ -34,6 +34,8 @@ export interface CleanCharacterPresentation {
   actSummary: string;
   /** Punchy bullet points for roleplay demeanor */
   actBullets: string[];
+  /** Zone 2: Secret Party-Night Roast & Banter Mission tailored to guest personality & inside jokes */
+  roastMission: string | null;
   /** Secrets or hidden motivation if present */
   secrets: string;
   /** Canonical Standard Character Photo or Outfit Photo URL */
@@ -139,7 +141,7 @@ export function getCleanCharacterPresentation(
     masculine: mascOutfit,
   };
 
-  // 2. How to Act (Summary & Bullets)
+  // 2. How to Act (Summary & Bullets) + Zone 1 Guest Personality / Inside Joke Injection
   const rawActSummary =
     profile.act_summary ||
     activePres?.act_summary ||
@@ -163,11 +165,30 @@ export function getCleanCharacterPresentation(
       ? presMale.act_bullets
       : []) || [];
 
-  const actBullets = rawBullets
-    .map(b => adaptBioForGuestGender(cleanText(b, allCharacters, mode), effectiveGender))
-    .filter(Boolean);
+  const guestTraits: string[] = Array.isArray(profile.traits)
+    ? profile.traits.map((t: any) => String(t || '').trim()).filter(Boolean)
+    : [];
+  const guestPersonalNote = String(profile.guest_bio || '').trim();
 
-  // 3. Backstory / Blurb
+  const customActBulletRaw =
+    profile.custom_act_bullet ||
+    (guestTraits.length > 0 || guestPersonalNote
+      ? `Channel your real-life reputation (${[
+          ...guestTraits.slice(0, 2),
+          guestPersonalNote ? `"${guestPersonalNote}"` : '',
+        ]
+          .filter(Boolean)
+          .join(' • ')}) while staying in character as ${roleTitle}.`
+      : '');
+
+  const actBullets = [
+    ...rawBullets.map(b => adaptBioForGuestGender(cleanText(b, allCharacters, mode), effectiveGender)),
+    customActBulletRaw
+      ? adaptBioForGuestGender(cleanText(customActBulletRaw, allCharacters, mode), effectiveGender)
+      : '',
+  ].filter(Boolean);
+
+  // 3. Backstory / Blurb + Zone 1 Custom Blurb Addon
   const isGuestPersonalBio =
     Boolean(profile.guest_id) &&
     profile.bio &&
@@ -185,10 +206,17 @@ export function getCleanCharacterPresentation(
     cleanText(rawBio, allCharacters, mode),
     effectiveGender
   );
-  const blurbParagraphs = cleanedBio
-    .split(/\n+/)
-    .map(p => p.trim())
-    .filter(Boolean);
+  const customBlurbAddon = profile.custom_blurb_addon
+    ? adaptBioForGuestGender(cleanText(profile.custom_blurb_addon, allCharacters, mode), effectiveGender)
+    : '';
+
+  const blurbParagraphs = [
+    ...cleanedBio
+      .split(/\n+/)
+      .map(p => p.trim())
+      .filter(Boolean),
+    ...(customBlurbAddon ? [customBlurbAddon] : []),
+  ];
 
   // Short hook for overview cards: prefer actSummary if concise, otherwise first 1-2 sentences of bio
   const shortSource = actSummary || blurbParagraphs[0] || cleanedBio;
@@ -198,11 +226,22 @@ export function getCleanCharacterPresentation(
     effectiveGender
   );
 
-  // 4. Secrets
+  // 4. Secrets & Zone 2 Party-Night Roast Mission
   const secrets = adaptBioForGuestGender(
     cleanText(profile.secrets || '', allCharacters, mode),
     effectiveGender
   );
+
+  const rawRoastMission =
+    profile.roast_mission ||
+    (guestTraits.length > 0 || guestPersonalNote
+      ? `During Round 1 questioning, deflect any suspicion by leaning into your known ${
+          guestTraits[0] || guestPersonalNote
+        } energy and demanding that the other suspects explain their own alibis first.`
+      : '');
+  const roastMission = rawRoastMission
+    ? adaptBioForGuestGender(cleanText(rawRoastMission, allCharacters, mode), effectiveGender)
+    : null;
 
   // 5. Standard Character Photo / Outfit Photo / Guest AI Portrait
   const guestIdStr = String(profile.guest_id || '').trim();
@@ -359,6 +398,7 @@ export function getCleanCharacterPresentation(
     outfitVariants,
     actSummary,
     actBullets,
+    roastMission,
     secrets,
     characterPhotoUrl,
     outfitReferenceImages,

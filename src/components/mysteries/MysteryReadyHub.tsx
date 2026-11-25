@@ -15,6 +15,7 @@ import {
   updatePartyEventDetailsAction,
   PartyEventDetails,
 } from '@/app/actions/customer-mystery';
+import { weavePersonalitiesAndInsideJokesAction } from '@/app/actions/inside-jokes-weaver';
 import { getEffectiveCoverUrl } from '@/utils/moodboard';
 
 export const FOOD_VIBE_OPTIONS = [
@@ -204,6 +205,7 @@ export function MysteryReadyHub({
   const [gameStartTime, setGameStartTime] = useState<string>('7:30 PM');
   const [location, setLocation] = useState<string>('');
   const [hostNotes, setHostNotes] = useState<string>('');
+  const [groupInsideJokes, setGroupInsideJokes] = useState<string>('');
   const [foodAndDrinkVibe, setFoodAndDrinkVibe] = useState<string>('cocktails_nibbles');
   const [whatToBringItems, setWhatToBringItems] = useState<string[]>([
     '📱 Charged phone or device (50%+ battery)',
@@ -212,6 +214,8 @@ export function MysteryReadyHub({
   const [customBringInput, setCustomBringInput] = useState<string>('');
   const [isSavingPartyDetails, setIsSavingPartyDetails] = useState<boolean>(false);
   const [partyDetailsSavedNotice, setPartyDetailsSavedNotice] = useState<boolean>(false);
+  const [isWeavingInsideJokes, setIsWeavingInsideJokes] = useState<boolean>(false);
+  const [insideJokesWeavedNotice, setInsideJokesWeavedNotice] = useState<boolean>(false);
   const [prepConfirmedCharacters, setPrepConfirmedCharacters] = useState<
     Record<string, { confirmedAt: string; guestName?: string }>
   >({});
@@ -238,6 +242,7 @@ export function MysteryReadyHub({
         if (parsed.gameStartTime) setGameStartTime(parsed.gameStartTime);
         if (parsed.location) setLocation(parsed.location);
         if (parsed.hostNotes) setHostNotes(parsed.hostNotes);
+        if (parsed.groupInsideJokes) setGroupInsideJokes(parsed.groupInsideJokes);
         if (parsed.foodAndDrinkVibe) setFoodAndDrinkVibe(parsed.foodAndDrinkVibe);
         if (Array.isArray(parsed.whatToBringItems) && parsed.whatToBringItems.length > 0) {
           setWhatToBringItems(parsed.whatToBringItems);
@@ -266,6 +271,7 @@ export function MysteryReadyHub({
           if (pd.gameStartTime) setGameStartTime(pd.gameStartTime);
           if (pd.location) setLocation(pd.location);
           if (pd.hostNotes) setHostNotes(pd.hostNotes);
+          if (pd.groupInsideJokes) setGroupInsideJokes(pd.groupInsideJokes);
           if (pd.foodAndDrinkVibe) setFoodAndDrinkVibe(pd.foodAndDrinkVibe);
           if (Array.isArray(pd.whatToBringItems) && pd.whatToBringItems.length > 0) {
             setWhatToBringItems(pd.whatToBringItems);
@@ -296,6 +302,7 @@ export function MysteryReadyHub({
       gameStartTime: (overrideFields?.gameStartTime ?? gameStartTime).trim(),
       location: (overrideFields?.location ?? location).trim(),
       hostNotes: (overrideFields?.hostNotes ?? hostNotes).trim(),
+      groupInsideJokes: (overrideFields?.groupInsideJokes ?? groupInsideJokes).trim(),
       foodAndDrinkVibe: vibeToSave,
       whatToBringItems: itemsToSave,
     };
@@ -315,6 +322,18 @@ export function MysteryReadyHub({
       setTimeout(() => setPartyDetailsSavedNotice(false), 3200);
     } finally {
       setIsSavingPartyDetails(false);
+    }
+  };
+
+  const handleWeaveInsideJokesNow = async () => {
+    setIsWeavingInsideJokes(true);
+    try {
+      await handleSavePartyDetails();
+      await weavePersonalitiesAndInsideJokesAction(mystery.id, groupInsideJokes);
+      setInsideJokesWeavedNotice(true);
+      setTimeout(() => setInsideJokesWeavedNotice(false), 4500);
+    } finally {
+      setIsWeavingInsideJokes(false);
     }
   };
 
@@ -949,6 +968,85 @@ export function MysteryReadyHub({
                       + Add Custom Item
                     </button>
                   </div>
+                </div>
+
+                {/* Row 4: Group Inside Jokes, Shared Memories & Roast Material (3-Zone Weaver) */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-white border-2 border-slate-300 space-y-3 shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-200 pb-2.5">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-black uppercase tracking-widest text-brand-pink">
+                          😂 Group Lore, Inside Jokes &amp; Roast Material
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-pink-50 border border-pink-200 text-brand-pink text-[9px] font-black uppercase tracking-wider">
+                          ✨ 3-Zone Personality Engine
+                        </span>
+                        {insideJokesWeavedNotice && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider">
+                            ✓ Weaved Into Bios, Secret Roast Missions &amp; Chat Clues!
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600 font-semibold mt-0.5">
+                        Drop 1–3 group memories, running jokes, or friend habits below. Our AI weaves them into each player&apos;s First Glance Bio, their secret Party-Night Roast Mission, and leaked Group-Chat Clues:
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isWeavingInsideJokes}
+                      onClick={() => void handleWeaveInsideJokesNow()}
+                      className="h-10 px-4 rounded-xl bg-slate-900 hover:bg-brand-pink text-white text-[11px] font-black uppercase tracking-wider shrink-0 cursor-pointer transition-all shadow-xs"
+                    >
+                      {isWeavingInsideJokes
+                        ? '✨ Weaving Into Mystery...'
+                        : '✨ Save & Weave Into Mystery'}
+                    </button>
+                  </div>
+
+                  {/* Quick Prompt Starter Chips */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-1">
+                      Quick Ideas:
+                    </span>
+                    {[
+                      {
+                        label: '+ Legendary Trip / Night Out',
+                        snippet: 'Our chaotic group trip where everything went off the rails, ',
+                      },
+                      {
+                        label: '+ Who Is Always Late / Dramatic',
+                        snippet: 'Someone is ALWAYS 25 minutes late with an iced latte in hand, ',
+                      },
+                      {
+                        label: '+ Obsessions & Catchphrases',
+                        snippet: 'Our group chat obsession with spicy margs and over-analyzing texts, ',
+                      },
+                    ].map(chip => (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        onClick={() => {
+                          const next = groupInsideJokes
+                            ? `${groupInsideJokes.trim()} ${chip.snippet}`
+                            : chip.snippet;
+                          setGroupInsideJokes(next);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-pink-50 border border-slate-200 hover:border-pink-200 text-[10px] font-bold text-slate-700 hover:text-brand-pink transition-colors cursor-pointer"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={groupInsideJokes}
+                    onChange={e => setGroupInsideJokes(e.target.value)}
+                    onBlur={() => void handleSavePartyDetails()}
+                    rows={2}
+                    placeholder="e.g. Everyone still brings up the 2024 Bali villa incident, Sam treats every board game like a Supreme Court trial, and Chloe will 100% try to bribe the detective with espresso martinis..."
+                    className="w-full rounded-xl border-2 border-slate-300 bg-slate-50/50 focus:bg-white p-3 text-xs font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink resize-none shadow-2xs leading-relaxed"
+                  />
                 </div>
               </div>
             )}

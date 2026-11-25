@@ -1040,10 +1040,11 @@ export default function CustomerCastClient({
     }
   };
 
-  // Party Date, Time & Address (or Playing ASAP) configurable during Step 4 before checkout
+  // Party Date, Time & Address (or Playing ASAP) + Group Inside Jokes configurable during Step 4 before checkout
   const [partyDate, setPartyDate] = useState('');
   const [arrivalTime, setArrivalTime] = useState('');
   const [partyLocation, setPartyLocation] = useState('');
+  const [groupInsideJokes, setGroupInsideJokes] = useState('');
   const [partySavedBadge, setPartySavedBadge] = useState(false);
   const [partyGameStart, setPartyGameStart] = useState('');
   const [partyHostNotes, setPartyHostNotes] = useState('');
@@ -1067,6 +1068,7 @@ export default function CustomerCastClient({
         if (parsed.partyDate) setPartyDate(parsed.partyDate);
         if (parsed.arrivalTime) setArrivalTime(parsed.arrivalTime);
         if (parsed.location) setPartyLocation(parsed.location);
+        if (parsed.groupInsideJokes) setGroupInsideJokes(parsed.groupInsideJokes);
         if (parsed.gameStartTime) setPartyGameStart(parsed.gameStartTime);
         if (parsed.hostNotes) setPartyHostNotes(parsed.hostNotes);
         if (parsed.foodAndDrinkVibe) setPartyFoodVibe(parsed.foodAndDrinkVibe);
@@ -1083,6 +1085,7 @@ export default function CustomerCastClient({
       if (pd.partyDate) setPartyDate(prev => prev || pd.partyDate || '');
       if (pd.arrivalTime) setArrivalTime(prev => prev || pd.arrivalTime || '');
       if (pd.location) setPartyLocation(prev => prev || pd.location || '');
+      if (pd.groupInsideJokes) setGroupInsideJokes(prev => prev || pd.groupInsideJokes || '');
       if (pd.gameStartTime) setPartyGameStart(pd.gameStartTime);
       if (pd.hostNotes) setPartyHostNotes(pd.hostNotes);
       if (pd.foodAndDrinkVibe) setPartyFoodVibe(pd.foodAndDrinkVibe);
@@ -1097,13 +1100,15 @@ export default function CustomerCastClient({
     arrivalTime?: string;
     location?: string;
     gameStartTime?: string;
+    groupInsideJokes?: string;
   }) => {
     const nextDate = (overrides?.partyDate ?? partyDate).trim();
     const nextArrival = (overrides?.arrivalTime ?? arrivalTime).trim();
     const nextLocation = (overrides?.location ?? partyLocation).trim();
     const nextStart = (overrides?.gameStartTime ?? partyGameStart).trim();
+    const nextJokes = (overrides?.groupInsideJokes ?? groupInsideJokes).trim();
 
-    if (!nextDate && !nextArrival && !nextLocation) return;
+    if (!nextDate && !nextArrival && !nextLocation && !nextJokes) return;
 
     const payload = {
       partyDate: nextDate,
@@ -1113,6 +1118,7 @@ export default function CustomerCastClient({
       hostNotes: partyHostNotes,
       foodAndDrinkVibe: partyFoodVibe,
       whatToBringItems: partyWhatToBring,
+      groupInsideJokes: nextJokes,
     };
 
     if (typeof window !== 'undefined') {
@@ -2486,6 +2492,74 @@ export default function CustomerCastClient({
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* GROUP INSIDE JOKES, SHARED MEMORIES & ROAST MATERIAL (WEAVED INTO ZONES 1, 2 & 3) */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-slate-100/90 border-2 border-slate-300 space-y-4 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-200 pb-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest">
+                        😂 Group Lore &amp; Inside Jokes
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-black uppercase tracking-wider">
+                        ✨ Woven Into Character Sheets, Roast Missions &amp; Chat Clues
+                      </span>
+                    </div>
+                    <h4 className="text-base sm:text-lg font-black text-slate-900 mt-1.5">
+                      Add Group Inside Jokes, Shared Memories or Gentle Roast Material (Optional)
+                    </h4>
+                    <p className="text-xs text-slate-600 font-semibold">
+                      Drop in 1 to 3 inside jokes or running gags from your friend group. We&apos;ll weave them into your guests&apos; <strong>Character Bios &amp; How to Play Cues</strong>, <strong>Party-Night Roast Missions</strong>, and <strong>Leaked Group-Chat Clues</strong> without touching the murder clues!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quick Prompt Starter Chips (Zero Writer's Block) */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mr-1">
+                    Quick prompts:
+                  </span>
+                  {[
+                    {
+                      label: '+ 🏖️ Legendary Trip / Night Out',
+                      template: 'The legendary group trip incident in ',
+                    },
+                    {
+                      label: '+ 💬 Group Chat Running Joke',
+                      template: 'Our group chat obsession with ',
+                    },
+                    {
+                      label: '+ 🔥 Gentle Friend Roast',
+                      template: 'Everyone knows someone in the group always ',
+                    },
+                  ].map((chip) => (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={() => {
+                        const prefix = groupInsideJokes.trim()
+                          ? `${groupInsideJokes.trim()}\n• ${chip.template}`
+                          : `• ${chip.template}`;
+                        setGroupInsideJokes(prefix);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border-2 border-slate-300 text-slate-800 text-[11px] font-black transition-all cursor-pointer shadow-2xs"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  rows={3}
+                  value={groupInsideJokes}
+                  onChange={(e) => setGroupInsideJokes(e.target.value)}
+                  onBlur={() => void persistCastPartyDetails()}
+                  placeholder={
+                    'e.g.\n• The 2024 Croatia boat incident that nobody is allowed to talk about\n• Alex still owes Matt £20 from poker night\n• Gabby always orders an Espresso Martini and tries to leave by 10:30 PM'
+                  }
+                  className="w-full rounded-xl border-2 border-slate-300 bg-white p-3.5 text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs leading-relaxed"
+                />
               </div>
 
               {/* Peace-of-Mind QA Guarantee Banner */}

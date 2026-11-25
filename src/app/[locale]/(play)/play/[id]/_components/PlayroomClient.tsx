@@ -4649,6 +4649,23 @@ export function PlayroomClient({
                     </div>
                   )}
 
+                  {/* Zone 2: Secret Party-Night Roast & Alibi Mission (Tailored to Guest Personality & Group Inside Jokes) */}
+                  {charPres.roastMission && (
+                    <div className="bg-amber-950/35 border border-amber-400/40 rounded-2xl p-4 sm:p-5 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-amber-300">
+                          🎯 Your Personal Party-Night Roast &amp; Banter Mission
+                        </h3>
+                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200">
+                          Inside Joke Challenge
+                        </span>
+                      </div>
+                      <p className="text-slate-100 text-xs sm:text-sm font-medium leading-relaxed">
+                        {charPres.roastMission}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Hidden Secret & Personal Motivation (At Eye Level!) */}
                   {charPres.secrets && (
                     <div className="bg-rose-950/35 border border-rose-500/35 rounded-2xl p-4 sm:p-5 space-y-2">
