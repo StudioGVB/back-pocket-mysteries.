@@ -234,8 +234,20 @@ const LEGACY_CLONE_AVATAR_REPLACEMENTS: Array<{ match: string; replacement: stri
     replacement: '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg',
   },
   {
-    match: 'f460c1c6-4019-4c4f-a204-4f60f4c70ae9-2f5e63f14bbb7b5d',
+    match: '57554cef-7738-4207-ac69-3843b457322b-a0a7b0759c30b3b4',
     replacement: '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
+  },
+  {
+    match: '57554cef-7738-4207-ac69-3843b457322b-ea59f65753508d99',
+    replacement: '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
+  },
+  {
+    match: '57554cef-7738-4207-ac69-3843b457322b-3f16624659431f78',
+    replacement: '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
+  },
+  {
+    match: '0370c2e5-a829-4b37-9eff-8251c337aa34-a35700fa222e4d08',
+    replacement: '/generated-avatars/0370c2e5-a829-4b37-9eff-8251c337aa34-luke-golden.jpg',
   },
 ];
 

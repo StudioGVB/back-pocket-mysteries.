@@ -351,16 +351,25 @@ export async function generateGuestAvatarAction(
         'caramel-honey light brown',
       ];
       hairColor = `Light Brown (specifically: ${lightBrownVariants[slot % lightBrownVariants.length]})`;
-    } else if (lowerHairColor.includes('blonde')) {
-      const blondeVariants = [
-        'warm honey golden blonde',
-        'icy cool platinum-ash blonde',
-        'champagne sandy blonde with natural darker roots',
-        'bright buttery sunlit blonde',
-        'warm strawberry-caramel blonde',
-        'beige-pearlescent Scandinavian blonde',
+    } else if (lowerHairColor === 'golden blonde') {
+      const goldenBlondeVariants = [
+        'natural warm honey-golden dirty blonde with darker sandy-blonde roots (#C8A464) — strictly warm golden/sandy blonde, NEVER white, NEVER silver, NEVER platinum',
+        'warm sunlit sandy-golden blonde with natural medium-blonde depth (#CEA968) — strictly warm golden blonde, NEVER white or grey',
+        'rich honey-wheat golden blonde with warm sandy undertones (#C49E5E) — strictly warm golden blonde, NEVER white or platinum',
       ];
-      hairColor = `${hairColor} (specifically: ${blondeVariants[slot % blondeVariants.length]})`;
+      hairColor = `Golden Blonde (specifically: ${goldenBlondeVariants[slot % goldenBlondeVariants.length]})`;
+    } else if (lowerHairColor === 'ash blonde') {
+      const ashBlondeVariants = [
+        'natural dark sandy dirty-blonde / cool bronde-blonde (#B29772) — strictly natural dirty sandy blonde, NEVER white, NEVER silver-grey',
+        'medium sandy-taupe dirty blonde with natural darker roots (#A88E6B) — strictly natural sandy blonde, NEVER white or silver',
+      ];
+      hairColor = `Ash / Dirty Blonde (specifically: ${ashBlondeVariants[slot % ashBlondeVariants.length]})`;
+    } else if (lowerHairColor === 'strawberry blonde') {
+      hairColor =
+        'Strawberry Blonde (specifically: warm copper-honey strawberry golden blonde — strictly warm reddish-gold blonde, NEVER white or silver)';
+    } else if (lowerHairColor === 'white blonde') {
+      hairColor =
+        'White Blonde (specifically: bright Scandinavian platinum-white blonde)';
     }
 
     // Axis 3: Distinct Hair Parting & Styling Variation (strictly respecting chosen hairStyle cut AND hairTexture!)
