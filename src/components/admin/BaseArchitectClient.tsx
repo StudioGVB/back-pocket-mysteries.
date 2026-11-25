@@ -556,6 +556,153 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
 }
 
 /**
+ * Exact preset from the user's "CHEER CAMP GETAWAY" (SPICY) all-girls relationship web diagram
+ * Twist: {{The Bestie}} tried to ambush {{The Co-Captain}} on the dark boathouse deck, but accidentally killed
+ * her own best friend {{The Cheer Captain}} because {{The Cheer Captain}} was wearing {{The Co-Captain}}'s hooded
+ * "CO-CAPTAIN" warmup jacket with {{The Co-Captain}}'s phone in the pocket.
+ */
+export function createCheerCampGetawayBlueprint(): MysteryBlueprintInput {
+  return {
+    id: 'cheer-camp-getaway',
+    title: 'Cheer Camp Getaway',
+    theme: 'Lakeside Cheer Camp & Pre-Nationals Getaway',
+    settingDescription:
+      'Six elite varsity cheerleaders check into an exclusive lakeside training lodge for one final pre-Nationals weekend of hot-tub gossip, secret hookups, and cutthroat squad politics. At 11:30 PM, {{The Cheer Captain}} is found dead on the dark boathouse deck wearing her {{The Co-Captain_sibling}} {{The Co-Captain}}\'s hooded "CO-CAPTAIN" warmup jacket—struck from behind with the heavy brass Nationals trophy.',
+    spiceLevel: 'Spicy',
+    complexity: 'medium',
+    murderTimeWindow: '11:24 PM',
+    murderWeaponAndMethod:
+      'Heavy brass Nationals Championship Trophy strike from behind on the dark Lakeside Boathouse Deck at 11:24 PM—{{The Bestie}} ambushed the hooded figure in the "CO-CAPTAIN" satin jacket believing it was {{The Co-Captain}}, accidentally killing {{The Bestie_his}} own best friend {{The Cheer Captain}}.',
+    killerHowAndWhySummary:
+      '{{The Co-Captain}} hooked up with {{The Bestie}}\'s ex and then caught {{The Bestie}} and {{The Tumbler}} secretly dating at 9:45 PM, threatening to expose their secret relationship to {{The Tumbler}}\'s {{The Head Flyer_sibling}} {{The Head Flyer}} ({{The Bestie}}\'s sworn rival) at midnight. To silence {{The Co-Captain}}, {{The Bestie}} sent a burner trap text at 11:10 PM summoning {{The Co-Captain}} to the dark boathouse deck at 11:15 PM. Neither knew {{The Cheer Captain}} had put on {{The Co-Captain}}\'s hooded "CO-CAPTAIN" jacket (with {{The Co-Captain}}\'s phone inside the pocket) after the hot tub, read the text, pulled up the hood to snoop, and walked into the ambush meants for {{The Co-Captain_him}}.',
+    insideJokesOrProps:
+      'Brass Nationals Championship Trophy, electric-blue hooded "CO-CAPTAIN" satin warmup jacket, burner trap text in the jacket pocket, spilled pink seltzers by the hot tub.',
+    characters: [
+      {
+        id: 'char-1',
+        roleTitle: 'The Cheer Captain',
+        defaultGender: 'female',
+        plotRole: 'victim',
+        color: 'Hot Pink',
+        conceptNotes:
+          'Sisters with {{The Co-Captain}}. Besties with {{The Bestie}}. Sworn rivals with {{The Rival}}. Secretly the object of {{The Tumbler}}\'s crush. Friends with {{The Head Flyer}}.',
+        motiveOrSecret:
+          'Cold after the lakeside hot tub at 10:45 PM, {{The Cheer Captain}} put on {{The Cheer Captain_his}} {{The Co-Captain_sibling}} {{The Co-Captain}}\'s hooded "CO-CAPTAIN" satin jacket with {{The Co-Captain}}\'s phone still in the pocket, saw a suspicious 11:10 PM text summoning {{The Co-Captain}} to the boathouse deck, and pulled the hood up to see who {{The Co-Captain}} was sneaking around with.',
+        outfitNotes:
+          'Hot-pink varsity cheer crop top, white pleated skirt, satin hair bow & borrowed electric-blue hooded "CO-CAPTAIN" warmup jacket',
+      },
+      {
+        id: 'char-2',
+        roleTitle: 'The Bestie',
+        defaultGender: 'female',
+        plotRole: 'killer',
+        color: 'Rose Gold',
+        conceptNotes:
+          'Besties with {{The Cheer Captain}}. Secretly dating {{The Tumbler}}. Sworn rivals with {{The Head Flyer}} ({{The Tumbler}}\'s {{The Head Flyer_sibling}}). Bad blood with {{The Co-Captain}} ({{The Co-Captain}} hooked up with {{The Bestie_his}} ex). Friends with {{The Rival}}.',
+        motiveOrSecret:
+          'Furious that {{The Co-Captain}} hooked up with {{The Bestie_his}} ex and then threatened to expose {{The Bestie}} and {{The Tumbler}}\'s secret relationship to {{The Head Flyer}} at midnight, {{The Bestie}} lured {{The Co-Captain}}\'s phone to the boathouse deck at 11:15 PM and struck the hooded "CO-CAPTAIN" jacket from behind with the brass trophy at 11:24 PM—horrified to discover {{The Bestie_he}} had killed {{The Bestie_his}} own best friend {{The Cheer Captain}} instead of {{The Co-Captain}}.',
+        outfitNotes:
+          'Rose-gold velour camp zip hoodie, white cheer sneakers, glitter lip gloss & silver best-friend charm bracelet',
+      },
+      {
+        id: 'char-3',
+        roleTitle: 'The Co-Captain',
+        defaultGender: 'female',
+        plotRole: 'innocent',
+        color: 'Electric Cyan',
+        conceptNotes:
+          'Sisters with {{The Cheer Captain}}. Besties with {{The Head Flyer}}. Hooked up with {{The Bestie}}\'s ex. Caught {{The Bestie}} and {{The Tumbler}} secretly dating. Friends with {{The Tumbler}} and {{The Rival}}.',
+        motiveOrSecret:
+          'Hooked up with {{The Bestie}}\'s ex and caught {{The Bestie}} and {{The Tumbler}} making out in the trophy room at 9:45 PM, gloating that {{The Co-Captain_he}} was going to tell {{The Head Flyer}} at midnight—only to survive because {{The Co-Captain_he}} left {{The Co-Captain_his}} hooded "CO-CAPTAIN" jacket and phone by the hot tub where {{The Cheer Captain}} put it on.',
+        outfitNotes:
+          'Electric-blue satin "CO-CAPTAIN" warmup jacket (borrowed by {{The Cheer Captain}}), rhinestone hairpin & silver captain whistle',
+      },
+      {
+        id: 'char-4',
+        roleTitle: 'The Head Flyer',
+        defaultGender: 'female',
+        plotRole: 'innocent',
+        color: 'Emerald Green',
+        conceptNotes:
+          'Sisters with {{The Tumbler}}. Besties with {{The Co-Captain}}. Sworn rivals with {{The Bestie}}. Friends with {{The Cheer Captain}} and {{The Rival}}.',
+        motiveOrSecret:
+          'Overprotective {{The Head Flyer_sibling}} of {{The Tumbler}} and bitter rival of {{The Bestie}}, who had a screaming match by the trophy case after suspecting {{The Bestie}} was sneaking around behind {{The Head Flyer_his}} back and tampering with the Nationals lineup.',
+        outfitNotes:
+          'Emerald-green sequin practice set, sleek high bun, gold flyer medal & white athletic wrist tape',
+      },
+      {
+        id: 'char-5',
+        roleTitle: 'The Tumbler',
+        defaultGender: 'female',
+        plotRole: 'innocent',
+        color: 'Purple',
+        conceptNotes:
+          'Sisters with {{The Head Flyer}}. Secretly dating {{The Bestie}} behind {{The Head Flyer}}\'s back. Secretly has a massive crush on {{The Cheer Captain}}. Besties with {{The Rival}}. Friends with {{The Co-Captain}}.',
+        motiveOrSecret:
+          'Secretly dating {{The Head Flyer}}\'s sworn rival {{The Bestie}} while hiding an obsessive crush (and unsent confession notes) on {{The Cheer Captain}}—terrified both {{The Head Flyer}} and {{The Bestie}} would find out tonight.',
+        outfitNotes:
+          'Lavender cropped varsity crew sweatshirt, white cheer shorts, taped ankle & locker key lanyard',
+      },
+      {
+        id: 'char-6',
+        roleTitle: 'The Rival',
+        defaultGender: 'female',
+        plotRole: 'innocent',
+        color: 'Crimson Red',
+        conceptNotes:
+          'Sworn rivals with {{The Cheer Captain}}. Besties with {{The Tumbler}}. Friends with {{The Co-Captain}}, {{The Head Flyer}}, and {{The Bestie}}.',
+        motiveOrSecret:
+          'Threw a spiked pink seltzer in {{The Cheer Captain}}\'s face earlier in the evening after discovering {{The Cheer Captain}} and {{The Co-Captain}} were benching {{The Rival_him}} from the Nationals center routine.',
+        outfitNotes:
+          'Crimson satin cheer bomber jacket, black metallic practice top, sharp winged eyeliner & Nationals finalist ring',
+      },
+    ],
+    beats: [
+      {
+        beatNumber: 1,
+        title: 'The Secret Relationship Blackmail',
+        timeWindow: '9:45 PM',
+        phase: 'pre_crime',
+        description:
+          '{{The Co-Captain}} catches {{The Bestie}} and {{The Tumbler}} secretly dating and threatens to expose them to {{The Tumbler}}\'s {{The Head Flyer_sibling}} {{The Head Flyer}} at midnight.',
+      },
+      {
+        beatNumber: 2,
+        title: 'The Borrowed Co-Captain Jacket & Phone',
+        timeWindow: '10:45 PM',
+        phase: 'pre_crime',
+        description:
+          'Cold after the hot tub, {{The Cheer Captain}} puts on {{The Cheer Captain_his}} {{The Co-Captain_sibling}} {{The Co-Captain}}\'s hooded "CO-CAPTAIN" jacket with {{The Co-Captain}}\'s phone still inside the pocket.',
+      },
+      {
+        beatNumber: 3,
+        title: 'The Intercepted Burner Trap Text',
+        timeWindow: '11:10 PM',
+        phase: 'pre_crime',
+        description:
+          '{{The Bestie}} texts {{The Co-Captain}}\'s phone from a burner number to meet on the boathouse deck at 11:15 PM, and {{The Cheer Captain}} reads the text from the borrowed jacket pocket.',
+      },
+      {
+        beatNumber: 4,
+        title: 'The Hooded Decoy Walkout & Trophy Ambush',
+        timeWindow: '11:15 PM',
+        phase: 'crime',
+        description:
+          'Pulling the "CO-CAPTAIN" hood up so {{The Cheer Captain_he}} looks like {{The Co-Captain}}, {{The Cheer Captain}} walks out to the dark boathouse deck while {{The Bestie}} grabs the heavy brass cheer trophy to ambush {{The Co-Captain_him}}.',
+      },
+      {
+        beatNumber: 5,
+        title: 'The Mistaken-Identity Boathouse Murder',
+        timeWindow: '11:24 PM',
+        phase: 'crime',
+        description:
+          'Believing {{The Co-Captain}} took the bait, {{The Bestie}} strikes the hooded "CO-CAPTAIN" figure from behind with the brass trophy, accidentally killing {{The Bestie_his}} own best friend {{The Cheer Captain}}.',
+      },
+    ],
+  };
+}
+
+/**
  * Helper: Returns true ONLY for clue formats that actually generate an AI Evidence Photo ('physical_prop' or 'cctv').
  * All other formats ('chat', 'audio', 'receipt', 'handwritten_note', 'search_log', 'social_post', 'document', 'medical_rx', 'call_sheet')
  * render as native interactive UI templates or ElevenLabs voice notes and should NOT have an AI photo prompt!
@@ -610,6 +757,34 @@ const UNIBREAK_BEAT_SUBFACTS: Record<number, [string, string, string]> = {
   ],
 };
 
+const CHEER_CAMP_BEAT_SUBFACTS: Record<number, [string, string, string]> = {
+  1: [
+    '{{The Co-Captain}} Catches {{The Bestie}} & {{The Tumbler}} Dating (9:45 PM)',
+    'Midnight Blackmail Threat to Tell {{The Head Flyer}}',
+    'Ex-Hookup Bad Blood Between {{The Co-Captain}} & {{The Bestie}}',
+  ],
+  2: [
+    'Hot-Tub Exit & Borrowed "CO-CAPTAIN" Hooded Jacket (10:45 PM)',
+    '{{The Co-Captain}}\'s Unlocked Phone Left Inside Jacket Pocket',
+    'Sister Silhouette Mix-Up ({{The Cheer Captain}} Dressed as {{The Co-Captain}})',
+  ],
+  3: [
+    '11:10 PM Burner Trap Text Sent by {{The Bestie}} to {{The Co-Captain}}\'s Phone',
+    '11:15 PM Boathouse Deck Lure Timestamp',
+    '{{The Cheer Captain}} Reads Trap Text From Borrowed Jacket Pocket',
+  ],
+  4: [
+    '{{The Cheer Captain}} Pulls Up "CO-CAPTAIN" Hood & Walks to Boathouse (11:15 PM)',
+    '{{The Bestie}} Takes Heavy Brass Nationals Trophy From Lodge Case',
+    'Ambush Set for {{The Co-Captain}} on Dark Lakeside Deck',
+  ],
+  5: [
+    'Fatal Brass Trophy Strike From Behind at 11:24 PM',
+    'Hooded "CO-CAPTAIN" Jacket Mistaken-Identity Reveal ({{The Cheer Captain}})',
+    '{{The Bestie}}\'s Post-Kill Panic & Staged Trophy Wipe',
+  ],
+};
+
 function getBeatSubFactsForBeat(
   beat: BlueprintBeatInput,
   blueprintId?: string,
@@ -617,6 +792,9 @@ function getBeatSubFactsForBeat(
 ): [string, string, string] {
   if (blueprintId === 'unibreak-at-the-cabin' && UNIBREAK_BEAT_SUBFACTS[beat.beatNumber]) {
     return UNIBREAK_BEAT_SUBFACTS[beat.beatNumber];
+  }
+  if (blueprintId === 'cheer-camp-getaway' && CHEER_CAMP_BEAT_SUBFACTS[beat.beatNumber]) {
+    return CHEER_CAMP_BEAT_SUBFACTS[beat.beatNumber];
   }
   const uniqueFromCandidates: string[] = [];
   for (const c of candidates || []) {
@@ -632,6 +810,9 @@ function getBeatSubFactsForBeat(
   }
   if (uniqueFromCandidates.length >= 3) {
     return [uniqueFromCandidates[0], uniqueFromCandidates[1], uniqueFromCandidates[2]];
+  }
+  if (CHEER_CAMP_BEAT_SUBFACTS[beat.beatNumber] && blueprintId?.includes('cheer')) {
+    return CHEER_CAMP_BEAT_SUBFACTS[beat.beatNumber];
   }
   if (UNIBREAK_BEAT_SUBFACTS[beat.beatNumber]) {
     return UNIBREAK_BEAT_SUBFACTS[beat.beatNumber];
@@ -1287,19 +1468,511 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
 }
 
 /**
- * Strips any leftover diagram real names (Leah, Stacy, Seb, James, Mia, Josh) and replaces them
- * with their canonical {{The Archetype}} tokens across all text fields.
+ * Pre-seeded Spicy Core Clues for Beats 1–5 of "Cheer Camp Getaway"
+ * - 5 options per beat (25 Beat Clues total)
+ * - Non-photo clues ('chat', 'audio', 'handwritten_note', 'search_log', 'social_post', 'document') have generationPrompt: ''
+ * - Photo clues ('physical_prop', 'cctv') have rich 3-sentence forensic camera & lighting briefs
+ */
+function createCheerCampInitialBeatCluesMap(): Record<number, SuggestedClueCandidate[]> {
+  return {
+    1: [
+      {
+        id: 'cheer-b1-c1',
+        beatNumber: 1,
+        title: 'Trophy-Room Makeout & Blackmail Caught on Baby Monitor Mic',
+        format: 'audio',
+        roundNumber: 1,
+        timestampLabel: '9:45 PM',
+        description:
+          'Recording Duration: 22.0 Seconds\n{{The Co-Captain}}: "[laughs] Well, well, well... {{The Bestie}} and {{The Tumbler}} hooking up in the trophy room? Wait till your {{The Head Flyer_sibling}} {{The Head Flyer}} hears you\'re secretly dating {{The Head Flyer_his}} sworn rival, bitch!"\n{{The Tumbler}}: "[whispers] Please don\'t tell {{The Head Flyer}}, {{The Co-Captain}}—{{The Head Flyer_he}}\'ll lose {{The Head Flyer_his}} mind!"\n{{The Bestie}}: "[angry] First you hook up with my ex and now you\'re blackmailing us?! You better keep your mouth shut past midnight."',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #1: {{The Co-Captain}} caught {{The Bestie}} and {{The Tumbler}} secretly dating at 9:45 PM and threatened to expose them to {{The Head Flyer}} at midnight.',
+        doubleMeaningNote:
+          'Gives both {{The Bestie}} AND {{The Tumbler}} an urgent midnight motive to silence {{The Co-Captain}}.',
+        involvedRoles: ['The Co-Captain', 'The Bestie', 'The Tumbler', 'The Head Flyer'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b1-c2',
+        beatNumber: 1,
+        title: 'Scheduled Midnight Group-Chat Draft on {{The Co-Captain}}\'s iPad',
+        format: 'social_post',
+        roundNumber: 1,
+        timestampLabel: '9:52 PM',
+        description:
+          'Scheduled squad blast queued on {{The Co-Captain}}\'s lodge iPad for 12:00 AM: "Midnight tea drop ☕: Ask {{The Tumbler}} why {{The Tumbler_he}}\'s secretly dating {{The Head Flyer}}\'s #1 enemy {{The Bestie}} behind {{The Head Flyer}}\'s back... and ask {{The Rival}} who actually tanked {{The Rival_his}} Nationals score."',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #1: Confirms {{The Co-Captain}} queued a midnight blackmail post exposing {{The Bestie}} and {{The Tumbler}} to {{The Head Flyer}}.',
+        doubleMeaningNote:
+          'Also threatens {{The Rival}}\'s Nationals spot, giving {{The Rival}} a motive to go after {{The Co-Captain}} too.',
+        involvedRoles: ['The Co-Captain', 'The Bestie', 'The Tumbler', 'The Head Flyer', 'The Rival'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b1-c3',
+        beatNumber: 1,
+        title: 'Panicked 9:55 PM Text Thread Between {{The Tumbler}} & {{The Bestie}}',
+        format: 'chat',
+        roundNumber: 1,
+        timestampLabel: '9:55 PM',
+        description:
+          '[9:55 PM] {{The Tumbler}}: If {{The Co-Captain}} tells my {{The Head Flyer_sibling}} {{The Head Flyer}} at midnight that we\'re dating, {{The Head Flyer}} will literally get us both kicked off the Nationals squad.\n[9:56 PM] {{The Bestie}}: That sneaky bitch already stole my ex and now {{The Co-Captain_he}} wants to ruin us. I\'ll handle {{The Co-Captain}} before midnight.\n[Status: SEEN]',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #1: Confirms {{The Bestie}} vowed at 9:56 PM to "handle {{The Co-Captain}} before midnight" over the relationship blackmail and ex-hookup grudge.',
+        doubleMeaningNote:
+          'Makes players wonder why {{The Cheer Captain}} died instead if {{The Bestie}}\'s grudge was entirely against {{The Co-Captain}}!',
+        involvedRoles: ['The Tumbler', 'The Bestie', 'The Co-Captain', 'The Head Flyer'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b1-c4',
+        beatNumber: 1,
+        title: 'Torn Polaroid & Spilled Pink Seltzer in the Trophy Room',
+        format: 'physical_prop',
+        roundNumber: 1,
+        timestampLabel: '9:48 PM',
+        description:
+          'Crime-scene exhibit on the trophy-room oak sideboard: a crushed pink hard-seltzer can splashed across a half-torn Polaroid snapshot of {{The Bestie}} and {{The Tumbler}} kissing behind the varsity banners.',
+        generationPrompt:
+          'Close-up 50mm f/1.8 macro forensic crime-scene photograph of a dented pastel-pink aluminum seltzer can lying in a fizzy spilled puddle on a dark polished oak trophy-room sideboard beside a ripped instant photo corner and scattered cheer pom-pom strands. Dramatic lakeside lodge tungsten noir lighting with deep shadows and 35mm film grain, strictly zero readable text.',
+        pointsTo:
+          'Proves Beat #1: Physical proof of the 9:45 PM trophy-room confrontation where {{The Co-Captain}} caught {{The Bestie}} and {{The Tumbler}}.',
+        doubleMeaningNote:
+          '{{The Rival}} was also drinking the exact same pink hard seltzers during her 9:30 PM fight with {{The Cheer Captain}}.',
+        involvedRoles: ['The Bestie', 'The Tumbler', 'The Co-Captain', 'The Rival'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b1-c5',
+        beatNumber: 1,
+        title: '{{The Head Flyer}}\'s Furious Warning Note on {{The Bestie}}\'s Locker',
+        format: 'handwritten_note',
+        roundNumber: 1,
+        timestampLabel: '10:05 PM',
+        description:
+          'Handwritten sharpie note shoved into {{The Bestie}}\'s camp cubby at 10:05 PM: "{{The Co-Captain}} just hinted you\'re hiding something massive about my {{The Tumbler_sibling}} {{The Tumbler}}. If I find out you touched {{The Tumbler_him}}, you won\'t survive this camp. — {{The Head Flyer}}"',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #1: Shows {{The Co-Captain}} had already started teasing the midnight reveal to {{The Head Flyer}}, ratcheting up the pressure on {{The Bestie}}.',
+        doubleMeaningNote:
+          'Makes {{The Head Flyer}} look violently unhinged and ready to attack anyone tonight.',
+        involvedRoles: ['The Head Flyer', 'The Bestie', 'The Tumbler', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+    2: [
+      {
+        id: 'cheer-b2-c1',
+        beatNumber: 2,
+        title: 'Hot-Tub Patio CCTV: {{The Cheer Captain}} Puts On the "CO-CAPTAIN" Jacket',
+        format: 'cctv',
+        roundNumber: 1,
+        timestampLabel: '10:45 PM',
+        description:
+          'Header: LODGE PATIO CAM 02 • HOT TUB DECK\nTimestamp: 10:45:18 PM\nVisual: Shivering as {{The Cheer Captain_he}} climbs out of the steaming lakeside hot tub, {{The Cheer Captain}} grabs {{The Co-Captain}}\'s electric-blue hooded "CO-CAPTAIN" satin warmup jacket off the cedar bench and zips it up while {{The Co-Captain}} heads inside wrapped in a towel.',
+        generationPrompt:
+          'High-angle infrared night-vision CCTV surveillance camera still of a wooden lakeside lodge hot-tub deck at night with steam rising off the water. By the cedar bench beside the hot tub, a wet towel and an athletic warmup jacket sit under moody outdoor string lights. High-contrast monochrome green-tinted surveillance camera aesthetic with scanlines, strictly zero text overlays.',
+        pointsTo:
+          'Proves Beat #2: Visual proof that at 10:45 PM {{The Cheer Captain}} put on {{The Co-Captain}}\'s hooded "CO-CAPTAIN" jacket right after the hot tub.',
+        doubleMeaningNote:
+          'From behind with the hood up, {{The Cheer Captain}} and {{The Co-Captain}} have the exact same sister height and jacket silhouette.',
+        involvedRoles: ['The Cheer Captain', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b2-c2',
+        beatNumber: 2,
+        title: '{{The Co-Captain}}\'s Missing-Phone Complaint on Lodge Hallway Mic',
+        format: 'audio',
+        roundNumber: 2,
+        timestampLabel: '10:52 PM',
+        description:
+          'Recording Duration: 17.5 Seconds\n{{The Co-Captain}}: "[annoyed] Wait, where the hell is my blue Co-Captain jacket? I left my unlocked phone in the right zipper pocket by the hot tub!"\n{{The Head Flyer}}: "[sarcastic] Your {{The Cheer Captain_sibling}} {{The Cheer Captain}} grabbed your jacket when {{The Cheer Captain_he}} got cold. Go dry your hair, you can get your phone from {{The Cheer Captain_him}} later."',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #2: Confirms {{The Co-Captain}}\'s phone was still inside the pocket of the hooded "CO-CAPTAIN" jacket that {{The Cheer Captain}} was wearing.',
+        doubleMeaningNote:
+          'Also gives {{The Co-Captain}} and {{The Head Flyer}} a verifiable upstairs bathroom alibi starting at 10:52 PM.',
+        involvedRoles: ['The Co-Captain', 'The Head Flyer', 'The Cheer Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b2-c3',
+        beatNumber: 2,
+        title: 'Chlorine-Damp "CO-CAPTAIN" Satin Jacket Examined by Forensics',
+        format: 'physical_prop',
+        roundNumber: 2,
+        timestampLabel: '10:48 PM',
+        description:
+          'The electric-blue satin warmup jacket recovered from the victim: emblazoned with "CO-CAPTAIN" across the back shoulders, soaked with hot-tub chlorine water inside the lining, and carrying {{The Co-Captain}}\'s rose-gold iPhone inside the right pocket.',
+        generationPrompt:
+          'Overhead 50mm forensic tabletop photograph of a glossy electric-blue satin varsity warmup jacket laid flat on a dark timber evidence table, with damp chlorine water stains along the cuffs and a rose-gold smartphone peeking halfway out of the right zipper pocket. Lit by high-contrast angled detective crime-scene lamps with 35mm film grain, strictly zero readable text.',
+        pointsTo:
+          'Proves Beat #2: Forensically confirms {{The Cheer Captain}} was wearing {{The Co-Captain}}\'s hooded jacket—with {{The Co-Captain}}\'s phone in the pocket—when {{The Cheer Captain_he}} was killed.',
+        doubleMeaningNote:
+          'A long dark hair caught on the jacket zipper matches {{The Rival}}, who shoved past {{The Cheer Captain}} on the hot-tub stairs at 10:44 PM.',
+        involvedRoles: ['The Cheer Captain', 'The Co-Captain', 'The Rival'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b2-c4',
+        beatNumber: 2,
+        title: '10:47 PM Mirror Selfie Story Draft From {{The Cheer Captain}}',
+        format: 'social_post',
+        roundNumber: 1,
+        timestampLabel: '10:47 PM',
+        description:
+          'Unposted Close-Friends story draft saved at 10:47 PM: {{The Cheer Captain}} posing in the lodge mudroom mirror wearing {{The Co-Captain}}\'s oversized hooded "CO-CAPTAIN" jacket with the caption: "Stole my {{The Co-Captain_sibling}} {{The Co-Captain}}\'s jacket after the hot tub lol—why is {{The Co-Captain_his}} phone blowing up in the pocket?? 👀"',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #2: Time-stamped proof from {{The Cheer Captain}} herself that {{The Cheer Captain_he}} had {{The Co-Captain}}\'s jacket and buzzing phone at 10:47 PM.',
+        doubleMeaningNote:
+          'Shows {{The Co-Captain}}\'s phone was already getting angry messages from multiple squad members.',
+        involvedRoles: ['The Cheer Captain', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b2-c5',
+        beatNumber: 2,
+        title: 'Apple Watch Bluetooth Proximity Disconnect Log (10:46 PM)',
+        format: 'search_log',
+        roundNumber: 2,
+        timestampLabel: '10:46 PM',
+        description:
+          'Device telemetry from {{The Co-Captain}}\'s wrist Apple Watch: lost Bluetooth tether to {{The Co-Captain}}\'s iPhone at 10:46 PM when {{The Co-Captain}} went upstairs to the second-floor bathroom while {{The Co-Captain_his}} phone stayed downstairs inside the borrowed jacket pocket.',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #2: Digital telemetry proving {{The Co-Captain}} did not have {{The Co-Captain_his}} own phone or jacket after 10:46 PM.',
+        doubleMeaningNote:
+          'Proves any text sent to {{The Co-Captain}}\'s phone after 10:46 PM was read by {{The Cheer Captain}}, not {{The Co-Captain}}!',
+        involvedRoles: ['The Co-Captain', 'The Cheer Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+    3: [
+      {
+        id: 'cheer-b3-c1',
+        beatNumber: 3,
+        title: '11:10 PM Burner Trap Text Recovered From {{The Co-Captain}}\'s Phone',
+        format: 'chat',
+        roundNumber: 2,
+        timestampLabel: '11:10 PM',
+        description:
+          '[11:10 PM] UNKNOWN BURNER (555-0199): Don\'t say a word to {{The Head Flyer}}. Meet me out on the dark boathouse deck at 11:15 PM alone and I\'ll give you what you want before midnight.\n[11:11 PM] Status: READ (Opened via Lock-Screen Notification inside Jacket Pocket)',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #3: The killer texted {{The Co-Captain}}\'s phone at 11:10 PM to lure {{The Co-Captain}} to the boathouse deck at 11:15 PM over the {{The Head Flyer}} blackmail secret—and {{The Cheer Captain}} read it.',
+        doubleMeaningNote:
+          'Because the text mentions keeping quiet in front of {{The Head Flyer}}, both {{The Bestie}} AND {{The Tumbler}} look equally guilty of sending it!',
+        involvedRoles: ['The Bestie', 'The Co-Captain', 'The Cheer Captain', 'The Tumbler', 'The Head Flyer'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b3-c2',
+        beatNumber: 3,
+        title: 'Lodge Wi-Fi Router Log: Burner Text App Sent From {{The Bestie}}\'s Phone',
+        format: 'search_log',
+        roundNumber: 3,
+        timestampLabel: '11:10 PM',
+        description:
+          'Camp Wi-Fi packet log at 11:10:04 PM: an encrypted VoIP burner-SMS packet addressed to {{The Co-Captain}}\'s phone number originated from MAC address 8C:FE:44 ("Sophie_Bestie_iPhone15") inside the downstairs trophy lounge.',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #3: Forensically links the 11:10 PM burner trap text directly to {{The Bestie}}\'s phone.',
+        doubleMeaningNote:
+          '{{The Bestie}} claims {{The Bestie_he}} left {{The Bestie_his}} phone charging on the trophy-lounge sofa where {{The Rival}} and {{The Tumbler}} were sitting.',
+        involvedRoles: ['The Bestie', 'The Co-Captain', 'The Rival', 'The Tumbler'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b3-c3',
+        beatNumber: 3,
+        title: '{{The Cheer Captain}}\'s 11:12 PM Voice Memo Before Heading Outside',
+        format: 'audio',
+        roundNumber: 2,
+        timestampLabel: '11:12 PM',
+        description:
+          'Recording Duration: 16.0 Seconds\n{{The Cheer Captain}}: "[whispers] Okay, someone just texted {{The Co-Captain}}\'s phone in my jacket pocket from a fake burner number begging {{The Co-Captain_him}} to meet on the boathouse deck at 11:15 so {{The Head Flyer}} doesn\'t find out. I\'m pulling the Co-Captain hood up and going out there to see which shady bitch {{The Co-Captain}} is blackmailing."',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #3 (& #4): Explains why {{The Cheer Captain}} went to the boathouse deck at 11:15 PM pretending to be {{The Co-Captain}} in the hooded jacket!',
+        doubleMeaningNote:
+          'Reveals {{The Cheer Captain}} had no idea {{The Cheer Captain_his}} own best friend {{The Bestie}} was the one waiting on the deck.',
+        involvedRoles: ['The Cheer Captain', 'The Co-Captain', 'The Bestie', 'The Head Flyer'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b3-c4',
+        beatNumber: 3,
+        title: 'FaceID Snooping Snapshot on {{The Co-Captain}}\'s Lock Screen (11:11 PM)',
+        format: 'document',
+        roundNumber: 2,
+        timestampLabel: '11:11 PM',
+        description:
+          'SUBJECT: IPHONE SECURITY UNLOCK LOG\nDATE: 11:11:09 PM\nSTATUS: FORENSIC EXHIBIT\nAt 11:11:09 PM, {{The Co-Captain}}\'s iPhone recorded a Lock-Screen notification tap on the 555-0199 burner message while connected to the downstairs mudroom node, followed by a sibling-similarity FaceID pass by {{The Cheer Captain}}.',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #3: Confirms {{The Cheer Captain}} opened and read the 11:10 PM burner text intended for {{The Co-Captain}}.',
+        doubleMeaningNote:
+          'Shows how easily the two sisters {{The Cheer Captain}} and {{The Co-Captain}} could be mistaken for one another.',
+        involvedRoles: ['The Cheer Captain', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b3-c5',
+        beatNumber: 3,
+        title: 'Burner App Receipt & Scratched Note in the Trophy Lounge Trash',
+        format: 'handwritten_note',
+        roundNumber: 2,
+        timestampLabel: '11:09 PM',
+        description:
+          'Torn notepad slip found under the trophy-lounge cushion with {{The Co-Captain}}\'s mobile digits scribbled beside "11:15 BOATHOUSE DECK — DON\'T LET {{The Head Flyer}} SEE" in rose-gold glitter gel pen.',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #3: Physical draft of the 11:10 PM burner trap text written in {{The Bestie}}\'s signature rose-gold glitter pen.',
+        doubleMeaningNote:
+          '{{The Tumbler}} borrowed {{The Bestie}}\'s rose-gold glitter pen earlier that afternoon to write cheer routine formations.',
+        involvedRoles: ['The Bestie', 'The Tumbler', 'The Co-Captain', 'The Head Flyer'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+    4: [
+      {
+        id: 'cheer-b4-c1',
+        beatNumber: 4,
+        title: 'Boathouse Path CCTV: Hooded "CO-CAPTAIN" Figure Walks Out at 11:15 PM',
+        format: 'cctv',
+        roundNumber: 2,
+        timestampLabel: '11:15 PM',
+        description:
+          'Header: BOATHOUSE DOCK CAM • SOUTH PATH\nTimestamp: 11:15:42 PM\nVisual: A cheerleader with the electric-blue "CO-CAPTAIN" satin hood pulled tight over {{The Cheer Captain_his}} head walks out onto the dark lakeside boathouse deck with hands tucked inside the jacket pockets, while a second figure slips out the trophy-room side door carrying a heavy gleaming object.',
+        generationPrompt:
+          'High-angle night-vision CCTV surveillance camera still of a misty timber path leading out to a dark lakeside boathouse deck at night. A single hooded figure in a glossy varsity warmup jacket walks toward the water edge with the hood pulled up against the lake fog. Grainy monochrome green-tinted surveillance camera aesthetic with scanlines, strictly zero readable text.',
+        pointsTo:
+          'Proves Beat #4: Visual CCTV proof of {{The Cheer Captain}} walking out to the boathouse deck at 11:15 PM with the "CO-CAPTAIN" hood up while the killer followed with the trophy.',
+        doubleMeaningNote:
+          'Because the second figure exits near the gym equipment door, guests initially suspect {{The Rival}} or {{The Head Flyer}} as well as {{The Bestie}}.',
+        involvedRoles: ['The Cheer Captain', 'The Co-Captain', 'The Bestie', 'The Rival', 'The Head Flyer'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b4-c2',
+        beatNumber: 4,
+        title: 'Empty Velvet Pedestal in the Lodge Nationals Trophy Case',
+        format: 'physical_prop',
+        roundNumber: 2,
+        timestampLabel: '11:14 PM',
+        description:
+          'Crime-scene photograph of the broken glass latch on the lodge trophy cabinet: the 12-pound brass Nationals Championship Trophy was lifted from its velvet stand at 11:14 PM, leaving a smudge of rose-gold glitter lip gloss and a pink velour thread snagged on the brass catch.',
+        generationPrompt:
+          'Close-up 50mm f/1.8 macro forensic crime-scene photograph of an open glass trophy display cabinet inside a dark wood-paneled cheer lodge, showing a circular dust ring on an empty crimson velvet pedestal where a heavy brass trophy stood. A tiny metallic rose-gold thread clings to the brass cabinet latch under angled forensic flashlight illumination, 35mm film grain, zero text.',
+        pointsTo:
+          'Proves Beat #4: Physical proof that {{The Bestie}} took the heavy brass cheer trophy from the cabinet at 11:14 PM to ambush {{The Co-Captain}}.',
+        doubleMeaningNote:
+          '{{The Head Flyer}}\'s gold flyer medal was stored in the same cabinet and had been moved earlier that night.',
+        involvedRoles: ['The Bestie', 'The Head Flyer'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b4-c3',
+        beatNumber: 4,
+        title: '11:17 PM Alibi Text From {{The Bestie}} Claiming to Be With {{The Cheer Captain}}',
+        format: 'chat',
+        roundNumber: 2,
+        timestampLabel: '11:17 PM',
+        description:
+          '[11:17 PM] {{The Bestie}} (to Squad Group Chat): Me and my bestie {{The Cheer Captain}} are chilling in our bunk room doing face masks, nobody bother us till midnight 💕\n[11:18 PM] {{The Rival}}: Funny, I just knocked on your bunk room door and nobody\'s in there.\n[Status: DELIVERED]',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #4: {{The Bestie}} tried to fake an 11:17 PM bunk-room alibi using {{The Cheer Captain}}\'s name—proving {{The Bestie}} had NO idea {{The Cheer Captain}} was actually the hooded figure walking onto the boathouse deck!',
+        doubleMeaningNote:
+          'Clever clue that proves {{The Bestie}} thought {{The Cheer Captain}} was safely inside the cabin while {{The Bestie}} stalked "Co-Captain" on the deck.',
+        involvedRoles: ['The Bestie', 'The Cheer Captain', 'The Rival'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b4-c4',
+        beatNumber: 4,
+        title: 'Trophy-Cabinet Smart Sensor & Side-Door Audit Log (11:14 PM)',
+        format: 'search_log',
+        roundNumber: 2,
+        timestampLabel: '11:14 PM',
+        description:
+          'Lodge security sensor log: at 11:14:12 PM the Nationals trophy-case contact sensor opened, and 22 seconds later at 11:14:34 PM the lakeside patio side door opened toward the dark boathouse path.',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #4: Locks the exact 22-second window between the killer grabbing the brass trophy and heading out to the boathouse deck.',
+        doubleMeaningNote:
+          '{{The Tumbler}} was also seen near the downstairs hallway water cooler at 11:13 PM.',
+        involvedRoles: ['The Bestie', 'The Tumbler'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b4-c5',
+        beatNumber: 4,
+        title: 'Muddy White Cheer Sneaker Prints Behind the Boathouse Pilings',
+        format: 'document',
+        roundNumber: 2,
+        timestampLabel: '11:18 PM',
+        description:
+          'SUBJECT: BOATHOUSE DECK FOOTPRINT CAST\nDATE: 11:45 PM\nSTATUS: FORENSIC EXHIBIT\nA pair of size-7 varsity cheer sneaker impressions in the damp lake mud right behind the boathouse piling shadow box shows someone crouched in wait with a heavy flat-based metal object between 11:16 PM and 11:24 PM.',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #4: Forensically confirms the killer lay in wait on the dark boathouse deck to ambush the person in the "CO-CAPTAIN" jacket from behind.',
+        doubleMeaningNote:
+          'Both {{The Bestie}} and {{The Rival}} wear size-7 team-issue varsity cheer sneakers.',
+        involvedRoles: ['The Bestie', 'The Rival', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+    5: [
+      {
+        id: 'cheer-b5-c1',
+        beatNumber: 5,
+        title: 'Bloodied Brass Nationals Trophy With Silver Friendship-Bracelet Charm',
+        format: 'physical_prop',
+        roundNumber: 3,
+        timestampLabel: '11:24 PM',
+        description:
+          'The 12-pound brass Nationals Championship Trophy found beside the boathouse railing: the sculpted brass cheer-flyer base is stained with {{The Cheer Captain}}\'s blood and blue satin fibers from the "CO-CAPTAIN" hood, and wedged under the trophy plinth is a broken sterling-silver "B.F.F." heart charm torn from {{The Bestie}}\'s wrist bracelet during the swing.',
+        generationPrompt:
+          'Close-up 50mm f/1.8 macro forensic crime-scene photograph of a heavy gold-brass cheerleading championship trophy lying on its side across wet dark timber boathouse deck planks at night. Tangled beneath the ornate brass base is a snapped sterling-silver heart charm link and a wisp of electric-blue satin fabric under a cold detective flashlight beam and lake mist, 35mm film grain, strictly zero readable text.',
+        pointsTo:
+          'Proves Beat #5: Smoking-gun physical evidence tying {{The Bestie}}\'s broken best-friend charm directly to the fatal brass trophy strike at 11:24 PM.',
+        doubleMeaningNote:
+          'Tragically, {{The Cheer Captain}} was wearing the matching half of that exact silver B.F.F. bracelet on {{The Cheer Captain_his}} wrist.',
+        involvedRoles: ['The Bestie', 'The Cheer Captain', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b5-c2',
+        beatNumber: 5,
+        title: '11:24 PM Boathouse Audio Mic: The Mistaken-Identity Horror',
+        format: 'audio',
+        roundNumber: 3,
+        timestampLabel: '11:24 PM',
+        description:
+          'Recording Duration: 21.0 Seconds\n{{The Bestie}}: "[angry] Try telling {{The Head Flyer}} about me and {{The Tumbler}} now, {{The Co-Captain}}, you ex-stealing bitch!"\n[Heavy metallic thud on timber deck]\n{{The Bestie}}: "[whispers] Wait... why did the hood fall off—oh my god. Oh my fucking god, {{The Cheer Captain}}?! Why are you wearing {{The Co-Captain}}\'s jacket?! {{The Cheer Captain}}, wake up!"',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #5: Irrefutable final-round smoking gun capturing {{The Bestie}} striking the hooded figure thinking it was {{The Co-Captain}}—and panicking upon realizing {{The Bestie_he}} killed {{The Cheer Captain}}.',
+        doubleMeaningNote:
+          'Locks together all 5 beats: the secret relationship with {{The Tumbler}}, the borrowed "CO-CAPTAIN" jacket, the burner lure, and the mistaken-sister murder.',
+        involvedRoles: ['The Bestie', 'The Cheer Captain', 'The Co-Captain', 'The Tumbler', 'The Head Flyer'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b5-c3',
+        beatNumber: 5,
+        title: 'Coroner & Hood-Impact Forensics Report (11:24 PM)',
+        format: 'document',
+        roundNumber: 3,
+        timestampLabel: '11:24 PM',
+        description:
+          'SUBJECT: PRELIMINARY FORENSIC & IMPACT REPORT\nDATE: 11:50 PM\nSTATUS: CONFIDENTIAL\n{{The Cheer Captain}} died instantly at 11:24 PM from a single blunt-force strike delivered directly from behind through the raised electric-blue satin hood of {{The Co-Captain}}\'s warmup jacket. Post-impact traces show the assailant frantically pulled the hood back and cradled the victim\'s shoulders, transferring rose-gold velour fibers onto the collar.',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #5: Medically confirms the killer struck from behind while the "CO-CAPTAIN" hood was up and transferred {{The Bestie}}\'s rose-gold velour hoodie fibers when turning the body over.',
+        doubleMeaningNote:
+          'Proves the killer did not know it was {{The Cheer Captain}} until after the fatal blow landed.',
+        involvedRoles: ['The Bestie', 'The Cheer Captain', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b5-c4',
+        beatNumber: 5,
+        title: '11:26 PM Deleted Panic Text From {{The Bestie}} to {{The Tumbler}}',
+        format: 'chat',
+        roundNumber: 3,
+        timestampLabel: '11:26 PM',
+        description:
+          '[11:26 PM] {{The Bestie}}: Oh god {{The Tumbler}} everything went wrong on the boathouse deck.\n[11:26 PM] {{The Bestie}}: It wasn\'t {{The Co-Captain}} in the blue Co-Captain hood. It was {{The Cheer Captain}}. Don\'t say a fucking word about us or we\'re both finished.\n[Status: DELETED FROM SENDER DEVICE]',
+        generationPrompt: '',
+        pointsTo:
+          'Proves Beat #5: Direct post-murder digital confession from {{The Bestie}} admitting {{The Bestie_he}} mistook {{The Cheer Captain}} for {{The Co-Captain}} in the blue hood.',
+        doubleMeaningNote:
+          'Explains why {{The Tumbler}} was acting terrified and hiding {{The Tumbler_his}} phone all night (protecting the secret without having swung the weapon).',
+        involvedRoles: ['The Bestie', 'The Tumbler', 'The Cheer Captain', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'cheer-b5-c5',
+        beatNumber: 5,
+        title: 'Rose-Gold Velour Hoodie Sleeve Stained With Trophy Polish & Blood',
+        format: 'physical_prop',
+        roundNumber: 3,
+        timestampLabel: '11:28 PM',
+        description:
+          'Recovered stuffed inside the bottom of the lodge laundry hamper at 11:28 PM: {{The Bestie}}\'s rose-gold velour zip hoodie with brass oxidation polish on the cuffs, a microscopic blood drop on the right wrist, and the broken clasp of {{The Bestie_his}} silver B.F.F. bracelet.',
+        generationPrompt:
+          'Close-up 85mm macro forensic crime-scene photograph of a plush rose-gold velour zip-up hoodie sleeve resting on a dark examination table, showing a dark metallic brass smudge and a tiny crimson pinpoint stain along the ribbed cuff beside a broken silver chain clasp. Dramatic angled forensic lighting with 35mm film grain, strictly zero text.',
+        pointsTo:
+          'Proves Beat #5: Ties {{The Bestie}} directly to handling the brass trophy and touching {{The Cheer Captain}} on the boathouse deck at 11:24 PM.',
+        doubleMeaningNote:
+          'The laundry hamper was outside {{The Head Flyer}} and {{The Co-Captain}}\'s shared suite.',
+        involvedRoles: ['The Bestie', 'The Cheer Captain', 'The Head Flyer', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+  };
+}
+
+/**
+ * Strips any leftover diagram real names (Leah, Stacy, Seb, James, Mia, Josh, Jade, Sophie, Alison, Gemma, Taylor, Courtney)
+ * and replaces them with their canonical {{The Archetype}} tokens across all text fields.
  */
 function convertRealNamesToArchetypeTokens(bp: MysteryBlueprintInput): MysteryBlueprintInput {
-  const nameToTokenPairs: [RegExp, string][] = [
-    [/\bLeah\s*\(Prom\s*queen\)/gi, '{{The Prom Queen}}'],
-    [/\bLeah\b/gi, '{{The Prom Queen}}'],
-    [/\bStacy\b/gi, '{{The Girlfriend}}'],
-    [/\bSeb\b/gi, '{{The Co-Captain}}'],
-    [/\bJames\b/gi, '{{The Teammate}}'],
-    [/\bMia\b/gi, '{{The Bestie}}'],
-    [/\bJosh\b/gi, '{{The Brother}}'],
-  ];
+  const isCheerCamp =
+    bp.id === 'cheer-camp-getaway' ||
+    bp.title.toLowerCase().includes('cheer') ||
+    bp.characters.some((c) => c.roleTitle.includes('Cheer Captain') || c.roleTitle.includes('Tumbler'));
+
+  const nameToTokenPairs: [RegExp, string][] = isCheerCamp
+    ? [
+        [/\bJade\b/gi, '{{The Cheer Captain}}'],
+        [/\bSophie\b/gi, '{{The Bestie}}'],
+        [/\bAlison\b/gi, '{{The Co-Captain}}'],
+        [/\bGemma\b/gi, '{{The Head Flyer}}'],
+        [/\bTaylor\b/gi, '{{The Tumbler}}'],
+        [/\bCour(?:t)?ney\b/gi, '{{The Rival}}'],
+      ]
+    : [
+        [/\bLeah\s*\(Prom\s*queen\)/gi, '{{The Prom Queen}}'],
+        [/\bLeah\b/gi, '{{The Prom Queen}}'],
+        [/\bStacy\b/gi, '{{The Girlfriend}}'],
+        [/\bSeb\b/gi, '{{The Co-Captain}}'],
+        [/\bJames\b/gi, '{{The Teammate}}'],
+        [/\bMia\b/gi, '{{The Bestie}}'],
+        [/\bJosh\b/gi, '{{The Brother}}'],
+      ];
 
   for (const ch of bp.characters) {
     const cleanRole = ch.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
@@ -1432,13 +2105,32 @@ function createInitialUnibreakProject(): OgProjectWorkspace {
   };
 }
 
+function createInitialCheerCampProject(): OgProjectWorkspace {
+  return {
+    id: 'og-proj-cheer-camp',
+    updatedAt: new Date().toISOString(),
+    step: 1,
+    blueprint: createCheerCampGetawayBlueprint(),
+    beatCluesMap: createCheerCampInitialBeatCluesMap(),
+    subplots: [],
+    lastRedHerringCoreSignature: '',
+    roundStrategySummary: {},
+    assembled: null,
+    transferredMysteryId: null,
+  };
+}
+
 function normalizeProjectCluesMediaAndPrompts(proj: OgProjectWorkspace): OgProjectWorkspace {
   const spice = proj?.blueprint?.spiceLevel || 'Filthy';
-  const freshUnibreakMap =
-    proj?.blueprint?.id === 'unibreak-at-the-cabin' ? createUnibreakInitialBeatCluesMap() : null;
+  const freshPresetMap =
+    proj?.blueprint?.id === 'unibreak-at-the-cabin'
+      ? createUnibreakInitialBeatCluesMap()
+      : proj?.blueprint?.id === 'cheer-camp-getaway'
+        ? createCheerCampInitialBeatCluesMap()
+        : null;
   const freshById = new Map<string, SuggestedClueCandidate>();
-  if (freshUnibreakMap) {
-    Object.values(freshUnibreakMap)
+  if (freshPresetMap) {
+    Object.values(freshPresetMap)
       .flat()
       .forEach((c) => freshById.set(c.id, c));
   }
@@ -1446,7 +2138,7 @@ function normalizeProjectCluesMediaAndPrompts(proj: OgProjectWorkspace): OgProje
   const rawMap =
     proj?.beatCluesMap && Object.keys(proj.beatCluesMap).length > 0
       ? proj.beatCluesMap
-      : freshUnibreakMap || {};
+      : freshPresetMap || {};
 
   const nextBeatCluesMap: Record<number, SuggestedClueCandidate[]> = {};
   for (const [bKey, list] of Object.entries(rawMap)) {
@@ -1490,8 +2182,20 @@ function normalizeProjectCluesMediaAndPrompts(proj: OgProjectWorkspace): OgProje
 
 const STORAGE_KEY = 'bpm_og_projects_list_v3';
 
+function ensureCheerCampPresetInList(list: OgProjectWorkspace[]): OgProjectWorkspace[] {
+  const hasCheerCamp = list.some(
+    (p) =>
+      p.id === 'og-proj-cheer-camp' ||
+      p.blueprint?.id === 'cheer-camp-getaway' ||
+      p.blueprint?.title?.toLowerCase() === 'cheer camp getaway'
+  );
+  if (hasCheerCamp) return list;
+  return [normalizeProjectCluesMediaAndPrompts(createInitialCheerCampProject()), ...list];
+}
+
 export function BaseArchitectClient({ locale }: { locale: string }) {
   const [projects, setProjects] = useState<OgProjectWorkspace[]>(() => [
+    createInitialCheerCampProject(),
     createInitialUnibreakProject(),
   ]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -1557,8 +2261,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const hydratedList = parsed.map((p: OgProjectWorkspace) =>
-            normalizeProjectCluesMediaAndPrompts(p)
+          const hydratedList = ensureCheerCampPresetInList(
+            parsed.map((p: OgProjectWorkspace) => normalizeProjectCluesMediaAndPrompts(p))
           );
           setProjects(hydratedList);
           loadedLocal = true;
@@ -1575,7 +2279,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             .filter((p: any) => p?.blueprint?.title)
             .map((p: OgProjectWorkspace) => normalizeProjectCluesMediaAndPrompts(p));
           if (valid.length > 0) {
-            setProjects(valid);
+            setProjects(ensureCheerCampPresetInList(valid));
           }
         }
       })
