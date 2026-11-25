@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { detectBrowserCurrency } from '@/utils/localization'
 
 export const AVAILABLE_CURRENCIES = [
-  { code: 'USD', symbol: '$', label: 'USD' },
+  { code: 'USD', symbol: 'US$', label: 'USD' },
   { code: 'GBP', symbol: '£', label: 'GBP' },
   { code: 'AUD', symbol: 'A$', label: 'AUD' },
   { code: 'EUR', symbol: '€', label: 'EUR' },

@@ -169,6 +169,54 @@ export function PageViewDurationTracker() {
     };
   }, [pathname]);
 
+  // Real-time live presence heartbeat (every 25s while tab is visible) for the Admin Global Map & Live People stream
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      isOwnerAnalyticsExcluded() ||
+      /^\/(en|es|fr|de|it)?\/?(admin|builder)(\/|$)/.test(pathname)
+    ) {
+      return;
+    }
+
+    let sessionId = '';
+    try {
+      sessionId = window.sessionStorage.getItem('bpm_visitor_sid') || '';
+      if (!sessionId) {
+        sessionId = `v_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        window.sessionStorage.setItem('bpm_visitor_sid', sessionId);
+      }
+    } catch {
+      sessionId = `v_${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    const detectDevice = (): 'mobile' | 'tablet' | 'desktop' => {
+      const ua = navigator.userAgent || '';
+      if (/ipad|tablet|playbook|silk/i.test(ua)) return 'tablet';
+      if (/mobile|iphone|ipod|android.*mobile|windows phone/i.test(ua)) return 'mobile';
+      return 'desktop';
+    };
+
+    const sendHeartbeat = () => {
+      if (document.visibilityState !== 'visible' || isOwnerAnalyticsExcluded()) return;
+      void fetch('/api/analytics/presence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          path: pathname + (window.location.search || ''),
+          device: detectDevice(),
+          referrer: document.referrer || '',
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+
+    sendHeartbeat();
+    const interval = window.setInterval(sendHeartbeat, 25000);
+    return () => window.clearInterval(interval);
+  }, [pathname]);
+
   return (
     <Analytics
       beforeSend={(event) => {

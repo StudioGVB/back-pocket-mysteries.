@@ -188,12 +188,34 @@ export function getCurrencyForLocale(locale: Locale | string): string {
   return 'USD'
 }
 
+export const CURRENCY_DISPLAY_PREFIX: Record<string, string> = {
+  USD: 'US$',
+  AUD: 'A$',
+  CAD: 'C$',
+  NZD: 'NZ$',
+  GBP: '£',
+  EUR: '€',
+}
+
 export function formatCurrency(amount: number, currency: string, locale: string = 'en-US') {
+  const code = (currency || DEFAULT_CURRENCY).toUpperCase().trim()
+  const prefix = CURRENCY_DISPLAY_PREFIX[code]
+  const rounded = Math.round((Number(amount) || 0) * 100) / 100
+  const isWhole = Math.abs(rounded - Math.round(rounded)) < 0.005
+
+  if (prefix) {
+    const numStr = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: isWhole ? 0 : 2,
+      maximumFractionDigits: isWhole ? 0 : 2,
+    }).format(isWhole ? Math.round(rounded) : rounded)
+    return `${prefix}${numStr}`
+  }
+
   return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: currency,
-    maximumFractionDigits: 0,
-  }).format(amount)
+    currency: code,
+    maximumFractionDigits: isWhole ? 0 : 2,
+  }).format(rounded)
 }
 
 export function getRegionalPrice(tier: PriceTierKey, currency: string) {

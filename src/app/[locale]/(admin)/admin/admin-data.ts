@@ -75,7 +75,7 @@ function getLocalNotificationsSeenPath(): string {
       fsSync.mkdirSync(dir, { recursive: true });
     }
   } catch {}
-  return path.join(dir, 'admin-notifications-seen.json');
+  return path.join(/*turbopackIgnore: true*/ dir, 'admin-notifications-seen.json');
 }
 
 async function loadAdminNotificationsSeen(supabase: any): Promise<AdminNotificationsSeenState> {
@@ -640,7 +640,7 @@ function getLocalSuperAdminInvitesPath(): string {
       fsSync.mkdirSync(dir, { recursive: true });
     }
   } catch {}
-  return path.join(dir, 'super-admin-invites.json');
+  return path.join(/*turbopackIgnore: true*/ dir, 'super-admin-invites.json');
 }
 
 function readLocalEnvVar(key: string): string {

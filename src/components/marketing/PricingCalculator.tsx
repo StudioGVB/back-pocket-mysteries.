@@ -7,6 +7,7 @@ import {
   getRegionalPrice,
   getTierForPlayerCount,
   formatCurrency,
+  detectBrowserCurrency,
   DEFAULT_CURRENCY,
 } from '@/utils/localization'
 import { useActiveDiscounts } from '@/utils/use-active-discounts'
@@ -37,13 +38,8 @@ export default function PricingCalculator({
 
   useEffect(() => {
     setMounted(true)
-    try {
-      const match = document.cookie.match(/(^| )NEXT_CURRENCY=([^;]+)/)
-      if (match) {
-        setActiveCurrency(match[2])
-      }
-    } catch {}
-  }, [])
+    setActiveCurrency(detectBrowserCurrency(locale))
+  }, [locale])
 
   const [guests, setGuests] = useState(8)
   const selectedTierId = getTierForPlayerCount(guests)
