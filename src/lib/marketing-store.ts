@@ -19,6 +19,7 @@ const STORE_FILENAME = ".marketing-suite-store.json";
 const LEADS_FILENAME = ".leads-store.json";
 const STORAGE_BUCKET = "character-images";
 const STORAGE_PATH = "system/marketing-suite-store.json";
+const VERSIONED_STORAGE_DIR = "system/marketing-store-v";
 
 const globalForMarketing = globalThis as unknown as {
   __marketingStoreCache?: MarketingStoreData;
@@ -69,13 +70,34 @@ function normalizeStore(parsed: any, leadsList: any[] = []): MarketingStoreData 
   };
 }
 
+function getRowTimestampMs(row: any): number {
+  const ts = row?.updated_at || row?.created_at;
+  if (!ts) return 0;
+  const ms = new Date(ts).getTime();
+  return Number.isNaN(ms) ? 0 : ms;
+}
+
 function mergeById(baseRows: any[], overrideRows: any[], key = "id"): any[] {
   const map = new Map<string, any>();
   for (const r of baseRows) {
     if (r && r[key]) map.set(String(r[key]), r);
   }
   for (const r of overrideRows) {
-    if (r && r[key]) map.set(String(r[key]), { ...(map.get(String(r[key])) || {}), ...r });
+    if (!r || !r[key]) continue;
+    const idStr = String(r[key]);
+    const existing = map.get(idStr);
+    if (!existing) {
+      map.set(idStr, r);
+      continue;
+    }
+    const existingMs = getRowTimestampMs(existing);
+    const incomingMs = getRowTimestampMs(r);
+    // Keep whichever record has the newer updated_at timestamp so stale CDN snapshots can never overwrite a fresher edit
+    if (existingMs > incomingMs) {
+      map.set(idStr, { ...r, ...existing });
+    } else {
+      map.set(idStr, { ...existing, ...r });
+    }
   }
   return Array.from(map.values());
 }
@@ -165,7 +187,7 @@ export async function loadMarketingStore(): Promise<MarketingStoreData> {
   if (
     globalForMarketing.__marketingStoreCache &&
     globalForMarketing.__marketingStoreLoadedAt &&
-    now - globalForMarketing.__marketingStoreLoadedAt < 15_000
+    now - globalForMarketing.__marketingStoreLoadedAt < 5_000
   ) {
     return readLocalMarketingStore();
   }
@@ -176,10 +198,29 @@ export async function loadMarketingStore(): Promise<MarketingStoreData> {
 
   const inflight = (async (): Promise<MarketingStoreData> => {
     const local = readLocalMarketingStore();
-    const sb = getReadStorageSupabase();
+    const sb = await getWriteStorageSupabase();
     if (sb) {
       try {
-        const { data: blob } = await sb.storage.from(STORAGE_BUCKET).download(STORAGE_PATH);
+        // 1. Check versioned snapshot directory first via POST .list() (bypasses Cloudflare's 15-min path cache!)
+        let targetDownloadPath = STORAGE_PATH;
+        try {
+          const { data: vFiles } = await sb.storage
+            .from(STORAGE_BUCKET)
+            .list(VERSIONED_STORAGE_DIR, {
+              limit: 5,
+              sortBy: { column: "name", order: "desc" },
+            });
+          const latestVersioned = (vFiles || []).find(
+            (f: any) => f?.name && f.name.startsWith("store-") && f.name.endsWith(".json")
+          );
+          if (latestVersioned?.name) {
+            targetDownloadPath = `${VERSIONED_STORAGE_DIR}/${latestVersioned.name}`;
+          }
+        } catch {
+          // Fallback to STORAGE_PATH
+        }
+
+        const { data: blob } = await sb.storage.from(STORAGE_BUCKET).download(targetDownloadPath);
         if (blob) {
           const parsed = normalizeStore(JSON.parse(await blob.text()), local.leads);
           const merged = mergeStores(local, parsed);
@@ -206,13 +247,36 @@ export async function saveMarketingStore(data: MarketingStoreData): Promise<void
   writeLocalMarketingStore(data);
   const sb = await getWriteStorageSupabase();
   if (sb) {
+    const payloadBuf = Buffer.from(JSON.stringify(data, null, 2), "utf8");
+    const versionedPath = `${VERSIONED_STORAGE_DIR}/store-${Date.now()}.json`;
     try {
-      await sb.storage
+      // 1. Upload to a unique timestamped path so Cloudflare CDN never serves a stale cached object
+      await sb.storage.from(STORAGE_BUCKET).upload(versionedPath, payloadBuf, {
+        contentType: "application/json",
+        cacheControl: "0",
+        upsert: true,
+      });
+
+      // 2. Also update the canonical path for legacy readers & prune old versioned snapshots
+      await sb.storage.from(STORAGE_BUCKET).upload(STORAGE_PATH, payloadBuf, {
+        contentType: "application/json",
+        cacheControl: "0",
+        upsert: true,
+      });
+
+      const { data: vFiles } = await sb.storage
         .from(STORAGE_BUCKET)
-        .upload(STORAGE_PATH, Buffer.from(JSON.stringify(data, null, 2), "utf8"), {
-          contentType: "application/json",
-          upsert: true,
+        .list(VERSIONED_STORAGE_DIR, {
+          limit: 20,
+          sortBy: { column: "name", order: "desc" },
         });
+      const oldFiles = (vFiles || [])
+        .filter((f: any) => f?.name && f.name.startsWith("store-") && f.name.endsWith(".json"))
+        .slice(2)
+        .map((f: any) => `${VERSIONED_STORAGE_DIR}/${f.name}`);
+      if (oldFiles.length > 0) {
+        await sb.storage.from(STORAGE_BUCKET).remove(oldFiles);
+      }
     } catch {
       // non-fatal
     }

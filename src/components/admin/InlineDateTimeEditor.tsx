@@ -27,17 +27,20 @@ export function InlineDateTimeEditor({
 }: InlineDateTimeEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftValue, setDraftValue] = useState("");
+  const [initialDraftValue, setInitialDraftValue] = useState("");
   const [saving, setSaving] = useState(false);
 
   const startEditing = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setDraftValue(toLocalDateTimeInputValue(value));
+    const initial = toLocalDateTimeInputValue(value);
+    setDraftValue(initial);
+    setInitialDraftValue(initial);
     setIsEditing(true);
   };
 
   const handleSave = async (e?: React.MouseEvent | React.FormEvent) => {
     e?.stopPropagation();
-    if (!draftValue) return;
+    if (!draftValue || saving) return;
     const parsed = new Date(draftValue);
     if (Number.isNaN(parsed.getTime())) return;
 
@@ -50,12 +53,24 @@ export function InlineDateTimeEditor({
     }
   };
 
+  const handleContainerBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    // If focus moved to another element inside this editor (e.g. Save/Cancel buttons), do nothing
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      return;
+    }
+    // If the user picked a new date/time and clicked outside, auto-save it!
+    if (draftValue && draftValue !== initialDraftValue && !saving) {
+      void handleSave();
+    }
+  };
+
   if (isEditing) {
     return (
       <div
         onClick={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1.5 bg-white border-2 border-brand-pink rounded-xl px-2.5 py-1 shadow-md z-20"
+        onBlur={handleContainerBlur}
+        className="inline-flex flex-wrap items-center gap-1.5 bg-white border-2 border-brand-pink rounded-xl px-2.5 py-1.5 shadow-md z-20"
       >
         <Calendar className="h-3.5 w-3.5 text-brand-pink shrink-0" />
         <input
@@ -80,9 +95,10 @@ export function InlineDateTimeEditor({
           disabled={saving}
           onClick={handleSave}
           title="Save new date & time (Enter)"
-          className="p-1 rounded-lg bg-brand-pink text-white hover:bg-brand-dark transition-colors cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-pink text-white hover:bg-brand-dark text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
         >
           <Check className="h-3 w-3" />
+          <span>{saving ? "Saving..." : "Save"}</span>
         </button>
         <button
           type="button"
@@ -94,7 +110,7 @@ export function InlineDateTimeEditor({
           title="Cancel (Esc)"
           className="p-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
         >
-          <X className="h-3 w-3" />
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
     );
@@ -102,11 +118,13 @@ export function InlineDateTimeEditor({
 
   return (
     <div
+      onClick={startEditing}
       onDoubleClick={startEditing}
-      title="Double-click to change posting date & time"
+      title="Click to change posting date & time"
       className={`cursor-pointer select-none group/date relative inline-block rounded-lg transition-colors hover:ring-1 hover:ring-brand-pink/40 ${className}`}
     >
       {children}
     </div>
   );
 }
+
