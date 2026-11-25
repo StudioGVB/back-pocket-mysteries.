@@ -107,6 +107,14 @@ export default async function HomePage(props: {
             text: 'Our mysteries include 6 to 16 core character roles (Basic, Premium, and Grand), PLUS unlimited Extra Guest Detectives at $0 extra cost! Any extra friends or last-minute plus-ones simply scan the party QR code on their phone to join as "Detective [Their Name]" with an official Detective Briefing, suspect interrogation prompts, live clues, and round voting.',
           },
         },
+        {
+          '@type': 'Question',
+          name: 'Why do you use AI-generated character portraits instead of real photos of our guests? Are our photos stored?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'To protect your guests’ biometric privacy, image rights, and personal data under global privacy and AI likeness laws (including GDPR, CCPA, and the Australian Privacy Principles), Back Pocket Mysteries never stores, hosts, or generates deepfakes from real photographs of your guests. Any photo used with our optional trait scanner is analyzed ephemerally in memory solely to select general appearance checkboxes and is immediately deleted. All roster avatars and mystery character portraits are original, fictional AI-generated illustrations created exclusively for your private game.',
+          },
+        },
       ],
     },
   ];

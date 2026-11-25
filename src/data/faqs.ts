@@ -213,12 +213,17 @@ export const faqsData: FAQ[] = [
   {
     category: "Customization",
     q: "Can I customize guest avatars and visual appearances?",
-    a: "Yes! On all package tiers, our Guest Profile editor lets you customize each guest's physical traits (hair, eye color, height, ethnicity, build, and accent) so their AI costume portrait and CCTV crime-scene photos look just like them."
+    a: "Yes! On all package tiers, our Guest Profile editor lets you customize each guest's physical traits (skin tone, hair color, hair length, hair texture, haircut style, face shape, eye color, facial hair, build, and accent) — or auto-fill their traits from a reference photo — so their AI costume portrait and CCTV crime-scene photos match their vibe while protecting their privacy."
+  },
+  {
+    category: "Customization",
+    q: "Why do you use AI-generated character portraits instead of real photos of our guests? Are our photos stored?",
+    a: "To protect your guests' biometric privacy, image rights, and personal data under global privacy and AI likeness laws (including GDPR, CCPA, and the Australian Privacy Principles), Back Pocket Mysteries never stores, hosts, or generates deepfakes from real photographs of your guests. If you use our optional 'Auto-fill traits from photo' scanner, your photo is analyzed ephemerally in memory solely to select general appearance checkboxes and is immediately deleted. All roster avatars, costume portraits, and crime-scene evidence images are original, fictional AI-generated illustrations created exclusively for your private game."
   },
   {
     category: "Customization",
     q: "How do the AI visual clues and voice wiretaps work?",
-    a: "Once you lock in your cast, our AI generates head-to-toe era costume portraits for each character, places those exact characters into the crime-scene CCTV and visual evidence photos, and synthesizes multi-speaker audio wiretaps matched to each character's gender and regional accent!"
+    a: "Once you lock in your cast, our AI generates head-to-toe era costume portraits for each character based on their selected trait profile, places those character illustrations into the crime-scene CCTV and visual evidence photos, and synthesizes multi-speaker audio wiretaps matched to each character's gender and regional accent!"
   },
   {
     category: "Customization",
