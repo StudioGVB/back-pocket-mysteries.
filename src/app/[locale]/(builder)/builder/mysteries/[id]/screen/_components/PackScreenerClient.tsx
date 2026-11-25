@@ -879,6 +879,9 @@ export function PackScreenerClient({
           profile_data: {
             ...(c.profile_data || {}),
             guest_name: '',
+            name: '',
+            first_name: '',
+            last_name: '',
           },
         };
       }
@@ -893,6 +896,7 @@ export function PackScreenerClient({
           ...(c.profile_data || {}),
           guest_id: friend.id,
           guest_name: friend.name,
+          name: friend.name,
           avatar_url: friend.avatar_url || c.profile_data?.avatar_url,
           friend_photo_url: friend.photoUrl ? resolveDisplayAvatarUrl(friend.photoUrl) : null,
         },

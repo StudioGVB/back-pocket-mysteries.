@@ -533,7 +533,10 @@ export function getCharacterNameParts(char: any): {
   }
   const profile = char.profile_data || {};
   const roleTitle = getCharacterRoleTitle(char);
-  const rawGuestName = String(profile.guest_name || profile.name || '').trim();
+  const rawGuestName =
+    profile.guest_name !== undefined
+      ? String(profile.guest_name || '').trim()
+      : String(profile.name || '').trim();
 
   if (!rawGuestName || rawGuestName.toLowerCase() === roleTitle.toLowerCase()) {
     return {
@@ -570,6 +573,7 @@ export function getCharacterNameParts(char: any): {
  */
 export function hasAssignedGuest(char: any): boolean {
   const profile = char?.profile_data || {};
+  if (profile.guest_name === '') return false;
   const roleTitle = getCharacterRoleTitle(char).toLowerCase();
   const guestName = String(profile.guest_name || profile.name || '').trim();
   if (guestName && guestName.toLowerCase() !== roleTitle) {

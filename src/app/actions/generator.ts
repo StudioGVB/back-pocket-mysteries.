@@ -14,6 +14,7 @@ import {
   extractCanonicalSingleAiOutfit,
   adaptBioForGuestGender,
   adaptOutfitReferenceImagesForGuestGender,
+  splitGuestNameParts,
   stripEmDashes,
 } from '@/utils/hydration';
 import { getStaticMockGuests } from '@/utils/mock-guests';
@@ -1019,11 +1020,15 @@ export async function applyScreenerCastAssignmentAction(
 
       const prevGuestId = String(rawProfile.guest_id || '');
       const isDifferentGuest = prevGuestId !== String(assigned.id || '');
+      const parsedAssignedName = splitGuestNameParts(assigned.name);
 
       const nextProfile: Record<string, any> = {
         ...rawProfile,
         guest_id: assigned.id,
-        guest_name: assigned.name,
+        guest_name: parsedAssignedName.fullName || assigned.name,
+        name: parsedAssignedName.fullName || assigned.name,
+        first_name: parsedAssignedName.firstName,
+        last_name: parsedAssignedName.lastName,
         gender: assigned.gender || rawProfile.gender,
         avatar_url: assigned.avatar_url || assigned.photoUrl || rawProfile.avatar_url,
         eye_color: assigned.eye_color || rawProfile.eye_color,
