@@ -5858,30 +5858,57 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       })}
                     </div>
                   ) : (
-                    /* 5-BEAT x 3-ROUND PROGRESSION MATRIX TABLE */
-                    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/80">
-                      <table className="w-full text-left border-collapse text-xs">
+                    /* 5-BEAT x 3-ROUND PROGRESSION MATRIX TABLE (FIXED COMPACT COLUMNS — NO HORIZONTAL SCROLL) */
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/80 overflow-hidden">
+                      <table className="w-full table-fixed text-left border-collapse text-[11px]">
                         <thead>
-                          <tr className="border-b border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                            <th className="p-3 min-w-[230px]">Story Beat / Red Herring</th>
-                            {roundNums.map((rNum) => (
-                              <th key={rNum} className="p-3 min-w-[200px] border-l border-slate-800">
-                                Round {rNum} (
-                                {allSelectedClues.filter((c) => c.roundNumber === rNum).length}{' '}
-                                Clues)
-                              </th>
-                            ))}
+                          <tr className="border-b border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-900/70">
+                            <th className="py-2 px-2.5 w-[22%]">Story Beat / Red Herring</th>
+                            {roundNums.map((rNum) => {
+                              const rCount = allSelectedClues.filter(
+                                (c) => c.roundNumber === rNum
+                              ).length;
+                              const rReal = allSelectedClues.filter(
+                                (c) => c.roundNumber === rNum && !c.isRedHerring
+                              ).length;
+                              const rFake = rCount - rReal;
+                              return (
+                                <th
+                                  key={rNum}
+                                  className="py-2 px-2.5 border-l border-slate-800"
+                                  style={{ width: `${Math.floor(78 / Math.max(1, roundNums.length))}%` }}
+                                >
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="text-white">
+                                      Round {rNum} ({rCount})
+                                    </span>
+                                    <span className="text-[9px] font-bold text-slate-400">
+                                      <span className="text-emerald-400">{rReal}R</span> /{' '}
+                                      <span className="text-indigo-400">{rFake}F</span>
+                                    </span>
+                                  </div>
+                                </th>
+                              );
+                            })}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/80">
                           {blueprint.beats.map((b) => (
                             <tr key={`beat-${b.beatNumber}`} className="hover:bg-slate-900/50">
-                              <td className="p-3 align-top">
-                                <div className="font-black text-emerald-300">
+                              <td className="py-2 px-2.5 align-top">
+                                <div className="font-black text-emerald-300 text-[10px] truncate">
                                   🧩 Beat #{b.beatNumber} • {b.timeWindow}
                                 </div>
-                                <div className="font-bold text-white mt-0.5">{b.title}</div>
-                                <div className="text-[11px] text-slate-400 line-clamp-2 mt-0.5">
+                                <div
+                                  className="font-bold text-white text-[11px] leading-snug truncate"
+                                  title={b.title}
+                                >
+                                  {b.title}
+                                </div>
+                                <div
+                                  className="text-[10px] text-slate-400 truncate"
+                                  title={b.description}
+                                >
                                   {b.description}
                                 </div>
                               </td>
@@ -5892,10 +5919,10 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                 return (
                                   <td
                                     key={rNum}
-                                    className="p-3 align-top border-l border-slate-800 space-y-1.5"
+                                    className="py-2 px-2 align-top border-l border-slate-800 space-y-1"
                                   >
                                     {cellClues.length === 0 ? (
-                                      <span className="text-[11px] text-slate-600">—</span>
+                                      <span className="text-[10px] text-slate-700">—</span>
                                     ) : (
                                       cellClues.map((c) => {
                                         const gIdx =
@@ -5906,9 +5933,10 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                         return (
                                           <div
                                             key={c.id}
-                                            className="flex items-center justify-between gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1.5 text-[11px]"
+                                            title={`#${gIdx} ${c.title} (${c.timestampLabel})`}
+                                            className="flex items-center justify-between gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-1 text-[10px] min-w-0"
                                           >
-                                            <span className="font-bold text-emerald-100 truncate">
+                                            <span className="font-bold text-emerald-100 truncate min-w-0 flex-1">
                                               #{gIdx} {medIcon} {c.title}
                                             </span>
                                             <select
@@ -5919,7 +5947,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                                   Number(e.target.value) as ArchitectRoundNumber
                                                 )
                                               }
-                                              className="rounded bg-slate-900 border border-emerald-500/40 px-1.5 py-0.5 text-[10px] font-black text-emerald-300 cursor-pointer shrink-0"
+                                              className="rounded bg-slate-900 border border-emerald-500/40 px-1 py-0.5 text-[9px] font-black text-emerald-300 cursor-pointer shrink-0"
                                             >
                                               {roundNums.map((rOpt) => (
                                                 <option key={rOpt} value={rOpt}>
@@ -5939,12 +5967,20 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
                           {subplots.map((sub, sIdx) => (
                             <tr key={`sub-${sub.id}`} className="hover:bg-slate-900/50">
-                              <td className="p-3 align-top">
-                                <div className="font-black text-indigo-300">
+                              <td className="py-2 px-2.5 align-top">
+                                <div className="font-black text-indigo-300 text-[10px] truncate">
                                   🎭 Red Herring #{sIdx + 1}
                                 </div>
-                                <div className="font-bold text-white mt-0.5">{sub.title}</div>
-                                <div className="text-[11px] text-slate-400 mt-0.5">
+                                <div
+                                  className="font-bold text-white text-[11px] leading-snug truncate"
+                                  title={sub.title}
+                                >
+                                  {sub.title}
+                                </div>
+                                <div
+                                  className="text-[10px] text-slate-400 truncate"
+                                  title={sub.involvedRoles.join(' ↔ ')}
+                                >
                                   {sub.involvedRoles.join(' ↔ ')}
                                 </div>
                               </td>
@@ -5955,10 +5991,10 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                 return (
                                   <td
                                     key={rNum}
-                                    className="p-3 align-top border-l border-slate-800 space-y-1.5"
+                                    className="py-2 px-2 align-top border-l border-slate-800 space-y-1"
                                   >
                                     {cellClues.length === 0 ? (
-                                      <span className="text-[11px] text-slate-600">—</span>
+                                      <span className="text-[10px] text-slate-700">—</span>
                                     ) : (
                                       cellClues.map((c) => {
                                         const gIdx =
@@ -5969,9 +6005,10 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                         return (
                                           <div
                                             key={c.id}
-                                            className="flex items-center justify-between gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-1.5 text-[11px]"
+                                            title={`#${gIdx} ${c.title}`}
+                                            className="flex items-center justify-between gap-1 rounded-md bg-indigo-500/10 border border-indigo-500/30 px-1.5 py-1 text-[10px] min-w-0"
                                           >
-                                            <span className="font-bold text-indigo-100 truncate">
+                                            <span className="font-bold text-indigo-100 truncate min-w-0 flex-1">
                                               #{gIdx} {medIcon} {c.title}
                                             </span>
                                             <select
@@ -5982,7 +6019,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                                   Number(e.target.value) as ArchitectRoundNumber
                                                 )
                                               }
-                                              className="rounded bg-slate-900 border border-indigo-500/40 px-1.5 py-0.5 text-[10px] font-black text-indigo-300 cursor-pointer shrink-0"
+                                              className="rounded bg-slate-900 border border-indigo-500/40 px-1 py-0.5 text-[9px] font-black text-indigo-300 cursor-pointer shrink-0"
                                             >
                                               {roundNums.map((rOpt) => (
                                                 <option key={rOpt} value={rOpt}>
