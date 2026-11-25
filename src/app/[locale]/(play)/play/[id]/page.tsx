@@ -64,7 +64,15 @@ export default async function PlayroomPage({
 
   const verifiedIsHost = Boolean((initialSession as any)?.isHost);
   const currentRound = Number((initialSession as any)?.currentRound ?? (mystery as any).current_round ?? 0);
-  const canRevealSpoilers = currentRound >= 5 && (verifiedIsHost || (initialSession as any)?.revealMode === 'shared_with_guests');
+  const highestClueRound = rawClues.reduce(
+    (acc: number, c: any) =>
+      c?.round_number && Number(c.round_number) <= 5 ? Math.max(acc, Number(c.round_number)) : acc,
+    3
+  );
+  const revealStageRound = highestClueRound >= 5 ? 6 : 5;
+  const canRevealSpoilers =
+    currentRound >= revealStageRound &&
+    (verifiedIsHost || (initialSession as any)?.revealMode === 'shared_with_guests');
 
   // Server-side spoiler redaction: never serialize killer plot_role, secret motives, or locked clues into guest HTML/RSC payloads
   const safeCharacters = rawCharacters.map((c: any) => {

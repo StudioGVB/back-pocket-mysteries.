@@ -54,6 +54,33 @@ export function PageViewDurationTracker() {
   const accumulatedMsRef = useRef<number>(0);
   const currentPathRef = useRef<string>(pathname);
 
+  // Force browser tabs (Chrome/Safari) to drop any stale cached cards favicon and repaint the new magnifying glass favicon immediately
+  useEffect(() => {
+    try {
+      const head = document.head;
+      if (!head) return;
+      const existingIcons = head.querySelectorAll('link[rel*="icon"]');
+      existingIcons.forEach((el) => {
+        const href = el.getAttribute('href') || '';
+        if (!href.includes('favicon-v3') && !href.includes('apple-touch-icon-v3')) {
+          el.parentNode?.removeChild(el);
+        }
+      });
+      let primaryIcon = head.querySelector('link#bpm-live-favicon') as HTMLLinkElement | null;
+      if (!primaryIcon) {
+        primaryIcon = document.createElement('link');
+        primaryIcon.id = 'bpm-live-favicon';
+        primaryIcon.rel = 'icon';
+        primaryIcon.type = 'image/png';
+        primaryIcon.sizes = '48x48';
+        primaryIcon.href = '/favicon-v3-48x48.png?v=4';
+        head.appendChild(primaryIcon);
+      }
+    } catch {
+      // ignore DOM errors
+    }
+  }, [pathname]);
+
   // Auto-detect owner device via URL query (?exclude_me=1), /admin or /builder route, or signed-in owner email
   useEffect(() => {
     try {

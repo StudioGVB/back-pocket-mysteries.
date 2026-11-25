@@ -277,9 +277,14 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
     clue.implication_type === 'red_herring' ||
     (!clue.linked_plot_beat_id && !clue.linked_subplot_beat_id);
 
-  // Group clues by round number (1, 2, 3, 4, etc.) and deterministically interleave real and fake clues
+  const tierRounds = getPackageInfoForMaxPlayers(mystery?.max_players || characters.length).requiredRounds;
+
+  // Group clues by round number (Basic = 1..3, Premium = 1..4, Grand = 1..5) and deterministically interleave real and fake clues
   const cluesByRound = useMemo(() => {
-    const grouped: Record<number, Clue[]> = { 1: [], 2: [], 3: [], 4: [] };
+    const grouped: Record<number, Clue[]> = {};
+    for (let r = 1; r <= tierRounds; r++) {
+      grouped[r] = [];
+    }
     currentClues.forEach((clue) => {
       const round = clue.round_number || 1;
       if (!grouped[round]) grouped[round] = [];
@@ -294,7 +299,7 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
       );
     });
     return grouped;
-  }, [currentClues]);
+  }, [currentClues, tierRounds]);
 
   const totalFakeCount = useMemo(
     () => currentClues.filter(isClueFake).length,
@@ -305,10 +310,10 @@ export function ClueGrid({ mystery, mysteryId, clues, beats, characters, subplot
   const roundNumbers = useMemo(() => {
     const keys = Object.keys(cluesByRound)
       .map(Number)
-      .filter((r) => (cluesByRound[r]?.length || 0) > 0 || r <= 4)
+      .filter((r) => (cluesByRound[r]?.length || 0) > 0 || r <= tierRounds)
       .sort((a, b) => a - b);
-    return keys.length > 0 ? keys : [1, 2, 3, 4];
-  }, [cluesByRound]);
+    return keys.length > 0 ? keys : Array.from({ length: tierRounds }, (_, i) => i + 1);
+  }, [cluesByRound, tierRounds]);
 
   const visibleRounds = selectedRound === 'all' ? roundNumbers : [selectedRound];
 

@@ -795,9 +795,15 @@ export async function getGameSessionAction(mysteryId: string) {
     }
   }
 
+  const highestClueRound = mysteryClues.reduce(
+    (acc: number, c: any) =>
+      c?.round_number && Number(c.round_number) <= 5 ? Math.max(acc, Number(c.round_number)) : acc,
+    3
+  );
+  const revealRound = highestClueRound >= 5 ? 6 : 5;
   const currentRound = session.currentRound ?? mystery.current_round ?? 0;
   const canViewSolution =
-    currentRound >= 5 && (isHost || session.revealMode === 'shared_with_guests');
+    currentRound >= revealRound && (isHost || session.revealMode === 'shared_with_guests');
 
   const killerChar = characters.find((c: any) => c.plot_role === 'killer');
   const victimChar = characters.find((c: any) => c.is_victim || c.plot_role === 'victim');

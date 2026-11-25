@@ -1069,12 +1069,17 @@ export function PlayroomClient({
   // 1 = 2. Round 1 Clues, 1.5 = 3. Guess 1
   // 2 = 4. Round 2 Clues, 2.5 = 5. Guess 2
   // 3 = 6. Round 3 Clues, 3.5 = 7. Guess 3
-  // 4 = 8. Round 4 Clues, 4.5 = 9. Guess 4 (only if maxClueRound === 4)
-  // 5 = Reveal
+  // 4 = 8. Round 4 Clues, 4.5 = 9. Guess 4 (when maxClueRound >= 4)
+  // 5 = 10. Round 5 Clues, 5.5 = 11. Guess 5 (when maxClueRound === 5)
+  // revealStageRound (5 for 3-4 rounds, 6 for 5 rounds) = Reveal
   const maxClueRound = useMemo(() => {
-    const highest = clues.reduce((acc, c) => Math.max(acc, c.round_number || 1), 3);
-    return Math.max(3, Math.min(4, highest));
+    const highest = clues.reduce(
+      (acc, c) => (c.round_number && c.round_number <= 5 ? Math.max(acc, c.round_number) : acc),
+      3
+    );
+    return Math.max(3, Math.min(5, highest));
   }, [clues]);
+  const revealStageRound = maxClueRound >= 5 ? 6 : 5;
 
   const availableClueRounds = useMemo(
     () => Array.from({ length: maxClueRound }, (_, i) => i + 1),
@@ -1114,7 +1119,7 @@ export function PlayroomClient({
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 150);
         }
-      } else if (currentRound >= 5) {
+      } else if (currentRound >= revealStageRound) {
         setActiveTab('reveal');
       }
       return () => clearTimeout(timer);
@@ -1127,10 +1132,10 @@ export function PlayroomClient({
         setClueSlideIndex(0);
       }
     }
-    if (currentRound >= 5) {
+    if (currentRound >= revealStageRound) {
       setActiveTab('reveal');
     }
-  }, [currentRound, maxClueRound]);
+  }, [currentRound, maxClueRound, revealStageRound]);
 
   // Pre-fill existing submission for the active round when switching rounds
   const activeVotingRound = Math.max(1, Math.min(maxClueRound, unlockedClueRound || 1));
@@ -1366,11 +1371,11 @@ export function PlayroomClient({
     setIsRefreshingSession(true);
     try {
       const updated = await updateHostGameControlAction(mystery.id, {
-        currentRound: 5,
+        currentRound: revealStageRound,
         revealMode: mode,
       });
       if (!('error' in updated)) {
-        setCurrentRound(5);
+        setCurrentRound(revealStageRound);
         setRevealMode(updated.revealMode || mode);
         if (updated.solutionData) setSolutionData(updated.solutionData);
       }
