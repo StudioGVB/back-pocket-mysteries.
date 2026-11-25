@@ -134,7 +134,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   // 5. SEO, Metadata & Social Profiles
   defaultSiteTitle: 'Back Pocket Mysteries | Custom Murder Mystery Party Games',
   defaultMetaDescription:
-    'Host an unforgettable evening with a custom-crafted murder mystery party game. Instant digital clues, audio evidence, and gender-flex casting for 4–20+ guests.',
+    'Host an unforgettable evening with a custom-crafted murder mystery party game. Instant digital clues, audio evidence, and gender-flex casting for 4–16 players (+ extra Detectives).',
   ogImageUrl: 'https://backpocketmysteries.com/og-cover.png',
   instagramUrl: 'https://instagram.com/backpocketmysteries',
   facebookUrl: 'https://facebook.com/backpocketmysteries',

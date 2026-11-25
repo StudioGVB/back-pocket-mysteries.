@@ -2,6 +2,7 @@ import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/ava
 import {
   getCharacterRoleTitle,
   getCharacterDisplayName,
+  getCharacterNameParts,
   hydrateTextWithCharacters,
 } from '@/utils/hydration';
 
@@ -732,8 +733,17 @@ export function normalizeSpeakerLabel(
 
   const lowerKey = extractedName.toLowerCase();
 
-  // 2. Match against mystery characters (by Role Title, assigned guest name, or legacy base name)
+  // 2. Match against mystery characters (by Role Title, assigned guest full name, unique first name, or legacy base name)
   if (Array.isArray(characters) && characters.length > 0) {
+    const firstNameCounts = new Map<string, number>();
+    characters.forEach((c) => {
+      const np = getCharacterNameParts(c);
+      if (np.hasRealGuest && np.firstName) {
+        const fk = np.firstName.toLowerCase();
+        firstNameCounts.set(fk, (firstNameCounts.get(fk) || 0) + 1);
+      }
+    });
+
     for (const char of characters) {
       const roleTitle = getCharacterRoleTitle(char);
       const roleLower = roleTitle.toLowerCase();
@@ -741,18 +751,25 @@ export function normalizeSpeakerLabel(
       const charBaseName = (char.name || '').split('|')[0]?.trim() || '';
       const charLower = charBaseName.toLowerCase();
       const profile = (char.profile_data as any) || {};
+      const nameParts = getCharacterNameParts(char);
       const guestName = (
         profile.guest_name ||
         profile.guestName ||
         profile.name ||
         ''
       ).trim();
-      const guestLower = guestName.toLowerCase();
+      const guestLower = (nameParts.hasRealGuest ? nameParts.fullName : guestName).toLowerCase();
+      const guestFirstLower =
+        nameParts.hasRealGuest &&
+        (firstNameCounts.get(nameParts.firstName.toLowerCase()) || 0) <= 1
+          ? nameParts.firstName.toLowerCase()
+          : '';
 
       if (
         (roleLower && (lowerKey === roleLower || lowerKey.includes(roleLower))) ||
         (roleShortLower && roleShortLower.length >= 2 && (lowerKey === roleShortLower || lowerKey.includes(roleShortLower))) ||
         (guestLower && (lowerKey === guestLower || lowerKey.includes(guestLower))) ||
+        (guestFirstLower && guestFirstLower.length >= 2 && (lowerKey === guestFirstLower || new RegExp(`\\b${guestFirstLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(lowerKey))) ||
         (charLower && (lowerKey === charLower || lowerKey.includes(charLower)))
       ) {
         const isGenericGender = (g?: string | null) =>

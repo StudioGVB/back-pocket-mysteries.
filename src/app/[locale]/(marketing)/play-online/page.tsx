@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getPublicMarketingMysteries } from '@/services/mysteries';
 import PriceDisplay from '@/components/marketing/PriceDisplay';
 import FreeMysteryLeadForm from '@/components/marketing/FreeMysteryLeadForm';
+import HowItWorksVideoShowcase from '@/components/marketing/HowItWorksVideoShowcase';
 import { i18n, type Locale } from '@/lib/i18n-config';
 
 export async function generateStaticParams() {
@@ -254,7 +255,7 @@ export default async function PlayOnlineMarketingPage(props: {
               </div>
 
               <p className="text-xs text-slate-400 font-semibold">
-                Works for <strong className="text-white">4 to 20+ players</strong> • Full pack from{' '}
+                Works for <strong className="text-white">4 to 16 players (+ extra Detectives)</strong> • Full pack from{' '}
                 <strong className="text-brand-pink">
                   <PriceDisplay tier="basic" locale={locale as Locale} />
                 </strong>{' '}
@@ -354,12 +355,6 @@ export default async function PlayOnlineMarketingPage(props: {
                       Private character script + 6 unlocked forensic &amp; audio clues + live theory voting ballot on every player&apos;s screen.
                     </p>
                   </div>
-                  <Link
-                    href={`/${locale}/mini-mystery`}
-                    className="shrink-0 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-brand-pink text-white text-[11px] font-black uppercase tracking-wider transition-all"
-                  >
-                    Try 60-Sec Demo ↗
-                  </Link>
                 </div>
               </div>
             </div>
@@ -391,6 +386,29 @@ export default async function PlayOnlineMarketingPage(props: {
               💬 WhatsApp Video
             </span>
           </div>
+        </div>
+      </section>
+
+      {/* 2.5. PROMO VIDEO SHOWCASE: "MILES APART, SAME CRIME SCENE" */}
+      <section className="py-16 lg:py-20 bg-white border-b border-slate-100">
+        <div className="container mx-auto px-6 max-w-5xl">
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="text-xs font-black uppercase tracking-[0.2em] text-brand-pink mb-2">
+              🎬 Watch The 40-Second Walkthrough
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight">
+              Miles Apart? <span className="text-brand-pink italic">Same Crime Scene.</span>
+            </h2>
+            <p className="text-sm sm:text-base text-slate-600 font-medium mt-3">
+              See how your friends connect on Zoom, FaceTime, or Discord while every crime photo, leaked text, and AI voice wiretap syncs live on everyone&apos;s phone across the globe.
+            </p>
+          </div>
+
+          <HowItWorksVideoShowcase
+            videoSrc="/videos/back-pocket-mysteries-play-online-16x9.mp4?v=1"
+            durationLabel="0:42"
+            ctaLabel="Watch How Online Play Works"
+          />
         </div>
       </section>
 
@@ -803,12 +821,6 @@ export default async function PlayOnlineMarketingPage(props: {
               className="px-9 py-4 rounded-full bg-brand-pink text-white text-xs font-black uppercase tracking-widest hover:bg-white hover:text-brand-dark transition-all shadow-xl shadow-brand-pink/25"
             >
               Build Your Online Mystery Now →
-            </Link>
-            <Link
-              href={`/${locale}/mini-mystery`}
-              className="px-8 py-4 rounded-full bg-white/10 border border-white/20 text-white text-xs font-black uppercase tracking-widest hover:bg-white/20 transition-all"
-            >
-              Play 60-Second Mini-Mystery
             </Link>
           </div>
 

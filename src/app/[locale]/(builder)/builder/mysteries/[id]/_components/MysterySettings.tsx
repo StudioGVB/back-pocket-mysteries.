@@ -39,9 +39,9 @@ export function MysterySettings({
   const [status, setStatus] = useState(initialStatus || 'draft');
 
   const packageBrackets = [
-    { max: 6, name: 'Basic Package', label: 'Basic (4–6 Players)', sub: '$19 Base • Requires 6 Characters' },
-    { max: 10, name: 'Premium Package', label: 'Premium (4–10 Players)', sub: '$25 Base • Requires 10 Characters' },
-    { max: 16, name: 'Grand Package', label: 'Grand (4–16 Players)', sub: '$33 Base • Requires 16 Characters' },
+    { max: 6, rounds: 3, name: 'Basic Package', label: 'Basic (4–6 Players • 3 Rounds)', sub: '$19 Base • Requires 6 Characters & 3 Investigation Rounds' },
+    { max: 10, rounds: 4, name: 'Premium Package', label: 'Premium (4–10 Players • 4 Rounds)', sub: '$25 Base • Requires 10 Characters & 4 Investigation Rounds' },
+    { max: 16, rounds: 5, name: 'Grand Package', label: 'Grand (4–16 Players • 5 Rounds)', sub: '$33 Base • Requires 16 Characters & 5 Investigation Rounds' },
   ];
 
   const selectedPkg = packageBrackets.find((p) => p.max === maxPlayers) || packageBrackets[0];
@@ -61,7 +61,7 @@ export function MysterySettings({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Package Tier &amp; Player Limit (Determines Price &amp; Required Characters)
+            Package Tier, Player Limit &amp; Round Count (Basic = 3 Rounds • Premium = 4 Rounds • Grand = 5 Rounds)
           </label>
           <span
             className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
@@ -70,7 +70,7 @@ export function MysterySettings({
                 : 'bg-amber-50 text-amber-700 border border-amber-200'
             }`}
           >
-            {characterCount} / {maxPlayers} Characters Created
+            {characterCount} / {maxPlayers} Characters • {selectedPkg.rounds} Rounds
           </span>
         </div>
 
@@ -120,7 +120,7 @@ export function MysterySettings({
                 ⚠️ Cannot Post / Publish Yet ({missingCharacters} More Character{missingCharacters === 1 ? '' : 's'} Needed)
               </p>
               <p className="text-xs text-amber-700 font-medium mt-0.5">
-                The <strong>{selectedPkg.name}</strong> allows up to {maxPlayers} players, so it must have all <strong>{maxPlayers} characters</strong> created before it can go live (currently has {characterCount}).
+                The <strong>{selectedPkg.name}</strong> ({selectedPkg.rounds} Investigation Rounds) allows up to {maxPlayers} players, so it must have all <strong>{maxPlayers} characters</strong> created before it can go live (currently has {characterCount}).
               </p>
             </div>
             {mysteryId && (
@@ -135,7 +135,7 @@ export function MysterySettings({
         ) : (
           <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
             <p className="text-xs font-bold text-emerald-800">
-              ✓ Roster complete ({characterCount}/{maxPlayers} characters). This <strong>{selectedPkg.name}</strong> mystery meets the character requirement to be published!
+              ✓ Roster complete ({characterCount}/{maxPlayers} characters • {selectedPkg.rounds} Investigation Rounds). This <strong>{selectedPkg.name}</strong> mystery meets the character requirement to be published!
             </p>
           </div>
         )}

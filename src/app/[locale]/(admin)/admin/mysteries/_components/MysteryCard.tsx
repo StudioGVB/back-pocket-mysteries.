@@ -200,9 +200,9 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
             {isPending ? 'Updating…' : currentStatus === 'published' ? '● Published' : currentStatus}
           </button>
 
-          {/* Package & Player Count Badge (Top Right) */}
+          {/* Package, Character & Round Count Badge (Top Right) */}
           <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 border border-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-slate-300 z-20">
-            📦 {pkgInfo.label} • {pkgInfo.rangeLabel}
+            📦 {pkgInfo.label} • {pkgInfo.requiredCharacters} Chars • {pkgInfo.requiredRounds} Rounds
           </div>
 
           {/* 7-Box QA Certification Pill (Bottom Left on Cover) */}

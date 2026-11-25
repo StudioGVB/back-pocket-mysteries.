@@ -51,7 +51,7 @@ export default async function PricingPage(props: {
       ],
       cta: 'Browse Mysteries',
       featured: false,
-      bestFor: 'INTIMATE PARTIES (6+ GUESTS) OR SOLO/COUPLE CASE FILES',
+      bestFor: 'INTIMATE PARTIES (4–6 PLAYERS + EXTRA DETECTIVES) OR SOLO/COUPLE CASE FILES',
       billingPeriod: 'event' as const
     },
     {
@@ -72,7 +72,7 @@ export default async function PricingPage(props: {
       ],
       cta: 'Browse Mysteries',
       featured: true,
-      bestFor: 'BIRTHDAYS, HENS NIGHTS & DINNER PARTIES (UP TO 10+ PLAYERS)',
+      bestFor: 'BIRTHDAYS, HENS NIGHTS & DINNER PARTIES (UP TO 10 PLAYERS + EXTRA DETECTIVES)',
       billingPeriod: 'event' as const
     },
     {
@@ -93,7 +93,7 @@ export default async function PricingPage(props: {
       ],
       cta: 'Browse Mysteries',
       featured: false,
-      bestFor: 'LARGE PARTIES & GETAWAYS (UP TO 16+ PLAYERS)',
+      bestFor: 'LARGE PARTIES & GETAWAYS (UP TO 16 PLAYERS + EXTRA DETECTIVES)',
       billingPeriod: 'event' as const
     },
   ];

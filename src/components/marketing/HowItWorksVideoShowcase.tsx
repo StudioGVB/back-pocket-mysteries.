@@ -3,10 +3,18 @@
 import React, { useRef, useState } from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
-const VIDEO_SRC = '/videos/back-pocket-mysteries-what-it-is-16x9.mp4?v=2';
-const VIDEO_DURATION = '1:17';
+const DEFAULT_VIDEO_SRC = '/videos/back-pocket-mysteries-what-it-is-16x9.mp4?v=2';
+const DEFAULT_VIDEO_DURATION = '1:17';
 
-export default function HowItWorksVideoShowcase() {
+export default function HowItWorksVideoShowcase({
+  videoSrc = DEFAULT_VIDEO_SRC,
+  durationLabel = DEFAULT_VIDEO_DURATION,
+  ctaLabel = 'Watch How It Works',
+}: {
+  videoSrc?: string;
+  durationLabel?: string;
+  ctaLabel?: string;
+} = {}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -35,7 +43,7 @@ export default function HowItWorksVideoShowcase() {
       <div className="relative mx-auto w-full aspect-video rounded-[2rem] border-2 border-brand-dark bg-brand-dark shadow-[10px_10px_0px_#fe04c6] overflow-hidden">
         <video
           ref={videoRef}
-          src={`${VIDEO_SRC}#t=0.5`}
+          src={`${videoSrc}#t=0.5`}
           playsInline
           controls={isPlaying}
           preload="metadata"
@@ -50,14 +58,14 @@ export default function HowItWorksVideoShowcase() {
           <button
             type="button"
             onClick={handleTogglePlay}
-            aria-label="Play How It Works video"
+            aria-label={ctaLabel}
             className="absolute inset-0 flex flex-col items-center justify-center bg-brand-dark/30 hover:bg-brand-dark/15 transition-colors group cursor-pointer"
           >
             <div className="w-20 h-20 rounded-full bg-brand-pink text-white border-4 border-white shadow-[6px_6px_0px_#120914] flex items-center justify-center group-hover:scale-105 transition-transform">
               <Play className="w-8 h-8 fill-current ml-1" />
             </div>
             <span className="mt-3 px-4 py-1.5 rounded-full bg-brand-dark text-white border border-white/20 text-[11px] font-black uppercase tracking-[0.2em] shadow-lg">
-              Watch How It Works ({VIDEO_DURATION})
+              {ctaLabel} ({durationLabel})
             </span>
           </button>
         )}

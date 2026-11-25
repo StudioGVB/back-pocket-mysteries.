@@ -676,17 +676,17 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
   },
   {
     slug: 'murder-mystery-game-for-12-to-16-players',
-    navLabel: 'Large Group (12–16+ Players)',
+    navLabel: 'Large Group (12–16 Players)',
     emoji: '🥂',
-    badge: 'Grand Tier • 12, 14, 16+ Player House Parties & Getaways • 5 Rounds',
+    badge: 'Grand Tier • 12 to 16 Player House Parties (+ Extra Detectives) • 5 Rounds',
     title: 'Large Group Murder Mystery',
-    titleHighlight: 'Games (12–16+ Players)',
+    titleHighlight: 'Games (12–16 Players)',
     subtitle:
-      'Hosting a big house party, weekend Airbnb getaway, hen party, or team social for 12 to 16+ people? Our Grand Tier scales up to 16 custom suspect roles across 5 investigation rounds—plus unlimited extra friends can join free as named Guest Detectives.',
+      'Hosting a big house party, weekend Airbnb getaway, hen party, or team social for 12 to 16 players? Our Grand Tier scales up to 16 custom suspect roles across 5 investigation rounds—plus unlimited extra friends can join free as named Guest Detectives.',
     metaTitle:
-      'Large Group Murder Mystery Games for 12, 14 & 16+ Players | Back Pocket Mysteries',
+      'Large Group Murder Mystery Games for 12, 14 & 16 Players (+ Extra Detectives) | Back Pocket Mysteries',
     metaDescription:
-      'Host a custom large-group murder mystery party for 12 to 16+ players. Full-house suspect web, custom character dossiers, CCTV & audio clues, and a live 6-digit PIN mobile lobby.',
+      'Host a custom large-group murder mystery party for 12 to 16 players (+ unlimited extra Guest Detectives). Full-house suspect web, custom character dossiers, CCTV & audio clues, and a live 6-digit PIN mobile lobby.',
     keywords: [
       'murder mystery game for 12 players',
       'murder mystery game for 14 players',
@@ -697,10 +697,10 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     recommendedThemeSlug: 'christmas-nightmare',
     groupSizeLabel: 'Up to 16 Suspects + Unlimited Free Extra Detectives',
     prepTimeLabel: 'Grand Tier • 5 Investigation Rounds • Zero Printing Required',
-    whyTitle: 'How to Run a 12-to-16+ Person Murder Mystery Without Chaos',
+    whyTitle: 'How to Run a 12-to-16 Person Murder Mystery (+ Extra Detectives) Without Chaos',
     whyParagraphs: [
       'Anyone who has tried to run a traditional paper murder mystery for 14 or 16 people knows the nightmare: 80 pages of printing, 48 paper clue slips to sort into envelopes, and guests constantly asking "Wait, who is Lord Pemberton again?"',
-      'Back Pocket Mysteries eliminates large-group chaos completely. First, every character is named after your real guests (`Sarah | The Bombshell`, `Marcus | The Producer`), and the live Room Cast directory on every phone shows each guest’s photo and role. Second, our 6-digit Game PIN Playroom pushes all 5 rounds of clues to all 16+ phones simultaneously.',
+      'Back Pocket Mysteries eliminates large-group chaos completely. First, every character is named after your real guests (`Sarah | The Bombshell`, `Marcus | The Producer`), and the live Room Cast directory on every phone shows each guest’s photo and role. Second, our 6-digit Game PIN Playroom pushes all 5 rounds of clues to all 16 suspects (plus any extra Guest Detectives) simultaneously.',
     ],
     highlights: [
       {

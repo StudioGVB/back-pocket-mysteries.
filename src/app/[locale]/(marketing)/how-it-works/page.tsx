@@ -620,7 +620,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
               <div className="grid sm:grid-cols-12 gap-6 items-center">
                 <div className="sm:col-span-7 space-y-4">
                   <span className="inline-block px-3.5 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
-                    1 to 16+ Players · Any Group Mix
+                    1 to 16 Players (+ Extra Detectives) · Any Group Mix
                   </span>
                   <h3 className="text-3xl font-black uppercase tracking-tight leading-none">
                     Gender-Flex Casting &amp; <span className="text-brand-pink italic">Two Ways to Play.</span>

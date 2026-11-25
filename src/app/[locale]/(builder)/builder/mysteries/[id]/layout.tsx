@@ -59,7 +59,11 @@ async function MysteryHeader({
 
   const characters = (mystery as any).characters || [];
   const plotBeats = (mystery as any).plot_beats || [];
+  const clues = (mystery as any).clues || [];
   const pkgInfo = getPackageInfoForMaxPlayers(mystery.max_players);
+  const populatedRoundsCount = Array.from({ length: pkgInfo.requiredRounds }, (_, idx) => idx + 1).filter(
+    (rNum) => clues.some((c: any) => Number(c.round_number || 1) === rNum)
+  ).length;
 
   // Calculate Progress
   let progress = 0;
@@ -78,7 +82,7 @@ async function MysteryHeader({
   if (characters.some((c: any) => c.motives && c.motives.length > 0)) {
     progress += 20;
   }
-  if (plotBeats && plotBeats.length > 0) {
+  if (plotBeats && plotBeats.length > 0 && populatedRoundsCount >= pkgInfo.requiredRounds) {
     progress += 20;
   }
 
@@ -86,13 +90,13 @@ async function MysteryHeader({
 
   return (
     <div className="px-8 lg:px-10 py-3.5 max-w-[1500px] mx-auto w-full flex flex-wrap items-center justify-between gap-4">
-      {/* Left: Mystery Title & Package / Role Metadata */}
+      {/* Left: Mystery Title & Package / Role / Round Metadata */}
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight leading-none">
           {mystery.title}
         </h1>
         <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold text-slate-600 border border-slate-200">
-          {pkgInfo.label} ({pkgInfo.rangeLabel})
+          {pkgInfo.label} ({pkgInfo.rangeLabel} • {pkgInfo.requiredRounds} Rounds)
         </span>
         <span
           className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border ${
@@ -102,6 +106,16 @@ async function MysteryHeader({
           }`}
         >
           {characters.length}/{pkgInfo.requiredCharacters} Roles
+        </span>
+        <span
+          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border ${
+            populatedRoundsCount >= pkgInfo.requiredRounds
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-amber-50 text-amber-700 border-amber-200'
+          }`}
+          title={`${pkgInfo.label} requires clues across all ${pkgInfo.requiredRounds} investigation rounds`}
+        >
+          {populatedRoundsCount}/{pkgInfo.requiredRounds} Rounds Clued
         </span>
       </div>
 

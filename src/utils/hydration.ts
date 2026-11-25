@@ -547,14 +547,15 @@ export function getCharacterNameParts(char: any): {
   const parsed = splitGuestNameParts(rawGuestName);
   const explicitFirst = String(profile.first_name || '').trim();
   const explicitLast = String(profile.last_name || '').trim();
+  const combinedExplicit = [explicitFirst, explicitLast].filter(Boolean).join(' ').trim();
+  const explicitMatchesRaw =
+    Boolean(combinedExplicit) &&
+    combinedExplicit.toLowerCase() === parsed.fullName.toLowerCase();
 
-  const firstName = explicitFirst || parsed.firstName || rawGuestName;
-  const lastName =
-    explicitLast ||
-    (explicitFirst && rawGuestName.toLowerCase().startsWith(explicitFirst.toLowerCase())
-      ? rawGuestName.slice(explicitFirst.length).trim()
-      : parsed.lastName);
-  const fullName = [firstName, lastName].filter(Boolean).join(' ') || rawGuestName;
+  const firstName =
+    (explicitMatchesRaw ? explicitFirst : parsed.firstName) || parsed.firstName || rawGuestName;
+  const lastName = explicitMatchesRaw ? explicitLast : parsed.lastName;
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || parsed.fullName || rawGuestName;
 
   return {
     firstName,
@@ -1254,8 +1255,17 @@ export function hydrateTextWithCharacters(
   }
 
   // 2. Hydrate all explicit {{Token}} occurrences:
-  // In 'print' mode, the 1st mention of a character in a text block uses their Full Name ("Sarah Jenkins"),
-  // and 2nd+ mentions of that character in the same block use their First Name ("Sarah") unless two guests share a first name!
+  // In narrative prose ('print' mode), the 1st mention of a character uses their Full Name ("Sarah Jenkins"),
+  // and 2nd+ mentions in the same prose block use their First Name ("Sarah") unless two guests share a first name.
+  // In Chat / SMS threads and Audio transcripts (where lines use `{{Role}}:` speaker prefixes or `Sender: {{Role}}` headers),
+  // keep every mention consistent as Full Name so chat bubble alignment, participant counts, and voice speakers never split!
+  const isDialogueOrChatBlock =
+    /(?:^|\r?\n)\s*(?:[\[\(][^\]\)]+[\]\)]\s*)?\{\{[^}]+\}\}(?:\s*[\[\(][^\]\)]+[\]\)])?\s*:/m.test(
+      hydrated
+    ) ||
+    /(?:^|\r?\n)\s*(?:sender|recipient|from|to|contact|participants?|speakers?)\s*:\s*\{\{[^}]+\}\}/im.test(
+      hydrated
+    );
   const mentionedCharKeys = new Set<string>();
   const resolveExplicitTokens = (input: string, usePlainNameForNested = false) =>
     input.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (fullMatch, inner) => {
@@ -1264,7 +1274,12 @@ export function hydrateTextWithCharacters(
       if (tokenMap.has(lower)) {
         let val = tokenMap.get(lower)!;
         const cKey = tokenToCharKey.get(lower);
-        if (mode === 'print' && cKey && subsequentTokenMap.has(lower)) {
+        if (
+          mode === 'print' &&
+          !isDialogueOrChatBlock &&
+          cKey &&
+          subsequentTokenMap.has(lower)
+        ) {
           if (mentionedCharKeys.has(cKey)) {
             val = subsequentTokenMap.get(lower)!;
           } else {

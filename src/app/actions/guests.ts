@@ -11,6 +11,7 @@ import {
   stripAiPhotoFromAvatarUrl,
 } from '@/utils/avatar';
 import { getAllCachedMysteries, updateCachedMysteryCharacters } from '@/lib/live-session-store';
+import { splitGuestNameParts } from '@/utils/hydration';
 
 export async function saveGuestAction(guestData: {
   name: string;
@@ -244,11 +245,14 @@ export async function updateGuestAction(
               pd.guest_name &&
               String(pd.guest_name).toLowerCase() === String(finalGuest.name).toLowerCase())
           ) {
+            const parsedUpdatedName = splitGuestNameParts(finalGuest?.name || pd.guest_name);
             const nextPd: Record<string, any> = {
               ...pd,
               guest_id: id,
-              guest_name: finalGuest?.name || pd.guest_name,
-              name: finalGuest?.name || pd.name,
+              guest_name: parsedUpdatedName.fullName || finalGuest?.name || pd.guest_name,
+              name: parsedUpdatedName.fullName || finalGuest?.name || pd.name,
+              first_name: parsedUpdatedName.firstName,
+              last_name: parsedUpdatedName.lastName,
               avatar_url: updatedUrl || pd.avatar_url,
               ...(resolvedAccent ? { accent: resolvedAccent } : {}),
               ...(resolvedAge ? { age: resolvedAge } : {}),
@@ -284,11 +288,14 @@ export async function updateGuestAction(
               String(pd.guest_name).toLowerCase() === String(finalGuest.name).toLowerCase())
           ) {
             changed = true;
+            const parsedUpdatedName = splitGuestNameParts(finalGuest?.name || pd.guest_name);
             const nextPd: Record<string, any> = {
               ...pd,
               guest_id: id,
-              guest_name: finalGuest?.name || pd.guest_name,
-              name: finalGuest?.name || pd.name,
+              guest_name: parsedUpdatedName.fullName || finalGuest?.name || pd.guest_name,
+              name: parsedUpdatedName.fullName || finalGuest?.name || pd.name,
+              first_name: parsedUpdatedName.firstName,
+              last_name: parsedUpdatedName.lastName,
               avatar_url: updatedUrl || pd.avatar_url,
               ...(resolvedAccent ? { accent: resolvedAccent } : {}),
               ...(resolvedAge ? { age: resolvedAge } : {}),

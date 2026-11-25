@@ -114,7 +114,6 @@ export default async function MarketingLayout(props: {
                 <li><Link href={`/${locale}/custom-murder-mystery`} className="text-brand-pink hover:text-white transition-colors">Custom Murder Mystery</Link></li>
                 <li><Link href={`/${locale}/play-online`} className="text-sky-400 hover:text-white transition-colors">🌍 Play Online (Zoom &amp; FaceTime)</Link></li>
                 <li><Link href={`/${locale}/free-murder-mystery-game`} className="text-white hover:text-brand-pink transition-colors">🎁 Free Murder Mystery Game</Link></li>
-                <li><Link href={`/${locale}/mini-mystery`} className="text-emerald-400 hover:text-white transition-colors">🕵️‍♀️ 60-Sec Mini-Mystery Quiz</Link></li>
                 <li><Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-colors">{dict.common.themes}</Link></li>
                 <li><Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-colors">{dict.common.howItWorks}</Link></li>
                 <li><Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-colors">{dict.common.pricing}</Link></li>
@@ -127,7 +126,7 @@ export default async function MarketingLayout(props: {
                 <li><Link href={`/${locale}/occasions/murder-mystery-game-for-6-players`} className="hover:text-brand-pink transition-colors">6-Player Murder Mystery</Link></li>
                 <li><Link href={`/${locale}/occasions/murder-mystery-game-for-8-players`} className="hover:text-brand-pink transition-colors">8-Player Murder Mystery</Link></li>
                 <li><Link href={`/${locale}/occasions/murder-mystery-game-for-10-players`} className="hover:text-brand-pink transition-colors">10-Player Murder Mystery</Link></li>
-                <li><Link href={`/${locale}/occasions/murder-mystery-game-for-12-to-16-players`} className="hover:text-brand-pink transition-colors">Large Groups (12–16+ Players)</Link></li>
+                <li><Link href={`/${locale}/occasions/murder-mystery-game-for-12-to-16-players`} className="hover:text-brand-pink transition-colors">Large Groups (12–16 Players)</Link></li>
                 <li><Link href={`/${locale}/occasions/small-group-murder-mystery-games-4-6-8-players`} className="hover:text-brand-pink transition-colors">Small Groups (4–8 Players)</Link></li>
                 <li><Link href={`/${locale}/blog`} className="hover:text-brand-pink transition-colors">{dict.common.blog}</Link></li>
                 <li><Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-colors">{dict.common.faq}</Link></li>
