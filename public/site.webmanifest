@@ -1,0 +1,23 @@
+{
+  "name": "Back Pocket Mysteries",
+  "short_name": "BPM",
+  "description": "Custom murder mystery party games built around your actual guest list.",
+  "start_url": "/en",
+  "display": "standalone",
+  "background_color": "#080c17",
+  "theme_color": "#ff007f",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

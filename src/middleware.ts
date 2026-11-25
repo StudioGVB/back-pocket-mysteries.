@@ -81,6 +81,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - Public assets like logos, hero images, and generated mystery audio
      */
-    '/((?!api|mystery-audio|videos|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|xml|txt|html|mp3|wav|ogg|m4a|mp4|webm|mov)$).*)',
+    '/((?!api|mystery-audio|videos|_next/static|_next/image|favicon\\.ico|apple-icon|icon|site\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|xml|txt|html|mp3|wav|ogg|m4a|mp4|webm|mov)$).*)',
   ],
 }
