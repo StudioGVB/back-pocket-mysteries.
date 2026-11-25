@@ -62,6 +62,12 @@ function getPackageRoundsForCount(charCount?: number): 3 | 4 | 5 {
   return 5;
 }
 
+export type ClueStrengthTier =
+  | 'Forensic Anchor'
+  | 'Timeline & Alibi Lock'
+  | 'Motive & Escalation Proof'
+  | 'Double-Meaning Misdirection';
+
 export interface SuggestedClueCandidate {
   id: string;
   title: string;
@@ -76,6 +82,10 @@ export interface SuggestedClueCandidate {
   subplotId?: string;
   beatNumber?: number;
   doubleMeaningNote?: string;
+  strengthTier?: ClueStrengthTier;
+  strengthSummary?: string;
+  coveredBeatPoints?: string[];
+  unaddressedBeatGap?: string;
   decision: 'yes' | 'no' | 'pending';
 }
 
@@ -86,6 +96,7 @@ export interface SuggestedRedHerringSubplot {
   theme: string;
   summary: string;
   doubleMeaningCoreClueHook?: string;
+  linkedCoreClueTitles?: string[];
   step1TriggerR1: string;
   step2EscalationR2: string;
   step3AlibiHoleR3: string;
@@ -2416,10 +2427,25 @@ MANDATORY FORMAT, SPICE & PHOTO-VS-TEXT RULES:
    - If Mild: romantic affair tension with 100% clean PG-13 dialogue (0 cussing).
    - If Clean: 100% SFW high-stakes murder/blackmail with 0 romance affairs and 0 profanity.
 3. **DOUBLE-MEANING / AMBIGUOUS HOOK (IDEAL!):** Wherever possible, write the clue so that while it genuinely proves part of Beat #${targetBeat.beatNumber}, it ALSO has an ambiguous double meaning that could make one of the innocent suspects look suspicious (and explain that in "doubleMeaningNote").
-4. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names.
+4. **BEAT SUB-FACTS, CLUE STRENGTH & GAP COVERAGE (CRITICAL!):**
+   - Break Beat #${targetBeat.beatNumber} ("${targetBeat.title}: ${targetBeat.description}") into **3 essential Beat Sub-Facts** ("beatSubFacts"):
+     1. A short label for **Who/Where & Timestamp** (e.g. "Upstairs Bedroom Lure at ${targetBeat.timeWindow}")
+     2. A short label for **The Physical Action / Object / Weapon** (e.g. "Stolen Varsity Betting Ledger")
+     3. A short label for **The Motive / Stakes / Aftermath** (e.g. "$42k Point-Shaving & Blackmail Leverage")
+   - For each of the 5 suggested clues, specify:
+     - "strengthTier": "Forensic Anchor" | "Timeline & Alibi Lock" | "Motive & Escalation Proof" | "Double-Meaning Misdirection"
+     - "strengthSummary": 1 punchy sentence explaining what specific investigative strength this clue adds to the mystery.
+     - "coveredBeatPoints": Array of 2 of the exact 3 "beatSubFacts" strings that this single clue proves (design the 5 options so that picking any complementary pair covers all 3 "beatSubFacts"!).
+     - "unaddressedBeatGap": 1 concise sentence explaining what single gap in Beat #${targetBeat.beatNumber} this clue leaves uncovered on its own so the creator knows what second clue to pair with it.
+5. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names.
 
 Return strict JSON:
 {
+  "beatSubFacts": [
+    "Sub-Fact 1 short label (4-7 words)",
+    "Sub-Fact 2 short label (4-7 words)",
+    "Sub-Fact 3 short label (4-7 words)"
+  ],
   "clues": [
     {
       "title": "Punchy in-world clue title",
@@ -2430,6 +2456,10 @@ Return strict JSON:
       "generationPrompt": "Leave empty '' for chat/audio/text formats! For physical_prop or cctv ONLY: write a rich 3-sentence cinematic forensic photo prompt (camera/lens + physical objects + ${blueprint.spiceLevel} noir lighting, NO text in image).",
       "pointsTo": "How this clue explains Beat #${targetBeat.beatNumber}.",
       "doubleMeaningNote": "How this clue also looks ambiguous or suspicious toward an innocent suspect's motive.",
+      "strengthTier": "Forensic Anchor" | "Timeline & Alibi Lock" | "Motive & Escalation Proof" | "Double-Meaning Misdirection",
+      "strengthSummary": "What specific investigative strength this clue adds to the pack.",
+      "coveredBeatPoints": ["Sub-Fact 1 short label (4-7 words)", "Sub-Fact 2 short label (4-7 words)"],
+      "unaddressedBeatGap": "What part of Beat #${targetBeat.beatNumber} this single clue doesn't cover on its own.",
       "involvedRoles": ["The Role A", "The Role B"]
     }
   ]
@@ -2441,17 +2471,65 @@ Return strict JSON:
       featureName: 'architect_suggest_beat_clues',
     });
     const PHOTO_FORMATS = new Set<ClueFormat>(['physical_prop', 'cctv']);
+    const defaultSubFacts: [string, string, string] =
+      Array.isArray(parsed.beatSubFacts) && parsed.beatSubFacts.length >= 3
+        ? [
+            String(parsed.beatSubFacts[0]).trim(),
+            String(parsed.beatSubFacts[1]).trim(),
+            String(parsed.beatSubFacts[2]).trim(),
+          ]
+        : [
+            `Timestamp & Presence (${targetBeat.timeWindow})`,
+            `Physical Action & Evidence (${targetBeat.title})`,
+            `Motive Stakes & Suspect Escalation`,
+          ];
+
+    const VALID_STRENGTH_TIERS: ClueStrengthTier[] = [
+      'Forensic Anchor',
+      'Timeline & Alibi Lock',
+      'Motive & Escalation Proof',
+      'Double-Meaning Misdirection',
+    ];
+
     const candidates: SuggestedClueCandidate[] = (parsed.clues || []).map(
       (c: any, idx: number) => {
         const fmt = (c.format as ClueFormat) || 'physical_prop';
         const isPhoto = PHOTO_FORMATS.has(fmt);
+        const fallbackCovered =
+          idx % 3 === 0
+            ? [defaultSubFacts[0], defaultSubFacts[1]]
+            : idx % 3 === 1
+              ? [defaultSubFacts[1], defaultSubFacts[2]]
+              : [defaultSubFacts[0], defaultSubFacts[2]];
+        const rawCovered = Array.isArray(c.coveredBeatPoints)
+          ? c.coveredBeatPoints.map((s: any) => String(s || '').trim()).filter(Boolean)
+          : [];
+        const coveredBeatPoints = rawCovered.length > 0 ? rawCovered : fallbackCovered;
+        const missingFromThisClue = defaultSubFacts.filter(
+          (sf) => !coveredBeatPoints.some((cp: string) => cp.toLowerCase() === sf.toLowerCase())
+        );
+
+        const rawTier = String(c.strengthTier || '').trim() as ClueStrengthTier;
+        const strengthTier: ClueStrengthTier = VALID_STRENGTH_TIERS.includes(rawTier)
+          ? rawTier
+          : isPhoto
+            ? 'Forensic Anchor'
+            : fmt === 'audio'
+              ? 'Timeline & Alibi Lock'
+              : idx % 2 === 0
+                ? 'Motive & Escalation Proof'
+                : 'Double-Meaning Misdirection';
+
         return {
           id: `beat-${beatNumber}-clue-${Date.now()}-${idx}`,
           title: String(c.title || `Beat #${beatNumber} Clue ${idx + 1}`).trim(),
           format: fmt,
           roundNumber: Math.max(
             1,
-            Math.min(maxAllowedRound, Number(c.roundNumber) || Math.min(maxAllowedRound, Math.ceil(beatNumber / 2)))
+            Math.min(
+              maxAllowedRound,
+              Number(c.roundNumber) || Math.min(maxAllowedRound, Math.ceil(beatNumber / 2))
+            )
           ) as ArchitectRoundNumber,
           timestampLabel: String(c.timestampLabel || targetBeat.timeWindow || '10:00 PM'),
           description: ensureSpiceFlavorInClueDescription(
@@ -2464,6 +2542,18 @@ Return strict JSON:
             : '',
           pointsTo: String(c.pointsTo || `Proves Beat #${beatNumber}.`).trim(),
           doubleMeaningNote: String(c.doubleMeaningNote || '').trim(),
+          strengthTier,
+          strengthSummary: String(
+            c.strengthSummary ||
+              `Anchors Beat #${beatNumber} at ${targetBeat.timeWindow} via ${fmt} evidence.`
+          ).trim(),
+          coveredBeatPoints,
+          unaddressedBeatGap: String(
+            c.unaddressedBeatGap ||
+              (missingFromThisClue.length > 0
+                ? `Doesn't directly prove "${missingFromThisClue.join(' & ')}" on its own — pair with a complementary clue.`
+                : `Pair with a second clue from a different medium to corroborate Beat #${beatNumber}.`)
+          ).trim(),
           involvedRoles: Array.isArray(c.involvedRoles) ? c.involvedRoles : [],
           isRedHerring: false,
           beatNumber,
@@ -2486,10 +2576,9 @@ Return strict JSON:
 
 /**
  * STAGE 3: Red Herring & Double-Meaning Builder
- * Creates 3 entangled Red-Herring Plotlines tying together the Innocent Suspects (and Accomplice/Victim),
- * showing each character's motive, how their motive ties into the already-selected 10 Core Clues
- * (double-meaning / ambiguity), and suggesting 4 Red Herring Clues per plotline so the user can pick ~2 each
- * (~6 Red Herring Clues total).
+ * Freshly generates 3 entangled Red-Herring Plotlines directly anchored to the exact Core Clues
+ * the user selected in Step 2, showing each character's motive, which selected Core Clues it
+ * hooks into via double-meaning, and suggesting 4 media-balanced Red Herring Clues per plotline.
  */
 export async function suggestRedHerringPlotlinesWithCluesAction(params: {
   blueprint: MysteryBlueprintInput;
@@ -2511,10 +2600,17 @@ export async function suggestRedHerringPlotlinesWithCluesAction(params: {
   const tokenDirective = getGenderFlexTokenDirective(blueprint.characters);
   const maxAllowedRound = getPackageRoundsForCount(blueprint.characters?.length);
 
+  // Measure the media balance of the user's already-selected Core Clues so the Red Herrings auto-balance the pack!
+  const corePhotoCount = selectedCoreClues.filter(
+    (c) => c.format === 'physical_prop' || c.format === 'cctv'
+  ).length;
+  const coreAudioCount = selectedCoreClues.filter((c) => c.format === 'audio').length;
+  const coreTextCount = selectedCoreClues.length - corePhotoCount - coreAudioCount;
+
   try {
     const prompt = `You are the Master Red-Herring & Double-Meaning Architect for Back Pocket Mysteries.
-The creator has locked in their **10 Core Murder Clues** across the 5 Core Story Beats.
-Now we need to build **3 entangled Red-Herring Plotlines** for the Innocent Suspects so the creator can see each suspect's motive, see how it ties into the real clues via double-meaning, and pick **2 Red-Herring Clues per plotline (6 Red-Herring Clues total)** to complete their 16-clue mystery!
+The creator has just locked in their **${selectedCoreClues.length} Selected Core Murder Clues** across the 5 Core Story Beats.
+Now you MUST freshly generate **3 entangled Red-Herring Plotlines** specifically tailored around the creator's **exact selected Core Clues below**, showing each innocent suspect's motive, which of the selected Core Clues their motive hooks into via double-meaning, and **4 Red-Herring Clues per plotline** (the creator will pick 2 per plotline = 6 Red-Herring Clues total).
 
 MYSTERY CONTEXT:
 - Title: "${blueprint.title}" (${blueprint.theme})
@@ -2531,13 +2627,22 @@ ${blueprint.characters
   )
   .join('\n')}
 
-LOCKED-IN 10 CORE MURDER CLUES:
+CREATOR'S EXACT SELECTED CORE CLUES (ANCHOR YOUR RED HERRINGS DIRECTLY TO THESE!):
 ${selectedCoreClues
   .map(
     (c, idx) =>
-      `${idx + 1}. [Beat #${c.beatNumber || '?'} • ${c.timestampLabel} • ${c.format}] "${c.title}": ${c.description}`
+      `Core Clue #${idx + 1} [Beat #${c.beatNumber || '?'} • ${c.timestampLabel} • ${c.format}] "${c.title}":
+   - Content: ${c.description}
+   - Double-Meaning Hook Already Embedded: ${c.doubleMeaningNote || 'None specified'}
+   - Involved Characters: ${(c.involvedRoles || []).join(', ')}`
   )
-  .join('\n')}
+  .join('\n\n')}
+
+CURRENT MEDIA MIX OF THE ${selectedCoreClues.length} SELECTED CORE CLUES:
+- 📸 Photos (physical_prop / cctv): ${corePhotoCount}
+- 🎙️ Audio Voice Notes (audio): ${coreAudioCount}
+- 💬 Text UI (chat / document / receipt / handwritten_note / social_post / search_log): ${coreTextCount}
+-> Across each plotline's 4 decoyClues, make sure the top 2 clues (which are pre-selected by default) balance out whatever medium is lowest above so the final 16-clue pack lands at ~5-6 Photos, ~3-4 Audio Voice Notes, and ~7-8 Text UI clues!
 
 ${
   customDirection && customDirection.trim()
@@ -2556,8 +2661,10 @@ RED-HERRING & DOUBLE-MEANING RULES:
    - "title": Punchy subplot title using {{The Role}} tokens.
    - "involvedRoles": The 2–3 character role titles entangled in this subplot.
    - "summary": Clear explanation of their motive against the Victim and their secret side-scheme.
-   - "doubleMeaningCoreClueHook": Explicitly name 1 or 2 of the **Locked-In 10 Core Murder Clues** above and explain how that real clue looks ambiguous or double-meaning toward THIS red-herring motive!
-   - "decoyClues": Suggest **4 distinct Red-Herring Clue options** for this plotline (mixing formats: 1 "physical_prop" or "cctv" photo clue, 1 "audio" voice note clue, and 2 "chat" / "receipt" / "handwritten_note" / "document" text clues).
+   - "linkedCoreClueTitles": Array of 1–3 exact titles from the **CREATOR'S EXACT SELECTED CORE CLUES** list above that this Red-Herring Plotline directly hooks into!
+   - "doubleMeaningCoreClueHook": Explicitly name those selected Core Clues and explain how this innocent suspect's motive creates a suspicious double-meaning interpretation of those real clues!
+   - "decoyClues": Suggest **4 distinct Red-Herring Clue options** for this plotline (mixing "physical_prop" or "cctv" photo clues, "audio" voice note clues, and "chat" / "receipt" / "handwritten_note" / "document" text clues).
+   - Each decoy clue MUST also include "strengthTier" and "strengthSummary" explaining how strongly it misdirects table suspicion or creates an alibi puzzle.
    - PHOTO PROMPT RULE: ONLY "physical_prop" and "cctv" clues get a 3-sentence cinematic forensic photo prompt in "generationPrompt". For "chat", "audio", "receipt", "handwritten_note", "search_log", "social_post", and "document", set "generationPrompt" to "" (empty string!).
 3. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names.
 
@@ -2565,11 +2672,12 @@ Return strict JSON:
 {
   "subplots": [
     {
-      "title": "e.g. {{The Bestie}} & {{The Teammate}}: The $18,000 Workplace Skim & Blackmail",
+      "title": "e.g. {{The Bestie}} & {{The Teammate}}: The $18,000 Scholarship Skim & Hookup Cover-Up",
       "involvedRoles": ["The Bestie", "The Teammate"],
       "theme": "Embezzlement & Secret Hookup Cover-Up",
       "summary": "Why these characters had a fierce motive to silence the Victim and what they were doing during the murder window.",
-      "doubleMeaningCoreClueHook": "Ties directly into Core Clue '[Title]' because...",
+      "linkedCoreClueTitles": ["Exact Title of Selected Core Clue #1", "Exact Title of Selected Core Clue #2"],
+      "doubleMeaningCoreClueHook": "Ties directly into Selected Core Clue '[Title]' because...",
       "step1TriggerR1": "Early suspicion trigger",
       "step2EscalationR2": "Mid-game escalation",
       "step3AlibiHoleR3": "How their alibi is finally explained",
@@ -2586,6 +2694,8 @@ Return strict JSON:
           "description": "In-world clue text calibrated to ${blueprint.spiceLevel} spice using {{Role}} tokens.",
           "generationPrompt": "Leave empty '' for chat/audio/text formats! For physical_prop or cctv ONLY: 3-sentence forensic photo prompt (NO text in image).",
           "pointsTo": "Why this makes {{The Role}} look guilty (or clears their alibi later).",
+          "strengthTier": "Double-Meaning Misdirection" | "Forensic Anchor" | "Timeline & Alibi Lock" | "Motive & Escalation Proof",
+          "strengthSummary": "How this red-herring clue amplifies suspicion or hooks into the selected core clues.",
           "involvedRoles": ["The Bestie", "The Teammate"]
         }
       ]
@@ -2624,6 +2734,11 @@ Return strict JSON:
                 ? String(c.generationPrompt || c.description || '').trim()
                 : '',
               pointsTo: String(c.pointsTo || 'Red-herring motive & misdirection clue.').trim(),
+              strengthTier: (c.strengthTier as ClueStrengthTier) || 'Double-Meaning Misdirection',
+              strengthSummary: String(
+                c.strengthSummary ||
+                  'Deflects table suspicion onto innocent suspects while tying into the real timeline.'
+              ).trim(),
               involvedRoles: Array.isArray(c.involvedRoles)
                 ? c.involvedRoles
                 : Array.isArray(s.involvedRoles)
@@ -2631,11 +2746,14 @@ Return strict JSON:
                   : [],
               isRedHerring: true,
               subplotId: subId,
-              // Pre-select the first 2 clues per subplot so 3 subplots x 2 = 6 Red Herring clues ready out of the box!
               decision: cIdx < 2 ? 'yes' : 'pending',
             };
           }
         );
+
+        const rawLinkedTitles = Array.isArray(s.linkedCoreClueTitles)
+          ? s.linkedCoreClueTitles.map((t: any) => String(t || '').trim()).filter(Boolean)
+          : [];
 
         return {
           id: subId,
@@ -2644,6 +2762,10 @@ Return strict JSON:
           theme: String(s.theme || 'Suspect Motive & Cover-Up').trim(),
           summary: String(s.summary || '').trim(),
           doubleMeaningCoreClueHook: String(s.doubleMeaningCoreClueHook || '').trim(),
+          linkedCoreClueTitles:
+            rawLinkedTitles.length > 0
+              ? rawLinkedTitles
+              : selectedCoreClues.slice(idx * 2, idx * 2 + 2).map((c) => c.title),
           step1TriggerR1: String(s.step1TriggerR1 || '').trim(),
           step2EscalationR2: String(s.step2EscalationR2 || '').trim(),
           step3AlibiHoleR3: String(s.step3AlibiHoleR3 || '').trim(),
