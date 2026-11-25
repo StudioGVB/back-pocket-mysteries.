@@ -487,9 +487,10 @@ export function upgradeLegacyCloneAvatarUrl(guest: {
     }
   }
 
+  // Only fallback to the canonical pre-baked portrait if the guest has no aiPhotoUrl yet
   const cleanName = String(guest.name || '').trim().toLowerCase();
   const canonicalPhoto = CANONICAL_GUEST_NAME_AVATAR_MAP[cleanName];
-  if (canonicalPhoto && !rawUrl.includes(canonicalPhoto)) {
+  if (canonicalPhoto && !rawUrl.includes('aiPhotoUrl=')) {
     try {
       const parsed = new URL(rawUrl);
       parsed.searchParams.set('aiPhotoUrl', canonicalPhoto);
@@ -506,7 +507,10 @@ export function upgradeLegacyCloneAvatarUrl(guest: {
  * Extracts the embedded `aiPhotoUrl` query parameter from a DiceBear avatar URL if present,
  * otherwise returns the original avatar URL (rewriting retired 8.x/avataaars to 7.x/avataaars).
  */
-export function resolveDisplayAvatarUrl(avatarUrl?: string | null): string {
+export function resolveDisplayAvatarUrl(
+  avatarUrl?: string | null,
+  options?: { disableCanonicalFallback?: boolean }
+): string {
   if (!avatarUrl) return '';
   for (const rule of LEGACY_CLONE_AVATAR_REPLACEMENTS) {
     if (avatarUrl.includes(rule.match)) {
@@ -524,7 +528,7 @@ export function resolveDisplayAvatarUrl(avatarUrl?: string | null): string {
       }
       return aiPhoto;
     }
-    if (seedName && CANONICAL_GUEST_NAME_AVATAR_MAP[seedName]) {
+    if (!options?.disableCanonicalFallback && seedName && CANONICAL_GUEST_NAME_AVATAR_MAP[seedName]) {
       return CANONICAL_GUEST_NAME_AVATAR_MAP[seedName];
     }
   } catch {

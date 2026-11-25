@@ -249,7 +249,20 @@ export async function generateGuestAvatarAction(
         hairStyle = `men's ${rawHairLength.toLowerCase()} length, ${texLower} texture hair`;
       }
     } else {
-      hairStyle = `${rawHairLength || 'Long'} length, ${rawHairTexture || 'Straight'} texture`;
+      const fLen = rawHairLength || 'Long';
+      if (fLen === 'Very Long') {
+        hairStyle = `very long ${rawHairTexture || 'Straight'} hair cascading down past the chest and mid-back (strictly worn down and flowing past both shoulders — NEVER a bob, NEVER chin-length, NEVER tied up)`;
+      } else if (fLen === 'Long') {
+        hairStyle = `long ${rawHairTexture || 'Straight'} hair falling well past the shoulders and collarbones down to the chest (strictly worn down past the shoulders — NEVER a short bob, NEVER chin-length, NEVER tied up in a bun/ponytail unless explicitly requested)`;
+      } else if (fLen === 'Shoulder-Length') {
+        hairStyle = `shoulder-length / collarbone-grazing ${rawHairTexture || 'Straight'} hair (strictly resting right at the shoulders/collarbones — NEVER long past the chest, NEVER a chin-length bob)`;
+      } else if (fLen === 'Medium') {
+        hairStyle = `medium-length chin-to-neck ${rawHairTexture || 'Straight'} bob haircut (strictly ending between the chin and mid-neck above the shoulders — NEVER long past the shoulders)`;
+      } else if (fLen === 'Short') {
+        hairStyle = `short ${rawHairTexture || 'Straight'} pixie / cropped haircut above the ears and jawline (strictly short cropped hair — NEVER long hair)`;
+      } else {
+        hairStyle = `${fLen} length, ${rawHairTexture || 'Straight'} texture`;
+      }
     }
 
     const supabase = await createClient();
@@ -372,7 +385,7 @@ export async function generateGuestAvatarAction(
         'White Blonde (specifically: bright Scandinavian platinum-white blonde)';
     }
 
-    // Axis 3: Distinct Hair Parting & Styling Variation (strictly respecting chosen hairStyle cut AND hairTexture!)
+    // Axis 3: Distinct Hair Parting & Styling Variation (strictly respecting chosen hairStyle cut, hairLength AND hairTexture!)
     const HAIR_STYLE_CUT_DESCRIPTIONS: Record<string, string> = {
       'Textured Crop / Curly Fringe':
         'textured crop with thick volume/curls on top and natural curl ringlets dipping lightly at the top hairline onto the upper forehead, paired with neat tapered sides',
@@ -428,29 +441,27 @@ export async function generateGuestAvatarAction(
         hairStylingVariation = mascStraightStyles[slot % mascStraightStyles.length];
       }
     } else {
-      const lowerHairStyle = hairStyle.toLowerCase();
-      if (lowerHairStyle.includes('long') && lowerHairStyle.includes('straight')) {
-        const longStraightStyles = [
-          'sleek middle part with hair tucked cleanly behind BOTH ears to fully expose the cheekbones and jawline',
-          'voluminous 90s layered blowout with a deep left side part swept asymmetrically over one shoulder',
-          'soft wispy forehead curtain bangs / fringe framing the eyebrows and temples, with straight hair pulled behind the shoulders',
-          'half-up, half-down crown styling (top half pinned back high at the crown exposing the full forehead and ears, long straight ends behind the neck)',
-          'chic collarbone-grazing blunt-cut straight layers with a sharp right side part tucked behind one ear',
-          'sleek high snatched ponytail with long straight hair cascading from the crown and two delicate face-framing tendrils',
-          'soft feathered face-framing layers with a deep off-center part and airy volume at the roots',
-          'sleek straight hair swept completely back over the shoulders with a side-swept fringe across the forehead',
+      const fLen = rawHairLength || 'Long';
+      if (fLen === 'Long' || fLen === 'Very Long') {
+        const longFemPartings = [
+          'clean center middle part with long hair falling smoothly forward over both shoulders and past the collarbones',
+          'soft off-center part with long face-framing layers cascading well past both shoulders',
+          'clean middle part with one side tucked lightly behind the ear and long lengths flowing down past the shoulders',
+          'voluminous long layered hair parted slightly to the left and draping forward over both shoulders down to the chest',
         ];
-        hairStylingVariation = longStraightStyles[slot % longStraightStyles.length];
-      } else if (lowerHairStyle.includes('straight')) {
-        const femStraightStyles = [
-          'sleek side-parted cut tucked behind one ear',
-          'textured French bob/lob with soft wispy forehead bangs',
-          'voluminous side-swept blowout exposing the jawline',
-          'half-up pinned crown style exposing the ears and cheekbones',
-          'blunt-cut ends with face-framing curtain fringe',
-          'sleek off-center part tucked cleanly behind both ears',
+        hairStylingVariation = longFemPartings[slot % longFemPartings.length];
+      } else if (fLen === 'Shoulder-Length') {
+        const shoulderFemPartings = [
+          'clean center part with collarbone-length ends resting right at the shoulders',
+          'off-center side part tucked behind one ear with shoulder-grazing ends',
         ];
-        hairStylingVariation = femStraightStyles[slot % femStraightStyles.length];
+        hairStylingVariation = shoulderFemPartings[slot % shoulderFemPartings.length];
+      } else if (fLen === 'Medium') {
+        const mediumFemPartings = [
+          'sleek chin-to-neck length bob with a clean center part',
+          'side-parted chin-length bob tucked behind one ear',
+        ];
+        hairStylingVariation = mediumFemPartings[slot % mediumFemPartings.length];
       }
     }
 

@@ -226,7 +226,13 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
     },
     name
   );
-  const previewDisplayUrl = resolveDisplayAvatarUrl(avatarUrl) || avatarUrl;
+  // Keep showing the guest's current AI photo in the preview circle while editing traits
+  // (the badge below clearly indicates a new AI photo will be generated when they click Save)
+  const currentAiPreviewUrl =
+    (avatarConfig.aiPhotoUrl ? resolveDisplayAvatarUrl(avatarConfig.aiPhotoUrl) : '') ||
+    (initialData?.avatar_url ? resolveDisplayAvatarUrl(initialData.avatar_url) : '');
+  const previewDisplayUrl =
+    currentAiPreviewUrl || resolveDisplayAvatarUrl(avatarUrl) || avatarUrl;
 
   const handleAddQuirk = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currentQuirk.trim() !== '') {

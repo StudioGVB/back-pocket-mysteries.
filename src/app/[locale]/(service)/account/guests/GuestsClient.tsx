@@ -761,6 +761,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
       height: newGuest.height,
       ethnicity: newGuest.ethnicity,
       avatar_url: newGuest.avatarUrl,
+      forceRegeneratePhoto: Boolean(newGuest.forceRegeneratePhoto),
       traits: newGuest.traits,
       bio: newGuest.bio,
     };
