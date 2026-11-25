@@ -2600,7 +2600,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
           {beatSummaries.map(({ beat, pickedCount, cov }) => {
             const isFocused = activeBeatNumber === beat.beatNumber;
             const isFull = pickedCount >= 2 && cov.isWholeBeatCovered;
@@ -3193,7 +3193,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 📂 Import Existing Base
               </button>
               {showLoadMenu && (
-                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-40 max-h-80 overflow-y-auto">
+                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-64 sm:w-72 rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-40 max-h-80 overflow-y-auto">
                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3 py-1.5">
                     Import Existing Mystery Base
                   </div>
@@ -3223,7 +3223,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             <button
               type="button"
               onClick={handleCreateNewBlankProject}
-              className="px-5 py-2.5 rounded-2xl bg-brand-pink hover:bg-pink-600 text-white text-xs font-black uppercase tracking-wider shadow-sm transition cursor-pointer"
+              className="px-4 sm:px-5 py-2.5 rounded-2xl bg-brand-pink hover:bg-pink-600 text-white text-xs font-black uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
               + New OG Mystery
             </button>
@@ -3257,13 +3257,13 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         )}
 
         {projects.length === 0 ? (
-          <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden p-16 text-center space-y-4">
+          <div className="bg-white rounded-3xl sm:rounded-[32px] border border-gray-100 shadow-sm overflow-hidden p-8 sm:p-16 text-center space-y-4">
             <h3 className="text-lg font-black text-brand-dark">No Active OG Projects Yet</h3>
             <p className="text-gray-400 text-sm max-w-md mx-auto">
               Start a new mystery project from a relationship diagram or load the Unibreak at the
               Cabin 5-beat blueprint.
             </p>
-            <div className="flex items-center justify-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={handleCreateUnibreakProject}
@@ -3281,7 +3281,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-8">
             {projects.map((proj) => {
               const bp = proj.blueprint;
               const roundsCount = getRoundsForCount(bp.characters.length);
@@ -3312,20 +3312,20 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     setActiveProjectId(proj.id);
                     setActiveBeatNumber(1);
                   }}
-                  className="bg-white rounded-[32px] border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-brand-pink/40 transition-all duration-200 overflow-hidden flex flex-col justify-between cursor-pointer group"
+                  className="bg-white rounded-3xl sm:rounded-[32px] border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-brand-pink/40 transition-all duration-200 overflow-hidden flex flex-col justify-between cursor-pointer group"
                 >
                   <div>
-                    <div className="p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white relative">
-                      <div className="flex items-center justify-between gap-2 mb-4">
-                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/15 text-white backdrop-blur-sm">
+                    <div className="p-5 sm:p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white relative">
+                      <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+                        <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/15 text-white backdrop-blur-sm">
                           {bp.characters.length} Players • {roundsCount} Rounds
                         </span>
-                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
+                        <span className="px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
                           {bp.spiceLevel}
                         </span>
                       </div>
 
-                      <h3 className="text-xl font-black tracking-tight text-white group-hover:text-pink-200 transition">
+                      <h3 className="text-lg sm:text-xl font-black tracking-tight text-white group-hover:text-pink-200 transition">
                         {bp.title || 'Untitled OG Mystery'}
                       </h3>
                       <p className="text-xs text-slate-300 mt-1 line-clamp-1">
@@ -3333,7 +3333,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       </p>
                     </div>
 
-                    <div className="p-6 space-y-4">
+                    <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-black text-brand-pink uppercase tracking-wider">
                           {stepLabels[proj.step] || 'Step 1: Plot & 5 Beats'}
@@ -3352,23 +3352,23 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         />
                       </div>
 
-                      <div className="rounded-2xl bg-slate-50 border border-slate-200/70 p-3.5 space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400 font-bold">Victim:</span>
-                          <span className="font-bold text-slate-800">
+                      <div className="rounded-2xl bg-slate-50 border border-slate-200/70 p-3 sm:p-3.5 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-slate-400 font-bold shrink-0">Victim:</span>
+                          <span className="font-bold text-slate-800 truncate">
                             {victimChar?.roleTitle || 'Not set'}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400 font-bold">Killer:</span>
-                          <span className="font-bold text-rose-700">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-slate-400 font-bold shrink-0">Killer:</span>
+                          <span className="font-bold text-rose-700 truncate">
                             {killerChar?.roleTitle || 'Not set'}
                             {accompliceChar ? ` + ${accompliceChar.roleTitle}` : ''}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400 font-bold">Core Beats:</span>
-                          <span className="font-bold text-slate-700">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-slate-400 font-bold shrink-0">Core Beats:</span>
+                          <span className="font-bold text-slate-700 truncate">
                             {bp.beats.length} Beats • {coreCount}/10 Core • {rhCount}/6 Red Herring
                           </span>
                         </div>
@@ -3376,7 +3376,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     </div>
                   </div>
 
-                  <div className="px-6 pb-6 pt-2 flex items-center justify-between gap-2">
+                  <div className="px-4 sm:px-6 pb-5 sm:pb-6 pt-1 flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -3384,7 +3384,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         setActiveProjectId(proj.id);
                         setActiveBeatNumber(1);
                       }}
-                      className="flex-1 py-3 rounded-2xl bg-slate-900 group-hover:bg-brand-pink text-white text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                      className="flex-1 py-2.5 sm:py-3 rounded-2xl bg-slate-900 group-hover:bg-brand-pink text-white text-xs font-black uppercase tracking-wider transition cursor-pointer"
                     >
                       Open in OG Builder →
                     </button>
@@ -3393,7 +3393,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       <Link
                         href={`/${locale}/builder/mysteries/${proj.transferredMysteryId}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="px-3.5 py-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-black uppercase tracking-wider transition"
+                        className="px-3.5 py-2.5 sm:py-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-black uppercase tracking-wider transition"
                         title="Open saved Draft in Mystery Builder"
                       >
                         Base ↗
@@ -3404,7 +3404,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       <button
                         type="button"
                         onClick={(e) => handleDeleteProject(proj.id, e)}
-                        className="px-3 py-3 rounded-2xl bg-red-600 text-white text-xs font-black uppercase cursor-pointer"
+                        className="px-3 py-2.5 sm:py-3 rounded-2xl bg-red-600 text-white text-xs font-black uppercase cursor-pointer"
                       >
                         Confirm
                       </button>
@@ -3415,7 +3415,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           e.stopPropagation();
                           setConfirmDeleteId(proj.id);
                         }}
-                        className="p-3 rounded-2xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                        className="p-2.5 sm:p-3 rounded-2xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                         title="Delete project from OG Builder"
                       >
                         ✕
@@ -3435,12 +3435,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   // VIEW 2: ACTIVE OG MYSTERY WORKSPACE (4-STAGE BEAT-BY-BEAT FLOW)
   // ==========================================================================
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-20">
+    <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 pb-20">
       {/* On-Brand Clean Page Header */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6 space-y-4 sm:space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() => setActiveProjectId(null)}
@@ -3449,18 +3449,18 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 ← All OG Projects ({projects.length})
               </button>
               <span className="text-slate-300">/</span>
-              <span className="text-xs font-bold text-slate-400">
+              <span className="text-[11px] sm:text-xs font-bold text-slate-400">
                 {blueprint.characters.length} Players • {totalRounds} Rounds • {blueprint.spiceLevel}{' '}
                 Spice
               </span>
             </div>
-            <h1 className="text-2xl font-black text-brand-dark tracking-tight mt-1">
+            <h1 className="text-xl sm:text-2xl font-black text-brand-dark tracking-tight mt-1">
               {blueprint.title || 'New Mystery Base'}
             </h1>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <label className="cursor-pointer px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+            <label className="cursor-pointer px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
               {isUploadingDiagram ? 'Reading Diagram...' : '📷 Update From Diagram'}
               <input
                 type="file"
@@ -3474,7 +3474,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             <button
               type="button"
               onClick={() => setActiveProjectId(null)}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition cursor-pointer"
+              className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition cursor-pointer"
             >
               Switch Project
             </button>
@@ -3482,7 +3482,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         </div>
 
         {/* Character Color Legend Bar so you can always scan who is who */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-2 border-t border-slate-100">
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mr-1">
             Cast Legend:
           </span>
@@ -3499,7 +3499,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             return (
               <span
                 key={ch.id}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black border ${st.bg} ${st.text} ${st.border}`}
+                className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-black border ${st.bg} ${st.text} ${st.border}`}
               >
                 <span className={`w-2 h-2 rounded-full ${st.dot}`} />
                 <span>{ch.roleTitle}</span>
@@ -3510,18 +3510,18 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         </div>
 
         {/* Clean 4-Step Segmented Stepper */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">
           {[
             { num: 1 as const, title: '1. Plot & Archetypes', sub: '5 Core Beats & Cast' },
             {
               num: 2 as const,
               title: '2. Beat-by-Beat Core Clues',
-              sub: `${selectedCoreClues.length} / 10 Core Clues Selected`,
+              sub: `${selectedCoreClues.length} / 10 Core Clues`,
             },
             {
               num: 3 as const,
               title: '3. Red Herrings & Motives',
-              sub: `${selectedRedHerringClues.length} / 6 Decoy Clues Selected`,
+              sub: `${selectedRedHerringClues.length} / 6 Decoy Clues`,
             },
             {
               num: 4 as const,
@@ -3541,15 +3541,15 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     setStep(item.num);
                   }
                 }}
-                className={`p-3 rounded-2xl text-left border transition-all cursor-pointer ${
+                className={`p-2.5 sm:p-3 rounded-2xl text-left border transition-all cursor-pointer ${
                   active
                     ? 'bg-brand-pink text-white border-brand-pink shadow-sm'
                     : 'bg-slate-50/80 hover:bg-slate-100 text-slate-700 border-slate-200/70'
                 }`}
               >
-                <div className="text-xs font-black tracking-tight">{item.title}</div>
+                <div className="text-[11px] sm:text-xs font-black tracking-tight leading-snug">{item.title}</div>
                 <div
-                  className={`text-[11px] mt-0.5 ${
+                  className={`text-[10px] sm:text-[11px] mt-0.5 ${
                     active ? 'text-pink-100 font-medium' : 'text-slate-400'
                   }`}
                 >
