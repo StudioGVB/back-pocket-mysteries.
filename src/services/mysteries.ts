@@ -850,6 +850,10 @@ export async function getPublicMarketingMysteries(): Promise<CanonicalActiveMyst
 export async function getPublicMarketingMysteryBySlugOrId(
   slugOrId: string
 ): Promise<CanonicalActiveMystery | null> {
+  'use cache';
+  const { cacheLife } = await import('next/cache');
+  cacheLife('minutes');
+
   const normalized = (slugOrId || '').trim().toLowerCase();
   if (!normalized) return null;
   const publishedList = await getPublicMarketingMysteries();
