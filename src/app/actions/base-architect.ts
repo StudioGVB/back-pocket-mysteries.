@@ -51,7 +51,7 @@ export interface MysteryBlueprintInput {
 
 export type ArchitectRoundNumber = 1 | 2 | 3 | 4 | 5;
 
-export function getPackageRoundsForCount(charCount?: number): 3 | 4 | 5 {
+function getPackageRoundsForCount(charCount?: number): 3 | 4 | 5 {
   const n = typeof charCount === 'number' && !isNaN(charCount) ? charCount : 6;
   if (n <= 6) return 3;
   if (n <= 10) return 4;
@@ -70,6 +70,8 @@ export interface SuggestedClueCandidate {
   involvedRoles: string[];
   isRedHerring: boolean;
   subplotId?: string;
+  beatNumber?: number;
+  doubleMeaningNote?: string;
   decision: 'yes' | 'no' | 'pending';
 }
 
@@ -79,6 +81,7 @@ export interface SuggestedRedHerringSubplot {
   involvedRoles: string[];
   theme: string;
   summary: string;
+  doubleMeaningCoreClueHook?: string;
   step1TriggerR1: string;
   step2EscalationR2: string;
   step3AlibiHoleR3: string;
