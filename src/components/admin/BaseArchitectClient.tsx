@@ -2741,6 +2741,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
     const MIN_BALANCED_CLUES = 4;
 
+    const totalCluesInPool = Math.max(1, cluesPool.length);
+
     const charStats = blueprint.characters.map((ch, idx) => {
       const cleanRole = ch.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
       const matchingClues = cluesPool.filter((cl) => {
@@ -2750,7 +2752,28 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         const inText = `${cl.title} ${cl.description} ${cl.pointsTo} ${cl.doubleMeaningNote || ''}`
           .toLowerCase()
           .includes(cleanRole.toLowerCase());
-        return inList || inText;
+        if (inList || inText) return true;
+
+        // Also check if this Real Clue is linked via double-meaning to a Red Herring subplot involving this character
+        if (!cl.isRedHerring && subplots.length > 0) {
+          const isLinkedViaSubplot = subplots.some((sub) => {
+            const subHasRole = (sub.involvedRoles || []).some(
+              (r) => r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === cleanRole.toLowerCase()
+            );
+            if (!subHasRole) return false;
+            return (sub.linkedCoreClueTitles || []).some((lt) => {
+              const ltLow = lt.toLowerCase().trim();
+              const clTitleLow = cl.title.toLowerCase().trim();
+              return (
+                ltLow === clTitleLow ||
+                clTitleLow.includes(ltLow) ||
+                ltLow.includes(clTitleLow)
+              );
+            });
+          });
+          if (isLinkedViaSubplot) return true;
+        }
+        return false;
       });
 
       const coreCount = matchingClues.filter((c) => !c.isRedHerring).length;
@@ -2788,8 +2811,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               🕵️‍♂️ Primary Character Balance &amp; Table Spotlight ({cluesPool.length} Selected Clues)
             </h3>
             <p className="text-[11px] text-slate-500">
-              Balances Real Beat Clues + Fake Red-Herring Clues so every primary character appears
-              in <strong>at least {MIN_BALANCED_CLUES}–6 clues</strong> across the pack.
+              Each bar shows a character&apos;s appearance across <strong>all {cluesPool.length} clues</strong> (Real Beat Clues + Fake Red-Herring Clues). Aim for <strong>at least {MIN_BALANCED_CLUES}–6 clues</strong> per character.
             </p>
           </div>
           {underFeaturedSuspects.length === 0 && !killerTooHotInR1 ? (
@@ -2819,8 +2841,29 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             const isLow = ch.plotRole !== 'victim' && cs.totalCount < MIN_BALANCED_CLUES;
             const pct = Math.min(
               100,
-              Math.round((cs.totalCount / Math.max(1, cluesPool.length)) * 100)
+              Math.round((cs.totalCount / totalCluesInPool) * 100)
             );
+            const corePct = Math.min(
+              100,
+              Math.round((cs.coreCount / totalCluesInPool) * 100)
+            );
+            const fakePct = Math.max(0, Math.min(100 - corePct, pct - corePct));
+
+            const primaryBarColor = isLow
+              ? 'bg-amber-500'
+              : ch.plotRole === 'killer'
+                ? 'bg-rose-600'
+                : ch.plotRole === 'assistant'
+                  ? 'bg-amber-500'
+                  : 'bg-indigo-600';
+
+            const fakeBarColor = isLow
+              ? 'bg-amber-300'
+              : ch.plotRole === 'killer'
+                ? 'bg-rose-300'
+                : ch.plotRole === 'assistant'
+                  ? 'bg-amber-300'
+                  : 'bg-indigo-300';
 
             return (
               <div
@@ -2845,19 +2888,22 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   </span>
                 </div>
 
-                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    style={{ width: `${Math.min(100, cs.totalCount * 14)}%` }}
-                    className={`h-full rounded-full ${
-                      isLow
-                        ? 'bg-amber-500'
-                        : ch.plotRole === 'killer'
-                          ? 'bg-rose-600'
-                          : ch.plotRole === 'assistant'
-                            ? 'bg-amber-500'
-                            : 'bg-indigo-600'
-                    }`}
-                  />
+                <div
+                  className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden flex"
+                  title={`${cs.totalCount} / ${cluesPool.length} Total Clues (${pct}%): ${cs.coreCount} Real Clues + ${cs.fakeCount} Fake Clues`}
+                >
+                  {corePct > 0 && (
+                    <div
+                      style={{ width: `${corePct}%` }}
+                      className={`h-full transition-all ${primaryBarColor}`}
+                    />
+                  )}
+                  {fakePct > 0 && (
+                    <div
+                      style={{ width: `${fakePct}%` }}
+                      className={`h-full transition-all ${fakeBarColor}`}
+                    />
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
@@ -4748,10 +4794,13 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             {/* IMPROVEMENT #5: Full-Mystery 5-Beat Coverage Health Strip */}
             {renderFiveBeatCoverageSummaryBar()}
 
-            {selectedCoreClues.length >= 2 &&
+            {allSelectedClues.length >= 2 &&
+              renderSuspectHeatAndSpotlightPanel(allSelectedClues)}
+
+            {allSelectedClues.length >= 2 &&
               renderMediaMixBreakdownPanel(
-                selectedCoreClues,
-                'Selected Core Clues Media Mix & Balance'
+                allSelectedClues,
+                'Full Pack Media Mix & Rebalance Suggestions'
               )}
 
             {/* Bottom Single-Beat Action Bar */}
