@@ -24,9 +24,11 @@ import {
   suggestStoryBeatsForCastAction,
   saveArchitectCloudWorkspaceAction,
   loadArchitectCloudWorkspaceAction,
+  suggestBetterMysteryTitlesAction,
 } from '@/app/actions/base-architect';
 import { ClueFormat, CLUE_FORMAT_OPTIONS } from '@/utils/clue-format';
 import { recommendDifficultyFromPlotAndClues } from '@/utils/architect-difficulty-recommender';
+import { RelationshipGraph } from '@/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipGraph';
 
 const DEFAULT_COLORS = [
   'Hot Pink',
@@ -65,9 +67,354 @@ function getRoundsForCount(charCount: number): 3 | 4 | 5 {
 }
 
 /**
- * Exact preset from the user's "UNIBREAK AT THE CABIN" (FILTHY) relationship web diagram:
- * - 6 characters converted from real names (Leah, Stacy, Seb, James, Mia, Josh) into Archetype Roles
- * - 5 Core Murder Plot Beats (strictly developing the true murder plot, 0 red-herring spoilers in the beats)
+ * Distinct, high-contrast color badge styling per character so you can scan any paragraph
+ * and immediately see who is talking / involved without getting a headache.
+ */
+const CHARACTER_PILL_STYLES: {
+  bg: string;
+  text: string;
+  border: string;
+  dot: string;
+  hex: string;
+}[] = [
+  {
+    bg: 'bg-pink-100',
+    text: 'text-pink-900',
+    border: 'border-pink-300',
+    dot: 'bg-pink-500',
+    hex: '#ec4899',
+  },
+  {
+    bg: 'bg-rose-100',
+    text: 'text-rose-900',
+    border: 'border-rose-300',
+    dot: 'bg-rose-600',
+    hex: '#e11d48',
+  },
+  {
+    bg: 'bg-amber-100',
+    text: 'text-amber-950',
+    border: 'border-amber-300',
+    dot: 'bg-amber-500',
+    hex: '#f59e0b',
+  },
+  {
+    bg: 'bg-blue-100',
+    text: 'text-blue-900',
+    border: 'border-blue-300',
+    dot: 'bg-blue-600',
+    hex: '#2563eb',
+  },
+  {
+    bg: 'bg-purple-100',
+    text: 'text-purple-900',
+    border: 'border-purple-300',
+    dot: 'bg-purple-600',
+    hex: '#9333ea',
+  },
+  {
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-900',
+    border: 'border-emerald-300',
+    dot: 'bg-emerald-600',
+    hex: '#059669',
+  },
+  {
+    bg: 'bg-cyan-100',
+    text: 'text-cyan-900',
+    border: 'border-cyan-300',
+    dot: 'bg-cyan-600',
+    hex: '#0891b2',
+  },
+  {
+    bg: 'bg-indigo-100',
+    text: 'text-indigo-900',
+    border: 'border-indigo-300',
+    dot: 'bg-indigo-600',
+    hex: '#4f46e5',
+  },
+];
+
+/**
+ * Renders any text containing {{The Role}} or {{The Role_his}} / {{The Role_sibling}} tokens
+ * with bold, color-coded character pills and clean human-readable pronouns!
+ */
+function HighlightedMysteryText({
+  text,
+  characters,
+  className = '',
+}: {
+  text: string;
+  characters: BlueprintCharacterInput[];
+  className?: string;
+}) {
+  if (!text) return null;
+
+  // Map normalized roleTitle -> character index & info
+  const roleMap = new Map<
+    string,
+    { char: BlueprintCharacterInput; idx: number; style: (typeof CHARACTER_PILL_STYLES)[number] }
+  >();
+  characters.forEach((c, idx) => {
+    const clean = c.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase();
+    roleMap.set(clean, {
+      char: c,
+      idx,
+      style: CHARACTER_PILL_STYLES[idx % CHARACTER_PILL_STYLES.length],
+    });
+  });
+
+  // Split by {{...}} tokens
+  const parts = text.split(/(\{\{[^}]+\}\})/g);
+
+  return (
+    <div className={`leading-relaxed ${className}`}>
+      {parts.map((part, i) => {
+        if (!part.startsWith('{{') || !part.endsWith('}}')) {
+          return <React.Fragment key={i}>{part}</React.Fragment>;
+        }
+
+        const inner = part.slice(2, -2).trim();
+        // Check if it has a suffix like _he, _him, _his, _himself, _sibling, _spouse, _inlaw
+        const suffixMatch = inner.match(
+          /^(.+?)_(he|him|his|himself|sibling|spouse|inlaw)$/i
+        );
+
+        if (suffixMatch) {
+          const baseRole = suffixMatch[1].trim();
+          const suffix = suffixMatch[2].toLowerCase();
+          const entry = roleMap.get(baseRole.toLowerCase());
+          const isFemale = entry?.char.defaultGender === 'female';
+
+          let resolvedWord = inner;
+          if (suffix === 'he') resolvedWord = isFemale ? 'she' : 'he';
+          else if (suffix === 'him') resolvedWord = isFemale ? 'her' : 'him';
+          else if (suffix === 'his') resolvedWord = isFemale ? 'her' : 'his';
+          else if (suffix === 'himself') resolvedWord = isFemale ? 'herself' : 'himself';
+          else if (suffix === 'sibling') resolvedWord = isFemale ? 'sister' : 'brother';
+          else if (suffix === 'spouse') resolvedWord = isFemale ? 'wife' : 'husband';
+          else if (suffix === 'inlaw')
+            resolvedWord = isFemale ? 'sister-in-law' : 'brother-in-law';
+
+          const style = entry?.style || CHARACTER_PILL_STYLES[0];
+          return (
+            <span
+              key={i}
+              title={`Gender-flex token: ${part} (${baseRole})`}
+              className={`font-bold underline decoration-dotted underline-offset-2 ${style.text}`}
+            >
+              {resolvedWord}
+            </span>
+          );
+        }
+
+        const entry = roleMap.get(inner.toLowerCase());
+        const style = entry?.style || {
+          bg: 'bg-slate-200',
+          text: 'text-slate-900',
+          border: 'border-slate-300',
+          dot: 'bg-slate-600',
+          hex: '#475569',
+        };
+
+        const roleBadge =
+          entry?.char.plotRole === 'victim'
+            ? '💀'
+            : entry?.char.plotRole === 'killer'
+              ? '🔪'
+              : entry?.char.plotRole === 'assistant'
+                ? '🤝'
+                : '';
+
+        return (
+          <span
+            key={i}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-md text-xs font-black border ${style.bg} ${style.text} ${style.border} shadow-2xs align-baseline`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+            <span>{inner}</span>
+            {roleBadge && <span className="text-[10px]">{roleBadge}</span>}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Rich Editable Field that renders easy-to-read color-coded character pills by default,
+ * and expands into an auto-sized textarea when you click "Edit Text" (or click directly on it).
+ */
+function RichTokenEditableBox({
+  value,
+  onChange,
+  characters,
+  placeholder,
+  minRows = 3,
+}: {
+  value: string;
+  onChange: (nextVal: string) => void;
+  characters: BlueprintCharacterInput[];
+  placeholder?: string;
+  minRows?: number;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Calculate rows dynamically so the user never has to scroll inside a tiny box
+  const computedRows = Math.max(
+    minRows,
+    Math.min(12, Math.ceil((value?.length || 0) / 85) + 1)
+  );
+
+  if (isEditing || !value?.trim()) {
+    return (
+      <div className="space-y-1.5">
+        <textarea
+          rows={computedRows}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={() => setIsEditing(false)}
+          autoFocus={isEditing}
+          placeholder={placeholder}
+          className="w-full rounded-xl bg-white border-2 border-brand-pink/60 px-3.5 py-2.5 text-sm text-slate-800 leading-relaxed focus:outline-none shadow-xs"
+        />
+        <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+          <span>
+            Tip: Use{' '}
+            {characters.map((c, idx) => (
+              <button
+                key={c.id}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onChange(`${value} {{${c.roleTitle}}}`);
+                }}
+                className="inline-block mr-1 px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+              >
+                +{c.roleTitle}
+              </button>
+            ))}
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            className="font-bold text-brand-pink hover:underline cursor-pointer"
+          >
+            ✓ Done Editing
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={() => setIsEditing(true)}
+      title="Click anywhere to edit text"
+      className="group relative w-full rounded-xl bg-white border border-slate-200/90 hover:border-brand-pink/50 px-4 py-3 text-sm text-slate-800 cursor-text transition shadow-2xs"
+    >
+      <HighlightedMysteryText text={value} characters={characters} />
+      <span className="opacity-0 group-hover:opacity-100 transition absolute top-2 right-2.5 px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-bold text-slate-600 border border-slate-200">
+        ✎ Click to Edit
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Automatically builds the live RelationshipGraph nodes & edges from the blueprint's characters
+ * and their `conceptNotes` so the user gets their interactive character relationship web right on Stage 1!
+ */
+function buildLiveRelationshipGraphData(characters: BlueprintCharacterInput[]) {
+  const graphCharacters = characters.map((c) => ({
+    id: c.id,
+    name: c.roleTitle,
+    gender: c.defaultGender,
+    is_victim: c.plotRole === 'victim',
+    plot_role: c.plotRole,
+    profile_data: {
+      role_title: c.roleTitle,
+      color: c.color,
+      bio: c.conceptNotes,
+    },
+  }));
+
+  const relationships: any[] = [];
+  const pairSeen = new Set<string>();
+
+  // Parse relationship phrases from conceptNotes between character A and any mentioned {{Character B}}
+  for (const charA of characters) {
+    const sentences = (charA.conceptNotes || '').split(/[.;\n]+/);
+    for (const sentence of sentences) {
+      const trimmed = sentence.trim();
+      if (!trimmed) continue;
+
+      for (const charB of characters) {
+        if (charA.id === charB.id) continue;
+        const cleanB = charB.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
+        if (
+          trimmed.toLowerCase().includes(`{{${cleanB.toLowerCase()}}}`) ||
+          trimmed.toLowerCase().includes(cleanB.toLowerCase())
+        ) {
+          const id1 = charA.id < charB.id ? charA.id : charB.id;
+          const id2 = charA.id < charB.id ? charB.id : charA.id;
+          const key = `${id1}__${id2}`;
+
+          // Extract the dynamic label from the sentence
+          let dynamicLabel = 'Connected';
+          const lower = trimmed.toLowerCase();
+          if (lower.includes('sibling')) dynamicLabel = 'Siblings';
+          else if (lower.includes('secret romance') || lower.includes('hooking up') || lower.includes('sleeping with'))
+            dynamicLabel = 'Secret Romance';
+          else if (lower.includes('dating')) dynamicLabel = 'Dating';
+          else if (lower.includes('exes') || lower.includes('ex ')) dynamicLabel = 'Exes';
+          else if (lower.includes('crush')) dynamicLabel = 'Secret Crush';
+          else if (lower.includes('enemies') || lower.includes('enemy')) dynamicLabel = 'Sworn Enemies';
+          else if (lower.includes('co-captain')) dynamicLabel = 'Team Co-Captains';
+          else if (lower.includes('work together') || lower.includes('works together'))
+            dynamicLabel = 'Work Together';
+          else if (lower.includes('best friend') || lower.includes('besties'))
+            dynamicLabel = 'Best Friends';
+          else if (lower.includes('friend')) dynamicLabel = 'Friends';
+
+          relationships.push({
+            id: `rel-${key}-${relationships.length}`,
+            character_a_id: charA.id,
+            character_b_id: charB.id,
+            know_each_other: true,
+            dynamics: [dynamicLabel],
+            notes: trimmed,
+          });
+          pairSeen.add(key);
+        }
+      }
+    }
+  }
+
+  // Ensure every pair in a 6-player cast has a connection line if not already detected
+  for (let i = 0; i < characters.length; i++) {
+    for (let j = i + 1; j < characters.length; j++) {
+      const id1 = characters[i].id < characters[j].id ? characters[i].id : characters[j].id;
+      const id2 = characters[i].id < characters[j].id ? characters[j].id : characters[i].id;
+      const key = `${id1}__${id2}`;
+      if (!pairSeen.has(key)) {
+        relationships.push({
+          id: `rel-fallback-${key}`,
+          character_a_id: characters[i].id,
+          character_b_id: characters[j].id,
+          know_each_other: true,
+          dynamics: ['Friends'],
+          notes: `{{${characters[i].roleTitle}}} and {{${characters[j].roleTitle}}} are part of the same inner circle.`,
+        });
+      }
+    }
+  }
+
+  return { graphCharacters, relationships };
+}
+
+/**
+ * Exact preset from the user's "UNIBREAK AT THE CABIN" (FILTHY) relationship web diagram
  */
 export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
   return {
@@ -206,7 +553,6 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
 
 /**
  * Pre-seeded Filthy Core Clues for Beats 1–5 of "Unibreak at the Cabin"
- * (5 options per beat, with 0 selected initially so the user can pick their favorite 2 per beat!).
  */
 function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandidate[]> {
   return {
@@ -257,7 +603,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 1,
         timestampLabel: '9:32 PM',
         description:
-          'iMessage from {{The Co-Captain}} to {{The Teammate}}: "Bro we are so fucked. I just left {{The Prom Queen}}\'s upstairs room and the black ledger is gone from my inside pocket. {{The Prom Queen_he}} was filming on {{The Prom Queen_his}} fucking phone the whole time too."',
+          'iMessage from {{The Co-Captain}} to {{The Teammate}}: "Bro we are so fucked. I just left {{The Prom Queen}}\'s upstairs room and the black ledger is gone from my inside pocket. {{The Prom Queen_he}} was recording on {{The Prom Queen_his}} fucking phone the whole time too."',
         generationPrompt:
           'Dark-mode smartphone screen resting beside a silver athletic whistle and varsity bomber sleeve on a wooden cabin bar, moody after-dark lighting, no text',
         pointsTo:
@@ -316,7 +662,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 1,
         timestampLabel: '10:15 PM',
         description:
-          'Cabin hallway smart-speaker voice-activation snippet at 10:15 PM: {{The Girlfriend}} snarls, "Give my {{The Co-Captain_sibling}} {{The Co-Captain_his}} fucking ledger back, you little snake!" {{The Prom Queen}} laughs: "Ask your boyfriend {{The Teammate}} how my bed feels first, bitch! At midnight the whole uni sees the ledger AND the receipts of me and {{The Teammate}}."',
+          'Cabin hallway smart-speaker voice-activation snippet at 10:15 PM: {{The Girlfriend}} snarls, "Give my {{The Co-Captain_sibling}} {{The Co-Captain_his}} fucking ledger back, you little snake!" {{The Prom Queen}} laughs: "Ask your partner {{The Teammate}} how my bed feels first, bitch! At midnight the whole uni sees the ledger AND the receipts of me and {{The Teammate}}."',
         generationPrompt:
           'Sleek smart speaker glowing red on a dark timber hallway console table beside two half-empty crystal tequila glasses, moody after-dark cabin lighting, no text',
         pointsTo:
@@ -335,7 +681,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 2,
         timestampLabel: '10:22 PM',
         description:
-          'Scheduled campus-wide group post queued on {{The Prom Queen}}\'s iPad for 12:00 AM: "Happy Unibreak fuckers! Here is how {{The Co-Captain}} & {{The Teammate}} rigged the varsity season—and here is what {{The Girlfriend}}\'s boyfriend {{The Teammate}} does when {{The Girlfriend_he}}\'s not looking."',
+          'Scheduled campus-wide group post queued on {{The Prom Queen}}\'s iPad for 12:00 AM: "Happy Unibreak fuckers! Here is how {{The Co-Captain}} & {{The Teammate}} rigged the varsity season—and here is what {{The Girlfriend}}\'s partner {{The Teammate}} does when {{The Girlfriend_he}}\'s not looking."',
         generationPrompt:
           'Glowing tablet screen lying on a faux-fur throw blanket inside a dimly lit mountain cabin lounge, dramatic neon-noir shadows, no text',
         pointsTo:
@@ -457,7 +803,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         pointsTo:
           'Proves Beat #3: Confirms {{The Prom Queen}} queued the files to send during the balcony struggle and someone tried to force FaceID open at 11:14 PM.',
         doubleMeaningNote:
-          'Anyone blackened in the folder ({{The Teammate}}, {{The Bestie}}, {{The Co-Captain}}) had reason to grab that phone.',
+          'Anyone implicated in the folder ({{The Teammate}}, {{The Bestie}}, {{The Co-Captain}}) had reason to grab that phone.',
         involvedRoles: ['The Prom Queen', 'The Co-Captain'],
         isRedHerring: false,
         decision: 'pending',
@@ -573,7 +919,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         pointsTo:
           'Proves Beat #4: Direct confession that {{The Co-Captain}} struck the first blow with the poker at 11:18 PM and summoned {{The Girlfriend}} to the balcony.',
         doubleMeaningNote:
-          'Proves {{The Co-Captain}} panicked and stopped after the first blow rather than throwing {{The Prom Queen}} off the balcony.',
+          'Proves {{The Co-Captain}} panicked and stopped after the first blow rather than pushing {{The Prom Queen}} off the balcony.',
         involvedRoles: ['The Co-Captain', 'The Girlfriend', 'The Prom Queen'],
         isRedHerring: false,
         decision: 'pending',
@@ -664,7 +1010,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 3,
         timestampLabel: '11:28 PM',
         description:
-          'Coroner\'s preliminary report: {{The Prom Queen}} sustained two separate strikes from the cast-iron poker—a non-fatal stunning blow to the left temple (~11:18 PM) and a second, lethal high-velocity strike to the crown (~11:28 PM) delivered immediately before the body was pushed dead-weight over the balcony railing.',
+          'Coroner\'s preliminary report: {{The Prom Queen}} sustained two separate strikes from the cast-iron poker—a non-fatal stunning blow to the left temple (~11:18 PM) and a second, lethal high-velocity strike (~11:28 PM) delivered immediately before the body was pushed dead-weight over the balcony railing.',
         generationPrompt:
           'Forensic trajectory diagram and evidence folder on a dark mahogany desk beside a brass lamp, classic detective noir aesthetic, no text',
         pointsTo:
@@ -858,6 +1204,13 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const [subplotCustomNote, setSubplotCustomNote] = useState<string>('');
   const [reviewTab, setReviewTab] = useState<'rounds' | 'characters' | 'relationships'>('rounds');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [showRelationshipMap, setShowRelationshipMap] = useState<boolean>(true);
+
+  // AI Title Renamer state
+  const [isRenamingTitle, setIsRenamingTitle] = useState(false);
+  const [titleSuggestions, setTitleSuggestions] = useState<
+    { title: string; theme: string; vibeTag: string }[]
+  >([]);
 
   // Loading states
   const [isUploadingDiagram, setIsUploadingDiagram] = useState(false);
@@ -896,7 +1249,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Ensure Unibreak project has pre-seeded beatCluesMap if empty
           const hydratedList = parsed.map((p: OgProjectWorkspace) => {
             if (
               p?.blueprint?.id === 'unibreak-at-the-cabin' &&
@@ -1039,6 +1391,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   };
 
   const totalRounds = getRoundsForCount(blueprint.characters.length);
+
+  // Live Interactive Relationship Map Data
+  const { graphCharacters, relationships: graphRelationships } = useMemo(
+    () => buildLiveRelationshipGraphData(blueprint.characters),
+    [blueprint.characters]
+  );
 
   // Flatten all selected ("yes") Core Clues across Beats 1..5
   const selectedCoreClues = useMemo(() => {
@@ -1229,6 +1587,24 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       }
       return { ...prev, characters: added };
     });
+  };
+
+  // AI Mystery Renamer Action
+  const handleSuggestBetterTitles = async () => {
+    setErrorMessage(null);
+    setIsRenamingTitle(true);
+    try {
+      const res = await suggestBetterMysteryTitlesAction({ blueprint });
+      if (!res.success || !res.suggestions || res.suggestions.length === 0) {
+        setErrorMessage(res.error || 'Could not generate title suggestions.');
+      } else {
+        setTitleSuggestions(res.suggestions);
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Error suggesting mystery titles.');
+    } finally {
+      setIsRenamingTitle(false);
+    }
   };
 
   const handleSuggestBeats = async () => {
@@ -1611,7 +1987,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   );
 
   // ==========================================================================
-  // VIEW 1: OG BASE BUILDER PROJECTS HUB (Same Layout as Mystery Bases Page!)
+  // VIEW 1: OG BASE BUILDER PROJECTS HUB
   // ==========================================================================
   if (!activeProject) {
     return (
@@ -1935,6 +2311,34 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           </div>
         </div>
 
+        {/* Character Color Legend Bar so you can always scan who is who */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mr-1">
+            Cast Legend:
+          </span>
+          {blueprint.characters.map((ch, idx) => {
+            const st = CHARACTER_PILL_STYLES[idx % CHARACTER_PILL_STYLES.length];
+            const roleIcon =
+              ch.plotRole === 'victim'
+                ? '💀 Victim'
+                : ch.plotRole === 'killer'
+                  ? '🔪 Killer'
+                  : ch.plotRole === 'assistant'
+                    ? '🤝 Accomplice'
+                    : '🕵️ Suspect';
+            return (
+              <span
+                key={ch.id}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black border ${st.bg} ${st.text} ${st.border}`}
+              >
+                <span className={`w-2 h-2 rounded-full ${st.dot}`} />
+                <span>{ch.roleTitle}</span>
+                <span className="text-[10px] opacity-75 font-bold">({roleIcon})</span>
+              </span>
+            );
+          })}
+        </div>
+
         {/* Clean 4-Step Segmented Stepper */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">
           {[
@@ -2013,34 +2417,101 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       {/* ================================================================= */}
       {step === 1 && (
         <div className="space-y-6">
-          {/* Section 1: Mystery Basics */}
+          {/* Section 1: Mystery Basics + AI Mystery Renamer */}
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
-                  1. Mystery Basics & Spice Level
+                  1. Mystery Title, Package & Spice Level
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  The Spice Level sets the tone for all clue dialogue, drama, and AI evidence
-                  photos.
+                  Start with a working title or click <strong>✨ AI Rename Mystery</strong> to pitch
+                  5 polished, high-converting titles.
                 </p>
               </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-                {blueprint.characters.length} Players • {totalRounds} Rounds
-              </span>
+              <button
+                type="button"
+                onClick={handleSuggestBetterTitles}
+                disabled={isRenamingTitle}
+                className="px-4 py-2 rounded-xl text-xs font-black bg-pink-50 hover:bg-pink-100 text-brand-pink border border-pink-200 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <span>
+                  {isRenamingTitle
+                    ? '✨ Pitching 5 Better Titles...'
+                    : '✨ AI Rename Mystery (5 Title Ideas)'}
+                </span>
+              </button>
             </div>
+
+            {/* AI Title Suggestions Drawer */}
+            {titleSuggestions.length > 0 && (
+              <div className="rounded-2xl bg-pink-50/50 border border-pink-200 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-brand-pink">
+                    ✨ Click Any AI Title Below to Apply It:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setTitleSuggestions([])}
+                    className="text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+                  >
+                    Close ✕
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-2.5">
+                  {titleSuggestions.map((sug, i) => {
+                    const isCurrent = blueprint.title === sug.title;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          updateBlueprint({ title: sug.title, theme: sug.theme });
+                          setStatusToast(`Renamed mystery to "${sug.title}"!`);
+                        }}
+                        className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                          isCurrent
+                            ? 'bg-brand-pink text-white border-brand-pink shadow-sm'
+                            : 'bg-white hover:border-brand-pink border-slate-200 text-slate-800'
+                        }`}
+                      >
+                        <div>
+                          <span
+                            className={`inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full mb-1.5 ${
+                              isCurrent
+                                ? 'bg-white/20 text-white'
+                                : 'bg-pink-50 text-brand-pink'
+                            }`}
+                          >
+                            {sug.vibeTag}
+                          </span>
+                          <div className="text-xs font-black leading-snug">{sug.title}</div>
+                        </div>
+                        <div
+                          className={`text-[11px] mt-1.5 line-clamp-2 ${
+                            isCurrent ? 'text-pink-100' : 'text-slate-500'
+                          }`}
+                        >
+                          {sug.theme}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
-                  Mystery Title
+                  Mystery Title (Working or Final)
                 </label>
                 <input
                   type="text"
                   value={blueprint.title}
                   onChange={(e) => updateBlueprint({ title: e.target.value })}
                   placeholder="e.g. Unibreak at the Cabin"
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-brand-pink"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-brand-pink"
                 />
               </div>
               <div>
@@ -2112,56 +2583,71 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             </div>
           </div>
 
-          {/* Section 2: Character Archetypes */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+          {/* Section 2: Interactive Character Relationship Map + Color-Coded Character Cards */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
-                  2. Character Archetypes ({blueprint.characters.length})
+                  2. Interactive Relationship Map & Character Archetypes ({blueprint.characters.length})
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Characters are named by role archetype (e.g.{' '}
-                  <code className="text-brand-pink font-semibold">{'{{The Prom Queen}}'}</code>) so
-                  any real names used during brainstorming are replaced automatically.
+                  Every character has their own color badge so you can immediately spot who is
+                  talking in any relationship, motive, or beat. Click any text box to edit.
                 </p>
               </div>
-              <div className="flex items-center gap-2 text-xs font-bold">
-                <span className="px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
-                  Victim: {victimCount}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                  Killer: {killerCount}
-                </span>
-                {assistantCount > 0 && (
-                  <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                    Accomplice: {assistantCount}
-                  </span>
-                )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRelationshipMap((v) => !v)}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
+                >
+                  {showRelationshipMap
+                    ? '🗺️ Hide Interactive Relationship Map'
+                    : '🗺️ Show Interactive Relationship Map'}
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Interactive Character Relationship Map */}
+            {showRelationshipMap && (
+              <div className="rounded-3xl border border-slate-200 overflow-hidden">
+                <RelationshipGraph
+                  characters={graphCharacters}
+                  relationships={graphRelationships}
+                  variant="light"
+                  revealPlotRoles={true}
+                />
+              </div>
+            )}
+
+            {/* Color-Coded Character Cards with Full-Size Readable Text Boxes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {blueprint.characters.map((char, idx) => {
                 const isVictim = char.plotRole === 'victim';
                 const isKiller = char.plotRole === 'killer';
                 const isAssistant = char.plotRole === 'assistant';
+                const pillStyle = CHARACTER_PILL_STYLES[idx % CHARACTER_PILL_STYLES.length];
 
                 const cardBorder = isVictim
-                  ? 'border-sky-200 bg-sky-50/30'
+                  ? 'border-sky-300 bg-sky-50/30'
                   : isKiller
-                    ? 'border-rose-200 bg-rose-50/30'
+                    ? 'border-rose-300 bg-rose-50/30'
                     : isAssistant
-                      ? 'border-amber-200 bg-amber-50/30'
+                      ? 'border-amber-300 bg-amber-50/30'
                       : 'border-slate-200 bg-slate-50/50';
 
                 return (
                   <div
                     key={char.id}
-                    className={`rounded-2xl border p-4 space-y-3 transition ${cardBorder}`}
+                    className={`rounded-2xl border-2 p-5 space-y-4 transition ${cardBorder}`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-1 min-w-[160px]">
-                        <span className="text-xs font-black text-slate-400">#{idx + 1}</span>
+                      <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+                        <span
+                          className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black border ${pillStyle.bg} ${pillStyle.text} ${pillStyle.border}`}
+                        >
+                          {idx + 1}
+                        </span>
                         <input
                           type="text"
                           value={char.roleTitle}
@@ -2169,7 +2655,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                             updateCharacter(char.id, { roleTitle: e.target.value })
                           }
                           placeholder="The Archetype Role"
-                          className="flex-1 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-pink"
+                          className="flex-1 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-sm font-black text-slate-900 focus:outline-none focus:border-brand-pink"
                         />
                       </div>
 
@@ -2195,49 +2681,45 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               plotRole: e.target.value as CharacterPlotRole,
                             })
                           }
-                          className={`rounded-xl px-2.5 py-1.5 text-xs font-bold border focus:outline-none ${
+                          className={`rounded-xl px-2.5 py-1.5 text-xs font-black border focus:outline-none ${
                             isVictim
-                              ? 'bg-sky-100 border-sky-300 text-sky-800'
+                              ? 'bg-sky-100 border-sky-300 text-sky-900'
                               : isKiller
-                                ? 'bg-rose-100 border-rose-300 text-rose-800'
+                                ? 'bg-rose-100 border-rose-300 text-rose-900'
                                 : isAssistant
-                                  ? 'bg-amber-100 border-amber-300 text-amber-800'
+                                  ? 'bg-amber-100 border-amber-300 text-amber-900'
                                   : 'bg-white border-slate-200 text-slate-700'
                           }`}
                         >
-                          <option value="victim">Victim</option>
-                          <option value="killer">Killer</option>
-                          <option value="assistant">Accomplice</option>
-                          <option value="innocent">Suspect</option>
+                          <option value="victim">💀 Victim</option>
+                          <option value="killer">🔪 Killer</option>
+                          <option value="assistant">🤝 Accomplice</option>
+                          <option value="innocent">🕵️ Suspect</option>
                         </select>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
                         Relationships & Connections
                       </label>
-                      <textarea
-                        rows={2}
+                      <RichTokenEditableBox
                         value={char.conceptNotes}
-                        onChange={(e) =>
-                          updateCharacter(char.id, { conceptNotes: e.target.value })
-                        }
-                        className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-700 leading-relaxed focus:outline-none focus:border-brand-pink"
+                        onChange={(val) => updateCharacter(char.id, { conceptNotes: val })}
+                        characters={blueprint.characters}
+                        minRows={3}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
                         Motive / Secret
                       </label>
-                      <textarea
-                        rows={2}
+                      <RichTokenEditableBox
                         value={char.motiveOrSecret}
-                        onChange={(e) =>
-                          updateCharacter(char.id, { motiveOrSecret: e.target.value })
-                        }
-                        className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-700 leading-relaxed focus:outline-none focus:border-brand-pink"
+                        onChange={(val) => updateCharacter(char.id, { motiveOrSecret: val })}
+                        characters={blueprint.characters}
+                        minRows={3}
                       />
                     </div>
                   </div>
@@ -2246,16 +2728,16 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             </div>
           </div>
 
-          {/* Section 3: How the Murder Went Down & 5 Core Plot Beats */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+          {/* Section 3: How the Murder Went Down & 5 Core Plot Beats (Full Readable Boxes + Highlighted Character Pills) */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
                   3. The Murder & 5 Core Plot Beats
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Lock in how the murder went down across 5 beats. In Step 2, you&apos;ll select 2
-                  clues for each beat one-by-one (10 Core Clues total).
+                  All character mentions are color-coded and bolded so you can read the entire plot
+                  at a glance. Click any box to edit.
                 </p>
               </div>
               <button
@@ -2270,7 +2752,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                   Murder Time
@@ -2280,18 +2762,18 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   value={blueprint.murderTimeWindow}
                   onChange={(e) => updateBlueprint({ murderTimeWindow: e.target.value })}
                   placeholder="11:28 PM"
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-brand-pink"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-3 text-sm font-black text-slate-900 focus:bg-white focus:outline-none focus:border-brand-pink"
                 />
               </div>
               <div className="md:col-span-3">
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                   Murder Weapon & Method
                 </label>
-                <input
-                  type="text"
+                <RichTokenEditableBox
                   value={blueprint.murderWeaponAndMethod}
-                  onChange={(e) => updateBlueprint({ murderWeaponAndMethod: e.target.value })}
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-brand-pink"
+                  onChange={(val) => updateBlueprint({ murderWeaponAndMethod: val })}
+                  characters={blueprint.characters}
+                  minRows={3}
                 />
               </div>
             </div>
@@ -2300,26 +2782,26 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                 How & Why the Killer (& Accomplice) Did It
               </label>
-              <textarea
-                rows={2}
+              <RichTokenEditableBox
                 value={blueprint.killerHowAndWhySummary}
-                onChange={(e) => updateBlueprint({ killerHowAndWhySummary: e.target.value })}
-                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs text-slate-800 leading-relaxed focus:bg-white focus:outline-none focus:border-brand-pink"
+                onChange={(val) => updateBlueprint({ killerHowAndWhySummary: val })}
+                characters={blueprint.characters}
+                minRows={4}
               />
             </div>
 
             {/* 5 Core Story Beat Cards */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-4 pt-2">
               <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400">
                 5 Core Story Beats
               </label>
               {blueprint.beats.map((beat) => (
                 <div
                   key={beat.beatNumber}
-                  className="rounded-2xl bg-slate-50/80 border border-slate-200/80 p-4 space-y-2"
+                  className="rounded-2xl bg-slate-50/90 border border-slate-200 p-5 space-y-3"
                 >
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="px-2.5 py-1 rounded-lg bg-brand-pink/10 text-brand-pink text-xs font-black">
+                    <span className="px-3 py-1 rounded-lg bg-brand-pink text-white text-xs font-black">
                       Beat #{beat.beatNumber}
                     </span>
                     <input
@@ -2328,24 +2810,21 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       onChange={(e) =>
                         updateBeat(beat.beatNumber, { timeWindow: e.target.value })
                       }
-                      className="w-28 rounded-xl bg-white border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-700"
+                      className="w-28 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700"
                     />
                     <input
                       type="text"
                       value={beat.title}
                       onChange={(e) => updateBeat(beat.beatNumber, { title: e.target.value })}
                       placeholder="Beat title"
-                      className="flex-1 min-w-[200px] rounded-xl bg-white border border-slate-200 px-3 py-1 text-xs font-bold text-slate-900"
+                      className="flex-1 min-w-[220px] rounded-xl bg-white border border-slate-200 px-3.5 py-1.5 text-sm font-black text-slate-900"
                     />
                   </div>
-                  <textarea
-                    rows={2}
+                  <RichTokenEditableBox
                     value={beat.description}
-                    onChange={(e) =>
-                      updateBeat(beat.beatNumber, { description: e.target.value })
-                    }
-                    placeholder="What happens in this beat..."
-                    className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-700 leading-relaxed focus:outline-none focus:border-brand-pink"
+                    onChange={(val) => updateBeat(beat.beatNumber, { description: val })}
+                    characters={blueprint.characters}
+                    minRows={3}
                   />
                 </div>
               ))}
@@ -2441,9 +2920,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     </div>
 
                     <div className="text-xs font-black text-slate-900">{b.title}</div>
-                    <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                      {b.description}
-                    </p>
 
                     {pickedInBeat.length > 0 && (
                       <div className="pt-1.5 border-t border-slate-200/70 space-y-1">
@@ -2486,18 +2962,18 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
           {/* RIGHT WORKSPACE: FOCUSED SINGLE-BEAT CLUE PICKER (8 Columns) */}
           <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
-            {/* Pinned Beat Context Header */}
+            {/* Pinned Beat Context Header with Color-Coded Character Pills */}
             {activeBeat && (
-              <div className="rounded-2xl bg-slate-900 text-white p-5 space-y-3">
+              <div className="rounded-2xl bg-slate-50 border-2 border-slate-200 p-5 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-brand-pink text-white">
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-brand-pink text-white">
                       Beat #{activeBeat.beatNumber} of {blueprint.beats.length}
                     </span>
-                    <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 text-slate-200">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-white border border-slate-200 text-slate-700">
                       {activeBeat.timeWindow}
                     </span>
-                    <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 text-pink-200">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-pink-50 border border-pink-200 text-brand-pink">
                       {blueprint.spiceLevel} Spice
                     </span>
                   </div>
@@ -2505,8 +2981,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-black ${
                       activeBeatSelectedCount >= 2
-                        ? 'bg-emerald-500 text-slate-950'
-                        : 'bg-white/15 text-white'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-200 text-slate-800'
                     }`}
                   >
                     {activeBeatSelectedCount} of 2 Clues Selected for Beat #{activeBeat.beatNumber}
@@ -2514,22 +2990,25 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-black text-white">{activeBeat.title}</h3>
-                  <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                    {activeBeat.description}
-                  </p>
+                  <h3 className="text-lg font-black text-slate-900">{activeBeat.title}</h3>
+                  <div className="mt-2 text-sm text-slate-800">
+                    <HighlightedMysteryText
+                      text={activeBeat.description}
+                      characters={blueprint.characters}
+                    />
+                  </div>
                 </div>
 
-                <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11px] text-slate-300">
+                <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs text-slate-500">
                     Select at least <strong>2 clues below</strong> that best explain Beat #
-                    {activeBeat.beatNumber}. The unpicked options won&apos;t be used.
+                    {activeBeat.beatNumber}.
                   </span>
                   <button
                     type="button"
                     onClick={() => handleSuggestCluesForBeat(activeBeat.beatNumber)}
                     disabled={isGeneratingBeatClues}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition cursor-pointer"
                   >
                     {isGeneratingBeatClues
                       ? `Generating Beat #${activeBeat.beatNumber} Clues...`
@@ -2572,7 +3051,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   return (
                     <div
                       key={clue.id}
-                      className={`rounded-2xl border-2 p-5 transition space-y-3 ${
+                      className={`rounded-2xl border-2 p-5 transition space-y-3.5 ${
                         isSelected
                           ? 'bg-emerald-50/40 border-emerald-500 shadow-sm'
                           : 'bg-white border-slate-200 hover:border-slate-300'
@@ -2607,7 +3086,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                 title: e.target.value,
                               })
                             }
-                            className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-900 focus:bg-white"
+                            className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5 text-sm font-black text-slate-900 focus:bg-white"
                           />
                         </div>
 
@@ -2626,26 +3105,40 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         </button>
                       </div>
 
-                      <textarea
-                        rows={3}
+                      {/* Rich Color-Coded Clue Description Box */}
+                      <RichTokenEditableBox
                         value={clue.description}
-                        onChange={(e) =>
+                        onChange={(val) =>
                           updateBeatClueField(activeBeatNumber, clue.id, {
-                            description: e.target.value,
+                            description: val,
                           })
                         }
-                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 leading-relaxed focus:bg-white"
+                        characters={blueprint.characters}
+                        minRows={3}
                       />
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 text-slate-600">
-                          <span className="font-bold text-slate-900">
-                            How it explains Beat #{activeBeatNumber}:
-                          </span>{' '}
-                          {clue.pointsTo}
+                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 text-slate-700 space-y-1.5">
+                          <div>
+                            <span className="font-black text-slate-900">
+                              How it explains Beat #{activeBeatNumber}:
+                            </span>{' '}
+                            <HighlightedMysteryText
+                              text={clue.pointsTo}
+                              characters={blueprint.characters}
+                              className="inline"
+                            />
+                          </div>
                           {clue.doubleMeaningNote && (
-                            <div className="mt-1.5 text-indigo-700 font-medium">
-                              <strong>🔗 Double-Meaning Hook:</strong> {clue.doubleMeaningNote}
+                            <div className="pt-1 border-t border-slate-200/70 text-indigo-900">
+                              <span className="font-black text-indigo-700">
+                                🔗 Double-Meaning Hook:
+                              </span>{' '}
+                              <HighlightedMysteryText
+                                text={clue.doubleMeaningNote}
+                                characters={blueprint.characters}
+                                className="inline"
+                              />
                             </div>
                           )}
                         </div>
@@ -2654,14 +3147,14 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                             AI Evidence Photo Prompt ({blueprint.spiceLevel}):
                           </span>
                           <textarea
-                            rows={2}
+                            rows={3}
                             value={clue.generationPrompt}
                             onChange={(e) =>
                               updateBeatClueField(activeBeatNumber, clue.id, {
                                 generationPrompt: e.target.value,
                               })
                             }
-                            className="w-full bg-transparent text-xs text-slate-600 focus:outline-none mt-1"
+                            className="w-full bg-transparent text-xs text-slate-600 focus:outline-none mt-1 leading-relaxed"
                           />
                         </div>
                       </div>
@@ -2808,7 +3301,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                             {pickedInSub}/2 Picked
                           </span>
                         </div>
-                        <div className="text-xs font-black text-slate-900">{sub.title}</div>
+                        <div className="text-xs font-black text-slate-900">
+                          <HighlightedMysteryText
+                            text={sub.title}
+                            characters={blueprint.characters}
+                          />
+                        </div>
                         <div className="text-[11px] font-bold text-slate-500">
                           {sub.involvedRoles.join(' ↔ ')}
                         </div>
@@ -2820,12 +3318,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 {/* Right Panel: Focused Single Red Herring Plotline + Motive + 4 Clue Options */}
                 {activeSubplot && (
                   <div className="lg:col-span-8 space-y-4">
-                    <div className="rounded-2xl bg-slate-900 text-white p-5 space-y-3">
+                    <div className="rounded-2xl bg-slate-50 border-2 border-slate-200 p-5 space-y-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="px-3 py-1 rounded-full text-xs font-black bg-brand-pink text-white">
                           {activeSubplot.involvedRoles.join(' ↔ ')}
                         </span>
-                        <span className="text-xs font-bold text-slate-300">
+                        <span className="text-xs font-black text-slate-700">
                           {
                             activeSubplot.decoyClues.filter((dc) => dc.decision === 'yes')
                               .length
@@ -2833,15 +3331,30 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           of 2 Clues Selected
                         </span>
                       </div>
-                      <h3 className="text-lg font-black text-white">{activeSubplot.title}</h3>
-                      <p className="text-xs text-slate-200 leading-relaxed">
-                        <strong className="text-pink-300">Suspect Motive & Secret Scheme:</strong>{' '}
-                        {activeSubplot.summary}
-                      </p>
+                      <h3 className="text-lg font-black text-slate-900">
+                        <HighlightedMysteryText
+                          text={activeSubplot.title}
+                          characters={blueprint.characters}
+                        />
+                      </h3>
+                      <div className="text-sm text-slate-800 leading-relaxed">
+                        <strong className="text-slate-900">Suspect Motive & Secret Scheme:</strong>{' '}
+                        <HighlightedMysteryText
+                          text={activeSubplot.summary}
+                          characters={blueprint.characters}
+                          className="inline"
+                        />
+                      </div>
                       {activeSubplot.doubleMeaningCoreClueHook && (
-                        <div className="rounded-xl bg-white/10 border border-white/15 px-3.5 py-2.5 text-xs text-indigo-200">
-                          <strong>🔗 Double-Meaning Tie-In to Your Real Clues:</strong>{' '}
-                          {activeSubplot.doubleMeaningCoreClueHook}
+                        <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-3.5 py-2.5 text-xs text-indigo-950">
+                          <strong className="text-indigo-800">
+                            🔗 Double-Meaning Tie-In to Your Real Clues:
+                          </strong>{' '}
+                          <HighlightedMysteryText
+                            text={activeSubplot.doubleMeaningCoreClueHook}
+                            characters={blueprint.characters}
+                            className="inline"
+                          />
                         </div>
                       )}
                     </div>
@@ -2852,7 +3365,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         return (
                           <div
                             key={dc.id}
-                            className={`rounded-2xl border-2 p-4 space-y-2.5 transition ${
+                            className={`rounded-2xl border-2 p-5 space-y-3 transition ${
                               isPicked
                                 ? 'bg-emerald-50/40 border-emerald-500 shadow-sm'
                                 : 'bg-white border-slate-200 hover:border-slate-300'
@@ -2874,7 +3387,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                       title: e.target.value,
                                     })
                                   }
-                                  className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-3 py-1 text-xs font-bold text-slate-900"
+                                  className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5 text-sm font-black text-slate-900"
                                 />
                               </div>
                               <button
@@ -2882,7 +3395,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                 onClick={() =>
                                   toggleRedHerringClueSelection(activeSubplot.id, dc.id)
                                 }
-                                className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
+                                className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
                                   isPicked
                                     ? 'bg-emerald-600 text-white'
                                     : 'bg-slate-900 text-white hover:bg-brand-pink'
@@ -2892,15 +3405,15 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               </button>
                             </div>
 
-                            <textarea
-                              rows={2}
+                            <RichTokenEditableBox
                               value={dc.description}
-                              onChange={(e) =>
+                              onChange={(val) =>
                                 updateRedHerringClueField(activeSubplot.id, dc.id, {
-                                  description: e.target.value,
+                                  description: val,
                                 })
                               }
-                              className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-800 leading-relaxed"
+                              characters={blueprint.characters}
+                              minRows={3}
                             />
                           </div>
                         );
@@ -3098,16 +3611,18 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           No clues in Round {rNum} yet. Click &ldquo;Re-Sort Rounds&rdquo; above.
                         </div>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                           {roundClues.map((rc) => (
                             <div
                               key={rc.id}
-                              className="rounded-xl bg-white border border-slate-200 p-3.5 text-xs space-y-1.5"
+                              className="rounded-xl bg-white border border-slate-200 p-4 text-xs space-y-2"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-slate-900">{rc.title}</span>
-                                  <span className="text-slate-400">
+                                  <span className="text-sm font-black text-slate-900">
+                                    {rc.title}
+                                  </span>
+                                  <span className="text-slate-400 font-semibold">
                                     ({rc.format} • {rc.timestampLabel})
                                   </span>
                                 </div>
@@ -3152,7 +3667,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                   </select>
                                 </div>
                               </div>
-                              <p className="text-slate-600 leading-relaxed">{rc.description}</p>
+                              <div className="text-sm text-slate-800">
+                                <HighlightedMysteryText
+                                  text={rc.description}
+                                  characters={blueprint.characters}
+                                />
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -3176,7 +3696,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         {ch.plotRole} • {ch.defaultGender}
                       </span>
                     </div>
-                    <p className="text-slate-600 leading-relaxed">{ch.bio}</p>
+                    <div className="text-sm text-slate-800">
+                      <HighlightedMysteryText
+                        text={ch.bio}
+                        characters={blueprint.characters}
+                      />
+                    </div>
                     <div className="text-slate-500 pt-1">
                       <strong className="text-slate-700">Outfit:</strong> {ch.outfitAdvice}
                     </div>
@@ -3190,12 +3715,17 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 {assembled.relationships.map((rel, i) => (
                   <div
                     key={i}
-                    className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-xs space-y-1"
+                    className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-xs space-y-1.5"
                   >
                     <div className="font-black text-slate-900">
                       {rel.roleA} ↔ {rel.roleB}
                     </div>
-                    <p className="text-slate-600 leading-relaxed">{rel.notes}</p>
+                    <div className="text-sm text-slate-800">
+                      <HighlightedMysteryText
+                        text={rel.notes}
+                        characters={blueprint.characters}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

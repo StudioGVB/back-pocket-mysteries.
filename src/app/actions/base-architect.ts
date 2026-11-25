@@ -2762,5 +2762,82 @@ Return strict JSON mapping every clue ID to its optimal roundNumber (1..${totalR
   }
 }
 
+/**
+ * AI MYSTERY RENAMER:
+ * Turns a working title (e.g. "Unibreak at the Cabin") + setting/beats into 5 high-converting,
+ * dramatic, on-brand Mystery Base Titles & Taglines so the user can pick one in 1 click.
+ */
+export async function suggestBetterMysteryTitlesAction(params: {
+  blueprint: MysteryBlueprintInput;
+}): Promise<{
+  success: boolean;
+  suggestions?: {
+    title: string;
+    theme: string;
+    vibeTag: string;
+  }[];
+  error?: string;
+}> {
+  await requireAdmin();
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
+
+  const { blueprint } = params;
+  try {
+    const prompt = `You are the Creative Brand Director for Back Pocket Mysteries.
+The creator has a working title for their murder mystery: "${blueprint.title}" (${blueprint.theme}).
+Spice Level: ${blueprint.spiceLevel}
+Setting: ${blueprint.settingDescription}
+Murder Method: ${blueprint.murderWeaponAndMethod}
+Plot Summary: ${blueprint.killerHowAndWhySummary}
+
+Pitch **5 irresistible, commercial, high-converting Mystery Titles & Taglines** that replace the working title with something iconic, punchy, and on-brand (like "Blackout at Blackwood Cabin", "Cabin Fever & Killer Secrets", "Snowbound & Scandalous", "Deadly Debt at the Chalet", "Last Call at the Cabin").
+Include a mix of:
+1. Elevated Thriller / Noir
+2. Scandalous / After-Dark Party (${blueprint.spiceLevel} vibe)
+3. Punchy Alliteration / Wordplay
+4. Classic Murder Mystery Hook
+5. Polished Version of Their Working Title
+
+Return strict JSON:
+{
+  "suggestions": [
+    {
+      "title": "Punchy Mystery Title (2-5 words)",
+      "theme": "1-line evocative setting & party tagline",
+      "vibeTag": "e.g. After-Dark Thriller"
+    }
+  ]
+}`;
+
+    const parsed = await generateArchitectJson({
+      apiKey,
+      prompt,
+      featureName: 'architect_suggest_mystery_titles',
+    });
+
+    const suggestions = Array.isArray(parsed.suggestions)
+      ? parsed.suggestions.map((s: any) => ({
+          title: String(s.title || '').trim(),
+          theme: String(s.theme || blueprint.theme || '').trim(),
+          vibeTag: String(s.vibeTag || 'Recommended').trim(),
+        }))
+      : [];
+
+    return {
+      success: true,
+      suggestions: suggestions.filter((s: any) => s.title.length > 0),
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to suggest mystery titles.',
+    };
+  }
+}
+
+
 
 
