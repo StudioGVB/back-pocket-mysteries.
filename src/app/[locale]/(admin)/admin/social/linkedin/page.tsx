@@ -433,7 +433,7 @@ export default function LinkedInManagementPage() {
           {/* SECTION 1: TO SCHEDULE */}
           {(activeTab === "all" || activeTab === "to_schedule") && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-200">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-amber-500" />
                   <h2 className="font-bold text-base text-brand-dark flex items-center gap-2">
@@ -443,9 +443,23 @@ export default function LinkedInManagementPage() {
                     </span>
                   </h2>
                 </div>
-                <span className="text-xs text-gray-500 font-medium">
-                  Click Mark Scheduled to push to Buffer and move down
-                </span>
+                <div className="flex items-center gap-3">
+                  {pastDueDraftCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleRefreshPastDates}
+                      disabled={refreshingDates}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-black transition-colors cursor-pointer disabled:opacity-50"
+                      title="Reassign all past-due dates to upcoming future dates"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${refreshingDates ? "animate-spin" : ""}`} />
+                      <span>Reassign {pastDueDraftCount} Past Date(s) to Future</span>
+                    </button>
+                  )}
+                  <span className="text-xs text-gray-500 font-medium">
+                    Click Mark Scheduled to push to Buffer and move down
+                  </span>
+                </div>
               </div>
 
               {filteredToSchedule.length === 0 ? (
@@ -468,6 +482,8 @@ export default function LinkedInManagementPage() {
                       onCopy={handleCopyText}
                       onToggleScheduled={handleToggleScheduled}
                       onUpdateScheduledAt={handleUpdateScheduledAt}
+                      onRefreshPastDates={handleRefreshPastDates}
+                      refreshingDates={refreshingDates}
                     />
                   ))}
                 </div>
@@ -511,6 +527,8 @@ export default function LinkedInManagementPage() {
                       onCopy={handleCopyText}
                       onToggleScheduled={handleToggleScheduled}
                       onUpdateScheduledAt={handleUpdateScheduledAt}
+                      onRefreshPastDates={handleRefreshPastDates}
+                      refreshingDates={refreshingDates}
                     />
                   ))}
                 </div>
@@ -534,6 +552,8 @@ interface PostCardProps {
     linkUrl?: string
   ) => void;
   onUpdateScheduledAt: (postId: string, newIsoDate: string) => Promise<void> | void;
+  onRefreshPastDates?: () => Promise<void> | void;
+  refreshingDates?: boolean;
 }
 
 function PostCard({
@@ -542,10 +562,13 @@ function PostCard({
   onCopy,
   onToggleScheduled,
   onUpdateScheduledAt,
+  onRefreshPastDates,
+  refreshingDates,
 }: PostCardProps) {
   const isScheduledOrPosted =
     post.status === "scheduled" || post.status === "posted" || post.status === "published";
   const isDraft = post.status === "draft";
+  const isPastDue = isDraft && isScheduledDateInPast(post.scheduled_at);
   const rawCopy = post.caption_data?.caption || post.slide_content?.postCopy || post.brief;
   const linkUrl = post.slide_content?.linkUrl || post.caption_data?.post_url || "";
   const hashtags = post.caption_data?.hashtags || [];
@@ -587,6 +610,12 @@ function PostCard({
                   : "Published"}
               </span>
 
+              {isPastDue && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-700 border border-rose-300">
+                  Date Passed
+                </span>
+              )}
+
               {!isDraft && (
                 <InlineDateTimeEditor
                   value={post.scheduled_at}
@@ -603,7 +632,7 @@ function PostCard({
             </div>
 
             {isDraft && (
-              <div className="mb-2">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
                 <InlineDateTimeEditor
                   value={post.scheduled_at}
                   onSave={(iso) => onUpdateScheduledAt(post.id, iso)}
@@ -623,6 +652,19 @@ function PostCard({
                     </span>
                   </div>
                 </InlineDateTimeEditor>
+
+                {isPastDue && onRefreshPastDates && (
+                  <button
+                    type="button"
+                    onClick={onRefreshPastDates}
+                    disabled={refreshingDates}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-pink hover:bg-brand-pink/90 text-white text-xs font-black transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                    title="Reassign past dates to upcoming future slots"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${refreshingDates ? "animate-spin" : ""}`} />
+                    <span>Refresh to Future Date</span>
+                  </button>
+                )}
               </div>
             )}
 

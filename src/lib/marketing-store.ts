@@ -198,7 +198,7 @@ export async function loadMarketingStore(): Promise<MarketingStoreData> {
 
   const inflight = (async (): Promise<MarketingStoreData> => {
     const local = readLocalMarketingStore();
-    const sb = await getWriteStorageSupabase();
+    const sb = getReadStorageSupabase();
     if (sb) {
       try {
         // 1. Check versioned snapshot directory first via POST .list() (bypasses Cloudflare's 15-min path cache!)

@@ -54,6 +54,33 @@ export async function POST(request: Request) {
       absoluteMediaUrl = `${BASE_URL}${mediaUrl}`;
     }
 
+    // 3.5. Ensure scheduledAt is in the future so Buffer never rejects a past dueAt
+    let effectiveScheduledAt: string | undefined = scheduledAt || undefined;
+    if (effectiveScheduledAt) {
+      const parsed = new Date(effectiveScheduledAt);
+      const now = new Date();
+      const minFutureMs = now.getTime() + 15 * 60_000;
+      if (!Number.isNaN(parsed.getTime()) && parsed.getTime() <= minFutureMs) {
+        const preferredHours = parsed.getUTCHours() || 9;
+        const preferredMinutes = parsed.getUTCMinutes() || 0;
+        const rolled = new Date(
+          Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            preferredHours,
+            preferredMinutes,
+            0,
+            0
+          )
+        );
+        if (rolled.getTime() <= minFutureMs) {
+          rolled.setUTCDate(rolled.getUTCDate() + 1);
+        }
+        effectiveScheduledAt = rolled.toISOString().replace(".000Z", "Z");
+      }
+    }
+
     // 4. Send to Buffer API
     const result = await createBufferUpdate({
       targetProfiles: targetProfiles.map((p: any) => ({ id: p.id, service: p.service })),
@@ -62,17 +89,22 @@ export async function POST(request: Request) {
         photo: absoluteMediaUrl || undefined,
         link: linkUrl || undefined,
       },
-      scheduledAt: scheduledAt || undefined,
+      scheduledAt: effectiveScheduledAt,
     });
 
     // 5. Update local database status in social_posts to 'scheduled'
     const supabase = await createClient();
+    const updatePayload: Record<string, any> = {
+      status: "scheduled",
+      updated_at: new Date().toISOString(),
+    };
+    if (effectiveScheduledAt) {
+      updatePayload.scheduled_at = effectiveScheduledAt;
+    }
+
     const { error: dbErr } = await (supabase as any)
       .from("social_posts")
-      .update({
-        status: "scheduled",
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", postId);
 
     if (dbErr) {
@@ -81,13 +113,14 @@ export async function POST(request: Request) {
         table: "social_posts",
         action: "update",
         filters: [{ type: "eq", column: "id", value: postId }],
-        values: { status: "scheduled", updated_at: new Date().toISOString() },
+        values: updatePayload,
       });
     }
 
     return NextResponse.json({
       success: true,
       bufferResult: result,
+      scheduledAt: effectiveScheduledAt,
       targetChannelsCount: profileIds.length,
       message: `Pushed post directly to ${profileIds.length} Buffer channel(s)!`,
     });

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { EdmCalendar, EdmCampaignCalendarItem } from "@/components/admin/edm/EdmCalendar";
+import { toast } from "sonner";
 import {
   Loader2,
   CheckCircle2,
@@ -12,6 +13,7 @@ import {
   ShieldCheck,
   BookOpen,
   Mail,
+  RefreshCw,
 } from "lucide-react";
 import {
   LinkedinIcon as Linkedin,
@@ -19,6 +21,10 @@ import {
 } from "@/components/icons/SocialIcons";
 import Link from "next/link";
 import { format } from "date-fns";
+import {
+  computeRefreshedFutureSchedule,
+  isScheduledDateInPast,
+} from "@/utils/marketing-schedule-refresh";
 
 interface SocialPostItem {
   id: string;
@@ -48,42 +54,99 @@ export default function SocialCalendarPage() {
   const [blogPosts, setBlogPosts] = useState<BlogPostItem[]>([]);
   const [captions, setCaptions] = useState<CaptionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshingDates, setRefreshingDates] = useState(false);
+
+  const fetchCalendarData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [{ data: edmData }, { data: socialData }, { data: blogData }, { data: captionData }] =
+        await Promise.all([
+          supabase
+            .from("edm_campaigns")
+            .select("id, subject, status, sent_at, scheduled_at")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("social_posts")
+            .select("id, brief, status, scheduled_at, source_blog_id")
+            .order("scheduled_at", { ascending: true }),
+          supabase
+            .from("blog_posts")
+            .select("id, title, is_draft, publish_date")
+            .order("publish_date", { ascending: true }),
+          supabase.from("social_post_captions").select("id, post_id, platform"),
+        ]);
+
+      setCampaigns((edmData as EdmCampaignCalendarItem[]) || []);
+      setSocialPosts((socialData as SocialPostItem[]) || []);
+      setBlogPosts((blogData as BlogPostItem[]) || []);
+      setCaptions((captionData as CaptionItem[]) || []);
+    } catch (err) {
+      console.error("Failed to fetch data for social calendar KPIs:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
 
   useEffect(() => {
-    async function fetchCalendarData() {
-      try {
-        setLoading(true);
-
-        const [{ data: edmData }, { data: socialData }, { data: blogData }, { data: captionData }] =
-          await Promise.all([
-            supabase
-              .from("edm_campaigns")
-              .select("id, subject, status, sent_at, scheduled_at")
-              .order("created_at", { ascending: false }),
-            supabase
-              .from("social_posts")
-              .select("id, brief, status, scheduled_at, source_blog_id")
-              .order("scheduled_at", { ascending: true }),
-            supabase
-              .from("blog_posts")
-              .select("id, title, is_draft, publish_date")
-              .order("publish_date", { ascending: true }),
-            supabase.from("social_post_captions").select("id, post_id, platform"),
-          ]);
-
-        setCampaigns((edmData as EdmCampaignCalendarItem[]) || []);
-        setSocialPosts((socialData as SocialPostItem[]) || []);
-        setBlogPosts((blogData as BlogPostItem[]) || []);
-        setCaptions((captionData as CaptionItem[]) || []);
-      } catch (err) {
-        console.error("Failed to fetch data for social calendar KPIs:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchCalendarData();
-  }, [supabase]);
+  }, [fetchCalendarData]);
+
+  const pastDueDraftCount = useMemo(() => {
+    const pastSocial = socialPosts.filter(
+      (p) => p.status === "draft" && isScheduledDateInPast(p.scheduled_at)
+    ).length;
+    const pastEdm = campaigns.filter(
+      (c) => c.status === "draft" && isScheduledDateInPast(c.scheduled_at)
+    ).length;
+    return pastSocial + pastEdm;
+  }, [socialPosts, campaigns]);
+
+  const handleRefreshAllPastDates = async () => {
+    try {
+      setRefreshingDates(true);
+      const socialRefresh = computeRefreshedFutureSchedule(socialPosts);
+      const edmRefresh = computeRefreshedFutureSchedule(
+        campaigns.map((c) => ({
+          id: c.id,
+          status: c.status,
+          scheduled_at: c.scheduled_at || null,
+        }))
+      );
+
+      const totalUpdates = socialRefresh.updates.length + edmRefresh.updates.length;
+      if (totalUpdates === 0) {
+        toast.info("All draft social posts & EDM campaigns already have future dates!");
+        return;
+      }
+
+      const nowIso = new Date().toISOString();
+
+      for (const u of socialRefresh.updates) {
+        await supabase
+          .from("social_posts")
+          .update({ scheduled_at: u.newScheduledAt, updated_at: nowIso })
+          .eq("id", u.id);
+      }
+
+      for (const u of edmRefresh.updates) {
+        await supabase
+          .from("edm_campaigns")
+          .update({ scheduled_at: u.newScheduledAt, updated_at: nowIso })
+          .eq("id", u.id);
+      }
+
+      await fetchCalendarData();
+      toast.success(
+        `Reassigned ${totalUpdates} campaign item(s) to upcoming future dates!`
+      );
+    } catch (err) {
+      console.error("Failed to refresh past dates:", err);
+      toast.error("Failed to reassign past dates");
+    } finally {
+      setRefreshingDates(false);
+    }
+  };
 
   // Compute real dynamic KPIs based on actual database status
   const kpis = useMemo(() => {
@@ -278,6 +341,29 @@ export default function SocialCalendarPage() {
           <p className="text-gray-500 text-xs font-bold">
             Visualize and manage your bi-weekly blogs, social queues, weekly EDMs, and promo codes in one place
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-start md:self-center">
+          <button
+            type="button"
+            onClick={handleRefreshAllPastDates}
+            disabled={refreshingDates}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs disabled:opacity-50 ${
+              pastDueDraftCount > 0
+                ? "bg-brand-pink text-white hover:bg-brand-pink/90 shadow-brand-pink/20"
+                : "bg-white border border-gray-200 text-brand-dark hover:bg-gray-50"
+            }`}
+            title="Reassign any past-due draft social posts & EDM campaigns to upcoming future dates"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshingDates ? "animate-spin" : ""}`} />
+            <span>
+              {refreshingDates
+                ? "Reassigning Dates..."
+                : pastDueDraftCount > 0
+                ? `Refresh Past Dates (${pastDueDraftCount})`
+                : "Refresh Past Dates"}
+            </span>
+          </button>
         </div>
       </div>
 
