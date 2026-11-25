@@ -199,7 +199,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
       <ol>
         <li><strong>Are there only 1 to 3 of you staying in for a quiet puzzle night?</strong> Play any Back Pocket Mystery in <strong>Couch Detective / Case-File Mode</strong>, or try a retail cold-case file.</li>
         <li><strong>Are you organizing a 200-person corporate auditorium dinner where guests don’t know each other and don’t want to roleplay?</strong> Hire a live-actor comedy troupe.</li>
-        <li><strong>Are you hosting 4 to 16+ friends for a birthday, dinner party, bachelorette/hen night, or holiday gathering where you want everyone laughing, dressing up, and accusing each other, and you want to play too without spending 4 hours cutting paper slips?</strong> Explore our <a href="/en/themes">Active Mystery Themes</a> and build your custom cast in ~20 minutes.</li>
+        <li><strong>Are you hosting 4 to 16 friends (+ extra Detectives) for a birthday, dinner party, bachelorette/hen night, or holiday gathering where you want everyone laughing, dressing up, and accusing each other, and you want to play too without spending 4 hours cutting paper slips?</strong> Explore our <a href="/en/themes">Active Mystery Themes</a> and build your custom cast in ~20 minutes.</li>
       </ol>
 
       <div class="bg-brand-pink/10 p-10 rounded-[2.5rem] border-2 border-brand-pink my-12 text-center">

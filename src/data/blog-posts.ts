@@ -430,7 +430,7 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'best-murder-mystery-large-groups',
     title: 'The Best Murder Mystery Party Games for Large Groups in 2026',
-    subtitle: 'How to host 12 to 16+ suspects without losing your mind.',
+    subtitle: 'How to host 12 to 16 suspects (+ extra Detectives) without losing your mind.',
     excerpt: 'Hosting a big group event? Discover the best murder mystery formats and strategies designed for lively dinner parties and multi-table corporate events.',
     image: '/blog/large-groups.png',
     date: 'May 28, 2024',

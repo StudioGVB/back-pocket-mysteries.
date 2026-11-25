@@ -175,6 +175,8 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       delete baseSpecProfile.avatar_url;
       delete baseSpecProfile.guest_id;
       delete baseSpecProfile.guest_name;
+      delete baseSpecProfile.first_name;
+      delete baseSpecProfile.last_name;
     }
 
     const existingGuestName = String(existingProfile.guest_name || '').trim().toLowerCase();
@@ -1267,6 +1269,8 @@ function normalizeCharacterList(
 
     const origGuestName = char.profile_data?.guest_name;
     const origProfileName = char.profile_data?.name;
+    const origFirstName = char.profile_data?.first_name;
+    const origLastName = char.profile_data?.last_name;
 
     let profileStr = JSON.stringify(char.profile_data || {});
     const origProfileStr = profileStr;
@@ -1285,6 +1289,12 @@ function normalizeCharacterList(
     }
     if (origProfileName !== undefined) {
       cleanedProfile.name = origProfileName;
+    }
+    if (origFirstName !== undefined) {
+      cleanedProfile.first_name = origFirstName;
+    }
+    if (origLastName !== undefined) {
+      cleanedProfile.last_name = origLastName;
     }
 
     // Ensure canonical role bio/outfit/act_summary are present if missing

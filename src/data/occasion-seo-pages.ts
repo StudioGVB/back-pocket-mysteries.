@@ -397,7 +397,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     metaTitle:
       'Corporate Team-Building Murder Mystery Games (Safe For Work & Online) | Back Pocket Mysteries',
     metaDescription:
-      'Host a corporate team-building murder mystery game for 6 to 16+ colleagues. Clean SFW spice level guarantees zero romantic roleplay and zero profanity while delivering complex forensic deduction.',
+      'Host a corporate team-building murder mystery game for 6 to 16 colleagues (+ extra Detectives). Clean SFW spice level guarantees zero romantic roleplay and zero profanity while delivering complex forensic deduction.',
     keywords: [
       'corporate murder mystery team building',
       'office murder mystery party game',
@@ -464,7 +464,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       'remote murder mystery game for friends',
     ],
     recommendedThemeSlug: 'christmas-nightmare',
-    groupSizeLabel: '4 to 16+ Players Anywhere in the World',
+    groupSizeLabel: '4 to 16 Players (+ Extra Detectives) Anywhere in the World',
     prepTimeLabel: 'Instant 6-Digit PIN Join • No App Download',
     whyTitle: 'One Live 6-Digit Game PIN. Zero PDFs. Zero App Downloads.',
     whyParagraphs: [

@@ -1314,6 +1314,8 @@ export async function createMysteryAction(formData: FormData) {
       const suspectCount = Math.max(3, targetCharCount - 1);
       const innocentCount = Math.max(1, targetCharCount - 3);
       const maxCharIndex = targetCharCount - 1;
+      const targetRounds = pkgInfo.requiredRounds;
+      const targetClueCount = targetRounds * 3;
       
       const responseSchema: Schema = {
         type: SchemaType.OBJECT,
@@ -1388,7 +1390,7 @@ export async function createMysteryAction(formData: FormData) {
           },
           clues: {
             type: SchemaType.ARRAY,
-            description: "Exactly 6 clues linked to the plot beats.",
+            description: `Exactly ${targetClueCount} clues distributed evenly across ${targetRounds} rounds (Rounds 1 through ${targetRounds}).`,
             items: {
               type: SchemaType.OBJECT,
               properties: {
@@ -1398,7 +1400,7 @@ export async function createMysteryAction(formData: FormData) {
                 },
                 clue_type: { type: SchemaType.STRING, enum: ['physical', 'testimony', 'background', 'secret'], format: 'enum' },
                 implication_type: { type: SchemaType.STRING, enum: ['direct', 'circumstantial', 'red_herring'], format: 'enum' },
-                round_number: { type: SchemaType.INTEGER, description: "Round of the game: 1, 2, or 3" },
+                round_number: { type: SchemaType.INTEGER, description: `Round of the game: integer from 1 to ${targetRounds}` },
                 is_essential: { type: SchemaType.BOOLEAN },
                 description: { type: SchemaType.STRING, description: "Clue description referring to characters strictly by their bracketed Role Title tokens (e.g. {{The Tycoon}}). NEVER use human names." },
                 beat_index: { type: SchemaType.INTEGER, description: "Index of the linked plot beat in the plot_beats array (0 to 3)" }
@@ -1445,7 +1447,7 @@ export async function createMysteryAction(formData: FormData) {
 
       const promptText = `
         You are an expert murder mystery party game designer.
-        The user wants to create a new murder mystery base for the ${pkgInfo.label} (${pkgInfo.rangeLabel}).
+        The user wants to create a new murder mystery base for the ${pkgInfo.label} (${pkgInfo.rangeLabel} • ${targetRounds} Investigation Rounds).
         Title: "${title}"
         Theme: "${theme}"
 
@@ -1480,7 +1482,7 @@ export async function createMysteryAction(formData: FormData) {
            - Beat 2: The discovery of the murder.
            - Beat 3: Key evidence or alibi cracks.
            - Beat 4: The climax / twist and resolution.
-        7. **CLUES**: Generate exactly 6 clue cards linked to the plot beats. Clue types must be strictly one of: 'physical', 'testimony', 'background', 'secret'. Implication types must be strictly one of: 'direct', 'circumstantial', 'red_herring'.
+        7. **CLUES & TIER ROUND STRUCTURE (${targetRounds} ROUNDS)**: Because this is a **${pkgInfo.label}** mystery, it has **${targetRounds} investigation rounds** (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds). Generate **${targetClueCount} clue cards** distributed evenly across **Rounds 1 through ${targetRounds}** (3 clues per round, so every round from 1 to ${targetRounds} has 3 clues). Clue types must be strictly one of: 'physical', 'testimony', 'background', 'secret'. Implication types must be strictly one of: 'direct', 'circumstantial', 'red_herring'.
            - **REALISTIC TEXT / CHAT TITLE RULE**: If any clue is a text chain, SMS, or chat message thread, its \`title\` MUST be a realistic contact name (\`{{Role Title}}\`), an emoji/codename (e.g., \`Wifey 🎄❤️\`, \`🔒 Unknown Number\`), or a group chat name (e.g., \`Work Ops 💼\`, \`Family GC\`). NEVER call a text chain "Intercepted Texts...", "Leaked Text Chain...", or "Direct Messages".
         8. **SUBPLOT**: Generate exactly 1 secondary red-herring subplot arc involving 2 innocent suspects (indexes 0-${maxCharIndex}, must not be the victim). Include 2 subplot beats linked to the plot beats.
         9. **DEFAULT MILD SPICE BOUNDARY**: Include juicy drama (e.g. secret affairs, financial blackmail, or revenge), while keeping all dialogue 100% clean and PG-13 (ZERO swearing/cussing, ZERO bitch slaps/catfights, ZERO sex tapes).
