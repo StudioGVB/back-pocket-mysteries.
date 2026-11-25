@@ -19,6 +19,7 @@ import {
   stripCustomerFacingTitle,
   shuffleRoundCluesDeterministically,
 } from '@/utils/clue-format';
+import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type Clue = Database['public']['Tables']['clues']['Row'];

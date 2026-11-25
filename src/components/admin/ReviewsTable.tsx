@@ -572,12 +572,12 @@ export default function ReviewsTable({
           )}
         </div>
 
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full sm:w-80">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search reviewer, base, or quote..."
+            placeholder="Search reviewer, host customer, base, or quote..."
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-full text-xs font-bold text-brand-dark outline-none focus:border-brand-pink"
           />
           {searchQuery && (
@@ -607,7 +607,7 @@ export default function ReviewsTable({
                   className="w-4 h-4 rounded border-gray-300 text-brand-pink focus:ring-brand-pink cursor-pointer"
                 />
               </th>
-              <th className="px-4 py-4">Customer</th>
+              <th className="px-4 py-4">Reviewer &amp; Party Host</th>
               <th className="px-4 py-4">Mystery Base</th>
               <th className="px-4 py-4">Rating</th>
               <th className="px-4 py-4">Review</th>
@@ -641,8 +641,31 @@ export default function ReviewsTable({
                       className="w-4 h-4 rounded border-gray-300 text-brand-pink focus:ring-brand-pink cursor-pointer"
                     />
                   </td>
-                  <td className="px-4 py-4 font-bold text-brand-dark group-hover:text-brand-pink transition-colors">
-                    {review.name}
+                  <td className="px-4 py-4">
+                    <div className="font-bold text-brand-dark group-hover:text-brand-pink transition-colors">
+                      {review.name}
+                    </div>
+                    {(review.hostCustomerName || review.hostCustomerEmail) ? (
+                      <div
+                        className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-50 border border-amber-200/70 text-[10px] font-bold text-amber-900 max-w-[240px] truncate"
+                        title={
+                          review.reviewerRelation === 'host'
+                            ? `Party Host Customer${review.hostCustomerEmail ? ` (${review.hostCustomerEmail})` : ''}`
+                            : `Hosted by ${review.hostCustomerName || 'Customer'}${review.hostCustomerEmail ? ` (${review.hostCustomerEmail})` : ''}`
+                        }
+                      >
+                        <span className="shrink-0">👑</span>
+                        <span className="truncate">
+                          {review.reviewerRelation === 'host'
+                            ? `Party Host${review.hostCustomerEmail ? ` • ${review.hostCustomerEmail}` : ''}`
+                            : `Host: ${review.hostCustomerName || review.hostCustomerEmail}`}
+                        </span>
+                      </div>
+                    ) : review.is_guest_review ? (
+                      <div className="mt-1 text-[10px] font-semibold text-gray-400">
+                        🎮 Playroom Guest Review
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-4 py-4">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-[11px] font-black">
@@ -790,9 +813,44 @@ export default function ReviewsTable({
               <div className="flex flex-wrap justify-between items-center gap-4 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
-                    Customer Name
+                    {selectedReview.is_guest_review ? 'Reviewer (Party Guest)' : 'Customer Name'}
                   </p>
                   <p className="text-base font-bold text-brand-dark">{selectedReview.name}</p>
+                  {(selectedReview.hostCustomerName || selectedReview.hostCustomerEmail) && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const hostQuery =
+                            selectedReview.hostCustomerName || selectedReview.hostCustomerEmail || '';
+                          if (hostQuery) {
+                            setSearchQuery(hostQuery);
+                            setIsBaseDropdownOpen(false);
+                            setSelectedReview(null);
+                          }
+                        }}
+                        title="Click to filter all reviews from this host's party"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-[11px] font-bold text-amber-900 transition-colors cursor-pointer"
+                      >
+                        <span>👑</span>
+                        <span>
+                          {selectedReview.reviewerRelation === 'host'
+                            ? 'Party Host Customer'
+                            : `Host: ${selectedReview.hostCustomerName || 'Customer'}`}
+                        </span>
+                        {selectedReview.hostCustomerEmail && (
+                          <span className="text-amber-700/80 font-semibold">
+                            ({selectedReview.hostCustomerEmail})
+                          </span>
+                        )}
+                      </button>
+                      {selectedReview.sessionPin && (
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] font-mono font-bold text-slate-600">
+                          PIN: {selectedReview.sessionPin}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="relative">

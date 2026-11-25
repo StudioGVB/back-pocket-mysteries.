@@ -52,6 +52,9 @@ ${pack.themeUrl}
 
 ${hashtagLine}`;
 
+  const roundCountWord = pack.maxPlayers <= 6 ? 'Three' : pack.maxPlayers <= 10 ? 'Four' : 'Five';
+  const roundCountLower = roundCountWord.toLowerCase();
+
   const linkedin = `Product Launch: Introducing "${pack.title}" (${pack.theme}), Our Newest Interactive Murder Mystery Base Pack for ${pack.minPlayers} to ${pack.maxPlayers} Players
 
 Traditional boxed murder mystery games were built around a very rigid formula: fixed gender ratios, generic stock illustrations, and twenty-page paper scripts that take hours for an organiser to prepare before guests arrive. While classic tabletop whodunits have a loyal following, modern party hosts planning birthdays, corporate team socials, bachelorette weekends, and dinner parties have been asking for immersive themes where the evidence looks and sounds like real investigative artifacts.
@@ -59,7 +62,7 @@ Traditional boxed murder mystery games were built around a very rigid formula: f
 Today we are excited to launch our newest Mystery Base Pack on Back Pocket Mysteries: ${pack.title}, a ${pack.theme.toLowerCase()} investigation engineered for ${pack.minPlayers} to ${pack.maxPlayers} suspects.
 
 The Narrative Premise and Investigation Structure:
-${pack.shortDesc} Across three progressive rounds of mingling, forensic discovery, and cross-examination, every guest in the room holds asymmetric clues required to reconstruct the timeline and unmask the killer before the final vote.
+${pack.shortDesc} Across ${roundCountLower} progressive rounds of mingling, forensic discovery, and cross-examination, every guest in the room holds asymmetric clues required to reconstruct the timeline and unmask the killer before the final vote.
 
 Four Core Engineering and Game-Design Innovations Inside ${pack.title}:
 1. Diegetic Multimedia Evidence Formats: Instead of handing players dense paragraphs of exposition, ${pack.title} delivers clues as authentic in-world artifacts. As the host advances each round, players unlock high-angle grainy CCTV security camera stills stamped with camera metadata, dark-mode smartphone chat threads with recovered message badges, formatted forensic documents, and multi-speaker ElevenLabs audio wiretaps directly in their mobile Playroom or as printable Polaroid clue cards.
@@ -69,7 +72,7 @@ Four Core Engineering and Game-Design Innovations Inside ${pack.title}:
 
 What Is Included in Every Customised Kit:
 - Personalised character dossiers, secret objectives, and costume moodboards for every guest.
-- Three structured rounds of mingling prompts, alibis, and multimedia forensic clues.
+- ${roundCountWord} structured rounds of mingling prompts, alibis, and multimedia forensic clues.
 - Theme-matched cocktail, mocktail, and make-ahead menu recommendations.
 - Live mobile lobby for theory tracking, final suspect voting, and end-of-night superlative awards (Best Detective, Master Manipulator, and Best Dressed).
 

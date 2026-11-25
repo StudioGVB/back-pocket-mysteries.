@@ -582,7 +582,8 @@ export function ClueEditor({ clue, mysteryId, beats, characters, subplots = [], 
                   <option value="1">Round 1</option>
                   <option value="2">Round 2</option>
                   <option value="3">Round 3</option>
-                  <option value="4">Round 4</option>
+                  <option value="4">Round 4 (Premium / Grand)</option>
+                  <option value="5">Round 5 (Grand)</option>
                 </CustomSelect>
               </div>
             </div>
