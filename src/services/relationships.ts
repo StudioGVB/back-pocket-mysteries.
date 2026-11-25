@@ -4,6 +4,7 @@ import {
   cacheRelationshipsSnapshot,
   getCachedMysterySnapshot,
   getCachedRelationshipsSnapshot,
+  loadArchitectSyncedMysteryFromSupabaseCarrier,
 } from '@/lib/live-session-store';
 import { replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
 import {
@@ -93,6 +94,10 @@ export const getRelationshipsByMysteryId = cache(async (mysteryId: string) => {
   if (error || !data || data.length === 0) {
     let cached = getCachedRelationshipsSnapshot(mysteryId);
     if (cached.length > 0) return cached;
+    const fromCarrier = await loadArchitectSyncedMysteryFromSupabaseCarrier(mysteryId, supabase);
+    if (fromCarrier?.relationships?.length) {
+      return fromCarrier.relationships;
+    }
     const { getMysteryById } = await import('@/services/mysteries');
     await getMysteryById(mysteryId);
     cached = getCachedRelationshipsSnapshot(mysteryId);

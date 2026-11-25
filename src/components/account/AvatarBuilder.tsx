@@ -16,24 +16,29 @@ export const deriveDiceBearTop = (length?: string, texture?: string, g?: string)
   if (length === 'Hijab') return 'hijab';
   if (length === 'Turban') return 'turban';
   if (length === 'Beanie') return 'winterHat1';
+  if (length === 'Baseball Cap') return 'hat';
+
+  if (length === 'Buzz / Crew Cut') {
+    return 'theCaesar';
+  }
   
   if (g === 'Masculine') {
     if (length === 'Short') {
-      if (texture === 'Curly' || texture === 'Very Curly') return 'shortCurly';
+      if (texture === 'Curly' || texture === 'Loose Curls' || texture === 'Very Curly') return 'shortCurly';
       if (texture === 'Coily' || texture === 'Afro') return 'frizzle';
       if (texture === 'Dreads') return 'dreads01';
       if (texture === 'Wavy' || texture === 'Small Waves') return 'shortWaved';
       return 'shortFlat';
     }
     if (length === 'Medium') {
-      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'shortCurly';
+      if (texture === 'Curly' || texture === 'Loose Curls' || texture === 'Very Curly' || texture === 'Coily') return 'shortCurly';
       if (texture === 'Afro') return 'fro';
       if (texture === 'Dreads') return 'dreads02';
       if (texture === 'Wavy' || texture === 'Small Waves') return 'shortWaved';
       return 'shortRound';
     }
     if (length === 'Shoulder-Length') {
-      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'shaggy';
+      if (texture === 'Curly' || texture === 'Loose Curls' || texture === 'Very Curly' || texture === 'Coily') return 'shaggy';
       if (texture === 'Afro') return 'fro';
       if (texture === 'Dreads') return 'dreads02';
       if (texture === 'Wavy' || texture === 'Small Waves') return 'shaggy';
@@ -42,27 +47,27 @@ export const deriveDiceBearTop = (length?: string, texture?: string, g?: string)
     if (length === 'Long' || length === 'Very Long') {
       if (texture === 'Dreads') return 'dreads';
       if (texture === 'Afro' || texture === 'Coily') return 'fro';
-      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Wavy' || texture === 'Small Waves') return 'shaggyMullet';
+      if (texture === 'Curly' || texture === 'Loose Curls' || texture === 'Very Curly' || texture === 'Wavy' || texture === 'Small Waves') return 'shaggyMullet';
       return 'longButNotTooLong';
     }
     return 'shortFlat';
   } else {
     if (length === 'Short') {
-      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'shortCurly';
+      if (texture === 'Curly' || texture === 'Loose Curls' || texture === 'Very Curly' || texture === 'Coily') return 'shortCurly';
       if (texture === 'Afro') return 'frizzle';
       if (texture === 'Dreads') return 'dreads01';
       if (texture === 'Wavy' || texture === 'Small Waves') return 'shortWaved';
       return 'miaWallace';
     }
     if (length === 'Medium' || length === 'Shoulder-Length') {
-      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
+      if (texture === 'Curly' || texture === 'Loose Curls' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
       if (texture === 'Wavy' || texture === 'Small Waves') return 'curvy';
       if (texture === 'Afro') return 'fro';
       if (texture === 'Dreads') return 'dreads';
       return 'bob';
     }
     if (length === 'Long' || length === 'Very Long') {
-      if (texture === 'Curly' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
+      if (texture === 'Curly' || texture === 'Loose Curls' || texture === 'Very Curly' || texture === 'Coily') return 'curly';
       if (texture === 'Wavy' || texture === 'Small Waves') return 'curvy';
       if (texture === 'Afro') return 'fro';
       if (texture === 'Dreads') return 'dreads';
@@ -108,32 +113,52 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
   
   const hairLengths = [
     { id: 'Bald', label: 'Bald' },
-    { id: 'Short', label: 'Short' },
+    { id: 'Buzz / Crew Cut', label: 'Buzz / Crew Cut' },
+    { id: 'Short', label: 'Short (Full Top)' },
     { id: 'Medium', label: 'Medium' },
     { id: 'Shoulder-Length', label: 'Shoulder-Length' },
     { id: 'Long', label: 'Long' },
     { id: 'Very Long', label: 'Very Long' },
     { id: 'Hijab', label: 'Hijab' },
     { id: 'Turban', label: 'Turban' },
-    { id: 'Beanie', label: 'Beanie' }
+    { id: 'Beanie', label: 'Beanie' },
+    { id: 'Baseball Cap', label: 'Baseball Cap' },
   ];
 
   const hairTextures = [
     { id: 'Straight', label: 'Straight' },
     { id: 'Small Waves', label: 'Small Waves' },
     { id: 'Wavy', label: 'Wavy' },
+    { id: 'Loose Curls', label: 'Loose Curls' },
     { id: 'Curly', label: 'Curly' },
-    { id: 'Very Curly', label: 'Very Curly' },
+    { id: 'Very Curly', label: 'Tight / Very Curly' },
     { id: 'Coily', label: 'Coily' },
-    { id: 'Dreads', label: 'Dreads' },
+    { id: 'Dreads', label: 'Dreads / Locs' },
     { id: 'Afro', label: 'Afro' }
+  ];
+
+  const hairStyleCuts = [
+    { id: 'Textured Crop / Curly Fringe', label: 'Textured Crop / Curly Fringe' },
+    { id: 'Taper Fade / Voluminous Top', label: 'Taper Fade + Full Top' },
+    { id: 'Natural / Classic', label: 'Natural / Classic' },
+    { id: 'Middle Part / Curtain Fringe', label: 'Middle Part / Curtain Fringe' },
+    { id: 'Side Part / Swept', label: 'Side Part / Swept' },
+    { id: 'Quiff / Pompadour', label: 'Quiff / Brushed Up' },
+    { id: 'Slicked Back', label: 'Slicked Back' },
+    { id: 'Modern Mullet / Shag', label: 'Modern Mullet / Shag' },
+    { id: 'Bangs / Full Fringe', label: 'Bangs / Forehead Fringe' },
+    { id: 'Layered Blowout', label: 'Layered / Voluminous Blowout' },
+    { id: 'High Ponytail / Bun', label: 'Ponytail / Updo / Bun' },
+    { id: 'Braids / Cornrows', label: 'Braids / Cornrows' },
   ];
 
   let currentLength = config.hairLength;
   if (!currentLength) {
     if (!config.top || config.top === 'none') {
       currentLength = 'Bald';
-    } else if (['shortFlat', 'shortCurly', 'shortWaved', 'theCaesar', 'miaWallace'].includes(config.top)) {
+    } else if (config.top === 'theCaesar') {
+      currentLength = 'Buzz / Crew Cut';
+    } else if (['shortFlat', 'shortCurly', 'shortWaved', 'miaWallace'].includes(config.top)) {
       currentLength = 'Short';
     } else if (['straight01', 'straight02', 'straightAndStrand'].includes(config.top)) {
       currentLength = 'Long';
@@ -150,19 +175,38 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
   };
 
   const facialHairOptions = [
-    { id: undefined, label: 'None' },
-    { id: 'beardLight', label: 'Light Beard' },
-    { id: 'beardMedium', label: 'Medium Beard' },
-    { id: 'beardMajestic', label: 'Majestic Beard' },
-    { id: 'moustacheFancy', label: 'Fancy Stache' },
-    { id: 'moustacheMagnum', label: 'Magnum Stache' },
+    { id: undefined, label: 'None (Clean-Shaven)' },
+    { id: 'stubbleLight', label: 'Light Stubble' },
+    { id: 'beardLight', label: 'Short Trimmed Beard' },
+    { id: 'beardMedium', label: 'Full Medium Beard' },
+    { id: 'beardMajestic', label: 'Long Majestic Beard' },
+    { id: 'moustacheFancy', label: 'Fancy Mustache' },
+    { id: 'moustacheMagnum', label: 'Thick Mustache' },
+    { id: 'goatee', label: 'Goatee' },
   ];
 
   const eyeColors = ['Brown', 'Blue', 'Green', 'Hazel', 'Grey', 'Heterochromia'];
+  const faceShapes = [
+    'Square / Angular Jaw',
+    'Oval / Balanced',
+    'Chiseled / High Cheekbones',
+    'Round / Soft Jaw',
+    'Heart-Shaped / Tapered Chin',
+    'Long / Sculpted',
+  ];
   const heights = ['Petite / Short', 'Average', 'Tall', 'Very Tall'];
 
   const builds = ['Slender', 'Athletic', 'Average', 'Curvy', 'Heavy-set', 'Broad-shouldered'];
-  const distinctiveFeaturesOptions = ['Freckles', 'Beauty Mark', 'Glasses'];
+  const distinctiveFeaturesOptions = [
+    'Thick / Dark Eyebrows',
+    'Cleft / Dimpled Chin',
+    'Cheek Dimples',
+    'Freckles',
+    'Beauty Mark',
+    'Glasses',
+    'Sun-Kissed Tan',
+    'Earrings / Piercings',
+  ];
 
   const toggleDistinctiveFeature = (feature: string) => {
     const current = config.distinctiveFeatures || [];
@@ -239,7 +283,7 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
       </div>
 
       {/* Hair Texture */}
-      {currentLength !== 'Bald' && !['Hijab', 'Turban', 'Beanie'].includes(currentLength) && (
+      {currentLength !== 'Bald' && !['Hijab', 'Turban', 'Beanie', 'Baseball Cap'].includes(currentLength) && (
         <div>
           <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Hair Texture</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
@@ -261,11 +305,44 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
         </div>
       )}
 
-      {/* Facial Hair (Only for Masculine) */}
-      {gender === 'Masculine' && (
+      {/* Hair Style & Cut */}
+      {currentLength !== 'Bald' && !['Hijab', 'Turban', 'Beanie', 'Baseball Cap'].includes(currentLength) && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+              Hair Style &amp; Cut (How It Sits)
+            </label>
+            <span className="text-[10px] font-bold text-brand-pink">
+              ✨ Shapes AI Portrait Hair
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+            {hairStyleCuts.map(cut => {
+              const isSelected = (config.hairStyle || 'Natural / Classic') === cut.id;
+              return (
+                <button
+                  key={cut.id}
+                  type="button"
+                  onClick={() => updateConfig('hairStyle', cut.id)}
+                  className={`py-2.5 sm:py-3 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
+                    isSelected
+                      ? 'border-brand-pink bg-brand-pink/5 text-brand-pink'
+                      : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {cut.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Facial Hair (For Masculine & Neutral) */}
+      {gender !== 'Feminine' && (
         <div>
           <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Facial Hair</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             {facialHairOptions.map(style => (
               <button
                 key={style.id || 'none'}
@@ -286,7 +363,7 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
 
       {/* Eye Color */}
       <div>
-        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Eye Color (Metadata)</label>
+        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Eye Color</label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
           {eyeColors.map(color => (
             <button
@@ -303,7 +380,62 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-slate-400 mt-2 italic">* Eye color will be used in the story, but isn&apos;t visible on this avatar style.</p>
+      </div>
+
+      {/* Face Shape & Jawline */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+            Face Shape &amp; Jawline
+          </label>
+          <span className="text-[10px] font-bold text-slate-400">
+            AI Likeness
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+          {faceShapes.map(shape => (
+            <button
+              key={shape}
+              type="button"
+              onClick={() =>
+                updateConfig('faceShape', config.faceShape === shape ? undefined : shape)
+              }
+              className={`py-2.5 sm:py-3 px-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
+                config.faceShape === shape
+                  ? 'border-brand-pink bg-brand-pink/5 text-brand-pink'
+                  : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {shape}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Distinctive Features */}
+      <div>
+        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">
+          Distinctive Facial Features (Select Any That Apply)
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          {distinctiveFeaturesOptions.map(feature => {
+            const isSelected = (config.distinctiveFeatures || []).includes(feature);
+            return (
+              <button
+                key={feature}
+                type="button"
+                onClick={() => toggleDistinctiveFeature(feature)}
+                className={`py-2.5 sm:py-3 px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
+                  isSelected 
+                    ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
+                    : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {feature}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Height */}
@@ -329,7 +461,7 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
 
       {/* Body Build */}
       <div>
-        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Body Build (AI Rendering Only)</label>
+        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Body Build</label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
           {builds.map(build => (
             <button
@@ -348,28 +480,26 @@ export function AvatarBuilder({ config, onChange, gender }: AvatarBuilderProps) 
         </div>
       </div>
 
-      {/* Distinctive Features */}
+      {/* Specific Hair & Facial Likeness Notes (Auto-filled by Photo Scan or Custom) */}
       <div>
-        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Distinctive Features (AI Rendering Only)</label>
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {distinctiveFeaturesOptions.map(feature => {
-            const isSelected = (config.distinctiveFeatures || []).includes(feature);
-            return (
-              <button
-                key={feature}
-                type="button"
-                onClick={() => toggleDistinctiveFeature(feature)}
-                className={`py-2.5 sm:py-3 px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all border-2 ${
-                  isSelected 
-                    ? 'border-brand-pink bg-brand-pink/5 text-brand-pink' 
-                    : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {feature}
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+            Specific Hair &amp; Facial Likeness Notes (Optional)
+          </label>
+          <span className="text-[10px] font-bold text-brand-pink">
+            ✨ Highest-Priority AI Portrait Guide
+          </span>
         </div>
+        <textarea
+          rows={2}
+          value={config.likenessNotes || ''}
+          onChange={(e) => updateConfig('likenessNotes', e.target.value || undefined)}
+          placeholder="e.g. Thick jet-black curly hair falling in a textured crop onto the upper forehead with neat tapered sides, bold dark straight eyebrows, square jawline with a slight chin dimple"
+          className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-xs font-medium text-slate-800 focus:bg-white focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/20 outline-none transition-all resize-none"
+        />
+        <p className="text-[10px] text-slate-400 mt-1.5">
+          Auto-filled when you upload a photo above, or describe their exact haircut &amp; features in your own words so the AI portrait looks just like them.
+        </p>
       </div>
     </div>
   );

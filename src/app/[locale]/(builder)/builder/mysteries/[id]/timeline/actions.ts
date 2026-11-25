@@ -183,9 +183,12 @@ export async function generateBeatsFromNarrativeAction(mysteryId: string, curren
     const mystery = await getMysteryById(mysteryId);
     if (!mystery) throw new Error('Mystery not found');
 
-    let targetBeats = 4;
-    if (mystery.complexity === 'medium') targetBeats = 6;
-    else if (mystery.complexity === 'hard') targetBeats = 8;
+    const isBasicMystery = (mystery.max_players || 6) <= 6;
+    let targetBeats = isBasicMystery ? 5 : 4;
+    if (!isBasicMystery) {
+      if (mystery.complexity === 'medium') targetBeats = 6;
+      else if (mystery.complexity === 'hard') targetBeats = 8;
+    }
 
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) throw new Error('Google Generative AI API Key is missing.');

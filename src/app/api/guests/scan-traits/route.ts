@@ -48,6 +48,7 @@ const HAIR_COLOR_MAP: Record<string, string> = {
 
 const VALID_HAIR_LENGTHS = [
   'Bald',
+  'Buzz / Crew Cut',
   'Short',
   'Medium',
   'Shoulder-Length',
@@ -56,12 +57,14 @@ const VALID_HAIR_LENGTHS = [
   'Hijab',
   'Turban',
   'Beanie',
+  'Baseball Cap',
 ] as const;
 
 const VALID_HAIR_TEXTURES = [
   'Straight',
   'Small Waves',
   'Wavy',
+  'Loose Curls',
   'Curly',
   'Very Curly',
   'Coily',
@@ -69,13 +72,30 @@ const VALID_HAIR_TEXTURES = [
   'Afro',
 ] as const;
 
+const VALID_HAIR_STYLES = [
+  'Natural / Classic',
+  'Textured Crop / Curly Fringe',
+  'Taper Fade / Voluminous Top',
+  'Middle Part / Curtain Fringe',
+  'Side Part / Swept',
+  'Quiff / Pompadour',
+  'Slicked Back',
+  'Modern Mullet / Shag',
+  'Bangs / Full Fringe',
+  'Layered Blowout',
+  'High Ponytail / Bun',
+  'Braids / Cornrows',
+] as const;
+
 const VALID_FACIAL_HAIR = [
   'none',
+  'stubbleLight',
   'beardLight',
   'beardMedium',
   'beardMajestic',
   'moustacheFancy',
   'moustacheMagnum',
+  'goatee',
 ] as const;
 
 const VALID_EYE_COLORS = [
@@ -87,6 +107,15 @@ const VALID_EYE_COLORS = [
   'Heterochromia',
 ] as const;
 
+const VALID_FACE_SHAPES = [
+  'Square / Angular Jaw',
+  'Oval / Balanced',
+  'Chiseled / High Cheekbones',
+  'Round / Soft Jaw',
+  'Heart-Shaped / Tapered Chin',
+  'Long / Sculpted',
+] as const;
+
 const VALID_BUILDS = [
   'Slender',
   'Athletic',
@@ -96,7 +125,16 @@ const VALID_BUILDS = [
   'Broad-shouldered',
 ] as const;
 
-const VALID_DISTINCTIVE_FEATURES = ['Freckles', 'Beauty Mark', 'Glasses'] as const;
+const VALID_DISTINCTIVE_FEATURES = [
+  'Thick / Dark Eyebrows',
+  'Cleft / Dimpled Chin',
+  'Cheek Dimples',
+  'Freckles',
+  'Beauty Mark',
+  'Glasses',
+  'Sun-Kissed Tan',
+  'Earrings / Piercings',
+] as const;
 
 export async function POST(req: NextRequest) {
   try {
@@ -154,9 +192,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const prompt = `Analyze the person in this reference photo and map their visible physical appearance traits to the exact allowed option values below so our form checkboxes can be auto-selected.
+    const prompt = `Analyze the person in this reference photo and map their visible physical appearance traits to the exact allowed option values below so our form checkboxes can be auto-selected and our AI portrait generator can create an accurate likeness.
 If multiple people are visible, focus on the most prominent/centered face.
-If a trait (like eye color or build) is partially obscured, make your best natural inference from the visible cues.
+Note: Ignore camera flash red-eye artifacts when determining natural eye color.
 
 Return ONLY a valid JSON object with these exact keys and allowed string values:
 {
@@ -165,12 +203,15 @@ Return ONLY a valid JSON object with these exact keys and allowed string values:
   "ethnicity": one of ["Caucasian / White", "Black / African Descent", "East Asian", "South Asian", "Southeast Asian", "Hispanic / Latino", "Middle Eastern", "Native American / Indigenous", "Pacific Islander", "Mixed / Multiracial"],
   "skinToneLabel": one of ["Porcelain", "Fair", "Light", "Olive", "Light Brown", "Medium Brown", "Dark Brown", "Deep"],
   "hairColorLabel": one of ["Black", "Dark Brown", "Light Brown", "Auburn", "Ash Blonde", "Strawberry Blonde", "Golden Blonde", "White Blonde", "Orange Red", "Cherry Red", "Silver / White", "Pastel Pink", "Hot Pink", "Indigo", "Bright Blue", "Mint Green"],
-  "hairLength": one of ["Bald", "Short", "Medium", "Shoulder-Length", "Long", "Very Long", "Hijab", "Turban", "Beanie"] (Note: for men with standard barbershop/cropped hair above the ears, choose "Short"; if slightly longer on top but above collar, choose "Medium"),
-  "hairTexture": one of ["Straight", "Small Waves", "Wavy", "Curly", "Very Curly", "Coily", "Dreads", "Afro"],
-  "facialHair": one of ["none", "beardLight", "beardMedium", "beardMajestic", "moustacheFancy", "moustacheMagnum"] (use "beardLight" for stubble/short beard, "beardMedium" for full trimmed beard, "beardMajestic" for long beard, "none" if clean-shaven or feminine),
+  "hairLength": one of ["Bald", "Buzz / Crew Cut", "Short", "Medium", "Shoulder-Length", "Long", "Very Long", "Hijab", "Turban", "Beanie", "Baseball Cap"] (IMPORTANT: Only use "Buzz / Crew Cut" for very short military clipper buzzcuts under 0.5 inch. For men with short/tapered sides and a 1.5-3.5 inch curly/wavy/styled top, choose "Short"; if the top or curls are fuller/longer above the ears, choose "Medium"),
+  "hairTexture": one of ["Straight", "Small Waves", "Wavy", "Loose Curls", "Curly", "Very Curly", "Coily", "Dreads", "Afro"],
+  "hairStyle": one of ["Natural / Classic", "Textured Crop / Curly Fringe", "Taper Fade / Voluminous Top", "Middle Part / Curtain Fringe", "Side Part / Swept", "Quiff / Pompadour", "Slicked Back", "Modern Mullet / Shag", "Bangs / Full Fringe", "Layered Blowout", "High Ponytail / Bun", "Braids / Cornrows"] (For men with thick curls or textured hair on top falling slightly onto the upper forehead with shorter sides, choose "Textured Crop / Curly Fringe" or "Taper Fade / Voluminous Top"),
+  "facialHair": one of ["none", "stubbleLight", "beardLight", "beardMedium", "beardMajestic", "moustacheFancy", "moustacheMagnum", "goatee"] (use "stubbleLight" for light 5 o'clock shadow, "beardLight" for short trimmed beard, "beardMedium" for full beard, "none" if clean-shaven),
   "eyeColor": one of ["Brown", "Blue", "Green", "Hazel", "Grey", "Heterochromia"],
+  "faceShape": one of ["Square / Angular Jaw", "Oval / Balanced", "Chiseled / High Cheekbones", "Round / Soft Jaw", "Heart-Shaped / Tapered Chin", "Long / Sculpted"],
   "build": one of ["Slender", "Athletic", "Average", "Curvy", "Heavy-set", "Broad-shouldered"],
-  "distinctiveFeatures": array containing any applicable values from ["Freckles", "Beauty Mark", "Glasses"] (include "Glasses" if they are wearing eyeglasses or sunglasses)
+  "distinctiveFeatures": array containing any applicable values from ["Thick / Dark Eyebrows", "Cleft / Dimpled Chin", "Cheek Dimples", "Freckles", "Beauty Mark", "Glasses", "Sun-Kissed Tan", "Earrings / Piercings"],
+  "likenessNotes": "A concise 1-to-2 sentence physical likeness description (max 220 characters) capturing their exact hairstyle shape & curl/fringe placement, eyebrow thickness, jawline/chin contour, and smile so an AI portrait artist can match their real likeness."
 }`;
 
     const response = await fetch(
@@ -262,11 +303,18 @@ Return ONLY a valid JSON object with these exact keys and allowed string values:
       ? parsed.hairTexture
       : 'Straight';
 
+    const hairStyle = VALID_HAIR_STYLES.includes(parsed.hairStyle)
+      ? parsed.hairStyle
+      : 'Natural / Classic';
+
     const rawFacial = VALID_FACIAL_HAIR.includes(parsed.facialHair) ? parsed.facialHair : 'none';
     const facialHair =
-      gender === 'Masculine' && rawFacial !== 'none' ? rawFacial : undefined;
+      gender !== 'Feminine' && rawFacial !== 'none' ? rawFacial : undefined;
 
     const eyeColor = VALID_EYE_COLORS.includes(parsed.eyeColor) ? parsed.eyeColor : 'Brown';
+    const faceShape = VALID_FACE_SHAPES.includes(parsed.faceShape)
+      ? parsed.faceShape
+      : 'Oval / Balanced';
     const build = VALID_BUILDS.includes(parsed.build) ? parsed.build : 'Average';
 
     const distinctiveFeatures: string[] = Array.isArray(parsed.distinctiveFeatures)
@@ -275,15 +323,21 @@ Return ONLY a valid JSON object with these exact keys and allowed string values:
         )
       : [];
 
+    const likenessNotes =
+      typeof parsed.likenessNotes === 'string' && parsed.likenessNotes.trim()
+        ? parsed.likenessNotes.trim().slice(0, 260)
+        : '';
+
     const summaryParts = [
       gender,
       age === 'young' ? 'Young Adult' : age === 'middle_aged' ? 'Adult' : 'Mature',
       `${skinToneLabel} Skin`,
       hairLength === 'Bald'
         ? 'Bald'
-        : `${hairLength} ${hairTexture} ${hairColorLabel} Hair`,
+        : `${hairLength} ${hairTexture} ${hairColorLabel} Hair (${hairStyle})`,
       `${eyeColor} Eyes`,
-      ...(facialHair ? [facialHair.replace('beard', 'Beard ').replace('moustache', 'Moustache ')] : []),
+      faceShape,
+      ...(facialHair ? [facialHair.replace('beard', 'Beard ').replace('moustache', 'Moustache ').replace('stubbleLight', 'Light Stubble')] : []),
       ...distinctiveFeatures,
     ];
 
@@ -300,10 +354,13 @@ Return ONLY a valid JSON object with these exact keys and allowed string values:
           hairColorLabel,
           hairLength,
           hairTexture,
+          hairStyle,
           facialHair,
           eyeColor,
+          faceShape,
           build,
           distinctiveFeatures,
+          likenessNotes,
         },
         summary: summaryParts.join(' • '),
       },

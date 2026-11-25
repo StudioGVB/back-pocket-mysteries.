@@ -18,9 +18,12 @@ export default async function MysteryTimelinePage({
 
   if (!mystery) return null;
 
-  let targetBeats = 4;
-  if (mystery.complexity === 'medium') targetBeats = 6;
-  if (mystery.complexity === 'hard') targetBeats = 8;
+  const isBasicMystery = (mystery.max_players || characters.length || 6) <= 6;
+  let targetBeats = isBasicMystery ? 5 : 4;
+  if (!isBasicMystery) {
+    if (mystery.complexity === 'medium') targetBeats = 6;
+    if (mystery.complexity === 'hard') targetBeats = 8;
+  }
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">

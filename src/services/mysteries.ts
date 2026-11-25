@@ -22,6 +22,7 @@ import {
   getCachedMysterySnapshot,
   getAllCachedMysteries,
   isLiveCarrierClue,
+  loadArchitectSyncedMysteryFromSupabaseCarrier,
   loadLiveStateFromSupabaseClueCarrier,
 } from '@/lib/live-session-store';
 import {
@@ -1865,6 +1866,12 @@ export const getMysteryById = cache(async (id: string) => {
   ]);
 
   const loadCloudArchitectSnapshot = async (lookupId: string) => {
+    try {
+      const fromCarrier = await loadArchitectSyncedMysteryFromSupabaseCarrier(lookupId, supabase);
+      if (fromCarrier?.mystery) {
+        return fromCarrier.mystery;
+      }
+    } catch {}
     try {
       const { data: settingsRow } = await (supabase as any)
         .from('platform_settings')

@@ -425,11 +425,14 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
                     hairColor: traits.hairColor,
                     hairLength: traits.hairLength,
                     hairTexture: traits.hairTexture,
+                    hairStyle: traits.hairStyle || 'Natural / Classic',
                     top: deriveDiceBearTop(traits.hairLength, traits.hairTexture, mappedGender),
                     facialHair: mappedGender === 'Masculine' ? traits.facialHair : undefined,
                     eyeColor: traits.eyeColor,
+                    faceShape: traits.faceShape,
                     build: traits.build,
                     distinctiveFeatures: traits.distinctiveFeatures,
+                    likenessNotes: traits.likenessNotes || prev.likenessNotes,
                     age: traits.age,
                   }));
                 }}
@@ -570,11 +573,14 @@ export default function ProfileClient({ user, profile, onClose, onSaved }: Profi
                     hairColor: traits.hairColor,
                     hairLength: traits.hairLength,
                     hairTexture: traits.hairTexture,
+                    hairStyle: traits.hairStyle || 'Natural / Classic',
                     top: deriveDiceBearTop(traits.hairLength, traits.hairTexture, mappedGender),
                     facialHair: mappedGender === 'Masculine' ? traits.facialHair : undefined,
                     eyeColor: traits.eyeColor,
+                    faceShape: traits.faceShape,
                     build: traits.build,
                     distinctiveFeatures: traits.distinctiveFeatures,
+                    likenessNotes: traits.likenessNotes || prev.likenessNotes,
                     age: traits.age,
                   }));
                 }}

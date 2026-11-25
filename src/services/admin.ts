@@ -9,15 +9,23 @@ import {
   isChristmasNightmareMystery,
 } from '@/data/christmas-nightmare';
 import {
+  UNIBREAK_CABIN_DESCRIPTION,
+  UNIBREAK_CABIN_THEME,
+  UNIBREAK_CABIN_TITLE,
+  isUnibreakCabinMystery,
+} from '@/data/unibreak-at-the-cabin';
+import {
   CHRISTMAS_CABIN_MOODBOARD,
   CHRISTMAS_MAIN_COVER_URL,
   serializeMysteryImageField,
 } from '@/utils/moodboard';
 import { requireAdmin } from '@/utils/admin-auth';
 import {
+  getAllCachedMysteries,
   getAllStoredGameSessions,
   getStoredGameSession,
   getCachedMysterySnapshot,
+  loadArchitectSyncedMysteriesIndexFromSupabaseCarrier,
 } from '@/lib/live-session-store';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
@@ -79,6 +87,19 @@ function normalizeMysteryCardSummary(m: any, supabase?: any) {
     };
   }
 
+  if (isUnibreakCabinMystery(m.title, m.theme)) {
+    return {
+      ...m,
+      title: m.title || UNIBREAK_CABIN_TITLE,
+      theme: m.theme || UNIBREAK_CABIN_THEME,
+      description: m.description || UNIBREAK_CABIN_DESCRIPTION,
+      min_players: 6,
+      max_players: 6,
+      complexity: m.complexity || 'hard',
+      spice_level: m.spice_level || 'filthy',
+    };
+  }
+
   // Strip multi-hundred-KB inline base64 data:image/ cover strings (e.g. Ringmaster 800KB base64)
   // and permanently replace them in Supabase so neither Postgres nor RSC serializes 800KB per request.
   if (typeof m.image_url === 'string' && m.image_url.startsWith('data:image/')) {
@@ -110,16 +131,19 @@ export function invalidateAdminMysteriesCache(): void {
 }
 
 export async function getMysteries() {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
   const now = Date.now();
   if (cachedAdminMysteries && now - cachedAdminMysteries.fetchedAt < ADMIN_MYSTERIES_CACHE_TTL_MS) {
     return cachedAdminMysteries.data;
   }
 
-  const { data, error } = (await supabase
-    .from('mysteries')
-    .select('id, title, theme, status, description, image_url, created_at, min_players, max_players, complexity, spice_level, created_by')
-    .order('created_at', { ascending: false })) as any;
+  const [{ data, error }, syncedIndex] = await Promise.all([
+    supabase
+      .from('mysteries')
+      .select('id, title, theme, status, description, image_url, created_at, min_players, max_players, complexity, spice_level, created_by')
+      .order('created_at', { ascending: false }) as any,
+    loadArchitectSyncedMysteriesIndexFromSupabaseCarrier(supabase),
+  ]);
 
   if (error) {
     console.error('Error fetching admin mysteries:', error);
@@ -134,13 +158,49 @@ export async function getMysteries() {
       .map((s) => s.mysteryId)
   );
 
+  const syncedIds = new Set(Object.keys(syncedIndex || {}));
+  const combinedRows: any[] = [...(data || [])];
+  const existingIds = new Set(combinedRows.map((r: any) => r?.id).filter(Boolean));
+
+  for (const item of Object.values(syncedIndex || {})) {
+    const it = item as any;
+    if (it?.id && !existingIds.has(it.id)) {
+      combinedRows.push(it);
+      existingIds.add(it.id);
+    }
+  }
+
+  for (const cached of getAllCachedMysteries()) {
+    if (
+      cached?.id &&
+      !String(cached.id).includes('__u_') &&
+      !cached.template_mystery_id &&
+      !existingIds.has(cached.id)
+    ) {
+      combinedRows.push(cached);
+      existingIds.add(cached.id);
+    }
+  }
+
   const seenBaseTitles = new Set<string>();
   const filteredRows: any[] = [];
-  // Prefer published bases first when deduplicating by title
-  const sortedRows = [...(data || [])].sort((a, b) => {
+  // Prefer OG Base Builder synced rows and admin-owned rows first, then published bases, then newest
+  const sortedRows = combinedRows.sort((a, b) => {
+    const aSynced = syncedIds.has(a.id) ? 1 : 0;
+    const bSynced = syncedIds.has(b.id) ? 1 : 0;
+    if (aSynced !== bSynced) return bSynced - aSynced;
+
+    const aOwned = user?.id && a.created_by === user.id ? 1 : 0;
+    const bOwned = user?.id && b.created_by === user.id ? 1 : 0;
+    if (aOwned !== bOwned) return bOwned - aOwned;
+
     if (a.status === 'published' && b.status !== 'published') return -1;
     if (b.status === 'published' && a.status !== 'published') return 1;
-    return 0;
+
+    return (
+      new Date(b.created_at || 0).getTime() -
+      new Date(a.created_at || 0).getTime()
+    );
   });
 
   for (const row of sortedRows) {

@@ -23,9 +23,12 @@ export function TimelineEditor({ mystery, mysteryId, initialBeats, allCharacters
   const [showGeneratorModal, setShowGeneratorModal] = useState(false);
   const router = useRouter();
 
-  let targetBeats = 4;
-  if (mystery?.complexity === 'medium') targetBeats = 6;
-  if (mystery?.complexity === 'hard') targetBeats = 8;
+  const isBasicMystery = (mystery?.max_players || allCharacters?.length || 6) <= 6;
+  let targetBeats = isBasicMystery ? 5 : 4;
+  if (!isBasicMystery) {
+    if (mystery?.complexity === 'medium') targetBeats = 6;
+    if (mystery?.complexity === 'hard') targetBeats = 8;
+  }
 
   const handleMoveUp = async (index: number) => {
     if (index === 0) return;

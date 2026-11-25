@@ -124,14 +124,22 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
               top: derivedTop,
               hairLength: hl || baseLength,
               hairTexture: ht || 'Straight',
+              hairStyle: url.searchParams.get('hairStyle') || undefined,
               hairColor: url.searchParams.get('hairColor') || '282828',
               skinColor: url.searchParams.get('skinColor') || 'ffe0bd',
               eyeColor: url.searchParams.get('eyeColor') || initialData.eye_color || 'Brown',
+              faceShape: url.searchParams.get('faceShape') || undefined,
               height: url.searchParams.get('height') || initialData.height || 'Average',
-              facialHair: url.searchParams.get('facialHair') || undefined,
+              facialHair:
+                url.searchParams.get('facialHairStyle') ||
+                url.searchParams.get('facialHair') ||
+                undefined,
               accessories: url.searchParams.get('accessories') || undefined,
               build: url.searchParams.get('build') || undefined,
-              distinctiveFeatures: url.searchParams.get('distinctiveFeatures') ? url.searchParams.get('distinctiveFeatures')!.split(',') : undefined,
+              distinctiveFeatures: url.searchParams.get('distinctiveFeatures')
+                ? url.searchParams.get('distinctiveFeatures')!.split(',').filter(Boolean)
+                : undefined,
+              likenessNotes: url.searchParams.get('likenessNotes') || undefined,
               accent: url.searchParams.get('accent') || initialAccent,
               age: (url.searchParams.get('age') as any) || initialAge,
               aiPhotoUrl: url.searchParams.get('aiPhotoUrl') || undefined,
@@ -280,16 +288,20 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
       hairColor: traits.hairColor,
       hairLength: traits.hairLength,
       hairTexture: traits.hairTexture,
+      hairStyle: traits.hairStyle || 'Natural / Classic',
       top: deriveDiceBearTop(traits.hairLength, traits.hairTexture, traits.gender),
-      facialHair: traits.gender === 'Masculine' ? traits.facialHair : undefined,
+      facialHair: traits.gender !== 'Feminine' ? traits.facialHair : undefined,
       eyeColor: traits.eyeColor,
+      faceShape: traits.faceShape,
       build: traits.build,
       distinctiveFeatures: traits.distinctiveFeatures,
+      likenessNotes: traits.likenessNotes || prev.likenessNotes,
       age: traits.age,
+      aiPhotoUrl: undefined,
     }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (opts?: { forceRegeneratePhoto?: boolean }) => {
     const cleanFirst = firstName.trim();
     const cleanLast = lastName.trim();
     if (!cleanFirst) {
@@ -306,6 +318,7 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
     }
     setNameError('');
     const fullGuestName = `${cleanFirst} ${cleanLast}`;
+    const forcePhoto = Boolean(opts?.forceRegeneratePhoto || hasPhysicalChanges);
 
     setIsSaving(true);
     try {
@@ -321,7 +334,19 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
         eyeColor: avatarConfig.eyeColor,
         height: avatarConfig.height,
         ethnicity,
-        avatarUrl,
+        avatarUrl: forcePhoto
+          ? buildAvatarUrl(
+              {
+                ...avatarConfig,
+                accent,
+                age,
+                ethnicity,
+                aiPhotoUrl: undefined,
+              },
+              fullGuestName
+            )
+          : avatarUrl,
+        forceRegeneratePhoto: forcePhoto,
         traits: quirks.slice(0, MAX_TRAITS),
         bio: '',
       });
@@ -354,7 +379,7 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
                 alt="Avatar preview"
                 className="w-full h-full object-cover object-top"
               />
-              {isSaving && hasPhysicalChanges && (
+              {isSaving && (
                 <div className="absolute inset-0 bg-slate-900/70 flex items-center justify-center">
                   <svg className="animate-spin h-4 w-4 text-brand-pink" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
@@ -397,7 +422,7 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
               alt="Avatar preview" 
               className="w-full h-full object-cover object-top" 
             />
-            {isSaving && hasPhysicalChanges && (
+            {isSaving && (
               <div className="absolute inset-0 bg-slate-900/75 backdrop-blur-sm flex flex-col items-center justify-center px-4 text-center">
                 <svg className="animate-spin h-8 w-8 text-brand-pink mb-2" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
@@ -410,12 +435,23 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
             )}
           </div>
 
-          {hasPhysicalChanges && (
+          {hasPhysicalChanges ? (
             <span className="mb-3 px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-wider text-center">
               {initialData
                 ? '✨ Physical Changes Detected - New AI Photo on Save'
                 : '✨ AI Character Photo Generated on Save'}
             </span>
+          ) : (
+            initialData?.id && (
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => handleSave({ forceRegeneratePhoto: true })}
+                className="mb-3 px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-brand-pink text-white text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
+              >
+                🔄 Regenerate AI Photo &amp; Save
+              </button>
+            )
           )}
           
           <div className="text-center w-full">
@@ -778,15 +814,13 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
               </button>
               <button
                 type="button"
-                onClick={handleSave}
+                onClick={() => handleSave()}
                 disabled={isSaving}
                 className="flex-1 sm:flex-initial px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-black text-xs sm:text-sm text-white transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
                 style={{ background: '#fe04c6', boxShadow: '0 8px 20px -8px rgba(254,4,198,0.5)' }}
               >
                 {isSaving
-                  ? hasPhysicalChanges
-                    ? 'Generating AI Photo & Saving...'
-                    : 'Saving...'
+                  ? 'Generating AI Photo & Saving...'
                   : hasPhysicalChanges && initialData
                   ? '✨ Save & Regenerate AI Photo'
                   : 'Save Guest'}

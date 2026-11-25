@@ -12,10 +12,13 @@ export interface ScannedGuestTraits {
   hairColorLabel: string;
   hairLength: string;
   hairTexture: string;
+  hairStyle?: string;
   facialHair?: string;
   eyeColor: string;
+  faceShape?: string;
   build: string;
   distinctiveFeatures: string[];
+  likenessNotes?: string;
 }
 
 interface PhotoTraitScannerProps {

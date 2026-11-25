@@ -19,7 +19,15 @@ import {
   stripFormatTagFromNotes,
 } from '@/utils/clue-format';
 import { recommendDifficultyFromPlotAndClues } from '@/utils/architect-difficulty-recommender';
-import { cacheMysterySnapshot, cacheRelationshipsSnapshot } from '@/lib/live-session-store';
+import {
+  cacheMysterySnapshot,
+  cacheRelationshipsSnapshot,
+  getAllCachedMysteries,
+  isLiveCarrierClue,
+  loadArchitectSyncedMysteriesIndexFromSupabaseCarrier,
+  saveArchitectSyncedMysteryToSupabaseCarrier,
+} from '@/lib/live-session-store';
+import { getMysteryById } from '@/services/mysteries';
 
 export type ArchitectSpiceLevel = 'Clean' | 'Mild' | 'Spicy' | 'Filthy';
 export type ArchitectComplexity = 'easy' | 'medium' | 'hard';
@@ -1557,7 +1565,7 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
           '[transferBlueprintToDraftMysteryBaseAction] Direct mysteries insert blocked by RLS, using deterministic fallback ID:',
           mErr?.message
         );
-        mysteryId = existingMysteryId || crypto.randomUUID();
+        mysteryId = crypto.randomUUID();
       } else {
         mysteryId = mysteryRow.id;
       }
@@ -1592,8 +1600,16 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
 
     const cachedCharacters: any[] = [];
 
+    // Sort characters so the Victim is always inserted FIRST (because non-victim characters reference `motive_linked_character_id = victimCharId`)
+    const orderedCharsForInsert = [...assembled.characters].sort((a, b) => {
+      const aVic = a.isVictim || a.plotRole === 'victim' ? 0 : 1;
+      const bVic = b.isVictim || b.plotRole === 'victim' ? 0 : 1;
+      return aVic - bVic;
+    });
+
     // 2. Insert all 6 characters + motives (using valid `characters` and `motives` columns)
-    for (const char of assembled.characters) {
+    let retriedFreshMysteryOnRls = false;
+    for (const char of orderedCharsForInsert) {
       const cleanRole = char.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
       const charId = resolveRoleId(cleanRole) || crypto.randomUUID();
 
@@ -1649,7 +1665,36 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
         },
       };
 
-      const { error: cErr } = await supabase.from('characters').insert(charRowPayload as any);
+      let { error: cErr } = await supabase.from('characters').insert(charRowPayload as any);
+
+      // If character insert failed due to RLS on a reused mysteryId, create a brand-new user-owned mystery row and retry
+      if (cErr && !retriedFreshMysteryOnRls && cachedCharacters.length === 0) {
+        retriedFreshMysteryOnRls = true;
+        const { data: freshMysteryRow } = await supabase
+          .from('mysteries')
+          .insert({
+            title: assembled.title,
+            theme: assembled.theme,
+            description: assembled.description,
+            inside_jokes: assembled.insideJokes || null,
+            spice_level: normalizedSpice,
+            complexity: normalizedComplexity,
+            min_players: assembled.characters.length,
+            max_players: assembled.characters.length,
+            status: 'draft',
+            current_round: 0,
+            created_by: user?.id || null,
+          } as any)
+          .select()
+          .single();
+
+        if (freshMysteryRow?.id) {
+          mysteryId = freshMysteryRow.id;
+          charRowPayload.mystery_id = mysteryId;
+          const retryRes = await supabase.from('characters').insert(charRowPayload as any);
+          cErr = retryRes.error;
+        }
+      }
 
       if (cErr) {
         console.warn(`Warning inserting character "${cleanRole}" (falling back to cloud snapshot):`, cErr.message);
@@ -2018,10 +2063,16 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
       updated_at: new Date().toISOString(),
     }));
 
-    // 7. Hydrate live session store cache AND persist to platform_settings.config_json.architectSyncedMysteries
+    // 7. Hydrate live session store cache, persist to Supabase clue carrier, AND persist to platform_settings.config_json.architectSyncedMysteries
     // so all Builder tabs (Overview, Characters, Relationships, Timeline, Subplots, Clues, Screen Test) render 100% populated across all Vercel instances
     cacheMysterySnapshot(mysteryId, fullSnapshot);
     cacheRelationshipsSnapshot(mysteryId, fullRelationships);
+    await saveArchitectSyncedMysteryToSupabaseCarrier(
+      mysteryId,
+      fullSnapshot,
+      fullRelationships,
+      supabase
+    );
 
     try {
       const { data: existingSettings } = await (supabase as any)
@@ -2446,19 +2497,65 @@ export async function listDraftMysteryBasesForArchitectAction(): Promise<{
     createdAt: string;
   }[];
 }> {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
   try {
-    const { data, error } = await supabase
-      .from('mysteries')
-      .select('id, title, theme, spice_level, complexity, status, created_at')
-      .order('created_at', { ascending: false })
-      .limit(20);
+    const [{ data }, syncedIndex] = await Promise.all([
+      supabase
+        .from('mysteries')
+        .select('id, title, theme, spice_level, complexity, status, created_by, created_at')
+        .order('created_at', { ascending: false })
+        .limit(30),
+      loadArchitectSyncedMysteriesIndexFromSupabaseCarrier(supabase),
+    ]);
 
-    if (error || !data) return { success: false };
+    const syncedIds = new Set(Object.keys(syncedIndex || {}));
+    const combined: any[] = [...(data || [])];
+    const existingIds = new Set(combined.map((m: any) => m.id));
+
+    for (const item of Object.values(syncedIndex || {})) {
+      if (item && (item as any).id && !existingIds.has((item as any).id)) {
+        combined.push(item);
+        existingIds.add((item as any).id);
+      }
+    }
+
+    for (const cached of getAllCachedMysteries()) {
+      if (
+        cached?.id &&
+        !String(cached.id).includes('__u_') &&
+        !existingIds.has(cached.id)
+      ) {
+        combined.push(cached);
+        existingIds.add(cached.id);
+      }
+    }
+
+    // Sort so synced OG Base Builder bases and admin-owned bases come first before deduplicating by title
+    combined.sort((a: any, b: any) => {
+      const aSynced = syncedIds.has(a.id) ? 1 : 0;
+      const bSynced = syncedIds.has(b.id) ? 1 : 0;
+      if (aSynced !== bSynced) return bSynced - aSynced;
+      const aOwned = user?.id && a.created_by === user.id ? 1 : 0;
+      const bOwned = user?.id && b.created_by === user.id ? 1 : 0;
+      if (aOwned !== bOwned) return bOwned - aOwned;
+      return (
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+      );
+    });
+
+    const seenTitles = new Set<string>();
+    const deduped = combined.filter((m: any) => {
+      if (!m?.id || String(m.id).includes('__u_')) return false;
+      const titleKey = String(m.title || '').trim().toLowerCase();
+      if (titleKey && seenTitles.has(titleKey)) return false;
+      if (titleKey) seenTitles.add(titleKey);
+      return true;
+    });
 
     return {
       success: true,
-      drafts: data.map((m: any) => ({
+      drafts: deduped.slice(0, 20).map((m: any) => ({
         id: m.id,
         title: m.title || 'Untitled Mystery',
         theme: m.theme || 'Mystery',
@@ -2485,14 +2582,15 @@ export async function loadExistingDraftIntoArchitectAction(params: {
   const { supabase } = await requireAdmin();
   try {
     const [
-      { data: mystery },
-      { data: chars },
-      { data: motives },
-      { data: beats },
-      { data: dbSubplots },
-      { data: clues },
+      { data: rawMystery },
+      { data: rawChars },
+      { data: rawMotives },
+      { data: rawBeats },
+      { data: rawSubplots },
+      { data: rawClues },
+      hydratedMystery,
     ] = await Promise.all([
-      supabase.from('mysteries').select('*').eq('id', params.mysteryId).single(),
+      supabase.from('mysteries').select('*').eq('id', params.mysteryId).maybeSingle(),
       supabase.from('characters').select('*').eq('mystery_id', params.mysteryId),
       supabase.from('motives').select('*').eq('mystery_id', params.mysteryId),
       supabase
@@ -2510,15 +2608,53 @@ export async function loadExistingDraftIntoArchitectAction(params: {
         .select('*')
         .eq('mystery_id', params.mysteryId)
         .order('round_number', { ascending: true }),
+      getMysteryById(params.mysteryId),
     ]);
 
+    const mystery = rawMystery || (hydratedMystery as any);
     if (!mystery) {
       return { success: false, error: 'Mystery not found.' };
     }
 
+    const chars =
+      Array.isArray(rawChars) && rawChars.length > 0
+        ? rawChars
+        : Array.isArray((hydratedMystery as any)?.characters)
+          ? (hydratedMystery as any).characters
+          : [];
+    const beats =
+      Array.isArray(rawBeats) && rawBeats.length > 0
+        ? rawBeats
+        : Array.isArray((hydratedMystery as any)?.plot_beats)
+          ? (hydratedMystery as any).plot_beats
+          : [];
+    const dbSubplots =
+      Array.isArray(rawSubplots) && rawSubplots.length > 0
+        ? rawSubplots
+        : Array.isArray((hydratedMystery as any)?.subplots)
+          ? (hydratedMystery as any).subplots
+          : [];
+    const filteredRawClues = (rawClues || []).filter((c: any) => !isLiveCarrierClue(c));
+    const clues =
+      filteredRawClues.length > 0
+        ? filteredRawClues
+        : Array.isArray((hydratedMystery as any)?.clues)
+          ? (hydratedMystery as any).clues.filter((c: any) => !isLiveCarrierClue(c))
+          : [];
+
     const motiveByCharId = new Map<string, string>();
-    for (const m of motives || []) {
+    for (const m of rawMotives || []) {
       motiveByCharId.set((m as any).character_id, (m as any).notes || '');
+    }
+    for (const c of chars) {
+      if (
+        c?.id &&
+        !motiveByCharId.has(c.id) &&
+        Array.isArray(c.motives) &&
+        c.motives[0]?.notes
+      ) {
+        motiveByCharId.set(c.id, c.motives[0].notes);
+      }
     }
 
     const palette = [

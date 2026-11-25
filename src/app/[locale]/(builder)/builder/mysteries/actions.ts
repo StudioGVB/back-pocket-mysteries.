@@ -1747,7 +1747,7 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
       .select('id', { count: 'exact', head: true })
       .eq('mystery_id', id);
 
-    const actualChars = charCount ?? 0;
+    const actualChars = Math.max(charCount ?? 0, characters.length);
     if (actualChars < pkgInfo.requiredCharacters) {
       return {
         error: `Cannot publish this ${pkgInfo.label} (${pkgInfo.rangeLabel}) mystery: it requires ${pkgInfo.requiredCharacters} characters, but currently has ${actualChars}. Please add ${pkgInfo.requiredCharacters - actualChars} more character(s) in the Characters tab before publishing.`,

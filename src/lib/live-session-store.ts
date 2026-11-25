@@ -906,6 +906,196 @@ export async function loadLiveStateFromSupabaseClueCarrier(
   }
 }
 
+function deriveArchitectCarrierClueId(key: string): string {
+  const hash = crypto
+    .createHash('md5')
+    .update(`bpm-architect-sync-v1:${key}`)
+    .digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(
+    13,
+    16
+  )}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
+const ARCHITECT_INDEX_CARRIER_ID = deriveArchitectCarrierClueId('__ARCHITECT_SYNC_INDEX__');
+const ANCHOR_CARRIER_MYSTERY_ID = '61196e53-09c3-427f-8862-30151f2ca75b';
+
+/**
+ * Persists a full 7-table OG Base Builder mystery snapshot + relationships into `public.clues`
+ * using the `round_number = 99, title = '__BPM_LIVE_CAST_AND_SESSION__'` cloud carrier row,
+ * and updates the master OG Base Builder synced index so `/en/admin/mysteries` and `/en/builder/mysteries/[id]`
+ * always see the synced base across all Vercel instances even if `platform_settings` is not created yet.
+ */
+export async function saveArchitectSyncedMysteryToSupabaseCarrier(
+  mysteryId: string,
+  mysterySnapshot: any,
+  relationships: any[],
+  supabaseClient?: any
+): Promise<void> {
+  if (!mysteryId || !mysterySnapshot) return;
+  cacheMysterySnapshot(mysteryId, mysterySnapshot);
+  if (Array.isArray(relationships) && relationships.length > 0) {
+    cacheRelationshipsSnapshot(mysteryId, relationships);
+  }
+
+  try {
+    let sb = supabaseClient;
+    if (!sb) {
+      const { createClient } = await import('@/utils/supabase/server');
+      sb = await createClient();
+    }
+
+    const carrierId = deriveArchitectCarrierClueId(mysteryId);
+    const snapshotPayload = {
+      type: 'architect_synced_mystery',
+      mysteryId,
+      mystery: mysterySnapshot,
+      relationships: relationships || [],
+      updatedAt: new Date().toISOString(),
+    };
+
+    await sb.from('clues').upsert({
+      id: carrierId,
+      mystery_id: ANCHOR_CARRIER_MYSTERY_ID,
+      title: LIVE_CARRIER_CLUE_TITLE,
+      round_number: 99,
+      clue_type: 'secret',
+      implication_type: 'red_herring',
+      evidence_status: 'fake',
+      is_essential: false,
+      description: JSON.stringify(snapshotPayload),
+    });
+
+    // Update the master index carrier row
+    const { data: existingIdxRow } = await sb
+      .from('clues')
+      .select('description')
+      .eq('id', ARCHITECT_INDEX_CARRIER_ID)
+      .maybeSingle();
+
+    let prevItems: Record<string, any> = {};
+    if (existingIdxRow?.description) {
+      try {
+        const parsedIdx = JSON.parse(existingIdxRow.description);
+        if (parsedIdx?.items && typeof parsedIdx.items === 'object') {
+          prevItems = parsedIdx.items;
+        }
+      } catch {}
+    }
+
+    const titleKey = String(mysterySnapshot.title || '').trim().toLowerCase();
+    // Remove any older entry with the same title so only the latest synced ID for a title stays in the index
+    for (const [k, v] of Object.entries(prevItems)) {
+      if (
+        k !== mysteryId &&
+        titleKey &&
+        String((v as any)?.title || '').trim().toLowerCase() === titleKey
+      ) {
+        delete prevItems[k];
+      }
+    }
+
+    prevItems[mysteryId] = {
+      id: mysteryId,
+      title: mysterySnapshot.title || 'Untitled Mystery',
+      theme: mysterySnapshot.theme || 'Mystery',
+      description: mysterySnapshot.description || '',
+      image_url: mysterySnapshot.image_url || null,
+      spice_level: mysterySnapshot.spice_level || 'mild',
+      complexity: mysterySnapshot.complexity || 'medium',
+      min_players: mysterySnapshot.min_players || 6,
+      max_players: mysterySnapshot.max_players || 6,
+      status: mysterySnapshot.status || 'draft',
+      created_by: mysterySnapshot.created_by || null,
+      created_at: mysterySnapshot.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    await sb.from('clues').upsert({
+      id: ARCHITECT_INDEX_CARRIER_ID,
+      mystery_id: ANCHOR_CARRIER_MYSTERY_ID,
+      title: LIVE_CARRIER_CLUE_TITLE,
+      round_number: 99,
+      clue_type: 'secret',
+      implication_type: 'red_herring',
+      evidence_status: 'fake',
+      is_essential: false,
+      description: JSON.stringify({
+        type: 'architect_synced_index',
+        items: prevItems,
+        updatedAt: new Date().toISOString(),
+      }),
+    });
+  } catch {
+    // Non-fatal
+  }
+}
+
+export async function loadArchitectSyncedMysteryFromSupabaseCarrier(
+  mysteryId: string,
+  supabaseClient?: any
+): Promise<{ mystery: any; relationships: any[] } | null> {
+  if (!mysteryId) return null;
+  try {
+    let sb = supabaseClient;
+    if (!sb) {
+      const { createClient } = await import('@/utils/supabase/server');
+      sb = await createClient();
+    }
+
+    const carrierId = deriveArchitectCarrierClueId(mysteryId);
+    const { data } = await sb
+      .from('clues')
+      .select('description')
+      .eq('id', carrierId)
+      .maybeSingle();
+
+    if (!data?.description) return null;
+    const parsed = JSON.parse(data.description);
+    if (!parsed?.mystery || typeof parsed.mystery !== 'object') return null;
+
+    cacheMysterySnapshot(mysteryId, parsed.mystery);
+    const rels = Array.isArray(parsed.relationships) ? parsed.relationships : [];
+    if (rels.length > 0) {
+      cacheRelationshipsSnapshot(mysteryId, rels);
+    }
+
+    return {
+      mystery: parsed.mystery,
+      relationships: rels,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function loadArchitectSyncedMysteriesIndexFromSupabaseCarrier(
+  supabaseClient?: any
+): Promise<Record<string, any>> {
+  try {
+    let sb = supabaseClient;
+    if (!sb) {
+      const { createClient } = await import('@/utils/supabase/server');
+      sb = await createClient();
+    }
+
+    const { data } = await sb
+      .from('clues')
+      .select('description')
+      .eq('id', ARCHITECT_INDEX_CARRIER_ID)
+      .maybeSingle();
+
+    if (!data?.description) return {};
+    const parsed = JSON.parse(data.description);
+    if (parsed?.items && typeof parsed.items === 'object') {
+      return parsed.items;
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Ensures a customer has their own isolated mystery instance in the server store
  * while preserving character costume portraits and any already-saved guest assignments for this user.

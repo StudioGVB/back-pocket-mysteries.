@@ -3,14 +3,17 @@ export type AvatarConfig = {
   top: string;
   hairLength?: string;
   hairTexture?: string;
+  hairStyle?: string;
   hairColor: string;
   skinColor: string;
   facialHair?: string;
   eyeColor?: string;
+  faceShape?: string;
   height?: string;
   accessories?: string;
   build?: string;
   distinctiveFeatures?: string[];
+  likenessNotes?: string;
   accent?: string;
   age?: 'young' | 'middle_aged' | 'old' | string;
   ethnicity?: string;
@@ -115,13 +118,16 @@ export function computeAvatarPhysicalSignature(
         (p.get('hairColor') || '').toLowerCase(),
         (p.get('hairLength') || '').toLowerCase(),
         (p.get('hairTexture') || '').toLowerCase(),
+        (p.get('hairStyle') || '').toLowerCase(),
         (p.get('top') || '').toLowerCase(),
         (extra?.eyeColor || p.get('eyeColor') || '').toLowerCase(),
+        (p.get('faceShape') || '').toLowerCase(),
         (p.get('facialHair') || '').toLowerCase(),
         (p.get('build') || '').toLowerCase(),
         (extra?.height || p.get('height') || '').toLowerCase(),
         (p.get('accessories') || '').toLowerCase(),
         (p.get('distinctiveFeatures') || '').toLowerCase(),
+        (p.get('likenessNotes') || '').toLowerCase(),
       ].join('|');
     } catch {
       return configOrUrl;
@@ -140,13 +146,16 @@ export function computeAvatarPhysicalSignature(
     (c.hairColor || '').toLowerCase(),
     (c.hairLength || '').toLowerCase(),
     (c.hairTexture || '').toLowerCase(),
+    (c.hairStyle || '').toLowerCase(),
     (c.top || '').toLowerCase(),
     (extra?.eyeColor || c.eyeColor || '').toLowerCase(),
+    (c.faceShape || '').toLowerCase(),
     (c.facialHair || '').toLowerCase(),
     (c.build || '').toLowerCase(),
     (extra?.height || c.height || '').toLowerCase(),
     (c.accessories || '').toLowerCase(),
     feats.toLowerCase(),
+    (c.likenessNotes || '').trim().toLowerCase(),
   ].join('|');
 }
 
@@ -169,21 +178,30 @@ export function buildAvatarUrl(
     config.accessories === 'prescription01' ||
     config.distinctiveFeatures?.includes('Glasses');
   const includeAiPhoto = options?.includeAiPhoto !== false;
+  const dicebearFacialHair =
+    config.facialHair === 'stubbleLight'
+      ? 'beardLight'
+      : config.facialHair === 'goatee'
+        ? 'beardMedium'
+        : config.facialHair;
 
   let url =
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || config.seed || 'player')}` +
     `&eyebrows=default&eyes=default&mouth=smile&clothesColor=262e33&backgroundColor=transparent` +
     `${isBald ? '&topProbability=0' : `&top=${config.top || 'shortFlat'}`}` +
     `&hairColor=${config.hairColor || '282828'}&hatColor=${config.hairColor || '282828'}&skinColor=${config.skinColor || 'ffe0bd'}` +
-    `&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${config.facialHair}&facialHairColor=${config.hairColor || '282828'}` : ''}` +
+    `&facialHairProbability=${config.facialHair ? '100' : '0'}${config.facialHair ? `&facialHair=${dicebearFacialHair}&facialHairStyle=${encodeURIComponent(config.facialHair)}&facialHairColor=${config.hairColor || '282828'}` : ''}` +
     `&accessoriesProbability=${hasGlasses ? '100' : '0'}${hasGlasses ? `&accessories=prescription01` : ''}` +
     `${config.build ? `&build=${encodeURIComponent(config.build)}` : ''}` +
     `${config.eyeColor ? `&eyeColor=${encodeURIComponent(config.eyeColor)}` : ''}` +
+    `${config.faceShape ? `&faceShape=${encodeURIComponent(config.faceShape)}` : ''}` +
     `${config.height ? `&height=${encodeURIComponent(config.height)}` : ''}` +
     `${config.ethnicity ? `&ethnicity=${encodeURIComponent(config.ethnicity)}` : ''}` +
     `${config.distinctiveFeatures && config.distinctiveFeatures.length > 0 ? `&distinctiveFeatures=${encodeURIComponent(config.distinctiveFeatures.filter((f: string) => f !== 'Glasses').join(','))}` : ''}` +
     `${config.hairLength ? `&hairLength=${encodeURIComponent(config.hairLength)}` : ''}` +
     `${config.hairTexture ? `&hairTexture=${encodeURIComponent(config.hairTexture)}` : ''}` +
+    `${config.hairStyle ? `&hairStyle=${encodeURIComponent(config.hairStyle)}` : ''}` +
+    `${config.likenessNotes ? `&likenessNotes=${encodeURIComponent(String(config.likenessNotes).trim().slice(0, 300))}` : ''}` +
     `${config.accent ? `&accent=${encodeURIComponent(config.accent)}` : ''}` +
     `${config.age ? `&age=${encodeURIComponent(config.age)}` : ''}`;
 

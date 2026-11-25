@@ -78,6 +78,12 @@ export async function generateGuestAvatarAction(
       '3b2219': 'Deep',
     };
 
+    let rawHairLength = guestData.avatar_config?.hairLength || '';
+    let rawHairTexture = guestData.avatar_config?.hairTexture || 'Straight';
+    let rawHairStyleCut = guestData.avatar_config?.hairStyle || '';
+    let rawFaceShape = guestData.avatar_config?.faceShape || '';
+    let rawLikenessNotes = guestData.avatar_config?.likenessNotes || '';
+
     // Extract from avatar_config directly if provided
     if (guestData.avatar_config) {
       const cfg = guestData.avatar_config;
@@ -89,18 +95,20 @@ export async function generateGuestAvatarAction(
         const cleanHex = String(cfg.skinColor).replace('#', '').toLowerCase();
         skinColor = skinColorMap[cleanHex] || `matching hex #${cleanHex}`;
       }
-      if (cfg.hairLength) {
-        const hl = cfg.hairLength;
-        const tex = (cfg.hairTexture || 'straight').toLowerCase();
-        if (hl === 'Bald') hairStyle = 'bald / no hair';
-        else if (['Hijab', 'Turban', 'Beanie'].includes(hl))
-          hairStyle = `wearing a ${hl.toLowerCase()}`;
-        else if (isMasculine)
-          hairStyle = `men's ${hl.toLowerCase()} length, ${tex} texture haircut`;
-        else hairStyle = `${hl} length, ${cfg.hairTexture || 'straight'} texture`;
-      }
       if (cfg.facialHair) {
-        facialHair = String(cfg.facialHair).replace(/([A-Z])/g, ' $1').toLowerCase();
+        const fhRaw = String(cfg.facialHair);
+        facialHair =
+          fhRaw === 'stubbleLight'
+            ? 'light 5 o’clock shadow stubble'
+            : fhRaw === 'beardLight'
+              ? 'short neatly trimmed beard'
+              : fhRaw === 'beardMedium'
+                ? 'full medium trimmed beard'
+                : fhRaw === 'beardMajestic'
+                  ? 'long full majestic beard'
+                  : fhRaw === 'goatee'
+                    ? 'trimmed goatee beard'
+                    : fhRaw.replace(/([A-Z])/g, ' $1').toLowerCase();
       }
       if (cfg.accessories && cfg.accessories !== 'none') {
         accessories =
@@ -116,41 +124,30 @@ export async function generateGuestAvatarAction(
 
         const hl = url.searchParams.get('hairLength');
         const ht = url.searchParams.get('hairTexture');
-        const tex = (ht || 'straight').toLowerCase();
+        const hs = url.searchParams.get('hairStyle');
+        const fsParam = url.searchParams.get('faceShape');
+        const lnParam = url.searchParams.get('likenessNotes');
 
-        if (hl) {
-          if (hl === 'Bald') {
-            hairStyle = 'bald / no hair';
-          } else if (['Hijab', 'Turban', 'Beanie'].includes(hl)) {
-            hairStyle = `wearing a ${hl.toLowerCase()}`;
-          } else if (isMasculine) {
-            if (hl === 'Short') {
-              hairStyle = `men's short cropped barbershop haircut (neat tapered sides and back, short ${tex} texture on top)`;
-            } else if (hl === 'Medium') {
-              hairStyle = `men's medium-length barbershop haircut (cropped well above the ears and collar, neat tapered sides with a medium-length ${tex} textured top, strictly a masculine men's cut, NOT long hair and NOT touching the shoulders)`;
-            } else if (hl === 'Shoulder-Length') {
-              hairStyle = `men's shoulder-length ${tex} texture hair`;
-            } else {
-              hairStyle = `men's ${hl.toLowerCase()} length, ${tex} texture hair`;
-            }
-          } else {
-            hairStyle = `${hl} length, ${ht || 'straight'} texture`;
-          }
-        } else if (hairStyle === 'unspecified') {
+        if (hl) rawHairLength = hl;
+        if (ht) rawHairTexture = ht;
+        if (hs) rawHairStyleCut = hs;
+        if (fsParam) rawFaceShape = fsParam;
+        if (lnParam) rawLikenessNotes = lnParam;
+
+        if (!rawHairLength) {
           const top = url.searchParams.get('top');
-          if (top) {
-            if (top === 'none' || top === 'noHair') {
-              hairStyle = 'bald / no hair';
-            } else if (isMasculine && (top === 'curvy' || top === 'shortCurly')) {
-              hairStyle = `men's short-to-medium curly barbershop haircut (cropped above the ears and collar, strictly NOT long hair)`;
-            } else {
-              hairStyle =
-                top
-                  .replace(/([A-Z])/g, ' $1')
-                  .toLowerCase()
-                  .replace(/[0-9]/g, '')
-                  .trim() + ' hair';
-            }
+          if (top === 'none' || top === 'noHair') {
+            rawHairLength = 'Bald';
+          } else if (top === 'theCaesar') {
+            rawHairLength = 'Buzz / Crew Cut';
+          } else if (top === 'shortCurly') {
+            rawHairLength = 'Short';
+            if (!ht) rawHairTexture = 'Curly';
+          } else if (top === 'shortWaved') {
+            rawHairLength = 'Short';
+            if (!ht) rawHairTexture = 'Wavy';
+          } else if (top) {
+            rawHairLength = isMasculine ? 'Short' : 'Long';
           }
         }
 
@@ -165,8 +162,21 @@ export async function generateGuestAvatarAction(
           const cleanHex = sc.replace('#', '').toLowerCase();
           skinColor = skinColorMap[cleanHex] || `matching hex #${cleanHex}`;
         }
-        const fh = url.searchParams.get('facialHair');
-        if (fh) facialHair = fh.replace(/([A-Z])/g, ' $1').toLowerCase();
+        const fh = url.searchParams.get('facialHairStyle') || url.searchParams.get('facialHair');
+        if (fh) {
+          facialHair =
+            fh === 'stubbleLight'
+              ? 'light 5 o’clock shadow stubble'
+              : fh === 'beardLight'
+                ? 'short neatly trimmed beard'
+                : fh === 'beardMedium'
+                  ? 'full medium trimmed beard'
+                  : fh === 'beardMajestic'
+                    ? 'long full majestic beard'
+                    : fh === 'goatee'
+                      ? 'trimmed goatee beard'
+                      : fh.replace(/([A-Z])/g, ' $1').toLowerCase();
+        }
 
         const b = url.searchParams.get('build');
         if (b) build = b;
@@ -196,6 +206,52 @@ export async function generateGuestAvatarAction(
       }
     }
 
+    // Build accurate base hairStyle description from rawHairLength & rawHairTexture
+    const texLower = (rawHairTexture || 'Straight').toLowerCase();
+    const isCurlyTex =
+      texLower.includes('curly') || texLower.includes('loose curls') || texLower.includes('coily');
+    const isWavyTex = texLower.includes('wavy') || texLower.includes('waves');
+
+    if (rawHairLength === 'Bald') {
+      hairStyle = 'bald / shaved head (no hair on top)';
+    } else if (['Hijab', 'Turban', 'Beanie', 'Baseball Cap'].includes(rawHairLength)) {
+      hairStyle = `wearing a ${rawHairLength.toLowerCase()}`;
+    } else if (rawHairLength === 'Buzz / Crew Cut') {
+      hairStyle = isMasculine
+        ? "men's ultra-short clipper buzz cut / tight crew cut with faded sides"
+        : 'ultra-short clipper buzz cut';
+    } else if (isMasculine) {
+      if (rawHairLength === 'Short' || !rawHairLength) {
+        if (isCurlyTex) {
+          hairStyle =
+            "men's thick curly crop haircut (voluminous, well-defined natural curls and ringlets on top, 2.5 to 3.5 inches of dense curl volume on top with curls falling naturally onto the upper forehead, paired with neat shorter tapered sides and back — strictly NOT a flat buzzcut, NOT a straight crew cut, and NOT short bristle hair)";
+        } else if (isWavyTex) {
+          hairStyle =
+            "men's short haircut with a fuller 2.5-to-3 inch textured wavy top and neat tapered sides";
+        } else if (texLower.includes('afro')) {
+          hairStyle = "men's short rounded afro taper haircut with neat faded sides";
+        } else if (texLower.includes('dreads')) {
+          hairStyle = "men's short dreadlocks / locs with tapered sides";
+        } else {
+          hairStyle =
+            "men's short barbershop haircut with neat tapered sides and a styled 2-inch straight top";
+        }
+      } else if (rawHairLength === 'Medium') {
+        if (isCurlyTex) {
+          hairStyle =
+            "men's medium-length voluminous curly haircut (thick, springy 3.5-to-4.5 inch curls on top and framing the upper forehead and temples, cropped above the collar)";
+        } else {
+          hairStyle = `men's medium-length barbershop haircut (3 to 4.5 inches of ${texLower} textured hair on top, cropped above the collar, strictly a masculine cut)`;
+        }
+      } else if (rawHairLength === 'Shoulder-Length') {
+        hairStyle = `men's shoulder-length ${texLower} texture hair`;
+      } else {
+        hairStyle = `men's ${rawHairLength.toLowerCase()} length, ${texLower} texture hair`;
+      }
+    } else {
+      hairStyle = `${rawHairLength || 'Long'} length, ${rawHairTexture || 'Straight'} texture`;
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -209,9 +265,8 @@ export async function generateGuestAvatarAction(
     // Guarantees that even when multiple guests share the exact same base traits
     // (e.g. fair skin + straight brown hair + hazel eyes), every guest in the
     // user's roster receives a distinct slot index (0..7) across 8 high-contrast
-    // visual axes: hair parting/styling, hair shade undertone, macro facial bone
-    // structure, regional phenotype, expression/pose, top color/neckline, exact age,
-    // and studio lighting direction.
+    // visual axes without EVER overriding the user's selected hair color, hair
+    // texture, hairstyle cut, face shape, or likeness notes!
     // ---------------------------------------------------------------------------
     let rosterSlotIndex = 0;
     const isHostTarget =
@@ -260,7 +315,7 @@ export async function generateGuestAvatarAction(
     const subHash = parseInt(hashHex.substring(4, 8), 16);
 
     // Axis 1: Exact Age within Age Bracket
-    const youngAges = [28, 22, 33, 25, 31, 24, 35, 27];
+    const youngAges = [26, 23, 29, 25, 28, 24, 30, 27];
     const midAges = [38, 44, 36, 47, 41, 49, 39, 45];
     const oldAges = [55, 63, 58, 68, 60, 71, 56, 65];
     const exactAge =
@@ -271,20 +326,31 @@ export async function generateGuestAvatarAction(
         : youngAges[slot % youngAges.length];
     const ageYearsDesc = `${exactAge} years old`;
 
-    // Axis 2: Hair Shade Undertone Nuance (within the user's chosen hair color)
+    // Axis 2: Hair Shade Undertone Nuance (strictly within the user's chosen hair color — NEVER turn Black into Brown!)
     const lowerHairColor = hairColor.toLowerCase();
-    if (lowerHairColor.includes('brown') || lowerHairColor === 'black') {
-      const brownVariants = [
-        'deep cool-toned espresso dark brown',
-        'warm medium-golden chestnut brown with subtle sun-kissed caramel dimension',
-        'rich dark chocolate brown with warm mahogany undertones',
-        'medium sandy ash-brown (cool bronde-brown)',
-        'glossy raven-black dark brown',
-        'warm cinnamon-walnut medium brown',
-        'rich mocha brown with subtle honey-brown face-framing highlights',
-        'deep sable brown',
+    if (lowerHairColor === 'black') {
+      const blackVariants = [
+        'deep natural jet-black hair (#121212) — strictly black hair, NOT brown',
+        'rich glossy raven-black hair (#101014) — strictly black hair, NOT brown',
+        'deep ink-black hair (#161616) — strictly black hair, NOT brown',
       ];
-      hairColor = `${hairColor} (specifically: ${brownVariants[slot % brownVariants.length]})`;
+      hairColor = `Black (specifically: ${blackVariants[slot % blackVariants.length]})`;
+    } else if (lowerHairColor === 'dark brown') {
+      const darkBrownVariants = [
+        'deep cool-toned espresso dark brown',
+        'rich dark chocolate brown with deep mahogany undertones',
+        'deep sable dark brown',
+        'dark mocha-espresso brown',
+      ];
+      hairColor = `Dark Brown (specifically: ${darkBrownVariants[slot % darkBrownVariants.length]})`;
+    } else if (lowerHairColor === 'light brown') {
+      const lightBrownVariants = [
+        'warm golden-chestnut light brown',
+        'medium sandy ash-brown',
+        'warm cinnamon-walnut light brown',
+        'caramel-honey light brown',
+      ];
+      hairColor = `Light Brown (specifically: ${lightBrownVariants[slot % lightBrownVariants.length]})`;
     } else if (lowerHairColor.includes('blonde')) {
       const blondeVariants = [
         'warm honey golden blonde',
@@ -297,57 +363,121 @@ export async function generateGuestAvatarAction(
       hairColor = `${hairColor} (specifically: ${blondeVariants[slot % blondeVariants.length]})`;
     }
 
-    // Axis 3: Distinct Hair Parting & Styling Variation (within their chosen length & texture!)
-    const lowerHairStyle = hairStyle.toLowerCase();
+    // Axis 3: Distinct Hair Parting & Styling Variation (strictly respecting chosen hairStyle cut AND hairTexture!)
+    const HAIR_STYLE_CUT_DESCRIPTIONS: Record<string, string> = {
+      'Textured Crop / Curly Fringe':
+        'textured crop with thick volume/curls on top falling forward as a natural curly/textured fringe over the upper forehead, paired with neat tapered sides',
+      'Taper Fade / Voluminous Top':
+        'clean barbershop taper fade on the sides and temples with a thick, high-volume textured/curly top (2.5 to 3.5 inches of fullness on top)',
+      'Middle Part / Curtain Fringe':
+        'center middle part with volume sweeping into face-framing curtain fringe around the temples',
+      'Side Part / Swept':
+        'defined side part swept neatly across the top with clean tapered sides',
+      'Quiff / Pompadour':
+        'voluminous quiff brushed upward and slightly back at the front hairline with tapered sides',
+      'Slicked Back':
+        'swept and styled smoothly backward off the forehead',
+      'Modern Mullet / Shag':
+        'modern textured mullet / shag with shorter sides, textured top/fringe, and longer layered back near the nape',
+      'Bangs / Full Fringe':
+        'full forehead bangs / fringe grazing the eyebrows',
+      'Layered Blowout':
+        'voluminous layered blowout with root lift and face-framing movement',
+      'High Ponytail / Bun':
+        'styled up into a high ponytail / top bun at the crown',
+      'Braids / Cornrows':
+        'neatly braided hair / cornrows',
+    };
+
     let hairStylingVariation = '';
-    if (!isMasculine && lowerHairStyle.includes('long') && lowerHairStyle.includes('straight')) {
-      const longStraightStyles = [
-        'sleek middle part with hair tucked cleanly behind BOTH ears to fully expose the cheekbones and jawline',
-        'voluminous 90s layered blowout with a deep left side part swept asymmetrically over one shoulder',
-        'soft wispy forehead curtain bangs / fringe framing the eyebrows and temples, with straight hair pulled behind the shoulders',
-        'half-up, half-down crown styling (top half pinned back high at the crown exposing the full forehead and ears, long straight ends behind the neck)',
-        'chic collarbone-grazing blunt-cut straight layers with a sharp right side part tucked behind one ear',
-        'sleek high snatched ponytail with long straight hair cascading from the crown and two delicate face-framing tendrils',
-        'soft feathered face-framing layers with a deep off-center part and airy volume at the roots',
-        'sleek straight hair swept completely back over the shoulders with a side-swept fringe across the forehead',
-      ];
-      hairStylingVariation = longStraightStyles[slot % longStraightStyles.length];
-    } else if (!isMasculine && lowerHairStyle.includes('straight')) {
-      const femStraightStyles = [
-        'sleek side-parted cut tucked behind one ear',
-        'textured French bob/lob with soft wispy forehead bangs',
-        'voluminous side-swept blowout exposing the jawline',
-        'half-up pinned crown style exposing the ears and cheekbones',
-        'blunt-cut ends with face-framing curtain fringe',
-        'sleek off-center part tucked cleanly behind both ears',
-      ];
-      hairStylingVariation = femStraightStyles[slot % femStraightStyles.length];
+    if (rawHairStyleCut && HAIR_STYLE_CUT_DESCRIPTIONS[rawHairStyleCut]) {
+      hairStylingVariation = HAIR_STYLE_CUT_DESCRIPTIONS[rawHairStyleCut];
+    } else if (rawHairLength === 'Buzz / Crew Cut' || rawHairLength === 'Bald') {
+      hairStylingVariation = '';
     } else if (isMasculine) {
-      const mascStyles = [
-        'textured quiff brushed up at the front with clean tapered fade on the sides',
-        'classic side-parted barbershop cut with neat scissor-trimmed sides',
-        'messy tousled textured crop with a short Caesar fringe',
-        'slicked-back modern crew cut exposing the full forehead',
-        'short Ivy League taper brushed slightly to the right',
-        'modern buzzed-side fade with a spiky textured top',
-      ];
-      hairStylingVariation = mascStyles[slot % mascStyles.length];
+      if (isCurlyTex) {
+        const mascCurlyStyles = [
+          'thick, springy natural curls on top falling forward in a textured curly crop / fringe over the upper forehead with clean tapered sides',
+          'voluminous tousled curls on top (3 inches of defined ringlet curl volume) with a loose curl lock dropping onto the forehead and neat tapered sides',
+          'dense curly top with defined ringlets across the crown and forehead line, paired with a neat barbershop taper on the sides',
+        ];
+        hairStylingVariation = mascCurlyStyles[slot % mascCurlyStyles.length];
+      } else if (isWavyTex) {
+        const mascWavyStyles = [
+          'tousled natural wavy texture on top with a soft forward fringe sweep and neat tapered sides',
+          'voluminous wavy top brushed slightly off-center with clean tapered sides',
+          'textured surfer-wave crop on top with natural movement and tapered sides',
+        ];
+        hairStylingVariation = mascWavyStyles[slot % mascWavyStyles.length];
+      } else if (texLower === 'straight') {
+        const mascStraightStyles = [
+          'textured quiff brushed up at the front with clean tapered fade on the sides',
+          'classic side-parted barbershop cut with neat scissor-trimmed sides',
+          'messy tousled textured crop with a short forward fringe',
+          'short Ivy League taper brushed slightly to the side',
+        ];
+        hairStylingVariation = mascStraightStyles[slot % mascStraightStyles.length];
+      }
+    } else {
+      const lowerHairStyle = hairStyle.toLowerCase();
+      if (lowerHairStyle.includes('long') && lowerHairStyle.includes('straight')) {
+        const longStraightStyles = [
+          'sleek middle part with hair tucked cleanly behind BOTH ears to fully expose the cheekbones and jawline',
+          'voluminous 90s layered blowout with a deep left side part swept asymmetrically over one shoulder',
+          'soft wispy forehead curtain bangs / fringe framing the eyebrows and temples, with straight hair pulled behind the shoulders',
+          'half-up, half-down crown styling (top half pinned back high at the crown exposing the full forehead and ears, long straight ends behind the neck)',
+          'chic collarbone-grazing blunt-cut straight layers with a sharp right side part tucked behind one ear',
+          'sleek high snatched ponytail with long straight hair cascading from the crown and two delicate face-framing tendrils',
+          'soft feathered face-framing layers with a deep off-center part and airy volume at the roots',
+          'sleek straight hair swept completely back over the shoulders with a side-swept fringe across the forehead',
+        ];
+        hairStylingVariation = longStraightStyles[slot % longStraightStyles.length];
+      } else if (lowerHairStyle.includes('straight')) {
+        const femStraightStyles = [
+          'sleek side-parted cut tucked behind one ear',
+          'textured French bob/lob with soft wispy forehead bangs',
+          'voluminous side-swept blowout exposing the jawline',
+          'half-up pinned crown style exposing the ears and cheekbones',
+          'blunt-cut ends with face-framing curtain fringe',
+          'sleek off-center part tucked cleanly behind both ears',
+        ];
+        hairStylingVariation = femStraightStyles[slot % femStraightStyles.length];
+      }
     }
 
     // Axis 4: Eye Color & Eye Shape Nuance
-    if (String(eyeColor).toLowerCase().includes('hazel') || String(eyeColor).toLowerCase().includes('brown')) {
-      const eyeVariants = [
+    if (String(eyeColor).toLowerCase().includes('hazel')) {
+      const hazelVariants = [
         'warm golden-amber hazel with a dark limbal ring',
         'olive-green dominant hazel with golden-brown flecks',
-        'deep espresso-chocolate brown eyes',
-        'light honey-chestnut brown eyes',
         'moss-green and warm taupe hazel eyes',
-        'rich dark velvet brown eyes',
       ];
-      eyeColor = `${eyeColor} (${eyeVariants[slot % eyeVariants.length]})`;
+      eyeColor = `${eyeColor} (${hazelVariants[slot % hazelVariants.length]})`;
+    } else if (String(eyeColor).toLowerCase().includes('brown')) {
+      const brownEyeVariants = [
+        'deep warm espresso-chocolate brown eyes',
+        'rich dark velvet brown eyes',
+        'warm chestnut-brown eyes',
+      ];
+      eyeColor = `${eyeColor} (${brownEyeVariants[slot % brownEyeVariants.length]})`;
     }
 
-    // Axis 5: Macro-Anatomical Facial Bone Structure (High-Contrast Proportions)
+    // Axis 5: Macro-Anatomical Facial Bone Structure (Honors user-selected faceShape & distinctiveFeatures first!)
+    const FACE_SHAPE_MAP: Record<string, string> = {
+      'Square / Angular Jaw':
+        'Broad square angular jawline with a well-defined chin, strong cheekbones, and balanced masculine/sculpted proportions',
+      'Oval / Balanced':
+        'Classic balanced oval face shape with a clean sculpted jawline and natural cheekbone contour',
+      'Chiseled / High Cheekbones':
+        'Chiseled diamond-oval face with high prominent cheekbones and a sharp defined jawline',
+      'Round / Soft Jaw':
+        'Approachable fuller-cheeked face with warm smiling contours and a softer wide jaw',
+      'Heart-Shaped / Tapered Chin':
+        'Heart-shaped face with wider cheekbones tapering to a defined chin',
+      'Long / Sculpted':
+        'Long angular rectangular face with sculpted cheekbones and a strong straight nose bridge',
+    };
+
     const femFaceArchetypes = [
       'Heart-shaped face with a delicate pointed chin, high curved eyebrows, and soft apple cheeks',
       'Round, full-cheeked youthful face with a shorter face length, wide-set large round doe eyes, a small upturned button nose, and deep cheek dimples',
@@ -356,46 +486,56 @@ export async function generateGuestAvatarAction(
       'Broad high Slavic cheekbones with a shorter wide jaw, hooded expressive eyes, a slightly wider structured nose, and a naturally full lower lip',
       'Petite gamine diamond-shaped face with prominent brow bones, large heavy-lidded eyes, a narrow delicate nose, and a wide expressive smile',
       'Sculpted oval face with a prominent cleft chin, bold feathered eyebrows, deep-set almond eyes, and high cheekbone definition',
-      'Soft rectangular face with a strong jaw, rosy rounded cheeks, ligeramente downturned dreamy eyes, and a classic straight nose',
+      'Soft rectangular face with a strong jaw, rosy rounded cheeks, slightly downturned dreamy eyes, and a classic straight nose',
     ];
     const mascFaceArchetypes = [
-      'Broad square jawline with a pronounced chin cleft, thick dark brows, and deep-set eyes',
-      'Long angular rectangular face with high hollow cheekbones, a prominent aquiline Roman nose, and sharp jaw',
-      'Rounder approachable face with full cheeks, warm crinkling eyes, and a softer wide jaw',
-      'Chiseled diamond-shaped face with a narrow chin, sharp brow ridge, and narrow straight nose',
-      'Strong wide jaw with a broader athletic neck, hooded eyes, and a slightly crooked distinctive nose bridge',
-      'Oval face with high Nordic cheekbones, wide-spaced eyes, and a clean sculpted jawline',
+      'Broad square jawline with a subtle chin dimple/cleft, thick dark well-defined eyebrows, and warm expressive eyes',
+      'Sculpted oval-square face with strong cheekbones, defined straight eyebrows, and a clean athletic jawline',
+      'Chiseled angular face with a defined jaw, natural straight nose bridge, and bold dark brows',
+      'Approachable athletic face with a broad jaw, warm crinkling smiling eyes, and natural dark eyebrows',
+      'Strong wide jaw with a clean sculpted chin, expressive eyes, and defined brow ridge',
+      'Oval face with high cheekbones, wide-spaced eyes, and a clean sculpted jawline',
     ];
-    const uniqueFacialStructure = isMasculine
-      ? mascFaceArchetypes[slot % mascFaceArchetypes.length]
-      : femFaceArchetypes[slot % femFaceArchetypes.length];
+    let uniqueFacialStructure =
+      rawFaceShape && FACE_SHAPE_MAP[rawFaceShape]
+        ? FACE_SHAPE_MAP[rawFaceShape]
+        : isMasculine
+          ? mascFaceArchetypes[slot % mascFaceArchetypes.length]
+          : femFaceArchetypes[slot % femFaceArchetypes.length];
+
+    const dfLower = distinctiveFeatures.toLowerCase();
+    if (
+      dfLower.includes('thick / dark eyebrows') ||
+      (isMasculine && (lowerHairColor === 'black' || lowerHairColor === 'dark brown'))
+    ) {
+      uniqueFacialStructure +=
+        ' — featuring thick, dark, well-defined natural eyebrows matching the dark hair';
+    }
+    if (dfLower.includes('cleft / dimpled chin')) {
+      uniqueFacialStructure += ' — featuring a distinct center chin cleft / chin dimple';
+    }
+    if (dfLower.includes('cheek dimples')) {
+      uniqueFacialStructure += ' — featuring visible cheek dimples when smiling';
+    }
 
     // Axis 6: Regional / Cultural Heritage Phenotype (when Ethnicity is unspecified)
     let phenotypeNuance = ethnicity;
     if (!ethnicity || ethnicity === 'unspecified') {
       const phenotypes = [
-        'Western European / British facial phenotype',
-        'Celtic / Irish-Scottish facial phenotype (porcelain-rose complexion with a visible dusting of natural freckles across the nose bridge and cheeks)',
-        'Mediterranean / Southern European facial phenotype (warm olive-ivory undertone, thick dark eyelashes, bold sculpted dark eyebrows)',
-        'Scandinavian / Northern European facial phenotype (crisp angular bone structure, high forehead, bright clear complexion)',
-        'French / Continental gamine facial phenotype (expressive asymmetrical charm, sharp cheekbones, natural effortless look)',
-        'Eastern European / Slavic facial phenotype (striking high cheekbones, wider eye spacing, heart-shaped lips)',
-        'Iberian / Levantine-Mediterranean facial phenotype (warm ivory skin, striking dark-lashed eyes, defined brow arch)',
-        'Central European / Alpine facial phenotype (rosy cheeks, strong bone structure, expressive eyes)',
+        'Western European / Australian-British facial phenotype',
+        'Mediterranean / Southern European facial phenotype (warm light-olive undertone, thick dark eyelashes, bold dark eyebrows)',
+        'Anglo-Celtic facial phenotype (clear natural complexion with expressive eyes)',
+        'Continental European facial phenotype (crisp bone structure, natural effortless look)',
       ];
       phenotypeNuance = phenotypes[slot % phenotypes.length];
     }
 
-    // Axis 7: Distinct Expression & Camera Micro-Pose (Breaks identical 0° passport mugshots)
+    // Axis 7: Distinct Expression & Camera Micro-Pose
     const expressionAndPoses = [
-      'looking directly at the camera with a warm, confident closed-lip smile',
-      'flashing a big, joyful, open-mouth toothy grin showing upper teeth with crinkling smiling eyes, head tilted 10 degrees to the left',
-      'posed in a clever editorial three-quarter angle (shoulders turned 25 degrees to the right, chin slightly lifted, playful knowing smirk with one eyebrow subtly raised)',
-      'caught in a candid, warm mid-laugh expression showing a bright toothy smile and deep cheek dimples, shoulders angled 20 degrees to the left',
-      'giving a cool, intense, mysterious editorial gaze with lips softly parted and a slight chin tuck, three-quarter shoulder turn',
-      'smiling with a friendly, asymmetrical wry side-smile, lively spark in the eyes, and a subtle head tilt to the right',
-      'beaming with a wide, radiant toothy smile and relaxed approachable posture, angled slightly toward the key light',
-      'posing with a poised,sharp detective-style half-smile and piercing direct eye contact, shoulders turned 15 degrees',
+      'smiling warmly directly at the camera with a natural, joyful toothy grin showing upper teeth and crinkling smiling eyes',
+      'flashing a big, genuine, friendly toothy smile directly toward the camera with relaxed shoulders',
+      'posed in a natural editorial three-quarter angle with a warm, confident toothy smile and direct eye contact',
+      'caught in a warm, candid smiling expression showing a bright toothy grin and approachable energy',
     ];
     const chosenExpressionPose = expressionAndPoses[(slot + (subHash % 2)) % expressionAndPoses.length];
 
@@ -440,15 +580,18 @@ export async function generateGuestAvatarAction(
     }
 
     const regenSalt = options?.forceRegenerate ? ` (Unique Variation Seed: ${Date.now() % 10000})` : '';
+    const likenessDirective = rawLikenessNotes
+      ? `\n- PRIMARY LIKENESS BLUEPRINT (HIGHEST PRIORITY — MATCH THIS EXACTLY): ${rawLikenessNotes}`
+      : '';
 
     const prompt = `A clean, shoulders-up editorial casting headshot photograph of a ${subjectNoun} who is ${ageYearsDesc}, photographed against a completely plain, solid, seamless pure white/light-grey studio background (#F4F4F4).
-CRITICAL ANTI-CLONE UNIQUENESS DIRECTIVE: This subject MUST look like a completely distinct, unique real individual with unmistakable personal character — NOT a generic symmetrical AI fashion model.
+CRITICAL LIKENESS & HAIR FIDELITY DIRECTIVE: You MUST faithfully render the exact hair color (${hairColor}), hair texture (${rawHairTexture}), haircut shape (${hairStyle}), and facial structure specified below.${likenessDirective}
 - Gender: ${genderLabel}
 - Cultural / Regional Facial Phenotype: ${phenotypeNuance}
-- Macro Facial Bone Structure & Proportions: ${uniqueFacialStructure}
+- Macro Facial Bone Structure & Jawline: ${uniqueFacialStructure}
 - Eye Color & Shape: ${eyeColor}
-- Hair Length & Texture: ${hairStyle}${hairStylingVariation ? ` — SPECIFIC STYLING: ${hairStylingVariation}` : ''}
-- Hair Color & Undertone: ${hairColor}
+- Hair Length, Cut & Texture (MANDATORY): ${hairStyle}${hairStylingVariation ? ` — SPECIFIC STYLING: ${hairStylingVariation}` : ''}
+- Hair Color & Shade (MANDATORY): ${hairColor}
 - Skin Complexion: ${skinColor}
 - Facial Hair: ${facialHair}
 - Build / Body Type: ${build}

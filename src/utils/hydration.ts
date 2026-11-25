@@ -732,6 +732,9 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
   const hairColor = getFriendlyHairColor(hairHex);
   const hairLength = extractHairLengthFromAvatarUrl(url);
   const hairTexture = extractHairTextureFromAvatarUrl(url);
+  const hairStyleCut = (extractUrlParam(url, 'hairStyle') || profileData.hairStyle || '').trim();
+  const faceShape = (extractUrlParam(url, 'faceShape') || profileData.faceShape || '').trim();
+  const likenessNotes = (extractUrlParam(url, 'likenessNotes') || profileData.likenessNotes || '').trim();
   const topParam = extractUrlParam(url, 'top');
 
   const skinHex = extractSkinColorFromAvatarUrl(url);
@@ -740,7 +743,11 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
   const height = (profileData.height || '').trim();
   const build = (extractUrlParam(url, 'build') || profileData.build || '').trim();
   const rawAge = (extractUrlParam(url, 'age') || profileData.age || '').trim().toLowerCase();
-  const rawFacialHair = (extractUrlParam(url, 'facialHair') || '').trim();
+  const rawFacialHair = (
+    extractUrlParam(url, 'facialHairStyle') ||
+    extractUrlParam(url, 'facialHair') ||
+    ''
+  ).trim();
   const rawAccessories = (extractUrlParam(url, 'accessories') || '').trim();
   const rawDistinctive = (extractUrlParam(url, 'distinctiveFeatures') || '').trim();
 
@@ -773,29 +780,46 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
   if (skinColor) {
     parts.push(skinColor);
   }
+  if (faceShape) {
+    parts.push(`${faceShape.toLowerCase()} facial bone structure`);
+  }
 
   // Hair style, length, texture & color
   if (hairColor) {
+    const styleSuffix =
+      hairStyleCut && hairStyleCut !== 'Natural / Classic'
+        ? ` styled as a ${hairStyleCut.toLowerCase()}`
+        : '';
     if (hairLength && hairLength !== 'Bald') {
-      if (['Hijab', 'Turban', 'Beanie'].includes(hairLength)) {
+      if (['Hijab', 'Turban', 'Beanie', 'Baseball Cap'].includes(hairLength)) {
         parts.push(`${hairColor.toLowerCase()} hair under a ${hairLength.toLowerCase()}`);
+      } else if (hairLength === 'Buzz / Crew Cut') {
+        parts.push(`ultra-short clipper buzz cut ${hairColor.toLowerCase()} hair`);
       } else {
         const textureStr = hairTexture ? ` ${hairTexture.toLowerCase()}` : ' straight';
+        const isCurly =
+          textureStr.includes('curly') ||
+          textureStr.includes('loose curls') ||
+          textureStr.includes('coily');
         if (isMasculine && hairLength === 'Medium') {
           parts.push(
-            `men's medium-length barbershop haircut (cropped above the ears and collar,${textureStr} texture ${hairColor.toLowerCase()} hair, strictly not long hair)`
+            isCurly
+              ? `men's medium-length voluminous curly haircut (thick, defined 3.5-inch ${hairColor.toLowerCase()} curls on top and over the upper forehead, cropped above the collar${styleSuffix})`
+              : `men's medium-length barbershop haircut (cropped above the ears and collar,${textureStr} texture ${hairColor.toLowerCase()} hair${styleSuffix}, strictly not long hair)`
           );
         } else if (isMasculine && hairLength === 'Short') {
           parts.push(
-            `men's short cropped barbershop haircut (neat tapered sides,${textureStr} texture ${hairColor.toLowerCase()} hair)`
+            isCurly
+              ? `men's thick curly crop haircut (voluminous, defined 2.5 to 3.5 inch ${hairColor.toLowerCase()} curls on top falling slightly onto the upper forehead with neat tapered sides${styleSuffix}, strictly not a flat buzzcut)`
+              : `men's short barbershop haircut (neat tapered sides, styled${textureStr} texture ${hairColor.toLowerCase()} hair on top${styleSuffix})`
           );
         } else if (isMasculine && hairLength === 'Shoulder-Length') {
           parts.push(
-            `men's shoulder-length,${textureStr} texture ${hairColor.toLowerCase()} hair`
+            `men's shoulder-length,${textureStr} texture ${hairColor.toLowerCase()} hair${styleSuffix}`
           );
         } else {
           parts.push(
-            `${hairLength.toLowerCase()} length,${textureStr} texture ${hairColor.toLowerCase()} hair`
+            `${hairLength.toLowerCase()} length,${textureStr} texture ${hairColor.toLowerCase()} hair${styleSuffix}`
           );
         }
       }
@@ -807,9 +831,9 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
         .toLowerCase()
         .replace(/[0-9]/g, '')
         .trim();
-      parts.push(`${cleanTop} ${hairColor.toLowerCase()} hair`);
+      parts.push(`${cleanTop} ${hairColor.toLowerCase()} hair${styleSuffix}`);
     } else {
-      parts.push(`${hairColor.toLowerCase()} hair`);
+      parts.push(`${hairColor.toLowerCase()} hair${styleSuffix}`);
     }
   } else if (hairLength === 'Bald' || topParam === 'none' || topParam === 'noHair') {
     parts.push('bald / no hair');
@@ -821,11 +845,16 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
 
   const facialHairProb = extractUrlParam(url, 'facialHairProbability');
   if (rawFacialHair && rawFacialHair.toLowerCase() !== 'none' && facialHairProb !== '0') {
-    const cleanFacialHair = rawFacialHair
-      .replace(/([A-Z])/g, ' $1')
-      .toLowerCase()
-      .replace(/[0-9]/g, '')
-      .trim();
+    const cleanFacialHair =
+      rawFacialHair === 'stubbleLight'
+        ? 'light 5 o’clock shadow stubble'
+        : rawFacialHair === 'goatee'
+          ? 'trimmed goatee'
+          : rawFacialHair
+              .replace(/([A-Z])/g, ' $1')
+              .toLowerCase()
+              .replace(/[0-9]/g, '')
+              .trim();
     parts.push(`${cleanFacialHair} facial hair`);
   } else if (isMasculine) {
     parts.push('strictly clean-shaven face (no beard, no facial hair)');
@@ -850,6 +879,10 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
 
   if (rawDistinctive && rawDistinctive.toLowerCase() !== 'none') {
     parts.push(`distinctive features: ${rawDistinctive.toLowerCase()}`);
+  }
+
+  if (likenessNotes) {
+    parts.push(`specific likeness details: ${likenessNotes}`);
   }
 
   return parts.join(', ');

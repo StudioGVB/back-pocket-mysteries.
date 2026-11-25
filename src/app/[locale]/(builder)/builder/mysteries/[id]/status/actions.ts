@@ -14,7 +14,8 @@ export async function updatePublishingAction(
   const status = formData.get('status') as string;
 
   if (status === 'published') {
-    const [{ data: mystery }, { count: charCount }] = await Promise.all([
+    const { getCharactersByMysteryId, getMysteryById } = await import('@/services/mysteries');
+    const [{ data: mystery }, { count: charCount }, hydratedChars, hydratedMystery] = await Promise.all([
       supabase
         .from('mysteries')
         .select('max_players')
@@ -24,10 +25,14 @@ export async function updatePublishingAction(
         .from('characters')
         .select('id', { count: 'exact', head: true })
         .eq('mystery_id', mysteryId),
+      getCharactersByMysteryId(mysteryId),
+      getMysteryById(mysteryId),
     ]);
 
-    const pkgInfo = getPackageInfoForMaxPlayers(mystery?.max_players);
-    const actualChars = charCount ?? 0;
+    const pkgInfo = getPackageInfoForMaxPlayers(
+      mystery?.max_players || (hydratedMystery as any)?.max_players
+    );
+    const actualChars = Math.max(charCount ?? 0, hydratedChars.length);
 
     if (actualChars < pkgInfo.requiredCharacters) {
       return {
@@ -58,6 +63,8 @@ export async function updatePublishingAction(
         updated_at: new Date().toISOString(),
       });
     }
+    const { invalidateAdminMysteriesCache } = await import('@/services/admin');
+    invalidateAdminMysteriesCache();
   } catch {
     // Non-fatal
   }
