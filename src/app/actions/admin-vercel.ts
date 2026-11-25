@@ -837,7 +837,7 @@ async function loadMergedGa4Config(): Promise<StoredGa4Config> {
     localGa4?.propertyId ||
     process.env.GA4_PROPERTY_ID ||
     process.env.GOOGLE_ANALYTICS_PROPERTY_ID ||
-    '';
+    '534443990';
   let clientEmail =
     localGa4?.clientEmail ||
     process.env.GA4_CLIENT_EMAIL ||
@@ -881,11 +881,11 @@ async function loadMergedGa4Config(): Promise<StoredGa4Config> {
   } catch {}
 
   // Clean numeric propertyId (strip "properties/" if user pasted "properties/123456")
-  propertyId = propertyId.replace(/^properties\//i, '').trim();
+  propertyId = (propertyId || '534443990').replace(/^properties\//i, '').trim();
 
   return {
     measurementId: (measurementId || 'G-VW0PRLFNL4').trim(),
-    propertyId,
+    propertyId: propertyId || '534443990',
     clientEmail: clientEmail.trim(),
     privateKey: privateKey.trim(),
     updatedAt: localGa4?.updatedAt || '',

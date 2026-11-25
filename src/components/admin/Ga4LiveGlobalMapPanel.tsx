@@ -106,7 +106,9 @@ export function Ga4LiveGlobalMapPanel({
   const [measurementIdInput, setMeasurementIdInput] = useState(
     ga4.measurementId || 'G-VW0PRLFNL4'
   );
-  const [propertyIdInput, setPropertyIdInput] = useState(ga4.propertyId || '');
+  const [propertyIdInput, setPropertyIdInput] = useState(
+    ga4.propertyId || '534443990'
+  );
   const [serviceAccountInput, setServiceAccountInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(

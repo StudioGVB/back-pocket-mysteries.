@@ -5,6 +5,14 @@ import { getMysteryById } from '@/services/mysteries';
 import { isUserAdmin } from '@/utils/admin-auth';
 
 export async function GET(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await isUserAdmin(supabase, user))) {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const mysteryId = searchParams.get('mysteryId') || '61196e53-09c3-427f-8862-30151f2ca75b';
   const mystery = await getMysteryById(mysteryId);
@@ -32,14 +40,11 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient();
-    const isLocalDev = process.env.NODE_ENV === 'development';
-
-    if (!isLocalDev) {
-      // Verify admin authentication in production
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !(await isUserAdmin(supabase, user))) {
-        return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-      }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !(await isUserAdmin(supabase, user))) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
     // Ensure canonical mystery snapshot and character assignments are loaded/synced first
