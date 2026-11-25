@@ -127,7 +127,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
 
       <h3>1. The "Fictional Stranger Name" Cognitive Tax</h3>
       <p>In a static PDF kit written ten years ago, characters have pun-heavy fictional names like <em>"Harry Hollister,"</em> <em>"Lola Lovegood,"</em> or <em>"Chef Boy-Ar-Dead."</em> When twelve friends arrive at a party, forcing everyone to call Sarah "Baroness Beatrice" and Dave "Doctor Doom" creates an immediate barrier to immersion. Guests spend the entire first hour breaking character to ask, <em>"Wait, who is Major Payne again? Is that Mark in the kitchen?"</em></p>
-      <p>By contrast, modern role-only systems like <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a> cast Mark as <strong>Mark - The Producer</strong> and Sarah as <strong>Sarah - The Villain</strong>. Everybody uses their real names while embodying a clear, delicious archetype.</p>
+      <p>By contrast, modern role-only systems like <a href="/en/themes">Love On The Rocks</a> cast Mark as <strong>Mark - The Producer</strong> and Sarah as <strong>Sarah - The Villain</strong>. Everybody uses their real names while embodying a clear, delicious archetype.</p>
 
       <h3>2. The 4-Hour Host Craft Project (And Accidental Spoilers)</h3>
       <p>We timed five experienced hosts setting up a standard 12-player downloadable PDF kit from a leading legacy provider. Here is the actual time log of what "instant download" really means for the host’s weekend:</p>
@@ -188,26 +188,26 @@ export const industrySeoBlogsPart2: BlogPost[] = [
       <p>When we built Back Pocket Mysteries, we asked a simple question: <em>What if you combined the tactile luxury of printed dinner-party suspect booklets with the personalization of a Hollywood writers’ room and the effortless pacing of a Kahoot-style live phone game?</em></p>
       <p>That hybrid architecture solves every single failure point of traditional murder mystery kits:</p>
       <ul>
-        <li><strong>Printed Booklets Keep Eye Contact Alive:</strong> During the mingling rounds, guests hold a sleek, custom-printed Suspect Booklet containing their character backstory, relationship matrix, and round talking points. They are looking at each other, clinking glasses, and arguing face-to-face.</li>
-        <li><strong>The 6-Digit PIN Mobile Lobby Eliminates Paper Envelopes:</strong> Instead of the host passing out 36 paper envelopes, every guest joins the live party lobby on their smartphone using a 6-digit Game PIN (zero app download required). When the Host taps "Unlock Round 2," leaked group-chat screenshots, crime-scene photos, and audio wiretaps drop onto everyone’s screens simultaneously.</li>
-        <li><strong>Spoiler-Free Host Mode Protects the Organizer:</strong> Whether you let the AI randomly select the killer or manually pick a suspect behind our cryptographic blur shield, the Host never sees the killer’s identity or the Round 2/3 twists during setup. You get to play, accuse, and vote right alongside your guests.</li>
-        <li><strong>Transparent Flat-Rate Package Pricing:</strong> No per-head ticket traps. Our <a href="/en/pricing">Small Gathering Package (4–6 guests) is £15 ($19)</a>, <a href="/en/pricing">Party Night (7–11 guests) is £20 ($24)</a>, and <a href="/en/pricing">Big Bash (12–16 guests) is £25 ($29)</a>-and every single package includes the exact same full suite of custom scripts, physical clue guides, audio wiretaps, and the live mobile lobby.</li>
+        <li><strong>100% Online Digital Suspect Dossiers Keep Eye Contact Alive:</strong> During the mingling rounds, guests open their sleek Suspect Dossier on their phone containing their character backstory, relationship matrix, and round talking points. They are looking at each other, clinking glasses, and arguing face-to-face.</li>
+        <li><strong>The 6-Digit PIN Mobile Lobby Eliminates Paper Envelopes:</strong> Instead of the host passing out 36 paper envelopes, every guest joins the live party lobby on their smartphone using a 6-digit Game PIN (zero app download required). When the Host taps to unlock the next round (across 3 rounds in Basic, 4 in Premium, or 5 in Grand), leaked group-chat screenshots, crime-scene CCTV photos, and audio wiretaps drop onto everyone’s screens simultaneously.</li>
+        <li><strong>Spoiler-Free Host Mode Protects the Organizer:</strong> Because the killer’s identity and solution are sealed behind our cryptographic blur shield until the Final Reveal, the Host never sees spoilers during setup. You get to play, accuse, and vote right alongside your guests.</li>
+        <li><strong>Transparent Flat-Rate Package Pricing:</strong> No per-head ticket traps. Our <a href="/en/pricing">Basic Package (up to 6 characters • 3 rounds) is US$19 / £15 / A$29</a>, <a href="/en/pricing">Premium Package (up to 10 characters • 4 rounds) is US$25 / £20 / A$39</a>, and <a href="/en/pricing">Grand Package (up to 16 characters • 5 rounds) is US$33 / £25 / A$49</a>—and every single package includes the exact same full suite of custom dossiers, visual CCTV clues, audio wiretaps, and the live mobile lobby.</li>
       </ul>
 
       <h2>Decision Flowchart: Which Format Should You Buy Tonight?</h2>
-      <p>Still weighing your options? Use this quick 4-question checklist to match your event to the ideal game architecture:</p>
+      <p>Still weighing your options? Use this quick 3-question checklist to match your event to the ideal game architecture:</p>
       <ol>
-        <li><strong>Are there only 2 or 3 of you staying in for a quiet puzzle night?</strong> Buy a retail boxed cold-case game (like <em>Sherlock Holmes Consulting Detective</em> or <em>Hunt A Killer</em>).</li>
+        <li><strong>Are there only 1 to 3 of you staying in for a quiet puzzle night?</strong> Play any Back Pocket Mystery in <strong>Couch Detective / Case-File Mode</strong>, or try a retail cold-case file.</li>
         <li><strong>Are you organizing a 200-person corporate auditorium dinner where guests don’t know each other and don’t want to roleplay?</strong> Hire a live-actor comedy troupe.</li>
-        <li><strong>Are you hosting 4 to 16 friends for a birthday, dinner party, bachelorette/hen night, or holiday gathering where you want everyone laughing, dressing up, and accusing each other, and you want to play too without spending 4 hours cutting paper slips?</strong> Launch a <a href="/en/custom-murder-mystery">Back Pocket Custom Mystery</a> or dive straight into <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>.</li>
+        <li><strong>Are you hosting 4 to 16+ friends for a birthday, dinner party, bachelorette/hen night, or holiday gathering where you want everyone laughing, dressing up, and accusing each other, and you want to play too without spending 4 hours cutting paper slips?</strong> Explore our <a href="/en/themes">Active Mystery Themes</a> and build your custom cast in ~20 minutes.</li>
       </ol>
 
       <div class="bg-brand-pink/10 p-10 rounded-[2.5rem] border-2 border-brand-pink my-12 text-center">
         <h3 class="text-3xl font-black text-brand-dark uppercase tracking-tight mt-0 mb-4">See How We Stack Up Against Every Major Brand</h3>
-        <p class="text-gray-600 max-w-2xl mx-auto mb-8">Explore our side-by-side feature breakdowns or start generating your custom script in ~30 minutes for as little as £15 / $19 flat.</p>
+        <p class="text-gray-600 max-w-2xl mx-auto mb-8">Explore our side-by-side feature breakdowns or start generating your custom mystery in ~20 minutes from US$19 / £15 / A$29 flat.</p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <a href="/en/compare" class="inline-block px-10 py-4 bg-brand-dark text-white no-underline rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-pink transition-all shadow-xl">View Competitor Comparisons</a>
-          <a href="/en/pricing" class="inline-block px-10 py-4 bg-brand-pink text-white no-underline rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-xl">Explore Packages (£15–£25)</a>
+          <a href="/en/pricing" class="inline-block px-10 py-4 bg-brand-pink text-white no-underline rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-xl">Explore Packages</a>
         </div>
       </div>
     `
@@ -265,7 +265,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
       </div>
 
       <h2>The 4 Pillars of Modern Murder Mystery Clue Design</h2>
-      <p>When our narrative engine builds a custom mystery, or when you launch our flagship Reality TV Reunion theme, <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>, every single clue belongs to one of four distinct sensory layers. Here is how each modality functions inside the room and why they interlock so effectively:</p>
+      <p>When our narrative engine builds a custom mystery, or when you launch our flagship Reality TV Reunion theme, <a href="/en/themes">Love On The Rocks</a>, every single clue belongs to one of four distinct sensory layers. Here is how each modality functions inside the room and why they interlock so effectively:</p>
 
       <div class="overflow-x-auto">
         <table>
@@ -279,9 +279,9 @@ export const industrySeoBlogsPart2: BlogPost[] = [
           </thead>
           <tbody>
             <tr>
-              <td><strong>1. Printed Suspect Dossiers</strong></td>
-              <td>Physical 2-page booklet handed to each guest at arrival</td>
-              <td>Establishes character archetype, secret motives, pre-murder relationships &amp; Round 1–3 talking points</td>
+              <td><strong>1. Digital Suspect Dossiers</strong></td>
+              <td>Mobile character sheet opened by each guest via 1-click link or 6-digit PIN</td>
+              <td>Establishes character archetype, secret motives, pre-murder relationships &amp; round-by-round talking points (3–5 rounds by package tier)</td>
               <td>Tactile prop for gesturing while holding a cocktail; keeps eyes up and conversation flowing naturally.</td>
             </tr>
             <tr>
@@ -418,7 +418,7 @@ export const industrySeoBlogsPart2: BlogPost[] = [
         <h3 class="text-3xl font-black text-white uppercase tracking-tight mt-0 mb-4">Experience Next-Gen Murder Mystery Clues Tonight</h3>
         <p class="text-gray-300 max-w-2xl mx-auto mb-8">No envelope stuffing. No host spoilers. Get custom suspect booklets, leaked DM clues, audio wiretaps, and your own 6-digit PIN mobile party lobby in ~30 minutes.</p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/en/themes/love-on-the-rocks" class="inline-block px-10 py-4 bg-brand-pink text-white no-underline rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-dark transition-all shadow-xl">See Love On The Rocks</a>
+          <a href="/en/themes" class="inline-block px-10 py-4 bg-brand-pink text-white no-underline rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-dark transition-all shadow-xl">See Love On The Rocks</a>
           <a href="/en/how-it-works" class="inline-block px-10 py-4 bg-white/10 text-white border border-white/20 no-underline rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-dark transition-all">Explore How The Live Lobby Works</a>
         </div>
       </div>

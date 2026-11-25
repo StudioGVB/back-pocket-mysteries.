@@ -671,7 +671,7 @@ export default async function HomePage(props: {
                 ★★★★★ 4.9 / 5 Average Host Rating
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-none">
-                What Hosts Say After <span className="text-brand-pink italic">Round 3</span>
+                What Hosts Say After <span className="text-brand-pink italic">The Final Reveal</span>
               </h2>
             </div>
             <Link

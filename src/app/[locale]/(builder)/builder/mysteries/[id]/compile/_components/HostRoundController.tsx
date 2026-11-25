@@ -6,6 +6,7 @@ import {
   updateHostGameControlAction,
   RoundSubmission,
 } from '@/app/actions/customer-mystery';
+import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 
 interface HostRoundControllerProps {
   mysteryId: string;
@@ -18,8 +19,11 @@ export function HostRoundController({
   mysteryId,
   currentRound: initialRound,
   initialSession,
-  totalPlayers = 8,
+  totalPlayers = 6,
 }: HostRoundControllerProps) {
+  const tierRounds = getPackageInfoForMaxPlayers(totalPlayers).requiredRounds;
+  const revealRound = tierRounds >= 5 ? 6 : 5;
+
   const [localRound, setLocalRound] = useState<number>(
     initialSession?.currentRound ?? initialRound ?? 0
   );
@@ -101,11 +105,11 @@ export function HostRoundController({
     setIsUpdating(true);
     try {
       const updated = await updateHostGameControlAction(mysteryId, {
-        currentRound: 5,
+        currentRound: revealRound,
         revealMode: mode,
       });
       if (!('error' in updated)) {
-        setLocalRound(5);
+        setLocalRound(revealRound);
         setRevealMode(updated.revealMode || mode);
       }
     } finally {
@@ -115,14 +119,17 @@ export function HostRoundController({
 
   const rounds = [
     { value: 0, label: '0. Lobby (Pre-Game)' },
-    { value: 1, label: 'Round 1' },
-    { value: 2, label: 'Round 2' },
-    { value: 3, label: 'Round 3' },
-    { value: 4, label: 'Round 4 (Final Clues)' },
-    { value: 5, label: '5. Final Stats & Reveal' },
+    ...Array.from({ length: tierRounds }, (_, idx) => {
+      const rNum = idx + 1;
+      return {
+        value: rNum,
+        label: rNum === tierRounds ? `Round ${rNum} (Final Clues)` : `Round ${rNum}`,
+      };
+    }),
+    { value: revealRound, label: 'Final Stats & Reveal' },
   ];
 
-  const activeVotingRound = Math.max(1, Math.min(4, localRound || 1));
+  const activeVotingRound = Math.max(1, Math.min(tierRounds, localRound || 1));
   const roundSubs = submissions.filter(s => s.round === activeVotingRound);
   const isRoundShared = sharedTheoryRounds.includes(activeVotingRound);
 
@@ -186,7 +193,7 @@ export function HostRoundController({
       </div>
 
       {/* Live Between-Round Suspect Vote Tally & Hide/Share Controls */}
-      {localRound >= 1 && localRound <= 4 && (
+      {localRound >= 1 && localRound <= tierRounds && (
         <div className="p-6 bg-slate-900 text-white rounded-2xl border border-slate-800 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
@@ -272,13 +279,13 @@ export function HostRoundController({
         </div>
       )}
 
-      {/* Round 5 Final Stats & Host Reveal Mode Selector */}
-      {localRound === 5 && (
+      {/* Final Stats & Host Reveal Mode Selector */}
+      {localRound >= revealRound && (
         <div className="p-6 bg-slate-900 text-white rounded-2xl border border-brand-pink/40 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                Round 5 • Final Solution &amp; Stats
+                Final Stage • Solution &amp; Stats
               </span>
               <h4 className="text-base font-black text-white">
                 Choose How to Reveal the Solution

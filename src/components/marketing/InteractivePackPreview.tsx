@@ -114,13 +114,13 @@ const HOST_STAGES = [
   },
   {
     id: 3,
-    short: '4. R2 & R3',
-    phase: 'Stage 4 · Rounds 2 & 3 Evidence',
+    short: '4. Next Rounds',
+    phase: 'Stage 4 · Subsequent Rounds (3–5 Rounds by Tier)',
     status: 'Forensic & Alibi Clues Live',
     mcScript:
       '“New forensic reports and keycard logs have just dropped to your phones! Cross-check the 15-minute alibi gaps before our final vote.”',
     guestState:
-      'Guests inspect Round 2 & 3 clues on their phones to catch the killer in a lie.',
+      'Guests inspect each round of clues (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds) on their phones to catch the killer in a lie.',
     ctaLabel: 'Open Final Killer Vote →',
   },
   {

@@ -55,7 +55,7 @@ export const industrySeoBlogsPart1: BlogPost[] = [
       <h2>Why the "Social Silo Problem" Ruins Night One (And How Roleplay Solves It)</h2>
       <p>Every Maid of Honour or Head Bridesmaid faces the exact same structural challenge on the opening night of a hen weekend. When ten guests arrive at the Airbnb with their suitcases, they immediately self-sort into comfortable cliques. The bride’s university friends cluster around the kitchen island rehashing 2018 holiday stories; the bride’s cousins sit on the patio; the bride’s work colleague, who only knows the bride, stands politely by the grazing board checking her phone.</p>
       <p>Traditional bachelorette games ("How Well Do You Know the Bride?" or bridal bingo) actually <em>reinforce</em> this hierarchy. They reward the childhood best friend who knows the bride’s first pet’s middle name and alienate the newer friends or in-laws. Worse, they are passive: everyone sits on a sofa staring at a single clipboard for forty minutes.</p>
-      <p>A modern, mingle-format murder mystery flips the social physics of the room upside down. Within sixty seconds of unlocking Round 1 in a game like <a href="/en/themes/love-on-the-rocks">Love On The Rocks (our flagship Reality TV Reunion mystery)</a>, the bride’s quiet work friend isn’t "the girl from marketing" anymore, she is <strong>The Producer</strong> holding a leaked NDA contract that proves the Maid of Honour (cast as <strong>The Villain</strong>) secretly hooked up with <strong>The Ex</strong> in the VIP Cabana after the Season 3 finale.</p>
+      <p>A modern, mingle-format murder mystery flips the social physics of the room upside down. Within sixty seconds of unlocking Round 1 in a game like <a href="/en/themes">Love On The Rocks (our flagship Reality TV Reunion mystery)</a>, the bride’s quiet work friend isn’t "the girl from marketing" anymore, she is <strong>The Producer</strong> holding a leaked NDA contract that proves the Maid of Honour (cast as <strong>The Villain</strong>) secretly hooked up with <strong>The Ex</strong> in the VIP Cabana after the Season 3 finale.</p>
       <p>Psychologists call this mechanism <strong>"Alibi Permission."</strong> When you hand a guest a secret objective, <em>"Corner The Influencer before the champagne toast and find out why she transferred £10,000 to a burner account"</em>, walking up to a stranger across the room is no longer awkward small talk. It is an urgent, hilarious mission.</p>
 
       <h2>Cost & Experience Comparison: Bachelorette Night Activities Stacked Side-by-Side</h2>
@@ -75,7 +75,7 @@ export const industrySeoBlogsPart1: BlogPost[] = [
           </thead>
           <tbody>
             <tr>
-              <td><strong>Custom AI Reality-TV Mystery (<a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>)</strong></td>
+              <td><strong>Custom AI Reality-TV Mystery (<a href="/en/themes">Love On The Rocks</a>)</strong></td>
               <td><strong>$24 / £20 Flat Total</strong></td>
               <td><strong>~$2.40 / £2.00</strong></td>
               <td>~30 mins (AI generates scripts, audio wiretaps &amp; live 6-digit PIN lobby)</td>
@@ -120,7 +120,7 @@ export const industrySeoBlogsPart1: BlogPost[] = [
 
       <h2>Why "Role-Only" Casting Is the Secret Weapon for Hen Parties</h2>
       <p>One of the biggest mistakes traditional murder mystery companies make is forcing players to adopt clunky, pre-written names like <em>"Lady Penelope Featherington"</em> or <em>"Barnaby Slick."</em> At a bachelorette party after two passionfruit martinis, nobody remembers who is playing "Lady Penelope." Guests spend half the night squinting at paper name tags asking, <em>"Wait, are you my sister or my accountant?"</em></p>
-      <p>When we engineered <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>, we eliminated pre-set human first names entirely. Every character is an iconic <strong>Reality TV Reunion Archetype</strong> that fuses directly with your guests’ real names, real relationships, and real personality quirks:</p>
+      <p>When we engineered <a href="/en/themes">Love On The Rocks</a>, we eliminated pre-set human first names entirely. Every character is an iconic <strong>Reality TV Reunion Archetype</strong> that fuses directly with your guests’ real names, real relationships, and real personality quirks:</p>
 
       <ul>
         <li><strong>The Star (The Story Catalyst):</strong> Unapologetically main-character energy. She won Season 3, secured the seven-figure brand deals, and tonight she’s calling out every fake friend in the penthouse, right up until her champagne coupe is spiked at the end of Round 1. Best of all, in our game architecture, <em>nobody is eliminated</em>: once The Star collapses, that player immediately transitions into leading the investigation to catch her own killer!</li>
@@ -246,7 +246,7 @@ export const industrySeoBlogsPart1: BlogPost[] = [
         <h3 class="text-3xl font-black text-brand-dark uppercase tracking-tight mt-0 mb-4">Cast Your Bridal Party in "Love On The Rocks"</h3>
         <p class="text-gray-600 max-w-2xl mx-auto mb-8">Turn your real guest list into the cast of Season 3's most explosive Reality TV Reunion, complete with custom suspect booklets, leaked group-chat clues, audio wiretaps, and a live 6-digit Game PIN lobby.</p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/en/themes/love-on-the-rocks" class="inline-block px-10 py-4 bg-brand-pink text-white no-underline rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-xl">Explore Love On The Rocks</a>
+          <a href="/en/themes" class="inline-block px-10 py-4 bg-brand-pink text-white no-underline rounded-full font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all shadow-xl">Explore Love On The Rocks</a>
           <a href="/en/pricing" class="inline-block px-10 py-4 bg-white text-brand-dark border-2 border-brand-dark no-underline rounded-full font-black uppercase tracking-widest text-xs hover:border-brand-pink hover:text-brand-pink transition-all">See Package Pricing</a>
         </div>
       </div>
@@ -289,7 +289,7 @@ export const industrySeoBlogsPart1: BlogPost[] = [
       <ul>
         <li><strong>Status Inversion:</strong> In everyday life, a junior colleague wouldn’t accuse their boss of embezzling funds, and a new boyfriend wouldn’t interrogate the bride’s best friend. Inside the Magic Circle of a mystery party, the rules <em>demand</em> it.</li>
         <li><strong>Low-Stakes Conflict, High-Reward Bonding:</strong> Research cited by the <a href="https://www.apa.org/Monitor/2014/02/play" target="_blank" rel="noopener noreferrer">American Psychological Association (APA)</a> demonstrates that structured, playful conflict among adults triggers a synchronized release of <strong>dopamine</strong> (from puzzle-solving and novelty) and <strong>oxytocin</strong> (from shared laughter and eye contact), accelerating interpersonal trust up to <strong>3x faster</strong> than unstructured small talk.</li>
-        <li><strong>The Shield of the Archetype:</strong> When guests are cast into stylized archetypes, like <em>The Villain</em>, <em>The Producer</em>, or <em>The Ex</em> in <a href="/en/themes/love-on-the-rocks">Love On The Rocks</a>-any outrageous accusation or dramatic bluff is attributed to the role, not the person. It provides complete psychological safety for both introverts and extroverts.</li>
+        <li><strong>The Shield of the Archetype:</strong> When guests are cast into stylized archetypes, like <em>The Villain</em>, <em>The Producer</em>, or <em>The Ex</em> in <a href="/en/themes">Love On The Rocks</a>-any outrageous accusation or dramatic bluff is attributed to the role, not the person. It provides complete psychological safety for both introverts and extroverts.</li>
       </ul>
 
       <h2>2. The Science of Deception: Why Humans Are Terrible Lie Detectors (And Why That Makes Great Parties)</h2>

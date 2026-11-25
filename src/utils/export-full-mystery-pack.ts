@@ -137,11 +137,21 @@ export function buildFullMysteryPackHtml({
 
   const victimChar = activeCharacters.find((c) => c.is_victim || c.plot_role === 'victim');
   const killerChar = activeCharacters.find((c) => c.plot_role === 'killer');
-  const allClues = [
-    ...(cluesByRound[1] || []),
-    ...(cluesByRound[2] || []),
-    ...(cluesByRound[3] || []),
-  ];
+  const tierMaxRound =
+    (mystery?.max_players || activeCharacters.length) <= 6
+      ? 3
+      : (mystery?.max_players || activeCharacters.length) <= 10
+      ? 4
+      : 5;
+  const activeRoundNumbers = Array.from(
+    new Set([
+      ...Array.from({ length: tierMaxRound }, (_, idx) => idx + 1),
+      ...Object.keys(cluesByRound)
+        .map(Number)
+        .filter((r) => r >= 1 && r <= 5 && (cluesByRound[r] || []).length > 0),
+    ])
+  ).sort((a, b) => a - b);
+  const allClues = activeRoundNumbers.flatMap((r) => cluesByRound[r] || []);
 
   // Build a lookup map of hydrated clue data for the interactive clue modal when clicking a beat's clue
   const clueModalLookup: Record<
@@ -1112,10 +1122,13 @@ export function buildFullMysteryPackHtml({
     <div class="nav-links">
       <a href="#overview">1. Cast Roster</a>
       <a href="#characters">2. Character Dossiers (${activeCharacters.length})</a>
-      <a href="#round-1">3. Round 1 Clues (${(cluesByRound[1] || []).length})</a>
-      <a href="#round-2">4. Round 2 Clues (${(cluesByRound[2] || []).length})</a>
-      <a href="#round-3">5. Round 3 Clues (${(cluesByRound[3] || []).length})</a>
-      <a href="#solution" class="xray-only">6. Master Reveal &amp; Timeline</a>
+      ${activeRoundNumbers
+        .map(
+          (rNum, idx) =>
+            `<a href="#round-${rNum}">${idx + 3}. Round ${rNum} Clues (${(cluesByRound[rNum] || []).length})</a>`
+        )
+        .join('\n      ')}
+      <a href="#solution" class="xray-only">${activeRoundNumbers.length + 3}. Master Reveal &amp; Timeline</a>
     </div>
     <div class="nav-links">
       <button type="button" class="nav-btn" onclick="document.body.classList.toggle('hide-xray')">
@@ -1137,7 +1150,7 @@ export function buildFullMysteryPackHtml({
         <div class="stats-row">
           <div class="stat-pill">🎭 Theme: ${escapeHtml(mystery?.theme || 'Custom')}</div>
           <div class="stat-pill">👥 Cast: ${activeCharacters.length} Suspects</div>
-          <div class="stat-pill">🔍 Evidence: ${allClues.length} Clues (R1: ${(cluesByRound[1] || []).length} • R2: ${(cluesByRound[2] || []).length} • R3: ${(cluesByRound[3] || []).length})</div>
+          <div class="stat-pill">🔍 Evidence: ${allClues.length} Clues (${activeRoundNumbers.map((rNum) => `R${rNum}: ${(cluesByRound[rNum] || []).length}`).join(' • ')})</div>
           <div class="stat-pill">🌶️ Spice: ${escapeHtml(String(mystery?.spice_level || 'Spicy').toUpperCase())}</div>
           <div class="stat-pill xray-only">🩸 Victim: ${escapeHtml(victimDisplay)}</div>
           <div class="stat-pill xray-only">🔪 Killer: ${escapeHtml(killerDisplay)}</div>
@@ -1182,10 +1195,8 @@ export function buildFullMysteryPackHtml({
       </div>
     </section>
 
-    <!-- ROUND 1, 2, 3 CLUES -->
-    ${renderRoundSection(1)}
-    ${renderRoundSection(2)}
-    ${renderRoundSection(3)}
+    <!-- ROUND CLUES (3, 4, OR 5 ROUNDS BY TIER) -->
+    ${activeRoundNumbers.map((rNum) => renderRoundSection(rNum)).join('\n    ')}
 
     <!-- MASTER SOLUTION & TIMELINE -->
     <section id="solution" class="pack-section page-break xray-only">
