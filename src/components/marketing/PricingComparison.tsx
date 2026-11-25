@@ -13,6 +13,7 @@ export default function PricingComparison() {
       items: [
         { name: 'Players Included (Party or Case-File Mode)', basic: '1–6 Players', premium: '1–10 Players', grand: '1–16 Players' },
         { name: 'Custom Character Dossiers Generated', basic: '6 Roles', premium: 'Up to 10 Roles', grand: 'Up to 16 Roles' },
+        { name: 'Investigation Rounds (+ Final Reveal)', basic: '3 Rounds', premium: '4 Rounds', grand: '5 Rounds' },
         { name: 'Cast Modes (All Friends, Hybrid, or 100% Fictional)', basic: true, premium: true, grand: true },
         { name: 'Relationship Web & Subplots', basic: 'Core Suspect Web', premium: 'Expanded Alliances & Subplots', grand: 'Full-House Multi-Faction Web' },
       ]
@@ -53,7 +54,7 @@ export default function PricingComparison() {
         <h2 className="text-4xl lg:text-6xl font-black text-brand-dark mb-6 uppercase tracking-tight">
           Compare <span className="text-brand-pink italic">Packages</span>
         </h2>
-        <p className="text-gray-400 font-bold text-lg">Same full-featured experience on every tier — only your character cast size changes the price.</p>
+        <p className="text-gray-400 font-bold text-lg">Same full-featured experience on every tier — only your character cast size and round count scale with the package.</p>
       </div>
 
       <div className="overflow-x-auto rounded-[2rem] border-2 border-gray-100 shadow-xl">

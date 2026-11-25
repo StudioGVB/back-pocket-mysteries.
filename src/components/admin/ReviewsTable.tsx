@@ -35,6 +35,7 @@ export default function ReviewsTable({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [savingBaseTag, setSavingBaseTag] = useState(false);
+  const [isBaseDropdownOpen, setIsBaseDropdownOpen] = useState(false);
   const router = useRouter();
 
   // Compute full review analytics
@@ -190,6 +191,7 @@ export default function ReviewsTable({
   };
 
   const handleAssignBase = async (reviewId: string, nextBaseTitle: string) => {
+    setIsBaseDropdownOpen(false);
     setSavingBaseTag(true);
     await assignReviewMysteryBaseAction(reviewId, nextBaseTitle);
     setSavingBaseTag(false);
@@ -200,12 +202,20 @@ export default function ReviewsTable({
   };
 
   const allBaseOptions = useMemo(() => {
+    const deprecated = new Set([
+      'ho ho homicide',
+      'midnight at the manor',
+      'testing',
+      'test',
+      'untitled mystery',
+    ]);
     const set = new Set<string>([
+      'Christmas Nightmare',
       'Love On The Rocks',
-      'Ho Ho Homicide',
-      'Midnight at the Manor',
-      ...availableBases,
-      ...analytics.baseLeaderboard.map((b) => b.title),
+      ...availableBases.filter((b) => b && !deprecated.has(b.toLowerCase().trim())),
+      ...analytics.baseLeaderboard
+        .map((b) => b.title)
+        .filter((b) => b && !deprecated.has(b.toLowerCase().trim())),
       'General / Custom Mystery',
     ]);
     return Array.from(set).filter(Boolean);
@@ -615,7 +625,10 @@ export default function ReviewsTable({
               filteredReviews.map((review) => (
                 <tr
                   key={review.id}
-                  onClick={() => setSelectedReview(review)}
+                  onClick={() => {
+                    setIsBaseDropdownOpen(false);
+                    setSelectedReview(review);
+                  }}
                   className="hover:bg-gray-50 transition-colors group cursor-pointer"
                 >
                   <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
@@ -713,10 +726,19 @@ export default function ReviewsTable({
       {/* Review Detail & Mystery Base Assignment Modal */}
       {selectedReview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="absolute inset-0" onClick={() => setSelectedReview(null)}></div>
+          <div
+            className="absolute inset-0"
+            onClick={() => {
+              setIsBaseDropdownOpen(false);
+              setSelectedReview(null);
+            }}
+          ></div>
           <div className="relative bg-white rounded-[32px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 animate-in zoom-in-95 duration-200">
             <button
-              onClick={() => setSelectedReview(null)}
+              onClick={() => {
+                setIsBaseDropdownOpen(false);
+                setSelectedReview(null);
+              }}
               className="absolute top-6 right-6 p-2 text-gray-400 hover:text-brand-pink hover:bg-brand-pink/10 rounded-full transition-colors"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -771,22 +793,92 @@ export default function ReviewsTable({
                   <p className="text-base font-bold text-brand-dark">{selectedReview.name}</p>
                 </div>
 
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                <div className="relative">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">
                     Assigned Mystery Base
                   </p>
-                  <select
+                  <button
+                    type="button"
                     disabled={savingBaseTag}
-                    value={selectedReview.mysteryBaseTitle || 'General / Custom Mystery'}
-                    onChange={(e) => handleAssignBase(selectedReview.id, e.target.value)}
-                    className="px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-black text-brand-dark outline-none focus:border-brand-pink"
+                    onClick={() => setIsBaseDropdownOpen((prev) => !prev)}
+                    className={`min-w-[220px] px-3.5 py-2 rounded-xl bg-white border text-xs font-black text-brand-dark flex items-center justify-between gap-3 transition-all cursor-pointer shadow-2xs ${
+                      isBaseDropdownOpen
+                        ? 'border-brand-pink ring-2 ring-brand-pink/15'
+                        : 'border-gray-200 hover:border-brand-pink/50'
+                    } ${savingBaseTag ? 'opacity-60 cursor-wait' : ''}`}
                   >
-                    {allBaseOptions.map((base) => (
-                      <option key={base} value={base}>
-                        {base}
-                      </option>
-                    ))}
-                  </select>
+                    <span className="flex items-center gap-2 truncate">
+                      <span className="w-2 h-2 rounded-full bg-brand-pink shrink-0" />
+                      <span className="truncate">
+                        {selectedReview.mysteryBaseTitle || 'General / Custom Mystery'}
+                      </span>
+                    </span>
+                    <svg
+                      className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-150 ${
+                        isBaseDropdownOpen ? 'rotate-180 text-brand-pink' : ''
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {isBaseDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsBaseDropdownOpen(false)}
+                      />
+                      <div className="absolute left-0 top-full mt-2 w-64 rounded-2xl bg-white border border-gray-100 shadow-[0_20px_50px_rgba(15,23,42,0.16)] p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-50 mb-1">
+                          Select Mystery Base
+                        </div>
+                        <div className="space-y-0.5 max-h-60 overflow-y-auto">
+                          {allBaseOptions.map((base) => {
+                            const currentVal =
+                              selectedReview.mysteryBaseTitle || 'General / Custom Mystery';
+                            const isSelected = currentVal === base;
+                            return (
+                              <button
+                                key={base}
+                                type="button"
+                                onClick={() => handleAssignBase(selectedReview.id, base)}
+                                className={`w-full px-3 py-2.5 rounded-xl text-left text-xs font-bold flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-brand-pink/10 text-brand-pink font-black'
+                                    : 'text-brand-dark hover:bg-gray-50'
+                                }`}
+                              >
+                                <span className="truncate">{base}</span>
+                                {isSelected && (
+                                  <svg
+                                    className="w-4 h-4 text-brand-pink shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2.5}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="text-right">

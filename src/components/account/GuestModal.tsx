@@ -28,7 +28,9 @@ interface GuestModalProps {
 export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: GuestModalProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'basics' | 'avatar' | 'personality'>('basics');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [nameError, setNameError] = useState('');
   const [email, setEmail] = useState('');
   const [gender, setGender] = useState('Masculine');
   const [age, setAge] = useState<'young' | 'middle_aged' | 'old'>('young');
@@ -41,6 +43,11 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   const [currentQuirk, setCurrentQuirk] = useState('');
   const [bio, setBio] = useState('');
   const [isGeneratingQuirk, setIsGeneratingQuirk] = useState(false);
+
+  const name = useMemo(
+    () => [firstName.trim(), lastName.trim()].filter(Boolean).join(' '),
+    [firstName, lastName]
+  );
 
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>({
     seed: 'Felix',
@@ -58,6 +65,7 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
   // Load initial data if provided
   React.useEffect(() => {
     if (isOpen) {
+      setNameError('');
       if (initialData) {
         const initialAccent =
           initialData.accent ||
@@ -68,7 +76,17 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
           extractAgeFromAvatarUrl(initialData.avatar_url) ||
           'young';
 
-        setName(initialData.name || '');
+        const rawFull = String(initialData.name || '').trim();
+        const tokens = rawFull.split(/\s+/).filter(Boolean);
+        const initFirst =
+          initialData.first_name?.trim() ||
+          (tokens.length > 0 ? tokens[0] : '');
+        const initLast =
+          initialData.last_name?.trim() ||
+          (tokens.length > 1 ? tokens.slice(1).join(' ') : '');
+
+        setFirstName(initFirst);
+        setLastName(initLast);
         setEmail(initialData.email || '');
         setGender(initialData.gender || 'Unspecified');
         setAge(initialAge);
@@ -136,7 +154,8 @@ export function GuestModal({ isOpen, onClose, onSave, onDelete, initialData }: G
         );
       } else {
         // Reset
-        setName('');
+        setFirstName('');
+        setLastName('');
         setEmail('');
         setGender('Masculine');
         setAge('young');

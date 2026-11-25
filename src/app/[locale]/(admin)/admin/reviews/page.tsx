@@ -3,9 +3,33 @@ import React, { Suspense } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import ReviewsTable from '@/components/admin/ReviewsTable';
 import { getReviewMetadataMap, getAllPlatformReviews } from '@/app/actions/reviews';
-import { ACTIVE_MYSTERIES } from '@/data/active-mysteries';
+import { ALL_CANONICAL_MYSTERIES } from '@/data/active-mysteries';
 
 export const unstable_instant = false;
+
+const DEPRECATED_OR_TEST_TITLES = new Set([
+  'ho ho homicide',
+  'midnight at the manor',
+  'testing',
+  'test',
+  'untitled mystery',
+]);
+
+function normalizeMysteryBaseTitle(rawTitle: string | null | undefined): string | null {
+  const clean = String(rawTitle || '').trim();
+  if (!clean) return null;
+  const lower = clean.toLowerCase();
+  if (lower.includes('christmas') || lower.includes('ho ho homicide')) {
+    return 'Christmas Nightmare';
+  }
+  if (lower.includes('love on the rocks') || lower.includes('reality')) {
+    return 'Love On The Rocks';
+  }
+  if (DEPRECATED_OR_TEST_TITLES.has(lower)) {
+    return 'General / Custom Mystery';
+  }
+  return clean;
+}
 
 export default async function AdminReviewsPage(props: { params: Promise<{ locale: string }> }) {
   return (
@@ -38,9 +62,11 @@ function inferMysteryBaseForReview(
   ordersByReviewerName: Map<string, string>
 ): string {
   // 1. Explicit admin tag in review-metadata.json or DB column
-  const metaTitle = metaMap[review.id]?.mysteryTitle || review.mystery_title || review.mystery_name;
-  if (metaTitle && String(metaTitle).trim()) {
-    return String(metaTitle).trim();
+  const metaTitle = normalizeMysteryBaseTitle(
+    metaMap[review.id]?.mysteryTitle || review.mystery_title || review.mystery_name
+  );
+  if (metaTitle) {
+    return metaTitle;
   }
 
   // 2. Match reviewer name to customer orders
@@ -48,10 +74,11 @@ function inferMysteryBaseForReview(
     .toLowerCase()
     .trim();
   if (reviewerNameKey && ordersByReviewerName.has(reviewerNameKey)) {
-    return ordersByReviewerName.get(reviewerNameKey)!;
+    const orderBase = normalizeMysteryBaseTitle(ordersByReviewerName.get(reviewerNameKey));
+    if (orderBase) return orderBase;
   }
 
-  // 3. Scan review_text for known Mystery Base titles or quoted theme names
+  // 3. Scan review_text for known Mystery Base titles
   const text = String(review.review_text || '');
   const textLower = text.toLowerCase();
 
@@ -61,14 +88,8 @@ function inferMysteryBaseForReview(
     }
   }
 
-  // Check for quoted theme name like `played the "Midnight at the Manor" theme`
-  const quotedMatch = text.match(/["“]([^"”]{3,48})["”]/);
-  if (quotedMatch && quotedMatch[1]) {
-    return quotedMatch[1].trim();
-  }
-
   if (textLower.includes('christmas') || textLower.includes('homicide')) {
-    return 'Ho Ho Homicide';
+    return 'Christmas Nightmare';
   }
   if (textLower.includes('love on the rocks') || textLower.includes('villa')) {
     return 'Love On The Rocks';
@@ -98,16 +119,17 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
   const mysteryTitleById = new Map<string, string>();
   const baseTitleSet = new Set<string>();
 
-  for (const active of ACTIVE_MYSTERIES || []) {
-    if (active.title) baseTitleSet.add(active.title);
+  for (const canonical of ALL_CANONICAL_MYSTERIES || []) {
+    if (canonical.title) baseTitleSet.add(canonical.title);
   }
   for (const m of dbMysteries) {
     if (m.id && m.title) {
-      mysteryTitleById.set(m.id, m.title);
-      baseTitleSet.add(m.title);
+      const normalized = normalizeMysteryBaseTitle(m.title);
+      if (normalized) {
+        mysteryTitleById.set(m.id, normalized);
+      }
     }
   }
-  baseTitleSet.add('Midnight at the Manor');
 
   const allReviews = await getAllPlatformReviews(supabase, mysteryTitleById);
 
