@@ -1539,6 +1539,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }[]
   >([]);
   const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
+  const [roundBeatDashView, setRoundBeatDashView] = useState<'columns' | 'matrix'>('columns');
+  const [isCompactRoundCluesView, setIsCompactRoundCluesView] = useState(true);
+  const [expandedRoundClueIds, setExpandedRoundClueIds] = useState<Record<string, boolean>>({});
 
   // Toast / Error banners
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -5510,6 +5513,500 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               </div>
             </div>
 
+            {/* ============================================================= */}
+            {/* NEW: ROUND-BY-ROUND BEAT & RED-HERRING DROP DASHBOARD         */}
+            {/* ============================================================= */}
+            {(() => {
+              const roundNums = Array.from(
+                { length: totalRounds },
+                (_, i) => (i + 1) as ArchitectRoundNumber
+              );
+              const finalBeatNum = blueprint.beats.length;
+              const prematureFinalBeatClues = allSelectedClues.filter(
+                (c) => !c.isRedHerring && c.beatNumber === finalBeatNum && c.roundNumber === 1
+              );
+
+              const moveClueToRound = (clue: SuggestedClueCandidate, newR: ArchitectRoundNumber) => {
+                if (clue.isRedHerring && clue.subplotId) {
+                  updateRedHerringClueField(clue.subplotId, clue.id, { roundNumber: newR });
+                } else if (clue.beatNumber) {
+                  updateBeatClueField(clue.beatNumber, clue.id, { roundNumber: newR });
+                }
+              };
+
+              return (
+                <div className="rounded-2xl bg-slate-900 text-white border border-slate-800 p-5 space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-black uppercase tracking-wider text-white">
+                          🗺️ Round-by-Round Beat &amp; Red-Herring Drop Dashboard
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          Quick Reference • Move Rounds Inline Without Reading Full Clues
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        See exactly which <strong>Core Story Beats (#1–#{blueprint.beats.length})</strong> and{' '}
+                        <strong>Red-Herring Plotlines</strong> drop in each round. Change any clue&apos;s round
+                        directly from its chip below.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700">
+                      <button
+                        type="button"
+                        onClick={() => setRoundBeatDashView('columns')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition cursor-pointer ${
+                          roundBeatDashView === 'columns'
+                            ? 'bg-brand-pink text-white shadow-2xs'
+                            : 'text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        📋 3-Round Drop Columns
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRoundBeatDashView('matrix')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-black transition cursor-pointer ${
+                          roundBeatDashView === 'matrix'
+                            ? 'bg-brand-pink text-white shadow-2xs'
+                            : 'text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        🧱 5-Beat × Round Matrix
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Premature Beat #5 Smoking Gun Alert */}
+                  {prematureFinalBeatClues.length > 0 && (
+                    <div className="rounded-xl bg-amber-500/15 border border-amber-400/40 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <span className="text-amber-200 font-semibold">
+                        ⚠️ <strong>Pacing Alert:</strong> {prematureFinalBeatClues.length} clue(s) from{' '}
+                        <strong>Beat #{finalBeatNum} (Fatal Window / Smoking Gun)</strong> are currently
+                        dropping in <strong>Round 1</strong>. Usually Beat #{finalBeatNum} should be held for
+                        Round {totalRounds}.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          for (const c of prematureFinalBeatClues) {
+                            moveClueToRound(c, totalRounds as ArchitectRoundNumber);
+                          }
+                          setStatusToast(`Moved Beat #${finalBeatNum} smoking-gun clue(s) to Round ${totalRounds}!`);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] cursor-pointer shrink-0"
+                      >
+                        ⚡ Move Beat #{finalBeatNum} to Round {totalRounds}
+                      </button>
+                    </div>
+                  )}
+
+                  {roundBeatDashView === 'columns' ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+                      {roundNums.map((rNum) => {
+                        const rClues = allSelectedClues.filter((c) => c.roundNumber === rNum);
+                        const rCoreClues = rClues.filter((c) => !c.isRedHerring);
+                        const rFakeClues = rClues.filter((c) => c.isRedHerring);
+
+                        // Group core clues in this round by Beat
+                        const beatsInRound = blueprint.beats
+                          .map((b) => {
+                            const cluesForBeatInRound = rCoreClues.filter(
+                              (c) => c.beatNumber === b.beatNumber
+                            );
+                            const totalCluesForBeatInPack = selectedCoreClues.filter(
+                              (c) => c.beatNumber === b.beatNumber
+                            );
+                            const otherRounds = Array.from(
+                              new Set(
+                                totalCluesForBeatInPack
+                                  .filter((c) => c.roundNumber !== rNum)
+                                  .map((c) => `R${c.roundNumber}`)
+                              )
+                            );
+                            return {
+                              beat: b,
+                              cluesInRound: cluesForBeatInRound,
+                              totalInPack: totalCluesForBeatInPack.length,
+                              otherRounds,
+                            };
+                          })
+                          .filter((g) => g.cluesInRound.length > 0);
+
+                        // Group fake clues in this round by Red Herring Subplot
+                        const subplotsInRound = subplots
+                          .map((sub, sIdx) => {
+                            const fakeInRound = rFakeClues.filter((c) => c.subplotId === sub.id);
+                            const totalFakeInPack = selectedRedHerringClues.filter(
+                              (c) => c.subplotId === sub.id
+                            );
+                            return {
+                              subplot: sub,
+                              index: sIdx + 1,
+                              cluesInRound: fakeInRound,
+                              totalInPack: totalFakeInPack.length,
+                            };
+                          })
+                          .filter((g) => g.cluesInRound.length > 0);
+
+                        const roundRolePacingLabel =
+                          rNum === 1
+                            ? 'Opening Alibis, Early Motives & Misdirection'
+                            : rNum === 2
+                              ? 'Escalating Contradictions & Timeline Cracks'
+                              : 'Fatal Window & Smoking-Gun Resolution';
+
+                        return (
+                          <div
+                            key={rNum}
+                            className="rounded-xl bg-slate-950/80 border border-slate-800 p-4 flex flex-col justify-between space-y-3"
+                          >
+                            <div className="space-y-3">
+                              {/* Round Header */}
+                              <div className="flex items-start justify-between gap-2 border-b border-slate-800/90 pb-2.5">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2.5 py-0.5 rounded-md bg-brand-pink text-white text-[11px] font-black uppercase">
+                                      Round {rNum}
+                                    </span>
+                                    <span className="text-xs font-black text-white">
+                                      {rClues.length} Clues
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 mt-1">
+                                    {roundStrategySummary[rNum] || roundRolePacingLabel}
+                                  </div>
+                                </div>
+                                <div className="text-right text-[10px] font-bold">
+                                  <span className="text-emerald-400">{rCoreClues.length} Real</span>
+                                  <span className="text-slate-600 mx-1">•</span>
+                                  <span className="text-indigo-400">{rFakeClues.length} Fake</span>
+                                </div>
+                              </div>
+
+                              {/* Core Beats Dropped in This Round */}
+                              <div className="space-y-2">
+                                <div className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+                                  <span>🧩 Core Beats Dropped ({beatsInRound.length})</span>
+                                  <span>{rCoreClues.length} Real Clues</span>
+                                </div>
+
+                                {beatsInRound.length === 0 ? (
+                                  <div className="rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-[11px] text-amber-300">
+                                    ⚠️ No Core Beat clues in Round {rNum}.
+                                  </div>
+                                ) : (
+                                  beatsInRound.map(({ beat, cluesInRound, totalInPack, otherRounds }) => (
+                                    <div
+                                      key={beat.beatNumber}
+                                      className="rounded-lg bg-slate-900/90 border border-emerald-500/25 p-2.5 space-y-1.5"
+                                    >
+                                      <div className="flex items-center justify-between gap-1.5">
+                                        <span className="text-[11px] font-black text-emerald-300 truncate">
+                                          Beat #{beat.beatNumber} ({beat.timeWindow}): {beat.title}
+                                        </span>
+                                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[9px] font-black shrink-0">
+                                          {cluesInRound.length}/{totalInPack} here
+                                          {otherRounds.length > 0 ? ` • also ${otherRounds.join(',')}` : ' • Full Beat'}
+                                        </span>
+                                      </div>
+
+                                      <div className="text-[10px] text-slate-400 line-clamp-1">
+                                        {beat.description}
+                                      </div>
+
+                                      <div className="space-y-1 pt-0.5">
+                                        {cluesInRound.map((c) => {
+                                          const gIdx =
+                                            allSelectedClues.findIndex((x) => x.id === c.id) + 1;
+                                          const med = getClueMediumCategory(c.format);
+                                          const medIcon =
+                                            med === 'photo' ? '📸' : med === 'audio' ? '🎙️' : '💬';
+                                          return (
+                                            <div
+                                              key={c.id}
+                                              className="flex items-center justify-between gap-1.5 bg-slate-950/90 rounded-md px-2 py-1 border border-slate-800 text-[11px]"
+                                            >
+                                              <span className="truncate text-slate-200 font-semibold">
+                                                <span className="text-slate-500 font-black mr-1">
+                                                  #{gIdx}
+                                                </span>
+                                                {medIcon} {c.title}
+                                              </span>
+                                              <select
+                                                value={c.roundNumber}
+                                                onChange={(e) =>
+                                                  moveClueToRound(
+                                                    c,
+                                                    Number(e.target.value) as ArchitectRoundNumber
+                                                  )
+                                                }
+                                                className="rounded bg-slate-800 border border-slate-700 px-1.5 py-0.5 text-[10px] font-black text-emerald-300 cursor-pointer shrink-0"
+                                                title="Move this beat clue to another round"
+                                              >
+                                                {roundNums.map((rOpt) => (
+                                                  <option key={rOpt} value={rOpt}>
+                                                    R{rOpt}
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+
+                              {/* Red Herring Plotlines Dropped in This Round */}
+                              <div className="space-y-2 pt-1 border-t border-slate-800/80">
+                                <div className="text-[10px] font-black uppercase tracking-wider text-indigo-400 flex items-center justify-between">
+                                  <span>🎭 Red Herrings Dropped ({subplotsInRound.length})</span>
+                                  <span>{rFakeClues.length} Fake Clues</span>
+                                </div>
+
+                                {subplotsInRound.length === 0 ? (
+                                  <div className="rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-[11px] text-slate-400">
+                                    No Fake Red-Herring clues in Round {rNum}.
+                                  </div>
+                                ) : (
+                                  subplotsInRound.map(({ subplot, index, cluesInRound, totalInPack }) => (
+                                    <div
+                                      key={subplot.id}
+                                      className="rounded-lg bg-slate-900/90 border border-indigo-500/25 p-2.5 space-y-1.5"
+                                    >
+                                      <div className="flex items-center justify-between gap-1.5">
+                                        <span className="text-[11px] font-black text-indigo-300 truncate">
+                                          RH #{index}: {subplot.title}
+                                        </span>
+                                        <span className="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 text-[9px] font-black shrink-0">
+                                          {cluesInRound.length}/{totalInPack} here
+                                        </span>
+                                      </div>
+                                      <div className="text-[10px] text-slate-400 truncate">
+                                        Suspects: {subplot.involvedRoles.join(' ↔ ')}
+                                      </div>
+                                      <div className="space-y-1 pt-0.5">
+                                        {cluesInRound.map((c) => {
+                                          const gIdx =
+                                            allSelectedClues.findIndex((x) => x.id === c.id) + 1;
+                                          const med = getClueMediumCategory(c.format);
+                                          const medIcon =
+                                            med === 'photo' ? '📸' : med === 'audio' ? '🎙️' : '💬';
+                                          return (
+                                            <div
+                                              key={c.id}
+                                              className="flex items-center justify-between gap-1.5 bg-slate-950/90 rounded-md px-2 py-1 border border-slate-800 text-[11px]"
+                                            >
+                                              <span className="truncate text-slate-200 font-semibold">
+                                                <span className="text-slate-500 font-black mr-1">
+                                                  #{gIdx}
+                                                </span>
+                                                {medIcon} {c.title}
+                                              </span>
+                                              <select
+                                                value={c.roundNumber}
+                                                onChange={(e) =>
+                                                  moveClueToRound(
+                                                    c,
+                                                    Number(e.target.value) as ArchitectRoundNumber
+                                                  )
+                                                }
+                                                className="rounded bg-slate-800 border border-slate-700 px-1.5 py-0.5 text-[10px] font-black text-indigo-300 cursor-pointer shrink-0"
+                                                title="Move this red-herring clue to another round"
+                                              >
+                                                {roundNums.map((rOpt) => (
+                                                  <option key={rOpt} value={rOpt}>
+                                                    R{rOpt}
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Bottom Round Beat Summary Pill Strip */}
+                            <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1">
+                              {beatsInRound.map(({ beat }) => (
+                                <span
+                                  key={beat.beatNumber}
+                                  className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-black"
+                                >
+                                  Beat #{beat.beatNumber}
+                                </span>
+                              ))}
+                              {subplotsInRound.map(({ index, subplot }) => (
+                                <span
+                                  key={subplot.id}
+                                  className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[10px] font-black"
+                                >
+                                  RH #{index}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* 5-BEAT x 3-ROUND PROGRESSION MATRIX TABLE */
+                    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/80">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                            <th className="p-3 min-w-[230px]">Story Beat / Red Herring</th>
+                            {roundNums.map((rNum) => (
+                              <th key={rNum} className="p-3 min-w-[200px] border-l border-slate-800">
+                                Round {rNum} (
+                                {allSelectedClues.filter((c) => c.roundNumber === rNum).length}{' '}
+                                Clues)
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/80">
+                          {blueprint.beats.map((b) => (
+                            <tr key={`beat-${b.beatNumber}`} className="hover:bg-slate-900/50">
+                              <td className="p-3 align-top">
+                                <div className="font-black text-emerald-300">
+                                  🧩 Beat #{b.beatNumber} • {b.timeWindow}
+                                </div>
+                                <div className="font-bold text-white mt-0.5">{b.title}</div>
+                                <div className="text-[11px] text-slate-400 line-clamp-2 mt-0.5">
+                                  {b.description}
+                                </div>
+                              </td>
+                              {roundNums.map((rNum) => {
+                                const cellClues = selectedCoreClues.filter(
+                                  (c) => c.beatNumber === b.beatNumber && c.roundNumber === rNum
+                                );
+                                return (
+                                  <td
+                                    key={rNum}
+                                    className="p-3 align-top border-l border-slate-800 space-y-1.5"
+                                  >
+                                    {cellClues.length === 0 ? (
+                                      <span className="text-[11px] text-slate-600">—</span>
+                                    ) : (
+                                      cellClues.map((c) => {
+                                        const gIdx =
+                                          allSelectedClues.findIndex((x) => x.id === c.id) + 1;
+                                        const med = getClueMediumCategory(c.format);
+                                        const medIcon =
+                                          med === 'photo' ? '📸' : med === 'audio' ? '🎙️' : '💬';
+                                        return (
+                                          <div
+                                            key={c.id}
+                                            className="flex items-center justify-between gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1.5 text-[11px]"
+                                          >
+                                            <span className="font-bold text-emerald-100 truncate">
+                                              #{gIdx} {medIcon} {c.title}
+                                            </span>
+                                            <select
+                                              value={c.roundNumber}
+                                              onChange={(e) =>
+                                                moveClueToRound(
+                                                  c,
+                                                  Number(e.target.value) as ArchitectRoundNumber
+                                                )
+                                              }
+                                              className="rounded bg-slate-900 border border-emerald-500/40 px-1.5 py-0.5 text-[10px] font-black text-emerald-300 cursor-pointer shrink-0"
+                                            >
+                                              {roundNums.map((rOpt) => (
+                                                <option key={rOpt} value={rOpt}>
+                                                  R{rOpt}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                        );
+                                      })
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+
+                          {subplots.map((sub, sIdx) => (
+                            <tr key={`sub-${sub.id}`} className="hover:bg-slate-900/50">
+                              <td className="p-3 align-top">
+                                <div className="font-black text-indigo-300">
+                                  🎭 Red Herring #{sIdx + 1}
+                                </div>
+                                <div className="font-bold text-white mt-0.5">{sub.title}</div>
+                                <div className="text-[11px] text-slate-400 mt-0.5">
+                                  {sub.involvedRoles.join(' ↔ ')}
+                                </div>
+                              </td>
+                              {roundNums.map((rNum) => {
+                                const cellClues = selectedRedHerringClues.filter(
+                                  (c) => c.subplotId === sub.id && c.roundNumber === rNum
+                                );
+                                return (
+                                  <td
+                                    key={rNum}
+                                    className="p-3 align-top border-l border-slate-800 space-y-1.5"
+                                  >
+                                    {cellClues.length === 0 ? (
+                                      <span className="text-[11px] text-slate-600">—</span>
+                                    ) : (
+                                      cellClues.map((c) => {
+                                        const gIdx =
+                                          allSelectedClues.findIndex((x) => x.id === c.id) + 1;
+                                        const med = getClueMediumCategory(c.format);
+                                        const medIcon =
+                                          med === 'photo' ? '📸' : med === 'audio' ? '🎙️' : '💬';
+                                        return (
+                                          <div
+                                            key={c.id}
+                                            className="flex items-center justify-between gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-1.5 text-[11px]"
+                                          >
+                                            <span className="font-bold text-indigo-100 truncate">
+                                              #{gIdx} {medIcon} {c.title}
+                                            </span>
+                                            <select
+                                              value={c.roundNumber}
+                                              onChange={(e) =>
+                                                moveClueToRound(
+                                                  c,
+                                                  Number(e.target.value) as ArchitectRoundNumber
+                                                )
+                                              }
+                                              className="rounded bg-slate-900 border border-indigo-500/40 px-1.5 py-0.5 text-[10px] font-black text-indigo-300 cursor-pointer shrink-0"
+                                            >
+                                              {roundNums.map((rOpt) => (
+                                                <option key={rOpt} value={rOpt}>
+                                                  R{rOpt}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                        );
+                                      })
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {renderMediaMixBreakdownPanel(
               allSelectedClues,
               'Pack Media Mix & Pacing Breakdown'
@@ -5548,44 +6045,73 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               </div>
             )}
 
-            {/* Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <button
-                type="button"
-                onClick={() => setReviewTab('rounds')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  reviewTab === 'rounds'
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Clues by Round ({totalSelectedCluesCount})
-              </button>
-              {assembled && (
-                <>
+            {/* Tabs + Compact vs. Full Clue Cards Toggle */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReviewTab('rounds')}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    reviewTab === 'rounds'
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Clues by Round ({totalSelectedCluesCount})
+                </button>
+                {assembled && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setReviewTab('characters')}
+                      className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        reviewTab === 'characters'
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Character Dossiers ({assembled.characters.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReviewTab('relationships')}
+                      className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        reviewTab === 'relationships'
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Relationships ({assembled.relationships.length})
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {reviewTab === 'rounds' && (
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
                   <button
                     type="button"
-                    onClick={() => setReviewTab('characters')}
-                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      reviewTab === 'characters'
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-500 hover:text-slate-800'
+                    onClick={() => setIsCompactRoundCluesView(true)}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-black transition cursor-pointer ${
+                      isCompactRoundCluesView
+                        ? 'bg-slate-900 text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    Character Dossiers ({assembled.characters.length})
+                    ⚡ Compact Beat &amp; Title Rows
                   </button>
                   <button
                     type="button"
-                    onClick={() => setReviewTab('relationships')}
-                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      reviewTab === 'relationships'
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-500 hover:text-slate-800'
+                    onClick={() => setIsCompactRoundCluesView(false)}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-black transition cursor-pointer ${
+                      !isCompactRoundCluesView
+                        ? 'bg-slate-900 text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    Relationships ({assembled.relationships.length})
+                    📖 Full Clue Text &amp; Scripts
                   </button>
-                </>
+                </div>
               )}
             </div>
 
@@ -5621,16 +6147,41 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                             const isPhoto = isPhotoClueFormat(rc.format);
                             const medium = getClueMediumCategory(rc.format);
                             const syncedTalkingPoints = getSyncedTalkingPointsForClue(rc);
+                            const linkedBeatObj = !rc.isRedHerring
+                              ? blueprint.beats.find((b) => b.beatNumber === rc.beatNumber)
+                              : null;
+                            const linkedSubplotIdx = rc.isRedHerring
+                              ? subplots.findIndex((s) => s.id === rc.subplotId)
+                              : -1;
+                            const linkedSubplotObj =
+                              linkedSubplotIdx >= 0 ? subplots[linkedSubplotIdx] : null;
+                            const isExpandedInCompact =
+                              !isCompactRoundCluesView || Boolean(expandedRoundClueIds[rc.id]);
 
                             return (
                               <div
                                 key={rc.id}
-                                className="rounded-xl bg-white border border-slate-200 p-4 text-xs space-y-3"
+                                className="rounded-xl bg-white border border-slate-200 p-3.5 text-xs space-y-3"
                               >
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <div className="flex flex-wrap items-center gap-2">
                                     <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-black">
                                       Clue #{globalIdx}
+                                    </span>
+                                    <span
+                                      className={`text-[11px] px-2.5 py-0.5 rounded-lg font-black ${
+                                        rc.isRedHerring
+                                          ? 'bg-indigo-50 text-indigo-800 border border-indigo-200'
+                                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                      }`}
+                                    >
+                                      {rc.isRedHerring
+                                        ? `🎭 RH #${linkedSubplotIdx + 1 || '?'}: ${
+                                            linkedSubplotObj?.title || 'Red Herring'
+                                          }`
+                                        : `🧩 Beat #${rc.beatNumber || '?'} (${
+                                            linkedBeatObj?.timeWindow || rc.timestampLabel
+                                          }): ${linkedBeatObj?.title || 'Core Beat'}`}
                                     </span>
                                     <span className="text-sm font-black text-slate-900">
                                       {rc.title}
@@ -5652,17 +6203,22 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                     </span>
                                   </div>
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <span
-                                      className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${
-                                        rc.isRedHerring
-                                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                      }`}
-                                    >
-                                      {rc.isRedHerring
-                                        ? 'Red Herring'
-                                        : `Core Beat #${rc.beatNumber || '?'}`}
-                                    </span>
+                                    {isCompactRoundCluesView && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setExpandedRoundClueIds((prev) => ({
+                                            ...prev,
+                                            [rc.id]: !prev[rc.id],
+                                          }))
+                                        }
+                                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer"
+                                      >
+                                        {expandedRoundClueIds[rc.id]
+                                          ? '▴ Hide Clue Text'
+                                          : '▾ Read Clue Text'}
+                                      </button>
+                                    )}
 
                                     <select
                                       value={rc.format}
@@ -5724,65 +6280,69 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                   </div>
                                 </div>
 
-                                <div className="text-sm text-slate-800">
-                                  <HighlightedMysteryText
-                                    text={rc.description}
-                                    characters={blueprint.characters}
-                                  />
-                                </div>
-
-                                {/* IMPROVEMENT #3: Auto-Synced Character Script Talking Points for This Clue */}
-                                {syncedTalkingPoints.length > 0 && (
-                                  <div className="rounded-xl bg-indigo-50/50 border border-indigo-200/80 p-3 space-y-2">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-[11px] font-black uppercase tracking-wider text-indigo-900">
-                                        🔗 Auto-Synced Round {rc.roundNumber} Character Script
-                                        Talking Points:
-                                      </span>
-                                      <span className="text-[10px] font-semibold text-indigo-700">
-                                        Injected into character booklets on export
-                                      </span>
+                                {isExpandedInCompact && (
+                                  <>
+                                    <div className="text-sm text-slate-800 pt-1 border-t border-slate-100">
+                                      <HighlightedMysteryText
+                                        text={rc.description}
+                                        characters={blueprint.characters}
+                                      />
                                     </div>
-                                    <div className="space-y-1.5">
-                                      {syncedTalkingPoints.map((tp) => (
-                                        <div
-                                          key={tp.roleTitle}
-                                          className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white rounded-lg border border-indigo-100 px-2.5 py-1.5"
-                                        >
-                                          <HighlightedMysteryText
-                                            text={`{{${tp.roleTitle}}}`}
-                                            characters={blueprint.characters}
-                                            className="inline whitespace-nowrap"
-                                          />
-                                          <input
-                                            type="text"
-                                            value={tp.defensiveLine}
-                                            onChange={(e) =>
-                                              updateClueTalkingPoint(
-                                                rc,
-                                                tp.roleTitle,
-                                                e.target.value
-                                              )
-                                            }
-                                            className="flex-1 text-xs text-slate-800 bg-transparent focus:outline-none"
-                                          />
+
+                                    {/* IMPROVEMENT #3: Auto-Synced Character Script Talking Points for This Clue */}
+                                    {syncedTalkingPoints.length > 0 && (
+                                      <div className="rounded-xl bg-indigo-50/50 border border-indigo-200/80 p-3 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[11px] font-black uppercase tracking-wider text-indigo-900">
+                                            🔗 Auto-Synced Round {rc.roundNumber} Character Script
+                                            Talking Points:
+                                          </span>
+                                          <span className="text-[10px] font-semibold text-indigo-700">
+                                            Injected into character booklets on export
+                                          </span>
                                         </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
+                                        <div className="space-y-1.5">
+                                          {syncedTalkingPoints.map((tp) => (
+                                            <div
+                                              key={tp.roleTitle}
+                                              className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white rounded-lg border border-indigo-100 px-2.5 py-1.5"
+                                            >
+                                              <HighlightedMysteryText
+                                                text={`{{${tp.roleTitle}}}`}
+                                                characters={blueprint.characters}
+                                                className="inline whitespace-nowrap"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={tp.defensiveLine}
+                                                onChange={(e) =>
+                                                  updateClueTalkingPoint(
+                                                    rc,
+                                                    tp.roleTitle,
+                                                    e.target.value
+                                                  )
+                                                }
+                                                className="flex-1 text-xs text-slate-800 bg-transparent focus:outline-none"
+                                              />
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
 
-                                {isPhoto && rc.generationPrompt && (
-                                  <div className="rounded-lg bg-pink-50/50 border border-pink-200/70 px-3 py-2 text-[11px] text-slate-600">
-                                    <strong className="text-brand-pink">
-                                      📸 AI Photo Prompt:
-                                    </strong>{' '}
-                                    {rc.generationPrompt}
-                                  </div>
-                                )}
+                                    {isPhoto && rc.generationPrompt && (
+                                      <div className="rounded-lg bg-pink-50/50 border border-pink-200/70 px-3 py-2 text-[11px] text-slate-600">
+                                        <strong className="text-brand-pink">
+                                          📸 AI Photo Prompt:
+                                        </strong>{' '}
+                                        {rc.generationPrompt}
+                                      </div>
+                                    )}
 
-                                {/* IMPROVEMENT #4: Live Player UI Preview + 1-Click Test Render Photo */}
-                                {renderInlineClueUiPreview(rc)}
+                                    {/* IMPROVEMENT #4: Live Player UI Preview + 1-Click Test Render Photo */}
+                                    {renderInlineClueUiPreview(rc)}
+                                  </>
+                                )}
                               </div>
                             );
                           })}
