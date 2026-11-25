@@ -12,8 +12,14 @@ import {
 import { createClient } from '@/utils/supabase/server';
 import { requireAdmin } from '@/utils/admin-auth';
 import { logAiUsage } from '@/utils/ai-logger';
-import { ClueFormat } from '@/utils/clue-format';
+import {
+  ClueFormat,
+  embedFormatTagInNotes,
+  extractFormatTagFromNotes,
+  stripFormatTagFromNotes,
+} from '@/utils/clue-format';
 import { recommendDifficultyFromPlotAndClues } from '@/utils/architect-difficulty-recommender';
+import { cacheMysterySnapshot, cacheRelationshipsSnapshot } from '@/lib/live-session-store';
 
 export type ArchitectSpiceLevel = 'Clean' | 'Mild' | 'Spicy' | 'Filthy';
 export type ArchitectComplexity = 'easy' | 'medium' | 'hard';
@@ -145,9 +151,13 @@ export interface AssembledFullMysteryBase {
   insideJokes: string;
   spiceLevel: ArchitectSpiceLevel;
   complexity: ArchitectComplexity;
+  murderTimeWindow?: string;
+  murderWeaponAndMethod?: string;
+  killerHowAndWhySummary?: string;
   characters: AssembledCharacterDossier[];
   relationships: AssembledRelationshipPair[];
   beats: BlueprintBeatInput[];
+  subplots?: SuggestedRedHerringSubplot[];
   clues: SuggestedClueCandidate[];
   proofreadReport: {
     overallPassed: boolean;
@@ -1344,61 +1354,130 @@ Return strict JSON:
 
 /**
  * STEP 5: Transfers the assembled & proofread Mystery Base directly into Supabase `mysteries`
- * (and related tables: `characters`, `motives`, `relationships`, `story_beats`, `clues`)
+ * (and related tables: `characters`, `motives`, `relationships`, `plot_beats`, `clues`)
  * with `status: 'draft'` so it appears in `/en/admin/mysteries` ready for review & 4-Pack QA!
  */
 export async function transferBlueprintToDraftMysteryBaseAction(params: {
   assembled: AssembledFullMysteryBase;
+  existingMysteryId?: string;
 }): Promise<{
   success: boolean;
   mysteryId?: string;
   error?: string;
 }> {
   const { supabase, user } = await requireAdmin();
-  const { assembled } = params;
+  const { assembled, existingMysteryId } = params;
 
   try {
-    // 1. Insert the draft mystery record
-    const { data: mysteryRow, error: mErr } = await supabase
-      .from('mysteries')
-      .insert({
-        title: assembled.title,
-        theme: assembled.theme,
-        description: assembled.description,
-        inside_jokes: assembled.insideJokes || null,
-        spice_level: assembled.spiceLevel,
-        complexity: assembled.complexity,
-        min_players: assembled.characters.length,
-        max_players: assembled.characters.length,
-        status: 'draft',
-        current_round: 0,
-        created_by: user?.id || null,
-      } as any)
-      .select()
-      .single();
+    const normalizedSpice = String(assembled.spiceLevel || 'spicy').toLowerCase() as
+      | 'clean'
+      | 'mild'
+      | 'spicy'
+      | 'filthy';
 
-    if (mErr || !mysteryRow) {
-      throw new Error(mErr?.message || 'Failed to create draft mystery row.');
+    // Check if an existing draft mystery with this ID or exact title already exists so we update it in place
+    let targetMysteryId = existingMysteryId || null;
+    if (!targetMysteryId && assembled.title) {
+      const { data: existingRows } = await supabase
+        .from('mysteries')
+        .select('id, status')
+        .ilike('title', assembled.title.trim())
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (existingRows && existingRows.length > 0) {
+        targetMysteryId = existingRows[0].id;
+      }
     }
 
-    const mysteryId = mysteryRow.id;
-    const roleToCharDbId = new Map<string, string>();
+    let mysteryId = targetMysteryId;
 
-    // 2. Insert all 6 characters + motives
+    if (mysteryId) {
+      await supabase
+        .from('mysteries')
+        .update({
+          title: assembled.title,
+          theme: assembled.theme,
+          description: assembled.description,
+          inside_jokes: assembled.insideJokes || null,
+          spice_level: normalizedSpice,
+          complexity: assembled.complexity,
+          min_players: assembled.characters.length,
+          max_players: assembled.characters.length,
+        } as any)
+        .eq('id', mysteryId);
+
+      // Clear any previous child rows before inserting the fresh blueprint
+      await supabase.from('relationships').delete().eq('mystery_id', mysteryId);
+      await supabase.from('motives').delete().eq('mystery_id', mysteryId);
+      await supabase.from('clues').delete().eq('mystery_id', mysteryId);
+      await supabase.from('plot_beats').delete().eq('mystery_id', mysteryId);
+      await supabase.from('characters').delete().eq('mystery_id', mysteryId);
+    } else {
+      // 1. Insert the draft mystery record
+      const { data: mysteryRow, error: mErr } = await supabase
+        .from('mysteries')
+        .insert({
+          title: assembled.title,
+          theme: assembled.theme,
+          description: assembled.description,
+          inside_jokes: assembled.insideJokes || null,
+          spice_level: normalizedSpice,
+          complexity: assembled.complexity,
+          min_players: assembled.characters.length,
+          max_players: assembled.characters.length,
+          status: 'draft',
+          current_round: 0,
+          created_by: user?.id || null,
+        } as any)
+        .select()
+        .single();
+
+      if (mErr || !mysteryRow) {
+        throw new Error(mErr?.message || 'Failed to create draft mystery row.');
+      }
+      mysteryId = mysteryRow.id;
+    }
+
+    if (!mysteryId) {
+      throw new Error('Failed to resolve mystery ID.');
+    }
+
+    const roleToCharDbId = new Map<string, string>();
     for (const char of assembled.characters) {
-      const charId = crypto.randomUUID();
-      roleToCharDbId.set(char.roleTitle.toLowerCase(), charId);
+      roleToCharDbId.set(char.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase(), crypto.randomUUID());
+    }
+
+    const victimSpec =
+      assembled.characters.find((c) => c.isVictim || c.plotRole === 'victim') ||
+      assembled.characters[0];
+    const victimCharId =
+      (victimSpec &&
+        roleToCharDbId.get(victimSpec.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase())) ||
+      Array.from(roleToCharDbId.values())[0];
+
+    // 2. Insert all characters + motives (using valid `characters` and `motives` columns)
+    for (const char of assembled.characters) {
+      const cleanRole = char.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
+      const charId = roleToCharDbId.get(cleanRole.toLowerCase()) || crypto.randomUUID();
 
       const dicebearUrl = `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(
-        char.roleTitle
+        cleanRole
       )}`;
+
+      const roleSuffix = char.isVictim
+        ? 'Victim'
+        : char.plotRole === 'killer'
+          ? 'Killer'
+          : char.plotRole === 'assistant'
+            ? 'Accomplice'
+            : 'Suspect';
 
       const { error: cErr } = await supabase.from('characters').insert({
         id: charId,
         mystery_id: mysteryId,
-        name: char.roleTitle,
-        gender: char.defaultGender,
-        is_victim: char.isVictim,
+        name: `${cleanRole}|${cleanRole}|${roleSuffix}`,
+        gender: char.defaultGender || 'adaptable',
+        is_victim: Boolean(char.isVictim),
         plot_role: char.plotRole,
         archetype: char.isVictim
           ? 'victim'
@@ -1409,7 +1488,6 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
               : 'witness',
         is_mandatory: true,
         min_player_count: assembled.characters.length,
-        image_url: dicebearUrl,
         profile_data: {
           age: 'adult',
           color: char.color,
@@ -1424,31 +1502,57 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
 
       if (cErr) {
         console.error('Error inserting character:', cErr);
+        throw new Error(`Failed to insert character "${cleanRole}": ${cErr.message}`);
       }
 
-      if (!char.isVictim && char.motiveNotes) {
-        await supabase.from('motives').insert({
+      if (!char.isVictim && char.motiveNotes && victimCharId) {
+        const validMotiveType = [
+          'revenge',
+          'greed',
+          'love',
+          'fear',
+          'justice',
+          'power',
+        ].includes(char.motiveType)
+          ? char.motiveType
+          : 'revenge';
+        const validStrength = ['low', 'moderate', 'high', 'critical'].includes(
+          char.motiveStrength
+        )
+          ? char.motiveStrength
+          : 'high';
+
+        const { error: motErr } = await supabase.from('motives').insert({
           id: crypto.randomUUID(),
           mystery_id: mysteryId,
           character_id: charId,
-          motive_type: char.motiveType,
-          strength: char.motiveStrength,
+          linked_character_id: victimCharId,
+          motive_type: validMotiveType,
+          strength: validStrength,
           notes: char.motiveNotes,
         } as any);
+        if (motErr) {
+          console.error('Error inserting motive:', motErr);
+        }
       }
     }
 
-    // 3. Insert all 15 pairwise relationships
+    // 3. Insert all pairwise relationships (sorted so character_a_id < character_b_id)
     const relRows: any[] = [];
+    const seenPairs = new Set<string>();
     for (const rel of assembled.relationships) {
       const idA = roleToCharDbId.get(rel.roleA.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase());
       const idB = roleToCharDbId.get(rel.roleB.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase());
       if (idA && idB && idA !== idB) {
+        const [a, b] = [idA, idB].sort();
+        const pairKey = `${a}|${b}`;
+        if (seenPairs.has(pairKey)) continue;
+        seenPairs.add(pairKey);
         relRows.push({
           id: crypto.randomUUID(),
           mystery_id: mysteryId,
-          character_a_id: idA,
-          character_b_id: idB,
+          character_a_id: a,
+          character_b_id: b,
           know_each_other: true,
           dynamics: rel.dynamics,
           notes: rel.notes,
@@ -1456,57 +1560,104 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
       }
     }
     if (relRows.length > 0) {
-      await supabase.from('relationships').insert(relRows as any);
+      const { error: relErr } = await supabase.from('relationships').insert(relRows as any);
+      if (relErr) {
+        console.error('Error inserting relationships:', relErr);
+      }
     }
 
-    // 4. Insert story beats
+    // 4. Insert plot beats into `plot_beats` (NOT `story_beats`)
+    const beatIdByNumber: Record<number, string> = {};
     if (assembled.beats.length > 0) {
-      const beatRows = assembled.beats.map((b, idx) => ({
-        id: crypto.randomUUID(),
-        mystery_id: mysteryId,
-        beat_number: idx + 1,
-        sort_order: idx + 1,
-        event_title: `${b.title} (${b.timeWindow})`,
-        description: b.description,
-        beat_type:
-          b.phase === 'crime'
-            ? 'twist'
-            : b.phase === 'pre_crime'
-              ? 'discovery'
-              : 'clue_reveal',
-        timeline_phase: b.phase,
-      }));
-      await (supabase as any).from('story_beats').insert(beatRows as any);
+      const beatRows = assembled.beats.map((b, idx) => {
+        const beatNum = b.beatNumber || idx + 1;
+        const beatId = crypto.randomUUID();
+        beatIdByNumber[beatNum] = beatId;
+        return {
+          id: beatId,
+          mystery_id: mysteryId,
+          beat_number: beatNum,
+          sort_order: idx + 1,
+          event_title: b.timeWindow ? `${b.title} (${b.timeWindow})` : b.title,
+          description: b.description,
+          is_required: true,
+          characters_involved: Array.from(roleToCharDbId.values()),
+          beat_type:
+            b.phase === 'crime'
+              ? 'twist'
+              : b.phase === 'pre_crime'
+                ? 'discovery'
+                : 'clue_reveal',
+          timeline_phase: ['pre_crime', 'crime', 'investigation', 'resolution'].includes(b.phase)
+            ? b.phase
+            : 'investigation',
+        };
+      });
+      const { error: beatErr } = await supabase.from('plot_beats').insert(beatRows as any);
+      if (beatErr) {
+        console.error('Error inserting plot_beats:', beatErr);
+      }
     }
 
-    // 5. Insert round-cast clues (preserving any previewImageUrl test-rendered in OG Base Builder!)
+    // 5. Insert round-cast clues (storing [FORMAT:...] inside `internal_notes` and using valid enum values)
     if (assembled.clues.length > 0) {
-      const clueRows = assembled.clues.map((c) => ({
-        id: crypto.randomUUID(),
-        mystery_id: mysteryId,
-        title: c.title,
-        description: c.description,
-        format: c.format,
-        static_image_url: c.previewImageUrl || null,
-        clue_type:
-          c.format === 'audio'
-            ? 'audio'
-            : c.format === 'cctv'
-              ? 'video'
-              : c.format === 'physical_prop'
-                ? 'physical'
-                : 'document',
-        round_number: c.roundNumber,
-        is_fake: Boolean(c.isRedHerring),
-        generation_prompt: c.generationPrompt || c.description,
-        evidence_status: c.isRedHerring ? 'misleading' : 'verified',
-        implication_type: c.isRedHerring ? 'red_herring' : 'direct_evidence',
-      }));
-      await supabase.from('clues').insert(clueRows as any);
+      const clueRows = assembled.clues.map((c) => {
+        const fmt = c.format || 'document';
+        const notesBody = [
+          c.timestampLabel ? `Timestamp: ${c.timestampLabel}.` : '',
+          c.pointsTo || '',
+          c.doubleMeaningNote ? `Table Misdirection: ${c.doubleMeaningNote}` : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+        const internalNotesWithFormat = `[FORMAT:${fmt}] ${notesBody}`.trim();
+
+        const validClueType =
+          fmt === 'physical_prop' || fmt === 'cctv'
+            ? 'physical'
+            : fmt === 'audio' || fmt === 'chat'
+              ? 'testimony'
+              : c.isRedHerring
+                ? 'secret'
+                : 'background';
+
+        const validImplication = c.isRedHerring
+          ? 'red_herring'
+          : (c.roundNumber || 1) >= 3
+            ? 'direct'
+            : 'circumstantial';
+
+        const validEvidenceStatus = c.isRedHerring ? 'fake' : 'real';
+
+        return {
+          id: crypto.randomUUID(),
+          mystery_id: mysteryId,
+          title: c.title,
+          description: c.description,
+          static_image_url: c.previewImageUrl || null,
+          clue_type: validClueType,
+          implication_type: validImplication,
+          evidence_status: validEvidenceStatus,
+          round_number: c.roundNumber || 1,
+          is_essential: !c.isRedHerring,
+          linked_plot_beat_id: c.beatNumber ? beatIdByNumber[c.beatNumber] || null : null,
+          internal_notes: internalNotesWithFormat,
+          generation_prompt: c.generationPrompt || '',
+        };
+      });
+      const { error: clueErr } = await supabase.from('clues').insert(clueRows as any);
+      if (clueErr) {
+        console.error('Error inserting clues:', clueErr);
+        throw new Error(`Failed to insert clues: ${clueErr.message}`);
+      }
     }
+
+    const { invalidateAdminMysteriesCache } = await import('@/services/admin');
+    invalidateAdminMysteriesCache();
 
     revalidatePath('/en/admin/mysteries');
     revalidatePath(`/en/builder/mysteries/${mysteryId}`);
+    revalidatePath(`/builder/mysteries/${mysteryId}`);
 
     return {
       success: true,

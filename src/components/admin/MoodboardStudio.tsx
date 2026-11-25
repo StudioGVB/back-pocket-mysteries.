@@ -38,8 +38,14 @@ export function MoodboardStudio({
   onUpdated,
 }: MoodboardStudioProps) {
   const initialParsed = parseMysteryImageField(initialImageUrl);
-  const [coverUrl, setCoverUrl] = useState<string | null>(initialParsed.coverUrl);
-  const [photos, setPhotos] = useState<MoodboardPhoto[]>(initialParsed.moodboardPhotos);
+  const initialEffectivePhotos =
+    initialParsed.moodboardPhotos.length > 0
+      ? initialParsed.moodboardPhotos
+      : getEffectiveMoodboardPhotos(initialParsed.coverUrl, theme, mysteryTitle);
+  const [coverUrl, setCoverUrl] = useState<string | null>(
+    initialParsed.coverUrl || initialEffectivePhotos[0]?.url || null
+  );
+  const [photos, setPhotos] = useState<MoodboardPhoto[]>(initialEffectivePhotos);
 
   const [selectedTag, setSelectedTag] = useState<string>('The Setting');
   const [uploadCaption, setUploadCaption] = useState<string>('');
@@ -48,7 +54,6 @@ export function MoodboardStudio({
   const [isUploading, setIsUploading] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
-  const [showLivePreview, setShowLivePreview] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
@@ -213,11 +218,6 @@ export function MoodboardStudio({
     await persistPhotoChanges(photos, coverUrl, 'Saved photo caption & tag!');
   };
 
-  const previewPhotos =
-    photos.length > 0
-      ? photos
-      : getEffectiveMoodboardPhotos(coverUrl, theme, mysteryTitle);
-
   return (
     <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm">
       {/* Top Bar */}
@@ -228,27 +228,19 @@ export function MoodboardStudio({
               className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full"
               style={{ background: 'rgba(254,4,198,0.1)', color: '#fe04c6' }}
             >
-              📸 Visual Vibe Builder
+              📸 Mystery Photos &amp; Primary Cover
             </span>
             <span className="text-[11px] font-bold text-slate-400">
-              {photos.length} Custom Photo{photos.length === 1 ? '' : 's'} Uploaded
+              {photos.length} Photo{photos.length === 1 ? '' : 's'}
             </span>
           </div>
           <h3 className="text-lg font-black text-slate-900">
-            Mystery Mood Board &amp; Gallery Photos
+            Mystery Photos &amp; Primary Cover Selection
           </h3>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Upload photos of the setting, dress code inspiration, cocktails, and atmosphere. They automatically assemble into a visual mood board on the mystery page.
+            Upload or AI-generate photos for this mystery and click <strong>Set as Cover</strong> on any photo below to make it the primary cover image.
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setShowLivePreview((v) => !v)}
-          className="px-4 py-2 rounded-xl text-xs font-black border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all self-start sm:self-auto shrink-0"
-        >
-          {showLivePreview ? 'Hide Mood Board Preview' : 'Show Mood Board Preview'}
-        </button>
       </div>
 
       {/* Vibe Tag & Optional Caption for New Uploads */}
@@ -339,10 +331,10 @@ export function MoodboardStudio({
             )}
           </div>
           <p className="text-sm font-black text-slate-900">
-            {isUploading ? 'Uploading Photos to Mood Board...' : 'Click or Drag & Drop Photos Here'}
+            {isUploading ? 'Uploading Photos...' : 'Click or Drag & Drop Photos Here'}
           </p>
           <p className="text-xs text-slate-400 font-medium mt-1">
-            Select multiple JPG, PNG, or WebP images at once to build your mood board
+            Select multiple JPG, PNG, or WebP images at once
           </p>
         </div>
 
@@ -412,18 +404,19 @@ export function MoodboardStudio({
         </div>
       )}
 
-      {/* Uploaded Photos Management Grid */}
+      {/* Single Unified Photos Grid — Select Primary Cover, Reorder, Edit Captions */}
       {photos.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Uploaded Mood Board Photos ({photos.length}) - Drag order, edit captions, or set as main cover
+              Mystery Photos ({photos.length}) — Click &ldquo;Set as Cover&rdquo; to choose your primary cover image
             </label>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {photos.map((photo, idx) => {
-              const isMainCover = coverUrl === photo.url;
+              const isMainCover =
+                coverUrl === photo.url || (!coverUrl && idx === 0);
               return (
                 <div
                   key={photo.id || idx}
@@ -450,7 +443,7 @@ export function MoodboardStudio({
                         <button
                           type="button"
                           onClick={() => handleSetMainCover(photo.url)}
-                          className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/70 hover:bg-black text-white backdrop-blur-sm transition-colors"
+                          className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-black/70 hover:bg-black text-white backdrop-blur-sm transition-colors cursor-pointer"
                         >
                           Set as Cover
                         </button>
@@ -462,7 +455,7 @@ export function MoodboardStudio({
                         type="button"
                         onClick={() => handleMovePhoto(idx, -1)}
                         disabled={idx === 0}
-                        className="w-6 h-6 rounded-lg bg-black/65 hover:bg-black text-white text-xs flex items-center justify-center disabled:opacity-30"
+                        className="w-6 h-6 rounded-lg bg-black/65 hover:bg-black text-white text-xs flex items-center justify-center disabled:opacity-30 cursor-pointer"
                         title="Move Earlier"
                       >
                         ←
@@ -471,7 +464,7 @@ export function MoodboardStudio({
                         type="button"
                         onClick={() => handleMovePhoto(idx, 1)}
                         disabled={idx === photos.length - 1}
-                        className="w-6 h-6 rounded-lg bg-black/65 hover:bg-black text-white text-xs flex items-center justify-center disabled:opacity-30"
+                        className="w-6 h-6 rounded-lg bg-black/65 hover:bg-black text-white text-xs flex items-center justify-center disabled:opacity-30 cursor-pointer"
                         title="Move Later"
                       >
                         →
@@ -479,7 +472,7 @@ export function MoodboardStudio({
                       <button
                         type="button"
                         onClick={() => handleRemovePhoto(photo.id)}
-                        className="w-6 h-6 rounded-lg bg-red-600/85 hover:bg-red-600 text-white text-xs flex items-center justify-center"
+                        className="w-6 h-6 rounded-lg bg-red-600/85 hover:bg-red-600 text-white text-xs flex items-center justify-center cursor-pointer"
                         title="Remove Photo"
                       >
                         ✕
@@ -509,23 +502,6 @@ export function MoodboardStudio({
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* Live Mood Board Preview */}
-      {showLivePreview && (
-        <div className="pt-4 border-t border-slate-100">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Live Customer Page Mood Board Preview {photos.length === 0 ? '(Showing Default Theme Vibe Until You Upload)' : ''}
-            </span>
-          </div>
-          <MysteryMoodboard
-            photos={previewPhotos}
-            mysteryTitle={mysteryTitle || 'Your Mystery'}
-            theme={theme}
-            compact
-          />
         </div>
       )}
     </div>

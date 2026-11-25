@@ -77,11 +77,7 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
         />
       </div>
 
-      <div className="pt-2">
-        <AIGenerateCoverButton mysteryId={mysteryId} currentImageUrl={mystery.image_url} />
-      </div>
-
-      {/* Mood Board & Multi-Photo Vibe Uploader */}
+      {/* Single Unified Photos & Primary Cover Section */}
       <div className="pt-2">
         <MoodboardStudio
           mysteryId={mysteryId}

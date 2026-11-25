@@ -46,6 +46,18 @@ import {
   isChristmasNightmareMystery,
   mapChristmasCharacterIds,
 } from '@/data/christmas-nightmare';
+import {
+  UNIBREAK_CABIN_BEATS,
+  UNIBREAK_CABIN_CHARACTERS,
+  UNIBREAK_CABIN_CLUES,
+  UNIBREAK_CABIN_DESCRIPTION,
+  UNIBREAK_CABIN_INSIDE_JOKES,
+  UNIBREAK_CABIN_RELATIONSHIPS,
+  UNIBREAK_CABIN_SUBPLOTS,
+  UNIBREAK_CABIN_THEME,
+  UNIBREAK_CABIN_TITLE,
+  isUnibreakCabinMystery,
+} from '@/data/unibreak-at-the-cabin';
 import { cacheRelationshipsSnapshot } from '@/lib/live-session-store';
 import { cache } from 'react';
 import crypto from 'crypto';
@@ -678,6 +690,250 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
 
   if (mysteryId) {
     cacheMysterySnapshot(mysteryId, mystery);
+  }
+
+  return mystery;
+}
+
+function deterministicUuid(seed: string): string {
+  return crypto
+    .createHash('md5')
+    .update(seed)
+    .digest('hex')
+    .replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
+}
+
+export function ensureUnibreakCabinCanon(mystery: any, supabase?: any): any {
+  if (!mystery || !isUnibreakCabinMystery(mystery.title, mystery.theme)) {
+    return mystery;
+  }
+
+  const mysteryId = mystery.id;
+  if (!mystery.description || !String(mystery.description).trim()) {
+    mystery.description = UNIBREAK_CABIN_DESCRIPTION;
+  }
+  if (!mystery.theme || !String(mystery.theme).trim()) {
+    mystery.theme = UNIBREAK_CABIN_THEME;
+  }
+  if (!mystery.inside_jokes) {
+    mystery.inside_jokes = UNIBREAK_CABIN_INSIDE_JOKES;
+  }
+  mystery.min_players = 6;
+  mystery.max_players = 6;
+  mystery.complexity = mystery.complexity || 'hard';
+  mystery.spice_level = mystery.spice_level || 'filthy';
+
+  const charIdByKey: Record<string, string> = {};
+  const existingChars = Array.isArray(mystery.characters) ? mystery.characters : [];
+  const needsCharSeed = existingChars.length === 0;
+
+  for (const spec of UNIBREAK_CABIN_CHARACTERS) {
+    const found = existingChars.find((ec: any) =>
+      String(ec?.name || '').toLowerCase().includes(spec.roleTitle.toLowerCase())
+    );
+    charIdByKey[spec.key] =
+      found?.id || (mysteryId ? deterministicUuid(`${mysteryId}:unibreak:char:${spec.key}`) : crypto.randomUUID());
+  }
+
+  const victimCharId = charIdByKey.prom_queen;
+
+  if (needsCharSeed) {
+    const seededChars = UNIBREAK_CABIN_CHARACTERS.map((spec) => {
+      const charId = charIdByKey[spec.key];
+      const motives = spec.motive
+        ? [
+            {
+              id: mysteryId
+                ? deterministicUuid(`${mysteryId}:unibreak:motive:${spec.key}`)
+                : crypto.randomUUID(),
+              mystery_id: mysteryId,
+              character_id: charId,
+              linked_character_id: victimCharId,
+              motive_type: spec.motive.motive_type,
+              strength: spec.motive.strength,
+              notes: spec.motive.notes,
+            },
+          ]
+        : [];
+
+      return {
+        id: charId,
+        mystery_id: mysteryId,
+        name: spec.name,
+        gender: spec.gender,
+        is_victim: spec.is_victim,
+        plot_role: spec.plot_role,
+        archetype: spec.archetype,
+        is_mandatory: spec.is_mandatory,
+        min_player_count: spec.min_player_count,
+        profile_data: spec.profile_data,
+        motives,
+      };
+    });
+
+    mystery.characters = seededChars;
+
+    if (supabase && mysteryId) {
+      const charInsertRows = seededChars.map(({ motives: _m, ...rest }) => rest);
+      const motiveInsertRows = seededChars.flatMap((c) => c.motives || []);
+      supabase
+        .from('characters')
+        .upsert(charInsertRows as any, { onConflict: 'id' })
+        .then(() => {
+          if (motiveInsertRows.length > 0) {
+            supabase
+              .from('motives')
+              .upsert(motiveInsertRows as any, { onConflict: 'id' })
+              .then(() => {}, () => {});
+          }
+        }, () => {});
+    }
+  }
+
+  // Ensure 5 plot beats exist
+  const existingBeats = Array.isArray(mystery.plot_beats) ? mystery.plot_beats : [];
+  const beatIdByNumber: Record<number, string> = {};
+  if (existingBeats.length === 0) {
+    const seededBeats = UNIBREAK_CABIN_BEATS.map((bSpec) => {
+      const beatId = mysteryId
+        ? deterministicUuid(`${mysteryId}:unibreak:beat:${bSpec.beat_number}`)
+        : crypto.randomUUID();
+      beatIdByNumber[bSpec.beat_number] = beatId;
+      return {
+        id: beatId,
+        mystery_id: mysteryId,
+        beat_number: bSpec.beat_number,
+        sort_order: bSpec.sort_order,
+        event_title: bSpec.event_title,
+        description: bSpec.description,
+        beat_type: bSpec.beat_type,
+        timeline_phase: bSpec.timeline_phase,
+        characters_involved: bSpec.involvedKeys.map((k) => charIdByKey[k]).filter(Boolean),
+        is_required: true,
+      };
+    });
+    mystery.plot_beats = seededBeats;
+
+    if (supabase && mysteryId) {
+      supabase
+        .from('plot_beats')
+        .upsert(seededBeats as any, { onConflict: 'id' })
+        .then(() => {}, () => {});
+    }
+  } else {
+    for (const eb of existingBeats) {
+      if (eb?.beat_number && eb?.id) {
+        beatIdByNumber[eb.beat_number] = eb.id;
+      }
+    }
+  }
+
+  // Ensure 16 clues exist across Rounds 1, 2, and 3
+  const existingClues = Array.isArray(mystery.clues) ? mystery.clues : [];
+  if (existingClues.length === 0) {
+    const seededClues = UNIBREAK_CABIN_CLUES.map((cSpec, idx) => {
+      const clueId = mysteryId
+        ? deterministicUuid(`${mysteryId}:unibreak:clue:${idx + 1}`)
+        : crypto.randomUUID();
+      const linkedBeatId = cSpec.beatNumber ? beatIdByNumber[cSpec.beatNumber] || null : null;
+      return {
+        id: clueId,
+        mystery_id: mysteryId,
+        title: cSpec.title,
+        description: cSpec.description,
+        clue_type: cSpec.clue_type,
+        implication_type: cSpec.implication_type,
+        evidence_status: cSpec.evidence_status,
+        round_number: cSpec.round_number,
+        is_essential: cSpec.is_essential,
+        linked_plot_beat_id: linkedBeatId,
+        static_image_url: null,
+        format: cSpec.format,
+        internal_notes: stripFormatTagFromNotes(cSpec.internal_notes),
+        generation_prompt: cSpec.generation_prompt,
+        _raw_internal_notes: cSpec.internal_notes,
+      };
+    });
+
+    mystery.clues = seededClues.map(({ _raw_internal_notes: _r, ...rest }) => rest);
+
+    if (supabase && mysteryId) {
+      const clueDbRows = seededClues.map((c) => ({
+        id: c.id,
+        mystery_id: c.mystery_id,
+        title: c.title,
+        description: c.description,
+        clue_type: c.clue_type,
+        implication_type: c.implication_type,
+        evidence_status: c.evidence_status,
+        round_number: c.round_number,
+        is_essential: c.is_essential,
+        linked_plot_beat_id: c.linked_plot_beat_id,
+        static_image_url: null,
+        internal_notes: c._raw_internal_notes,
+        generation_prompt: c.generation_prompt,
+      }));
+      supabase
+        .from('clues')
+        .upsert(clueDbRows as any, { onConflict: 'id' })
+        .then(() => {}, () => {});
+    }
+  }
+
+  // Ensure 3 subplots exist
+  const existingSubplots = Array.isArray(mystery.subplots) ? mystery.subplots : [];
+  if (existingSubplots.length === 0) {
+    const seededSubplots = UNIBREAK_CABIN_SUBPLOTS.map((sSpec, idx) => ({
+      id: mysteryId
+        ? deterministicUuid(`${mysteryId}:unibreak:subplot:${idx + 1}`)
+        : crypto.randomUUID(),
+      mystery_id: mysteryId,
+      title: sSpec.title,
+      theme: sSpec.theme,
+      description: sSpec.description,
+      primary_character_id: charIdByKey[sSpec.primaryKey],
+      secondary_character_id: charIdByKey[sSpec.secondaryKey],
+    }));
+    mystery.subplots = seededSubplots;
+
+    if (supabase && mysteryId) {
+      supabase
+        .from('subplots')
+        .upsert(seededSubplots as any, { onConflict: 'id' })
+        .then(() => {}, () => {});
+    }
+  }
+
+  // Build and cache 15 canonical pairwise relationships
+  if (mysteryId) {
+    const canonicalRels = UNIBREAK_CABIN_RELATIONSHIPS.map((rel) => {
+      const [a, b] = [charIdByKey[rel.charAKey], charIdByKey[rel.charBKey]].sort();
+      return {
+        id: deterministicUuid(`${mysteryId}:unibreak:rel:${a}:${b}`),
+        mystery_id: mysteryId,
+        character_a_id: a,
+        character_b_id: b,
+        know_each_other: true,
+        dynamics: rel.dynamics,
+        notes: rel.notes,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
+    cacheRelationshipsSnapshot(mysteryId, canonicalRels);
+
+    if (supabase && needsCharSeed) {
+      supabase
+        .from('relationships')
+        .upsert(
+          canonicalRels.map(({ id, created_at: _c, updated_at: _u, ...rest }) => ({
+            id,
+            ...rest,
+          })) as any,
+          { onConflict: 'id' }
+        )
+        .then(() => {}, () => {});
+    }
   }
 
   return mystery;
@@ -1681,7 +1937,10 @@ export const getMysteryById = cache(async (id: string) => {
     data.characters = overlayLiveCarrierCharacters(data.characters, liveCarrier.characters);
   }
 
-  const upgradedData = ensureChristmasNightmareCanon(ensureRealityPromoCover(data, supabase), supabase);
+  const upgradedData = ensureUnibreakCabinCanon(
+    ensureChristmasNightmareCanon(ensureRealityPromoCover(data, supabase), supabase),
+    supabase
+  );
   data.image_url = upgradedData.image_url;
 
   if (liveCarrier?.characters?.length && Array.isArray(data.characters)) {
