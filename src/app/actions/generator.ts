@@ -1402,22 +1402,12 @@ export async function generateClueImageAction(
     }
 
     const clueFormat = (clue as any).format || inferClueFormat(clue);
-    const hasExplicitVisualPrompt = Boolean(promptText?.trim() || clue.generation_prompt?.trim());
-    const isStructuredTextCardWithoutPrompt =
-      !hasExplicitVisualPrompt &&
-      (clueFormat === 'receipt' ||
-        clueFormat === 'handwritten_note' ||
-        clueFormat === 'document' ||
-        clueFormat === 'medical_rx' ||
-        clueFormat === 'call_sheet');
+    const isPhotoClueFormat = clueFormat === 'physical_prop' || clueFormat === 'cctv';
 
-    // Message ('chat'), Voice ('audio'), Cyber Terminal ('search_log'), and text-only structured cards never need images generated
-    if (
-      clueFormat === 'chat' ||
-      clueFormat === 'audio' ||
-      clueFormat === 'search_log' ||
-      isStructuredTextCardWithoutPrompt
-    ) {
+    // Only true Photo Clues ('physical_prop' and 'cctv') should ever have an AI photo generated.
+    // All other formats ('chat', 'audio', 'search_log', 'receipt', 'handwritten_note', 'document', 'medical_rx', 'call_sheet', 'social_post')
+    // render as custom interactive UI templates or voice notes and should NOT have a photo.
+    if (!isPhotoClueFormat) {
       await supabase
         .from('clues')
         .update({ static_image_url: null, updated_at: new Date().toISOString() })
@@ -2678,7 +2668,7 @@ Respond with valid JSON ONLY:
     // =========================================================================
     for (const c of allClues) {
       const fmt = c?.format || inferClueFormat(c);
-      if ((fmt === 'chat' || fmt === 'audio') && c?.static_image_url) {
+      if (fmt !== 'physical_prop' && fmt !== 'cctv' && c?.static_image_url) {
         c.static_image_url = null;
         if (c.id) {
           await supabase.from('clues').update({ static_image_url: null }).eq('id', c.id);
@@ -2687,23 +2677,9 @@ Respond with valid JSON ONLY:
     }
 
     const visualClues = allClues.filter((c: any) => {
-      if (!c?.id || !c?.generation_prompt) return false;
+      if (!c?.id) return false;
       const fmt = c.format || inferClueFormat(c);
-      if (
-        fmt === 'chat' ||
-        fmt === 'audio' ||
-        fmt === 'search_log' ||
-        fmt === 'receipt' ||
-        fmt === 'call_sheet'
-      ) {
-        return false;
-      }
-      return (
-        fmt === 'cctv' ||
-        fmt === 'physical_prop' ||
-        fmt === 'social_post' ||
-        Boolean(c.static_image_url)
-      );
+      return fmt === 'cctv' || fmt === 'physical_prop';
     });
 
     const evaluateVisualClueWithCritic = async (

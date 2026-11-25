@@ -642,22 +642,10 @@ export function PackScreenerClient({
 
       const charsToRegenPortrait = assignmentsPayload.filter((a) => a.needsNewPortrait);
 
-      // Identify all visual clues (CCTV, physical props, Polaroids, photos — NEVER chat or audio)
+      // Identify ONLY true Photo Clues ('physical_prop' or 'cctv')
       const visualCluesToRegen = rawClues.filter((c) => {
-        const prompt = String(c.generation_prompt || c.prompt_template || '');
         const fmt = c.format || inferClueFormat(c);
-        if (
-          fmt === 'audio' ||
-          fmt === 'chat' ||
-          fmt === 'search_log' ||
-          fmt === 'receipt' ||
-          fmt === 'call_sheet'
-        ) {
-          return false;
-        }
-        const isVisualFormat =
-          fmt === 'physical_prop' || fmt === 'cctv' || fmt === 'social_post' || Boolean(c.static_image_url);
-        return isVisualFormat && Boolean(prompt || c.static_image_url);
+        return fmt === 'physical_prop' || fmt === 'cctv';
       });
 
       // Identify all audio clues so their voice notes are re-synthesized with the newly cast friends' names & voices
@@ -1005,13 +993,10 @@ export function PackScreenerClient({
     const realCount = rawClues.filter((c) => c.evidence_status !== 'fake' && c.implication_type !== 'red_herring').length;
     const fakeCount = total - realCount;
 
-    const visualFormats = new Set(['physical_prop', 'cctv', 'social_post']);
+    const visualFormats = new Set(['physical_prop', 'cctv']);
     const visualClues = rawClues.filter((c) => {
       const fmt = c.format || inferClueFormat(c);
-      if (fmt === 'audio' || fmt === 'chat' || fmt === 'search_log' || fmt === 'receipt' || fmt === 'call_sheet') {
-        return false;
-      }
-      return visualFormats.has(fmt) || Boolean(c.static_image_url);
+      return visualFormats.has(fmt);
     });
     const missingImages = rawClues.filter(
       (c) =>
@@ -1103,17 +1088,7 @@ export function PackScreenerClient({
     const isRegeneratingThisClue = regeneratingClueIds.has(clue.id);
     const resolvedClueFormat = clue.format || inferClueFormat(clue);
     const hasVisualPhotoOrPrompt =
-      resolvedClueFormat !== 'chat' &&
-      resolvedClueFormat !== 'audio' &&
-      resolvedClueFormat !== 'search_log' &&
-      resolvedClueFormat !== 'receipt' &&
-      resolvedClueFormat !== 'call_sheet' &&
-      Boolean(
-        clue.static_image_url ||
-          resolvedClueFormat === 'physical_prop' ||
-          resolvedClueFormat === 'cctv' ||
-          resolvedClueFormat === 'social_post'
-      );
+      resolvedClueFormat === 'physical_prop' || resolvedClueFormat === 'cctv';
 
     return (
       <div

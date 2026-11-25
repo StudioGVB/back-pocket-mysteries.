@@ -66,6 +66,53 @@ function Countdown({ expiresAt }: { expiresAt: string }) {
   return <span className="font-mono">{d}d {h}h {m}m</span>;
 }
 
+const HAIR_HEX_LABEL_MAP: Record<string, string> = {
+  '282828': 'Black',
+  '4a3123': 'Dark Brown',
+  'a0785a': 'Light Brown',
+  'a55728': 'Auburn',
+  'c2a67e': 'Ash Blonde',
+  'e8b07d': 'Strawberry Blonde',
+  'd6b370': 'Golden Blonde',
+  'f4f0e6': 'White Blonde',
+  'd95319': 'Orange Red',
+  'ca4444': 'Cherry Red',
+  'e8e1e1': 'Silver / White',
+  'f59797': 'Pastel Pink',
+  'e84393': 'Hot Pink',
+  '4b0082': 'Indigo',
+  '00a8ff': 'Bright Blue',
+  '00b894': 'Mint Green',
+};
+
+function extractGuestAppearanceSummary(avatarUrl?: string | null, eyeColorFallback?: string | null): string | null {
+  if (!avatarUrl || avatarUrl.startsWith('data:')) return null;
+  try {
+    const parsed = new URL(avatarUrl);
+    const p = parsed.searchParams;
+    const hairHex = (p.get('hairColor') || '').replace('#', '').toLowerCase();
+    const hairColorLabel = HAIR_HEX_LABEL_MAP[hairHex] || '';
+    const hairLength = p.get('hairLength') || '';
+    const hairTexture = p.get('hairTexture') || '';
+    const eyeColor = p.get('eyeColor') || eyeColorFallback || '';
+
+    const parts: string[] = [];
+    if (hairLength === 'Bald') {
+      parts.push('Bald');
+    } else if (hairColorLabel) {
+      const texPart =
+        hairTexture && hairTexture !== 'Straight' ? ` ${hairTexture}` : '';
+      parts.push(`${hairColorLabel}${texPart} Hair`);
+    }
+    if (eyeColor) {
+      parts.push(`${eyeColor} Eyes`);
+    }
+    return parts.length > 0 ? parts.join(' · ') : null;
+  } catch {
+    return null;
+  }
+}
+
 function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, onCancelInvite, isGenerating }: { guest: ManualGuest; locale: string; onRemove?: () => void; onEdit?: () => void; onShare?: () => void; pendingInvite?: PendingInvite; onCancelInvite?: () => void; isGenerating?: boolean }) {
   const [copiedBanner, setCopiedBanner] = useState(false);
   const initials = guest.name.charAt(0).toUpperCase();
@@ -82,6 +129,7 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
   const displayAvatar = resolveDisplayAvatarUrl(rawDisplayAvatar) || rawDisplayAvatar || '';
   const isAiPhoto = Boolean(displayAvatar) && !displayAvatar.includes('api.dicebear.com');
   const accent = guest.accent || extractAccentFromAvatarUrl(guest.avatar_url);
+  const appearanceSummary = extractGuestAppearanceSummary(guest.avatar_url, (guest as any).eye_color);
 
   const handleCopyPendingLink = async () => {
     if (!pendingInvite?.invite_token) {
@@ -95,7 +143,7 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
   };
 
   return (
-    <div className="bg-white border border-slate-100 p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative overflow-hidden">
+    <div className="bg-white border border-slate-100 p-5 sm:p-6 rounded-[2rem] flex flex-col group hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200/80 transition-all duration-300 relative overflow-hidden">
       {pendingInvite && (
         <div className="absolute top-0 left-0 w-full bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest px-5 py-2 flex justify-between items-center z-10">
           <span>Invite Pending</span>
@@ -116,68 +164,141 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
           </div>
         </div>
       )}
-      <div className={`flex items-start justify-between mb-6 ${pendingInvite ? 'mt-6' : ''}`}>
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            {displayAvatar ? (
-              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={displayAvatar}
-                  alt={guest.name}
-                  className={isAiPhoto ? 'w-full h-full object-cover object-top' : 'w-[120%] h-[120%] object-cover mt-2'}
-                />
-              </div>
-            ) : (
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white border-2 border-white shadow-md" style={{ background: '#fe04c6' }}>
-                {initials}
-              </div>
-            )}
-            
-            {/* Loading Overlay */}
-            {isGenerating && (
-              <div className="absolute inset-0 bg-slate-900/60 rounded-2xl flex flex-col items-center justify-center border-2 border-white backdrop-blur-sm z-10 shadow-lg">
-                <svg className="animate-spin h-5 w-5 text-brand-pink mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span className="text-[8px] font-black uppercase tracking-widest text-white">AI Gen</span>
-              </div>
-            )}
-          </div>
+
+      {/* Main Profile Header: Large Glanceable Portrait + Clean Info & Action Column */}
+      <div className={`flex items-start gap-4 sm:gap-5 mb-5 ${pendingInvite ? 'mt-6' : ''}`}>
+        {/* Larger 96px-112px Portrait Container */}
+        <button
+          type="button"
+          onClick={onEdit}
+          title={`Edit ${guest.name}'s profile & portrait`}
+          className="relative shrink-0 group/avatar cursor-pointer focus:outline-none"
+        >
+          {displayAvatar ? (
+            <div className="w-24 h-24 sm:w-28 sm:h-28 bg-slate-100 rounded-2xl sm:rounded-3xl flex items-center justify-center overflow-hidden border-2 border-white ring-1 ring-slate-200/70 shadow-md group-hover/avatar:ring-brand-pink/50 transition-all">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={displayAvatar}
+                alt={guest.name}
+                className={
+                  isAiPhoto
+                    ? 'w-full h-full object-cover object-top group-hover/avatar:scale-105 transition-transform duration-300'
+                    : 'w-[120%] h-[120%] object-cover mt-2'
+                }
+              />
+            </div>
+          ) : (
+            <div
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl flex items-center justify-center text-2xl font-black text-white border-2 border-white shadow-md"
+              style={{ background: '#fe04c6' }}
+            >
+              {initials}
+            </div>
+          )}
+
+          {/* Subtle hover edit pill on portrait */}
+          {!isGenerating && (
+            <span className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full bg-slate-900/75 text-white text-[9px] font-black uppercase tracking-wider opacity-0 group-hover/avatar:opacity-100 transition-opacity backdrop-blur-xs">
+              Edit
+            </span>
+          )}
+
+          {/* Loading Overlay */}
+          {isGenerating && (
+            <div className="absolute inset-0 bg-slate-900/65 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center border-2 border-white backdrop-blur-sm z-10 shadow-lg">
+              <svg className="animate-spin h-6 w-6 text-brand-pink mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="text-[9px] font-black uppercase tracking-widest text-white">AI Photo</span>
+            </div>
+          )}
+        </button>
+
+        {/* Right Info Column: Action Toolbar on Top + Full Uncramped Name + Identity & Appearance Pills */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between min-h-[6rem] sm:min-h-[7rem]">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">{guest.name}</h3>
-            <p className="text-xs font-bold text-slate-400">
-              {guest.gender || 'Unspecified'}{accent ? ` · 🎙️ ${accent}` : ''}
-            </p>
+            {/* Top Row: Quick Action Icons pushed cleanly to top-right above/beside title */}
+            <div className="flex items-start justify-between gap-2">
+              <h3
+                onClick={onEdit}
+                className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug cursor-pointer hover:text-brand-pink transition-colors"
+              >
+                {guest.name}
+              </h3>
+              <div className="flex items-center gap-0.5 shrink-0 -mt-0.5 -mr-1">
+                {onShare && (
+                  <button
+                    onClick={onShare}
+                    className="text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors p-1.5 cursor-pointer"
+                    title="Invite guest via link or email"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                  </button>
+                )}
+                {onEdit && (
+                  <button
+                    onClick={onEdit}
+                    className="text-slate-300 hover:text-brand-pink hover:bg-pink-50 rounded-lg transition-colors p-1.5 cursor-pointer"
+                    title="Edit profile & avatar"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                )}
+                {onRemove && (
+                  <button
+                    onClick={onRemove}
+                    className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors p-1.5 cursor-pointer"
+                    title="Delete guest"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Identity & Accent Badges */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
+                {guest.gender || 'Unspecified'}
+              </span>
+              {accent && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
+                  <span>🎙️</span>
+                  <span>{accent}</span>
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex gap-1">
-          {onShare && (
-            <button onClick={onShare} className="text-slate-300 hover:text-indigo-400 transition-colors p-1" title="Invite guest via link or email">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-            </button>
-          )}
-          {onEdit && (
-            <button onClick={onEdit} className="text-slate-300 hover:text-brand-pink transition-colors p-1">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-          )}
-          {onRemove && (
-            <button onClick={onRemove} className="text-slate-300 hover:text-red-400 transition-colors p-1" title="Delete guest">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            </button>
+
+          {/* Quick-Glance Appearance Summary Line */}
+          {appearanceSummary && (
+            <p className="text-[11px] font-semibold text-slate-400 truncate mt-2">
+              {appearanceSummary}
+            </p>
           )}
         </div>
       </div>
-      <div className="mt-auto pt-4 border-t border-slate-50 flex flex-wrap gap-2">
-        {guest.traits?.map((trait, idx) => (
-          <span key={idx} className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-100">
-            {trait}
-          </span>
-        ))}
-        {(!guest.traits || guest.traits.length === 0) && (
-          <span className="text-xs text-slate-400 italic">No traits added.</span>
+
+      {/* Bottom Traits & Quirks Section */}
+      <div className="mt-auto pt-3.5 border-t border-slate-100/80 flex flex-wrap items-center gap-2">
+        {guest.traits && guest.traits.length > 0 ? (
+          guest.traits.map((trait, idx) => (
+            <span
+              key={idx}
+              className="px-3 py-1 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-200/70"
+            >
+              {trait}
+            </span>
+          ))
+        ) : (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="text-xs font-semibold text-slate-400 hover:text-brand-pink transition-colors italic cursor-pointer"
+          >
+            + Add personality quirks or traits
+          </button>
         )}
       </div>
     </div>
@@ -193,46 +314,46 @@ function LinkedGuestCard({ guest, onUnlink }: { guest: LinkedGuest; onUnlink?: (
       {/* Animated rainbow background */}
       <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 animate-pulse opacity-70 group-hover:opacity-100 transition-opacity" />
       {/* Inner card */}
-      <div className="relative bg-white p-6 rounded-[calc(2rem-3px)] h-full flex flex-col hover:shadow-xl transition-all duration-300 overflow-hidden">
-      {/* Linked badge */}
-      <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: 'rgba(254,4,198,0.08)' }}>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        <span className="text-[10px] font-black" style={{ color: '#fe04c6' }}>Linked</span>
-      </div>
+      <div className="relative bg-white p-5 sm:p-6 rounded-[calc(2rem-3px)] h-full flex flex-col hover:shadow-xl transition-all duration-300 overflow-hidden">
+        {/* Linked badge */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: 'rgba(254,4,198,0.08)' }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fe04c6" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span className="text-[10px] font-black" style={{ color: '#fe04c6' }}>Linked</span>
+        </div>
 
-      <div className="flex items-start gap-4 mb-6 pr-20">
-        {avatar ? (
-          <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatar} alt={guest.name} className="w-full h-full object-cover object-top" />
+        <div className="flex items-start gap-4 sm:gap-5 mb-5 pr-16">
+          {avatar ? (
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-white ring-1 ring-slate-200/70 shadow-md flex-shrink-0" style={{ background: 'linear-gradient(135deg, #1e191c, #2d1f2b)' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatar} alt={guest.name} className="w-full h-full object-cover object-top" />
+            </div>
+          ) : (
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl flex items-center justify-center text-2xl font-black text-white border-2 border-white shadow-md flex-shrink-0" style={{ background: '#fe04c6' }}>
+              {initials}
+            </div>
+          )}
+          <div className="min-w-0 pt-1">
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug">{guest.name}</h3>
+            {guest.profile?.pronouns && <p className="text-xs font-bold text-slate-400 mt-1">{guest.profile.pronouns}</p>}
+            {guest.profile?.location && <p className="text-xs text-slate-400 mt-0.5">{guest.profile.location}</p>}
           </div>
-        ) : (
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white border-2 border-white shadow-md flex-shrink-0" style={{ background: '#fe04c6' }}>
-            {initials}
+        </div>
+
+        {guest.profile?.character_preferences && guest.profile.character_preferences.length > 0 && (
+          <div className="mt-auto pt-3.5 border-t border-slate-100/80 flex flex-wrap gap-2">
+            {guest.profile.character_preferences.slice(0, 3).map((p, idx) => (
+              <span key={idx} className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-100" style={{ background: 'rgba(254,4,198,0.05)', color: '#fe04c6' }}>
+                {p}
+              </span>
+            ))}
           </div>
         )}
-        <div className="min-w-0">
-          <h3 className="text-lg font-bold text-slate-900 truncate">{guest.name}</h3>
-          {guest.profile?.pronouns && <p className="text-xs font-bold text-slate-400">{guest.profile.pronouns}</p>}
-          {guest.profile?.location && <p className="text-xs text-slate-400">{guest.profile.location}</p>}
-        </div>
-      </div>
 
-      {guest.profile?.character_preferences && guest.profile.character_preferences.length > 0 && (
-        <div className="mt-auto pt-4 border-t border-slate-50 flex flex-wrap gap-2">
-          {guest.profile.character_preferences.slice(0, 3).map((p, idx) => (
-            <span key={idx} className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-100" style={{ background: 'rgba(254,4,198,0.05)', color: '#fe04c6' }}>
-              {p}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {onUnlink && (
-        <button onClick={onUnlink} className="mt-4 text-xs font-bold text-slate-300 hover:text-red-400 transition-colors text-left">
-          Unlink guest
-        </button>
-      )}
+        {onUnlink && (
+          <button onClick={onUnlink} className="mt-4 text-xs font-bold text-slate-300 hover:text-red-400 transition-colors text-left">
+            Unlink guest
+          </button>
+        )}
       </div>
     </div>
   );

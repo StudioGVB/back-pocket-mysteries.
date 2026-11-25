@@ -172,10 +172,11 @@ export function buildFullMysteryPackHtml({
 
   allClues.forEach((clue) => {
     const fmt = clue.format || inferClueFormat(clue);
+    const isPhotoClue = fmt === 'physical_prop' || fmt === 'cctv';
     const rawTitle = stripCustomerFacingTitle(clue.title) || clue.title || 'Evidence';
     const title = hydrate(rawTitle);
     const desc = hydrate(clue.description || '');
-    const imgUrl = resolveAbsoluteUrl(clue.static_image_url);
+    const imgUrl = isPhotoClue ? resolveAbsoluteUrl(clue.static_image_url) : null;
     const audioUrl = resolveAbsoluteUrl(clue.audio_url);
     const isFake = clue.evidence_status === 'fake' || clue.implication_type === 'red_herring';
     const linkedBeat = (plotBeats || []).find((b: any) => b.id === clue.linked_plot_beat_id);

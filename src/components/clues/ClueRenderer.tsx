@@ -32,13 +32,16 @@ export function ClueRenderer({
     (clue.format as ClueFormat) ||
     inferClueFormat(clue);
 
+  const isPhotoClue =
+    resolvedFormat === 'physical_prop' || resolvedFormat === 'cctv';
+
   const viewProps = {
     clue,
     hydratedTitle,
     hydratedDescription,
     characters,
     compact,
-    showImage,
+    showImage: Boolean(showImage && isPhotoClue),
   };
 
   switch (resolvedFormat) {

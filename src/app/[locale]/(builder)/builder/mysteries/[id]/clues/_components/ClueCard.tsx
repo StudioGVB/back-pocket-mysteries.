@@ -97,13 +97,15 @@ export function ClueCard({
   const hydratedDesc = hydrateTextWithCharacters(clue.description || '', characters, 'role');
 
   const renderFormatView = () => {
+    const isPhotoClue =
+      resolvedFormat === 'physical_prop' || resolvedFormat === 'cctv';
     const viewProps = {
       clue,
       hydratedTitle,
       hydratedDescription: hydratedDesc,
       characters,
       compact: true,
-      showImage: true,
+      showImage: isPhotoClue,
     };
 
     switch (resolvedFormat) {
