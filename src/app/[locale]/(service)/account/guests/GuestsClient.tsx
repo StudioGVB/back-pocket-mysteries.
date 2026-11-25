@@ -113,7 +113,7 @@ function extractGuestAppearanceSummary(avatarUrl?: string | null, eyeColorFallba
   }
 }
 
-function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, onCancelInvite, isGenerating }: { guest: ManualGuest; locale: string; onRemove?: () => void; onEdit?: () => void; onShare?: () => void; pendingInvite?: PendingInvite; onCancelInvite?: () => void; isGenerating?: boolean }) {
+function GuestCard({ guest, locale, onRemove, onEdit, onShare, onRegenerateAvatar, pendingInvite, onCancelInvite, isGenerating }: { guest: ManualGuest; locale: string; onRemove?: () => void; onEdit?: () => void; onShare?: () => void; onRegenerateAvatar?: () => void; pendingInvite?: PendingInvite; onCancelInvite?: () => void; isGenerating?: boolean }) {
   const [copiedBanner, setCopiedBanner] = useState(false);
   const initials = guest.name.charAt(0).toUpperCase();
   const defaultAvatar = buildAvatarUrl({
@@ -224,6 +224,21 @@ function GuestCard({ guest, locale, onRemove, onEdit, onShare, pendingInvite, on
             </span>
 
             <div className="flex items-center gap-0.5 shrink-0">
+              {onRegenerateAvatar && (
+                <button
+                  onClick={onRegenerateAvatar}
+                  disabled={isGenerating}
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-brand-pink hover:bg-pink-50 rounded-lg transition-colors cursor-pointer disabled:opacity-40"
+                  title={`Regenerate ${guest.name}'s AI studio headshot`}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className={isGenerating ? 'animate-spin' : ''}>
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                    <path d="M16 16h5v5" />
+                  </svg>
+                </button>
+              )}
               {onShare && (
                 <button
                   onClick={onShare}
@@ -816,6 +831,69 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
     }
   };
 
+  const [isBatchRegenerating, setIsBatchRegenerating] = useState(false);
+
+  const handleRegenerateSingleGuestAvatar = async (guest: ManualGuest) => {
+    if (!guest.id || generatingAvatars.has(guest.id)) return;
+    setGeneratingAvatars(prev => new Set(prev).add(guest.id));
+    try {
+      const { generateGuestAvatarAction } = await import('@/app/actions/ai-guests');
+      const res = await generateGuestAvatarAction(guest.id, guest, { forceRegenerate: true });
+      if (res?.publicUrl) {
+        setGuests(prev =>
+          prev.map(g => (g.id === guest.id ? { ...g, avatar_url: res.publicUrl } : g))
+        );
+      }
+    } catch (err) {
+      console.error(`Failed to regenerate AI photo for ${guest.name}:`, err);
+    } finally {
+      setGeneratingAvatars(prev => {
+        const next = new Set(prev);
+        next.delete(guest.id);
+        return next;
+      });
+    }
+  };
+
+  const handleRegenerateAllGuestAvatars = async () => {
+    if (isBatchRegenerating || guests.length === 0) return;
+    setIsBatchRegenerating(true);
+    try {
+      const { generateGuestAvatarAction } = await import('@/app/actions/ai-guests');
+      const batchSize = 3;
+      for (let i = 0; i < guests.length; i += batchSize) {
+        const slice = guests.slice(i, i + batchSize);
+        setGeneratingAvatars(prev => {
+          const next = new Set(prev);
+          slice.forEach(g => next.add(g.id));
+          return next;
+        });
+        await Promise.all(
+          slice.map(async guest => {
+            try {
+              const res = await generateGuestAvatarAction(guest.id, guest, { forceRegenerate: true });
+              if (res?.publicUrl) {
+                setGuests(prev =>
+                  prev.map(g => (g.id === guest.id ? { ...g, avatar_url: res.publicUrl } : g))
+                );
+              }
+            } catch (err) {
+              console.error(`Batch regenerate failed for ${guest.name}:`, err);
+            } finally {
+              setGeneratingAvatars(prev => {
+                const next = new Set(prev);
+                next.delete(guest.id);
+                return next;
+              });
+            }
+          })
+        );
+      }
+    } finally {
+      setIsBatchRegenerating(false);
+    }
+  };
+
   const totalCount = guests.length + linkedGuests.length + pendingInvites.length;
   const isEmpty = totalCount === 0;
 
@@ -915,9 +993,38 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
           {/* Manual guests */}
           {guests.length > 0 && (
             <section>
-              <div className="flex items-center gap-3 mb-5">
-                <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Saved Guests</h2>
-                <span className="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{guests.length}</span>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Saved Guests</h2>
+                  <span className="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{guests.length}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRegenerateAllGuestAvatars}
+                  disabled={isBatchRegenerating || generatingAvatars.size > 0}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black border border-slate-200 bg-white text-slate-700 hover:border-brand-pink hover:text-brand-pink shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                  title="Regenerate all saved guests' AI headshots to the uniform front-on studio standard"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={isBatchRegenerating || generatingAvatars.size > 0 ? 'animate-spin text-brand-pink' : ''}
+                  >
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                    <path d="M16 16h5v5" />
+                  </svg>
+                  {isBatchRegenerating || generatingAvatars.size > 0
+                    ? `Regenerating AI Photos (${generatingAvatars.size} active)...`
+                    : '✨ Regenerate All AI Photos'}
+                </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-4 sm:gap-5">
                 {guests.map(g => {
@@ -931,6 +1038,7 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
                       onCancelInvite={pendingInvite ? () => handleCancelInvite(pendingInvite.id) : undefined}
                       onRemove={() => handleRemoveManualGuest(g.id)} 
                       onEdit={() => setEditingGuest(g)}
+                      onRegenerateAvatar={() => handleRegenerateSingleGuestAvatar(g)}
                       onShare={() => {
                         setSharingGuest(g);
                         setIsInviteModalOpen(true);

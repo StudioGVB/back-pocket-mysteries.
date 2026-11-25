@@ -213,26 +213,59 @@ export function buildAvatarUrl(
 }
 
 const LEGACY_CLONE_AVATAR_REPLACEMENTS: Array<{ match: string; replacement: string }> = [
+  // Louissa Aboad (5a2a5120-1f05-4725-9652-a9647fe647ca)
   {
-    match: 'f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-4cfdc19783654b536827888c21c53c64',
-    replacement: '/generated-avatars/f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-distinct.jpg',
+    match: '5a2a5120-1f05-4725-9652-a9647fe647ca-80bd5940667046d5',
+    replacement: '/generated-avatars/louissa-aboad-front.jpg',
+  },
+  // Alex Masterson (74ced342-5614-4f81-a5e1-a4dab75e9420)
+  {
+    match: '74ced342-5614-4f81-a5e1-a4dab75e9420-7e976952cc5df3830daa44da2b988098',
+    replacement: '/generated-avatars/alex-masterson-front.jpg',
   },
   {
-    match: 'f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-e7ccc710ba2d6101b69b2e15e238f50a5',
-    replacement: '/generated-avatars/f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-distinct.jpg',
+    match: '74ced342-5614-4f81-a5e1-a4dab75e9420-ace4735b76caad3973e124ac2a06e161',
+    replacement: '/generated-avatars/alex-masterson-front.jpg',
+  },
+  // Elia Scrim (5d0e09e5-4575-42a8-8713-da6972dfe8b3)
+  {
+    match: '5d0e09e5-4575-42a8-8713-da6972dfe8b3-590ed913c5a413c0',
+    replacement: '/generated-avatars/elia-scrim-front.jpg',
   },
   {
     match: '5d0e09e5-4575-42a8-8713-da6972dfe8b3-f7fa2bd491d9d7943443c7a15be6ab3007ebe170abdc4bae6d80c58d7f105471',
-    replacement: '/generated-avatars/5d0e09e5-4575-42a8-8713-da6972dfe8b3-distinct.jpg',
+    replacement: '/generated-avatars/elia-scrim-front.jpg',
   },
   {
-    match: 'e800e385-9f2a-4e02-b937-85c45e63b00d-52c1e1b699baad0c2d50b0c4694fdfde',
-    replacement: '/generated-avatars/e800e385-9f2a-4e02-b937-85c45e63b00d-distinct.jpg',
+    match: '5d0e09e5-4575-42a8-8713-da6972dfe8b3-e97cfb155a73f101d000028264726105c01fa852c6aefd604cac8cc55235d182',
+    replacement: '/generated-avatars/elia-scrim-front.jpg',
   },
   {
-    match: '4903bd39-e54f-42e4-b679-2af5d128bb8f-b130e47b4cee2149a7aad02dfc972e91',
-    replacement: '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg',
+    match: '5d0e09e5-4575-42a8-8713-da6972dfe8b3-d1c4b968f4ac6fd5cb15bea64ae14264fc43c85c089ef35ecf8e5adce19792f4',
+    replacement: '/generated-avatars/elia-scrim-front.jpg',
   },
+  {
+    match: '5d0e09e5-4575-42a8-8713-da6972dfe8b3-754210fd50ab7e88f692e538b405b9a1a80aeb3389c1eef533c13de652eb32f7',
+    replacement: '/generated-avatars/elia-scrim-front.jpg',
+  },
+  {
+    match: '5d0e09e5-4575-42a8-8713-da6972dfe8b3-distinct.jpg',
+    replacement: '/generated-avatars/elia-scrim-front.jpg',
+  },
+  // Darren (aecac18e-d529-40aa-8704-ba873d0dc2c9)
+  {
+    match: 'aecac18e-d529-40aa-8704-ba873d0dc2c9-946a757e734ed2841c86a9a67f85f10a235e613e24e5d0506644f43586b26c4b',
+    replacement: '/generated-avatars/darren-front.jpg',
+  },
+  {
+    match: 'aecac18e-d529-40aa-8704-ba873d0dc2c9-ba030ef39fa0b4021ef2dd142563cb255f8ad6ab39d9e2e110f066178cd5ba14',
+    replacement: '/generated-avatars/darren-front.jpg',
+  },
+  {
+    match: 'aecac18e-d529-40aa-8704-ba873d0dc2c9-789b6d967153a8ae54f0a7ace832557e1e803eee5b883011200134cef356d943',
+    replacement: '/generated-avatars/darren-front.jpg',
+  },
+  // Matt Pinder (57554cef-7738-4207-ac69-3843b457322b)
   {
     match: '57554cef-7738-4207-ac69-3843b457322b-a0a7b0759c30b3b4',
     replacement: '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
@@ -246,17 +279,99 @@ const LEGACY_CLONE_AVATAR_REPLACEMENTS: Array<{ match: string; replacement: stri
     replacement: '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
   },
   {
-    match: '0370c2e5-a829-4b37-9eff-8251c337aa34-a35700fa222e4d08',
-    replacement: '/generated-avatars/0370c2e5-a829-4b37-9eff-8251c337aa34-luke-golden.jpg',
+    match: '57554cef-7738-4207-ac69-3843b457322b-e9e2df71fc48366b899d2553cf5557c58f8346a8b502367be1ccc95230b8eec6',
+    replacement: '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
   },
+  {
+    match: '57554cef-7738-4207-ac69-3843b457322b-7b02e8695e7e8a9ea8832faa1764cd1e50b31c4ce295c4b01e7f52f0700a87c5',
+    replacement: '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
+  },
+  // Charley Haywood (f460c1c6-4019-4c4f-a204-4f60f4c70ae9)
   {
     match: 'f460c1c6-4019-4c4f-a204-4f60f4c70ae9-2f5e63f14bbb7b5d',
     replacement: '/generated-avatars/charley-haywood-front.jpg',
   },
   {
+    match: 'f460c1c6-4019-4c4f-a204-4f60f4c70ae9-603d3f899c5bf5459e840aa86a60be98683d09cabae30d5eeb75f10bd1a1fa23',
+    replacement: '/generated-avatars/charley-haywood-front.jpg',
+  },
+  {
+    match: 'f460c1c6-4019-4c4f-a204-4f60f4c70ae9-c24aabcbd0d7fcfd0199ffa3e32d2d51f6396cf9865ff4e381187e764d20d620',
+    replacement: '/generated-avatars/charley-haywood-front.jpg',
+  },
+  // kiri Smyth (2e971de9-24ec-4a3d-9361-9cdcf75683b0)
+  {
+    match: '2e971de9-24ec-4a3d-9361-9cdcf75683b0-859ec69d0275a383',
+    replacement: '/generated-avatars/kiri-smyth-front.jpg',
+  },
+  {
+    match: '2e971de9-24ec-4a3d-9361-9cdcf75683b0-e77c4baec0c7f832',
+    replacement: '/generated-avatars/kiri-smyth-front.jpg',
+  },
+  {
+    match: '2e971de9-24ec-4a3d-9361-9cdcf75683b0-466b6a984de58b8c10e2b8f2e47fe30d1122cfb802208792a1cc76751e9d3fb6',
+    replacement: '/generated-avatars/kiri-smyth-front.jpg',
+  },
+  {
+    match: '2e971de9-24ec-4a3d-9361-9cdcf75683b0-410b05b88e9dbece693cb0b88d5176b9b4c3704212951cbc8af99652265740e2',
+    replacement: '/generated-avatars/kiri-smyth-front.jpg',
+  },
+  // Vic Wayne (c3411bf0-6c26-45b4-b743-af9e0d365c44)
+  {
     match: 'c3411bf0-6c26-45b4-b743-af9e0d365c44-de05418f9ee49522',
     replacement: '/generated-avatars/vic-wayne-front.jpg',
   },
+  {
+    match: 'c3411bf0-6c26-45b4-b743-af9e0d365c44-f175ad5be3e3dd6d',
+    replacement: '/generated-avatars/vic-wayne-front.jpg',
+  },
+  {
+    match: 'c3411bf0-6c26-45b4-b743-af9e0d365c44-1c1ed88b51c2a4814ac5df1b7f9717b6cc15e0e4dfeac9625572994c56cda18e',
+    replacement: '/generated-avatars/vic-wayne-front.jpg',
+  },
+  {
+    match: 'c3411bf0-6c26-45b4-b743-af9e0d365c44-7bdf9a231c7531f92daa5b7a9376d0c558c76dd0fd0d75edec481a1d27de9fec',
+    replacement: '/generated-avatars/vic-wayne-front.jpg',
+  },
+  {
+    match: 'c3411bf0-6c26-45b4-b743-af9e0d365c44-f895382e1aeabcff9e250dcec2313e994542d95c787eb605b0614542d95c787',
+    replacement: '/generated-avatars/vic-wayne-front.jpg',
+  },
+  {
+    match: 'vic-distinct.jpg',
+    replacement: '/generated-avatars/vic-wayne-front.jpg',
+  },
+  // Scarlett Blyth (e800e385-9f2a-4e02-b937-85c45e63b00d)
+  {
+    match: 'e800e385-9f2a-4e02-b937-85c45e63b00d-76e32bd0f52e645e',
+    replacement: '/generated-avatars/scarlett-blyth-front.jpg',
+  },
+  {
+    match: 'e800e385-9f2a-4e02-b937-85c45e63b00d-52c1e1b699baad0c2d50b0c4694fdfde',
+    replacement: '/generated-avatars/scarlett-blyth-front.jpg',
+  },
+  {
+    match: 'e800e385-9f2a-4e02-b937-85c45e63b00d-238f30b4bbfe1cbe068dcd3e874e44b6117999fabdf10554460a4eda7c234ebb',
+    replacement: '/generated-avatars/scarlett-blyth-front.jpg',
+  },
+  {
+    match: 'e800e385-9f2a-4e02-b937-85c45e63b00d-distinct.jpg',
+    replacement: '/generated-avatars/scarlett-blyth-front.jpg',
+  },
+  // Luke Beveridge (0370c2e5-a829-4b37-9eff-8251c337aa34)
+  {
+    match: '0370c2e5-a829-4b37-9eff-8251c337aa34-a35700fa222e4d08',
+    replacement: '/generated-avatars/luke-beveridge-front.jpg',
+  },
+  {
+    match: '0370c2e5-a829-4b37-9eff-8251c337aa34-2bf6d5bf0afbd2f035beba3503d89b0715244bba9ce52d769847659687fdce22',
+    replacement: '/generated-avatars/luke-beveridge-front.jpg',
+  },
+  {
+    match: '0370c2e5-a829-4b37-9eff-8251c337aa34-luke-golden.jpg',
+    replacement: '/generated-avatars/luke-beveridge-front.jpg',
+  },
+  // Jason Dhillon (83836dda-1625-48e6-8b13-5128d1435df5)
   {
     match: '83836dda-1625-48e6-8b13-5128d1435df5-2e57646841b96699',
     replacement: '/generated-avatars/jason-dhillon-front.jpg',
@@ -269,7 +384,88 @@ const LEGACY_CLONE_AVATAR_REPLACEMENTS: Array<{ match: string; replacement: stri
     match: '83836dda-1625-48e6-8b13-5128d1435df5-835bfdf5a66e1c29',
     replacement: '/generated-avatars/jason-dhillon-front.jpg',
   },
+  {
+    match: '83836dda-1625-48e6-8b13-5128d1435df5-9d71fdb1554439be0d6e87b44fa9f714c4f2765db5786bea5d6d61055cd92125',
+    replacement: '/generated-avatars/jason-dhillon-front.jpg',
+  },
+  {
+    match: '83836dda-1625-48e6-8b13-5128d1435df5-64ef450de7d4dd1b89409612d1f92b6f4319c615a269a639e80554e6d0107183',
+    replacement: '/generated-avatars/jason-dhillon-front.jpg',
+  },
+  {
+    match: '83836dda-1625-48e6-8b13-5128d1435df5-cb5637357779a0c1445b29231a2a64aeaa0bae29b802aa8a977cc667846fdfce',
+    replacement: '/generated-avatars/jason-dhillon-front.jpg',
+  },
+  {
+    match: '83836dda-1625-48e6-8b13-5128d1435df5-ad31844e0708fd8955cf8b4bdc23b9b5da8eb54e259662de3050f32e4da5e3ae',
+    replacement: '/generated-avatars/jason-dhillon-front.jpg',
+  },
+  // Polly (b1ad3178-403c-4945-9532-731ca3398457)
+  {
+    match: 'b1ad3178-403c-4945-9532-731ca3398457-732e3d3e2e04c456',
+    replacement: '/generated-avatars/polly-front.jpg',
+  },
+  {
+    match: 'b1ad3178-403c-4945-9532-731ca3398457-4fc4178b9188296cb9100ef23dd5e7d9ffa19a6ce502eb7db5baa6628c6357e8',
+    replacement: '/generated-avatars/polly-front.jpg',
+  },
+  {
+    match: 'b1ad3178-403c-4945-9532-731ca3398457-0a0a6ebd46029b374f651437bb08561e1015bf2d4136fa846fbb3481915377ee',
+    replacement: '/generated-avatars/polly-front.jpg',
+  },
+  // Gabriella Blyth / Host (4903bd39-e54f-42e4-b679-2af5d128bb8f)
+  {
+    match: '4903bd39-e54f-42e4-b679-2af5d128bb8f-b130e47b4cee2149a7aad02dfc972e91',
+    replacement: '/generated-avatars/gabriella-blyth-front.jpg',
+  },
+  {
+    match: '4903bd39-e54f-42e4-b679-2af5d128bb8f-eadf0ea4a3744e82',
+    replacement: '/generated-avatars/gabriella-blyth-front.jpg',
+  },
+  {
+    match: '4903bd39-e54f-42e4-b679-2af5d128bb8f-c719abfbc47f1e05',
+    replacement: '/generated-avatars/gabriella-blyth-front.jpg',
+  },
+  {
+    match: '4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg',
+    replacement: '/generated-avatars/gabriella-blyth-front.jpg',
+  },
+  // Gabby (f77d09a9-e74f-43c4-8b7b-9f522dfbb91f)
+  {
+    match: 'f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-4cfdc19783654b536827888c21c53c64',
+    replacement: '/generated-avatars/f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-distinct.jpg',
+  },
+  {
+    match: 'f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-e7ccc710ba2d6101b69b2e15e238f50a5',
+    replacement: '/generated-avatars/f77d09a9-e74f-43c4-8b7b-9f522dfbb91f-distinct.jpg',
+  },
 ];
+
+const CANONICAL_GUEST_NAME_AVATAR_MAP: Record<string, string> = {
+  'louissa aboad': '/generated-avatars/louissa-aboad-front.jpg',
+  'louissa': '/generated-avatars/louissa-aboad-front.jpg',
+  'alex masterson': '/generated-avatars/alex-masterson-front.jpg',
+  'alex': '/generated-avatars/alex-masterson-front.jpg',
+  'elia scrim': '/generated-avatars/elia-scrim-front.jpg',
+  'elia': '/generated-avatars/elia-scrim-front.jpg',
+  'darren': '/generated-avatars/darren-front.jpg',
+  'matt pinder': '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
+  'matt': '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
+  'charley haywood': '/generated-avatars/charley-haywood-front.jpg',
+  'charley': '/generated-avatars/charley-haywood-front.jpg',
+  'kiri smyth': '/generated-avatars/kiri-smyth-front.jpg',
+  'kiri': '/generated-avatars/kiri-smyth-front.jpg',
+  'vic wayne': '/generated-avatars/vic-wayne-front.jpg',
+  'vic': '/generated-avatars/vic-wayne-front.jpg',
+  'scarlett blyth': '/generated-avatars/scarlett-blyth-front.jpg',
+  'scarlett': '/generated-avatars/scarlett-blyth-front.jpg',
+  'luke beveridge': '/generated-avatars/luke-beveridge-front.jpg',
+  'luke': '/generated-avatars/luke-beveridge-front.jpg',
+  'jason dhillon': '/generated-avatars/jason-dhillon-front.jpg',
+  'jason': '/generated-avatars/jason-dhillon-front.jpg',
+  'polly': '/generated-avatars/polly-front.jpg',
+  'gabriella blyth': '/generated-avatars/gabriella-blyth-front.jpg',
+};
 
 export function upgradeLegacyCloneAvatarUrl(guest: {
   id?: string | null;
@@ -292,13 +488,14 @@ export function upgradeLegacyCloneAvatarUrl(guest: {
   }
 
   const cleanName = String(guest.name || '').trim().toLowerCase();
-  if (cleanName === 'vic' && !rawUrl.includes('vic-distinct.jpg')) {
+  const canonicalPhoto = CANONICAL_GUEST_NAME_AVATAR_MAP[cleanName];
+  if (canonicalPhoto && !rawUrl.includes(canonicalPhoto)) {
     try {
       const parsed = new URL(rawUrl);
-      parsed.searchParams.set('aiPhotoUrl', '/generated-avatars/vic-distinct.jpg');
+      parsed.searchParams.set('aiPhotoUrl', canonicalPhoto);
       return parsed.toString();
     } catch {
-      return '/generated-avatars/vic-distinct.jpg';
+      return canonicalPhoto;
     }
   }
 
@@ -316,18 +513,19 @@ export function resolveDisplayAvatarUrl(avatarUrl?: string | null): string {
       return rule.replacement;
     }
   }
-  if (avatarUrl.includes('seed=Vic&') && !avatarUrl.includes('vic-distinct.jpg')) {
-    return '/generated-avatars/vic-distinct.jpg';
-  }
   if (avatarUrl.startsWith('data:') || avatarUrl.startsWith('/')) return avatarUrl;
   try {
     const parsed = new URL(avatarUrl);
+    const seedName = decodeURIComponent(parsed.searchParams.get('seed') || '').trim().toLowerCase();
     const aiPhoto = parsed.searchParams.get('aiPhotoUrl');
     if (aiPhoto) {
       for (const rule of LEGACY_CLONE_AVATAR_REPLACEMENTS) {
         if (aiPhoto.includes(rule.match)) return rule.replacement;
       }
       return aiPhoto;
+    }
+    if (seedName && CANONICAL_GUEST_NAME_AVATAR_MAP[seedName]) {
+      return CANONICAL_GUEST_NAME_AVATAR_MAP[seedName];
     }
   } catch {
     if (avatarUrl.includes('aiPhotoUrl=')) {
