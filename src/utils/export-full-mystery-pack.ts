@@ -371,10 +371,11 @@ export function buildFullMysteryPackHtml({
     const cardsHtml = roundClues
       .map((clue, idx) => {
         const fmt = clue.format || inferClueFormat(clue);
+        const isPhotoClue = fmt === 'physical_prop' || fmt === 'cctv';
         const rawTitle = stripCustomerFacingTitle(clue.title) || clue.title || `Clue #${idx + 1}`;
         const title = hydrate(rawTitle);
         const desc = hydrate(clue.description || '');
-        const imgUrl = resolveAbsoluteUrl(clue.static_image_url);
+        const imgUrl = isPhotoClue ? resolveAbsoluteUrl(clue.static_image_url) : null;
         const audioUrl = resolveAbsoluteUrl(clue.audio_url);
         const isFake = clue.evidence_status === 'fake' || clue.implication_type === 'red_herring';
         const linkedBeat = (plotBeats || []).find((b: any) => b.id === clue.linked_plot_beat_id);
@@ -474,8 +475,12 @@ export function buildFullMysteryPackHtml({
               <div class="beat-clue-buttons">
                 ${linked
                   .map((lc) => {
+                    const lcFmt = lc.format || inferClueFormat(lc);
                     const cTitle = hydrate(stripCustomerFacingTitle(lc.title) || lc.title);
-                    const thumb = resolveAbsoluteUrl(lc.static_image_url);
+                    const thumb =
+                      lcFmt === 'physical_prop' || lcFmt === 'cctv'
+                        ? resolveAbsoluteUrl(lc.static_image_url)
+                        : null;
                     return `
                       <button type="button" class="beat-clue-btn" onclick="openClueModal('${escapeHtml(lc.id)}')">
                         ${thumb ? `<img src="${escapeHtml(thumb)}" alt="" class="beat-clue-thumb" />` : `<span class="beat-clue-icon">🔎</span>`}
@@ -537,8 +542,12 @@ export function buildFullMysteryPackHtml({
               <div class="beat-clue-buttons">
                 ${fakeClues
                   .map((fc) => {
+                    const fcFmt = fc.format || inferClueFormat(fc);
                     const cTitle = hydrate(stripCustomerFacingTitle(fc.title) || fc.title);
-                    const thumb = resolveAbsoluteUrl(fc.static_image_url);
+                    const thumb =
+                      fcFmt === 'physical_prop' || fcFmt === 'cctv'
+                        ? resolveAbsoluteUrl(fc.static_image_url)
+                        : null;
                     return `
                       <button type="button" class="beat-clue-btn" onclick="openClueModal('${escapeHtml(fc.id)}')">
                         ${thumb ? `<img src="${escapeHtml(thumb)}" alt="" class="beat-clue-thumb" />` : `<span class="beat-clue-icon">🎭</span>`}
