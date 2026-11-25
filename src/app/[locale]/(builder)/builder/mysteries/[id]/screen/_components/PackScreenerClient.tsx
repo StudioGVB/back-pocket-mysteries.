@@ -47,7 +47,16 @@ interface PackScreenerClientProps {
   friendRoster: FriendRosterItem[];
 }
 
-type ScreenerStep = 'cast' | 'round1' | 'round2' | 'round3' | 'reveal' | 'all_clues' | 'qa_20x';
+type ScreenerStep =
+  | 'cast'
+  | 'round1'
+  | 'round2'
+  | 'round3'
+  | 'round4'
+  | 'round5'
+  | 'reveal'
+  | 'all_clues'
+  | 'qa_20x';
 
 interface RoundGuess {
   suspectId: string;
@@ -175,6 +184,8 @@ export function PackScreenerClient({
     1: { suspectId: '', motiveGuess: '' },
     2: { suspectId: '', motiveGuess: '' },
     3: { suspectId: '', motiveGuess: '' },
+    4: { suspectId: '', motiveGuess: '' },
+    5: { suspectId: '', motiveGuess: '' },
   });
   const [notebookLoaded, setNotebookLoaded] = useState<boolean>(false);
 
@@ -188,7 +199,7 @@ export function PackScreenerClient({
     const reqStep = params.get('step') as ScreenerStep | null;
     if (
       reqStep &&
-      ['cast', 'round1', 'round2', 'round3', 'reveal', 'all_clues', 'qa_20x'].includes(
+      ['cast', 'round1', 'round2', 'round3', 'round4', 'round5', 'reveal', 'all_clues', 'qa_20x'].includes(
         reqStep
       )
     ) {
@@ -898,22 +909,33 @@ export function PackScreenerClient({
     );
   };
 
+  const tierRounds =
+    (mystery?.max_players || activeCharacters.length) <= 6
+      ? 3
+      : (mystery?.max_players || activeCharacters.length) <= 10
+      ? 4
+      : 5;
+  const activeRoundNumbers = useMemo(() => {
+    const highestInClues = rawClues.reduce(
+      (acc: number, c: any) =>
+        c?.round_number && Number(c.round_number) <= 5 ? Math.max(acc, Number(c.round_number)) : acc,
+      tierRounds
+    );
+    const total = Math.max(tierRounds, highestInClues);
+    return Array.from({ length: total }, (_, idx) => idx + 1);
+  }, [rawClues, tierRounds]);
+
   // Group and deterministically shuffle clues per round so real & fake are interleaved
   const cluesByRound = useMemo(() => {
-    const r1 = shuffleRoundCluesDeterministically(
-      rawClues.filter((c) => (c.round_number || 1) === 1),
-      1
-    );
-    const r2 = shuffleRoundCluesDeterministically(
-      rawClues.filter((c) => c.round_number === 2),
-      2
-    );
-    const r3 = shuffleRoundCluesDeterministically(
-      rawClues.filter((c) => c.round_number === 3),
-      3
-    );
-    return { 1: r1, 2: r2, 3: r3 };
-  }, [rawClues]);
+    const grouped: Record<number, any[]> = {};
+    for (const rNum of activeRoundNumbers) {
+      grouped[rNum] = shuffleRoundCluesDeterministically(
+        rawClues.filter((c) => Number(c.round_number || 1) === rNum),
+        rNum
+      );
+    }
+    return grouped;
+  }, [rawClues, activeRoundNumbers]);
 
   // Automated Pack QA Scorecard
   const qaStats = useMemo(() => {
@@ -1312,7 +1334,7 @@ export function PackScreenerClient({
     }> = [];
 
     for (let r = 1; r <= roundNum; r++) {
-      const rClues = cluesByRound[r as 1 | 2 | 3] || [];
+      const rClues = cluesByRound[r] || [];
       rClues.forEach((c: any, idx: number) => {
         const t = clueTags[c.id];
         const n = (clueNotes[c.id] || '').trim();
@@ -1355,11 +1377,11 @@ export function PackScreenerClient({
               Lock In Your Round {roundNum} Theory (Before Advancing)
             </h3>
           </div>
-          {roundNum < 3 ? (
+          {roundNum < activeRoundNumbers.length ? (
             <button
               type="button"
               onClick={() =>
-                setStep(roundNum === 1 ? 'round2' : 'round3')
+                setStep(`round${roundNum + 1}` as ScreenerStep)
               }
               className="px-4 py-2 rounded-xl bg-brand-pink hover:opacity-90 text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
             >
@@ -2016,12 +2038,13 @@ export function PackScreenerClient({
         <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-800">
           {[
             { id: 'cast', label: '1. Cast & POV' },
-            { id: 'round1', label: `2. Round 1 (${cluesByRound[1].length})` },
-            { id: 'round2', label: `3. Round 2 (${cluesByRound[2].length})` },
-            { id: 'round3', label: `4. Round 3 (${cluesByRound[3].length})` },
+            ...activeRoundNumbers.map((rNum, idx) => ({
+              id: `round${rNum}`,
+              label: `${idx + 2}. Round ${rNum} (${(cluesByRound[rNum] || []).length})`,
+            })),
             { id: 'all_clues', label: `All ${rawClues.length} Clues` },
-            { id: 'reveal', label: '5. Final Solution' },
-            { id: 'qa_20x', label: '🧪 6. Pre-Launch QA' },
+            { id: 'reveal', label: `${activeRoundNumbers.length + 2}. Final Solution` },
+            { id: 'qa_20x', label: `🧪 ${activeRoundNumbers.length + 3}. Pre-Launch QA` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -2429,12 +2452,25 @@ export function PackScreenerClient({
         </div>
       )}
 
-      {/* STEP 2, 3, 4: ROUND-BY-ROUND SOLO PLAYTEST */}
-      {(step === 'round1' || step === 'round2' || step === 'round3') && (
+      {/* ROUND-BY-ROUND SOLO PLAYTEST (3, 4, OR 5 ROUNDS BY TIER) */}
+      {(step === 'round1' ||
+        step === 'round2' ||
+        step === 'round3' ||
+        step === 'round4' ||
+        step === 'round5') && (
         <div>
           {(() => {
-            const rNum = step === 'round1' ? 1 : step === 'round2' ? 2 : 3;
-            const roundClues = cluesByRound[rNum as 1 | 2 | 3] || [];
+            const rNum =
+              step === 'round1'
+                ? 1
+                : step === 'round2'
+                ? 2
+                : step === 'round3'
+                ? 3
+                : step === 'round4'
+                ? 4
+                : 5;
+            const roundClues = cluesByRound[rNum] || [];
             const matchesTagFilter = (c: any) => {
               if (tagFilter === 'all') return true;
               if (stickyClueIds.has(c.id)) return true;
@@ -2549,8 +2585,8 @@ export function PackScreenerClient({
             </div>
           </div>
 
-          {[1, 2, 3].map((rNum) => {
-            const roundList = cluesByRound[rNum as 1 | 2 | 3] || [];
+          {activeRoundNumbers.map((rNum) => {
+            const roundList = cluesByRound[rNum] || [];
             const matchesTagFilter = (c: any) => {
               if (tagFilter === 'all') return true;
               if (stickyClueIds.has(c.id)) return true;
@@ -2610,7 +2646,7 @@ export function PackScreenerClient({
             return descLine ? hydrate(descLine) : 'Corroborating case evidence.';
           };
 
-          for (const r of [1, 2, 3] as const) {
+          for (const r of activeRoundNumbers) {
             (cluesByRound[r] || []).forEach((c: any, idx: number) => {
               const isFake =
                 c.evidence_status === 'fake' || c.implication_type === 'red_herring';
@@ -3197,9 +3233,9 @@ export function PackScreenerClient({
                     </div>
                   </div>
 
-                  {/* Compact 3-Round Guesses Strip */}
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {[1, 2, 3].map((rNum) => {
+                  {/* Compact Round Guesses Strip */}
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+                    {activeRoundNumbers.map((rNum) => {
                       const g = guesses[rNum];
                       const guessedChar = getCharById(g?.suspectId);
                       const isCorrect =

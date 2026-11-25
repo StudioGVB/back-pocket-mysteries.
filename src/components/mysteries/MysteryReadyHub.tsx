@@ -1080,12 +1080,31 @@ export function MysteryReadyHub({
                 char.characterPhotoUrl || guest?.avatar_url || undefined
               );
 
+              const guestFirstName = guest ? guest.name.trim().split(/\s+/)[0] : '';
+              const hasDuplicateFirstNameInCast =
+                Boolean(guestFirstName) &&
+                characters.filter(otherChar => {
+                  const otherG = guests.find(g => g.id === (assignments[otherChar.id] || ''));
+                  const otherFirst = otherG ? otherG.name.trim().split(/\s+/)[0] : '';
+                  return (
+                    Boolean(otherFirst) &&
+                    otherFirst.toLowerCase() === guestFirstName.toLowerCase()
+                  );
+                }).length > 1;
+              const guestInviteLabel = guest
+                ? hasDuplicateFirstNameInCast
+                  ? guest.name.trim()
+                  : guestFirstName
+                : '';
+
               const buildCharacterUrl = () =>
                 `${getOrigin()}/${locale}/play/${mystery.id}?char=${char.id}&prep=1`;
 
               const buildInviteText = () => {
                 const url = buildCharacterUrl();
-                const greeting = guest ? `${guest.name.split(' ')[0]}, you have been cast` : 'You have been cast';
+                const greeting = guestInviteLabel
+                  ? `${guestInviteLabel}, you have been cast`
+                  : 'You have been cast';
                 const vibeLine =
                   char.actBullets && char.actBullets.length > 0
                     ? `\nHow to Play the Role: ${char.actBullets.map(b => adaptBioForGuestGender(b, guestGender)).join(' • ')}`
@@ -1236,7 +1255,7 @@ export function MysteryReadyHub({
                     >
                       {copiedId === copyInviteKey
                         ? '✓ Invite Copied!'
-                        : `📋 Copy Invite${guest ? ` (${guest.name.split(' ')[0]})` : ''}`}
+                        : `📋 Copy Invite${guestInviteLabel ? ` (${guestInviteLabel})` : ''}`}
                     </button>
 
                     <Link

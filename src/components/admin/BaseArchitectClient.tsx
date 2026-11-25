@@ -350,10 +350,76 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const currentSlot = slots[activeSlotIndex] || slots[0];
   const { blueprint, coreClues, subplots, assembled } = currentSlot;
 
+  const activeTierRounds: 3 | 4 | 5 =
+    blueprint.characters.length <= 6 ? 3 : blueprint.characters.length <= 10 ? 4 : 5;
+  const activeTierName =
+    blueprint.characters.length <= 6
+      ? 'Basic Package (6 Characters • 3 Rounds)'
+      : blueprint.characters.length <= 10
+      ? 'Premium Package (10 Characters • 4 Rounds)'
+      : 'Grand Package (16 Characters • 5 Rounds)';
+  const activeTierRoundList = Array.from(
+    { length: activeTierRounds },
+    (_, idx) => (idx + 1) as 1 | 2 | 3 | 4 | 5
+  );
+
   const updateCurrentSlot = (updater: (prev: WorkspaceSlotState) => WorkspaceSlotState) => {
     setSlots((prevSlots) =>
       prevSlots.map((s, idx) => (idx === activeSlotIndex ? updater(s) : s))
     );
+  };
+
+  const handleSetPackageTierCharCount = (targetCount: 6 | 10 | 16) => {
+    const extraRolesPool = [
+      'The Insider',
+      'The Wildcard',
+      'The Socialite',
+      'The Accountant',
+      'The Protege',
+      'The Journalist',
+      'The Fixer',
+      'The Benefactor',
+      'ThePublicist',
+      'TheBodyguard',
+      'The Heiress',
+      'The Lawyer',
+    ];
+    updateCurrentSlot((prev) => {
+      const existing = prev.blueprint.characters;
+      let nextChars = [...existing];
+      if (nextChars.length > targetCount) {
+        nextChars = nextChars.slice(0, targetCount);
+      } else {
+        while (nextChars.length < targetCount) {
+          const i = nextChars.length;
+          const colorOpt = DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+          const fallbackTitle = extraRolesPool[i - 4] || `The Suspect ${i + 1}`;
+          nextChars.push({
+            id: `char-${i + 1}`,
+            roleTitle: fallbackTitle.replace(/([a-z])([A-Z])/g, '$1 $2'),
+            defaultGender: i % 2 === 0 ? 'female' : 'male',
+            plotRole: 'innocent',
+            color: colorOpt,
+            conceptNotes: '',
+            motiveOrSecret: '',
+            outfitNotes: '',
+          });
+        }
+      }
+      const nextRounds = targetCount <= 6 ? 3 : targetCount <= 10 ? 4 : 5;
+      setStatusToast(
+        `📦 Switched Slot #${activeSlotIndex + 1} to ${
+          targetCount === 6 ? 'Basic' : targetCount === 10 ? 'Premium' : 'Grand'
+        } Tier (${targetCount} Characters • ${nextRounds} Investigation Rounds).`
+      );
+      return {
+        ...prev,
+        blueprint: {
+          ...prev.blueprint,
+          characters: nextChars,
+        },
+      };
+    });
   };
 
   const updateBlueprint = (patch: Partial<MysteryBlueprintInput>) => {
@@ -971,15 +1037,16 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
               </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-              OG Mystery Base Architect (Up to 6 Players)
+              OG Mystery Base Architect ({activeTierName})
             </h1>
             <p className="text-xs md:text-sm text-white/70 leading-relaxed">
-              Select your <span className="text-white font-bold">Spice Level</span> → tick{' '}
+              Select your <span className="text-white font-bold">Package Tier (Basic = 3 Rounds, Premium = 4 Rounds, Grand = 5 Rounds)</span> &amp;{' '}
+              <span className="text-white font-bold">Spice Level</span> → tick{' '}
               <span className="text-emerald-400 font-bold">✓ Yes</span> or{' '}
               <span className="text-rose-400 font-bold">✕ No</span> on AI-suggested Core Clues &
               Red-Herring Subplots (while AI auto-recommends your{' '}
-              <span className="text-amber-300 font-bold">Difficulty</span>) → auto-cast Rounds 1–3
-              with live gender-flex preview → transfer to{' '}
+              <span className="text-amber-300 font-bold">Difficulty</span>) → auto-cast Rounds 1–{activeTierRounds}
+              {' '}with live gender-flex preview → transfer to{' '}
               <span className="text-white font-bold">Mystery Bases</span> as a draft.
             </p>
           </div>
@@ -1618,19 +1685,22 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
             </div>
           </div>
 
-          {/* 6-Player Character Cast Builder */}
+          {/* Character Cast Builder & Package Tier / Round Selector */}
           <div className="bg-white rounded-[28px] border border-slate-200 p-7 shadow-sm space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
                 <span className="text-[11px] font-black uppercase tracking-widest text-indigo-600">
-                  Section 1B • 6-Player Gender-Flex Character Cast
+                  Section 1B • {blueprint.characters.length}-Character Gender-Flex Cast ({activeTierRounds} Investigation Rounds)
                 </span>
                 <h2 className="text-xl font-black text-slate-900">
-                  Character Roles, Plot Assignments & Dynamics
+                  Package Tier, Character Roles &amp; Round Count
                 </h2>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-xs font-black bg-brand-pink/15 text-brand-pink">
+                  🔍 {activeTierRounds} Rounds Required
+                </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-black ${
                     victimCount === 1
@@ -1653,6 +1723,65 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                   Accomplice: {assistantCount}
                 </span>
               </div>
+            </div>
+
+            {/* 1-Click Package Tier & Round Count Selector */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+              {[
+                {
+                  count: 6 as const,
+                  rounds: 3,
+                  label: 'Basic Package',
+                  sub: '6 Characters • 3 Investigation Rounds',
+                },
+                {
+                  count: 10 as const,
+                  rounds: 4,
+                  label: 'Premium Package',
+                  sub: '10 Characters • 4 Investigation Rounds',
+                },
+                {
+                  count: 16 as const,
+                  rounds: 5,
+                  label: 'Grand Package',
+                  sub: '16 Characters • 5 Investigation Rounds',
+                },
+              ].map((tierOpt) => {
+                const isSelected =
+                  (tierOpt.count === 6 && blueprint.characters.length <= 6) ||
+                  (tierOpt.count === 10 &&
+                    blueprint.characters.length > 6 &&
+                    blueprint.characters.length <= 10) ||
+                  (tierOpt.count === 16 && blueprint.characters.length > 10);
+                return (
+                  <button
+                    key={tierOpt.count}
+                    type="button"
+                    onClick={() => handleSetPackageTierCharCount(tierOpt.count)}
+                    className={`p-3 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-brand-pink bg-white shadow-sm'
+                        : 'border-slate-200 bg-white/60 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`text-xs font-black uppercase tracking-wider ${
+                          isSelected ? 'text-brand-pink' : 'text-slate-900'
+                        }`}
+                      >
+                        {tierOpt.label}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-slate-900 text-white text-[10px] font-black uppercase">
+                        {tierOpt.rounds} Rounds
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-500 mt-0.5">
+                      {tierOpt.sub}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2069,14 +2198,16 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                           value={clue.roundNumber}
                           onChange={(e) =>
                             updateCoreClueField(clue.id, {
-                              roundNumber: Number(e.target.value) as 1 | 2 | 3,
+                              roundNumber: Number(e.target.value) as 1 | 2 | 3 | 4 | 5,
                             })
                           }
                           className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-black text-indigo-700"
                         >
-                          <option value={1}>Round 1</option>
-                          <option value={2}>Round 2</option>
-                          <option value={3}>Round 3</option>
+                          {activeTierRoundList.map((rNum) => (
+                            <option key={rNum} value={rNum}>
+                              Round {rNum}
+                            </option>
+                          ))}
                         </select>
                         <select
                           value={clue.format}
@@ -2411,14 +2542,16 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                               value={dClue.roundNumber}
                               onChange={(e) =>
                                 updateDecoyClueInSubplot(sub.id, dClue.id, {
-                                  roundNumber: Number(e.target.value) as 1 | 2 | 3,
+                                  roundNumber: Number(e.target.value) as 1 | 2 | 3 | 4 | 5,
                                 })
                               }
                               className="rounded-lg border border-slate-200 px-2 py-0.5 text-[10px] font-black text-amber-700 bg-amber-50"
                             >
-                              <option value={1}>Round 1</option>
-                              <option value={2}>Round 2</option>
-                              <option value={3}>Round 3</option>
+                              {activeTierRoundList.map((rNum) => (
+                                <option key={rNum} value={rNum}>
+                                  Round {rNum}
+                                </option>
+                              ))}
                             </select>
                             <span className="text-[10px] font-bold text-slate-400">
                               {dClue.format.toUpperCase()} • {dClue.timestampLabel}
@@ -2470,8 +2603,8 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
               className="px-6 py-3 rounded-2xl bg-slate-900 hover:bg-brand-pink disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider shadow-lg transition"
             >
               {isAssembling
-                ? '⏳ Auto-Casting Rounds 1–3 & Writing Gender-Flex Dossiers...'
-                : `✨ Step 4: Auto-Cast Rounds & Build Full Gender-Flex Base (${
+                ? `⏳ Auto-Casting Rounds 1–${activeTierRounds} & Writing Gender-Flex Dossiers...`
+                : `✨ Step 4: Auto-Cast Rounds 1–${activeTierRounds} & Build Full Gender-Flex Base (${
                     approvedCoreCount + approvedDecoyCluesCount
                   } Clues) →`}
             </button>
@@ -2480,7 +2613,7 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
       )}
 
       {/* ===================================================================== */}
-      {/* STEP 4: AUTO-CAST ROUNDS 1–3, GENDER-FLEX PREVIEW & 7-CHECK QA        */}
+      {/* STEP 4: AUTO-CAST ROUNDS 1–N, GENDER-FLEX PREVIEW & 7-CHECK QA        */}
       {/* ===================================================================== */}
       {currentSlot.step === 4 && (
         <div className="space-y-5">
@@ -2488,7 +2621,7 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
             <div className="bg-white rounded-[28px] border border-slate-200 p-12 text-center space-y-4">
               <p className="text-sm font-bold text-slate-700">
                 Ready to auto-cast your {approvedCoreCount} Core Clues + {approvedDecoyCluesCount}{' '}
-                Red-Herring Clues into Rounds 1–3 and build all 6 Gender-Flex Dossiers?
+                Red-Herring Clues into Rounds 1–{activeTierRounds} and build all {blueprint.characters.length} Gender-Flex Dossiers?
               </p>
               <button
                 type="button"
@@ -2584,7 +2717,7 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                           : 'text-slate-600 hover:bg-slate-50'
                       }`}
                     >
-                      🗂️ Rounds 1–3 ({assembled.clues.length})
+                      🗂️ Rounds 1–{activeTierRounds} ({assembled.clues.length})
                     </button>
                     <button
                       type="button"
@@ -2595,7 +2728,7 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                           : 'text-slate-600 hover:bg-slate-50'
                       }`}
                     >
-                      🎭 6 Dossiers & 3 Outfits
+                      🎭 {assembled.characters.length} Dossiers &amp; 3 Outfits
                     </button>
                     <button
                       type="button"
@@ -2606,7 +2739,7 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                           : 'text-slate-600 hover:bg-slate-50'
                       }`}
                     >
-                      🕸️ 15 Relationships
+                      🕸️ {assembled.relationships.length} Relationships
                     </button>
                   </div>
 
@@ -2648,10 +2781,10 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                 </button>
               </div>
 
-              {/* TAB 1: Auto-Cast Rounds 1–3 Clue Deck */}
+              {/* TAB 1: Auto-Cast Rounds 1–N Clue Deck */}
               {step4Tab === 'clues' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {([1, 2, 3] as const).map((roundNum) => {
+                  {activeTierRoundList.map((roundNum) => {
                     const roundClues = assembled.clues.filter((c) => c.roundNumber === roundNum);
                     return (
                       <div
@@ -2661,10 +2794,10 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                         <div className="border-b border-slate-100 pb-2.5">
                           <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">
                             {roundNum === 1
-                              ? 'Act I • Misdirection & Motives'
-                              : roundNum === 2
-                                ? 'Act II • Escalation & Means'
-                                : 'Act III • Alibi Holes & Smoking Gun'}
+                              ? 'Round 1 • Misdirection & Motives'
+                              : roundNum === activeTierRounds
+                              ? `Round ${roundNum} • Final Alibi Holes & Smoking Gun`
+                              : `Round ${roundNum} • Escalation & Forensic Means`}
                           </span>
                           <h3 className="text-base font-black text-slate-900">
                             Round {roundNum} ({roundClues.length} Clues)
@@ -2694,7 +2827,7 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                                 <select
                                   value={c.roundNumber}
                                   onChange={(e) => {
-                                    const nextR = Number(e.target.value) as 1 | 2 | 3;
+                                    const nextR = Number(e.target.value) as 1 | 2 | 3 | 4 | 5;
                                     updateCurrentSlot((prev) => ({
                                       ...prev,
                                       assembled: prev.assembled
@@ -2711,9 +2844,11 @@ ${blueprint.killerHowAndWhySummary || 'Explain who committed the murder, their e
                                   }}
                                   className="text-[11px] font-black border border-slate-200 rounded-lg px-2 py-0.5 bg-white"
                                 >
-                                  <option value={1}>Round 1</option>
-                                  <option value={2}>Round 2</option>
-                                  <option value={3}>Round 3</option>
+                                  {activeTierRoundList.map((rOpt) => (
+                                    <option key={rOpt} value={rOpt}>
+                                      Round {rOpt}
+                                    </option>
+                                  ))}
                                 </select>
                               </div>
                               <div className="text-xs font-black text-slate-900">

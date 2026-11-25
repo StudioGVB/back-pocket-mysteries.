@@ -631,17 +631,17 @@ export function getCharacterInitial(char: any, allCharacters?: any[]): string {
   if (!char) return '?';
   const parts = getCharacterNameParts(char);
   if (parts.hasRealGuest && parts.firstName) {
-    const firstAlpha = parts.firstName.match(/[A-Za-z]/);
+    const firstAlpha = parts.firstName.match(/\p{L}/u);
     if (firstAlpha) {
       const fInit = firstAlpha[0].toUpperCase();
       if (parts.lastName && Array.isArray(allCharacters) && allCharacters.length > 1) {
         const sameInitCount = allCharacters.filter((other) => {
           const op = getCharacterNameParts(other);
-          const m = op.firstName?.match(/[A-Za-z]/);
+          const m = op.firstName?.match(/\p{L}/u);
           return op.hasRealGuest && m && m[0].toUpperCase() === fInit;
         }).length;
         if (sameInitCount > 1) {
-          const lastAlpha = parts.lastName.match(/[A-Za-z]/);
+          const lastAlpha = parts.lastName.match(/\p{L}/u);
           if (lastAlpha) {
             return `${fInit}.${lastAlpha[0].toUpperCase()}.`;
           }
@@ -651,7 +651,7 @@ export function getCharacterInitial(char: any, allCharacters?: any[]): string {
     }
   }
   const roleTitle = getCharacterRoleTitle(char).replace(/^The\s+/i, '').trim();
-  const roleAlpha = roleTitle.match(/[A-Za-z]/);
+  const roleAlpha = roleTitle.match(/\p{L}/u);
   return roleAlpha ? roleAlpha[0].toUpperCase() : '?';
 }
 
@@ -1308,8 +1308,8 @@ export function hydrateTextWithCharacters(
       (a, b) => b.length - a.length
     );
     const pattern = new RegExp(
-      `\\b(${sortedAliases.map(escapeRegExp).join('|')})\\b`,
-      'gi'
+      `(?<![\\p{L}\\p{N}])(${sortedAliases.map(escapeRegExp).join('|')})(?![\\p{L}\\p{N}])`,
+      'giu'
     );
     hydrated = hydrated.replace(pattern, (matchedWord) => {
       const replacement = wordAliasMap.get(matchedWord.toLowerCase());
@@ -1407,7 +1407,10 @@ export function tokenizeTextWithCharacterRoles(
 
   if (roleMap.size > 0) {
     const sortedRoles = Array.from(roleMap.keys()).sort((a, b) => b.length - a.length);
-    const pattern = new RegExp(`\\b(${sortedRoles.map(escapeRegExp).join('|')})\\b`, 'gi');
+    const pattern = new RegExp(
+      `(?<![\\p{L}\\p{N}])(${sortedRoles.map(escapeRegExp).join('|')})(?![\\p{L}\\p{N}])`,
+      'giu'
+    );
     normalized = normalized.replace(pattern, (matched) => {
       const canonical = roleMap.get(matched.toLowerCase()) || matched;
       return `{{${canonical}}}`;
@@ -1531,7 +1534,7 @@ export function findInvolvedCharactersInText(text: string, characters: any[]): a
     const np = getCharacterNameParts(char);
     if (np.hasRealGuest && np.fullName.includes(' ')) {
       const escapedFull = escapeRegExp(np.fullName);
-      const fullWordRegex = new RegExp(`(?:^|[^a-zA-Z0-9])(${escapedFull})(?=$|[^a-zA-Z0-9])`, 'gi');
+      const fullWordRegex = new RegExp(`(?<![\\p{L}\\p{N}])(${escapedFull})(?![\\p{L}\\p{N}])`, 'giu');
       if (fullWordRegex.test(remainingTextForSingleWordCheck)) {
         addChar(char);
         remainingTextForSingleWordCheck = remainingTextForSingleWordCheck.replace(
@@ -1547,8 +1550,8 @@ export function findInvolvedCharactersInText(text: string, characters: any[]): a
     const aliases = getCharacterCandidateKeys(char, characters);
     for (const alias of aliases) {
       const escaped = escapeRegExp(alias);
-      const tokenRegex = new RegExp(`\\{\\{\\s*${escaped}(?:_[a-zA-Z]+)?\\s*\\}\\}`, 'i');
-      const wordRegex = new RegExp(`(?:^|[^a-zA-Z0-9])${escaped}(?=$|[^a-zA-Z0-9])`, 'i');
+      const tokenRegex = new RegExp(`\\{\\{\\s*${escaped}(?:_[a-zA-Z]+)?\\s*\\}\\}`, 'iu');
+      const wordRegex = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu');
       if (tokenRegex.test(text) || wordRegex.test(remainingTextForSingleWordCheck)) {
         addChar(char);
         break;
@@ -1584,15 +1587,15 @@ export function replacePlaceholderNamesWithRoles(
     const nameParts = getCharacterNameParts(char);
 
     if (baseName) {
-      const tokenRegex = new RegExp(`\\{\\{\\s*${escapeRegExp(baseName)}\\s*\\}\\}`, 'gi');
+      const tokenRegex = new RegExp(`\\{\\{\\s*${escapeRegExp(baseName)}\\s*\\}\\}`, 'giu');
       result = result.replace(tokenRegex, roleTitle);
 
-      const wordRegex = new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'g');
+      const wordRegex = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(baseName)}(?![\\p{L}\\p{N}])`, 'gu');
       result = result.replace(wordRegex, roleTitle);
     }
 
     if (nameParts.hasRealGuest && nameParts.fullName.toLowerCase() !== roleTitle.toLowerCase()) {
-      const fullRegex = new RegExp(`\\b${escapeRegExp(nameParts.fullName)}\\b`, 'gi');
+      const fullRegex = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(nameParts.fullName)}(?![\\p{L}\\p{N}])`, 'giu');
       result = result.replace(fullRegex, roleTitle);
     }
   });
@@ -1611,12 +1614,12 @@ export function replacePlaceholderNamesWithRoles(
       nameParts.firstName.length >= 2 &&
       nameParts.firstName.toLowerCase() !== roleTitle.toLowerCase()
     ) {
-      const firstRegex = new RegExp(`\\b${escapeRegExp(nameParts.firstName)}\\b`, 'gi');
+      const firstRegex = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(nameParts.firstName)}(?![\\p{L}\\p{N}])`, 'giu');
       result = result.replace(firstRegex, roleTitle);
     }
   });
 
-  result = result.replace(/\{\{([A-Za-z0-9\s'._&-]+)\}\}/g, '$1');
+  result = result.replace(/\{\{([^}]+)\}\}/g, '$1');
   return stripEmDashes(result);
 }
 

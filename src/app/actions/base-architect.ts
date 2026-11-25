@@ -49,11 +49,20 @@ export interface MysteryBlueprintInput {
   beats: BlueprintBeatInput[];
 }
 
+export type ArchitectRoundNumber = 1 | 2 | 3 | 4 | 5;
+
+export function getPackageRoundsForCount(charCount?: number): 3 | 4 | 5 {
+  const n = typeof charCount === 'number' && !isNaN(charCount) ? charCount : 6;
+  if (n <= 6) return 3;
+  if (n <= 10) return 4;
+  return 5;
+}
+
 export interface SuggestedClueCandidate {
   id: string;
   title: string;
   format: ClueFormat;
-  roundNumber: 1 | 2 | 3;
+  roundNumber: ArchitectRoundNumber;
   timestampLabel: string;
   description: string;
   generationPrompt: string;
@@ -170,45 +179,49 @@ function getSpiceRubricDirective(spice: ArchitectSpiceLevel): string {
   }
 }
 
-function getComplexityRubricDirective(complexity: ArchitectComplexity): {
+function getComplexityRubricDirective(
+  complexity: ArchitectComplexity,
+  requiredRounds: 3 | 4 | 5 = 3
+): {
   directive: string;
   targetCoreClues: number;
   targetRedHerringSubplots: number;
   targetTotalClues: number;
   requiresAssistant: boolean;
 } {
+  const extraRoundClues = (requiredRounds - 3) * 3;
   switch (complexity) {
     case 'easy':
       return {
-        directive: `COMPLEXITY = EASY (1.0–5.2 / 10):
+        directive: `COMPLEXITY = EASY (1.0–5.2 / 10 • ${requiredRounds} Investigation Rounds):
 - 1 Lone-Wolf Killer (0 assistants/accomplices).
-- 9–10 total clues across 3 rounds (6–7 Core Murder Clues + 3 Decoy Clues from 1 simple Red-Herring Subplot).
+- ${9 + extraRoundClues}–${10 + extraRoundClues} total clues across ${requiredRounds} rounds (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds).
 - Clear, straightforward timestamp windows.`,
-        targetCoreClues: 7,
+        targetCoreClues: 7 + (requiredRounds - 3) * 2,
         targetRedHerringSubplots: 1,
-        targetTotalClues: 10,
+        targetTotalClues: 10 + extraRoundClues,
         requiresAssistant: false,
       };
     case 'medium':
       return {
-        directive: `COMPLEXITY = MEDIUM (5.3–7.9 / 10):
+        directive: `COMPLEXITY = MEDIUM (5.3–7.9 / 10 • ${requiredRounds} Investigation Rounds):
 - 1 Lone-Wolf Killer (0 assistants/accomplices).
-- 13–14 total clues across 3 rounds (8–9 Core Murder Clues + 4–5 Decoy Clues from 2 entangled Red-Herring Subplots).
+- ${13 + extraRoundClues}–${14 + extraRoundClues} total clues across ${requiredRounds} rounds (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds).
 - Multi-timestamp HH:MM PM alibi cross-referencing across rooms.`,
-        targetCoreClues: 9,
+        targetCoreClues: 9 + (requiredRounds - 3) * 2,
         targetRedHerringSubplots: 2,
-        targetTotalClues: 14,
+        targetTotalClues: 14 + extraRoundClues,
         requiresAssistant: false,
       };
     case 'hard':
       return {
-        directive: `COMPLEXITY = HARD (8.0–10.0 / 10):
+        directive: `COMPLEXITY = HARD (8.0–10.0 / 10 • ${requiredRounds} Investigation Rounds):
 - Features 1 Primary Killer + 1 Secret Accomplice/Assistant (plotRole = 'assistant') who helps stage an alibi, tamper with power/locks, or plant evidence.
-- 15–16 total clues across 3 rounds (10 Core/Conspiracy Clues + 5–6 Decoy Clues from 2–3 entangled Red-Herring Subplots).
-- Tight micro-window HH:MM PM timestamps requiring 4+ interlocking Round 3 clues to solve.`,
-        targetCoreClues: 10,
+- ${15 + extraRoundClues}–${16 + extraRoundClues} total clues across ${requiredRounds} rounds (Basic = 3 rounds, Premium = 4 rounds, Grand = 5 rounds).
+- Tight micro-window HH:MM PM timestamps requiring 4+ interlocking final-round clues (Round ${requiredRounds}) to solve.`,
+        targetCoreClues: 10 + (requiredRounds - 3) * 2,
         targetRedHerringSubplots: 2,
-        targetTotalClues: 16,
+        targetTotalClues: 16 + extraRoundClues,
         requiresAssistant: true,
       };
   }
@@ -506,14 +519,16 @@ Return strict JSON:
     });
 
     const parsed = extractJsonObject(res.response.text());
+    const maxAllowedRound = getPackageRoundsForCount(blueprint.characters?.length);
     const newCandidates: SuggestedClueCandidate[] = (parsed.clues || []).map(
       (c: any, idx: number) => ({
         id: `core-clue-${Date.now()}-${idx}`,
         title: String(c.title || `Core Evidence #${idx + 1}`).trim(),
         format: (c.format as ClueFormat) || 'physical_prop',
-        roundNumber: [1, 2, 3].includes(Number(c.roundNumber))
-          ? (Number(c.roundNumber) as 1 | 2 | 3)
-          : 2,
+        roundNumber: Math.max(
+          1,
+          Math.min(maxAllowedRound, Number(c.roundNumber) || 2)
+        ) as ArchitectRoundNumber,
         timestampLabel: String(c.timestampLabel || blueprint.murderTimeWindow || '8:15 PM'),
         description: String(c.description || '').trim(),
         generationPrompt: String(c.generationPrompt || c.description || '').trim(),
@@ -678,6 +693,7 @@ Return strict JSON:
     });
 
     const parsed = extractJsonObject(res.response.text());
+    const maxAllowedRound = getPackageRoundsForCount(blueprint.characters?.length);
     const newSubplots: SuggestedRedHerringSubplot[] = (parsed.subplots || []).map(
       (s: any, idx: number) => {
         const subId = `subplot-${Date.now()}-${idx}`;
@@ -686,9 +702,10 @@ Return strict JSON:
             id: `${subId}-clue-${cIdx}`,
             title: String(c.title || `Decoy Clue #${cIdx + 1}`).trim(),
             format: (c.format as ClueFormat) || 'chat',
-            roundNumber: [1, 2, 3].includes(Number(c.roundNumber))
-              ? (Number(c.roundNumber) as 1 | 2 | 3)
-              : ((cIdx + 1) as 1 | 2 | 3),
+            roundNumber: Math.max(
+              1,
+              Math.min(maxAllowedRound, Number(c.roundNumber) || (cIdx % maxAllowedRound) + 1)
+            ) as ArchitectRoundNumber,
             timestampLabel: String(c.timestampLabel || blueprint.murderTimeWindow || '8:10 PM'),
             description: String(c.description || '').trim(),
             generationPrompt: String(c.generationPrompt || c.description || '').trim(),
@@ -767,7 +784,7 @@ function runAutomatedProofreader(
     [];
   const check2Passed = flexTokenMatches.length >= 6;
 
-  // 3. Check all 15 pairwise relationships for 6 characters (N*(N-1)/2)
+  // 3. Check all pairwise relationships for N characters (N*(N-1)/2)
   const nChars = assembled.characters.length;
   const expectedPairs = (nChars * (nChars - 1)) / 2;
   const check3Passed = assembled.relationships.length >= expectedPairs;
@@ -808,10 +825,12 @@ function runAutomatedProofreader(
     check4Detail = 'Filthy (9.2/10): 18+ unfiltered after-dark dialogue & image-sanitizer ready.';
   }
 
+  const requiredRounds = getPackageRoundsForCount(nChars);
+
   // 5. 5-Factor Complexity Score Calibration
   const assistantCount = assembled.characters.filter((c) => c.plotRole === 'assistant').length;
   const fakeCluesCount = assembled.clues.filter((c) => c.isRedHerring).length;
-  const r3CluesCount = assembled.clues.filter((c) => c.roundNumber === 3).length;
+  const finalRoundCluesCount = assembled.clues.filter((c) => c.roundNumber === requiredRounds).length;
   const timestampMatches = new Set(
     (combinedText.match(/\b(1[0-2]|0?[1-9]):[0-5]\d\s*(?:AM|PM)\b/gi) || []).map((s) =>
       s.toUpperCase()
@@ -824,7 +843,7 @@ function runAutomatedProofreader(
     Math.min(2.2, (fakeCluesCount / 2) * 0.85) +
     (timestampMatches.size >= 5 ? 1.0 : 0.5) +
     Math.min(1.6, (assembled.clues.length / 15) * 1.4) +
-    (r3CluesCount >= 4 ? 0.7 : 0.3);
+    (finalRoundCluesCount >= 4 ? 0.7 : 0.3);
 
   if (assembled.complexity === 'easy') {
     rawComplexity = Math.min(5.0, Math.max(3.5, rawComplexity - 1.4));
@@ -839,10 +858,14 @@ function runAutomatedProofreader(
     (assembled.complexity === 'medium' && assistantCount === 0) ||
     (assembled.complexity === 'hard' && assistantCount >= 1);
 
-  // 6. Round 1–3 Clue Distribution Check
-  const r1Count = assembled.clues.filter((c) => c.roundNumber === 1).length;
-  const r2Count = assembled.clues.filter((c) => c.roundNumber === 2).length;
-  const check6Passed = r1Count >= 2 && r2Count >= 2 && r3CluesCount >= 2;
+  // 6. Tier-Based Round Clue Distribution Check (Basic = 3, Premium = 4, Grand = 5)
+  const activeRoundNums = Array.from({ length: requiredRounds }, (_, idx) => idx + 1);
+  const check6Passed = activeRoundNums.every(
+    (rNum) => assembled.clues.filter((c) => c.roundNumber === rNum).length >= 2
+  );
+  const roundCountsDetail = activeRoundNums
+    .map((rNum) => `Round ${rNum}: ${assembled.clues.filter((c) => c.roundNumber === rNum).length} clues`)
+    .join(' • ');
 
   // 7. 3 Outfit Options per Character Check
   const check7Passed = assembled.characters.every(
@@ -884,9 +907,9 @@ function runAutomatedProofreader(
     },
     {
       id: 'round_pacing',
-      label: 'Round 1, Round 2 & Round 3 Clue Pacing',
+      label: `Round 1–${requiredRounds} Clue Pacing (${requiredRounds} Rounds for Tier)`,
       passed: check6Passed,
-      detail: `Round 1: ${r1Count} clues • Round 2: ${r2Count} clues • Round 3: ${r3CluesCount} clues.`,
+      detail: roundCountsDetail,
     },
     {
       id: 'outfits',
@@ -1583,17 +1606,22 @@ export async function autoFixAssembledBaseIssuesAction(params: {
       };
     });
 
-    // 2. Balance Round 1, Round 2, and Round 3 clues if any round has < 2 clues
+    // 2. Balance clues across all required tier rounds (Basic = 3, Premium = 4, Grand = 5) if any round has < 2 clues
     const fixedClues = assembled.clues.map((cl) => ({
       ...cl,
       title: cleanBraces(cl.title),
       description: cleanBraces(cl.description),
     }));
 
-    for (const targetRound of [1, 2, 3] as const) {
+    const requiredRounds = getPackageRoundsForCount(fixedCharacters.length);
+    const activeRoundNums = Array.from(
+      { length: requiredRounds },
+      (_, idx) => (idx + 1) as ArchitectRoundNumber
+    );
+    for (const targetRound of activeRoundNums) {
       const countInRound = fixedClues.filter((c) => c.roundNumber === targetRound).length;
-      if (countInRound < 2 && fixedClues.length >= 6) {
-        const donorRound = ([1, 2, 3] as const).find(
+      if (countInRound < 2 && fixedClues.length >= requiredRounds * 2) {
+        const donorRound = activeRoundNums.find(
           (r) => fixedClues.filter((c) => c.roundNumber === r).length > 3
         );
         if (donorRound) {
@@ -1779,7 +1807,7 @@ export async function loadExistingDraftIntoArchitectAction(params: {
       'Obsidian Black',
     ];
 
-    const mappedChars: BlueprintCharacterInput[] = (chars || []).slice(0, 6).map((c: any, idx: number) => {
+    const mappedChars: BlueprintCharacterInput[] = (chars || []).map((c: any, idx: number) => {
       const pData = (c.profile_data || {}) as any;
       const plotRole: CharacterPlotRole = c.is_victim
         ? 'victim'
@@ -1845,8 +1873,8 @@ export async function loadExistingDraftIntoArchitectAction(params: {
         id: c.id || `loaded-core-${idx}`,
         title: c.title || `Clue #${idx + 1}`,
         format: (c.format as ClueFormat) || 'document',
-        roundNumber: [1, 2, 3].includes(Number(c.round_number))
-          ? (Number(c.round_number) as 1 | 2 | 3)
+        roundNumber: [1, 2, 3, 4, 5].includes(Number(c.round_number))
+          ? (Number(c.round_number) as ArchitectRoundNumber)
           : 1,
         timestampLabel: '8:19 PM',
         description: c.description || '',
@@ -1863,8 +1891,8 @@ export async function loadExistingDraftIntoArchitectAction(params: {
         id: c.id || `loaded-decoy-${idx}`,
         title: c.title || `Decoy Clue #${idx + 1}`,
         format: (c.format as ClueFormat) || 'chat',
-        roundNumber: [1, 2, 3].includes(Number(c.round_number))
-          ? (Number(c.round_number) as 1 | 2 | 3)
+        roundNumber: [1, 2, 3, 4, 5].includes(Number(c.round_number))
+          ? (Number(c.round_number) as ArchitectRoundNumber)
           : 1,
         timestampLabel: '8:19 PM',
         description: c.description || '',

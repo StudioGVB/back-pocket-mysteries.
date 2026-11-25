@@ -295,21 +295,38 @@ export async function runInsideJokesWeaverInternal(
       .filter(Boolean)
       .slice(0, 8);
 
-    // Map cast members' first names so named inside jokes ("Sam treats every board game...") bind to the right person
+    // Map cast members' full names and unique first names so named inside jokes
+    // ("Sarah Patel always loses her keys..." or "Sam treats every board game...") bind to the right person
+    const charFullNames = new Map<string, string>();
     const charFirstNames = new Map<string, string>();
+    const firstCounts = new Map<string, number>();
     activeChars.forEach((c) => {
-      const full = sanitizeLoreText(getCharacterDisplayName(c) || '', 50);
+      const full = sanitizeLoreText(getCharacterDisplayName(c) || '', 50).trim();
       const first = full.split(/\s+/)[0]?.toLowerCase() || '';
+      if (full && full.length >= 2) {
+        charFullNames.set(c.id, full.toLowerCase());
+      }
       if (first && first.length >= 2) {
         charFirstNames.set(c.id, first);
+        firstCounts.set(first, (firstCounts.get(first) || 0) + 1);
       }
     });
 
     const findMentionedCharId = (joke: string): string | null => {
       const lower = joke.toLowerCase();
+      // Pass 1: Match full name (longest first) so "Sarah Patel" never gets hijacked by "Sarah Jenkins"
+      for (const [cId, full] of charFullNames.entries()) {
+        if (!full.includes(' ')) continue;
+        const escaped = full.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu').test(lower)) {
+          return cId;
+        }
+      }
+      // Pass 2: Match unique first name
       for (const [cId, first] of charFirstNames.entries()) {
+        if ((firstCounts.get(first) || 0) > 1) continue;
         const escaped = first.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        if (new RegExp(`\\b${escaped}\\b`, 'i').test(lower)) {
+        if (new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu').test(lower)) {
           return cId;
         }
       }
