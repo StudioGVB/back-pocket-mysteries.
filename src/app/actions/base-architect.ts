@@ -1939,3 +1939,275 @@ export async function loadExistingDraftIntoArchitectAction(params: {
   }
 }
 
+/**
+ * Parses an uploaded relationship web / mind-map diagram screenshot (e.g. Canva / Miro / Freeform PNG)
+ * into a structured MysteryBlueprintInput, mapping every box and connecting line into gender-flex roles.
+ */
+export async function parseDiagramImageIntoBlueprintAction(params: {
+  imageBase64: string;
+  mimeType: string;
+  currentBlueprint: MysteryBlueprintInput;
+}): Promise<{
+  success: boolean;
+  blueprint?: MysteryBlueprintInput;
+  error?: string;
+}> {
+  await requireAdmin();
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const cleanBase64 = params.imageBase64.replace(/^data:[^;]+;base64,/, '');
+    const prompt = `You are the Master Mystery Architect for Back Pocket Mysteries.
+Inspect the attached relationship web diagram image and convert it into a structured MysteryBlueprintInput JSON object.
+
+RULES FOR READING THE DIAGRAM:
+1. Extract the Mystery Title (e.g. "Unibreak at the Cabin") and Spice Level if written on the diagram (e.g. "FILTHY" / "FIFTHY" -> "Filthy", "SPICY" -> "Spicy", "MILD" -> "Mild", "CLEAN" -> "Clean").
+2. Extract every character box in the diagram:
+   - Pink boxes indicate defaultGender = "female"; Blue boxes indicate defaultGender = "male".
+   - If a box has a highlighted border (e.g. blue border in the center like "Leah (Prom queen)" or red border like "Stacy"), assign 1 character as 'victim' and 1 character (such as their enemy/rival) as 'killer', and the rest as 'innocent'.
+   - Convert each character into an iconic Role Title starting with "The " (e.g. "Leah (Prom queen)" -> "The Prom Queen", "Stacy" -> "The Girlfriend", "Mia" -> "The Bestie", "Josh" -> "The Brother", "Seb" -> "The Co-Captain", "James" -> "The Teammate"), while keeping a note of their diagram name and ALL connecting relationship lines (e.g. "Siblings", "Exes", "Crush", "Secret romance", "Enemies", "Dating", "Besties", "Co-captains of a sport team", "work together", "friends") inside \`conceptNotes\` using the {{The Role}} tokens!
+3. Suggest a fitting murder weapon/method, killer how & why summary, and 4 chronological story beats if the beats on the diagram are blank or incomplete.
+
+Return strict JSON:
+{
+  "title": "string",
+  "theme": "string",
+  "settingDescription": "string",
+  "spiceLevel": "Clean" | "Mild" | "Spicy" | "Filthy",
+  "complexity": "easy" | "medium" | "hard",
+  "murderTimeWindow": "e.g. 11:45 PM",
+  "murderWeaponAndMethod": "string",
+  "killerHowAndWhySummary": "string",
+  "insideJokesOrProps": "string",
+  "characters": [
+    {
+      "id": "char-1",
+      "roleTitle": "The ...",
+      "defaultGender": "female" | "male" | "adaptable",
+      "plotRole": "victim" | "killer" | "assistant" | "innocent",
+      "color": "e.g. Crimson Red",
+      "conceptNotes": "Diagram name + all relationship connections from the diagram using {{The Role}} tokens",
+      "motiveOrSecret": "Their secret motive or scandal",
+      "outfitNotes": "Outfit vibe"
+    }
+  ],
+  "beats": [
+    {
+      "beatNumber": 1,
+      "title": "string",
+      "timeWindow": "e.g. 9:30 PM",
+      "phase": "pre_crime" | "crime" | "investigation" | "resolution",
+      "description": "string"
+    }
+  ]
+}`;
+
+    const res = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: cleanBase64,
+          mimeType: params.mimeType || 'image/png',
+        },
+      },
+    ]);
+
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'architect_parse_diagram_image',
+      usageMetadata: res.response.usageMetadata,
+    });
+
+    const parsed = extractJsonObject(res.response.text());
+    const palette = [
+      'Hot Pink',
+      'Crimson Red',
+      'Rose Gold',
+      'Sapphire Blue',
+      'Electric Cyan',
+      'Cobalt Blue',
+    ];
+
+    const merged: MysteryBlueprintInput = {
+      ...params.currentBlueprint,
+      title: parsed.title || params.currentBlueprint.title,
+      theme: parsed.theme || params.currentBlueprint.theme || 'Cabin Getaway',
+      settingDescription: parsed.settingDescription || params.currentBlueprint.settingDescription,
+      spiceLevel: ['Clean', 'Mild', 'Spicy', 'Filthy'].includes(parsed.spiceLevel)
+        ? parsed.spiceLevel
+        : params.currentBlueprint.spiceLevel,
+      murderTimeWindow: parsed.murderTimeWindow || '11:45 PM',
+      murderWeaponAndMethod:
+        parsed.murderWeaponAndMethod || params.currentBlueprint.murderWeaponAndMethod,
+      killerHowAndWhySummary:
+        parsed.killerHowAndWhySummary || params.currentBlueprint.killerHowAndWhySummary,
+      insideJokesOrProps: parsed.insideJokesOrProps || params.currentBlueprint.insideJokesOrProps,
+      characters:
+        Array.isArray(parsed.characters) && parsed.characters.length > 0
+          ? parsed.characters.map((c: any, idx: number) => ({
+              id: `char-${idx + 1}`,
+              roleTitle: String(c.roleTitle || `The Suspect ${idx + 1}`).replace(/^\{\{|\}\}$/g, ''),
+              defaultGender: ['female', 'male', 'adaptable'].includes(c.defaultGender)
+                ? c.defaultGender
+                : 'adaptable',
+              plotRole: ['victim', 'killer', 'assistant', 'innocent'].includes(c.plotRole)
+                ? c.plotRole
+                : 'innocent',
+              color: c.color || palette[idx % palette.length],
+              conceptNotes: c.conceptNotes || '',
+              motiveOrSecret: c.motiveOrSecret || '',
+              outfitNotes: c.outfitNotes || '',
+            }))
+          : params.currentBlueprint.characters,
+      beats:
+        Array.isArray(parsed.beats) && parsed.beats.length > 0
+          ? parsed.beats.map((b: any, idx: number) => ({
+              beatNumber: idx + 1,
+              title: b.title || `Beat ${idx + 1}`,
+              timeWindow: b.timeWindow || '10:00 PM',
+              phase: ['pre_crime', 'crime', 'investigation', 'resolution'].includes(b.phase)
+                ? b.phase
+                : 'investigation',
+              description: b.description || '',
+            }))
+          : params.currentBlueprint.beats,
+    };
+
+    return { success: true, blueprint: merged };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Could not parse diagram image.',
+    };
+  }
+}
+
+/**
+ * Generates 4 chronological story beats + murder method & killer summary from the current cast & relationships.
+ */
+export async function suggestStoryBeatsForCastAction(params: {
+  blueprint: MysteryBlueprintInput;
+}): Promise<{
+  success: boolean;
+  murderTimeWindow?: string;
+  murderWeaponAndMethod?: string;
+  killerHowAndWhySummary?: string;
+  settingDescription?: string;
+  beats?: BlueprintBeatInput[];
+  error?: string;
+}> {
+  await requireAdmin();
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const { blueprint } = params;
+    const spiceDirective = getSpiceRubricDirective(blueprint.spiceLevel);
+    const tokenDirective = getGenderFlexTokenDirective(blueprint.characters);
+
+    const prompt = `You are the Lead Story Architect for Back Pocket Mysteries.
+Based on the Mystery Title, Spice Level, and Character Relationship Web below, generate a tight, dramatic murder method, killer how/why summary, setting description, and 4 chronological story beats.
+
+TITLE: "${blueprint.title}"
+THEME: "${blueprint.theme || blueprint.title}"
+${spiceDirective}
+${tokenDirective}
+
+CHARACTER CAST & RELATIONSHIPS:
+${blueprint.characters
+  .map(
+    (c) =>
+      `- {{${c.roleTitle}}} (${c.plotRole.toUpperCase()} • ${c.defaultGender}): ${c.conceptNotes} | Motive/Secret: ${c.motiveOrSecret}`
+  )
+  .join('\n')}
+
+Return strict JSON:
+{
+  "settingDescription": "2-3 atmospheric sentences setting the scene for the party.",
+  "murderTimeWindow": "e.g. 11:45 PM",
+  "murderWeaponAndMethod": "1-2 sentences describing the exact murder weapon, method, and forensic trace.",
+  "killerHowAndWhySummary": "2 sentences explaining why the Killer murdered the Victim and how they pulled it off during the murder time window using {{Role}} tokens.",
+  "beats": [
+    {
+      "beatNumber": 1,
+      "title": "Beat 1 Title (Arrival & Public Tension)",
+      "timeWindow": "e.g. 9:30 PM",
+      "phase": "pre_crime",
+      "description": "What happens early in the night using {{Role}} tokens."
+    },
+    {
+      "beatNumber": 2,
+      "title": "Beat 2 Title (Secret Confrontations & Alibis)",
+      "timeWindow": "e.g. 11:15 PM",
+      "phase": "pre_crime",
+      "description": "Escalating drama right before the murder using {{Role}} tokens."
+    },
+    {
+      "beatNumber": 3,
+      "title": "Beat 3 Title (The Murder Window)",
+      "timeWindow": "e.g. 11:45 PM",
+      "phase": "crime",
+      "description": "The fatal strike and where the suspects are during the murder window using {{Role}} tokens."
+    },
+    {
+      "beatNumber": 4,
+      "title": "Beat 4 Title (Discovery & Smoking Gun)",
+      "timeWindow": "e.g. 11:55 PM",
+      "phase": "resolution",
+      "description": "The body is found and the key forensic contradiction unmasks the killer using {{Role}} tokens."
+    }
+  ]
+}`;
+
+    const res = await model.generateContent(prompt);
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'architect_suggest_beats_for_cast',
+      usageMetadata: res.response.usageMetadata,
+    });
+
+    const parsed = extractJsonObject(res.response.text());
+    return {
+      success: true,
+      settingDescription: parsed.settingDescription || blueprint.settingDescription,
+      murderTimeWindow: parsed.murderTimeWindow || blueprint.murderTimeWindow || '11:45 PM',
+      murderWeaponAndMethod: parsed.murderWeaponAndMethod || blueprint.murderWeaponAndMethod,
+      killerHowAndWhySummary: parsed.killerHowAndWhySummary || blueprint.killerHowAndWhySummary,
+      beats: Array.isArray(parsed.beats)
+        ? parsed.beats.map((b: any, idx: number) => ({
+            beatNumber: idx + 1,
+            title: b.title || `Beat ${idx + 1}`,
+            timeWindow: b.timeWindow || '11:00 PM',
+            phase: ['pre_crime', 'crime', 'investigation', 'resolution'].includes(b.phase)
+              ? b.phase
+              : 'investigation',
+            description: b.description || '',
+          }))
+        : blueprint.beats,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to suggest story beats.',
+    };
+  }
+}
+
+
