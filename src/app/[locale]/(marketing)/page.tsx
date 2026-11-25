@@ -67,8 +67,8 @@ export default async function HomePage(props: {
       offers: {
         '@type': 'AggregateOffer',
         priceCurrency: 'GBP',
-        lowPrice: '20.00',
-        highPrice: '45.00',
+        lowPrice: '15.00',
+        highPrice: '25.00',
         offerCount: '3',
         availability: 'https://schema.org/InStock',
       },
@@ -87,7 +87,7 @@ export default async function HomePage(props: {
           name: 'How does a custom murder mystery party game work?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'You pick a theme (like Love On The Rocks or Cirque du Crime), enter your guests’ names, traits, and inside jokes, and our AI story engine generates custom character booklets, alibis, crime scene clues, and an interactive Playroom in ~30 minutes.',
+            text: 'You pick a theme (like Love On The Rocks or Christmas Nightmare), enter your guests’ names, traits, and inside jokes, and our AI story engine generates custom character booklets, alibis, crime scene clues, and an interactive Playroom in ~20 minutes.',
           },
         },
         {
@@ -146,7 +146,7 @@ export default async function HomePage(props: {
               <p className="mt-6 text-xs text-gray-400 font-bold">
                 {dict.home.hero.priceLabel.replace('{{price}}', '')} 
                 <PriceDisplay tier="basic" locale={locale as Locale} />
-                {' · Ready in ~30 mins · Unlimited Extra Guest Detectives included'}
+                {' · Ready in ~20 mins · Unlimited Extra Guest Detectives included'}
               </p>
             </div>
             
@@ -577,7 +577,7 @@ export default async function HomePage(props: {
                   [dict.home.compare.table.f1, '✓ (100% Human)', '✓ (Rigid template)', '✗ (Plot holes)'],
                   [dict.home.compare.table.f2, '✓ (AI-tailored)', '✓ (Manual & slow)', '✓ (Basic)'],
                   [dict.home.compare.table.f3, '✓', '✗', '✗'],
-                  [dict.home.compare.table.f4, '~30 min', '3–21 days', 'Hours of prompting'],
+                  [dict.home.compare.table.f4, '~20 min', '3–21 days', 'Hours of prompting'],
                   [dict.home.compare.table.f5, <PriceDisplay key="p1" tier="basic" locale={locale as Locale} />, '$60–$150+', '$20/mo + DIY layout'],
                   [dict.home.compare.table.f6, '✓', 'Depends', '✗'],
                 ].map(([feat, bpm, etsy, ai], i) => (
@@ -746,10 +746,10 @@ export default async function HomePage(props: {
                 🎁 Pre-Launch Founding Host Offer • First 50 Only
               </div>
               <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight leading-tight">
-                Be One of Our First 50 Sign-Ups &amp; Get Your First Custom Mystery <span className="text-brand-pink italic">100% Free</span>
+                Be One of Our First 50 Sign-Ups &amp; Get a 6-Player Custom Mystery <span className="text-brand-pink italic">100% Free</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-                Lock in one of the first 50 VIP spots in 10 seconds (no credit card needed) and we&apos;ll email you a <strong>100%-off Founding Host voucher code</strong> good for any custom murder mystery pack up to 16 players (worth up to £45 / $55).
+                Lock in one of the first 50 VIP spots in 10 seconds (no credit card needed) and we&apos;ll email you a <strong>single-use 100%-off Founding Host voucher code</strong> good for any 6-Player (Basic Tier • 4–6 suspects) custom murder mystery pack (worth £15 / $19).
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 relative z-10 w-full lg:w-auto">
@@ -775,7 +775,7 @@ export default async function HomePage(props: {
                 {dict.home.ctaSection.title.split('better')[1]}
               </h2>
               <p className="text-gray-400 text-xl lg:text-2xl mb-4 font-bold max-w-xl mx-auto">
-                {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} /> - ready in ~30 mins.
+                {dict.home.ctaSection.desc.replace('{{price}}', '')} <PriceDisplay tier="basic" locale={locale as Locale} /> - ready in ~20 mins.
               </p>
               <p className="text-gray-500 text-sm font-bold mb-12 uppercase tracking-widest">{dict.home.ctaSection.meta}</p>
               <Link href={`/${locale}/login`} className="inline-block px-14 py-6 bg-brand-pink text-white rounded-full font-black uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-brand-pink transition-all shadow-2xl hover:translate-y-[-4px] active:scale-95">

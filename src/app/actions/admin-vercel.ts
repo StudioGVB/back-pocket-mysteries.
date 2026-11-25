@@ -756,3 +756,520 @@ export async function getGoogleSearchConsoleStats(days = 30): Promise<GscStatsRe
     };
   }
 }
+
+// ============================================================================
+// GOOGLE ANALYTICS 4 (GA4) REAL-TIME & GLOBAL GEO DATA API INTEGRATION
+// ============================================================================
+
+const GA4_STORE_PATH = path.join(process.cwd(), '.ga4-config.json');
+
+export interface StoredGa4Config {
+  measurementId: string; // e.g. G-XXXXXXXXXX
+  propertyId: string; // numeric e.g. 482910384
+  clientEmail: string;
+  privateKey: string;
+  updatedAt: string;
+}
+
+export interface Ga4RealtimeLocationRow {
+  country: string;
+  city: string;
+  activeUsers: number;
+}
+
+export interface Ga4RealtimePageRow {
+  screenName: string;
+  activeUsers: number;
+}
+
+export interface Ga4CountryGeoRow {
+  country: string;
+  countryCode: string;
+  activeUsers: number;
+  sessions: number;
+  pageviews: number;
+}
+
+export interface Ga4StatsResult {
+  isConnected: boolean;
+  hasTrackingTagOnly: boolean;
+  measurementId: string;
+  propertyId: string;
+  clientEmail: string;
+  error?: string;
+  realtime: {
+    activeUsersLast30Min: number;
+    activeLocations: Ga4RealtimeLocationRow[];
+    activePages: Ga4RealtimePageRow[];
+    devices: { category: string; activeUsers: number }[];
+  };
+  historicalGeo: Ga4CountryGeoRow[];
+  totals: {
+    activeUsers: number;
+    sessions: number;
+    pageviews: number;
+    avgEngagementSeconds: number;
+  };
+}
+
+function readLocalGa4ConfigSync(): Partial<StoredGa4Config> | null {
+  try {
+    if ((globalThis as any).__BPM_GA4_CONFIG) {
+      return (globalThis as any).__BPM_GA4_CONFIG;
+    }
+    if (fs.existsSync(GA4_STORE_PATH)) {
+      const parsed = JSON.parse(fs.readFileSync(GA4_STORE_PATH, 'utf8'));
+      if (parsed && typeof parsed === 'object') return parsed;
+    }
+  } catch {}
+  return null;
+}
+
+async function loadMergedGa4Config(): Promise<StoredGa4Config> {
+  const gscFallback = readStoredGscConfig();
+  const localGa4 = readLocalGa4ConfigSync();
+
+  let measurementId =
+    localGa4?.measurementId ||
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
+    '';
+  let propertyId =
+    localGa4?.propertyId ||
+    process.env.GA4_PROPERTY_ID ||
+    process.env.GOOGLE_ANALYTICS_PROPERTY_ID ||
+    '';
+  let clientEmail =
+    localGa4?.clientEmail ||
+    process.env.GA4_CLIENT_EMAIL ||
+    process.env.GOOGLE_SEARCH_CONSOLE_CLIENT_EMAIL ||
+    gscFallback?.clientEmail ||
+    '';
+  let privateKey =
+    localGa4?.privateKey ||
+    (process.env.GA4_PRIVATE_KEY
+      ? process.env.GA4_PRIVATE_KEY.replace(/\\n/g, '\n')
+      : '') ||
+    (process.env.GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY
+      ? process.env.GOOGLE_SEARCH_CONSOLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      : '') ||
+    gscFallback?.privateKey ||
+    '';
+
+  // Also check Supabase platform_settings table so credentials persist on Vercel serverless
+  try {
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabase = await createClient();
+    const { data } = await (supabase as any)
+      .from('platform_settings')
+      .select('config_json')
+      .eq('id', 'global')
+      .maybeSingle();
+
+    const cfg = data?.config_json;
+    if (cfg && typeof cfg === 'object') {
+      if (!measurementId && cfg.gaMeasurementId) {
+        measurementId = String(cfg.gaMeasurementId).trim();
+      }
+      if (cfg.ga4Config && typeof cfg.ga4Config === 'object') {
+        const dbGa = cfg.ga4Config;
+        if (dbGa.measurementId) measurementId = String(dbGa.measurementId).trim();
+        if (dbGa.propertyId) propertyId = String(dbGa.propertyId).trim();
+        if (dbGa.clientEmail) clientEmail = String(dbGa.clientEmail).trim();
+        if (dbGa.privateKey) privateKey = String(dbGa.privateKey).replace(/\\n/g, '\n').trim();
+      }
+    }
+  } catch {}
+
+  // Clean numeric propertyId (strip "properties/" if user pasted "properties/123456")
+  propertyId = propertyId.replace(/^properties\//i, '').trim();
+
+  return {
+    measurementId: measurementId.trim(),
+    propertyId,
+    clientEmail: clientEmail.trim(),
+    privateKey: privateKey.trim(),
+    updatedAt: localGa4?.updatedAt || '',
+  };
+}
+
+export async function getActiveGaMeasurementId(): Promise<string> {
+  const envId = (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '').trim();
+  if (envId) return envId;
+  const local = readLocalGa4ConfigSync();
+  if (local?.measurementId) return local.measurementId.trim();
+  try {
+    const { getPlatformSettingsAction } = await import('@/app/actions/platform-settings');
+    const settings = (await getPlatformSettingsAction()) as any;
+    return (settings?.gaMeasurementId || '').trim();
+  } catch {
+    return '';
+  }
+}
+
+export async function saveGoogleAnalytics4ConfigAction(input: {
+  measurementId: string;
+  propertyId?: string;
+  serviceAccountJsonOrEmail?: string;
+  privateKey?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { requireAdmin } = await import('@/utils/admin-auth');
+    const { supabase, user } = await requireAdmin();
+
+    const existing = await loadMergedGa4Config();
+    const measurementId = (input.measurementId || existing.measurementId || '')
+      .trim()
+      .toUpperCase();
+    const propertyId = (input.propertyId || existing.propertyId || '')
+      .replace(/^properties\//i, '')
+      .trim();
+
+    if (!measurementId && !propertyId) {
+      return {
+        ok: false,
+        error:
+          'Please enter at least your GA4 Measurement ID (G-XXXXXXXXXX) or GA4 Property ID (e.g. 482910384).',
+      };
+    }
+
+    let clientEmail = existing.clientEmail;
+    let privateKey = (input.privateKey || '').trim() || existing.privateKey;
+
+    const trimmedJson = (input.serviceAccountJsonOrEmail || '').trim();
+    if (trimmedJson) {
+      if (trimmedJson.startsWith('{')) {
+        const parsed = JSON.parse(trimmedJson);
+        clientEmail = (parsed.client_email || '').trim();
+        privateKey = (parsed.private_key || '').trim();
+      } else {
+        clientEmail = trimmedJson;
+      }
+    }
+
+    if (privateKey) {
+      privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+
+    const payload: StoredGa4Config = {
+      measurementId,
+      propertyId,
+      clientEmail,
+      privateKey,
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      fs.writeFileSync(GA4_STORE_PATH, JSON.stringify(payload, null, 2), 'utf8');
+    } catch {}
+    (globalThis as any).__BPM_GA4_CONFIG = payload;
+
+    // Also update .env.local NEXT_PUBLIC_GA_MEASUREMENT_ID locally if writable
+    if (measurementId) {
+      try {
+        const envPath = path.join(process.cwd(), '.env.local');
+        if (fs.existsSync(envPath)) {
+          let envText = fs.readFileSync(envPath, 'utf8');
+          if (/^NEXT_PUBLIC_GA_MEASUREMENT_ID=/m.test(envText)) {
+            envText = envText.replace(
+              /^NEXT_PUBLIC_GA_MEASUREMENT_ID=.*$/m,
+              `NEXT_PUBLIC_GA_MEASUREMENT_ID="${measurementId}"`
+            );
+          } else {
+            envText += `\nNEXT_PUBLIC_GA_MEASUREMENT_ID="${measurementId}"\n`;
+          }
+          fs.writeFileSync(envPath, envText, 'utf8');
+        }
+      } catch {}
+    }
+
+    // Persist to Supabase platform_settings so Vercel production sees both the Measurement ID and GA4 Data API config
+    try {
+      const { data: row } = await (supabase as any)
+        .from('platform_settings')
+        .select('config_json')
+        .eq('id', 'global')
+        .maybeSingle();
+
+      const prevCfg = row?.config_json && typeof row.config_json === 'object' ? row.config_json : {};
+      await (supabase as any).from('platform_settings').upsert(
+        {
+          id: 'global',
+          config_json: {
+            ...prevCfg,
+            gaMeasurementId: measurementId || prevCfg.gaMeasurementId || '',
+            ga4Config: payload,
+          },
+          updated_at: payload.updatedAt,
+          updated_by: user?.email || 'Super Admin',
+        },
+        { onConflict: 'id' }
+      );
+    } catch {}
+
+    revalidatePath('/', 'layout');
+    revalidatePath('/en/admin/analytics');
+    revalidatePath('/en/admin/settings');
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Failed to save Google Analytics config.' };
+  }
+}
+
+async function getGa4AccessToken(config: StoredGa4Config): Promise<string | null> {
+  if (!config.clientEmail || !config.privateKey || !config.privateKey.includes('PRIVATE KEY')) {
+    return null;
+  }
+
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+    const payload = Buffer.from(
+      JSON.stringify({
+        iss: config.clientEmail,
+        scope: 'https://www.googleapis.com/auth/analytics.readonly',
+        aud: 'https://oauth2.googleapis.com/token',
+        exp: now + 3600,
+        iat: now,
+      })
+    ).toString('base64url');
+
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(`${header}.${payload}`);
+    const signature = signer.sign(config.privateKey, 'base64url');
+    const assertion = `${header}.${payload}.${signature}`;
+
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion,
+      }),
+      cache: 'no-store',
+    });
+
+    if (!tokenRes.ok) return null;
+    const tokenData = await tokenRes.json();
+    return tokenData.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getGoogleAnalytics4RealtimeAndGeoStats(
+  days = 30
+): Promise<Ga4StatsResult> {
+  await connection();
+  const cfg = await loadMergedGa4Config();
+  const token = await getGa4AccessToken(cfg);
+
+  const emptyResult: Ga4StatsResult = {
+    isConnected: false,
+    hasTrackingTagOnly: Boolean(cfg.measurementId && (!cfg.propertyId || !token)),
+    measurementId: cfg.measurementId,
+    propertyId: cfg.propertyId,
+    clientEmail: cfg.clientEmail,
+    realtime: {
+      activeUsersLast30Min: 0,
+      activeLocations: [],
+      activePages: [],
+      devices: [],
+    },
+    historicalGeo: [],
+    totals: {
+      activeUsers: 0,
+      sessions: 0,
+      pageviews: 0,
+      avgEngagementSeconds: 0,
+    },
+  };
+
+  if (!cfg.propertyId || !token) {
+    return emptyResult;
+  }
+
+  try {
+    const baseUrl = `https://analyticsdata.googleapis.com/v1beta/properties/${encodeURIComponent(
+      cfg.propertyId
+    )}`;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+
+    const [rtLocRes, rtPagesRes, rtDevRes, geoReportRes, totalsReportRes] = await Promise.all([
+      // 1. Realtime active users by Country + City (last 30 mins)
+      fetch(`${baseUrl}:runRealtimeReport`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          dimensions: [{ name: 'country' }, { name: 'city' }],
+          metrics: [{ name: 'activeUsers' }],
+          limit: 25,
+        }),
+        cache: 'no-store',
+      }),
+      // 2. Realtime active pages
+      fetch(`${baseUrl}:runRealtimeReport`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          dimensions: [{ name: 'unifiedScreenName' }],
+          metrics: [{ name: 'activeUsers' }],
+          limit: 10,
+        }),
+        cache: 'no-store',
+      }),
+      // 3. Realtime devices
+      fetch(`${baseUrl}:runRealtimeReport`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          dimensions: [{ name: 'deviceCategory' }],
+          metrics: [{ name: 'activeUsers' }],
+        }),
+        cache: 'no-store',
+      }),
+      // 4. Historical Global Map Country Breakdown (N days)
+      fetch(`${baseUrl}:runReport`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          dateRanges: [{ startDate: `${days}daysAgo`, endDate: 'today' }],
+          dimensions: [{ name: 'country' }, { name: 'countryId' }],
+          metrics: [
+            { name: 'activeUsers' },
+            { name: 'sessions' },
+            { name: 'screenPageViews' },
+          ],
+          limit: 60,
+        }),
+        cache: 'no-store',
+      }),
+      // 5. Historical Aggregate Totals
+      fetch(`${baseUrl}:runReport`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          dateRanges: [{ startDate: `${days}daysAgo`, endDate: 'today' }],
+          metrics: [
+            { name: 'activeUsers' },
+            { name: 'sessions' },
+            { name: 'screenPageViews' },
+            { name: 'userEngagementDuration' },
+          ],
+        }),
+        cache: 'no-store',
+      }),
+    ]);
+
+    if (!geoReportRes.ok && !rtLocRes.ok) {
+      const errText = await geoReportRes.text();
+      return {
+        ...emptyResult,
+        isConnected: true,
+        error: `GA4 Data API returned ${geoReportRes.status}: ${errText.slice(
+          0,
+          200
+        )}. Make sure 1) "Google Analytics Data API" is enabled in Google Cloud Console, and 2) ${
+          cfg.clientEmail
+        } is added as a Viewer in Google Analytics -> Admin -> Property Access Management.`,
+      };
+    }
+
+    const activeLocations: Ga4RealtimeLocationRow[] = [];
+    let activeUsersLast30Min = 0;
+
+    if (rtLocRes.ok) {
+      const rtLocJson = await rtLocRes.json();
+      for (const row of rtLocJson.rows || []) {
+        const country = row.dimensionValues?.[0]?.value || 'Unknown';
+        const city = row.dimensionValues?.[1]?.value || '';
+        const count = Number(row.metricValues?.[0]?.value) || 0;
+        activeUsersLast30Min += count;
+        activeLocations.push({ country, city, activeUsers: count });
+      }
+    }
+
+    const activePages: Ga4RealtimePageRow[] = [];
+    if (rtPagesRes.ok) {
+      const rtPagesJson = await rtPagesRes.json();
+      for (const row of rtPagesJson.rows || []) {
+        activePages.push({
+          screenName: row.dimensionValues?.[0]?.value || '/',
+          activeUsers: Number(row.metricValues?.[0]?.value) || 0,
+        });
+      }
+    }
+
+    const devices: { category: string; activeUsers: number }[] = [];
+    if (rtDevRes.ok) {
+      const rtDevJson = await rtDevRes.json();
+      for (const row of rtDevJson.rows || []) {
+        devices.push({
+          category: row.dimensionValues?.[0]?.value || 'desktop',
+          activeUsers: Number(row.metricValues?.[0]?.value) || 0,
+        });
+      }
+    }
+
+    const historicalGeo: Ga4CountryGeoRow[] = [];
+    if (geoReportRes.ok) {
+      const geoJson = await geoReportRes.json();
+      for (const row of geoJson.rows || []) {
+        historicalGeo.push({
+          country: row.dimensionValues?.[0]?.value || 'Unknown',
+          countryCode: (row.dimensionValues?.[1]?.value || '').toUpperCase(),
+          activeUsers: Number(row.metricValues?.[0]?.value) || 0,
+          sessions: Number(row.metricValues?.[1]?.value) || 0,
+          pageviews: Number(row.metricValues?.[2]?.value) || 0,
+        });
+      }
+    }
+
+    let totalUsers = historicalGeo.reduce((s, r) => s + r.activeUsers, 0);
+    let totalSessions = historicalGeo.reduce((s, r) => s + r.sessions, 0);
+    let totalViews = historicalGeo.reduce((s, r) => s + r.pageviews, 0);
+    let avgEngagementSeconds = 0;
+
+    if (totalsReportRes.ok) {
+      const totJson = await totalsReportRes.json();
+      const row0 = totJson.rows?.[0];
+      if (row0) {
+        totalUsers = Number(row0.metricValues?.[0]?.value) || totalUsers;
+        totalSessions = Number(row0.metricValues?.[1]?.value) || totalSessions;
+        totalViews = Number(row0.metricValues?.[2]?.value) || totalViews;
+        const totalDur = Number(row0.metricValues?.[3]?.value) || 0;
+        avgEngagementSeconds = totalUsers > 0 ? Math.round(totalDur / totalUsers) : 0;
+      }
+    }
+
+    return {
+      isConnected: true,
+      hasTrackingTagOnly: false,
+      measurementId: cfg.measurementId,
+      propertyId: cfg.propertyId,
+      clientEmail: cfg.clientEmail,
+      realtime: {
+        activeUsersLast30Min,
+        activeLocations,
+        activePages,
+        devices,
+      },
+      historicalGeo,
+      totals: {
+        activeUsers: totalUsers,
+        sessions: totalSessions,
+        pageviews: totalViews,
+        avgEngagementSeconds,
+      },
+    };
+  } catch (err: any) {
+    return {
+      ...emptyResult,
+      isConnected: true,
+      error: err?.message || 'Failed to query Google Analytics 4 Data API.',
+    };
+  }
+}
+

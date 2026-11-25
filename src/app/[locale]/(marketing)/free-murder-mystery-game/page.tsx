@@ -284,9 +284,9 @@ export default async function FreeMurderMysteryGamePage(props: {
       },
       {
         '@type': 'Product',
-        name: 'Free Custom Murder Mystery Game Pack (First 50 Founding Host Giveaway)',
+        name: 'Free 6-Player Custom Murder Mystery Game Pack (First 50 Founding Host Giveaway)',
         description:
-          'Complete custom murder mystery party game kit for 4 to 16 players. Human-authored mystery plot personalised around your friends by AI, with a 100% online live mobile Playroom.',
+          'Complete custom 6-player murder mystery party game kit (Basic Tier, 4–6 suspects). Human-authored mystery plot personalised around your friends by AI, with a 100% online live mobile Playroom.',
         image: ['https://backpocketmysteries.com/og-image.png'],
         brand: {
           '@type': 'Brand',
@@ -309,7 +309,7 @@ export default async function FreeMurderMysteryGamePage(props: {
             unitText: 'Founding Host VIP Spots',
           },
           description:
-            '100% Free Custom Murder Mystery Game Pack voucher (up to £45 / $55 USD retail value) for the first 50 pre-launch VIP email sign-ups.',
+            '100% Free 6-Player Custom Murder Mystery Game Pack voucher (Basic Tier • £15 / $19 USD retail value) for the first 50 pre-launch VIP email sign-ups.',
         },
       },
       {

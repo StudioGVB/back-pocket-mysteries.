@@ -40,7 +40,7 @@ export default function FooterMarketingForm({ placeholder }: { placeholder: stri
         </p>
         <p className="text-xs font-medium text-slate-300 leading-relaxed">
           {qualifies
-            ? "You're in the First 50! We'll email your FREE Mystery code when we launch."
+            ? "You're in the First 50! We'll email your FREE 6-Player Mystery code when we launch."
             : "We'll email your exclusive launch perks as soon as we go live!"}
         </p>
       </div>
@@ -50,7 +50,7 @@ export default function FooterMarketingForm({ placeholder }: { placeholder: stri
   return (
     <div className="space-y-2">
       <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-pink">
-        <span>🎁 First 50 Sign-Ups Get a Free Mystery</span>
+        <span>🎁 First 50 Sign-Ups Get a Free 6-Player Mystery</span>
       </div>
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input

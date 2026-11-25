@@ -252,14 +252,16 @@ export default async function ThemeDetailPage(props: {
                     className="px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest text-white shadow-lg"
                     style={{ background: '#fe04c6' }}
                   >
-                    💋 {mystery.theme} • XOXO
+                    {mystery.slug === 'christmas-nightmare'
+                      ? `🎄 ${mystery.theme} • Active Release`
+                      : `💋 ${mystery.theme} • XOXO`}
                   </span>
                   <span className="px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest bg-black/65 text-white backdrop-blur-md">
                     {mystery.playersLabel}
                   </span>
                 </div>
                 <span className="px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50/95 text-emerald-700 border border-emerald-200 shadow-sm">
-                  Ready in ~30 Mins
+                  Ready in ~20 Mins
                 </span>
               </div>
 
@@ -267,7 +269,9 @@ export default async function ThemeDetailPage(props: {
                 <div className="flex items-center gap-2 text-amber-400 text-xs font-black uppercase tracking-widest mb-2">
                   <span>★ ★ ★ ★ ★</span>
                   <span className="text-white/90">
-                    Spotted: #1 Pick for Girls&apos; Night, Hens &amp; Birthdays
+                    {mystery.slug === 'christmas-nightmare'
+                      ? '#1 Pick for Holiday Dinners, Friendsmas & Couples Nights'
+                      : "Spotted: #1 Pick for Girls' Night, Hens & Birthdays"}
                   </span>
                 </div>
                 <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none uppercase">
@@ -351,10 +355,10 @@ export default async function ThemeDetailPage(props: {
                   style={{ background: 'rgba(254,4,198,0.04)', borderColor: 'rgba(254,4,198,0.15)' }}
                 >
                   <p className="text-xs font-black text-slate-900 mb-1 flex items-center gap-1.5">
-                    <span style={{ color: '#fe04c6' }}>✦</span> Your Group Chat, Main-Character Edition
+                    <span style={{ color: '#fe04c6' }}>✦</span> Your Friends, Main-Character Edition
                   </p>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                    Characters don&apos;t have pre-set names, because they are named after <strong>your actual guests</strong>. Cast your friends as the bombshells, exes, and producers, and their real names, pronouns, avatars, and quirks drop straight into the story.
+                    Characters don&apos;t have pre-set names, because they are named after <strong>your actual guests</strong>. Cast your friends into the roles below, and their real names, pronouns, portraits, and quirks drop straight into the story.
                   </p>
                 </div>
               </div>
@@ -392,10 +396,14 @@ export default async function ThemeDetailPage(props: {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 bg-white rounded-[2.5rem] border border-slate-100 p-8 sm:p-10 shadow-sm">
             <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#fe04c6' }}>
-              📱 &ldquo;I&apos;ve Got A Text!&rdquo; • The Official Tea
+              {mystery.slug === 'christmas-nightmare'
+                ? '🎄 The Official Story • Behind Closed Doors'
+                : '📱 "I\'ve Got A Text!" • The Official Tea'}
             </p>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-5">
-              Spotted at the Reunion...
+              {mystery.slug === 'christmas-nightmare'
+                ? 'The Night the Lights Went Out...'
+                : 'Spotted at the Reunion...'}
             </h2>
             <div className="space-y-4 text-slate-600 font-medium leading-relaxed text-base">
               {mystery.description
@@ -409,21 +417,21 @@ export default async function ThemeDetailPage(props: {
             {/* How Your Guests Fit In */}
             <div className="mt-8 pt-8 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-2xl bg-slate-50">
-                <p className="text-xs font-black text-slate-900 mb-1">1. Couple Up Your Cast</p>
+                <p className="text-xs font-black text-slate-900 mb-1">1. Assign Your Cast</p>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Assign your friends to the {mystery.characters.length} iconic reality-TV roles below, from The Star to The Ex and The Superfan.
+                  Assign your friends to the {mystery.characters.length} iconic roles below (or auto-cast them in 1 click with Bidirectional Gender-Flex).
                 </p>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50">
                 <p className="text-xs font-black text-slate-900 mb-1">2. Personalize Every Role</p>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Their real names, initials, pronouns, avatars, and real-life quirks are woven directly into the character booklets and story rounds.
+                  Their real names, pronouns, portraits, and real-life quirks are woven directly into the character booklets and 3 rounds of evidence.
                 </p>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50">
-                <p className="text-xs font-black text-slate-900 mb-1">3. Main-Character Reveal</p>
+                <p className="text-xs font-black text-slate-900 mb-1">3. Spoiler-Free Final Reveal</p>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  The killer is sealed until Round 4, so the host can sip martinis, stir the pot, and play completely spoiler-free.
+                  The killer is sealed until the final accusation round, so the host can sip cocktails, stir the pot, and play completely spoiler-free.
                 </p>
               </div>
             </div>
@@ -473,10 +481,10 @@ export default async function ThemeDetailPage(props: {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
             <div>
               <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#fe04c6' }}>
-                💋 Meet The Bombshells &amp; Villains ({mystery.characters.length} Roles + Extra Detectives)
+                🎭 Meet The Suspects ({mystery.characters.length} Roles + Extra Detectives)
               </p>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                The Reunion Cast &amp; Dress Code
+                The Cast Lineup &amp; Dress Code
               </h2>
               <p className="text-sm text-slate-500 font-medium mt-1 max-w-2xl">
                 Characters only use role titles here because <strong>each role takes the real name of the guest you assign to it</strong>. When you build your kit, their name, pronouns, avatar, and quirks are woven throughout their dossier.
@@ -625,14 +633,14 @@ export default async function ThemeDetailPage(props: {
         <div className="bg-brand-dark rounded-[3rem] p-10 sm:p-16 lg:p-20 text-center text-white relative overflow-hidden shadow-2xl">
           <div className="relative z-10 max-w-3xl mx-auto">
             <span className="inline-block px-4 py-1.5 rounded-full bg-brand-pink/20 text-brand-pink text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-pink/30">
-              Ready in ~30 Minutes
+              Ready in ~20 Minutes
             </span>
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-6 uppercase tracking-tight leading-none">
               Ready to Cast Your Friends in <br />
               <span className="text-brand-pink italic">{mystery.title}?</span>
             </h2>
             <p className="text-gray-300 text-base lg:text-lg mb-10 max-w-xl mx-auto font-medium">
-              Add your guest list, assign them to the {mystery.characters.length} reunion roles above, weave in their real-life quirks, and launch your personalized mystery.
+              Add your guest list, assign them to the {mystery.characters.length} character roles above, weave in their real-life quirks, and launch your personalized mystery.
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-4">

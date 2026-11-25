@@ -123,10 +123,10 @@ export default async function PricingPage(props: {
               🎁 Pre-Launch Founding Host Offer • First 50 Sign-Ups
             </div>
             <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">
-              Get Any Tier Below (Up to Grand 16-Player Pack) <span className="text-brand-pink italic">100% Free</span>
+              Get Our 6-Player Basic Mystery Pack <span className="text-brand-pink italic">100% Free</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-              The first 50 hosts on our pre-launch VIP list receive a 100%-off promo code on launch day good for any Basic, Premium, or Grand custom mystery pack.
+              The first 50 hosts on our pre-launch VIP list receive a single-use 100%-off promo code on launch day good for any 6-Player (Basic Tier • 4–6 suspects) custom mystery pack (worth £15 / $19).
             </p>
           </div>
           <Link

@@ -178,7 +178,8 @@ export default async function ThemesPage(props: {
                     <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="px-3.5 py-1.5 bg-brand-pink text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
-                          💋 {mystery.category} • Active Release
+                          {mystery.slug === 'christmas-nightmare' ? '🎄 ' : '💋 '}
+                          {mystery.category} • Active Release
                         </span>
                         <span className="px-3.5 py-1.5 bg-emerald-50/95 backdrop-blur-sm border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-widest text-emerald-700">
                           Ready in ~20 Mins
@@ -195,7 +196,9 @@ export default async function ThemesPage(props: {
                         <div className="flex items-center gap-2 text-amber-400 text-[11px] font-black uppercase tracking-widest mb-1">
                           <span>★ ★ ★ ★ ★</span>
                           <span className="text-white/90">
-                            #1 Pick for Girls&apos; Nights, Birthdays &amp; Hens
+                            {mystery.slug === 'christmas-nightmare'
+                              ? '#1 Pick for Holiday Dinners, Friendsmas & Couples Nights'
+                              : "#1 Pick for Girls' Nights, Birthdays & Hens"}
                           </span>
                         </div>
                         <h2
