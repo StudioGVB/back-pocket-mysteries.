@@ -22,14 +22,14 @@ export default function AdminLayout({
   params: Promise<{ locale: string }>;
 }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Suspense fallback={<aside className="w-64 bg-brand-dark text-white min-h-screen fixed left-0 top-0" />}>
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
+      <Suspense fallback={<aside className="hidden md:block w-64 bg-brand-dark text-white min-h-screen fixed left-0 top-0" />}>
         <AdminSidebar />
       </Suspense>
       <Toaster richColors position="top-right" />
 
       {/* Main Content */}
-      <main className="flex-grow ml-64 p-8">
+      <main className="flex-grow md:ml-64 p-4 sm:p-6 lg:p-8 min-w-0 w-full">
         <Suspense fallback={<div className="py-12" />}>
           {children}
         </Suspense>

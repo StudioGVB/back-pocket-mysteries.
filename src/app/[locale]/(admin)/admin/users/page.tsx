@@ -14,9 +14,9 @@ export default async function AdminUsers({
 }) {
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
         <div>
-          <h1 className="text-4xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-4">
+          <h1 className="text-2xl sm:text-4xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-3 sm:mb-4">
             Customer <span className="text-brand-pink italic">Management</span>
           </h1>
           <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px]">
@@ -39,7 +39,7 @@ async function CustomerCount() {
   const customers = await getCustomers();
   const newSignupsCount = customers.filter((c: any) => c.isNewSignup).length;
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       {newSignupsCount > 0 && (
         <div className="bg-emerald-50 px-5 py-3 rounded-2xl border border-emerald-200 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1 flex items-center gap-1.5">
@@ -86,14 +86,15 @@ async function CustomerList({
 
   return (
     <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-      <table className="w-full text-left">
+      <div className="overflow-x-auto">
+      <table className="w-full text-left min-w-[680px]">
         <thead className="bg-gray-50/50 border-b border-gray-100">
           <tr>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Customer</th>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Purchases Made</th>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Joined Date</th>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Mysteries Owned</th>
-            <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</th>
+            <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Customer</th>
+            <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Purchases Made</th>
+            <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Joined Date</th>
+            <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Mysteries Owned</th>
+            <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50">
@@ -188,6 +189,7 @@ async function CustomerList({
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

@@ -439,7 +439,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
         <div className="flex items-center gap-3 flex-wrap">
           {/* Calendar Event Filters */}
           {!isMinimized && (
-            <div className="flex items-center gap-3 border border-gray-200 rounded-lg bg-white px-3 h-8 text-xs shrink-0 select-none">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 border border-gray-200 rounded-lg bg-white px-3 py-1.5 min-h-8 text-xs select-none">
               <label className="flex items-center gap-1.5 cursor-pointer font-semibold hover:text-brand-dark text-gray-600">
                 <input
                   type="checkbox"
@@ -449,7 +449,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                 />
                 Newsletters
               </label>
-              <div className="w-px h-4 bg-gray-200" />
+              <div className="hidden sm:block w-px h-4 bg-gray-200" />
               <label className="flex items-center gap-1.5 cursor-pointer font-semibold hover:text-brand-dark text-gray-600">
                 <input
                   type="checkbox"
@@ -459,7 +459,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                 />
                 VIP Leads
               </label>
-              <div className="w-px h-4 bg-gray-200" />
+              <div className="hidden sm:block w-px h-4 bg-gray-200" />
               <label className="flex items-center gap-1.5 cursor-pointer font-semibold hover:text-brand-dark text-gray-600">
                 <input
                   type="checkbox"
@@ -469,7 +469,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                 />
                 Blogs
               </label>
-              <div className="w-px h-4 bg-gray-200" />
+              <div className="hidden sm:block w-px h-4 bg-gray-200" />
               <label className="flex items-center gap-1.5 cursor-pointer font-semibold hover:text-brand-dark text-gray-600">
                 <input
                   type="checkbox"
@@ -627,7 +627,8 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
           </div>
 
           {/* Calendar Grid */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+          <div className="border border-gray-200 rounded-xl overflow-x-auto bg-white">
+            <div className="min-w-[680px]">
             {/* Weekday Headers */}
             <div className="grid grid-cols-7 bg-gray-50">
               {weekDays.map((day) => (
@@ -851,6 +852,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
 

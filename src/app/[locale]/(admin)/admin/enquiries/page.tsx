@@ -11,9 +11,9 @@ export default async function AdminEnquiriesPage({
 }) {
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
         <div>
-          <h1 className="text-4xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-4">
+          <h1 className="text-2xl sm:text-4xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-3 sm:mb-4">
             Customer <span className="text-brand-pink italic">Enquiries</span>
           </h1>
           <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px]">

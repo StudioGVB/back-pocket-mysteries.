@@ -58,6 +58,11 @@ export function AdminSidebar() {
   const [unseenCustomersCount, setUnseenCustomersCount] = useState(0);
   const [unseenLeadsCount, setUnseenLeadsCount] = useState(0);
   const [unseenDashboardCount, setUnseenDashboardCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const markSectionSeen = useCallback((section: 'dashboard' | 'customers' | 'leads') => {
     const nowIso = new Date().toISOString();
@@ -297,6 +302,16 @@ export function AdminSidebar() {
     },
   ];
 
+  const allNavItems: NavItem[] = [
+    dashboardItem,
+    ...basesItems,
+    ...ordersItems,
+    ...customerItems,
+    ...marketingItems,
+    ...analyticsItems,
+  ];
+  const activeNavItem = allNavItems.find(isItemActive);
+
   const isSettingsActive =
     cleanPath === '/admin/settings' ||
     cleanPath.startsWith('/admin/settings/') ||
@@ -306,17 +321,29 @@ export function AdminSidebar() {
   const isTicketsActive =
     cleanPath === '/admin/tickets' || cleanPath.startsWith('/admin/tickets/');
 
+  const activeMobileLabel = isSettingsActive
+    ? 'Settings'
+    : isTicketsActive
+      ? 'Support & Ticketing'
+      : activeNavItem?.label || 'Admin';
+
+  const totalUnseenBadges =
+    (unseenDashboardCount || 0) + (unseenCustomersCount || 0) + (unseenLeadsCount || 0);
+
   const sectionTitleClass =
     'px-3.5 text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1.5';
 
-  const renderNavItem = (item: NavItem) => {
+  const renderNavItem = (item: NavItem, onNavigate?: () => void) => {
     const active = isItemActive(item);
     const hasBadge = !active && typeof item.badgeCount === 'number' && item.badgeCount > 0;
     return (
       <li key={item.id}>
         <Link
           href={`${localePrefix}${item.href}`}
-          onClick={() => item.onSelectSection?.()}
+          onClick={() => {
+            item.onSelectSection?.();
+            onNavigate?.();
+          }}
           className={`flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl transition-all text-[13px] font-bold ${
             active
               ? 'bg-brand-pink text-white shadow-md shadow-brand-pink/25'
@@ -338,40 +365,52 @@ export function AdminSidebar() {
     );
   };
 
-  const renderSection = (title: string, items: NavItem[]) => (
+  const renderSection = (title: string, items: NavItem[], onNavigate?: () => void) => (
     <div>
       <h3 className={sectionTitleClass}>{title}</h3>
-      <ul className="space-y-1">{items.map(renderNavItem)}</ul>
+      <ul className="space-y-1">{items.map((item) => renderNavItem(item, onNavigate))}</ul>
     </div>
   );
 
-  return (
-    <aside className="w-64 bg-brand-dark text-white flex flex-col fixed h-full z-30 border-r border-white/10">
-      <div className="px-6 pt-5 pb-4 border-b border-white/5">
-        <Link href={`${localePrefix}/admin`}>
-          <Image
-            src="/logo-horizontal-white.png"
-            alt="Back Pocket Mysteries Admin"
-            width={160}
-            height={32}
-            className="h-7 w-auto object-contain"
-          />
-        </Link>
-        <div className="mt-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
-          Internal Admin
+  const renderSidebarContent = (onNavigate?: () => void) => (
+    <>
+      <div className="px-6 pt-5 pb-4 border-b border-white/5 flex items-center justify-between">
+        <div>
+          <Link href={`${localePrefix}/admin`} onClick={onNavigate}>
+            <Image
+              src="/logo-horizontal-white.png"
+              alt="Back Pocket Mysteries Admin"
+              width={160}
+              height={32}
+              className="h-7 w-auto object-contain"
+            />
+          </Link>
+          <div className="mt-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+            Internal Admin
+          </div>
         </div>
+        {onNavigate && (
+          <button
+            type="button"
+            onClick={onNavigate}
+            aria-label="Close menu"
+            className="md:hidden w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-black cursor-pointer"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       <nav className="flex-grow px-3 py-4 overflow-y-auto custom-scrollbar">
         <div className="space-y-4 pb-4">
           {/* Standalone Dashboard at Top (No Section Header) */}
-          <ul className="space-y-1">{renderNavItem(dashboardItem)}</ul>
+          <ul className="space-y-1">{renderNavItem(dashboardItem, onNavigate)}</ul>
 
-          {renderSection('Bases', basesItems)}
-          {renderSection('Orders', ordersItems)}
-          {renderSection('Customers', customerItems)}
-          {renderSection('Marketing Suite', marketingItems)}
-          {renderSection('Analytics', analyticsItems)}
+          {renderSection('Bases', basesItems, onNavigate)}
+          {renderSection('Orders', ordersItems, onNavigate)}
+          {renderSection('Customers', customerItems, onNavigate)}
+          {renderSection('Marketing Suite', marketingItems, onNavigate)}
+          {renderSection('Analytics', analyticsItems, onNavigate)}
         </div>
       </nav>
 
@@ -380,6 +419,7 @@ export function AdminSidebar() {
         <div className="grid grid-cols-3 gap-2">
           <Link
             href={`${localePrefix}/admin/settings`}
+            onClick={onNavigate}
             title="Settings & Super Admins"
             aria-label="Settings & Super Admins"
             className={`flex items-center justify-center h-10 rounded-xl border transition-all ${
@@ -396,6 +436,7 @@ export function AdminSidebar() {
 
           <Link
             href={`${localePrefix}/account/orders`}
+            onClick={onNavigate}
             title="Guest Portal"
             aria-label="Guest Portal"
             className="flex items-center justify-center h-10 rounded-xl border bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-all"
@@ -409,6 +450,7 @@ export function AdminSidebar() {
 
           <Link
             href={`${localePrefix}/admin/tickets`}
+            onClick={onNavigate}
             title="Support & Ticketing"
             aria-label="Support & Ticketing"
             className={`flex items-center justify-center h-10 rounded-xl border transition-all ${
@@ -423,7 +465,76 @@ export function AdminSidebar() {
           </Link>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Fixed Sidebar */}
+      <aside className="hidden md:flex w-64 bg-brand-dark text-white flex-col fixed inset-y-0 left-0 z-30 border-r border-white/10">
+        {renderSidebarContent()}
+      </aside>
+
+      {/* Mobile Sticky Top Header Bar */}
+      <div className="md:hidden sticky top-0 z-40 bg-brand-dark text-white px-4 py-3 flex items-center justify-between border-b border-white/10 shadow-md">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Link href={`${localePrefix}/admin`} className="shrink-0">
+            <Image
+              src="/logo-horizontal-white.png"
+              alt="Back Pocket Mysteries Admin"
+              width={132}
+              height={26}
+              className="h-6 w-auto object-contain"
+            />
+          </Link>
+          <span className="px-2 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[9px] font-black uppercase tracking-widest truncate">
+            {activeMobileLabel}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open admin navigation menu"
+          className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          <span>Menu</span>
+          {totalUnseenBadges > 0 && (
+            <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black leading-none shadow-sm">
+              +{totalUnseenBadges}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Slide-Over Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[100] flex">
+          <div
+            className="fixed inset-0 bg-black/65 backdrop-blur-xs"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative w-72 max-w-[85vw] bg-brand-dark text-white flex flex-col h-full z-10 shadow-2xl border-r border-white/10">
+            {renderSidebarContent(() => setMobileMenuOpen(false))}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
 

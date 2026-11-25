@@ -15,9 +15,14 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const locale = (params?.locale as string) || 'en';
   const dashboardHref = isAdmin ? `/${locale}/admin` : `/${locale}/account`;
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'My Account';
+
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const mysteryIdMatch = pathname.match(/\/builder\/mysteries\/([^\/]+)/);
   const activeMysteryId =
@@ -180,22 +185,34 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
     return pathname === cleanHref || pathname.startsWith(`${cleanHref}/`);
   };
 
-  return (
-    <aside className="w-64 bg-brand-dark border-r border-white/10 text-white flex-shrink-0 flex flex-col h-full z-30">
+  const renderSidebarContent = (onNavigate?: () => void) => (
+    <>
       {/* Brand Header */}
-      <div className="px-5 pt-5 pb-3 border-b border-white/5">
-        <Link href={dashboardHref} className="block">
-          <Image
-            src="/logo-horizontal-white.png"
-            alt="Back Pocket Mysteries Studio"
-            width={155}
-            height={30}
-            className="h-7 w-auto object-contain"
-          />
-        </Link>
-        <div className="mt-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">
-          Mystery Builder Studio
+      <div className="px-5 pt-5 pb-3 border-b border-white/5 flex items-center justify-between">
+        <div>
+          <Link href={dashboardHref} onClick={onNavigate} className="block">
+            <Image
+              src="/logo-horizontal-white.png"
+              alt="Back Pocket Mysteries Studio"
+              width={155}
+              height={30}
+              className="h-7 w-auto object-contain"
+            />
+          </Link>
+          <div className="mt-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">
+            Mystery Builder Studio
+          </div>
         </div>
+        {onNavigate && (
+          <button
+            type="button"
+            onClick={onNavigate}
+            aria-label="Close builder menu"
+            className="md:hidden w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-black cursor-pointer"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Compact Mystery Switcher */}
@@ -211,7 +228,7 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
               <ul className="space-y-0.5">
                 {storyAndCastItems.map((item) => (
                   <li key={item.href}>
-                    <Link href={item.href} className={getLinkClass(isItemActive(item))}>
+                    <Link href={item.href} onClick={onNavigate} className={getLinkClass(isItemActive(item))}>
                       {item.icon}
                       <span>{item.label}</span>
                     </Link>
@@ -226,7 +243,7 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
               <ul className="space-y-0.5">
                 {plotAndEvidenceItems.map((item) => (
                   <li key={item.href}>
-                    <Link href={item.href} className={getLinkClass(isItemActive(item))}>
+                    <Link href={item.href} onClick={onNavigate} className={getLinkClass(isItemActive(item))}>
                       {item.icon}
                       <span>{item.label}</span>
                     </Link>
@@ -241,7 +258,7 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
               <ul className="space-y-0.5">
                 {digitalLaunchItems.map((item) => (
                   <li key={item.href}>
-                    <Link href={item.href} className={getLinkClass(isItemActive(item))}>
+                    <Link href={item.href} onClick={onNavigate} className={getLinkClass(isItemActive(item))}>
                       {item.icon}
                       <span>{item.label}</span>
                     </Link>
@@ -257,6 +274,7 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
       <div className="p-3 border-t border-white/10 space-y-1 bg-black/20">
         <Link
           href={dashboardHref}
+          onClick={onNavigate}
           className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-xs font-bold text-slate-300 hover:text-white"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -267,6 +285,7 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
 
         <Link
           href={`/${locale}`}
+          onClick={onNavigate}
           className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-xs font-bold text-slate-400 hover:text-white"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -290,6 +309,70 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
           <span>Sign Out</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 bg-brand-dark border-r border-white/10 text-white flex-shrink-0 flex-col h-full z-30">
+        {renderSidebarContent()}
+      </aside>
+
+      {/* Mobile Sticky Top Header Bar */}
+      <div className="md:hidden sticky top-0 z-40 bg-brand-dark text-white px-4 py-3 flex items-center justify-between border-b border-white/10 shadow-md">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Link href={dashboardHref} className="shrink-0">
+            <Image
+              src="/logo-horizontal-white.png"
+              alt="Back Pocket Mysteries Studio"
+              width={132}
+              height={26}
+              className="h-6 w-auto object-contain"
+            />
+          </Link>
+          <span className="px-2 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[9px] font-black uppercase tracking-widest truncate">
+            Builder Studio
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open builder navigation menu"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          <span>Menu</span>
+        </button>
+      </div>
+
+      {/* Mobile Slide-Over Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[100] flex">
+          <div
+            className="fixed inset-0 bg-black/65 backdrop-blur-xs"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative w-72 max-w-[85vw] bg-brand-dark text-white flex flex-col h-full z-10 shadow-2xl border-r border-white/10">
+            {renderSidebarContent(() => setMobileMenuOpen(false))}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

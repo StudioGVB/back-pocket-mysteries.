@@ -152,8 +152,8 @@ async function DashboardTraffic() {
 async function DashboardTransactions() {
   const transactions = await getRecentTransactions();
   return (
-    <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-      <div className="flex justify-between items-center mb-8">
+    <div className="bg-white p-5 sm:p-8 rounded-[32px] border border-gray-100 shadow-sm">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6 sm:mb-8">
         <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Recent Transactions</h3>
         <div className="flex items-center gap-4">
           <Link href="/en/admin/balance-sheet" className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline">
@@ -167,20 +167,20 @@ async function DashboardTransactions() {
       <div className="space-y-6">
         {transactions.length > 0 ? (
           transactions.map((tx: any, i: number) => (
-            <div key={i} className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
-              <div className="flex items-center gap-4">
+            <div key={i} className="flex items-center justify-between gap-3 py-4 border-b border-gray-50 last:border-0">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={getUserDisplayAvatarUrl(tx.profile)}
                   alt={tx.profile?.full_name || 'Guest'}
                   className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-slate-100 shrink-0"
                 />
-                <div>
-                  <p className="text-sm font-bold text-brand-dark">{tx.profile?.full_name || 'Anonymous Guest'}</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{tx.mystery?.title || 'Unknown Mystery'}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-brand-dark truncate">{tx.profile?.full_name || 'Anonymous Guest'}</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{tx.mystery?.title || 'Unknown Mystery'}</p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <p className="text-sm font-black text-brand-dark">£{(tx.amount || 0).toLocaleString()}</p>
                 <p className={`text-[10px] font-bold uppercase tracking-widest ${tx.status === 'succeeded' ? 'text-green-500' : 'text-amber-500'}`}>
                   {tx.status}
@@ -199,8 +199,8 @@ async function DashboardTransactions() {
 async function DashboardTopMysteries() {
   const topMysteries = await getTopMysteries();
   return (
-    <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-      <div className="flex justify-between items-center mb-8">
+    <div className="bg-white p-5 sm:p-8 rounded-[32px] border border-gray-100 shadow-sm">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6 sm:mb-8">
         <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Top Mystery Bases</h3>
         <Link href="/en/admin/mysteries" className="text-xs font-black text-brand-pink uppercase tracking-widest hover:underline">Manage All</Link>
       </div>
@@ -210,15 +210,15 @@ async function DashboardTopMysteries() {
             const colors = ['bg-brand-pink', 'bg-brand-blue', 'bg-brand-dark', 'bg-gray-400'];
             const colorClass = colors[i % colors.length];
             return (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-2 h-12 rounded-full ${colorClass}`}></div>
-                  <div>
-                    <p className="text-sm font-bold text-brand-dark">{base.name}</p>
+              <div key={i} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className={`w-2 h-12 rounded-full shrink-0 ${colorClass}`}></div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-brand-dark truncate">{base.name}</p>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{base.sales} Sales</p>
                   </div>
                 </div>
-                <div className="w-24 bg-gray-100 h-2 rounded-full overflow-hidden">
+                <div className="w-20 sm:w-24 bg-gray-100 h-2 rounded-full overflow-hidden shrink-0">
                   <div 
                     className={`h-full ${colorClass}`} 
                     style={{ width: `${Math.min(100, (base.sales / (topMysteries[0].sales || 1)) * 100)}%` }}
