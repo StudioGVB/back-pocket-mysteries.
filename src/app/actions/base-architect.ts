@@ -86,6 +86,8 @@ export interface SuggestedClueCandidate {
   strengthSummary?: string;
   coveredBeatPoints?: string[];
   unaddressedBeatGap?: string;
+  previewImageUrl?: string;
+  characterTalkingPoints?: { roleTitle: string; defensiveLine: string }[];
   decision: 'yes' | 'no' | 'pending';
 }
 
@@ -1201,6 +1203,42 @@ Return strict JSON:
         outfitAdvice = `${outfitAdvice.replace(/\.\s*$/, '')}: Option 1 — Primary ${bpChar.color} evening look; Option 2 — Tailored cocktail variation with statement accessories; Option 3 — Relaxed luxury variation in ${bpChar.color}.`;
       }
 
+      // Build Clue -> Character Talking-Point Sync bullets for every clue involving this character
+      const syncedClueBullets: string[] = [];
+      for (const cl of allApprovedClues) {
+        const customTp = (cl.characterTalkingPoints || []).find(
+          (tp) =>
+            tp.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() ===
+            cleanBpRole.toLowerCase()
+        );
+        if (customTp && customTp.defensiveLine.trim()) {
+          syncedClueBullets.push(
+            `[Round ${cl.roundNumber} • Clue "${cl.title}"]: ${customTp.defensiveLine.trim()}`
+          );
+        } else {
+          const isMentioned =
+            (cl.involvedRoles || []).some(
+              (r) =>
+                r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === cleanBpRole.toLowerCase()
+            ) || cl.description.toLowerCase().includes(`{{${cleanBpRole.toLowerCase()}`);
+          if (isMentioned && bpChar.plotRole !== 'victim') {
+            syncedClueBullets.push(
+              `[Round ${cl.roundNumber} • When "${cl.title}" drops]: Defend your alibi around ${cl.timestampLabel} and deflect suspicion onto ${
+                cl.doubleMeaningNote ? 'the rival suspects implicated by the clue' : 'anyone who had access to the crime scene'
+              }.`
+            );
+          }
+        }
+      }
+
+      const baseBullets =
+        Array.isArray(aiMatch.actBullets) && aiMatch.actBullets.length > 0
+          ? aiMatch.actBullets.map((b: any) => String(b).trim())
+          : [
+              `Stay in character as {{${cleanBpRole}}} throughout the party.`,
+              `Defend your whereabouts around ${blueprint.murderTimeWindow}.`,
+            ];
+
       return {
         id: bpChar.id,
         roleTitle: cleanBpRole,
@@ -1210,13 +1248,7 @@ Return strict JSON:
         color: bpChar.color || aiMatch.color || 'Crimson',
         bio: String(aiMatch.bio || bpChar.conceptNotes || '').trim(),
         actSummary: String(aiMatch.actSummary || bpChar.conceptNotes || '').trim(),
-        actBullets:
-          Array.isArray(aiMatch.actBullets) && aiMatch.actBullets.length > 0
-            ? aiMatch.actBullets.map((b: any) => String(b).trim())
-            : [
-                `Stay in character as {{${cleanBpRole}}} throughout the party.`,
-                `Defend your whereabouts around ${blueprint.murderTimeWindow}.`,
-              ],
+        actBullets: [...baseBullets, ...syncedClueBullets.slice(0, 4)],
         outfitAdvice,
         traits:
           Array.isArray(aiMatch.traits) && aiMatch.traits.length > 0
@@ -1447,7 +1479,7 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
       await (supabase as any).from('story_beats').insert(beatRows as any);
     }
 
-    // 5. Insert round-cast clues
+    // 5. Insert round-cast clues (preserving any previewImageUrl test-rendered in OG Base Builder!)
     if (assembled.clues.length > 0) {
       const clueRows = assembled.clues.map((c) => ({
         id: crypto.randomUUID(),
@@ -1455,6 +1487,7 @@ export async function transferBlueprintToDraftMysteryBaseAction(params: {
         title: c.title,
         description: c.description,
         format: c.format,
+        static_image_url: c.previewImageUrl || null,
         clue_type:
           c.format === 'audio'
             ? 'audio'
@@ -2979,6 +3012,200 @@ Return strict JSON:
   }
 }
 
+/**
+ * IMPROVEMENT #2: 1-Click "Tie to Innocent Suspect (Inject Double-Meaning Twist)"
+ * Rewrites/enhances a Beat Clue so that it still 100% proves the Beat's core murder facts,
+ * while embedding an incriminating double-meaning detail that frames the chosen innocent suspect!
+ */
+export async function injectDoubleMeaningTwistIntoBeatClueAction(params: {
+  blueprint: MysteryBlueprintInput;
+  beat: BlueprintBeatInput;
+  clue: SuggestedClueCandidate;
+  targetSuspectRole: string;
+}): Promise<{
+  success: boolean;
+  updatedClue?: Partial<SuggestedClueCandidate>;
+  error?: string;
+}> {
+  await requireAdmin();
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
 
+  const { blueprint, beat, clue, targetSuspectRole } = params;
+  const cleanRole = targetSuspectRole.replace(/^\{\{|\}\}$/g, '').trim();
+  const suspectChar = blueprint.characters.find(
+    (c) => c.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === cleanRole.toLowerCase()
+  );
+  const spiceDirective = getSpiceRubricDirective(blueprint.spiceLevel);
+  const tokenDirective = getGenderFlexTokenDirective(blueprint.characters);
 
+  try {
+    const prompt = `You are the Master Double-Meaning Clue Architect for Back Pocket Mysteries.
+We have an existing Core Beat Clue for **Beat #${beat.beatNumber} (${beat.timeWindow} — ${beat.title})**:
+- Beat Description: "${beat.description}"
+- Current Clue Title: "${clue.title}"
+- Current Clue Format: "${clue.format}"
+- Current Clue Content: "${clue.description}"
+- What It Proves About the Beat: "${clue.pointsTo}"
 
+TARGET INNOCENT SUSPECT TO FRAME VIA DOUBLE MEANING:
+- Suspect Role: {{${cleanRole}}}
+- Suspect Concept & Connections: ${suspectChar?.conceptNotes || 'Innocent suspect at the scene'}
+- Suspect Motive / Secret: ${suspectChar?.motiveOrSecret || 'Secret grievance against the Victim'}
+
+YOUR TASK:
+Rewrite/enhance this clue so that:
+1. It **STILL 100% proves Beat #${beat.beatNumber}** (${clue.pointsTo}). Do NOT lose any of the core Beat facts!
+2. It weaves in a razor-sharp **Double-Meaning Twist** that ALSO implicates **{{${cleanRole}}}** (based on {{${cleanRole}}}'s motive/secret above) so players at the table can't tell whether the clue points to the real killer or {{${cleanRole}}}!
+3. Keep the format as "${clue.format}" and match the **${blueprint.spiceLevel}** spice level.
+
+${spiceDirective}
+
+${tokenDirective}
+
+Return strict JSON:
+{
+  "title": "Updated or refined clue title",
+  "description": "Updated in-world clue text/dialogue calibrated to ${blueprint.spiceLevel} spice that proves Beat #${beat.beatNumber} AND embeds a double-meaning detail implicating {{${cleanRole}}}.",
+  "doubleMeaningNote": "1-2 sentences explaining how this clue now frames {{${cleanRole}}} via double meaning.",
+  "strengthSummary": "1 sentence explaining how this clue proves Beat #${beat.beatNumber} while deflecting suspicion onto {{${cleanRole}}}.",
+  "involvedRoles": ["The Role A", "${cleanRole}"]
+}`;
+
+    const parsed = await generateArchitectJson({
+      apiKey,
+      prompt,
+      featureName: 'architect_inject_double_meaning_twist',
+    });
+
+    const mergedRoles = Array.from(
+      new Set([
+        ...(clue.involvedRoles || []),
+        ...(Array.isArray(parsed.involvedRoles) ? parsed.involvedRoles : []),
+        cleanRole,
+      ])
+    ).map((r) => String(r).replace(/^\{\{|\}\}$/g, '').trim());
+
+    return {
+      success: true,
+      updatedClue: {
+        title: String(parsed.title || clue.title).trim(),
+        description: ensureSpiceFlavorInClueDescription(
+          String(parsed.description || clue.description).trim(),
+          blueprint.spiceLevel,
+          clue.format
+        ),
+        doubleMeaningNote: String(
+          parsed.doubleMeaningNote ||
+            `Creates a double-meaning hook implicating {{${cleanRole}}} (${suspectChar?.motiveOrSecret || 'secret motive'}).`
+        ).trim(),
+        strengthTier: 'Double-Meaning Misdirection',
+        strengthSummary: String(
+          parsed.strengthSummary ||
+            `Proves Beat #${beat.beatNumber} while framing {{${cleanRole}}} via a double-meaning twist.`
+        ).trim(),
+        involvedRoles: mergedRoles,
+      },
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to inject double-meaning twist.',
+    };
+  }
+}
+
+/**
+ * IMPROVEMENT #4: 1-Click Test Photo Render for Photo Clues ('physical_prop' or 'cctv')
+ * Renders the 3-sentence forensic photo prompt via gemini-2.5-flash-image, uploads to Supabase
+ * `mystery-assets`, and returns the public image URL so the creator can preview the photo immediately
+ * (and automatically carry it over when turning the blueprint into a Mystery Base!).
+ */
+export async function testRenderArchitectCluePhotoAction(params: {
+  clueTitle: string;
+  generationPrompt: string;
+  spiceLevel: ArchitectSpiceLevel;
+}): Promise<{
+  success: boolean;
+  imageUrl?: string;
+  error?: string;
+}> {
+  const { supabase } = await requireAdmin();
+  const apiKey = resolveGeminiApiKey();
+  if (!apiKey) {
+    return { success: false, error: 'Missing GEMINI_API_KEY in environment.' };
+  }
+
+  const cleanPrompt = String(params.generationPrompt || params.clueTitle || '')
+    .replace(/\{\{[^}]+\}\}/g, 'a suspect')
+    .trim();
+
+  if (!cleanPrompt) {
+    return { success: false, error: 'Please enter a photo prompt first.' };
+  }
+
+  try {
+    const fullImagePrompt = `${cleanPrompt}\nMANDATORY FORENSIC PHOTOGRAPHY RULES: Edge-to-edge full-bleed 4:3 crime-scene photograph, moody ${params.spiceLevel}-noir lighting, 35mm film grain, strictly ZERO readable text, ZERO letters, ZERO numbers, ZERO watermarks.`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: fullImagePrompt }] }],
+        generationConfig: { responseModalities: ['IMAGE'] },
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return {
+        success: false,
+        error: `Gemini image generation error (${res.status}): ${errText.slice(0, 140)}`,
+      };
+    }
+
+    const data = await res.json();
+    const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+    const b64 = imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
+    if (!b64) {
+      return {
+        success: false,
+        error: 'Image model returned an empty image payload. Try tweaking the photo prompt.',
+      };
+    }
+
+    try {
+      const buffer = Buffer.from(b64, 'base64');
+      const fileName = `architect-previews/clue-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 7)}.png`;
+      const { error: upErr } = await supabase.storage
+        .from('mystery-assets')
+        .upload(fileName, buffer, {
+          contentType: 'image/png',
+          upsert: true,
+        });
+      if (!upErr) {
+        const { data: pubData } = supabase.storage.from('mystery-assets').getPublicUrl(fileName);
+        if (pubData?.publicUrl) {
+          return { success: true, imageUrl: pubData.publicUrl };
+        }
+      }
+    } catch {
+      // Fallback to data URL below
+    }
+
+    return {
+      success: true,
+      imageUrl: `data:image/png;base64,${b64}`,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to test-render clue photo.',
+    };
+  }
+}

@@ -26,10 +26,13 @@ import {
   saveArchitectCloudWorkspaceAction,
   loadArchitectCloudWorkspaceAction,
   suggestBetterMysteryTitlesAction,
+  injectDoubleMeaningTwistIntoBeatClueAction,
+  testRenderArchitectCluePhotoAction,
 } from '@/app/actions/base-architect';
 import { ClueFormat, CLUE_FORMAT_OPTIONS } from '@/utils/clue-format';
 import { recommendDifficultyFromPlotAndClues } from '@/utils/architect-difficulty-recommender';
 import { RelationshipGraph } from '@/app/[locale]/(builder)/builder/mysteries/[id]/relationships/_components/RelationshipGraph';
+import { ClueRenderer } from '@/components/clues/ClueRenderer';
 
 const DEFAULT_COLORS = [
   'Hot Pink',
@@ -1518,6 +1521,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const [isAssembling, setIsAssembling] = useState(false);
   const [isAutoFixing, setIsAutoFixing] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
+  const [previewingClueIds, setPreviewingClueIds] = useState<Record<string, boolean>>({});
+  const [renderingPhotoClueId, setRenderingPhotoClueId] = useState<string | null>(null);
+  const [injectingTwistClueId, setInjectingTwistClueId] = useState<string | null>(null);
 
   // Import existing base from Supabase dropdown
   const [showLoadMenu, setShowLoadMenu] = useState(false);
@@ -2318,6 +2324,535 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     () => [...selectedCoreClues, ...selectedRedHerringClues],
     [selectedCoreClues, selectedRedHerringClues]
   );
+
+  // ==========================================================================
+  // IMPROVEMENTS 1–5 HELPERS & HANDLERS
+  // ==========================================================================
+  const togglePreviewClueUi = (clueId: string) => {
+    setPreviewingClueIds((prev) => ({ ...prev, [clueId]: !prev[clueId] }));
+  };
+
+  const applyCluePatchEverywhere = (
+    clue: SuggestedClueCandidate,
+    patch: Partial<SuggestedClueCandidate>
+  ) => {
+    if (clue.isRedHerring && clue.subplotId) {
+      updateRedHerringClueField(clue.subplotId, clue.id, patch);
+    } else if (clue.beatNumber) {
+      updateBeatClueField(clue.beatNumber, clue.id, patch);
+    } else {
+      // Fallback: scan beatCluesMap and subplots
+      setBeatCluesMap((prev) => {
+        const next: Record<number, SuggestedClueCandidate[]> = {};
+        for (const [bKey, list] of Object.entries(prev)) {
+          next[Number(bKey)] = (list || []).map((c) =>
+            c.id === clue.id ? { ...c, ...patch } : c
+          );
+        }
+        return next;
+      });
+      setSubplots((prev) =>
+        prev.map((s) => ({
+          ...s,
+          decoyClues: s.decoyClues.map((dc) => (dc.id === clue.id ? { ...dc, ...patch } : dc)),
+        }))
+      );
+    }
+  };
+
+  const handleTestRenderCluePhoto = async (clue: SuggestedClueCandidate) => {
+    setErrorMessage(null);
+    setRenderingPhotoClueId(clue.id);
+    try {
+      const promptToUse =
+        clue.generationPrompt ||
+        buildDefaultDetailedPhotoPrompt(clue.title, clue.description, blueprint.spiceLevel);
+      const res = await testRenderArchitectCluePhotoAction({
+        clueTitle: clue.title,
+        generationPrompt: promptToUse,
+        spiceLevel: blueprint.spiceLevel,
+      });
+      if (!res.success || !res.imageUrl) {
+        setErrorMessage(res.error || 'Failed to test-render photo.');
+      } else {
+        applyCluePatchEverywhere(clue, {
+          generationPrompt: promptToUse,
+          previewImageUrl: res.imageUrl,
+        });
+        setPreviewingClueIds((prev) => ({ ...prev, [clue.id]: true }));
+        setStatusToast(
+          `Rendered live evidence photo for "${clue.title}"! This photo will automatically transfer when you Turn Into Mystery Base.`
+        );
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Error rendering clue photo.');
+    } finally {
+      setRenderingPhotoClueId(null);
+    }
+  };
+
+  const handleInjectDoubleMeaningSuspect = async (
+    beatNum: number,
+    clue: SuggestedClueCandidate,
+    targetSuspectRole: string
+  ) => {
+    if (!targetSuspectRole) return;
+    const beatObj =
+      blueprint.beats.find((b) => b.beatNumber === beatNum) || blueprint.beats[0];
+    if (!beatObj) return;
+
+    setErrorMessage(null);
+    setInjectingTwistClueId(clue.id);
+    try {
+      const res = await injectDoubleMeaningTwistIntoBeatClueAction({
+        blueprint,
+        beat: beatObj,
+        clue,
+        targetSuspectRole,
+      });
+      if (!res.success || !res.updatedClue) {
+        setErrorMessage(res.error || 'Failed to inject double-meaning twist.');
+      } else {
+        updateBeatClueField(beatNum, clue.id, res.updatedClue);
+        setStatusToast(
+          `Wove a double-meaning twist into "${clue.title}" framing {{${targetSuspectRole}}} while keeping Beat #${beatNum} 100% intact!`
+        );
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Error injecting double-meaning twist.');
+    } finally {
+      setInjectingTwistClueId(null);
+    }
+  };
+
+  const getInvolvedNonVictimRolesForClue = (clue: SuggestedClueCandidate): string[] => {
+    const foundRoles = new Set<string>();
+    const nonVictims = blueprint.characters.filter((c) => c.plotRole !== 'victim');
+    for (const r of clue.involvedRoles || []) {
+      const clean = r.replace(/^\{\{|\}\}$/g, '').trim();
+      const matched = nonVictims.find(
+        (c) => c.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === clean.toLowerCase()
+      );
+      if (matched) foundRoles.add(matched.roleTitle);
+    }
+    const textToScan = `${clue.title} ${clue.description} ${clue.pointsTo} ${clue.doubleMeaningNote || ''}`.toLowerCase();
+    for (const ch of nonVictims) {
+      const clean = ch.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
+      if (textToScan.includes(clean.toLowerCase())) {
+        foundRoles.add(ch.roleTitle);
+      }
+    }
+    if (foundRoles.size === 0 && nonVictims.length > 0) {
+      foundRoles.add(nonVictims[0].roleTitle);
+    }
+    return Array.from(foundRoles);
+  };
+
+  const getSyncedTalkingPointsForClue = (
+    clue: SuggestedClueCandidate
+  ): { roleTitle: string; plotRole: CharacterPlotRole; defensiveLine: string }[] => {
+    const roles = getInvolvedNonVictimRolesForClue(clue);
+    return roles.map((roleTitle) => {
+      const charObj = blueprint.characters.find(
+        (c) =>
+          c.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() ===
+          roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase()
+      );
+      const plotRole: CharacterPlotRole = charObj?.plotRole || 'innocent';
+      const custom = (clue.characterTalkingPoints || []).find(
+        (tp) =>
+          tp.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() ===
+          roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase()
+      );
+      if (custom && custom.defensiveLine) {
+        return { roleTitle, plotRole, defensiveLine: custom.defensiveLine };
+      }
+
+      const defaultLine =
+        plotRole === 'killer'
+          ? `When "${clue.title}" drops in Round ${clue.roundNumber}: Deny any fatal intent around ${clue.timestampLabel} and point out how this evidence actually matches your rival suspects' motive.`
+          : plotRole === 'assistant'
+            ? `When "${clue.title}" drops in Round ${clue.roundNumber}: Admit only the bare minimum about ${clue.timestampLabel} while protecting your secret cover-up pact.`
+            : `When "${clue.title}" drops in Round ${clue.roundNumber}: Defend your alibi at ${clue.timestampLabel} — admit your private dispute with the victim, but insist someone else used it to frame you.`;
+
+      return { roleTitle, plotRole, defensiveLine: defaultLine };
+    });
+  };
+
+  const updateClueTalkingPoint = (
+    clue: SuggestedClueCandidate,
+    roleTitle: string,
+    nextLine: string
+  ) => {
+    const currentList = getSyncedTalkingPointsForClue(clue);
+    const updated = currentList.map((tp) =>
+      tp.roleTitle === roleTitle
+        ? { roleTitle: tp.roleTitle, defensiveLine: nextLine }
+        : { roleTitle: tp.roleTitle, defensiveLine: tp.defensiveLine }
+    );
+    applyCluePatchEverywhere(clue, { characterTalkingPoints: updated });
+  };
+
+  const renderInlineClueUiPreview = (clue: SuggestedClueCandidate) => {
+    const isPreviewOpen = Boolean(previewingClueIds[clue.id]);
+    const isPhoto = isPhotoClueFormat(clue.format);
+    const isRenderingThisPhoto = renderingPhotoClueId === clue.id;
+
+    return (
+      <div className="space-y-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => togglePreviewClueUi(clue.id)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
+              isPreviewOpen
+                ? 'bg-slate-900 text-white border-slate-900'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+            }`}
+          >
+            {isPreviewOpen ? '🙈 Hide Player UI Preview' : '👁️ Preview What Players See (Live UI)'}
+          </button>
+
+          {isPhoto && (
+            <button
+              type="button"
+              onClick={() => handleTestRenderCluePhoto(clue)}
+              disabled={isRenderingThisPhoto}
+              className="px-3 py-1.5 rounded-xl text-xs font-black bg-pink-50 hover:bg-pink-100 text-brand-pink border border-pink-200 transition cursor-pointer disabled:opacity-50"
+            >
+              {isRenderingThisPhoto
+                ? '⚡ Rendering Forensic Photo...'
+                : clue.previewImageUrl
+                  ? '🔄 Re-Render Test Photo'
+                  : '⚡ Test Render AI Photo Now'}
+            </button>
+          )}
+
+          {isPhoto && clue.previewImageUrl && (
+            <span className="text-[11px] font-bold text-emerald-700">
+              ✓ Live Photo Rendered (Will Carry Over to Mystery Base)
+            </span>
+          )}
+        </div>
+
+        {isPreviewOpen && (
+          <div className="rounded-2xl bg-slate-900/95 border border-slate-800 p-4 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-slate-400">
+              <span>👁️ Live Player-Facing Clue Card ({clue.format})</span>
+              <span>Timestamp: {clue.timestampLabel}</span>
+            </div>
+            <div className="max-w-xl mx-auto">
+              <ClueRenderer
+                clue={{
+                  id: clue.id,
+                  title: clue.title,
+                  description: clue.description,
+                  format: clue.format,
+                  round_number: clue.roundNumber,
+                  static_image_url: clue.previewImageUrl || null,
+                }}
+                formatOverride={clue.format}
+                hydratedTitle={clue.title}
+                hydratedDescription={clue.description}
+                showImage={true}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // IMPROVEMENT #5: Full-Mystery 5-Beat Coverage Summary Bar
+  const renderFiveBeatCoverageSummaryBar = () => {
+    const beatSummaries = blueprint.beats.map((b) => {
+      const cands = beatCluesMap[b.beatNumber] || [];
+      const cov = analyzeBeatSelectionCoverage(b, cands, blueprint.id);
+      const pickedCount = cov.selectedMeta.length;
+      return {
+        beat: b,
+        pickedCount,
+        cov,
+      };
+    });
+
+    const fullyCoveredBeatsCount = beatSummaries.filter(
+      (bs) => bs.pickedCount >= 2 && bs.cov.isWholeBeatCovered
+    ).length;
+
+    return (
+      <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+              🧩 Full-Mystery 5-Beat Coverage Health Strip ({fullyCoveredBeatsCount} /{' '}
+              {blueprint.beats.length} Beats at 100%)
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              Check all 5 beats at a glance before generating Red Herrings. Click any beat below to
+              inspect or fix gaps.
+            </p>
+          </div>
+          {fullyCoveredBeatsCount === blueprint.beats.length && (
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+              ✓ All 5 Beats 100% Covered ({selectedCoreClues.length} Clues)
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+          {beatSummaries.map(({ beat, pickedCount, cov }) => {
+            const isFocused = activeBeatNumber === beat.beatNumber;
+            const isFull = pickedCount >= 2 && cov.isWholeBeatCovered;
+            const hasGap = pickedCount >= 2 && !cov.isWholeBeatCovered;
+
+            return (
+              <button
+                key={beat.beatNumber}
+                type="button"
+                onClick={() => handleSelectBeatTab(beat.beatNumber)}
+                className={`p-3 rounded-xl border-2 text-left transition cursor-pointer space-y-1 ${
+                  isFocused
+                    ? 'border-brand-pink bg-pink-50/50 shadow-xs'
+                    : isFull
+                      ? 'border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50'
+                      : hasGap
+                        ? 'border-amber-300 bg-amber-50/60 hover:bg-amber-50'
+                        : 'border-slate-200 bg-white hover:bg-slate-100'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[11px] font-black uppercase text-slate-800">
+                    Beat #{beat.beatNumber}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      isFull
+                        ? 'bg-emerald-600 text-white'
+                        : hasGap
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {isFull
+                      ? '✓ 100%'
+                      : hasGap
+                        ? `⚠️ ${cov.coveragePct}%`
+                        : `${pickedCount}/2`}
+                  </span>
+                </div>
+                <div className="text-[11px] font-bold text-slate-800 truncate">{beat.title}</div>
+                <div className="text-[10px] text-slate-500">
+                  {isFull
+                    ? '3/3 Sub-Facts Covered'
+                    : hasGap
+                      ? `Gap: ${cov.uncoveredSubFacts[0] || '1 Missing Fact'}`
+                      : `${cov.coveredCount}/3 Sub-Facts (${pickedCount}/2 Picked)`}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // IMPROVEMENT #1: Suspect Heat & Table Spotlight Meter (Step 3 & Step 4)
+  const renderSuspectHeatAndSpotlightPanel = (cluesPool: SuggestedClueCandidate[]) => {
+    if (cluesPool.length === 0) return null;
+
+    const charStats = blueprint.characters.map((ch, idx) => {
+      const cleanRole = ch.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
+      const matchingClues = cluesPool.filter((cl) => {
+        const inList = (cl.involvedRoles || []).some(
+          (r) => r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === cleanRole.toLowerCase()
+        );
+        const inText = `${cl.title} ${cl.description} ${cl.pointsTo} ${cl.doubleMeaningNote || ''}`
+          .toLowerCase()
+          .includes(cleanRole.toLowerCase());
+        return inList || inText;
+      });
+
+      const r1Count = matchingClues.filter((c) => c.roundNumber === 1).length;
+      const r2Count = matchingClues.filter((c) => c.roundNumber === 2).length;
+      const r3Count = matchingClues.filter((c) => c.roundNumber >= 3).length;
+
+      return {
+        character: ch,
+        pillStyle: CHARACTER_PILL_STYLES[idx % CHARACTER_PILL_STYLES.length],
+        totalCount: matchingClues.length,
+        r1Count,
+        r2Count,
+        r3Count,
+        matchingClues,
+      };
+    });
+
+    const underFeaturedSuspects = charStats.filter(
+      (cs) => cs.character.plotRole !== 'victim' && cs.totalCount < 2
+    );
+    const killerStat = charStats.find((cs) => cs.character.plotRole === 'killer');
+    const r1Total = Math.max(1, cluesPool.filter((c) => c.roundNumber === 1).length);
+    const killerTooHotInR1 =
+      killerStat && killerStat.r1Count >= 3 && killerStat.r1Count / r1Total > 0.5;
+
+    return (
+      <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+              🕵️‍♂️ Suspect Heat &amp; Table Spotlight Meter ({cluesPool.length} Selected Clues)
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              Ensures every guest gets accused/involved at the party table (target: 3+ clues per
+              suspect) and keeps early Round 1 heat off the true Killer.
+            </p>
+          </div>
+          {underFeaturedSuspects.length === 0 && !killerTooHotInR1 && (
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+              ✓ Balanced Suspect Spotlight
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {charStats.map((cs) => {
+            const ch = cs.character;
+            const isLow = ch.plotRole !== 'victim' && cs.totalCount < 2;
+            const pct = Math.min(100, Math.round((cs.totalCount / Math.max(1, cluesPool.length)) * 100));
+
+            return (
+              <div
+                key={ch.id}
+                className={`rounded-xl bg-white border p-3.5 space-y-2 ${
+                  isLow ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-black border ${cs.pillStyle.bg} ${cs.pillStyle.text} ${cs.pillStyle.border}`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${cs.pillStyle.dot}`} />
+                    <span>{ch.roleTitle}</span>
+                  </span>
+                  <span className="text-xs font-black text-slate-800">
+                    {cs.totalCount} Clues ({pct}%)
+                  </span>
+                </div>
+
+                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    style={{ width: `${Math.min(100, cs.totalCount * 14)}%` }}
+                    className={`h-full rounded-full ${
+                      ch.plotRole === 'killer'
+                        ? 'bg-rose-600'
+                        : ch.plotRole === 'assistant'
+                          ? 'bg-amber-500'
+                          : 'bg-indigo-600'
+                    }`}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                  <span>
+                    {ch.plotRole === 'victim'
+                      ? '💀 Victim'
+                      : ch.plotRole === 'killer'
+                        ? '🔪 Killer'
+                        : ch.plotRole === 'assistant'
+                          ? '🤝 Accomplice'
+                          : '🕵️ Suspect'}
+                  </span>
+                  <span>
+                    R1: <strong>{cs.r1Count}</strong> • R2: <strong>{cs.r2Count}</strong> • R3:{' '}
+                    <strong>{cs.r3Count}</strong>
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Actionable Suspect Spotlight & Killer Heat Suggestions */}
+        {(underFeaturedSuspects.length > 0 || killerTooHotInR1) && (
+          <div className="space-y-2 pt-1">
+            {underFeaturedSuspects.map((uf) => {
+              const targetCoreClue =
+                selectedCoreClues.find(
+                  (c) => !(c.involvedRoles || []).includes(uf.character.roleTitle)
+                ) || selectedCoreClues[0];
+
+              return (
+                <div
+                  key={uf.character.id}
+                  className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+                >
+                  <div className="text-xs font-semibold text-amber-950 flex-1">
+                    💡 <strong>Table Spotlight Suggestion:</strong>{' '}
+                    <strong>{uf.character.roleTitle}</strong> only appears in{' '}
+                    <strong>{uf.totalCount}</strong> selected clue(s). We suggest weaving a
+                    double-meaning twist for <strong>{uf.character.roleTitle}</strong> into{' '}
+                    {targetCoreClue ? `"${targetCoreClue.title}"` : 'a Beat Clue'} so that player is
+                    actively interrogated at the party!
+                  </div>
+                  {targetCoreClue && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInjectDoubleMeaningSuspect(
+                          targetCoreClue.beatNumber || 1,
+                          targetCoreClue,
+                          uf.character.roleTitle
+                        )
+                      }
+                      disabled={injectingTwistClueId === targetCoreClue.id}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-amber-900 hover:bg-brand-pink text-white transition cursor-pointer whitespace-nowrap disabled:opacity-50"
+                    >
+                      {injectingTwistClueId === targetCoreClue.id
+                        ? 'Weaving Twist...'
+                        : `🎭 Tie ${uf.character.roleTitle} Into "${targetCoreClue.title.slice(0, 24)}..."`}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            {killerTooHotInR1 && killerStat && (
+              <div className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-xs font-semibold text-rose-950 flex-1">
+                  ⚠️ <strong>Early Killer Heat Warning:</strong> True Killer{' '}
+                  <strong>{killerStat.character.roleTitle}</strong> is implicated in{' '}
+                  <strong>{killerStat.r1Count} Round 1 clues</strong>. We suggest moving one of
+                  their Round 1 Core Clues to Round 2 or Round {totalRounds} so players don&apos;t
+                  lock onto the Killer in Round 1.
+                </div>
+                {(() => {
+                  const r1KillerClue = killerStat.matchingClues.find(
+                    (c) => c.roundNumber === 1 && !c.isRedHerring
+                  );
+                  if (!r1KillerClue) return null;
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        applyCluePatchEverywhere(r1KillerClue, { roundNumber: 2 });
+                        setStatusToast(
+                          `Moved "${r1KillerClue.title}" from Round 1 to Round 2 to keep early heat off the Killer!`
+                        );
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-rose-900 hover:bg-brand-pink text-white transition cursor-pointer whitespace-nowrap"
+                    >
+                      🔀 Move &ldquo;{r1KillerClue.title.slice(0, 22)}...&rdquo; to Round 2
+                    </button>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderMediaMixBreakdownPanel = (
     cluesPool: SuggestedClueCandidate[],
@@ -4014,6 +4549,35 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               />
                             </div>
                           )}
+
+                          {/* IMPROVEMENT #2: 1-Click "Tie Double-Meaning Twist to Innocent Suspect" */}
+                          <div className="pt-2 border-t border-slate-200/70 flex flex-wrap items-center gap-1.5">
+                            <span className="text-[11px] font-black text-indigo-800">
+                              🎭 1-Click Tie Double-Meaning to Suspect:
+                            </span>
+                            {blueprint.characters
+                              .filter((ch) => ch.plotRole !== 'victim' && ch.plotRole !== 'killer')
+                              .map((ch) => {
+                                const isSpinning = injectingTwistClueId === clue.id;
+                                return (
+                                  <button
+                                    key={ch.id}
+                                    type="button"
+                                    disabled={isSpinning}
+                                    onClick={() =>
+                                      handleInjectDoubleMeaningSuspect(
+                                        activeBeatNumber,
+                                        clue,
+                                        ch.roleTitle
+                                      )
+                                    }
+                                    className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-900 hover:text-white border border-indigo-200 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                                  >
+                                    {isSpinning ? 'Weaving...' : `+ Frame ${ch.roleTitle}`}
+                                  </button>
+                                );
+                              })}
+                          </div>
                         </div>
 
                         {/* ONLY show AI Evidence Photo Prompt if this clue is actually a Photo Clue (physical_prop or cctv)! */}
@@ -4059,11 +4623,17 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           </div>
                         )}
                       </div>
+
+                      {/* IMPROVEMENT #4: Live Player UI Preview + 1-Click Test Render Photo */}
+                      {renderInlineClueUiPreview(clue)}
                     </div>
                   );
                 })}
               </div>
             )}
+
+            {/* IMPROVEMENT #5: Full-Mystery 5-Beat Coverage Health Strip */}
+            {renderFiveBeatCoverageSummaryBar()}
 
             {selectedCoreClues.length >= 2 &&
               renderMediaMixBreakdownPanel(
@@ -4455,6 +5025,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                 />
                               </div>
                             )}
+
+                            {/* IMPROVEMENT #4: Live Player UI Preview + 1-Click Test Render Photo */}
+                            {renderInlineClueUiPreview(dc)}
                           </div>
                         );
                       })}
@@ -4463,6 +5036,10 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 )}
               </div>
             )}
+
+            {/* IMPROVEMENT #1: Suspect Heat & Table Spotlight Meter */}
+            {allSelectedClues.length > 0 &&
+              renderSuspectHeatAndSpotlightPanel(allSelectedClues)}
 
             {allSelectedClues.length > 0 &&
               renderMediaMixBreakdownPanel(
@@ -4566,6 +5143,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               'Pack Media Mix & Pacing Breakdown'
             )}
 
+            {/* IMPROVEMENT #1: Suspect Heat & Table Spotlight Meter */}
+            {renderSuspectHeatAndSpotlightPanel(allSelectedClues)}
+
             {assembled && (
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap gap-2">
@@ -4668,11 +5248,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               allSelectedClues.findIndex((c) => c.id === rc.id) + 1;
                             const isPhoto = isPhotoClueFormat(rc.format);
                             const medium = getClueMediumCategory(rc.format);
+                            const syncedTalkingPoints = getSyncedTalkingPointsForClue(rc);
 
                             return (
                               <div
                                 key={rc.id}
-                                className="rounded-xl bg-white border border-slate-200 p-4 text-xs space-y-2.5"
+                                className="rounded-xl bg-white border border-slate-200 p-4 text-xs space-y-3"
                               >
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <div className="flex flex-wrap items-center gap-2">
@@ -4711,7 +5292,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                         : `Core Beat #${rc.beatNumber || '?'}`}
                                     </span>
 
-                                    {/* Allow switching format right here on Step 4 too! */}
                                     <select
                                       value={rc.format}
                                       onChange={(e) => {
@@ -4771,12 +5351,55 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                     </select>
                                   </div>
                                 </div>
+
                                 <div className="text-sm text-slate-800">
                                   <HighlightedMysteryText
                                     text={rc.description}
                                     characters={blueprint.characters}
                                   />
                                 </div>
+
+                                {/* IMPROVEMENT #3: Auto-Synced Character Script Talking Points for This Clue */}
+                                {syncedTalkingPoints.length > 0 && (
+                                  <div className="rounded-xl bg-indigo-50/50 border border-indigo-200/80 p-3 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[11px] font-black uppercase tracking-wider text-indigo-900">
+                                        🔗 Auto-Synced Round {rc.roundNumber} Character Script
+                                        Talking Points:
+                                      </span>
+                                      <span className="text-[10px] font-semibold text-indigo-700">
+                                        Injected into character booklets on export
+                                      </span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      {syncedTalkingPoints.map((tp) => (
+                                        <div
+                                          key={tp.roleTitle}
+                                          className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white rounded-lg border border-indigo-100 px-2.5 py-1.5"
+                                        >
+                                          <HighlightedMysteryText
+                                            text={`{{${tp.roleTitle}}}`}
+                                            characters={blueprint.characters}
+                                            className="inline whitespace-nowrap"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={tp.defensiveLine}
+                                            onChange={(e) =>
+                                              updateClueTalkingPoint(
+                                                rc,
+                                                tp.roleTitle,
+                                                e.target.value
+                                              )
+                                            }
+                                            className="flex-1 text-xs text-slate-800 bg-transparent focus:outline-none"
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
                                 {isPhoto && rc.generationPrompt && (
                                   <div className="rounded-lg bg-pink-50/50 border border-pink-200/70 px-3 py-2 text-[11px] text-slate-600">
                                     <strong className="text-brand-pink">
@@ -4785,6 +5408,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                     {rc.generationPrompt}
                                   </div>
                                 )}
+
+                                {/* IMPROVEMENT #4: Live Player UI Preview + 1-Click Test Render Photo */}
+                                {renderInlineClueUiPreview(rc)}
                               </div>
                             );
                           })}
