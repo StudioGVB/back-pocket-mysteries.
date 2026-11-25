@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Gift, Sparkles, ArrowRight, CheckCircle2, X } from 'lucide-react';
+import PriceDisplay from '@/components/marketing/PriceDisplay';
 import {
   getLaunchWaitlistStatusAction,
   submitEmailLead,
@@ -424,7 +425,7 @@ export default function First50WaitlistBanner({
                     <p className="text-xs text-slate-300 font-medium leading-relaxed">
                       Join our founding host list and get a{' '}
                       <strong className="text-white font-bold">100% Free 6-Player Custom Murder Mystery Pack</strong>{' '}
-                      (Basic Tier • worth $19 / £15) when we launch.
+                      (Basic Tier • valued at <PriceDisplay tier="basic" locale="en" />) when we launch.
                     </p>
                   </div>
 

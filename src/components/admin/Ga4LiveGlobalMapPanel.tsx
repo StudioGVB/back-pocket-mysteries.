@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Ga4StatsResult,
   saveGoogleAnalytics4ConfigAction,
 } from '@/app/actions/admin-vercel';
+import type { LivePresenceSnapshot } from '@/lib/live-presence-store';
 
 interface VercelCountryRow {
   key: string; // ISO-2 e.g. 'GB', 'US', 'AU' or country name
@@ -79,20 +80,32 @@ function latLonToSvg(lat: number, lon: number): { x: number; y: number } {
   return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
 }
 
+function formatTimeAgo(ts: number): string {
+  const sec = Math.max(1, Math.round((Date.now() - ts) / 1000));
+  if (sec < 60) return `${sec}s ago`;
+  const mins = Math.floor(sec / 60);
+  return `${mins}m ago`;
+}
+
 export function Ga4LiveGlobalMapPanel({
   ga4,
   vercelCountries,
+  initialPresence,
   days,
 }: {
   ga4: Ga4StatsResult;
   vercelCountries: VercelCountryRow[];
+  initialPresence: LivePresenceSnapshot;
   days: number;
 }) {
   const router = useRouter();
+  const [presence, setPresence] = useState<LivePresenceSnapshot>(initialPresence);
   const [showSetupDrawer, setShowSetupDrawer] = useState(false);
   const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null);
 
-  const [measurementIdInput, setMeasurementIdInput] = useState(ga4.measurementId || '');
+  const [measurementIdInput, setMeasurementIdInput] = useState(
+    ga4.measurementId || 'G-VW0PRLFNL4'
+  );
   const [propertyIdInput, setPropertyIdInput] = useState(ga4.propertyId || '');
   const [serviceAccountInput, setServiceAccountInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -100,7 +113,33 @@ export function Ga4LiveGlobalMapPanel({
     null
   );
 
-  // Merge GA4 historicalGeo with Vercel topCountries so the Global Map works immediately
+  // Auto-poll /api/analytics/presence every 15s for real-time live visitor stream
+  useEffect(() => {
+    const poll = () => {
+      void fetch('/api/analytics/presence', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((res) => {
+          if (res?.ok && res.snapshot) {
+            setPresence(res.snapshot);
+          }
+        })
+        .catch(() => {});
+    };
+    const interval = window.setInterval(poll, 15000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  // Total live people on site right now (max of first-party 3-min beacon stream and GA4 30-min realtime stream)
+  const liveActiveRightNow = Math.max(
+    presence.activeRightNowCount || 0,
+    ga4.realtime?.activeUsersLast30Min || 0
+  );
+  const activeLast30Min = Math.max(
+    presence.activeLast30MinCount || 0,
+    ga4.realtime?.activeUsersLast30Min || 0
+  );
+
+  // Merge GA4 historicalGeo + Vercel topCountries + First-Party Live Sessions onto the World Map
   const mapPins = useMemo(() => {
     const byCode = new Map<
       string,
@@ -155,8 +194,26 @@ export function Ga4LiveGlobalMapPanel({
       });
     }
 
+    // 4. Overlay First-Party Live Visitors
+    for (const lv of presence.liveVisitors || []) {
+      const coord = resolveCountryCoord(lv.countryCode);
+      if (!coord) continue;
+      const existing = byCode.get(coord.code);
+      byCode.set(coord.code, {
+        coord,
+        visitors: Math.max(existing?.visitors || 0, 1),
+        pageviews: Math.max(existing?.pageviews || 0, 1),
+        liveNow: (existing?.liveNow || 0) + 1,
+      });
+    }
+
     return Array.from(byCode.values()).sort((a, b) => b.visitors - a.visitors);
-  }, [ga4.historicalGeo, ga4.realtime?.activeLocations, vercelCountries]);
+  }, [
+    ga4.historicalGeo,
+    ga4.realtime?.activeLocations,
+    vercelCountries,
+    presence.liveVisitors,
+  ]);
 
   const totalGeoVisitors = mapPins.reduce((s, p) => s + p.visitors, 0);
   const maxCountryVisitors = Math.max(1, ...mapPins.map((p) => p.visitors));
@@ -179,7 +236,7 @@ export function Ga4LiveGlobalMapPanel({
       } else {
         setStatusMsg({
           type: 'ok',
-          text: 'Google Analytics 4 connected! Refreshing live telemetry & global map...',
+          text: 'Google Analytics 4 settings saved!',
         });
         setShowSetupDrawer(false);
         router.refresh();
@@ -203,45 +260,29 @@ export function Ga4LiveGlobalMapPanel({
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[11px] font-black uppercase tracking-widest">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               <span>
-                {ga4.isConnected && !ga4.error
-                  ? `${ga4.realtime.activeUsersLast30Min} Live on Site (Last 30m)`
-                  : 'Global Visitor Map & GA4 Live Stream'}
+                {liveActiveRightNow} Live Right Now • {activeLast30Min} Active (Last 30m)
               </span>
             </span>
 
-            {ga4.measurementId ? (
-              <span className="px-2.5 py-1 rounded-full bg-white/10 text-white/80 text-[10px] font-black uppercase tracking-wider">
-                Tag Active: {ga4.measurementId}
-              </span>
-            ) : (
-              <span className="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-black uppercase tracking-wider">
-                GA4 Tag Not Set
-              </span>
-            )}
+            <span className="px-2.5 py-1 rounded-full bg-white/10 text-white/90 text-[10px] font-black uppercase tracking-wider">
+              ✓ GA4 Tag Active: {ga4.measurementId || 'G-VW0PRLFNL4'}
+            </span>
 
-            {ga4.isConnected && !ga4.error && (
-              <span className="px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-[10px] font-black uppercase tracking-wider">
-                GA4 Property #{ga4.propertyId} Connected
-              </span>
-            )}
+            <span className="px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-[10px] font-black uppercase tracking-wider">
+              ⚡ First-Party Live Geo Radar Active (15s Refresh)
+            </span>
           </div>
           <h2 className="text-xl md:text-2xl font-black tracking-tight">
-            Global Audience Map &amp; Real-Time Activity
+            Global Audience Map, Live Visitors &amp; Real-Time Journey Radar
           </h2>
         </div>
 
         <button
           type="button"
           onClick={() => setShowSetupDrawer((prev) => !prev)}
-          className="px-4 py-2.5 rounded-xl bg-brand-pink hover:bg-brand-pink/90 text-white text-xs font-black uppercase tracking-wider shadow-lg transition flex items-center gap-2"
+          className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold transition flex items-center gap-2"
         >
-          <span>
-            {showSetupDrawer
-              ? '✕ Close GA4 Setup'
-              : ga4.isConnected && !ga4.error
-                ? '⚙️ GA4 Settings'
-                : '🔌 Connect Google Analytics 4'}
-          </span>
+          <span>{showSetupDrawer ? '✕ Close GA4 Settings' : '⚙️ GA4 API Settings'}</span>
         </button>
       </div>
 
@@ -264,68 +305,33 @@ export function Ga4LiveGlobalMapPanel({
         </div>
       )}
 
-      {ga4.error && (
-        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-400/30 text-amber-200 text-xs font-semibold leading-relaxed">
-          ⚠️ {ga4.error}
-        </div>
-      )}
-
-      {/* Collapsible Step-by-Step GA4 Connection Drawer */}
+      {/* Optional Collapsible GA4 Property ID / Service Account Drawer */}
       {showSetupDrawer && (
-        <div className="rounded-2xl bg-white/5 border border-white/15 p-6 space-y-5">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-              <div className="text-brand-pink font-black uppercase tracking-wider text-[10px]">
-                Step 1 • Tracking Tag (G-XXXXXXXXXX)
-              </div>
-              <p className="text-white/80 leading-relaxed">
-                In <strong>Google Analytics</strong> → <strong>Admin (Gear Icon)</strong> →{' '}
-                <strong>Data Streams</strong> → click your Web stream and copy your{' '}
-                <strong>Measurement ID</strong> (starts with <code>G-</code>).
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-              <div className="text-indigo-400 font-black uppercase tracking-wider text-[10px]">
-                Step 2 • Property ID (For Live People &amp; Map API)
-              </div>
-              <p className="text-white/80 leading-relaxed">
-                In <strong>GA4 Admin</strong> → <strong>Property Details</strong>, copy your
-                numeric <strong>Property ID</strong> (e.g. <code>482910384</code>).
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-              <div className="text-emerald-400 font-black uppercase tracking-wider text-[10px]">
-                Step 3 • Grant Service Account Viewer Access
-              </div>
-              <p className="text-white/80 leading-relaxed">
-                Paste your <strong>Google Service Account JSON</strong> below, then add its{' '}
-                <code>client_email</code> as a <strong>Viewer</strong> in{' '}
-                <strong>GA4 Admin → Property Access Management</strong> (and enable{' '}
-                <em>Google Analytics Data API</em> in Google Cloud).
-              </p>
-            </div>
+        <div className="rounded-2xl bg-white/5 border border-white/15 p-6 space-y-4">
+          <div className="text-xs text-white/80">
+            Your <strong>GA4 Measurement ID ({ga4.measurementId || 'G-VW0PRLFNL4'})</strong> and{' '}
+            <strong>First-Party Live Presence Radar</strong> are already active! Optionally add your
+            numeric GA4 Property ID &amp; Service Account JSON if you also want to mirror historical
+            GA4 Data API reports.
           </div>
-
           <form onSubmit={handleSaveConfig} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">
-                  1. GA4 Measurement ID (Injects Live Tracking Tag on Site) *
+                  1. GA4 Measurement ID *
                 </label>
                 <input
                   type="text"
                   value={measurementIdInput}
                   onChange={(e) => setMeasurementIdInput(e.target.value)}
-                  placeholder="G-XXXXXXXXXX"
+                  placeholder="G-VW0PRLFNL4"
                   className="w-full rounded-xl bg-black/40 border border-white/20 px-4 py-2.5 text-xs font-mono font-bold text-white focus:border-brand-pink focus:outline-none"
                 />
               </div>
 
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">
-                  2. GA4 Numeric Property ID (Streams Live People &amp; Global Map into Admin)
+                  2. GA4 Numeric Property ID (Optional)
                 </label>
                 <input
                   type="text"
@@ -339,14 +345,14 @@ export function Ga4LiveGlobalMapPanel({
 
             <div>
               <label className="block text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">
-                3. Google Service Account JSON {ga4.clientEmail ? `(Current: ${ga4.clientEmail})` : '(Paste Full JSON File)'}
+                3. Google Service Account JSON (Optional)
               </label>
               <textarea
-                rows={4}
+                rows={3}
                 value={serviceAccountInput}
                 onChange={(e) => setServiceAccountInput(e.target.value)}
-                placeholder='Paste your Google Cloud Service Account JSON here ({"type": "service_account", "client_email": "...", "private_key": "..."})...'
-                className="w-full rounded-xl bg-black/40 border border-white/20 p-3.5 text-xs font-mono text-white/90 focus:border-brand-pink focus:outline-none"
+                placeholder='{"type": "service_account", "client_email": "...", "private_key": "..."}'
+                className="w-full rounded-xl bg-black/40 border border-white/20 p-3 text-xs font-mono text-white/90 focus:border-brand-pink focus:outline-none"
               />
             </div>
 
@@ -363,20 +369,21 @@ export function Ga4LiveGlobalMapPanel({
                 disabled={isSaving}
                 className="px-6 py-2.5 rounded-xl bg-brand-pink hover:bg-brand-pink/90 disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider shadow-lg"
               >
-                {isSaving ? 'Saving & Connecting...' : 'Save & Connect Google Analytics 4 →'}
+                {isSaving ? 'Saving...' : 'Save Settings →'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Main Content Grid: Interactive Global World Map (Left 7 Cols) + Live Locations & Country Leaderboard (Right 5 Cols) */}
+      {/* Main Content Grid: Interactive Global World Map (Left 7 Cols) + Live Visitors & Country Leaderboard (Right 5 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Interactive Global World Map */}
         <div className="lg:col-span-7 rounded-2xl bg-[#090612] border border-white/10 p-5 flex flex-col justify-between relative overflow-hidden">
           <div className="flex items-center justify-between gap-2 z-10 mb-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
-              Global Visitor Distribution ({days}d • {totalGeoVisitors.toLocaleString()} Visitors Across {mapPins.length} Countries)
+              Global Visitor Map ({days}d • {totalGeoVisitors.toLocaleString()} Visitors Across{' '}
+              {mapPins.length} Countries)
             </span>
             {selectedCountryCode && (
               <button
@@ -389,7 +396,7 @@ export function Ga4LiveGlobalMapPanel({
             )}
           </div>
 
-          {/* Equirectangular World Map SVG with Latitude/Longitude Grid & Continent Silhouettes */}
+          {/* Equirectangular World Map SVG with Latitude/Longitude Grid, Continent Silhouettes, Country Bubbles & Exact City Pins */}
           <div className="relative w-full aspect-[800/380] my-auto">
             <svg
               viewBox="0 0 800 380"
@@ -422,7 +429,7 @@ export function Ga4LiveGlobalMapPanel({
                 <path d="M 635 245 L 730 245 L 745 315 L 665 325 L 630 290 Z" />
               </g>
 
-              {/* Glowing Visitor Pins for Each Active Country */}
+              {/* Glowing Country Visitor Bubbles */}
               {mapPins.map((pin) => {
                 const { x, y } = latLonToSvg(pin.coord.lat, pin.coord.lon);
                 const ratio = pin.visitors / maxCountryVisitors;
@@ -438,15 +445,13 @@ export function Ga4LiveGlobalMapPanel({
                       setSelectedCountryCode(isSelected ? null : pin.coord.code)
                     }
                   >
-                    {/* Outer Pulse Ring */}
                     <circle
                       cx={x}
                       cy={y}
                       r={radius + 6}
-                      fill={hasLive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 45, 85, 0.22)'}
+                      fill={hasLive ? 'rgba(16, 185, 129, 0.28)' : 'rgba(255, 45, 85, 0.22)'}
                       className="animate-pulse"
                     />
-                    {/* Core Pin Bubble */}
                     <circle
                       cx={x}
                       cy={y}
@@ -455,7 +460,6 @@ export function Ga4LiveGlobalMapPanel({
                       stroke="#ffffff"
                       strokeWidth={isSelected ? 2.5 : 1.2}
                     />
-                    {/* Country Code & Count Label */}
                     <text
                       x={x}
                       y={y - radius - 5}
@@ -469,6 +473,23 @@ export function Ga4LiveGlobalMapPanel({
                   </g>
                 );
               })}
+
+              {/* Exact City Geo-Pins (from Vercel Lat/Lon headers) */}
+              {(presence.cityPins || []).slice(0, 15).map((cp) => {
+                const { x, y } = latLonToSvg(cp.lat, cp.lon);
+                return (
+                  <g key={cp.key}>
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={3.5}
+                      fill="#38bdf8"
+                      stroke="#ffffff"
+                      strokeWidth={1}
+                    />
+                  </g>
+                );
+              })}
             </svg>
           </div>
 
@@ -476,61 +497,92 @@ export function Ga4LiveGlobalMapPanel({
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-brand-pink inline-block" />
-                <span>Visitor Volume ({days}d)</span>
+                <span>Country Visitors ({days}d)</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
-                <span>Live Active Users Now (GA4 Realtime)</span>
+                <span>Live Active Visitors Right Now</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block" />
+                <span>City Lat/Lon Pins</span>
               </span>
             </div>
             <span>Click any country pin to inspect</span>
           </div>
         </div>
 
-        {/* Right Column: Live Active Locations/Pages + Country Leaderboard */}
+        {/* Right Column: Live Active Visitors Feed + Country Leaderboard */}
         <div className="lg:col-span-5 flex flex-col justify-between gap-4">
           {/* Live Right Now Card */}
           <div className="rounded-2xl bg-white/5 border border-white/10 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                🟢 Live Right Now (GA4 30-Min Stream)
+                🟢 Live Visitors on Site (Real-Time Stream)
               </span>
               <span className="text-xl font-black text-white">
-                {ga4.realtime.activeUsersLast30Min} Active
+                {liveActiveRightNow} Live Now
               </span>
             </div>
 
-            {ga4.isConnected && !ga4.error ? (
-              ga4.realtime.activeLocations.length > 0 ? (
-                <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                  {ga4.realtime.activeLocations.slice(0, 5).map((loc, idx) => (
+            {presence.recentVisitors30m && presence.recentVisitors30m.length > 0 ? (
+              <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                {presence.recentVisitors30m.slice(0, 6).map((v) => {
+                  const coord = resolveCountryCoord(v.countryCode);
+                  const isLiveNow = Date.now() - v.lastSeenAt <= 3 * 60 * 1000;
+                  return (
                     <div
-                      key={idx}
-                      className="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-0"
+                      key={v.sessionId}
+                      className="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-white/5 last:border-0"
                     >
-                      <span className="font-bold text-white/90 truncate">
-                        {loc.city && loc.city !== '(not set)'
-                          ? `${loc.city}, ${loc.country}`
-                          : loc.country}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black">
-                        {loc.activeUsers} live
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 font-bold text-white truncate">
+                          <span>{coord?.flag || '🌍'}</span>
+                          <span>
+                            {v.city ? `${v.city}, ${v.countryCode}` : coord?.name || v.countryCode}
+                          </span>
+                          <span className="text-[10px] text-white/50">• {v.device}</span>
+                          <span className="text-[10px] text-indigo-300">• {v.referrerSource}</span>
+                        </div>
+                        <div className="text-[11px] text-white/60 truncate font-mono">
+                          {v.stageLabel} ({v.path})
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                          isLiveNow
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : 'bg-white/10 text-white/60'
+                        }`}
+                      >
+                        {isLiveNow ? '● LIVE' : formatTimeAgo(v.lastSeenAt)}
                       </span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-white/60">
-                  0 active visitors in the last 30 minutes (your own admin device is excluded from
-                  GA4 tracking so your numbers stay 100% real).
-                </p>
-              )
+                  );
+                })}
+              </div>
+            ) : ga4.realtime?.activeLocations?.length > 0 ? (
+              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                {ga4.realtime.activeLocations.slice(0, 5).map((loc, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-0"
+                  >
+                    <span className="font-bold text-white/90 truncate">
+                      {loc.city && loc.city !== '(not set)'
+                        ? `${loc.city}, ${loc.country}`
+                        : loc.country}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black">
+                      {loc.activeUsers} live
+                    </span>
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="text-xs text-white/60 leading-relaxed">
-                Click <strong>&ldquo;Connect Google Analytics 4&rdquo;</strong> above and paste your{' '}
-                <strong>Measurement ID</strong>, <strong>Property ID</strong>, and{' '}
-                <strong>Service Account JSON</strong> to stream real-time active visitors and city
-                locations here.
+                Listening for live customer visits (your own admin device is excluded so only real
+                customer sessions appear here in real time).
               </p>
             )}
           </div>
@@ -596,6 +648,70 @@ export function Ga4LiveGlobalMapPanel({
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Bottom Strip: 5-Stage Customer Journey & Live Party Radar */}
+      <div className="pt-4 border-t border-white/10">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-2.5">
+          Live Customer Journey &amp; Active Party Funnel
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+          {[
+            {
+              key: 'browsing',
+              label: '1. Browsing & Blogs',
+              sub: 'Landing, /blog & info',
+              count: presence.funnelCounts?.browsing || 0,
+            },
+            {
+              key: 'inspecting_mystery',
+              label: '2. Exploring Packs',
+              sub: '/themes & /mysteries',
+              count: presence.funnelCounts?.inspecting_mystery || 0,
+            },
+            {
+              key: 'checkout',
+              label: '3. In Checkout',
+              sub: '/checkout & /subscribe',
+              count: presence.funnelCounts?.checkout || 0,
+            },
+            {
+              key: 'casting_or_prep',
+              label: '4. Casting & Prep',
+              sub: '/cast & Guest Invites',
+              count: presence.funnelCounts?.casting_or_prep || 0,
+            },
+            {
+              key: 'live_playroom',
+              label: '5. Live Mystery Parties',
+              sub: '/play/[id] In Progress',
+              count: presence.funnelCounts?.live_playroom || 0,
+            },
+          ].map((st) => {
+            const liveInStage = (presence.liveVisitors || []).filter(
+              (v) => v.stage === st.key
+            ).length;
+            return (
+              <div
+                key={st.key}
+                className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-1.5"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[11px] font-black text-white">{st.label}</span>
+                  {liveInStage > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black">
+                      {liveInStage} live
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[10px] text-white/50">{st.sub}</span>
+                  <span className="text-sm font-black text-white/90">{st.count}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

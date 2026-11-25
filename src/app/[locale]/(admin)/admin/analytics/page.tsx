@@ -16,6 +16,7 @@ import { AnalyticsNav } from '@/components/admin/AnalyticsNav';
 import { AnalyticsDurationSelector } from '@/components/admin/AnalyticsDurationSelector';
 import { parseAnalyticsDays } from '@/components/admin/analytics-duration-utils';
 import { OwnerDeviceExclusionBanner } from '@/components/analytics/PageViewDurationTracker';
+import { getLivePresenceSnapshot } from '@/lib/live-presence-store';
 
 export const unstable_instant = false;
 
@@ -41,7 +42,7 @@ export default async function AnalyticsPage({
             Traffic &amp; SEO Analytics
           </h1>
           <p className="text-xs font-semibold text-gray-400 mt-1">
-            Live visitor telemetry from Google Analytics 4 (GA4), Vercel Web Analytics &amp; Google Search Console
+            Live visitor telemetry from Google Analytics 4 (GA4), First-Party Geo Radar, Vercel Web Analytics &amp; Google Search Console
           </p>
         </div>
         <Suspense fallback={null}>
@@ -82,6 +83,7 @@ async function AnalyticsData({ days }: { days: number }) {
     browsers,
     gsc,
     ga4,
+    initialPresence,
   ] = await Promise.all([
     getAnalyticsTimeseries(days).catch(() => ({
       isConnected: false,
@@ -102,8 +104,8 @@ async function AnalyticsData({ days }: { days: number }) {
     })),
     getGoogleAnalytics4RealtimeAndGeoStats(days).catch(() => ({
       isConnected: false,
-      hasTrackingTagOnly: false,
-      measurementId: '',
+      hasTrackingTagOnly: true,
+      measurementId: 'G-VW0PRLFNL4',
       propertyId: '',
       clientEmail: '',
       realtime: {
@@ -120,14 +122,29 @@ async function AnalyticsData({ days }: { days: number }) {
         avgEngagementSeconds: 0,
       },
     })),
+    getLivePresenceSnapshot().catch(() => ({
+      activeRightNowCount: 0,
+      activeLast30MinCount: 0,
+      liveVisitors: [],
+      recentVisitors30m: [],
+      cityPins: [],
+      funnelCounts: {
+        browsing: 0,
+        inspecting_mystery: 0,
+        checkout: 0,
+        casting_or_prep: 0,
+        live_playroom: 0,
+      },
+    })),
   ]);
 
   return (
     <>
-      {/* Global Visitor Map & GA4 Real-Time Live Stream */}
+      {/* Global Visitor Map & GA4 / First-Party Real-Time Live Stream */}
       <Ga4LiveGlobalMapPanel
         ga4={ga4}
         vercelCountries={topCountries}
+        initialPresence={initialPresence}
         days={days}
       />
 

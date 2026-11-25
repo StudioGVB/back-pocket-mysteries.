@@ -2,7 +2,9 @@ import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import MiniMysteryInteractiveClient from '@/components/marketing/MiniMysteryInteractiveClient';
+import PriceDisplay from '@/components/marketing/PriceDisplay';
 import { OCCASION_SEO_PAGES } from '@/data/occasion-seo-pages';
+import { Locale } from '@/lib/i18n-config';
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
@@ -127,7 +129,7 @@ export default async function MiniMysteryPage(props: {
                 Turn Your Next Dinner Party Into a 3-Round <span className="text-brand-pink italic">Live Investigation.</span>
               </h2>
               <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed">
-                In a full Back Pocket Mystery, those leaked group chats, CCTV photos, and voice-acted audio wiretaps are generated around <strong>your actual guest list</strong>—with their real names, inside jokes, and a live 6-digit Game PIN lobby from just <strong>$19 (~$2.50/guest)</strong>.
+                In a full Back Pocket Mystery, those leaked group chats, CCTV photos, and voice-acted audio wiretaps are generated around <strong>your actual guest list</strong>—with their real names, inside jokes, and a live 6-digit Game PIN lobby from just <strong><PriceDisplay tier="basic" locale={locale as Locale} /></strong>.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 w-full sm:w-auto">

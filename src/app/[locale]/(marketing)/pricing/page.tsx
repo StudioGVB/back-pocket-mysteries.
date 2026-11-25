@@ -126,7 +126,7 @@ export default async function PricingPage(props: {
               Get Our 6-Player Basic Mystery Pack <span className="text-brand-pink italic">100% Free</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-              The first 50 hosts on our pre-launch VIP list receive a single-use 100%-off promo code on launch day good for any 6-Player (Basic Tier • 4–6 suspects) custom mystery pack (worth £15 / $19).
+              The first 50 hosts on our pre-launch VIP list receive a single-use 100%-off promo code on launch day good for any 6-Player (Basic Tier • 4–6 suspects) custom mystery pack (valued at <PriceDisplay tier="basic" locale={locale as Locale} />).
             </p>
           </div>
           <Link

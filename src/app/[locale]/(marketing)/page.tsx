@@ -750,7 +750,7 @@ export default async function HomePage(props: {
                 Be One of Our First 50 Sign-Ups &amp; Get a 6-Player Custom Mystery <span className="text-brand-pink italic">100% Free</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-                Lock in one of the first 50 VIP spots in 10 seconds (no credit card needed) and we&apos;ll email you a <strong>single-use 100%-off Founding Host voucher code</strong> good for any 6-Player (Basic Tier • 4–6 suspects) custom murder mystery pack (worth £15 / $19).
+                Lock in one of the first 50 VIP spots in 10 seconds (no credit card needed) and we&apos;ll email you a <strong>single-use 100%-off Founding Host voucher code</strong> good for any 6-Player (Basic Tier • 4–6 suspects) custom murder mystery pack (valued at <PriceDisplay tier="basic" locale={locale as Locale} />).
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 relative z-10 w-full lg:w-auto">
