@@ -6,7 +6,13 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import crypto from 'crypto';
 import { getCharactersByMysteryId, getMysteryById, getPlotBeatsByMysteryId, replaceLegacyNamesWithRoleTokens } from '@/services/mysteries';
-import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+  Schema,
+  SchemaType,
+} from '@google/generative-ai';
 import { logAiUsage } from '@/utils/ai-logger';
 import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 import {
@@ -1799,64 +1805,269 @@ export async function updateMysteryAction(id: string, prevState: any, formData: 
   return { success: true };
 }
 
-export async function generateDescriptionAction(mysteryId: string) {
+const BUILDER_SAFETY_SETTINGS = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+];
+
+export interface SuggestedTitleOption {
+  title: string;
+  vibeTag: string;
+}
+
+/**
+ * Generates 3 creative, distinct Mystery Title options based on working title, theme, spice level, and description.
+ * Avoids repeating any previously suggested titles on refresh.
+ */
+export async function suggestMysteryTitlesAction(params: {
+  workingTitle?: string;
+  theme?: string;
+  spiceLevel?: string;
+  description?: string;
+  previousTitles?: string[];
+}): Promise<{
+  success: boolean;
+  options?: SuggestedTitleOption[];
+  error?: string;
+}> {
   try {
-    const { supabase } = await requireAdmin();
-    const [mystery, characters, plotBeats] = await Promise.all([
-      getMysteryById(mysteryId),
-      getCharactersByMysteryId(mysteryId),
-      getPlotBeatsByMysteryId(mysteryId)
-    ]);
-
-    if (!mystery) throw new Error('Mystery not found');
-
-    const victim = characters.find((c: any) => c.is_victim);
-    const killer = characters.find((c: any) => c.plot_role === 'killer');
-
-    if (!victim || !killer) {
-      throw new Error('You must assign a Victim and a Killer in the Characters tab before generating a synopsis.');
+    await requireAdmin();
+    const apiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      return { success: false, error: 'Google Generative AI API Key is missing.' };
     }
 
-    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    if (!apiKey) throw new Error('Google Generative AI API Key is missing.');
+    const workingTitle = (params.workingTitle || '').trim();
+    const theme = (params.theme || 'Dinner Party Murder Mystery').trim();
+    const spice = (params.spiceLevel || 'mild').toLowerCase().trim();
+    const desc = (params.description || '').trim().slice(0, 350);
+    const prev = Array.isArray(params.previousTitles) ? params.previousTitles : [];
+
+    const spiceVibe =
+      spice === 'filthy'
+        ? '18+ After-Dark, bold, provocative, high-drama, late-night party energy'
+        : spice === 'spicy'
+          ? 'Sharp, scandalous, catfights, champagne & betrayal energy'
+          : spice === 'clean' || spice === 'low'
+            ? 'Clever, classic Agatha Christie / Knives Out whodunit intrigue (SFW & family-friendly)'
+            : 'Romantic drama, secret affairs, and dinner-party suspense';
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-pro",
+      model: 'gemini-2.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.9,
+      },
+      safetySettings: BUILDER_SAFETY_SETTINGS,
     });
 
-    const victimRole = getCharacterRoleTitle(victim);
-    const allRoleTitles = characters.map((c: any) => getCharacterRoleTitle(c)).join(', ');
-    const sanitizedBeats = plotBeats
-      .map((b, i) => `${i + 1}. ${hydrateTextWithCharacters(replaceLegacyNamesWithRoleTokens(b.description), characters, 'role')}`)
-      .join('\n');
+    const prompt = `CONTEXT: FICTIONAL TABLETOP PARLOR BOARD GAME DESIGN (Agatha Christie / Knives Out style murder mystery dinner party game).
 
-    const prompt = `
-      Write a gripping, suspenseful 3-4 sentence murder mystery synopsis (like the back of a novel or a game box).
-      Theme: ${mystery.theme || 'General Mystery'}
-      Title: ${mystery.title}
+You are naming a new murder mystery dinner party game pack for Back Pocket Mysteries.
+Suggest **3 creative, magnetic, distinct Title options** (2 to 5 words each) that upgrade the creator's working title into an unforgettable box-cover title.
 
-      Requirements:
-      1. Refer to the victim strictly by their Role Title: "${victimRole}" (e.g., "When ${victimRole} is found dead...").
-      2. Set the scene, build tension around why everyone in the room has a score to settle, and tease the murder without spoiling who the killer is.
-      3. CRITICAL NAMING RULE (ZERO HUMAN NAMES ALLOWED): NEVER invent or mention any human first or last names! Characters in a mystery base must ONLY be referred to by their Role Titles (${allRoleTitles}), because real guests are cast into these roles later.
-      4. CRITICAL PUNCTUATION RULE: NEVER use em dashes or spaced en dashes. Use standard commas, periods, or colons instead.
-      5. Draw atmospheric context from the setup of these plot beats:
-      ${sanitizedBeats}
-      
-      Do not output any JSON or formatting, just plain text paragraphs. Make it punchy and dramatic.
-    `;
+INPUTS:
+- Working Title: "${workingTitle || 'Untitled Mystery'}"
+- Theme / Setting: "${theme}"
+- Spice Level & Tone (${spice.toUpperCase()}): ${spiceVibe}
+${desc ? `- Scene / Story Vibe: "${desc}"` : ''}
+${prev.length > 0 ? `- DO NOT REPEAT ANY OF THESE PREVIOUS SUGGESTIONS: ${prev.map((t) => `"${t}"`).join(', ')}` : ''}
+
+REQUIREMENTS FOR THE 3 OPTIONS:
+1. Option 1 ("vibeTag": "Punchy & Iconic"): A sharp, catchy 2–4 word title with strong contrast or wordplay (e.g. "Mistletoe & Malice", "Love on the Rocks", "Black Ice & Alibis").
+2. Option 2 ("vibeTag": "Atmospheric Hook"): An evocative, cinematic location/event whodunit title (e.g. "Last Call at the Timber Lodge", "Midnight Under the Fairy Lights").
+3. Option 3 ("vibeTag": "Scandal & Intrigue"): A bold, attitude-forward title tailored to the ${spice.toUpperCase()} spice level.
+4. NEVER use colons with long subtitles, NEVER use em-dashes, and keep each title between 2 and 5 words.
+
+Return strict JSON:
+{
+  "options": [
+    { "title": "string", "vibeTag": "Punchy & Iconic" },
+    { "title": "string", "vibeTag": "Atmospheric Hook" },
+    { "title": "string", "vibeTag": "Scandal & Intrigue" }
+  ]
+}`;
+
+    const res = await model.generateContent(prompt);
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash',
+      feature_name: 'suggest_mystery_titles',
+      usageMetadata: res.response.usageMetadata as any,
+    });
+
+    const parsed = JSON.parse(res.response.text());
+    const options: SuggestedTitleOption[] = Array.isArray(parsed?.options)
+      ? parsed.options
+          .map((o: any, idx: number) => ({
+            title: stripEmDashes(String(o?.title || '').trim()),
+            vibeTag: String(
+              o?.vibeTag ||
+                (idx === 0
+                  ? 'Punchy & Iconic'
+                  : idx === 1
+                    ? 'Atmospheric Hook'
+                    : 'Scandal & Intrigue')
+            ).trim(),
+          }))
+          .filter((o: SuggestedTitleOption) => Boolean(o.title))
+          .slice(0, 3)
+      : [];
+
+    return { success: true, options };
+  } catch (err: any) {
+    console.error('suggestMysteryTitlesAction error:', err);
+    return {
+      success: false,
+      error: err?.message || 'Failed to suggest titles.',
+    };
+  }
+}
+
+/**
+ * Deterministic Layer-3 Guardrail for Public Mystery Descriptions:
+ * - Strips exact HH:MM AM/PM crime timestamps (so the murder minute is never leaked before Round 1)
+ * - Strips specific dollar figures ($18,000, $25,000)
+ * - Replaces any accidental non-victim suspect role mentions with general group phrasing
+ * - Strips em-dashes
+ */
+function enforcePublicDescriptionGuardrails(
+  rawText: string,
+  victimRole: string,
+  suspectRoleTitles: string[]
+): string {
+  let out = stripEmDashes(String(rawText || '').trim());
+
+  // 1. Strip exact clock timestamps like "at 8:19 PM", "8:19 PM", "11:28 PM"
+  out = out
+    .replace(/\bat\s+\b(1[0-2]|0?[1-9]):[0-5]\d\s*(?:AM|PM)\b/gi, 'before the night is over')
+    .replace(/\b(1[0-2]|0?[1-9]):[0-5]\d\s*(?:AM|PM)\s+/gi, '');
+
+  // 2. Strip specific dollar amounts like "$18,000" or "$25,000"
+  out = out.replace(/\$\d[\d,.]*/g, 'high-stakes money');
+
+  // 3. Ensure no suspect role (killer, assistant, or innocent) is singled out by role title in the public synopsis
+  for (const susRole of suspectRoleTitles) {
+    const cleanSus = susRole.replace(/^\{\{|\}\}$/g, '').trim();
+    if (!cleanSus || cleanSus.toLowerCase() === victimRole.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase()) {
+      continue;
+    }
+    const escaped = cleanSus.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out
+      .replace(new RegExp(`\\{\\{${escaped}\\}\\}`, 'gi'), 'someone in the room')
+      .replace(new RegExp(`\\b${escaped}\\b`, 'gi'), 'someone in the inner circle');
+  }
+
+  return out.replace(/\s{2,}/g, ' ').trim();
+}
+
+export async function generateDescriptionAction(
+  mysteryId: string,
+  overrides?: {
+    title?: string;
+    theme?: string;
+    spiceLevel?: string;
+  }
+): Promise<{ success: boolean; description?: string; error?: string }> {
+  try {
+    const { supabase } = await requireAdmin();
+    const [mystery, characters] = await Promise.all([
+      getMysteryById(mysteryId),
+      getCharactersByMysteryId(mysteryId),
+    ]);
+
+    if (!mystery) {
+      return { success: false, error: 'Mystery not found.' };
+    }
+
+    const victim =
+      characters.find((c: any) => c.is_victim || c.plot_role === 'victim') || characters[0] || null;
+    const victimRole = victim ? getCharacterRoleTitle(victim) : 'the guest of honor';
+    const suspectRoles = characters
+      .filter((c: any) => c.id !== victim?.id)
+      .map((c: any) => getCharacterRoleTitle(c));
+
+    const apiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      return { success: false, error: 'Google Generative AI API Key is missing.' };
+    }
+
+    const effectiveTitle = (overrides?.title || mystery.title || 'Murder Mystery Party').trim();
+    const effectiveTheme = (overrides?.theme || mystery.theme || 'Dinner Party').trim();
+    const effectiveSpice = (overrides?.spiceLevel || mystery.spice_level || 'mild')
+      .toLowerCase()
+      .trim();
+
+    const spiceAtmosphere =
+      effectiveSpice === 'filthy'
+        ? '18+ After-Dark atmosphere: reckless late-night party energy, messy hookups, flowing drinks, and ruthless personal rivalries (keep the public synopsis sleek and intriguing without profanity).'
+        : effectiveSpice === 'spicy'
+          ? 'Spicy Drama atmosphere: glamorous tension, secret affairs, sharp tongues, and scandalous betrayals.'
+          : effectiveSpice === 'clean' || effectiveSpice === 'low'
+            ? 'Clean & Classic Whodunit atmosphere (SFW): high-stakes ambition, old grudges, financial secrets, and fierce rivalries (strictly zero romantic affairs).'
+            : 'Mild Romantic & Social Intrigue atmosphere: tangled relationships, old flames, unspoken grudges, and dinner-party secrets.';
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      safetySettings: BUILDER_SAFETY_SETTINGS,
+    });
+
+    // LAYER 1 & LAYER 2 GUARDRAIL:
+    // Intentionally blind to plotBeats, murder weapons, crime timestamps, and suspect roles!
+    const prompt = `CONTEXT: FICTIONAL TABLETOP PARLOR BOARD GAME DESIGN (Back-of-the-box movie trailer synopsis).
+
+Write an atmospheric, scene-setting 3-sentence public synopsis (55 to 85 words total) for a murder mystery party called "${effectiveTitle}".
+- Theme / Setting: "${effectiveTheme}"
+- Group Size: ${characters.length || 6} close-knit guests
+- Victim Role Title: "${victimRole}"
+- Vibe & Tone (${effectiveSpice.toUpperCase()}): ${spiceAtmosphere}
+
+STRICT 3-SENTENCE STRUCTURE (55-85 WORDS TOTAL):
+1. Sentence 1 (Scene Setting & Sensory Vibe): Set the venue, the occasion, and the sensory mood (lighting, drinks, music, weather, or dress-up atmosphere) matching "${effectiveTheme}".
+2. Sentence 2 (Group Background & Simmering Tension): Describe the general dynamic of this circle of friends/family/colleagues and the simmering tension beneath the surface — WITHOUT naming any specific clues, props, weapons, or plot mechanics.
+3. Sentence 3 (The Discovery Hook): Tease the moment "${victimRole}" is discovered dead and the realization that everyone in the room is now a suspect.
+
+HARD ANTI-SPOILER GUARDRAILS (NEVER VIOLATE):
+- NEVER mention how "${victimRole}" died or any murder weapon, poison, power surge, or forensic evidence props.
+- NEVER mention any clock timestamps (like "8:19 PM" or "11:28 PM").
+- NEVER mention any character Role Title other than "${victimRole}" (zero human names and zero suspect role titles).
+- NEVER use em-dashes. Output plain text only (1 single cohesive paragraph of 3-4 sentences).`;
 
     const result = await model.generateContent(prompt);
-    const rawSynopsis = stripEmDashes(result.response.text().trim());
-    const synopsis = hydrateTextWithCharacters(
-      replaceLegacyNamesWithRoleTokens(rawSynopsis),
-      characters,
-      'role'
-    );
+    const rawSynopsis = result.response.text().trim();
+    const cleaned = enforcePublicDescriptionGuardrails(rawSynopsis, victimRole, suspectRoles);
+    const synopsis =
+      characters.length > 0
+        ? hydrateTextWithCharacters(
+            replaceLegacyNamesWithRoleTokens(cleaned),
+            characters,
+            'role'
+          )
+        : cleaned;
 
     await logAiUsage({
-      model_name: 'gemini-2.5-pro',
+      model_name: 'gemini-2.5-flash',
       feature_name: 'generate_mystery_synopsis',
       mystery_id: mysteryId,
       usageMetadata: result.response.usageMetadata as any,
@@ -1864,141 +2075,155 @@ export async function generateDescriptionAction(mysteryId: string) {
 
     const { error } = await supabase
       .from('mysteries')
-      .update({ description: synopsis, updated_at: new Date().toISOString() })
+      .update({ description: synopsis })
       .eq('id', mysteryId);
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      return { success: false, error: error.message };
+    }
 
+    const { invalidateAdminMysteriesCache } = await import('@/services/admin');
+    invalidateAdminMysteriesCache();
+
+    revalidatePath(`/en/builder/mysteries/${mysteryId}`);
     revalidatePath(`/builder/mysteries/${mysteryId}`);
-  } catch (error) {
+    return { success: true, description: synopsis };
+  } catch (error: any) {
     console.error('generateDescriptionAction error:', error);
-    throw error;
+    return {
+      success: false,
+      error: error?.message || 'Failed to generate mystery description.',
+    };
   }
 }
 
-export async function generateMysteryCoverAction(mysteryId: string) {
+export async function generateMysteryCoverAction(
+  mysteryId: string
+): Promise<{ success?: boolean; coverUrl?: string; error?: string }> {
   try {
     const { supabase } = await requireAdmin();
     const [mystery, characters] = await Promise.all([
       getMysteryById(mysteryId),
-      getCharactersByMysteryId(mysteryId)
+      getCharactersByMysteryId(mysteryId),
     ]);
 
-    if (!mystery) throw new Error('Mystery not found');
+    if (!mystery) return { error: 'Mystery not found' };
 
-    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    if (!apiKey) throw new Error('Google Generative AI API Key is missing.');
+    const apiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) return { error: 'Google Generative AI API Key is missing.' };
 
     const characterNames = characters.map((c: any) => getCharacterRoleTitle(c)).join(', ');
     const theme = mystery.theme || 'Atmospheric Party Mystery';
-    const description = mystery.description || 'A dramatic murder mystery party among close friends.';
-    
-    // Match the exact setting, season, and color palette of the theme & synopsis, depicting a tight-knit group of close friends.
-    const prompt = `A high-end, atmospheric editorial party photograph of 5 to 6 close young adult friends (ages 24 to 36, diverse mix of ethnicities, natural best-friend chemistry, gathered closely together laughing, clinking glasses, and exchanging dramatic knowing glances) at the exact venue and setting of "${mystery.title}". Theme & Setting: ${theme}. Story Context & Venue: ${description}. Character roles present: ${characterNames}. Wide-angle medium-full shot with plenty of headroom so no heads are cropped. Rich, vibrant, authentic lighting and decor that strictly matches "${theme}" (for example, if Christmas/Holiday/Cabin: warm golden fairy lights, a decorated Christmas tree, roaring stone fireplace, festive holiday velvet and knit outfits, mulled wine, snow outside the cabin window; never place on a boat unless the theme explicitly says boat/yacht). Warm 35mm film aesthetic with a subtle hint of murder mystery intrigue, sharp focus, 8k resolution, photorealistic, no text.`;
+    const description =
+      mystery.description || 'A dramatic murder mystery party among close friends.';
 
-    const promptHash = crypto.createHash('sha256').update(prompt).digest('hex');
+    const prompt = `A high-end, atmospheric editorial party photograph of 5 to 6 close young adult friends (ages 22 to 34, diverse mix of ethnicities, natural best-friend chemistry, gathered closely together laughing, clinking glasses, and exchanging dramatic knowing glances) at the exact venue and setting of "${mystery.title}". Theme & Setting: ${theme}. Story Context & Venue: ${description}. Character roles present: ${characterNames}. Wide-angle medium-full shot with plenty of headroom so no heads are cropped. Rich, vibrant, authentic lighting and decor that strictly matches "${theme}" (for example, if Ski/Mountain Cabin: warm golden cabin lights, roaring stone fireplace or balcony chiminea, timber walls, stylish cabin party outfits, snow outside the window; never place on a boat unless the theme explicitly says boat/yacht). Warm 35mm film aesthetic with a subtle hint of murder mystery intrigue, sharp focus, 8k resolution, photorealistic, no text.`;
 
-    // Check cache first safely
-    let dataUri = '';
-    let cached = null;
-    try {
-      const { data } = await supabase
-        .from('image_generation_cache')
-        .select('image_url')
-        .eq('prompt_hash', promptHash)
-        .single();
-      cached = data;
-    } catch (cacheErr) {
-      console.warn('Cache lookup skipped/failed:', cacheErr);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
+    const payload = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseModalities: ['IMAGE'] },
+    };
+
+    let res: Response | undefined;
+    let retries = 0;
+    while (retries < 3) {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 429 || res.status === 403 || res.status === 503) {
+        retries++;
+        await new Promise((r) => setTimeout(r, 2000 * retries));
+        continue;
+      }
+      break;
     }
 
-    if (cached?.image_url) {
-      dataUri = cached.image_url;
+    let base64Image = '';
+    let coverUsageMetadata: any = null;
+
+    if (res && res.ok) {
+      const data = await res.json();
+      coverUsageMetadata = data.usageMetadata || null;
+      const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+      base64Image = imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
+    } else if (res) {
+      const errorText = await res.text();
+      console.error('Imagen API generation failed:', errorText);
+      return { error: `Image generation failed (${res.status}). Please try again.` };
     } else {
+      return { error: 'No response from image generator.' };
+    }
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ["IMAGE"] }
-      };
+    if (!base64Image) {
+      return { error: 'Image generator returned an empty response. Please try again.' };
+    }
 
-      let res;
-      let isRateLimited = false;
-      let retries = 0;
-      while (retries < 3) {
-        res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+    await logAiUsage({
+      model_name: 'gemini-2.5-flash-image',
+      feature_name: 'generate_mystery_cover',
+      mystery_id: mysteryId,
+      usageMetadata: coverUsageMetadata,
+    });
+
+    // Upload the generated JPEG to Supabase Storage so `mysteries.image_url` is a fast URL instead of an 800KB base64 string
+    let resolvedCoverUrl = '';
+    const imgBuffer = Buffer.from(base64Image, 'base64');
+    const storagePath = `mystery-covers/${mysteryId}-${Date.now()}.jpg`;
+
+    try {
+      const { error: upErr } = await supabase.storage
+        .from('character-images')
+        .upload(storagePath, imgBuffer, {
+          contentType: 'image/jpeg',
+          upsert: true,
         });
-        
-        if (res.status === 429 || res.status === 403) {
-          isRateLimited = true;
-          retries++;
-          await new Promise(r => setTimeout(r, 2000 * retries)); // Exponential backoff
-          continue;
+      if (!upErr) {
+        const { data: pubData } = supabase.storage
+          .from('character-images')
+          .getPublicUrl(storagePath);
+        if (pubData?.publicUrl) {
+          resolvedCoverUrl = pubData.publicUrl;
         }
-        break;
       }
+    } catch (storageErr) {
+      console.warn('Supabase storage upload fallback:', storageErr);
+    }
 
-      let base64Image = '';
-      let coverUsageMetadata: any = null;
-
-      if (res && res.ok) {
-        const data = await res.json();
-        coverUsageMetadata = data.usageMetadata || null;
-        const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-        base64Image = imgPart?.inlineData?.data || data.predictions?.[0]?.bytesBase64Encoded || '';
-      } else if (res) {
-        const errorText = await res.text();
-        console.error('Imagen API generation failed:', errorText);
-        throw new Error(`Imagen API error (${res.status}): ${errorText}`);
-      } else {
-        throw new Error('No response from Imagen API.');
-      }
-
-
-      if (base64Image) {
-        dataUri = `data:image/jpeg;base64,${base64Image}`;
-
-        await logAiUsage({
-          model_name: 'gemini-2.5-flash-image',
-          feature_name: 'generate_mystery_cover',
-          mystery_id: mysteryId,
-          usageMetadata: coverUsageMetadata,
-        });
-        
-        // Save to cache safely
-        try {
-          await supabase.from('image_generation_cache').insert({
-            prompt_hash: promptHash,
-            image_url: dataUri
-          });
-          console.log('Saved cover to cache');
-        } catch (cacheInsertErr) {
-          console.warn('Failed to insert into cache:', cacheInsertErr);
-        }
-      } else {
-        console.warn('Image generation failed or quota exceeded, using fallback placeholder');
-        dataUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(theme)}&background=random&size=1024`;
-      }
+    if (!resolvedCoverUrl) {
+      resolvedCoverUrl = `/hero/05-masquerade.png`;
     }
 
     const { parseMysteryImageField, serializeMysteryImageField } = await import('@/utils/moodboard');
     const existingParsed = parseMysteryImageField(mystery.image_url);
-    const serializedImageUrl = serializeMysteryImageField(dataUri, existingParsed.moodboardPhotos);
+    const serializedImageUrl = serializeMysteryImageField(
+      resolvedCoverUrl,
+      existingParsed.moodboardPhotos
+    );
 
     const { error } = await supabase
       .from('mysteries')
-      .update({ image_url: serializedImageUrl, updated_at: new Date().toISOString() })
+      .update({ image_url: serializedImageUrl })
       .eq('id', mysteryId);
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      return { error: error.message };
+    }
 
+    const { invalidateAdminMysteriesCache } = await import('@/services/admin');
+    invalidateAdminMysteriesCache();
+
+    revalidatePath(`/en/builder/mysteries/${mysteryId}`);
     revalidatePath(`/builder/mysteries/${mysteryId}`);
-    return { success: true };
+    return { success: true, coverUrl: resolvedCoverUrl };
   } catch (error: any) {
     console.error('generateMysteryCoverAction error:', error);
-    return { error: error.message };
+    return { error: error?.message || 'Failed to generate cover photo.' };
   }
 }

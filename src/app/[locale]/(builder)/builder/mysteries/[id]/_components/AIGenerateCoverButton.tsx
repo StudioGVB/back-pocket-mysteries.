@@ -7,7 +7,9 @@ import { parseMysteryImageField } from '@/utils/moodboard';
 export function AIGenerateCoverButton({ mysteryId, currentImageUrl }: { mysteryId: string, currentImageUrl?: string | null }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const resolvedCoverUrl = parseMysteryImageField(currentImageUrl).coverUrl || currentImageUrl;
+  const [localCoverUrl, setLocalCoverUrl] = useState<string | null>(null);
+  const resolvedCoverUrl =
+    localCoverUrl || parseMysteryImageField(currentImageUrl).coverUrl || currentImageUrl;
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -16,6 +18,8 @@ export function AIGenerateCoverButton({ mysteryId, currentImageUrl }: { mysteryI
       const res = await generateMysteryCoverAction(mysteryId);
       if (res?.error) {
         setError(res.error);
+      } else if (res?.coverUrl) {
+        setLocalCoverUrl(res.coverUrl);
       }
     } catch (e: any) {
       setError(e.message || 'An error occurred');

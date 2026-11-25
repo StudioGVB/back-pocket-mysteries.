@@ -2193,11 +2193,17 @@ export const getPlotBeatsByMysteryId = cache(async (mysteryId: string) => {
     .order('sort_order', { ascending: true });
 
   if (error || !data || data.length === 0) {
+    const full = await getMysteryById(mysteryId);
+    if (full && Array.isArray(full.plot_beats) && full.plot_beats.length > 0) {
+      return normalizePlotBeats(full.plot_beats, mysteryId);
+    }
     const cached = getCachedMysterySnapshot(mysteryId);
     if (cached && Array.isArray(cached.plot_beats) && cached.plot_beats.length > 0) {
       const upgraded = isChristmasNightmareMystery(cached.title, cached.theme)
         ? ensureChristmasNightmareCanon(cached)
-        : cached;
+        : isUnibreakCabinMystery(cached.title, cached.theme)
+          ? ensureUnibreakCabinCanon(cached)
+          : cached;
       return normalizePlotBeats(upgraded.plot_beats || [], mysteryId);
     }
     if (error) {
@@ -2325,11 +2331,17 @@ export const getCluesByMysteryId = cache(async (mysteryId: string) => {
     .order('created_at', { ascending: true });
 
   if (error || !data || data.length === 0) {
+    const full = await getMysteryById(mysteryId);
+    if (full && Array.isArray(full.clues) && full.clues.length > 0) {
+      return normalizeClueList(full.clues);
+    }
     const cached = getCachedMysterySnapshot(mysteryId);
     if (cached && Array.isArray(cached.clues) && cached.clues.length > 0) {
       const upgraded = isChristmasNightmareMystery(cached.title, cached.theme)
         ? ensureChristmasNightmareCanon(cached)
-        : cached;
+        : isUnibreakCabinMystery(cached.title, cached.theme)
+          ? ensureUnibreakCabinCanon(cached)
+          : cached;
       return normalizeClueList(upgraded.clues || []);
     }
     if (error) {

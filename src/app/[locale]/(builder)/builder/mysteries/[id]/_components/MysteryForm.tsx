@@ -13,6 +13,8 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
   const updateWithId = updateMysteryAction.bind(null, mysteryId);
   const [state, formAction] = useActionState(updateWithId, null);
   const [themeValue, setThemeValue] = useState<string>(mystery.theme || '');
+  const [descriptionValue, setDescriptionValue] = useState<string>(mystery.description || '');
+  const [descError, setDescError] = useState<string | null>(null);
 
   return (
     <form action={formAction} className="space-y-8">
@@ -66,11 +68,21 @@ export function MysteryForm({ mystery, mysteryId }: { mystery: any; mysteryId: s
       <div className="space-y-2">
         <div className="flex justify-between items-end">
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Description / Synopsis</label>
-          <AIGenerateDescriptionButton mysteryId={mysteryId} />
+          <AIGenerateDescriptionButton
+            mysteryId={mysteryId}
+            onGenerated={(nextDesc) => setDescriptionValue(nextDesc)}
+            onError={(err) => setDescError(err)}
+          />
         </div>
+        {descError && (
+          <div className="text-red-500 text-xs font-bold bg-red-50 p-2.5 rounded-lg border border-red-200">
+            {descError}
+          </div>
+        )}
         <textarea 
           name="description"
-          defaultValue={mystery.description || ''}
+          value={descriptionValue}
+          onChange={(e) => setDescriptionValue(e.target.value)}
           rows={6}
           className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl focus:border-brand-pink outline-none font-medium transition-all resize-none shadow-sm"
           placeholder="Brief synopsis..."

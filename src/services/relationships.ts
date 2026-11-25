@@ -91,7 +91,11 @@ export const getRelationshipsByMysteryId = cache(async (mysteryId: string) => {
     .eq('mystery_id', mysteryId);
 
   if (error || !data || data.length === 0) {
-    const cached = getCachedRelationshipsSnapshot(mysteryId);
+    let cached = getCachedRelationshipsSnapshot(mysteryId);
+    if (cached.length > 0) return cached;
+    const { getMysteryById } = await import('@/services/mysteries');
+    await getMysteryById(mysteryId);
+    cached = getCachedRelationshipsSnapshot(mysteryId);
     if (cached.length > 0) return cached;
     if (error) {
       console.error('Error fetching relationships:', error);
