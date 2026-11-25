@@ -408,6 +408,10 @@ export async function getAllPlatformReviews(
         // ignore malformed row
       }
     }
+  } catch {
+    // non-fatal
+  }
+
   // 2b. Read all Supabase characters.profile_data.__game_session carrier rows (written by submitGuestMysteryReviewAction)
   try {
     const { data: charCarriers } = await supabase
