@@ -366,9 +366,9 @@ export async function generateGuestAvatarAction(
     // Axis 3: Distinct Hair Parting & Styling Variation (strictly respecting chosen hairStyle cut AND hairTexture!)
     const HAIR_STYLE_CUT_DESCRIPTIONS: Record<string, string> = {
       'Textured Crop / Curly Fringe':
-        'textured crop with thick volume/curls on top falling forward as a natural curly/textured fringe over the upper forehead, paired with neat tapered sides',
+        'textured crop with thick volume/curls on top and natural curl ringlets dipping lightly at the top hairline onto the upper forehead, paired with neat tapered sides',
       'Taper Fade / Voluminous Top':
-        'clean barbershop taper fade on the sides and temples with a thick, high-volume textured/curly top (2.5 to 3.5 inches of fullness on top)',
+        'clean barbershop taper on the sides and temples with thick, high-volume curls/texture piled on top of the crown, keeping the forehead open and visible with a single small stray curl at the upper hairline',
       'Middle Part / Curtain Fringe':
         'center middle part with volume sweeping into face-framing curtain fringe around the temples',
       'Side Part / Swept':
@@ -397,9 +397,9 @@ export async function generateGuestAvatarAction(
     } else if (isMasculine) {
       if (isCurlyTex) {
         const mascCurlyStyles = [
-          'thick, springy natural curls on top falling forward in a textured curly crop / fringe over the upper forehead with clean tapered sides',
-          'voluminous tousled curls on top (3 inches of defined ringlet curl volume) with a loose curl lock dropping onto the forehead and neat tapered sides',
-          'dense curly top with defined ringlets across the crown and forehead line, paired with a neat barbershop taper on the sides',
+          'dense, tight natural curls piled on top of the crown with neat scissor-tapered sides, keeping the full broad forehead visible with one or two small loose curl ringlets dipping lightly at the upper hairline',
+          'voluminous tousled curls on top (3 inches of defined ringlet curl volume) with a loose curl lock dropping slightly at the top hairline and neat tapered sides',
+          'thick, springy natural curls on top styled in a textured curly crop with clean tapered sides and back',
         ];
         hairStylingVariation = mascCurlyStyles[slot % mascCurlyStyles.length];
       } else if (isWavyTex) {
@@ -518,16 +518,24 @@ export async function generateGuestAvatarAction(
       uniqueFacialStructure += ' — featuring visible cheek dimples when smiling';
     }
 
-    // Axis 6: Regional / Cultural Heritage Phenotype (when Ethnicity is unspecified)
+    // Axis 6: Regional / Cultural Heritage Phenotype (when Ethnicity is unspecified — strictly aligned with chosen skinColor!)
     let phenotypeNuance = ethnicity;
     if (!ethnicity || ethnicity === 'unspecified') {
-      const phenotypes = [
-        'Western European / Australian-British facial phenotype',
-        'Mediterranean / Southern European facial phenotype (warm light-olive undertone, thick dark eyelashes, bold dark eyebrows)',
-        'Anglo-Celtic facial phenotype (clear natural complexion with expressive eyes)',
-        'Continental European facial phenotype (crisp bone structure, natural effortless look)',
-      ];
-      phenotypeNuance = phenotypes[slot % phenotypes.length];
+      const lowerSkin = skinColor.toLowerCase();
+      if (lowerSkin === 'porcelain' || lowerSkin === 'fair' || lowerSkin === 'light') {
+        const fairPhenotypes = [
+          'Caucasian / Anglo-Australian / Western European facial phenotype with fair-to-light warm rosy-ivory Caucasian skin',
+          'Anglo-Celtic / British facial phenotype with clear fair-light natural complexion',
+          'Western European Caucasian facial phenotype with light warm ivory skin and natural bone structure',
+          'Northern / Continental European Caucasian facial phenotype with crisp bone structure and fair-light skin',
+        ];
+        phenotypeNuance = fairPhenotypes[slot % fairPhenotypes.length];
+      } else if (lowerSkin === 'olive') {
+        phenotypeNuance =
+          'Mediterranean / Southern European facial phenotype with warm olive complexion';
+      } else {
+        phenotypeNuance = `Natural ${skinColor} complexion with dimensional portrait lighting`;
+      }
     }
 
     // Axis 7: Distinct Expression & Camera Micro-Pose

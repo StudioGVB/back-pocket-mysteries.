@@ -233,6 +233,10 @@ const LEGACY_CLONE_AVATAR_REPLACEMENTS: Array<{ match: string; replacement: stri
     match: '4903bd39-e54f-42e4-b679-2af5d128bb8f-b130e47b4cee2149a7aad02dfc972e91',
     replacement: '/generated-avatars/4903bd39-e54f-42e4-b679-2af5d128bb8f-host.jpg',
   },
+  {
+    match: 'f460c1c6-4019-4c4f-a204-4f60f4c70ae9-2f5e63f14bbb7b5d',
+    replacement: '/generated-avatars/f460c1c6-4019-4c4f-a204-4f60f4c70ae9-matt-curly.jpg',
+  },
 ];
 
 export function upgradeLegacyCloneAvatarUrl(guest: {
