@@ -2,7 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Bell, Users, Mail, Check, ArrowRight, Sparkles, Calendar } from 'lucide-react';
+import {
+  Bell,
+  Users,
+  Mail,
+  MessageSquare,
+  Star,
+  LifeBuoy,
+  Check,
+  ArrowRight,
+  Sparkles,
+  Calendar,
+} from 'lucide-react';
 import { markAdminSectionSeenAction } from '@/app/[locale]/(admin)/admin/admin-data';
 
 export interface PeriodCounts {
@@ -30,13 +41,45 @@ export interface UnseenLeadPreview {
   created_at: string;
 }
 
+export interface UnseenEnquiryPreview {
+  id: string;
+  name: string;
+  subject: string;
+  created_at: string;
+}
+
+export interface UnseenReviewPreview {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface UnseenTicketPreview {
+  id: string;
+  name: string;
+  subject: string;
+  created_at: string;
+}
+
 interface DashboardSignupsWidgetProps {
+  newOrdersCount?: number;
   newUsersCount: number;
   newLeadsCount: number;
+  newEnquiriesCount?: number;
+  newReviewsCount?: number;
+  newTicketsCount?: number;
   unseenCustomers: UnseenCustomerPreview[];
   unseenLeads: UnseenLeadPreview[];
+  unseenEnquiries?: UnseenEnquiryPreview[];
+  unseenReviews?: UnseenReviewPreview[];
+  unseenTickets?: UnseenTicketPreview[];
   customerPeriods: PeriodCounts;
   leadPeriods: PeriodCounts;
+  enquiryPeriods?: PeriodCounts;
+  reviewPeriods?: PeriodCounts;
+  ticketPeriods?: PeriodCounts;
 }
 
 type PeriodKey = 'week' | 'month' | 'quarter' | 'year' | 'allTime';
@@ -48,6 +91,15 @@ const PERIOD_OPTIONS: Array<{ key: PeriodKey; label: string; shortLabel: string 
   { key: 'year', label: 'This Year', shortLabel: 'This Year' },
   { key: 'allTime', label: 'All Time', shortLabel: 'All Time' },
 ];
+
+const EMPTY_PERIODS: PeriodCounts = {
+  today: 0,
+  week: 0,
+  month: 0,
+  quarter: 0,
+  year: 0,
+  allTime: 0,
+};
 
 function formatTimeAgo(iso?: string): string {
   if (!iso) return 'Recently';
@@ -62,14 +114,32 @@ function formatTimeAgo(iso?: string): string {
 }
 
 export function DashboardSignupsWidget({
+  newOrdersCount = 0,
   newUsersCount,
   newLeadsCount,
+  newEnquiriesCount = 0,
+  newReviewsCount = 0,
+  newTicketsCount = 0,
   unseenCustomers,
   unseenLeads,
+  unseenEnquiries = [],
+  unseenReviews = [],
+  unseenTickets = [],
   customerPeriods,
   leadPeriods,
+  enquiryPeriods = EMPTY_PERIODS,
+  reviewPeriods = EMPTY_PERIODS,
+  ticketPeriods = EMPTY_PERIODS,
 }: DashboardSignupsWidgetProps) {
-  const initialHasUrgency = newUsersCount > 0 || newLeadsCount > 0;
+  const totalNewTraction =
+    newOrdersCount +
+    newUsersCount +
+    newLeadsCount +
+    newEnquiriesCount +
+    newReviewsCount +
+    newTicketsCount;
+
+  const initialHasUrgency = totalNewTraction > 0;
   const [isUrgent, setIsUrgent] = useState(initialHasUrgency);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodKey>('week');
 
@@ -89,7 +159,7 @@ export function DashboardSignupsWidget({
   }, []);
 
   // Automatically record that the dashboard has been viewed so next visit has 0 urgency,
-  // and soften the urgency on-screen after the admin has had 8 seconds to read the alert
+  // and soften the urgency on-screen after 9 seconds
   useEffect(() => {
     const recordTimer = setTimeout(() => {
       persistDashboardSeen();
@@ -99,7 +169,7 @@ export function DashboardSignupsWidget({
     if (initialHasUrgency) {
       calmTimer = setTimeout(() => {
         setIsUrgent(false);
-      }, 9000);
+      }, 9500);
     }
 
     return () => {
@@ -116,6 +186,61 @@ export function DashboardSignupsWidget({
   const activePeriodMeta =
     PERIOD_OPTIONS.find((p) => p.key === selectedPeriod) || PERIOD_OPTIONS[0];
 
+  const channels = [
+    {
+      id: 'customers',
+      label: 'Customer Sign-Ups',
+      href: '/en/admin/users',
+      icon: <Users className="w-4 h-4" />,
+      iconBg: isUrgent ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700',
+      unseenCount: newUsersCount,
+      periods: customerPeriods,
+    },
+    {
+      id: 'leads',
+      label: 'Newsletter & VIPs',
+      href: '/en/admin/leads',
+      icon: <Mail className="w-4 h-4" />,
+      iconBg: isUrgent ? 'bg-brand-pink/25 text-brand-pink' : 'bg-brand-pink/10 text-brand-pink',
+      unseenCount: newLeadsCount,
+      periods: leadPeriods,
+    },
+    {
+      id: 'enquiries',
+      label: 'Contact Enquiries',
+      href: '/en/admin/enquiries',
+      icon: <MessageSquare className="w-4 h-4" />,
+      iconBg: isUrgent ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-100 text-indigo-700',
+      unseenCount: newEnquiriesCount,
+      periods: enquiryPeriods,
+    },
+    {
+      id: 'reviews',
+      label: 'Customer Reviews',
+      href: '/en/admin/reviews',
+      icon: <Star className="w-4 h-4" />,
+      iconBg: isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-100 text-amber-700',
+      unseenCount: newReviewsCount,
+      periods: reviewPeriods,
+    },
+    {
+      id: 'tickets',
+      label: 'Support Tickets',
+      href: '/en/admin/tickets',
+      icon: <LifeBuoy className="w-4 h-4" />,
+      iconBg: isUrgent ? 'bg-sky-500/20 text-sky-300' : 'bg-sky-100 text-sky-700',
+      unseenCount: newTicketsCount,
+      periods: ticketPeriods,
+    },
+  ];
+
+  const hasUnseenPreviews =
+    unseenCustomers.length > 0 ||
+    unseenLeads.length > 0 ||
+    unseenEnquiries.length > 0 ||
+    unseenReviews.length > 0 ||
+    unseenTickets.length > 0;
+
   return (
     <div
       className={`rounded-[32px] border transition-all duration-500 p-6 sm:p-8 ${
@@ -131,12 +256,12 @@ export function DashboardSignupsWidget({
             {isUrgent ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-pink text-white text-[10px] font-black uppercase tracking-widest shadow-md shadow-brand-pink/30">
                 <Bell className="w-3 h-3 animate-bounce" />
-                New Sign-Up Activity
+                New Traction Alert
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest">
                 <Calendar className="w-3 h-3 text-brand-pink" />
-                Community &amp; Newsletter Growth
+                Traction &amp; Community Growth
               </span>
             )}
 
@@ -147,7 +272,7 @@ export function DashboardSignupsWidget({
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
               >
                 <Check className="w-3 h-3 text-emerald-400" />
-                Viewed · Clear Alert
+                Viewed · Clear Urgency
               </button>
             )}
           </div>
@@ -155,17 +280,13 @@ export function DashboardSignupsWidget({
           <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight">
             {isUrgent ? (
               <>
-                You Have{' '}
-                <span className="text-brand-pink">
-                  {newUsersCount + newLeadsCount} New Sign-Up
-                  {newUsersCount + newLeadsCount === 1 ? '' : 's'}
-                </span>{' '}
-                Since Your Last Visit
+                <span className="text-brand-pink">+{totalNewTraction} New</span> Sign-Ups, Leads,
+                Enquiries &amp; Reviews Since Your Last Visit
               </>
             ) : (
               <>
-                Customer Sign-Ups &amp;{' '}
-                <span className="text-brand-pink italic">Newsletter Subscribers</span>
+                Sign-Ups, Newsletter, Enquiries &amp;{' '}
+                <span className="text-brand-pink italic">Reviews Breakdown</span>
               </>
             )}
           </h3>
@@ -204,30 +325,30 @@ export function DashboardSignupsWidget({
         </div>
       </div>
 
-      {/* Urgent Recent Sign-Ups Strip (Automatically disappears once viewed) */}
-      {isUrgent && (unseenCustomers.length > 0 || unseenLeads.length > 0) && (
+      {/* Urgent Activity Feed (Automatically clears once viewed) */}
+      {isUrgent && hasUnseenPreviews && (
         <div className="mt-5 p-4 rounded-2xl bg-white/[0.06] border border-brand-pink/30 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-black uppercase tracking-widest text-brand-pink flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
-              Just Joined Since You Last Checked the Dashboard
+              New Traction Since You Last Checked the Dashboard
             </p>
             <span className="text-[10px] text-slate-400 font-semibold">
-              Alert clears automatically after viewing
+              Click any item to open · Urgency clears automatically after viewing
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
             {unseenCustomers.slice(0, 2).map((c) => (
               <Link
-                key={c.id}
+                key={`cust-${c.id}`}
                 href={`/en/admin/users/${c.id}`}
-                className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
+                className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
               >
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
-                      New Account
+                      Sign-Up
                     </span>
                     <p className="text-xs font-black text-white truncate">{c.name}</p>
                   </div>
@@ -243,23 +364,86 @@ export function DashboardSignupsWidget({
 
             {unseenLeads.slice(0, 2).map((l) => (
               <Link
-                key={l.id}
+                key={`lead-${l.id}`}
                 href="/en/admin/leads"
-                className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
+                className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
               >
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <span className="px-2 py-0.5 rounded-full bg-brand-pink/25 text-brand-pink text-[9px] font-black uppercase tracking-widest">
                       {l.vip_rank && l.vip_rank <= 50 ? `VIP #${l.vip_rank}` : 'Newsletter'}
                     </span>
                     <p className="text-xs font-black text-white truncate">{l.name}</p>
                   </div>
-                  <p className="text-[11px] text-slate-300 truncate mt-0.5">
-                    {l.email} {l.country ? `· ${l.country}` : ''}
-                  </p>
+                  <p className="text-[11px] text-slate-300 truncate mt-0.5">{l.email}</p>
                 </div>
                 <span className="text-[10px] font-bold text-slate-400 shrink-0">
                   {formatTimeAgo(l.created_at)} →
+                </span>
+              </Link>
+            ))}
+
+            {unseenEnquiries.slice(0, 2).map((e) => (
+              <Link
+                key={`enq-${e.id}`}
+                href="/en/admin/enquiries"
+                className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-500/25 text-indigo-300 text-[9px] font-black uppercase tracking-widest">
+                      Enquiry
+                    </span>
+                    <p className="text-xs font-black text-white truncate">{e.name}</p>
+                  </div>
+                  <p className="text-[11px] text-slate-300 truncate mt-0.5">{e.subject}</p>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 shrink-0">
+                  {formatTimeAgo(e.created_at)} →
+                </span>
+              </Link>
+            ))}
+
+            {unseenReviews.slice(0, 2).map((r) => (
+              <Link
+                key={`rev-${r.id}`}
+                href="/en/admin/reviews"
+                className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-300 text-[9px] font-black uppercase tracking-widest">
+                      ★ {r.rating}.0 Review
+                    </span>
+                    <p className="text-xs font-black text-white truncate">{r.name}</p>
+                  </div>
+                  <p className="text-[11px] text-slate-300 truncate mt-0.5">
+                    {r.comment || 'New customer review submitted'}
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 shrink-0">
+                  {formatTimeAgo(r.created_at)} →
+                </span>
+              </Link>
+            ))}
+
+            {unseenTickets.slice(0, 2).map((t) => (
+              <Link
+                key={`tkt-${t.id}`}
+                href="/en/admin/tickets"
+                className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-colors"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full bg-sky-500/25 text-sky-300 text-[9px] font-black uppercase tracking-widest">
+                      Ticket
+                    </span>
+                    <p className="text-xs font-black text-white truncate">{t.name}</p>
+                  </div>
+                  <p className="text-[11px] text-slate-300 truncate mt-0.5">{t.subject}</p>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 shrink-0">
+                  {formatTimeAgo(t.created_at)} →
                 </span>
               </Link>
             ))}
@@ -267,195 +451,97 @@ export function DashboardSignupsWidget({
         </div>
       )}
 
-      {/* Side-by-Side Growth Cards: Customer Sign-Ups vs Newsletter Subscribers */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Card 1: Customer Account Sign-Ups */}
-        <div
-          className={`p-6 rounded-2xl border transition-colors ${
-            isUrgent
-              ? 'bg-white/[0.04] border-white/10'
-              : 'bg-slate-50/70 border-slate-100'
-          }`}
-        >
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  isUrgent
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : 'bg-emerald-100 text-emerald-700'
-                }`}
-              >
-                <Users className="w-5 h-5" />
-              </div>
-              <div>
-                <p
-                  className={`text-[10px] font-black uppercase tracking-widest ${
-                    isUrgent ? 'text-slate-400' : 'text-gray-400'
+      {/* 5 Traction Channels Grid (Customer Sign-Ups, Newsletter & VIPs, Enquiries, Reviews, Tickets) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mt-6">
+        {channels.map((ch) => (
+          <div
+            key={ch.id}
+            className={`p-5 rounded-2xl border transition-colors flex flex-col justify-between ${
+              isUrgent
+                ? 'bg-white/[0.04] border-white/10'
+                : 'bg-slate-50/70 border-slate-100'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${ch.iconBg}`}>
+                  {ch.icon}
+                </div>
+                <Link
+                  href={ch.href}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-colors ${
+                    isUrgent && ch.unseenCount > 0
+                      ? 'bg-brand-pink text-white'
+                      : isUrgent
+                      ? 'bg-white/10 text-white hover:bg-white/20'
+                      : 'bg-white border border-gray-200 text-brand-dark hover:border-brand-pink hover:text-brand-pink'
                   }`}
                 >
-                  Customer Account Sign-Ups
-                </p>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-3xl font-black">
-                    +{customerPeriods[selectedPeriod]}
-                  </span>
-                  <span
-                    className={`text-xs font-bold ${
-                      isUrgent ? 'text-slate-400' : 'text-gray-500'
-                    }`}
-                  >
-                    in {activePeriodMeta.label}
-                  </span>
-                </div>
+                  {isUrgent && ch.unseenCount > 0 ? `+${ch.unseenCount} New` : 'Open'}
+                  <ArrowRight className="w-2.5 h-2.5" />
+                </Link>
+              </div>
+
+              <p
+                className={`text-[10px] font-black uppercase tracking-widest ${
+                  isUrgent ? 'text-slate-400' : 'text-gray-400'
+                }`}
+              >
+                {ch.label}
+              </p>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-2xl font-black">
+                  {selectedPeriod === 'allTime'
+                    ? ch.periods[selectedPeriod]
+                    : `+${ch.periods[selectedPeriod]}`}
+                </span>
+                <span
+                  className={`text-[11px] font-bold ${
+                    isUrgent ? 'text-slate-400' : 'text-gray-500'
+                  }`}
+                >
+                  {activePeriodMeta.shortLabel}
+                </span>
               </div>
             </div>
 
-            <Link
-              href="/en/admin/users"
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${
-                isUrgent && newUsersCount > 0
-                  ? 'bg-emerald-500 text-white hover:bg-emerald-400'
-                  : isUrgent
-                  ? 'bg-white/10 text-white hover:bg-white/20'
-                  : 'bg-white border border-gray-200 text-brand-dark hover:border-brand-pink hover:text-brand-pink'
-              }`}
-            >
-              {isUrgent && newUsersCount > 0 ? `+${newUsersCount} Unseen` : 'View All'}
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          {/* All Period Breakdown Chips (This Week, 30 Days, 90 Days, This Year, Total) */}
-          <div className="grid grid-cols-5 gap-2 pt-3 border-t border-current/10">
-            {PERIOD_OPTIONS.map((opt) => {
-              const isSelected = selectedPeriod === opt.key;
-              return (
+            {/* Mini Period Row (7d · 30d · 1y · Total) */}
+            <div className="grid grid-cols-4 gap-1 pt-3 mt-4 border-t border-current/10 text-center">
+              {(
+                [
+                  { k: 'week', l: '7d' },
+                  { k: 'month', l: '30d' },
+                  { k: 'year', l: '1y' },
+                  { k: 'allTime', l: 'All' },
+                ] as const
+              ).map((p) => (
                 <button
-                  key={opt.key}
+                  key={p.k}
                   type="button"
-                  onClick={() => setSelectedPeriod(opt.key)}
-                  className={`p-2 rounded-xl text-left transition-all cursor-pointer ${
-                    isSelected
+                  onClick={() => setSelectedPeriod(p.k)}
+                  className={`py-1 rounded-lg transition-colors cursor-pointer ${
+                    selectedPeriod === p.k
                       ? isUrgent
-                        ? 'bg-white/15 ring-1 ring-emerald-400/50'
-                        : 'bg-white shadow-sm ring-1 ring-brand-dark/10'
-                      : isUrgent
-                      ? 'hover:bg-white/5'
-                      : 'hover:bg-white/60'
+                        ? 'bg-white/15 font-black'
+                        : 'bg-white shadow-xs font-black'
+                      : 'opacity-75 hover:opacity-100'
                   }`}
                 >
                   <p
-                    className={`text-[9px] font-black uppercase tracking-wider truncate ${
+                    className={`text-[8px] font-black uppercase ${
                       isUrgent ? 'text-slate-400' : 'text-gray-400'
                     }`}
                   >
-                    {opt.shortLabel}
+                    {p.l}
                   </p>
-                  <p className="text-sm font-black mt-0.5">
-                    {opt.key === 'allTime'
-                      ? customerPeriods[opt.key]
-                      : `+${customerPeriods[opt.key]}`}
+                  <p className="text-[11px] font-black">
+                    {p.k === 'allTime' ? ch.periods[p.k] : `+${ch.periods[p.k]}`}
                   </p>
                 </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Card 2: Newsletter & First 50 VIP Sign-Ups */}
-        <div
-          className={`p-6 rounded-2xl border transition-colors ${
-            isUrgent
-              ? 'bg-white/[0.04] border-white/10'
-              : 'bg-slate-50/70 border-slate-100'
-          }`}
-        >
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  isUrgent
-                    ? 'bg-brand-pink/25 text-brand-pink'
-                    : 'bg-brand-pink/10 text-brand-pink'
-                }`}
-              >
-                <Mail className="w-5 h-5" />
-              </div>
-              <div>
-                <p
-                  className={`text-[10px] font-black uppercase tracking-widest ${
-                    isUrgent ? 'text-slate-400' : 'text-gray-400'
-                  }`}
-                >
-                  Newsletter &amp; First 50 VIPs
-                </p>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-3xl font-black">
-                    +{leadPeriods[selectedPeriod]}
-                  </span>
-                  <span
-                    className={`text-xs font-bold ${
-                      isUrgent ? 'text-slate-400' : 'text-gray-500'
-                    }`}
-                  >
-                    in {activePeriodMeta.label}
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
-
-            <Link
-              href="/en/admin/leads"
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors ${
-                isUrgent && newLeadsCount > 0
-                  ? 'bg-brand-pink text-white hover:bg-brand-pink/90'
-                  : isUrgent
-                  ? 'bg-white/10 text-white hover:bg-white/20'
-                  : 'bg-white border border-gray-200 text-brand-dark hover:border-brand-pink hover:text-brand-pink'
-              }`}
-            >
-              {isUrgent && newLeadsCount > 0 ? `+${newLeadsCount} Unseen` : 'View All'}
-              <ArrowRight className="w-3 h-3" />
-            </Link>
           </div>
-
-          {/* All Period Breakdown Chips (This Week, 30 Days, 90 Days, This Year, Total) */}
-          <div className="grid grid-cols-5 gap-2 pt-3 border-t border-current/10">
-            {PERIOD_OPTIONS.map((opt) => {
-              const isSelected = selectedPeriod === opt.key;
-              return (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setSelectedPeriod(opt.key)}
-                  className={`p-2 rounded-xl text-left transition-all cursor-pointer ${
-                    isSelected
-                      ? isUrgent
-                        ? 'bg-white/15 ring-1 ring-brand-pink/50'
-                        : 'bg-white shadow-sm ring-1 ring-brand-dark/10'
-                      : isUrgent
-                      ? 'hover:bg-white/5'
-                      : 'hover:bg-white/60'
-                  }`}
-                >
-                  <p
-                    className={`text-[9px] font-black uppercase tracking-wider truncate ${
-                      isUrgent ? 'text-slate-400' : 'text-gray-400'
-                    }`}
-                  >
-                    {opt.shortLabel}
-                  </p>
-                  <p className="text-sm font-black mt-0.5">
-                    {opt.key === 'allTime'
-                      ? leadPeriods[opt.key]
-                      : `+${leadPeriods[opt.key]}`}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );

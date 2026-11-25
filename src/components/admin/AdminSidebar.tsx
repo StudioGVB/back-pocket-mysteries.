@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
+  AdminNotificationSection,
   getAdminSidebarNotificationCountsAction,
   markAdminSectionSeenAction,
 } from '@/app/[locale]/(admin)/admin/admin-data';
@@ -20,27 +21,63 @@ interface NavItem {
   onSelectSection?: () => void;
 }
 
+const SECTION_STORAGE_KEYS: Record<
+  AdminNotificationSection,
+  { cookie: string; storage: string }
+> = {
+  dashboard: {
+    cookie: 'admin_dashboard_last_view',
+    storage: 'bpm_admin_dashboard_last_view',
+  },
+  transactions: {
+    cookie: 'admin_transactions_last_seen',
+    storage: 'bpm_admin_transactions_last_seen',
+  },
+  customers: {
+    cookie: 'admin_users_last_seen',
+    storage: 'bpm_admin_users_last_seen',
+  },
+  leads: {
+    cookie: 'admin_leads_last_seen',
+    storage: 'bpm_admin_leads_last_seen',
+  },
+  enquiries: {
+    cookie: 'admin_enquiries_last_seen',
+    storage: 'bpm_admin_enquiries_last_seen',
+  },
+  reviews: {
+    cookie: 'admin_reviews_last_seen',
+    storage: 'bpm_admin_reviews_last_seen',
+  },
+  tickets: {
+    cookie: 'admin_tickets_last_seen',
+    storage: 'bpm_admin_tickets_last_seen',
+  },
+};
+
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-function writeSeenTimestamp(cookieName: string, storageKey: string, iso: string) {
+function writeSeenTimestamp(section: AdminNotificationSection, iso: string) {
   if (typeof window === 'undefined') return;
+  const { cookie, storage } = SECTION_STORAGE_KEYS[section];
   const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
-  document.cookie = `${cookieName}=${encodeURIComponent(iso)};expires=${expires};path=/`;
+  document.cookie = `${cookie}=${encodeURIComponent(iso)};expires=${expires};path=/`;
   try {
-    window.localStorage.setItem(storageKey, iso);
+    window.localStorage.setItem(storage, iso);
   } catch {}
 }
 
-function readSeenTimestamp(cookieName: string, storageKey: string): string | null {
+function readSeenTimestamp(section: AdminNotificationSection): string | null {
   if (typeof window === 'undefined') return null;
-  const fromCookie = readCookie(cookieName);
+  const { cookie, storage } = SECTION_STORAGE_KEYS[section];
+  const fromCookie = readCookie(cookie);
   let fromStorage: string | null = null;
   try {
-    fromStorage = window.localStorage.getItem(storageKey);
+    fromStorage = window.localStorage.getItem(storage);
   } catch {}
   if (fromCookie && fromStorage) {
     return fromCookie > fromStorage ? fromCookie : fromStorage;
@@ -55,66 +92,70 @@ export function AdminSidebar() {
   // Normalize locale prefix (e.g. /en/admin/... -> /admin/...)
   const cleanPath = pathname.replace(/^\/(en|fr)(?=\/admin)/, '');
 
-  const [unseenCustomersCount, setUnseenCustomersCount] = useState(0);
-  const [unseenLeadsCount, setUnseenLeadsCount] = useState(0);
-  const [unseenDashboardCount, setUnseenDashboardCount] = useState(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [counts, setCounts] = useState({
+    transactions: 0,
+    customers: 0,
+    leads: 0,
+    enquiries: 0,
+    reviews: 0,
+    tickets: 0,
+    dashboard: 0,
+  });
 
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
-
-  const markSectionSeen = useCallback((section: 'dashboard' | 'customers' | 'leads') => {
+  const markSectionSeen = useCallback((section: AdminNotificationSection) => {
     const nowIso = new Date().toISOString();
-    if (section === 'customers') {
-      setUnseenCustomersCount(0);
-      writeSeenTimestamp('admin_users_last_seen', 'bpm_admin_users_last_seen', nowIso);
-    } else if (section === 'leads') {
-      setUnseenLeadsCount(0);
-      writeSeenTimestamp('admin_leads_last_seen', 'bpm_admin_leads_last_seen', nowIso);
-    } else if (section === 'dashboard') {
-      setUnseenDashboardCount(0);
-      writeSeenTimestamp('admin_dashboard_last_view', 'bpm_admin_dashboard_last_view', nowIso);
-    }
+    setCounts((prev) => ({ ...prev, [section]: 0 }));
+    writeSeenTimestamp(section, nowIso);
     markAdminSectionSeenAction(section, nowIso).catch(() => {});
   }, []);
 
   const refreshCounts = useCallback(async () => {
-    const counts = await getAdminSidebarNotificationCountsAction({
-      dashboard: readSeenTimestamp('admin_dashboard_last_view', 'bpm_admin_dashboard_last_view'),
-      customers: readSeenTimestamp('admin_users_last_seen', 'bpm_admin_users_last_seen'),
-      leads: readSeenTimestamp('admin_leads_last_seen', 'bpm_admin_leads_last_seen'),
+    const res = await getAdminSidebarNotificationCountsAction({
+      dashboard: readSeenTimestamp('dashboard'),
+      transactions: readSeenTimestamp('transactions'),
+      customers: readSeenTimestamp('customers'),
+      leads: readSeenTimestamp('leads'),
+      enquiries: readSeenTimestamp('enquiries'),
+      reviews: readSeenTimestamp('reviews'),
+      tickets: readSeenTimestamp('tickets'),
     });
 
-    const onUsersPage = cleanPath === '/admin/users' || cleanPath.startsWith('/admin/users/');
-    const onLeadsPage = cleanPath === '/admin/leads' || cleanPath.startsWith('/admin/leads/');
-    const onDashPage = cleanPath === '/admin';
+    const isAt = (prefix: string) =>
+      cleanPath === prefix || cleanPath.startsWith(`${prefix}/`);
 
-    setUnseenCustomersCount(onUsersPage ? 0 : counts.unseenCustomersCount);
-    setUnseenLeadsCount(onLeadsPage ? 0 : counts.unseenLeadsCount);
-    setUnseenDashboardCount(onDashPage ? 0 : counts.unseenDashboardCount);
+    setCounts({
+      transactions: isAt('/admin/transactions') ? 0 : res.unseenTransactionsCount,
+      customers: isAt('/admin/users') ? 0 : res.unseenCustomersCount,
+      leads: isAt('/admin/leads') ? 0 : res.unseenLeadsCount,
+      enquiries: isAt('/admin/enquiries') ? 0 : res.unseenEnquiriesCount,
+      reviews: isAt('/admin/reviews') ? 0 : res.unseenReviewsCount,
+      tickets: isAt('/admin/tickets') ? 0 : res.unseenTicketsCount,
+      dashboard: cleanPath === '/admin' ? 0 : res.unseenDashboardCount,
+    });
   }, [cleanPath]);
 
   // Auto-clear section badge as soon as the admin lands on that page
   useEffect(() => {
-    if (cleanPath === '/admin/users' || cleanPath.startsWith('/admin/users/')) {
-      markSectionSeen('customers');
-    } else if (cleanPath === '/admin/leads' || cleanPath.startsWith('/admin/leads/')) {
-      markSectionSeen('leads');
-    }
+    const isAt = (prefix: string) =>
+      cleanPath === prefix || cleanPath.startsWith(`${prefix}/`);
+
+    if (isAt('/admin/transactions')) markSectionSeen('transactions');
+    else if (isAt('/admin/users')) markSectionSeen('customers');
+    else if (isAt('/admin/leads')) markSectionSeen('leads');
+    else if (isAt('/admin/enquiries')) markSectionSeen('enquiries');
+    else if (isAt('/admin/reviews')) markSectionSeen('reviews');
+    else if (isAt('/admin/tickets')) markSectionSeen('tickets');
+
     refreshCounts();
   }, [cleanPath, markSectionSeen, refreshCounts]);
 
-  // Listen for custom seen events from DashboardTracker / DashboardSignupsWidget + poll every 45s
+  // Listen for custom seen events from DashboardSignupsWidget + poll every 45s
   useEffect(() => {
     const handleCustomSeen = (e: Event) => {
-      const ev = e as CustomEvent<{ section?: 'dashboard' | 'customers' | 'leads' }>;
-      if (ev.detail?.section === 'dashboard') {
-        setUnseenDashboardCount(0);
-      } else if (ev.detail?.section === 'customers') {
-        setUnseenCustomersCount(0);
-      } else if (ev.detail?.section === 'leads') {
-        setUnseenLeadsCount(0);
+      const ev = e as CustomEvent<{ section?: AdminNotificationSection }>;
+      const sec = ev.detail?.section;
+      if (sec) {
+        setCounts((prev) => ({ ...prev, [sec]: 0 }));
       }
     };
     window.addEventListener('bpm:admin-section-seen', handleCustomSeen);
@@ -142,7 +183,7 @@ export function AdminSidebar() {
     label: 'Dashboard',
     href: '/admin',
     exact: true,
-    badgeCount: unseenDashboardCount,
+    badgeCount: counts.dashboard,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="15" rx="1"/></svg>
     ),
@@ -175,6 +216,8 @@ export function AdminSidebar() {
       label: 'Transactions',
       href: '/admin/transactions',
       matchPrefixes: ['/admin/transactions'],
+      badgeCount: counts.transactions,
+      onSelectSection: () => markSectionSeen('transactions'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       ),
@@ -196,7 +239,7 @@ export function AdminSidebar() {
       label: 'Customers',
       href: '/admin/users',
       matchPrefixes: ['/admin/users'],
-      badgeCount: unseenCustomersCount,
+      badgeCount: counts.customers,
       onSelectSection: () => markSectionSeen('customers'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -207,7 +250,7 @@ export function AdminSidebar() {
       label: 'Leads',
       href: '/admin/leads',
       matchPrefixes: ['/admin/leads'],
-      badgeCount: unseenLeadsCount,
+      badgeCount: counts.leads,
       onSelectSection: () => markSectionSeen('leads'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
@@ -218,6 +261,8 @@ export function AdminSidebar() {
       label: 'Enquiries',
       href: '/admin/enquiries',
       matchPrefixes: ['/admin/enquiries'],
+      badgeCount: counts.enquiries,
+      onSelectSection: () => markSectionSeen('enquiries'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
       ),
@@ -227,6 +272,8 @@ export function AdminSidebar() {
       label: 'Reviews',
       href: '/admin/reviews',
       matchPrefixes: ['/admin/reviews'],
+      badgeCount: counts.reviews,
+      onSelectSection: () => markSectionSeen('reviews'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       ),
@@ -302,16 +349,6 @@ export function AdminSidebar() {
     },
   ];
 
-  const allNavItems: NavItem[] = [
-    dashboardItem,
-    ...basesItems,
-    ...ordersItems,
-    ...customerItems,
-    ...marketingItems,
-    ...analyticsItems,
-  ];
-  const activeNavItem = allNavItems.find(isItemActive);
-
   const isSettingsActive =
     cleanPath === '/admin/settings' ||
     cleanPath.startsWith('/admin/settings/') ||
@@ -321,29 +358,17 @@ export function AdminSidebar() {
   const isTicketsActive =
     cleanPath === '/admin/tickets' || cleanPath.startsWith('/admin/tickets/');
 
-  const activeMobileLabel = isSettingsActive
-    ? 'Settings'
-    : isTicketsActive
-      ? 'Support & Ticketing'
-      : activeNavItem?.label || 'Admin';
-
-  const totalUnseenBadges =
-    (unseenDashboardCount || 0) + (unseenCustomersCount || 0) + (unseenLeadsCount || 0);
-
   const sectionTitleClass =
     'px-3.5 text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1.5';
 
-  const renderNavItem = (item: NavItem, onNavigate?: () => void) => {
+  const renderNavItem = (item: NavItem) => {
     const active = isItemActive(item);
     const hasBadge = !active && typeof item.badgeCount === 'number' && item.badgeCount > 0;
     return (
       <li key={item.id}>
         <Link
           href={`${localePrefix}${item.href}`}
-          onClick={() => {
-            item.onSelectSection?.();
-            onNavigate?.();
-          }}
+          onClick={() => item.onSelectSection?.()}
           className={`flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl transition-all text-[13px] font-bold ${
             active
               ? 'bg-brand-pink text-white shadow-md shadow-brand-pink/25'
@@ -365,52 +390,40 @@ export function AdminSidebar() {
     );
   };
 
-  const renderSection = (title: string, items: NavItem[], onNavigate?: () => void) => (
+  const renderSection = (title: string, items: NavItem[]) => (
     <div>
       <h3 className={sectionTitleClass}>{title}</h3>
-      <ul className="space-y-1">{items.map((item) => renderNavItem(item, onNavigate))}</ul>
+      <ul className="space-y-1">{items.map(renderNavItem)}</ul>
     </div>
   );
 
-  const renderSidebarContent = (onNavigate?: () => void) => (
-    <>
-      <div className="px-6 pt-5 pb-4 border-b border-white/5 flex items-center justify-between">
-        <div>
-          <Link href={`${localePrefix}/admin`} onClick={onNavigate}>
-            <Image
-              src="/logo-horizontal-white.png"
-              alt="Back Pocket Mysteries Admin"
-              width={160}
-              height={32}
-              className="h-7 w-auto object-contain"
-            />
-          </Link>
-          <div className="mt-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
-            Internal Admin
-          </div>
+  return (
+    <aside className="w-64 bg-brand-dark text-white flex flex-col fixed h-full z-30 border-r border-white/10">
+      <div className="px-6 pt-5 pb-4 border-b border-white/5">
+        <Link href={`${localePrefix}/admin`}>
+          <Image
+            src="/logo-horizontal-white.png"
+            alt="Back Pocket Mysteries Admin"
+            width={160}
+            height={32}
+            className="h-7 w-auto object-contain"
+          />
+        </Link>
+        <div className="mt-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+          Internal Admin
         </div>
-        {onNavigate && (
-          <button
-            type="button"
-            onClick={onNavigate}
-            aria-label="Close menu"
-            className="md:hidden w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-black cursor-pointer"
-          >
-            ✕
-          </button>
-        )}
       </div>
 
       <nav className="flex-grow px-3 py-4 overflow-y-auto custom-scrollbar">
         <div className="space-y-4 pb-4">
           {/* Standalone Dashboard at Top (No Section Header) */}
-          <ul className="space-y-1">{renderNavItem(dashboardItem, onNavigate)}</ul>
+          <ul className="space-y-1">{renderNavItem(dashboardItem)}</ul>
 
-          {renderSection('Bases', basesItems, onNavigate)}
-          {renderSection('Orders', ordersItems, onNavigate)}
-          {renderSection('Customers', customerItems, onNavigate)}
-          {renderSection('Marketing Suite', marketingItems, onNavigate)}
-          {renderSection('Analytics', analyticsItems, onNavigate)}
+          {renderSection('Bases', basesItems)}
+          {renderSection('Orders', ordersItems)}
+          {renderSection('Customers', customerItems)}
+          {renderSection('Marketing Suite', marketingItems)}
+          {renderSection('Analytics', analyticsItems)}
         </div>
       </nav>
 
@@ -419,7 +432,6 @@ export function AdminSidebar() {
         <div className="grid grid-cols-3 gap-2">
           <Link
             href={`${localePrefix}/admin/settings`}
-            onClick={onNavigate}
             title="Settings & Super Admins"
             aria-label="Settings & Super Admins"
             className={`flex items-center justify-center h-10 rounded-xl border transition-all ${
@@ -436,7 +448,6 @@ export function AdminSidebar() {
 
           <Link
             href={`${localePrefix}/account/orders`}
-            onClick={onNavigate}
             title="Guest Portal"
             aria-label="Guest Portal"
             className="flex items-center justify-center h-10 rounded-xl border bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white transition-all"
@@ -450,10 +461,10 @@ export function AdminSidebar() {
 
           <Link
             href={`${localePrefix}/admin/tickets`}
-            onClick={onNavigate}
+            onClick={() => markSectionSeen('tickets')}
             title="Support & Ticketing"
             aria-label="Support & Ticketing"
-            className={`flex items-center justify-center h-10 rounded-xl border transition-all ${
+            className={`relative flex items-center justify-center h-10 rounded-xl border transition-all ${
               isTicketsActive
                 ? 'bg-brand-pink border-brand-pink text-white shadow-md shadow-brand-pink/25'
                 : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
@@ -462,79 +473,14 @@ export function AdminSidebar() {
             <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
+            {!isTicketsActive && counts.tickets > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-pink text-white text-[9px] font-black flex items-center justify-center shadow-sm shadow-brand-pink/50">
+                +{counts.tickets}
+              </span>
+            )}
           </Link>
         </div>
       </div>
-    </>
-  );
-
-  return (
-    <>
-      {/* Desktop Fixed Sidebar */}
-      <aside className="hidden md:flex w-64 bg-brand-dark text-white flex-col fixed inset-y-0 left-0 z-30 border-r border-white/10">
-        {renderSidebarContent()}
-      </aside>
-
-      {/* Mobile Sticky Top Header Bar */}
-      <div className="md:hidden sticky top-0 z-40 bg-brand-dark text-white px-4 py-3 flex items-center justify-between border-b border-white/10 shadow-md">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Link href={`${localePrefix}/admin`} className="shrink-0">
-            <Image
-              src="/logo-horizontal-white.png"
-              alt="Back Pocket Mysteries Admin"
-              width={132}
-              height={26}
-              className="h-6 w-auto object-contain"
-            />
-          </Link>
-          <span className="px-2 py-0.5 rounded-full bg-brand-pink/20 border border-brand-pink/40 text-brand-pink text-[9px] font-black uppercase tracking-widest truncate">
-            {activeMobileLabel}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(true)}
-          aria-label="Open admin navigation menu"
-          className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-[11px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-          <span>Menu</span>
-          {totalUnseenBadges > 0 && (
-            <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black leading-none shadow-sm">
-              +{totalUnseenBadges}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* Mobile Slide-Over Navigation Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-[100] flex">
-          <div
-            className="fixed inset-0 bg-black/65 backdrop-blur-xs"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <aside className="relative w-72 max-w-[85vw] bg-brand-dark text-white flex flex-col h-full z-10 shadow-2xl border-r border-white/10">
-            {renderSidebarContent(() => setMobileMenuOpen(false))}
-          </aside>
-        </div>
-      )}
-    </>
+    </aside>
   );
 }
-

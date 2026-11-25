@@ -56,8 +56,11 @@ async function DashboardStats() {
       label: 'Mystery Sales',
       value: stats.salesCount.toString(),
       href: '/en/admin/transactions',
-      badge: null,
-      urgent: false,
+      badge:
+        stats.newOrdersCount > 0
+          ? `+${stats.newOrdersCount} New`
+          : `+${stats.orderPeriods.week} this wk`,
+      urgent: stats.newOrdersCount > 0,
     },
     {
       label: 'Customer Sign-Ups',
@@ -125,12 +128,22 @@ async function DashboardStats() {
       </div>
 
       <DashboardSignupsWidget
+        newOrdersCount={stats.newOrdersCount}
         newUsersCount={stats.newUsersCount}
         newLeadsCount={stats.newLeadsCount}
+        newEnquiriesCount={stats.newEnquiriesCount}
+        newReviewsCount={stats.newReviewsCount}
+        newTicketsCount={stats.newTicketsCount}
         unseenCustomers={stats.unseenCustomers}
         unseenLeads={stats.unseenLeads}
+        unseenEnquiries={stats.unseenEnquiries}
+        unseenReviews={stats.unseenReviews}
+        unseenTickets={stats.unseenTickets}
         customerPeriods={stats.customerPeriods}
         leadPeriods={stats.leadPeriods}
+        enquiryPeriods={stats.enquiryPeriods}
+        reviewPeriods={stats.reviewPeriods}
+        ticketPeriods={stats.ticketPeriods}
       />
     </div>
   );
