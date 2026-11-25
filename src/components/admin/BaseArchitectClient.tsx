@@ -466,7 +466,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         id: 'uni-b3-c4',
         beatNumber: 3,
         title: 'Muffled Balcony Shouting Captured on Downstairs Patio Cam',
-        format: 'official_document',
+        format: 'cctv',
         roundNumber: 2,
         timestampLabel: '11:11 PM',
         description:
