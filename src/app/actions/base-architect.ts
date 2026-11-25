@@ -169,20 +169,20 @@ function getSpiceRubricDirective(spice: ArchitectSpiceLevel): string {
   switch (spice) {
     case 'Clean':
       return `SPICE LEVEL = CLEAN (1.0–3.4 / 10 • Safe For Work & Family):
-- High-stakes adult murder mystery: death, murder weapons, poison/spiked drinks, financial blackmail, greed, inheritance fraud, corporate espionage, and revenge are ALL allowed and expected.
-- STRICTLY ZERO romantic love affairs, cheating spouses, secret lovers, or sexual roleplay between players.
-- 100% clean dialogue: ZERO swearing or cussing.`;
+- IN-WORLD DIALOGUE ("description"): High-stakes adult murder mystery: death, murder weapons, poison/spiked drinks, financial blackmail, greed, inheritance fraud, corporate espionage, and revenge are ALL allowed and expected. STRICTLY ZERO romantic love affairs, cheating spouses, secret lovers, or sexual roleplay between players. 100% clean dialogue: ZERO swearing or cussing.
+- PHOTO PROMPT ("generationPrompt"): Crisp, classic Agatha Christie / Knives Out detective evidence photography on a dark tabletop (NO text in image).`;
     case 'Mild':
       return `SPICE LEVEL = MILD (3.5–5.5 / 10 • Romantic Affairs • Clean PG-13 Dialogue):
-- Romantic betrayal, secret love affairs, cheating spouses, and jealous exes ARE allowed alongside murder and blackmail.
-- Dialogue MUST remain 100% clean PG-13: ZERO swearing/cussing (no bitch, shit, fuck, asshole), ZERO catfights/bitch slaps.`;
+- IN-WORLD DIALOGUE ("description"): Romantic betrayal, secret love affairs, cheating spouses, and jealous exes ARE allowed alongside murder and blackmail. Dialogue MUST remain 100% clean PG-13: ZERO swearing/cussing (no bitch, shit, fuck, asshole), ZERO catfights/bitch slaps.
+- PHOTO PROMPT ("generationPrompt"): Moody romantic-thriller noir evidence photography with warm candlelight and luxury dinner party details (NO text in image).`;
     case 'Spicy':
       return `SPICE LEVEL = SPICY (5.6–8.2 / 10 • Cussing, Catfights & Scandalous Secrets):
-- Include spicy cussing/swearing in chat logs, voicemails, and dialogue (e.g. bitch, shit, bullshit, asshole, wtf, stfu), drink-throwing/catfights, and scandalous secrets (e.g. secret VIP tabloid blackmail, sugar-daddy payoffs, late-night bedroom voice memos).
-- Do NOT use heavy F-bombs ("fuck") — keep it in the 5.6–8.2 Spicy tier.`;
+- IN-WORLD DIALOGUE ("description"): Include spicy cussing/swearing in chat logs, voicemails, and dialogue (e.g. bitch, shit, bullshit, asshole, wtf, stfu), drink-throwing/catfights, and scandalous secrets (e.g. secret VIP tabloid blackmail, sugar-daddy payoffs, late-night bedroom voice memos). Do NOT use heavy F-bombs ("fuck") — keep it in the 5.6–8.2 Spicy tier.
+- PHOTO PROMPT ("generationPrompt"): High-drama neon-noir evidence photography with spilled cocktails, shattered glass, and luxury evening textures (NO text in image).`;
     case 'Filthy':
-      return `SPICE LEVEL = FILTHY (8.3–10.0 / 10 • 18+ Unfiltered After-Dark):
-- Go full 18+ unfiltered after-dark in chat logs, voicemails, and secrets: include raw F-bombs ("fuck", "fucking", "bullshit"), wild VIP after-hours party debauchery, scandalous hookup confessions, and ruthless blackmail.`;
+      return `SPICE LEVEL = FILTHY (8.3–10.0 / 10 • HBO / White Lotus / Euphoria 18+ Unfiltered After-Dark):
+- IN-WORLD DIALOGUE ("description"): Go full 18+ unfiltered after-dark in chat logs, voicemails, and secrets: include raw F-bombs ("fuck", "fucking", "bullshit", "bitch", "asshole"), wild VIP after-hours party debauchery, scandalous hookup confessions, and ruthless blackmail.
+- PHOTO PROMPT ("generationPrompt"): Keep the visual photo prompt 100% safe for AI image generators while capturing a sultry, moody after-dark luxury noir aesthetic (e.g. "Moody after-dark mountain cabin bedroom, rumpled silk sheets, spilled tequila shot glass and glowing smartphone on timber nightstand, neon-noir rim lighting, 35mm film grain, no text"). Never put profanity or gore inside "generationPrompt".`;
   }
 }
 
@@ -197,13 +197,42 @@ function sanitizePromptForGeminiSafety(prompt: string): string {
       'recording an incriminating late-night bedroom voice memo & confession'
     )
     .replace(
-      /\b(?:explicit|sex|boudoir|18\+|nude|naked)\s+(?:tape|video|recording|footage|clips?)s?\b/gi,
+      /\b(?:explicit|sex|boudoir|18\+|nude|naked|humiliating)\s+(?:tape|video|recording|footage|clips?)s?\b/gi,
       'incriminating late-night bedroom voice recording'
     )
     .replace(/\bOnlyFans\b/gi, 'VIP tabloid')
     .replace(/\b(?:cocaine|white powder|snorting lines)\b/gi, 'after-hours party contraband')
-    .replace(/\bfatal blows to ([^']+)'s skull\b/gi, 'fatal strike against $1')
-    .replace(/\bskull\b/gi, 'temple');
+    .replace(/\bfatal blows? to ([^']+)'s skull\b/gi, 'fatal strike against $1')
+    .replace(/\bskull\b/gi, 'temple')
+    .replace(/\bhurling\s+(\{\{[^}]+\}\})\s+over\b/gi, 'pushing $1 over')
+    .replace(/\bhurled\s+(\{\{[^}]+\}\})\s+off\b/gi, 'pushed $1 off');
+}
+
+function ensureSpiceFlavorInClueDescription(
+  description: string,
+  spiceLevel: ArchitectSpiceLevel,
+  format: ClueFormat
+): string {
+  const text = String(description || '').trim();
+  if (!text) return text;
+  if (spiceLevel === 'Filthy') {
+    const hasFilthyWord = /\b(fuck|fucking|fucked|bullshit|bitch|shit|asshole)\b/i.test(text);
+    if (
+      !hasFilthyWord &&
+      (format === 'chat' || format === 'social_post' || format === 'handwritten_note')
+    ) {
+      return `${text} ("What the fuck were you thinking?! Delete that fucking file before midnight or we're both ruined.")`;
+    }
+  } else if (spiceLevel === 'Spicy') {
+    const hasSpicyWord = /\b(bitch|shit|bullshit|asshole|wtf|stfu|damn)\b/i.test(text);
+    if (
+      !hasSpicyWord &&
+      (format === 'chat' || format === 'social_post' || format === 'handwritten_note')
+    ) {
+      return `${text} ("Cut the bullshit—if this leaks tonight, you're finished.")`;
+    }
+  }
+  return text;
 }
 
 const ARCHITECT_SAFETY_SETTINGS = [
@@ -2402,24 +2431,31 @@ Return strict JSON:
       featureName: 'architect_suggest_beat_clues',
     });
     const candidates: SuggestedClueCandidate[] = (parsed.clues || []).map(
-      (c: any, idx: number) => ({
-        id: `beat-${beatNumber}-clue-${Date.now()}-${idx}`,
-        title: String(c.title || `Beat #${beatNumber} Clue ${idx + 1}`).trim(),
-        format: (c.format as ClueFormat) || 'physical_prop',
-        roundNumber: Math.max(
-          1,
-          Math.min(maxAllowedRound, Number(c.roundNumber) || Math.min(maxAllowedRound, Math.ceil(beatNumber / 2)))
-        ) as ArchitectRoundNumber,
-        timestampLabel: String(c.timestampLabel || targetBeat.timeWindow || '10:00 PM'),
-        description: String(c.description || '').trim(),
-        generationPrompt: String(c.generationPrompt || c.description || '').trim(),
-        pointsTo: String(c.pointsTo || `Proves Beat #${beatNumber}.`).trim(),
-        doubleMeaningNote: String(c.doubleMeaningNote || '').trim(),
-        involvedRoles: Array.isArray(c.involvedRoles) ? c.involvedRoles : [],
-        isRedHerring: false,
-        beatNumber,
-        decision: 'pending',
-      })
+      (c: any, idx: number) => {
+        const fmt = (c.format as ClueFormat) || 'physical_prop';
+        return {
+          id: `beat-${beatNumber}-clue-${Date.now()}-${idx}`,
+          title: String(c.title || `Beat #${beatNumber} Clue ${idx + 1}`).trim(),
+          format: fmt,
+          roundNumber: Math.max(
+            1,
+            Math.min(maxAllowedRound, Number(c.roundNumber) || Math.min(maxAllowedRound, Math.ceil(beatNumber / 2)))
+          ) as ArchitectRoundNumber,
+          timestampLabel: String(c.timestampLabel || targetBeat.timeWindow || '10:00 PM'),
+          description: ensureSpiceFlavorInClueDescription(
+            String(c.description || '').trim(),
+            blueprint.spiceLevel,
+            fmt
+          ),
+          generationPrompt: String(c.generationPrompt || c.description || '').trim(),
+          pointsTo: String(c.pointsTo || `Proves Beat #${beatNumber}.`).trim(),
+          doubleMeaningNote: String(c.doubleMeaningNote || '').trim(),
+          involvedRoles: Array.isArray(c.involvedRoles) ? c.involvedRoles : [],
+          isRedHerring: false,
+          beatNumber,
+          decision: 'pending',
+        };
+      }
     );
 
     return {
@@ -2551,28 +2587,35 @@ Return strict JSON:
       (s: any, idx: number) => {
         const subId = `rh-plot-${Date.now()}-${idx}`;
         const decoyClues: SuggestedClueCandidate[] = (s.decoyClues || []).map(
-          (c: any, cIdx: number) => ({
-            id: `${subId}-clue-${cIdx}`,
-            title: String(c.title || `Red Herring Clue #${cIdx + 1}`).trim(),
-            format: (c.format as ClueFormat) || 'chat',
-            roundNumber: Math.max(
-              1,
-              Math.min(maxAllowedRound, Number(c.roundNumber) || (cIdx % maxAllowedRound) + 1)
-            ) as ArchitectRoundNumber,
-            timestampLabel: String(c.timestampLabel || '10:30 PM'),
-            description: String(c.description || '').trim(),
-            generationPrompt: String(c.generationPrompt || c.description || '').trim(),
-            pointsTo: String(c.pointsTo || 'Red-herring motive & misdirection clue.').trim(),
-            involvedRoles: Array.isArray(c.involvedRoles)
-              ? c.involvedRoles
-              : Array.isArray(s.involvedRoles)
-                ? s.involvedRoles
-                : [],
-            isRedHerring: true,
-            subplotId: subId,
-            // Pre-select the first 2 clues per subplot so 3 subplots x 2 = 6 Red Herring clues ready out of the box!
-            decision: cIdx < 2 ? 'yes' : 'pending',
-          })
+          (c: any, cIdx: number) => {
+            const fmt = (c.format as ClueFormat) || 'chat';
+            return {
+              id: `${subId}-clue-${cIdx}`,
+              title: String(c.title || `Red Herring Clue #${cIdx + 1}`).trim(),
+              format: fmt,
+              roundNumber: Math.max(
+                1,
+                Math.min(maxAllowedRound, Number(c.roundNumber) || (cIdx % maxAllowedRound) + 1)
+              ) as ArchitectRoundNumber,
+              timestampLabel: String(c.timestampLabel || '10:30 PM'),
+              description: ensureSpiceFlavorInClueDescription(
+                String(c.description || '').trim(),
+                blueprint.spiceLevel,
+                fmt
+              ),
+              generationPrompt: String(c.generationPrompt || c.description || '').trim(),
+              pointsTo: String(c.pointsTo || 'Red-herring motive & misdirection clue.').trim(),
+              involvedRoles: Array.isArray(c.involvedRoles)
+                ? c.involvedRoles
+                : Array.isArray(s.involvedRoles)
+                  ? s.involvedRoles
+                  : [],
+              isRedHerring: true,
+              subplotId: subId,
+              // Pre-select the first 2 clues per subplot so 3 subplots x 2 = 6 Red Herring clues ready out of the box!
+              decision: cIdx < 2 ? 'yes' : 'pending',
+            };
+          }
         );
 
         return {

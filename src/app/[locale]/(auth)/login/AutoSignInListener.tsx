@@ -1,14 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
 export default function AutoSignInListener({ locale }: { locale: string }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const handledRef = useRef(false);
 
   useEffect(() => {
@@ -18,7 +17,10 @@ export default function AutoSignInListener({ locale }: { locale: string }) {
 
       router.refresh();
 
-      const nextPath = searchParams?.get('next');
+      const nextPath =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('next')
+          : null;
       if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
         router.push(nextPath);
         return;
@@ -106,7 +108,7 @@ export default function AutoSignInListener({ locale }: { locale: string }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [router, supabase, locale, pathname, searchParams]);
+  }, [router, supabase, locale, pathname]);
 
   return null;
 }

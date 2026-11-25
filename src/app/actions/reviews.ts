@@ -234,11 +234,22 @@ export interface ReviewExtraMeta {
   updatedAt?: string;
 }
 
+let cachedReviewMetaMap: { mtimeMs: number; data: Record<string, ReviewExtraMeta> } | null = null;
+let cachedRawReviewSources: {
+  fetchedAt: number;
+  dbReviews: any[];
+  carrierRows: any[];
+  charCarriers: any[];
+} | null = null;
+const REVIEW_SOURCES_CACHE_TTL_MS = 20_000;
+
 function saveReviewMetadataMap(map: Record<string, ReviewExtraMeta>) {
+  cachedRawReviewSources = null;
   try {
     const dir = path.dirname(REVIEW_META_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(REVIEW_META_PATH, JSON.stringify(map, null, 2), 'utf8');
+    cachedReviewMetaMap = { mtimeMs: fs.statSync(REVIEW_META_PATH).mtimeMs, data: map };
   } catch {
     // non-fatal in read-only environments
   }
@@ -246,12 +257,17 @@ function saveReviewMetadataMap(map: Record<string, ReviewExtraMeta>) {
 
 export async function getReviewMetadataMap(): Promise<Record<string, ReviewExtraMeta>> {
   try {
-    if (fs.existsSync(REVIEW_META_PATH)) {
-      const parsed = JSON.parse(fs.readFileSync(REVIEW_META_PATH, 'utf8'));
-      if (parsed && typeof parsed === 'object') return parsed;
+    const stat = fs.statSync(REVIEW_META_PATH);
+    if (cachedReviewMetaMap && cachedReviewMetaMap.mtimeMs === stat.mtimeMs) {
+      return { ...cachedReviewMetaMap.data };
+    }
+    const parsed = JSON.parse(fs.readFileSync(REVIEW_META_PATH, 'utf8'));
+    if (parsed && typeof parsed === 'object') {
+      cachedReviewMetaMap = { mtimeMs: stat.mtimeMs, data: parsed };
+      return { ...parsed };
     }
   } catch {
-    // ignore
+    if (cachedReviewMetaMap) return { ...cachedReviewMetaMap.data };
   }
   return {};
 }
@@ -290,21 +306,53 @@ export async function getAllPlatformReviews(
   const metaMap = await getReviewMetadataMap();
   const byId = new Map<string, any>();
 
-  // 1. Query public.reviews if available
-  const { data: dbReviews, error: dbErr } = await supabase
-    .from('reviews')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const now = Date.now();
+  let dbReviews: any[] = [];
+  let carrierRows: any[] = [];
+  let charCarriers: any[] = [];
 
-  if (!dbErr && Array.isArray(dbReviews)) {
-    for (const r of dbReviews) {
-      if (!r?.id || metaMap[r.id]?.deleted) continue;
-      byId.set(String(r.id), {
-        ...r,
-        status: metaMap[r.id]?.status || r.status || 'pending',
-        mystery_title: metaMap[r.id]?.mysteryTitle || r.mystery_title,
-      });
-    }
+  if (cachedRawReviewSources && now - cachedRawReviewSources.fetchedAt < REVIEW_SOURCES_CACHE_TTL_MS) {
+    dbReviews = cachedRawReviewSources.dbReviews;
+    carrierRows = cachedRawReviewSources.carrierRows;
+    charCarriers = cachedRawReviewSources.charCarriers;
+  } else {
+    const [reviewsRes, carriersRes, charsRes] = await Promise.all([
+      supabase
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .then((r: any) => r, () => ({ data: [] })),
+      supabase
+        .from('clues')
+        .select('id, mystery_id, description')
+        .eq('title', LIVE_CARRIER_CLUE_TITLE)
+        .then((r: any) => r, () => ({ data: [] })),
+      supabase
+        .from('characters')
+        .select('id, mystery_id, profile_data')
+        .eq('is_victim', true)
+        .then((r: any) => r, () => ({ data: [] })),
+    ]);
+
+    dbReviews = Array.isArray(reviewsRes?.data) ? reviewsRes.data : [];
+    carrierRows = Array.isArray(carriersRes?.data) ? carriersRes.data : [];
+    charCarriers = Array.isArray(charsRes?.data) ? charsRes.data : [];
+
+    cachedRawReviewSources = {
+      fetchedAt: now,
+      dbReviews,
+      carrierRows,
+      charCarriers,
+    };
+  }
+
+  for (const r of dbReviews) {
+    if (!r?.id || metaMap[r.id]?.deleted) continue;
+    byId.set(String(r.id), {
+      ...r,
+      status: metaMap[r.id]?.status || r.status || 'pending',
+      mystery_title: metaMap[r.id]?.mysteryTitle || r.mystery_title,
+    });
   }
 
   const ingestGuestReview = (
@@ -381,59 +429,41 @@ export async function getAllPlatformReviews(
     });
   };
 
-  // 2. Read all Supabase LIVE_CARRIER_CLUE_TITLE rows so cross-container Playroom reviews always show in Admin
-  try {
-    const { data: carrierRows } = await supabase
-      .from('clues')
-      .select('id, mystery_id, description')
-      .eq('title', LIVE_CARRIER_CLUE_TITLE);
-
-    for (const row of carrierRows || []) {
-      if (!row?.description) continue;
-      try {
-        const parsed =
-          typeof row.description === 'string' ? JSON.parse(row.description) : row.description;
-        const sessObj = parsed?.session || parsed || {};
-        const sessionReviews: StoredGuestReview[] = sessObj?.reviews || [];
-        const sessionHostMeta = {
-          hostUserId: sessObj?.hostUserId || sessObj?.paidByUserId,
-          hostName: sessObj?.customerName,
-          hostEmail: sessObj?.customerEmail,
-          sessionPin: sessObj?.pin,
-        };
-        for (const rev of sessionReviews) {
-          ingestGuestReview(rev, row.mystery_id, parsed?.title, sessionHostMeta);
-        }
-      } catch {
-        // ignore malformed row
+  // 2. Process Supabase LIVE_CARRIER_CLUE_TITLE rows
+  for (const row of carrierRows) {
+    if (!row?.description) continue;
+    try {
+      const parsed =
+        typeof row.description === 'string' ? JSON.parse(row.description) : row.description;
+      const sessObj = parsed?.session || parsed || {};
+      const sessionReviews: StoredGuestReview[] = sessObj?.reviews || [];
+      const sessionHostMeta = {
+        hostUserId: sessObj?.hostUserId || sessObj?.paidByUserId,
+        hostName: sessObj?.customerName,
+        hostEmail: sessObj?.customerEmail,
+        sessionPin: sessObj?.pin,
+      };
+      for (const rev of sessionReviews) {
+        ingestGuestReview(rev, row.mystery_id, parsed?.title, sessionHostMeta);
       }
+    } catch {
+      // ignore malformed row
     }
-  } catch {
-    // non-fatal
   }
 
-  // 2b. Read all Supabase characters.profile_data.__game_session carrier rows (written by submitGuestMysteryReviewAction)
-  try {
-    const { data: charCarriers } = await supabase
-      .from('characters')
-      .select('id, mystery_id, profile_data')
-      .eq('is_victim', true);
-
-    for (const cRow of charCarriers || []) {
-      const sessObj = cRow?.profile_data?.__game_session;
-      if (!sessObj || !Array.isArray(sessObj.reviews)) continue;
-      const sessionHostMeta = {
-        hostUserId: sessObj.hostUserId || sessObj.paidByUserId,
-        hostName: sessObj.customerName,
-        hostEmail: sessObj.customerEmail,
-        sessionPin: sessObj.pin,
-      };
-      for (const rev of sessObj.reviews) {
-        ingestGuestReview(rev, cRow.mystery_id, undefined, sessionHostMeta);
-      }
+  // 2b. Process Supabase characters.profile_data.__game_session carrier rows
+  for (const cRow of charCarriers) {
+    const sessObj = cRow?.profile_data?.__game_session;
+    if (!sessObj || !Array.isArray(sessObj.reviews)) continue;
+    const sessionHostMeta = {
+      hostUserId: sessObj.hostUserId || sessObj.paidByUserId,
+      hostName: sessObj.customerName,
+      hostEmail: sessObj.customerEmail,
+      sessionPin: sessObj.pin,
+    };
+    for (const rev of sessObj.reviews) {
+      ingestGuestReview(rev, cRow.mystery_id, undefined, sessionHostMeta);
     }
-  } catch {
-    // non-fatal
   }
 
   // 3. Read all local game sessions from .live-game-sessions.json

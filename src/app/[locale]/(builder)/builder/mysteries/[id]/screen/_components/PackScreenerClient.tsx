@@ -528,20 +528,82 @@ export function PackScreenerClient({
     }
   }, [mystery?.id]);
 
+  const [regeneratingCharIds, setRegeneratingCharIds] = useState<Set<string>>(new Set());
+
+  const handleRegenerateSinglePortrait = useCallback(
+    async (characterId: string) => {
+      if (!mystery?.id || regeneratingCharIds.has(characterId)) return;
+      const char = rawCharacters.find((c) => c.id === characterId);
+      if (!char) return;
+      const fId = friendAssignments[characterId];
+      const friend = liveFriends.find((f) => f.id === fId);
+
+      setRegeneratingCharIds((prev) => new Set(prev).add(characterId));
+      try {
+        const charRes = await generateStandardCharacterPhotoAction(
+          mystery.id,
+          characterId,
+          true,
+          friend
+            ? {
+                id: friend.id,
+                name: friend.name,
+                gender: friend.gender,
+                avatar_url: friend.avatar_url,
+                photoUrl: friend.photoUrl,
+                eye_color: friend.eye_color,
+                height: friend.height,
+                ethnicity: friend.ethnicity,
+              }
+            : undefined
+        );
+        if (charRes?.imageUrl) {
+          const freshPortrait = charRes.imageUrl.startsWith('data:')
+            ? charRes.imageUrl
+            : `${charRes.imageUrl.split('?')[0]}?t=${Date.now()}`;
+          setRawCharacters((prev) =>
+            prev.map((c) =>
+              c.id === characterId
+                ? {
+                    ...c,
+                    profile_data: {
+                      ...(c.profile_data || {}),
+                      ...(friend ? { guest_id: friend.id, guest_name: friend.name } : {}),
+                      standard_character_photo_url: freshPortrait,
+                      standard_character_photo_hash: charRes.identityHash,
+                      outfit_image_url: freshPortrait,
+                    },
+                  }
+                : c
+            )
+          );
+        }
+      } catch (err) {
+        console.error('Failed to regenerate single character portrait:', err);
+      } finally {
+        setRegeneratingCharIds((prev) => {
+          const next = new Set(prev);
+          next.delete(characterId);
+          return next;
+        });
+      }
+    },
+    [mystery?.id, regeneratingCharIds, rawCharacters, friendAssignments, liveFriends]
+  );
+
   const handleGenerateForSelectedCast = useCallback(async () => {
     if (!mystery?.id || isGeneratingCastMedia) return;
     setIsGeneratingCastMedia(true);
 
     try {
       // 1. Build payload of currently selected friends for each character
+      // Always regenerate all 6 character portraits when explicitly triggered so all backgrounds & waist-up framing stay 100% synced
       const assignmentsPayload = rawCharacters
         .map((c) => {
           const fId = friendAssignments[c.id];
           const friend = liveFriends.find((f) => f.id === fId);
           if (!friend) return null;
-          const prevGuestId = String(c?.profile_data?.guest_id || '');
-          const hasExistingPortrait = Boolean(c?.profile_data?.standard_character_photo_url);
-          const needsNewPortrait = prevGuestId !== String(friend.id) || !hasExistingPortrait;
+          const needsNewPortrait = true;
           return {
             characterId: c.id,
             roleTitle: getCharacterRoleTitle(c) || c.name,
@@ -555,12 +617,8 @@ export function PackScreenerClient({
               eye_color: friend.eye_color,
               height: friend.height,
               ethnicity: friend.ethnicity,
-              standard_character_photo_url: !needsNewPortrait
-                ? (c?.profile_data?.standard_character_photo_url as string | null)
-                : null,
-              standard_character_photo_hash: !needsNewPortrait
-                ? (c?.profile_data?.standard_character_photo_hash as string | null)
-                : null,
+              standard_character_photo_url: null,
+              standard_character_photo_hash: null,
             },
           };
         })
@@ -1006,16 +1064,6 @@ export function PackScreenerClient({
       .toLowerCase();
 
     if (useFriendNames) {
-      // On Christmas Nightmare (The Husband), both Alex and Luke have pre-rendered costume portraits in Storage
-      if (c?.id === 'da18ef00-ecdc-41e7-8c71-97d78046e43b') {
-        if (currentGuestName === 'alex') {
-          return 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-b90b57ad1e85.jpg';
-        }
-        if (currentGuestName === 'luke') {
-          return 'https://tlmgiveaotdhhvhebwvc.supabase.co/storage/v1/object/public/character-images/standard-characters/61196e53-09c3-427f-8862-30151f2ca75b/da18ef00-ecdc-41e7-8c71-97d78046e43b-28ec1e5263c3.jpg';
-        }
-      }
-
       const hasExplicitRenderedGuest = Boolean(rawGuestId || rawGuestName);
       const isSameGuestAsRendered = hasExplicitRenderedGuest
         ? Boolean(rawGuestId && currentGuestId && rawGuestId === currentGuestId) ||
@@ -2186,8 +2234,9 @@ export function PackScreenerClient({
               const photo = getPortraitUrl(char);
               const isSelectedPov = char.id === selectedPovCharId;
               const isGeneratingPhoto =
-                Boolean(char.assignedFriend?.id) &&
-                generatingFriendIds.has(char.assignedFriend.id);
+                regeneratingCharIds.has(char.id) ||
+                (Boolean(char.assignedFriend?.id) &&
+                  generatingFriendIds.has(char.assignedFriend.id));
               const friendDropKey = `friend-${char.id}`;
               const isFriendDropOpen = openDropdownId === friendDropKey;
 
@@ -2215,21 +2264,35 @@ export function PackScreenerClient({
                             }}
                             className="w-full h-full object-cover"
                           />
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedPortraitModal({
-                                url: photo,
-                                title: char.displayName,
-                                subtitle: hydrate(char.profile_data?.outfit_advice || ''),
-                              });
-                            }}
-                            title="Enlarge character portrait"
-                            className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/80 hover:bg-brand-pink text-white text-[9px] font-black uppercase tracking-wider border border-white/20 transition-colors cursor-zoom-in z-10"
-                          >
-                            🔍 Zoom
-                          </button>
+                          <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 z-10">
+                            <button
+                              type="button"
+                              disabled={isGeneratingPhoto || isGeneratingCastMedia}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleRegenerateSinglePortrait(char.id);
+                              }}
+                              title="Regenerate synced character portrait"
+                              className="px-1.5 py-0.5 rounded bg-black/80 hover:bg-indigo-600 text-white text-[9px] font-black uppercase tracking-wider border border-white/20 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              🔄
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPortraitModal({
+                                  url: photo,
+                                  title: char.displayName,
+                                  subtitle: hydrate(char.profile_data?.outfit_advice || ''),
+                                });
+                              }}
+                              title="Enlarge character portrait"
+                              className="px-2 py-0.5 rounded bg-black/80 hover:bg-brand-pink text-white text-[9px] font-black uppercase tracking-wider border border-white/20 transition-colors cursor-zoom-in"
+                            >
+                              🔍 Zoom
+                            </button>
+                          </div>
                         </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">

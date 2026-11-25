@@ -6,6 +6,9 @@ export const ADMIN_EMAIL_ALLOWLIST = ['hello@studiogvb.com'];
 export const ADMIN_UID_ALLOWLIST = ['4903bd39-e54f-42e4-b679-2af5d128bb8f'];
 export const VALID_ADMIN_ROLES = ['admin', 'superadmin', 'super_admin'];
 
+const adminRoleVerifyCache = new Map<string, { isAdmin: boolean; expiresAt: number }>();
+const ADMIN_ROLE_CACHE_TTL_MS = 60_000;
+
 /**
  * Checks whether a given Supabase user is an authorized Admin / Superadmin.
  * Checks both the owner email/UID allowlist and the `public.user_roles` table.
@@ -18,6 +21,12 @@ export async function isUserAdmin(supabase: any, user: { id: string; email?: str
     return true;
   }
 
+  const now = Date.now();
+  const cached = adminRoleVerifyCache.get(user.id);
+  if (cached && cached.expiresAt > now) {
+    return cached.isAdmin;
+  }
+
   try {
     const { data: roleData } = await supabase
       .from('user_roles')
@@ -27,6 +36,7 @@ export async function isUserAdmin(supabase: any, user: { id: string; email?: str
 
     const role = ((roleData?.role as string) || '').toLowerCase().trim();
     if (VALID_ADMIN_ROLES.includes(role)) {
+      adminRoleVerifyCache.set(user.id, { isAdmin: true, expiresAt: now + ADMIN_ROLE_CACHE_TTL_MS });
       return true;
     }
   } catch {
@@ -60,6 +70,7 @@ export async function isUserAdmin(supabase: any, user: { id: string; email?: str
               { onConflict: 'user_id' }
             );
         } catch {}
+        adminRoleVerifyCache.set(user.id, { isAdmin: true, expiresAt: now + ADMIN_ROLE_CACHE_TTL_MS });
         return true;
       }
     } catch {
@@ -67,6 +78,7 @@ export async function isUserAdmin(supabase: any, user: { id: string; email?: str
     }
   }
 
+  adminRoleVerifyCache.set(user.id, { isAdmin: false, expiresAt: now + 15_000 });
   return false;
 }
 

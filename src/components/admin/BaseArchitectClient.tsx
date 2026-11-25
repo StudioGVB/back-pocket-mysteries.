@@ -80,9 +80,9 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
     complexity: 'hard',
     murderTimeWindow: '11:28 PM',
     murderWeaponAndMethod:
-      'Heavy cast-iron fireplace poker from the upstairs balcony chiminea: {{The Co-Captain}} struck the first non-fatal blow across {{The Prom Queen}}\'s temple at 11:18 PM in a blind panic over {{The Prom Queen_his}} phone, and {{The Girlfriend}} delivered the fatal strike at 11:28 PM before hurling {{The Prom Queen_him}} over the second-story balcony railing onto the stone patio below.',
+      'Heavy cast-iron fireplace poker from the upstairs balcony chiminea: {{The Co-Captain}} struck the first non-fatal blow across {{The Prom Queen}}\'s temple at 11:18 PM in a blind panic over {{The Prom Queen_his}} phone, and {{The Girlfriend}} delivered the fatal strike at 11:28 PM before pushing {{The Prom Queen_him}} over the second-story balcony railing onto the stone patio below.',
     killerHowAndWhySummary:
-      '{{The Prom Queen}} strung {{The Co-Captain}} along to steal {{The Co-Captain_his}} and {{The Teammate}}\'s varsity sports-betting ledger, then laughed in {{The Co-Captain}}\'s face in front of {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} and revealed {{The Prom Queen_he}} was secretly sleeping with {{The Girlfriend}}\'s partner {{The Teammate}}—threatening to leak both the incriminating bedroom voice memo and the betting ledger at midnight. After {{The Co-Captain}} snapped on the balcony at 11:18 PM and knocked {{The Prom Queen}} unconscious with a cast-iron fireplace poker, {{The Girlfriend}} sent {{The Co-Captain}} inside for a living-room alibi, finished {{The Prom Queen}} off with the poker at 11:28 PM, and threw {{The Prom Queen_him}} off the balcony.',
+      '{{The Prom Queen}} strung {{The Co-Captain}} along to steal {{The Co-Captain_his}} and {{The Teammate}}\'s varsity sports-betting ledger, then laughed in {{The Co-Captain}}\'s face in front of {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} and revealed {{The Prom Queen_he}} was secretly sleeping with {{The Girlfriend}}\'s partner {{The Teammate}}—threatening to leak both the incriminating bedroom recording and the betting ledger at midnight. After {{The Co-Captain}} snapped on the balcony at 11:18 PM and knocked {{The Prom Queen}} unconscious with a cast-iron fireplace poker, {{The Girlfriend}} sent {{The Co-Captain}} inside for a living-room alibi, finished {{The Prom Queen}} off with the poker at 11:28 PM, and pushed {{The Prom Queen_him}} off the balcony.',
     insideJokesOrProps:
       'Cast-iron fireplace poker, varsity sports-betting ledger, cracked iPhone in the snowbank, ripped varsity chain on the balcony railing.',
     characters: [
@@ -107,7 +107,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         conceptNotes:
           'Dating {{The Teammate}}. Siblings with {{The Co-Captain}}. Sworn enemies with {{The Prom Queen}}. Friends with {{The Bestie}} and {{The Brother}}.',
         motiveOrSecret:
-          'Found {{The Girlfriend_his}} {{The Co-Captain_sibling}} {{The Co-Captain}} panicking over a bleeding, semi-conscious {{The Prom Queen}} on the balcony at 11:25 PM; sent {{The Co-Captain}} inside for an alibi, delivered the fatal blows with the cast-iron poker at 11:28 PM, and hurled {{The Prom Queen}} off the balcony.',
+          'Found {{The Girlfriend_his}} {{The Co-Captain_sibling}} {{The Co-Captain}} panicking over a bleeding, semi-conscious {{The Prom Queen}} on the balcony at 11:25 PM; sent {{The Co-Captain}} inside for an alibi, delivered the fatal strike with the cast-iron poker at 11:28 PM, and pushed {{The Prom Queen}} off the balcony.',
         outfitNotes: 'Sleek crimson velvet tracksuit, gold hoop earrings & dark berry lipstick',
       },
       {
@@ -119,7 +119,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         conceptNotes:
           'Co-captains of the varsity sport team with {{The Teammate}}. Siblings with {{The Girlfriend}}. Exes with {{The Bestie}}. Secretly has a huge crush on {{The Prom Queen}}. Friends with {{The Brother}}.',
         motiveOrSecret:
-          'Cornered {{The Prom Queen}} on the upstairs balcony at 11:10 PM to get {{The Co-Captain_his}} stolen sports-betting ledger and bedroom voice recording back; snapped at 11:18 PM and struck {{The Prom Queen}} with the cast-iron poker before {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} took over and finished the kill.',
+          'Cornered {{The Prom Queen}} on the upstairs balcony at 11:10 PM to get {{The Co-Captain_his}} stolen sports-betting ledger and phone recording back; snapped at 11:18 PM and struck {{The Prom Queen}} with the cast-iron poker before {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} took over and finished the kill.',
         outfitNotes: 'Uni athletic team letterman bomber, compression shirt & silver whistle chain',
       },
       {
@@ -166,7 +166,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         timeWindow: '9:15 PM',
         phase: 'pre_crime',
         description:
-          '{{The Prom Queen}} uses {{The Co-Captain}}\'s crush on {{The Prom Queen_him}} to lure {{The Co-Captain_him}} into the upstairs cabin bedroom, secretly recording an incriminating late-night bedroom voice memo and stealing the varsity sports-betting ledger from {{The Co-Captain_his}} jacket.',
+          '{{The Prom Queen}} uses {{The Co-Captain}}\'s crush on {{The Prom Queen_him}} to lure {{The Co-Captain_him}} into the upstairs cabin bedroom, recording an incriminating late-night confession and stealing the varsity sports-betting ledger from {{The Co-Captain_his}} jacket.',
       },
       {
         beatNumber: 2,
@@ -174,7 +174,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         timeWindow: '10:15 PM',
         phase: 'pre_crime',
         description:
-          'When {{The Co-Captain}} and {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} confront {{The Prom Queen}} to get the ledger back, {{The Prom Queen}} laughs in {{The Co-Captain}}\'s face, reveals {{The Prom Queen_he}} has been secretly sleeping with {{The Girlfriend}}\'s partner {{The Teammate}}, and threatens to drop the incriminating bedroom recording and betting ledger to the entire university at midnight.',
+          'When {{The Co-Captain}} and {{The Co-Captain_his}} {{The Girlfriend_sibling}} {{The Girlfriend}} confront {{The Prom Queen}} to get the ledger back, {{The Prom Queen}} laughs in {{The Co-Captain}}\'s face, reveals {{The Prom Queen_he}} has been secretly sleeping with {{The Girlfriend}}\'s partner {{The Teammate}}, and threatens to drop the bedroom recording and betting ledger to the entire university at midnight.',
       },
       {
         beatNumber: 3,
@@ -182,7 +182,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         timeWindow: '11:10 PM',
         phase: 'pre_crime',
         description:
-          'Desperate to stop the midnight upload, {{The Co-Captain}} corners {{The Prom Queen}} out on the isolated second-story cabin balcony to wrestle {{The Prom Queen_his}} phone away, sparking a violent physical struggle when {{The Prom Queen}} claws {{The Co-Captain_his}} neck and queues the files to send.',
+          'Desperate to stop the midnight upload, {{The Co-Captain}} corners {{The Prom Queen}} out on the isolated second-story cabin balcony to wrestle {{The Prom Queen_his}} phone away, sparking a fierce physical struggle when {{The Prom Queen}} scratches {{The Co-Captain_his}} neck and queues the files to send.',
       },
       {
         beatNumber: 4,
@@ -190,7 +190,7 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         timeWindow: '11:18 PM',
         phase: 'crime',
         description:
-          'In a blind panic, {{The Co-Captain}} grabs the heavy cast-iron fireplace poker beside the balcony chiminea and strikes {{The Prom Queen}} across the temple, knocking {{The Prom Queen_him}} bleeding and unconscious onto the timber deck while {{The Prom Queen_his}} phone locks.',
+          'In a blind panic, {{The Co-Captain}} grabs the heavy cast-iron fireplace poker beside the balcony chiminea and strikes {{The Prom Queen}} across the temple, knocking {{The Prom Queen_him}} unconscious onto the timber deck while {{The Prom Queen_his}} phone locks.',
       },
       {
         beatNumber: 5,
@@ -198,7 +198,501 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
         timeWindow: '11:28 PM',
         phase: 'crime',
         description:
-          '{{The Girlfriend}} steps onto the balcony and finds a blood-spattered {{The Co-Captain}} frozen as {{The Prom Queen}} begins groaning; to save {{The Girlfriend_his}} {{The Co-Captain_sibling}} and destroy {{The Girlfriend_his}} enemy, {{The Girlfriend}} sends {{The Co-Captain}} inside for a living-room alibi, delivers the fatal blows with the cast-iron poker, smashes the phone, and hurls {{The Prom Queen}} over the second-story railing onto the stone patio below.',
+          '{{The Girlfriend}} steps onto the balcony and finds a shaken {{The Co-Captain}} frozen as {{The Prom Queen}} begins groaning; to save {{The Girlfriend_his}} {{The Co-Captain_sibling}} and destroy {{The Girlfriend_his}} enemy, {{The Girlfriend}} sends {{The Co-Captain}} inside for a living-room alibi, delivers the fatal strike with the cast-iron poker, smashes the phone, and pushes {{The Prom Queen}} over the second-story railing onto the stone patio below.',
+      },
+    ],
+  };
+}
+
+/**
+ * Pre-seeded Filthy Core Clues for Beats 1–5 of "Unibreak at the Cabin"
+ * (5 options per beat, with 0 selected initially so the user can pick their favorite 2 per beat!).
+ */
+function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandidate[]> {
+  return {
+    1: [
+      {
+        id: 'uni-b1-c1',
+        beatNumber: 1,
+        title: 'Upstairs Bedroom Voice Memo Draft',
+        format: 'chat',
+        roundNumber: 1,
+        timestampLabel: '9:18 PM',
+        description:
+          'Unsent iMessage audio transcript from {{The Prom Queen}} to {{The Bestie}}: "Lmfao {{The Co-Captain}} is such a gullible fucking puppy. {{The Co-Captain_he}} came straight up to the master bedroom thinking {{The Co-Captain_he}} was finally getting lucky, and while {{The Co-Captain_he}} was pouring tequila shots I pulled the black varsity betting ledger right out of {{The Co-Captain_his}} letterman jacket."',
+        generationPrompt:
+          'Moody after-dark mountain cabin master bedroom, varsity letterman jacket draped over timber chair with an open black leather notebook and glowing smartphone on silk sheets, neon-noir rim lighting, 35mm film grain, no text',
+        pointsTo:
+          'Proves Beat #1: {{The Prom Queen}} lured {{The Co-Captain}} upstairs at 9:15 PM and stole the varsity betting ledger from {{The Co-Captain_his}} jacket.',
+        doubleMeaningNote:
+          'Mentions {{The Bestie}} as the recipient of the stolen ledger brag, making {{The Bestie}} look like an active co-conspirator in the blackmail.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain', 'The Bestie'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b1-c2',
+        beatNumber: 1,
+        title: 'Torn Page From the Varsity Betting Ledger',
+        format: 'handwritten_note',
+        roundNumber: 1,
+        timestampLabel: '9:20 PM',
+        description:
+          'A crumpled notebook page found tucked inside {{The Prom Queen}}\'s clutch: lists illegal point-shaving payouts totaling $42,000 signed with the initials of co-captains {{The Co-Captain}} and {{The Teammate}}, plus an unpaid $25,000 tab owed by {{The Brother}}.',
+        generationPrompt:
+          'Close-up forensic macro photograph of a crumpled ledger page beside a rhinestone clutch and spilled tequila glass on a dark timber cabin table, moody noir lighting, no text',
+        pointsTo:
+          'Proves Beat #1: Confirms the exact varsity sports-betting ledger {{The Prom Queen}} stole from {{The Co-Captain}} in the upstairs bedroom.',
+        doubleMeaningNote:
+          'Directly implicates {{The Teammate}} and {{The Brother}} in massive illegal gambling debts, giving both innocent suspects a huge motive to kill {{The Prom Queen}}.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain', 'The Teammate', 'The Brother'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b1-c3',
+        beatNumber: 1,
+        title: 'Panicked Text From {{The Co-Captain}} to {{The Teammate}}',
+        format: 'chat',
+        roundNumber: 1,
+        timestampLabel: '9:32 PM',
+        description:
+          'iMessage from {{The Co-Captain}} to {{The Teammate}}: "Bro we are so fucked. I just left {{The Prom Queen}}\'s upstairs room and the black ledger is gone from my inside pocket. {{The Prom Queen_he}} was filming on {{The Prom Queen_his}} fucking phone the whole time too."',
+        generationPrompt:
+          'Dark-mode smartphone screen resting beside a silver athletic whistle and varsity bomber sleeve on a wooden cabin bar, moody after-dark lighting, no text',
+        pointsTo:
+          'Proves Beat #1: {{The Co-Captain}} realized immediately after leaving the upstairs bedroom that {{The Prom Queen}} stole the ledger and recorded {{The Co-Captain_him}}.',
+        doubleMeaningNote:
+          'Puts {{The Teammate}} on notice at 9:32 PM that {{The Teammate_his}} sports career is about to be destroyed too.',
+        involvedRoles: ['The Co-Captain', 'The Teammate', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b1-c4',
+        beatNumber: 1,
+        title: 'Polaroid Snap on the Master Bed',
+        format: 'physical_prop',
+        roundNumber: 1,
+        timestampLabel: '9:15 PM',
+        description:
+          'An instant Polaroid photo left on the upstairs dresser showing {{The Co-Captain}} unbuttoning {{The Co-Captain_his}} varsity jacket on the master bed while {{The Prom Queen}}\'s reflection in the mirror holds up a fanned stack of betting slips behind {{The Co-Captain_his}} back.',
+        generationPrompt:
+          'Vintage instant Polaroid photograph resting on a rustic cabin dresser beside a shot glass and lipstick tube, warm tungsten shadows, cinematic noir, no text',
+        pointsTo:
+          'Proves Beat #1: Visual proof of {{The Prom Queen}} setting up {{The Co-Captain}} in the upstairs bedroom at 9:15 PM.',
+        doubleMeaningNote:
+          'Makes {{The Bestie}} (who is {{The Co-Captain}}\'s jealous ex) look furious that {{The Co-Captain}} was in {{The Prom Queen}}\'s bed.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b1-c5',
+        beatNumber: 1,
+        title: 'Cloud Folder Upload Queue Log',
+        format: 'search_log',
+        roundNumber: 1,
+        timestampLabel: '9:25 PM',
+        description:
+          'Cabin Wi-Fi router device log for {{The Prom Queen}}\'s iPhone: created a shared folder titled "VARSITY_FIX_&_BEDROOM_CONFESSION" at 9:25 PM containing 14 high-res photos of the betting ledger and 1 audio file.',
+        generationPrompt:
+          'Glowing laptop and router status lights on a dark cabin desk during a mountain snowstorm outside the window, moody cyan and amber noir lighting, no text',
+        pointsTo:
+          'Proves Beat #1: Digital timestamp confirming {{The Prom Queen}} digitized the stolen ledger and bedroom recording by 9:25 PM.',
+        doubleMeaningNote:
+          'Shows 3 other cabin devices attempted to brute-force the folder password between 9:40 PM and 11:00 PM.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+    2: [
+      {
+        id: 'uni-b2-c1',
+        beatNumber: 2,
+        title: 'Hallway Shouted Confrontation Overheard on Smart Speaker',
+        format: 'social_post',
+        roundNumber: 1,
+        timestampLabel: '10:15 PM',
+        description:
+          'Cabin hallway smart-speaker voice-activation snippet at 10:15 PM: {{The Girlfriend}} snarls, "Give my {{The Co-Captain_sibling}} {{The Co-Captain_his}} fucking ledger back, you little snake!" {{The Prom Queen}} laughs: "Ask your boyfriend {{The Teammate}} how my bed feels first, bitch! At midnight the whole uni sees the ledger AND the receipts of me and {{The Teammate}}."',
+        generationPrompt:
+          'Sleek smart speaker glowing red on a dark timber hallway console table beside two half-empty crystal tequila glasses, moody after-dark cabin lighting, no text',
+        pointsTo:
+          'Proves Beat #2: {{The Co-Captain}} and {{The Girlfriend}} confronted {{The Prom Queen}} at 10:15 PM, and {{The Prom Queen}} exposed the affair with {{The Teammate}} plus the midnight leak ultimatum.',
+        doubleMeaningNote:
+          'Publicly humiliates {{The Teammate}} as a cheater right in front of {{The Girlfriend}}, giving {{The Teammate}} a desperate motive to silence {{The Prom Queen}}.',
+        involvedRoles: ['The Prom Queen', 'The Girlfriend', 'The Co-Captain', 'The Teammate'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b2-c2',
+        beatNumber: 2,
+        title: 'Scheduled Midnight Blast Draft on {{The Prom Queen}}\'s iPad',
+        format: 'social_post',
+        roundNumber: 2,
+        timestampLabel: '10:22 PM',
+        description:
+          'Scheduled campus-wide group post queued on {{The Prom Queen}}\'s iPad for 12:00 AM: "Happy Unibreak fuckers! Here is how {{The Co-Captain}} & {{The Teammate}} rigged the varsity season—and here is what {{The Girlfriend}}\'s boyfriend {{The Teammate}} does when {{The Girlfriend_he}}\'s not looking."',
+        generationPrompt:
+          'Glowing tablet screen lying on a faux-fur throw blanket inside a dimly lit mountain cabin lounge, dramatic neon-noir shadows, no text',
+        pointsTo:
+          'Proves Beat #2: Confirms the midnight deadline ultimatum that drove {{The Co-Captain}} and {{The Girlfriend}} into a corner.',
+        doubleMeaningNote:
+          'Names {{The Teammate}} in both the varsity betting scandal and the cheating scandal.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain', 'The Girlfriend', 'The Teammate'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b2-c3',
+        beatNumber: 2,
+        title: 'Furious Text From {{The Girlfriend}} to {{The Teammate}}',
+        format: 'chat',
+        roundNumber: 1,
+        timestampLabel: '10:19 PM',
+        description:
+          'iMessage from {{The Girlfriend}} to {{The Teammate}}: "You\'ve been fucking {{The Prom Queen}} behind my back?! And now {{The Prom Queen_he}}\'s using it to destroy my {{The Co-Captain_sibling}} {{The Co-Captain}} at midnight. Dead to me doesn\'t even fucking cover it."',
+        generationPrompt:
+          'Smartphone screen glowing on a velvet cushion beside a spilled red cocktail stain on a cabin table, moody crimson noir lighting, no text',
+        pointsTo:
+          'Proves Beat #2: Shows {{The Girlfriend}}\'s explosive rage at 10:19 PM over both the affair and the threat to {{The Girlfriend_his}} sibling {{The Co-Captain}}.',
+        doubleMeaningNote:
+          'Sounds like {{The Girlfriend}} is threatening {{The Teammate}} as much as {{The Prom Queen}}.',
+        involvedRoles: ['The Girlfriend', 'The Teammate', 'The Prom Queen', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b2-c4',
+        beatNumber: 2,
+        title: 'Shattered Tequila Glass Outside the Upstairs Study',
+        format: 'physical_prop',
+        roundNumber: 2,
+        timestampLabel: '10:17 PM',
+        description:
+          'Broken crystal shot glass swept under the hallway rug outside the study, stained with dark berry lipstick matching {{The Girlfriend}} and a torn corner of a betting slip from {{The Co-Captain}}\'s ledger.',
+        generationPrompt:
+          'Shattered crystal glass shards on a rustic hardwood cabin floor with a smudge of dark berry lipstick on the rim, dramatic noir rim lighting, no text',
+        pointsTo:
+          'Proves Beat #2: Physical evidence of the 10:15 PM confrontation between {{The Girlfriend}}, {{The Co-Captain}}, and {{The Prom Queen}}.',
+        doubleMeaningNote:
+          '{{The Bestie}} was wearing a similar dark lip gloss earlier in the evening.',
+        involvedRoles: ['The Girlfriend', 'The Co-Captain', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b2-c5',
+        beatNumber: 2,
+        title: 'Sibling Pact Text Between {{The Girlfriend}} & {{The Co-Captain}}',
+        format: 'chat',
+        roundNumber: 2,
+        timestampLabel: '10:35 PM',
+        description:
+          'Deleted message thread between siblings {{The Girlfriend}} and {{The Co-Captain}}: {{The Co-Captain}}: "If {{The Prom Queen}} posts that ledger at midnight I\'m expelled and going to fucking prison." {{The Girlfriend}}: "Get {{The Prom Queen_him}} out on the upstairs balcony before 11:15. We are NOT letting that bitch ruin this family."',
+        generationPrompt:
+          'Two smartphones side by side on a dark stone fireplace mantel in a luxury mountain cabin, warm ember glow, cinematic thriller photography, no text',
+        pointsTo:
+          'Proves Beat #2: Directly links {{The Girlfriend}} and {{The Co-Captain}} in a coordinated plan to corner {{The Prom Queen}} on the balcony before midnight.',
+        doubleMeaningNote:
+          'Does not yet reveal who swung the murder weapon on the balcony.',
+        involvedRoles: ['The Girlfriend', 'The Co-Captain', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+    3: [
+      {
+        id: 'uni-b3-c1',
+        beatNumber: 3,
+        title: 'Snapped Silver Whistle Chain on the Balcony Railing',
+        format: 'physical_prop',
+        roundNumber: 2,
+        timestampLabel: '11:12 PM',
+        description:
+          'A broken sterling-silver athletic whistle chain tangled in the iron lattice of the second-story balcony railing, alongside three acrylic nail tips belonging to {{The Prom Queen}}.',
+        generationPrompt:
+          'Broken silver chain and athletic whistle snagged on a snow-dusted wrought-iron cabin balcony railing at night, forensic flashlight beam, noir photography, no text',
+        pointsTo:
+          'Proves Beat #3: Places {{The Co-Captain}} in a violent physical struggle with {{The Prom Queen}} on the upstairs balcony at 11:10–11:12 PM.',
+        doubleMeaningNote:
+          'Both {{The Co-Captain}} and {{The Teammate}} wear identical varsity co-captain whistle chains.',
+        involvedRoles: ['The Co-Captain', 'The Prom Queen', 'The Teammate'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b3-c2',
+        beatNumber: 3,
+        title: 'Fresh Fingernail Scratch Marks & Skin DNA Under {{The Prom Queen}}\'s Nails',
+        format: 'document',
+        roundNumber: 2,
+        timestampLabel: '11:14 PM',
+        description:
+          'Preliminary forensic examination of {{The Prom Queen}}\'s right hand: three broken hot-pink acrylic nails containing fresh skin tissue and blue threads from a varsity letterman bomber collar, matching the three raw claw marks on {{The Co-Captain}}\'s neck.',
+        generationPrompt:
+          'Forensic evidence bag containing fabric fibers and a sterile swab under a magnifying lamp on a dark examination table, clinical noir lighting, no text',
+        pointsTo:
+          'Proves Beat #3: Forensically locks {{The Co-Captain}} as the person {{The Prom Queen}} clawed during the 11:10 PM balcony struggle for the phone.',
+        doubleMeaningNote:
+          '{{The Brother}} also wears a vintage blue varsity jacket, causing early table debate.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain', 'The Brother'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b3-c3',
+        beatNumber: 3,
+        title: 'Aborted Emergency Upload Log at 11:14 PM',
+        format: 'search_log',
+        roundNumber: 2,
+        timestampLabel: '11:14 PM',
+        description:
+          'System log recovered from {{The Prom Queen}}\'s iCloud sync: at 11:14:08 PM on the upstairs balcony Wi-Fi node, the user pressed "SEND NOW" on the blackmail folder—followed 6 seconds later by 3 failed FaceID unlock attempts from another angle.',
+        generationPrompt:
+          'Smartphone diagnostic log displayed on a dark monitor beside a snow-covered cabin balcony window, moody blue cyber-noir lighting, no text',
+        pointsTo:
+          'Proves Beat #3: Confirms {{The Prom Queen}} queued the files to send during the balcony struggle and someone tried to force FaceID open at 11:14 PM.',
+        doubleMeaningNote:
+          'Anyone blackened in the folder ({{The Teammate}}, {{The Bestie}}, {{The Co-Captain}}) had reason to grab that phone.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b3-c4',
+        beatNumber: 3,
+        title: 'Muffled Balcony Shouting Captured on Downstairs Patio Cam',
+        format: 'official_document',
+        roundNumber: 2,
+        timestampLabel: '11:11 PM',
+        description:
+          'Audio waveform transcript from the cabin driveway security camera at 11:11 PM: a male voice above on the second-story balcony yells, "Give me the fucking phone right now!" followed by {{The Prom Queen}} screaming, "Get off me or I hit send!" and the sound of patio chairs overturning.',
+        generationPrompt:
+          'Exterior night-vision security camera view looking up toward a wooden second-story cabin balcony in falling snow, dramatic high-contrast noir lighting, no text',
+        pointsTo:
+          'Proves Beat #3: Timestamped audio proof of the 11:10–11:14 PM balcony struggle over the phone.',
+        doubleMeaningNote:
+          'Because the audio only identifies "a male voice," players initially suspect {{The Teammate}} or {{The Brother}} as well as {{The Co-Captain}}.',
+        involvedRoles: ['The Co-Captain', 'The Prom Queen', 'The Teammate', 'The Brother'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b3-c5',
+        beatNumber: 3,
+        title: 'Bloodied Collar of {{The Co-Captain}}\'s Compression Shirt',
+        format: 'physical_prop',
+        roundNumber: 2,
+        timestampLabel: '11:15 PM',
+        description:
+          'Found stuffed behind the upstairs laundry hamper: a black athletic compression shirt belonging to {{The Co-Captain}} with a stretched collar and three parallel blood smears along the right neck seam.',
+        generationPrompt:
+          'Black athletic shirt crumpled inside a dark wooden cabin laundry closet with a faint crimson smear on the collar, moody detective flashlight lighting, no text',
+        pointsTo:
+          'Proves Beat #3: Shows {{The Co-Captain}} hid the shirt {{The Prom Queen}} scratched during the 11:10 PM balcony struggle.',
+        doubleMeaningNote:
+          'Found near the bathroom shared by {{The Brother}} and {{The Teammate}}.',
+        involvedRoles: ['The Co-Captain', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+    4: [
+      {
+        id: 'uni-b4-c1',
+        beatNumber: 4,
+        title: 'Cast-Iron Chiminea Poker With Two Distinct Sets of Prints',
+        format: 'physical_prop',
+        roundNumber: 3,
+        timestampLabel: '11:18 PM',
+        description:
+          'The heavy cast-iron fireplace poker from the upstairs balcony chiminea: forensic dusting reveals {{The Co-Captain}}\'s sweaty palm prints mid-shaft (consistent with a panic swing), overlaid at the top handle by crimson velvet fibers matching {{The Girlfriend}}\'s tracksuit sleeve.',
+        generationPrompt:
+          'Heavy cast-iron fireplace poker resting beside an outdoor balcony chiminea in the snow, forensic evidence markers, dramatic night noir lighting, no text',
+        pointsTo:
+          'Proves Beat #4 (& #5): Physical weapon linking {{The Co-Captain}}\'s first strike at 11:18 PM and {{The Girlfriend}} gripping the handle afterward.',
+        doubleMeaningNote:
+          'Early on, guests notice the poker came from the balcony outside the room where {{The Teammate}} left {{The Teammate_his}} flannel shirt.',
+        involvedRoles: ['The Co-Captain', 'The Girlfriend', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b4-c2',
+        beatNumber: 4,
+        title: 'Apple Watch Heart-Rate & Fall-Detection Spike at 11:18 PM',
+        format: 'document',
+        roundNumber: 2,
+        timestampLabel: '11:18 PM',
+        description:
+          'Health telemetry recovered from {{The Prom Queen}}\'s Apple Watch: records an impact hard-fall alert onto the second-story balcony deck at 11:18:12 PM—followed by 10 full minutes of a weak, resting pulse (58 BPM) before cardiac arrest at 11:28 PM.',
+        generationPrompt:
+          'Cracked luxury smartwatch on a dark forensic tray showing a glowing red biometric waveform on its face, macro noir photography, no text',
+        pointsTo:
+          'Proves Beat #4: Crucial forensic proof that the 11:18 PM strike by {{The Co-Captain}} only knocked {{The Prom Queen}} unconscious on the deck—{{The Prom Queen_he}} was still alive for 10 minutes until 11:28 PM!',
+        doubleMeaningNote:
+          'Anyone with an alibi at 11:18 PM (like {{The Girlfriend}}) is NOT cleared if they were on the balcony at 11:28 PM.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain', 'The Girlfriend'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b4-c3',
+        beatNumber: 4,
+        title: 'First-Impact Blood Pool on the Upstairs Balcony Timber Deck',
+        format: 'document',
+        roundNumber: 2,
+        timestampLabel: '11:19 PM',
+        description:
+          'Crime-scene spatter report on the second-story balcony floorboards: a shallow pool of coagulating blood beside the chiminea shows {{The Prom Queen}} lay unconscious on the upstairs deck for roughly 9–10 minutes before being lifted over the railing.',
+        generationPrompt:
+          'Yellow forensic evidence marker #4 on dark wet timber balcony floorboards beside a wrought-iron railing at night, moody crime-scene photography, no text',
+        pointsTo:
+          'Proves Beat #4: Confirms the two-stage attack (knocked unconscious on the balcony at 11:18 PM, then finished and pushed off 10 minutes later).',
+        doubleMeaningNote:
+          'A footprint in the melted snow near the door matches a common size-10 boot worn by both {{The Co-Captain}} and {{The Brother}}.',
+        involvedRoles: ['The Co-Captain', 'The Prom Queen', 'The Girlfriend'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b4-c4',
+        beatNumber: 4,
+        title: 'Panicked 11:19 PM Text From {{The Co-Captain}} to {{The Girlfriend}}',
+        format: 'chat',
+        roundNumber: 3,
+        timestampLabel: '11:19 PM',
+        description:
+          'Recovered iCloud text sent from {{The Co-Captain}} to {{The Girlfriend}} at 11:19 PM: "Get up to the balcony right fucking now. I swung the poker to get the phone and {{The Prom Queen}} went down hard. There\'s blood on the deck—I don\'t know what the fuck to do."',
+        generationPrompt:
+          'Cracked smartphone screen glowing in the dark beside a fireplace poker rack, high-tension thriller noir lighting, no text',
+        pointsTo:
+          'Proves Beat #4: Direct confession that {{The Co-Captain}} struck the first blow with the poker at 11:18 PM and summoned {{The Girlfriend}} to the balcony.',
+        doubleMeaningNote:
+          'Proves {{The Co-Captain}} panicked and stopped after the first blow rather than throwing {{The Prom Queen}} off the balcony.',
+        involvedRoles: ['The Co-Captain', 'The Girlfriend', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b4-c5',
+        beatNumber: 4,
+        title: 'Soot & Ash Smudge on {{The Prom Queen}}\'s Faux-Fur Jacket Shoulder',
+        format: 'physical_prop',
+        roundNumber: 2,
+        timestampLabel: '11:18 PM',
+        description:
+          'Wood-ash and cast-iron soot transferred across the left temple and faux-fur collar of {{The Prom Queen}}\'s jacket, matching the ash inside the upstairs balcony chiminea stand.',
+        generationPrompt:
+          'White faux-fur jacket collar smudged with dark fireplace soot under a forensic UV light, moody noir macro photography, no text',
+        pointsTo:
+          'Proves Beat #4: Confirms the murder weapon was the upstairs balcony chiminea poker.',
+        doubleMeaningNote:
+          '{{The Bestie}} was seen tending the downstairs fireplace earlier at 10:50 PM.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+    ],
+    5: [
+      {
+        id: 'uni-b5-c1',
+        beatNumber: 5,
+        title: 'Crimson Velvet Tracksuit Fibers & Soot on the Balcony Railing',
+        format: 'physical_prop',
+        roundNumber: 3,
+        timestampLabel: '11:28 PM',
+        description:
+          'Forensic tape-lift from the top bar of the second-story balcony railing directly above the patio impact site: contains crimson crushed-velvet microfibers from {{The Girlfriend}}\'s tracksuit sleeve mixed with chiminea poker soot and {{The Prom Queen}}\'s blood.',
+        generationPrompt:
+          'Forensic adhesive tape strip lifting crimson velvet fibers from a wet iron balcony railing at night, macro detective photography, no text',
+        pointsTo:
+          'Proves Beat #5: Smoking-gun physical evidence that {{The Girlfriend}} wielded the poker for the final strike and pushed {{The Prom Queen}} over the balcony railing at 11:28 PM.',
+        doubleMeaningNote:
+          '{{The Girlfriend}} claimed {{The Girlfriend_he}} never stepped foot on the upstairs balcony after 10:30 PM.',
+        involvedRoles: ['The Girlfriend', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b5-c2',
+        beatNumber: 5,
+        title: '11:26 PM Living-Room Smart-TV Alibi Staging & Balcony Door Log',
+        format: 'search_log',
+        roundNumber: 3,
+        timestampLabel: '11:28 PM',
+        description:
+          'Cabin smart-home audit log: at 11:25 PM the balcony sliding door opened as {{The Co-Captain}} went downstairs to be seen pouring drinks in the living room, while {{The Girlfriend}}\'s phone remained connected to the upstairs balcony Wi-Fi repeater through 11:29 PM—the exact minute the patio motion floodlight triggered from the body falling.',
+        generationPrompt:
+          'Smart-home security tablet displaying a floorplan sensor timeline of a two-story mountain cabin at night, glowing amber and red indicators, noir style, no text',
+        pointsTo:
+          'Proves Beat #5: Proves {{The Girlfriend}} sent {{The Co-Captain}} downstairs at 11:25 PM to manufacture a living-room alibi while {{The Girlfriend}} stayed on the balcony to finish {{The Prom Queen}} at 11:28 PM.',
+        doubleMeaningNote:
+          'Shatters both {{The Co-Captain}}\'s and {{The Girlfriend}}\'s alibis simultaneously in the final round.',
+        involvedRoles: ['The Girlfriend', 'The Co-Captain', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b5-c3',
+        beatNumber: 5,
+        title: 'Smashed iPhone in the Snowbank With Dark Berry Lipstick on the Case',
+        format: 'physical_prop',
+        roundNumber: 3,
+        timestampLabel: '11:29 PM',
+        description:
+          '{{The Prom Queen}}\'s iPhone recovered from the snowdrift beside the stone patio, crushed by the flat iron base of the fireplace poker; a smear of {{The Girlfriend}}\'s signature dark berry lipstick and a partial thumbprint are pressed onto the inside of the detached phone case.',
+        generationPrompt:
+          'Shattered smartphone half-buried in fresh snow beside a stone patio at night, warm cabin window glow in background, cinematic noir crime scene, no text',
+        pointsTo:
+          'Proves Beat #5: Confirms {{The Girlfriend}} smashed {{The Prom Queen}}\'s phone with the poker on the balcony at 11:28 PM before throwing it into the snowbank.',
+        doubleMeaningNote:
+          'The phone was found 4 feet from the basement door where {{The Teammate}} and {{The Bestie}} were arguing.',
+        involvedRoles: ['The Girlfriend', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b5-c4',
+        beatNumber: 5,
+        title: 'Autopsy & Patio Impact Trajectory Report (11:28 PM)',
+        format: 'document',
+        roundNumber: 3,
+        timestampLabel: '11:28 PM',
+        description:
+          'Coroner\'s preliminary report: {{The Prom Queen}} sustained two separate strikes from the cast-iron poker—a non-fatal stunning blow to the left temple (~11:18 PM) and a second, lethal high-velocity strike to the crown (~11:28 PM) delivered immediately before the body was pushed dead-weight over the balcony railing.',
+        generationPrompt:
+          'Forensic trajectory diagram and evidence folder on a dark mahogany desk beside a brass lamp, classic detective noir aesthetic, no text',
+        pointsTo:
+          'Proves Beat #5: Medically confirms the 2-person Accomplice + Killer sequence ({{The Co-Captain}} struck first at 11:18 PM; {{The Girlfriend}} delivered the fatal blow at 11:28 PM).',
+        doubleMeaningNote:
+          'Proves the fall from the balcony was staged after the fatal poker strike.',
+        involvedRoles: ['The Girlfriend', 'The Co-Captain', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
+      },
+      {
+        id: 'uni-b5-c5',
+        beatNumber: 5,
+        title: '11:31 PM Bathroom Sink Bleach & Deleted Alibi Text',
+        format: 'chat',
+        roundNumber: 3,
+        timestampLabel: '11:31 PM',
+        description:
+          'Unsent draft on {{The Girlfriend}}\'s phone at 11:31 PM to {{The Co-Captain}}: "It\'s done. {{The Prom Queen_he}} started waking up so I finished it with the poker and sent {{The Prom Queen_him}} over the rail. Stick to the fucking story: you were downstairs by 11:25 and I was in the shower."',
+        generationPrompt:
+          'Luxury cabin bathroom sink with running water, a bottle of bleach, and a glowing smartphone on dark marble counter, moody after-dark noir lighting, no text',
+        pointsTo:
+          'Proves Beat #5: Irrefutable final-round smoking gun unmasking {{The Girlfriend}} as the Killer and {{The Co-Captain}} as the Accomplice.',
+        doubleMeaningNote:
+          'Links directly back to the 11:19 PM panic text and the 11:26 PM smart-home log.',
+        involvedRoles: ['The Girlfriend', 'The Co-Captain', 'The Prom Queen'],
+        isRedHerring: false,
+        decision: 'pending',
       },
     ],
   };
@@ -340,7 +834,7 @@ function createInitialUnibreakProject(): OgProjectWorkspace {
     updatedAt: new Date().toISOString(),
     step: 1,
     blueprint: createUnibreakCabinBlueprint(),
-    beatCluesMap: {},
+    beatCluesMap: createUnibreakInitialBeatCluesMap(),
     subplots: [],
     roundStrategySummary: {},
     assembled: null,
@@ -348,10 +842,9 @@ function createInitialUnibreakProject(): OgProjectWorkspace {
   };
 }
 
-const STORAGE_KEY = 'bpm_og_projects_list_v1';
+const STORAGE_KEY = 'bpm_og_projects_list_v2';
 
 export function BaseArchitectClient({ locale }: { locale: string }) {
-  // Multi-project state: null = show Projects Hub Grid (just like Mystery Bases page!)
   const [projects, setProjects] = useState<OgProjectWorkspace[]>(() => [
     createInitialUnibreakProject(),
   ]);
@@ -360,6 +853,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
   // Active editor UI state
   const [activeBeatNumber, setActiveBeatNumber] = useState<number>(1);
+  const [activeSubplotIndex, setActiveSubplotIndex] = useState<number>(0);
   const [beatCustomNote, setBeatCustomNote] = useState<string>('');
   const [subplotCustomNote, setSubplotCustomNote] = useState<string>('');
   const [reviewTab, setReviewTab] = useState<'rounds' | 'characters' | 'relationships'>('rounds');
@@ -375,7 +869,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const [isAutoFixing, setIsAutoFixing] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
 
-  // Import existing base from Supabase modal/dropdown
+  // Import existing base from Supabase dropdown
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [draftList, setDraftList] = useState<
     {
@@ -402,7 +896,17 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setProjects(parsed);
+          // Ensure Unibreak project has pre-seeded beatCluesMap if empty
+          const hydratedList = parsed.map((p: OgProjectWorkspace) => {
+            if (
+              p?.blueprint?.id === 'unibreak-at-the-cabin' &&
+              (!p.beatCluesMap || Object.keys(p.beatCluesMap).length === 0)
+            ) {
+              return { ...p, beatCluesMap: createUnibreakInitialBeatCluesMap() };
+            }
+            return p;
+          });
+          setProjects(hydratedList);
           loadedLocal = true;
         }
       }
@@ -413,8 +917,17 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     loadArchitectCloudWorkspaceAction()
       .then((res) => {
         if (!loadedLocal && res.success && Array.isArray(res.slots) && res.slots.length > 0) {
-          // Ensure they match OgProjectWorkspace shape
-          const valid = res.slots.filter((p: any) => p?.blueprint?.title);
+          const valid = res.slots
+            .filter((p: any) => p?.blueprint?.title)
+            .map((p: OgProjectWorkspace) => {
+              if (
+                p?.blueprint?.id === 'unibreak-at-the-cabin' &&
+                (!p.beatCluesMap || Object.keys(p.beatCluesMap).length === 0)
+              ) {
+                return { ...p, beatCluesMap: createUnibreakInitialBeatCluesMap() };
+              }
+              return p;
+            });
           if (valid.length > 0) {
             setProjects(valid);
           }
@@ -443,7 +956,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     [projects, activeProjectId]
   );
 
-  // Helper to update the active project in place
   const updateActiveProject = (updater: (prev: OgProjectWorkspace) => OgProjectWorkspace) => {
     if (!activeProjectId) return;
     setProjects((prevList) =>
@@ -455,7 +967,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     );
   };
 
-  // Shorthand properties for the active project (with safe defaults when on the Hub screen)
   const step = activeProject?.step || 1;
   const blueprint = activeProject?.blueprint || createUnibreakCabinBlueprint();
   const beatCluesMap = activeProject?.beatCluesMap || {};
@@ -574,7 +1085,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   );
 
   // ============================================================================
-  // HUB ACTIONS: Create New OG Project, Create From Diagram, Delete Project
+  // HUB ACTIONS
   // ============================================================================
   const handleCreateNewBlankProject = () => {
     const newProj: OgProjectWorkspace = {
@@ -617,7 +1128,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     setConfirmDeleteId(null);
   };
 
-  // Upload diagram directly from the Hub OR inside a project
   const handleDiagramUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     createNewProjectOnParse: boolean = false
@@ -757,7 +1267,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     setStep(2);
     setActiveBeatNumber(1);
     setStatusToast(
-      'Locked 5-Beat Plot & converted all characters to {{The Archetype}} tokens! Now pick at least 2 clues for Beat #1.'
+      'Locked 5-Beat Plot & converted all characters to {{The Archetype}} tokens! Now pick your 2 favorite clues for Beat #1.'
     );
 
     if (!beatCluesMap[1] || beatCluesMap[1].length === 0) {
@@ -843,6 +1353,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       return;
     }
     setStep(3);
+    setActiveSubplotIndex(0);
     if (subplots.length > 0 && !forceRefresh) {
       return;
     }
@@ -908,11 +1419,11 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const handleSortCluesIntoRoundsAndReview = async () => {
     setErrorMessage(null);
     if (selectedCoreClues.length === 0) {
-      setErrorMessage('Please select your Core Clues in Stage 2 first.');
+      setErrorMessage('Please select your Core Clues in Step 2 first.');
       return;
     }
     if (selectedRedHerringClues.length === 0) {
-      setErrorMessage('Please select your Red-Herring Clues in Stage 3 first.');
+      setErrorMessage('Please select your Red-Herring Clues in Step 3 first.');
       return;
     }
     setStep(4);
@@ -1092,6 +1603,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const activeBeatCandidates = beatCluesMap[activeBeatNumber] || [];
   const activeBeatSelectedCount = activeBeatCandidates.filter((c) => c.decision === 'yes').length;
 
+  const activeSubplot = subplots[activeSubplotIndex] || subplots[0] || null;
+
   const allSelectedClues = useMemo(
     () => [...selectedCoreClues, ...selectedRedHerringClues],
     [selectedCoreClues, selectedRedHerringClues]
@@ -1103,7 +1616,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   if (!activeProject) {
     return (
       <div className="space-y-8 pb-20">
-        {/* Top Header matching /en/admin/mysteries */}
         <div className="flex flex-wrap justify-between items-center gap-4">
           <div>
             <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">
@@ -1172,7 +1684,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           </div>
         </div>
 
-        {/* Feedback Banners */}
         {errorMessage && (
           <div className="rounded-2xl bg-red-50 border border-red-200 px-5 py-3.5 text-xs font-medium text-red-700 flex items-center justify-between">
             <span>{errorMessage}</span>
@@ -1199,7 +1710,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           </div>
         )}
 
-        {/* Projects Grid (Same 3-column card layout as Mystery Bases page) */}
         {projects.length === 0 ? (
           <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden p-16 text-center space-y-4">
             <h3 className="text-lg font-black text-brand-dark">No Active OG Projects Yet</h3>
@@ -1259,7 +1769,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   className="bg-white rounded-[32px] border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-brand-pink/40 transition-all duration-200 overflow-hidden flex flex-col justify-between cursor-pointer group"
                 >
                   <div>
-                    {/* Top Visual Banner */}
                     <div className="p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white relative">
                       <div className="flex items-center justify-between gap-2 mb-4">
                         <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/15 text-white backdrop-blur-sm">
@@ -1278,9 +1787,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       </p>
                     </div>
 
-                    {/* Card Body */}
                     <div className="p-6 space-y-4">
-                      {/* Current Step & Progress */}
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-black text-brand-pink uppercase tracking-wider">
                           {stepLabels[proj.step] || 'Step 1: Plot & 5 Beats'}
@@ -1290,7 +1797,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         </span>
                       </div>
 
-                      {/* Progress Bar */}
                       <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                         <div
                           className="h-full bg-brand-pink rounded-full transition-all"
@@ -1300,7 +1806,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         />
                       </div>
 
-                      {/* Cast Snapshot */}
                       <div className="rounded-2xl bg-slate-50 border border-slate-200/70 p-3.5 space-y-1.5 text-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400 font-bold">Victim:</span>
@@ -1325,7 +1830,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     </div>
                   </div>
 
-                  {/* Card Footer */}
                   <div className="px-6 pb-6 pt-2 flex items-center justify-between gap-2">
                     <button
                       type="button"
@@ -1385,7 +1889,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   // VIEW 2: ACTIVE OG MYSTERY WORKSPACE (4-STAGE BEAT-BY-BEAT FLOW)
   // ==========================================================================
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+    <div className="max-w-6xl mx-auto space-y-6 pb-20">
       {/* On-Brand Clean Page Header */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1400,7 +1904,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               </button>
               <span className="text-slate-300">/</span>
               <span className="text-xs font-bold text-slate-400">
-                {blueprint.characters.length} Players • {totalRounds} Rounds
+                {blueprint.characters.length} Players • {totalRounds} Rounds • {blueprint.spiceLevel}{' '}
+                Spice
               </span>
             </div>
             <h1 className="text-2xl font-black text-brand-dark tracking-tight mt-1">
@@ -1408,7 +1913,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             </h1>
           </div>
 
-          {/* Clean Action Buttons inside Editor */}
           <div className="flex flex-wrap items-center gap-2">
             <label className="cursor-pointer px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
               {isUploadingDiagram ? 'Reading Diagram...' : '📷 Update From Diagram'}
@@ -1437,17 +1941,17 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             { num: 1 as const, title: '1. Plot & Archetypes', sub: '5 Core Beats & Cast' },
             {
               num: 2 as const,
-              title: '2. Beat Clues',
-              sub: `${selectedCoreClues.length} / 10 Core Clues`,
+              title: '2. Beat-by-Beat Core Clues',
+              sub: `${selectedCoreClues.length} / 10 Core Clues Selected`,
             },
             {
               num: 3 as const,
-              title: '3. Red Herrings',
-              sub: `${selectedRedHerringClues.length} / 6 Decoy Clues`,
+              title: '3. Red Herrings & Motives',
+              sub: `${selectedRedHerringClues.length} / 6 Decoy Clues Selected`,
             },
             {
               num: 4 as const,
-              title: '4. Sort Rounds & Save',
+              title: '4. Sort Rounds & Save Base',
               sub: `${totalSelectedCluesCount} / 16 Total Clues`,
             },
           ].map((item) => {
@@ -1751,7 +2255,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Lock in how the murder went down across 5 beats. In Step 2, you&apos;ll select 2
-                  clues for each beat (10 Core Clues total).
+                  clues for each beat one-by-one (10 Core Clues total).
                 </p>
               </div>
               <button
@@ -1850,8 +2354,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             {/* Bottom Approve CTA */}
             <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-slate-500">
-                Approving locks your 5 beats, converts all names to archetype tokens, and starts
-                Beat #1 clues.
+                Approving locks your 5 beats, converts all names to archetype tokens, and opens the
+                Beat-by-Beat Clue Picker.
               </p>
               <button
                 type="button"
@@ -1869,36 +2373,36 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       )}
 
       {/* ================================================================= */}
-      {/* STAGE 2: BEAT-BY-BEAT CORE CLUE PICKER (5 BEATS x 2 = 10 CLUES)   */}
+      {/* STAGE 2: STRICT BEAT-BY-BEAT SPLIT WORKSPACE (1 BEAT AT A TIME)   */}
       {/* ================================================================= */}
       {step === 2 && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* LEFT RAIL: THE 5 BEATS PLAYLIST (4 Columns) */}
+          <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 space-y-4 lg:sticky lg:top-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-black text-brand-dark uppercase tracking-tight">
-                  Step 2: Pick 2 Clues Per Beat ({selectedCoreClues.length} / 10 Selected)
+                <div className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                  Beat-by-Beat Playlist
+                </div>
+                <h2 className="text-base font-black text-brand-dark">
+                  5 Core Story Beats
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Select a beat below, review the 5 suggested clues (written for{' '}
-                  <strong className="text-brand-pink">{blueprint.spiceLevel}</strong> spice), and
-                  pick at least <strong>2 clues</strong> per beat.
-                </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                ← Back to 5-Beat Plot
-              </button>
+              <span className="px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-800">
+                {selectedCoreClues.length} / 10 Picked
+              </span>
             </div>
 
-            {/* 5 Beat Tabs */}
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Click a beat below to see its 5 suggested clues on the right. Pick at least{' '}
+              <strong>2 clues per beat</strong>.
+            </p>
+
+            <div className="space-y-2.5">
               {blueprint.beats.map((b) => {
                 const cands = beatCluesMap[b.beatNumber] || [];
-                const pickedCount = cands.filter((c) => c.decision === 'yes').length;
+                const pickedInBeat = cands.filter((c) => c.decision === 'yes');
+                const pickedCount = pickedInBeat.length;
                 const isCurrent = activeBeatNumber === b.beatNumber;
                 const isComplete = pickedCount >= 2;
 
@@ -1907,77 +2411,150 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     key={b.beatNumber}
                     type="button"
                     onClick={() => handleSelectBeatTab(b.beatNumber)}
-                    className={`p-3.5 rounded-2xl border-2 text-left transition cursor-pointer ${
+                    className={`w-full p-4 rounded-2xl border-2 text-left transition-all cursor-pointer space-y-2 ${
                       isCurrent
-                        ? 'border-brand-pink bg-pink-50/40'
+                        ? 'border-brand-pink bg-pink-50/40 shadow-sm'
                         : isComplete
-                          ? 'border-emerald-200 bg-emerald-50/40 hover:border-emerald-300'
+                          ? 'border-emerald-200 bg-emerald-50/30 hover:border-emerald-300'
                           : 'border-slate-200 bg-slate-50/60 hover:bg-slate-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between text-xs font-black">
-                      <span className={isCurrent ? 'text-brand-pink' : 'text-slate-800'}>
-                        Beat #{b.beatNumber}
-                      </span>
+                    <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                          isComplete
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-200 text-slate-700'
+                        className={`text-xs font-black uppercase tracking-wider ${
+                          isCurrent ? 'text-brand-pink' : 'text-slate-700'
                         }`}
                       >
-                        {pickedCount}/2
+                        Beat #{b.beatNumber} • {b.timeWindow}
+                      </span>
+                      <span
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-black ${
+                          isComplete
+                            ? 'bg-emerald-600 text-white'
+                            : pickedCount === 1
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {isComplete ? `✓ ${pickedCount}/2 Locked` : `${pickedCount}/2 Picked`}
                       </span>
                     </div>
-                    <div className="text-xs font-bold truncate mt-1 text-slate-800">{b.title}</div>
-                    <div className="text-[11px] text-slate-400">{b.timeWindow}</div>
+
+                    <div className="text-xs font-black text-slate-900">{b.title}</div>
+                    <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                      {b.description}
+                    </p>
+
+                    {pickedInBeat.length > 0 && (
+                      <div className="pt-1.5 border-t border-slate-200/70 space-y-1">
+                        {pickedInBeat.map((pc) => (
+                          <div
+                            key={pc.id}
+                            className="text-[11px] font-bold text-emerald-800 flex items-center gap-1.5 truncate"
+                          >
+                            <span>✓</span>
+                            <span className="truncate">{pc.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Active Beat Summary Banner */}
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <button
+                type="button"
+                onClick={() => handleMoveToRedHerrings(false)}
+                disabled={isGeneratingSubplots || selectedCoreClues.length < 6}
+                className="w-full py-3 rounded-2xl text-xs font-black uppercase tracking-wider bg-brand-pink hover:bg-pink-600 text-white shadow-sm transition disabled:opacity-40 cursor-pointer"
+              >
+                {isGeneratingSubplots
+                  ? 'Building Red Herrings...'
+                  : `Done Beats (${selectedCoreClues.length}/10): Build Red Herrings →`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="w-full py-2 text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                ← Back to 5-Beat Plot
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT WORKSPACE: FOCUSED SINGLE-BEAT CLUE PICKER (8 Columns) */}
+          <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+            {/* Pinned Beat Context Header */}
             {activeBeat && (
-              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-1 flex-1 min-w-[260px]">
+              <div className="rounded-2xl bg-slate-900 text-white p-5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-brand-pink/10 text-brand-pink">
-                      Beat #{activeBeat.beatNumber} • {activeBeat.timeWindow}
+                    <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-brand-pink text-white">
+                      Beat #{activeBeat.beatNumber} of {blueprint.beats.length}
                     </span>
-                    <h3 className="text-sm font-black text-slate-900">{activeBeat.title}</h3>
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 text-slate-200">
+                      {activeBeat.timeWindow}
+                    </span>
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 text-pink-200">
+                      {blueprint.spiceLevel} Spice
+                    </span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
+
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-black ${
+                      activeBeatSelectedCount >= 2
+                        ? 'bg-emerald-500 text-slate-950'
+                        : 'bg-white/15 text-white'
+                    }`}
+                  >
+                    {activeBeatSelectedCount} of 2 Clues Selected for Beat #{activeBeat.beatNumber}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-black text-white">{activeBeat.title}</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed mt-1">
                     {activeBeat.description}
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleSuggestCluesForBeat(activeBeat.beatNumber)}
-                  disabled={isGeneratingBeatClues}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition whitespace-nowrap cursor-pointer"
-                >
-                  {isGeneratingBeatClues
-                    ? `Suggesting Beat #${activeBeat.beatNumber} Clues...`
-                    : `🔄 Suggest 5 Fresh Clues`}
-                </button>
+                <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] text-slate-300">
+                    Select at least <strong>2 clues below</strong> that best explain Beat #
+                    {activeBeat.beatNumber}. The unpicked options won&apos;t be used.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleSuggestCluesForBeat(activeBeat.beatNumber)}
+                    disabled={isGeneratingBeatClues}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                  >
+                    {isGeneratingBeatClues
+                      ? `Generating Beat #${activeBeat.beatNumber} Clues...`
+                      : `🔄 Suggest 5 Fresh Clues for Beat #${activeBeat.beatNumber}`}
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Clue Candidates List */}
+            {/* 5 Clue Cards for the Active Beat ONLY */}
             {isGeneratingBeatClues && activeBeatCandidates.length === 0 ? (
               <div className="rounded-2xl bg-slate-50 border border-slate-200 p-12 text-center space-y-2">
                 <div className="text-sm font-black text-slate-800">
-                  Writing 5 {blueprint.spiceLevel}-Spice Clues for Beat #{activeBeatNumber}...
+                  Writing 5 {blueprint.spiceLevel}-Spice Clues Specifically for Beat #
+                  {activeBeatNumber}...
                 </div>
                 <p className="text-xs text-slate-500">
-                  Crafting dialogue, forensic details, double-meaning hooks, and photo prompts...
+                  Crafting in-world dialogue, forensic details, double-meaning hooks, and photo
+                  prompts...
                 </p>
               </div>
             ) : activeBeatCandidates.length === 0 ? (
               <div className="rounded-2xl bg-slate-50 border border-slate-200 p-10 text-center space-y-3">
                 <p className="text-sm font-semibold text-slate-600">
-                  No clues suggested for Beat #{activeBeatNumber} yet.
+                  No clues generated for Beat #{activeBeatNumber} yet.
                 </p>
                 <button
                   type="button"
@@ -1989,13 +2566,13 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                {activeBeatCandidates.map((clue) => {
+              <div className="space-y-4">
+                {activeBeatCandidates.map((clue, cIdx) => {
                   const isSelected = clue.decision === 'yes';
                   return (
                     <div
                       key={clue.id}
-                      className={`rounded-2xl border-2 p-4 transition space-y-3 ${
+                      className={`rounded-2xl border-2 p-5 transition space-y-3 ${
                         isSelected
                           ? 'bg-emerald-50/40 border-emerald-500 shadow-sm'
                           : 'bg-white border-slate-200 hover:border-slate-300'
@@ -2003,6 +2580,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+                          <span className="text-xs font-black text-slate-400">
+                            Option #{cIdx + 1}
+                          </span>
                           <select
                             value={clue.format}
                             onChange={(e) =>
@@ -2037,49 +2617,51 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
                             isSelected
                               ? 'bg-emerald-600 text-white shadow-sm'
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              : 'bg-slate-900 text-white hover:bg-brand-pink'
                           }`}
                         >
-                          {isSelected ? '✓ Selected' : '+ Select Clue'}
+                          {isSelected
+                            ? `✓ Selected for Beat #${activeBeatNumber}`
+                            : `+ Select for Beat #${activeBeatNumber}`}
                         </button>
                       </div>
 
                       <textarea
-                        rows={2}
+                        rows={3}
                         value={clue.description}
                         onChange={(e) =>
                           updateBeatClueField(activeBeatNumber, clue.id, {
                             description: e.target.value,
                           })
                         }
-                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-800 leading-relaxed focus:bg-white"
+                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 leading-relaxed focus:bg-white"
                       />
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2 text-slate-600">
-                          <span className="font-bold text-slate-800">
+                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 text-slate-600">
+                          <span className="font-bold text-slate-900">
                             How it explains Beat #{activeBeatNumber}:
                           </span>{' '}
                           {clue.pointsTo}
                           {clue.doubleMeaningNote && (
-                            <div className="mt-1 text-indigo-700 font-medium">
-                              <strong>Double-Meaning Hook:</strong> {clue.doubleMeaningNote}
+                            <div className="mt-1.5 text-indigo-700 font-medium">
+                              <strong>🔗 Double-Meaning Hook:</strong> {clue.doubleMeaningNote}
                             </div>
                           )}
                         </div>
-                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2 text-slate-500">
-                          <span className="font-bold text-slate-700">
+                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 text-slate-500">
+                          <span className="font-bold text-slate-800">
                             AI Evidence Photo Prompt ({blueprint.spiceLevel}):
                           </span>
-                          <input
-                            type="text"
+                          <textarea
+                            rows={2}
                             value={clue.generationPrompt}
                             onChange={(e) =>
                               updateBeatClueField(activeBeatNumber, clue.id, {
                                 generationPrompt: e.target.value,
                               })
                             }
-                            className="w-full bg-transparent text-xs text-slate-600 focus:outline-none mt-0.5"
+                            className="w-full bg-transparent text-xs text-slate-600 focus:outline-none mt-1"
                           />
                         </div>
                       </div>
@@ -2089,7 +2671,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               </div>
             )}
 
-            {/* Bottom Navigation */}
+            {/* Bottom Single-Beat Action Bar */}
             <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-1 min-w-[260px]">
                 <input
@@ -2105,25 +2687,24 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   disabled={isGeneratingBeatClues}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 whitespace-nowrap cursor-pointer"
                 >
-                  + Suggest More
+                  + Suggest More for Beat #{activeBeatNumber}
                 </button>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                {activeBeatNumber < blueprint.beats.length && (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectBeatTab(activeBeatNumber + 1)}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${
-                      activeBeatSelectedCount >= 2
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
-                  >
-                    Next: Beat #{activeBeatNumber + 1} →
-                  </button>
-                )}
-
+              {activeBeatNumber < blueprint.beats.length ? (
+                <button
+                  type="button"
+                  onClick={() => handleSelectBeatTab(activeBeatNumber + 1)}
+                  className={`px-6 py-3 rounded-2xl text-sm font-black transition cursor-pointer ${
+                    activeBeatSelectedCount >= 2
+                      ? 'bg-brand-pink hover:bg-pink-600 text-white shadow-sm'
+                      : 'bg-slate-900 text-white hover:bg-slate-800'
+                  }`}
+                >
+                  Lock Beat #{activeBeatNumber} ({activeBeatSelectedCount}/2) & Continue to Beat #
+                  {activeBeatNumber + 1} →
+                </button>
+              ) : (
                 <button
                   type="button"
                   onClick={() => handleMoveToRedHerrings(false)}
@@ -2132,9 +2713,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 >
                   {isGeneratingSubplots
                     ? 'Building Red Herrings...'
-                    : `Next: Build Red Herrings (${selectedCoreClues.length}/10) →`}
+                    : `Finish Beats (${selectedCoreClues.length}/10) & Build Red Herrings →`}
                 </button>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -2152,8 +2733,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   Step 3: Red Herring Motives & Clues ({selectedRedHerringClues.length} / 6 Selected)
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Review each innocent suspect plotline, see how their motive hooks into your real
-                  clues, and pick <strong>2 clues per plotline (6 total)</strong>.
+                  Select a Red-Herring Plotline below to see the suspects&apos; motive, how it hooks
+                  into your 10 real clues via double meaning, and pick{' '}
+                  <strong>2 clues per plotline (6 total)</strong>.
                 </p>
               </div>
               <button
@@ -2168,10 +2750,11 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
             {isGeneratingSubplots && subplots.length === 0 ? (
               <div className="rounded-2xl bg-slate-50 border border-slate-200 p-12 text-center space-y-2">
                 <div className="text-sm font-black text-slate-800">
-                  Designing Entangled Red-Herring Plotlines & Double-Meaning Tie-Ins...
+                  Designing 3 Entangled Red-Herring Plotlines & Double-Meaning Tie-Ins...
                 </div>
                 <p className="text-xs text-slate-500">
-                  Connecting innocent suspect motives to your 10 Core Clues...
+                  Connecting innocent suspect motives to your 10 Core Clues with{' '}
+                  {blueprint.spiceLevel}-spice dialogue...
                 </p>
               </div>
             ) : subplots.length === 0 ? (
@@ -2185,111 +2768,146 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   disabled={isGeneratingSubplots}
                   className="px-5 py-2.5 rounded-xl text-xs font-black bg-brand-pink text-white cursor-pointer"
                 >
-                  ✨ Generate Red-Herring Plotlines & Clues
+                  ✨ Generate 3 Red-Herring Plotlines & Clues
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
-                {subplots.map((sub, sIdx) => {
-                  const pickedInSub = sub.decoyClues.filter((dc) => dc.decision === 'yes').length;
-                  return (
-                    <div
-                      key={sub.id}
-                      className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 space-y-4"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-200">
-                        <div className="space-y-1.5 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
-                              Red Herring #{sIdx + 1}
-                            </span>
-                            <h3 className="text-sm font-black text-slate-900">{sub.title}</h3>
-                            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200">
-                              {sub.involvedRoles.join(' ↔ ')}
-                            </span>
-                          </div>
-
-                          <p className="text-xs text-slate-700 leading-relaxed">
-                            <strong className="text-slate-900">Suspect Motive & Scheme:</strong>{' '}
-                            {sub.summary}
-                          </p>
-
-                          {sub.doubleMeaningCoreClueHook && (
-                            <div className="rounded-xl bg-indigo-50/70 border border-indigo-200/80 px-3.5 py-2 text-xs text-indigo-900">
-                              <strong>Double-Meaning Tie-In to Your Real Clues:</strong>{' '}
-                              {sub.doubleMeaningCoreClueHook}
-                            </div>
-                          )}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Rail: 3 Red Herring Plotline Tabs */}
+                <div className="lg:col-span-4 space-y-2.5">
+                  {subplots.map((sub, sIdx) => {
+                    const pickedInSub = sub.decoyClues.filter(
+                      (dc) => dc.decision === 'yes'
+                    ).length;
+                    const isCurrent = activeSubplotIndex === sIdx;
+                    const isComplete = pickedInSub >= 2;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => setActiveSubplotIndex(sIdx)}
+                        className={`w-full p-4 rounded-2xl border-2 text-left transition cursor-pointer space-y-1.5 ${
+                          isCurrent
+                            ? 'border-brand-pink bg-pink-50/40 shadow-sm'
+                            : isComplete
+                              ? 'border-emerald-200 bg-emerald-50/30'
+                              : 'border-slate-200 bg-slate-50/60 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black uppercase text-brand-pink">
+                            Red Herring #{sIdx + 1}
+                          </span>
+                          <span
+                            className={`text-[10px] px-2.5 py-0.5 rounded-full font-black ${
+                              isComplete
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {pickedInSub}/2 Picked
+                          </span>
                         </div>
+                        <div className="text-xs font-black text-slate-900">{sub.title}</div>
+                        <div className="text-[11px] font-bold text-slate-500">
+                          {sub.involvedRoles.join(' ↔ ')}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
 
-                        <span
-                          className={`text-xs font-black px-3 py-1 rounded-full ${
-                            pickedInSub >= 2
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-slate-200 text-slate-700'
-                          }`}
-                        >
-                          {pickedInSub} Picked
+                {/* Right Panel: Focused Single Red Herring Plotline + Motive + 4 Clue Options */}
+                {activeSubplot && (
+                  <div className="lg:col-span-8 space-y-4">
+                    <div className="rounded-2xl bg-slate-900 text-white p-5 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-black bg-brand-pink text-white">
+                          {activeSubplot.involvedRoles.join(' ↔ ')}
+                        </span>
+                        <span className="text-xs font-bold text-slate-300">
+                          {
+                            activeSubplot.decoyClues.filter((dc) => dc.decision === 'yes')
+                              .length
+                          }{' '}
+                          of 2 Clues Selected
                         </span>
                       </div>
+                      <h3 className="text-lg font-black text-white">{activeSubplot.title}</h3>
+                      <p className="text-xs text-slate-200 leading-relaxed">
+                        <strong className="text-pink-300">Suspect Motive & Secret Scheme:</strong>{' '}
+                        {activeSubplot.summary}
+                      </p>
+                      {activeSubplot.doubleMeaningCoreClueHook && (
+                        <div className="rounded-xl bg-white/10 border border-white/15 px-3.5 py-2.5 text-xs text-indigo-200">
+                          <strong>🔗 Double-Meaning Tie-In to Your Real Clues:</strong>{' '}
+                          {activeSubplot.doubleMeaningCoreClueHook}
+                        </div>
+                      )}
+                    </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {sub.decoyClues.map((dc) => {
-                          const isPicked = dc.decision === 'yes';
-                          return (
-                            <div
-                              key={dc.id}
-                              className={`rounded-2xl border-2 p-4 space-y-2.5 transition ${
-                                isPicked
-                                  ? 'bg-white border-emerald-500 shadow-sm'
-                                  : 'bg-white/70 border-slate-200 opacity-80 hover:opacity-100'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-[11px] font-black text-slate-500 uppercase">
+                    <div className="space-y-3">
+                      {activeSubplot.decoyClues.map((dc, dIdx) => {
+                        const isPicked = dc.decision === 'yes';
+                        return (
+                          <div
+                            key={dc.id}
+                            className={`rounded-2xl border-2 p-4 space-y-2.5 transition ${
+                              isPicked
+                                ? 'bg-emerald-50/40 border-emerald-500 shadow-sm'
+                                : 'bg-white border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-1">
+                                <span className="text-xs font-black text-slate-400">
+                                  Option #{dIdx + 1}
+                                </span>
+                                <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700">
                                   {dc.format}
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleRedHerringClueSelection(sub.id, dc.id)}
-                                  className={`px-3.5 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
-                                    isPicked
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                  }`}
-                                >
-                                  {isPicked ? '✓ Selected' : '+ Select'}
-                                </button>
+                                <input
+                                  type="text"
+                                  value={dc.title}
+                                  onChange={(e) =>
+                                    updateRedHerringClueField(activeSubplot.id, dc.id, {
+                                      title: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-3 py-1 text-xs font-bold text-slate-900"
+                                />
                               </div>
-
-                              <input
-                                type="text"
-                                value={dc.title}
-                                onChange={(e) =>
-                                  updateRedHerringClueField(sub.id, dc.id, {
-                                    title: e.target.value,
-                                  })
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toggleRedHerringClueSelection(activeSubplot.id, dc.id)
                                 }
-                                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-900"
-                              />
-
-                              <textarea
-                                rows={2}
-                                value={dc.description}
-                                onChange={(e) =>
-                                  updateRedHerringClueField(sub.id, dc.id, {
-                                    description: e.target.value,
-                                  })
-                                }
-                                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-1.5 text-xs text-slate-700 leading-relaxed"
-                              />
+                                className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
+                                  isPicked
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-slate-900 text-white hover:bg-brand-pink'
+                                }`}
+                              >
+                                {isPicked ? '✓ Selected' : '+ Select Clue'}
+                              </button>
                             </div>
-                          );
-                        })}
-                      </div>
+
+                            <textarea
+                              rows={2}
+                              value={dc.description}
+                              onChange={(e) =>
+                                updateRedHerringClueField(activeSubplot.id, dc.id, {
+                                  description: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-800 leading-relaxed"
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -2308,7 +2926,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   disabled={isGeneratingSubplots}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 whitespace-nowrap cursor-pointer"
                 >
-                  {isGeneratingSubplots ? 'Regenerating...' : '🔄 Regenerate'}
+                  {isGeneratingSubplots ? 'Regenerating...' : '🔄 Regenerate Red Herrings'}
                 </button>
               </div>
 

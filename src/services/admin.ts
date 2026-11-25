@@ -52,32 +52,70 @@ function readLightweightQaSummary(mysteryId: string) {
   }
 }
 
-function normalizeMysteryCardSummary(m: any) {
-  if (!m || !isChristmasNightmareMystery(m.title, m.theme)) {
-    return m;
-  }
-  const needsImageUpgrade =
-    !m.image_url ||
-    String(m.image_url).startsWith('data:image/') ||
-    !String(m.image_url).includes('#moodboard=');
+function normalizeMysteryCardSummary(m: any, supabase?: any) {
+  if (!m) return m;
 
-  return {
-    ...m,
-    title: CHRISTMAS_NIGHTMARE_TITLE,
-    theme: CHRISTMAS_NIGHTMARE_THEME,
-    description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
-    min_players: 6,
-    max_players: 6,
-    complexity: 'medium',
-    spice_level: 'mild',
-    image_url: needsImageUpgrade
+  if (isChristmasNightmareMystery(m.title, m.theme)) {
+    const needsImageUpgrade =
+      !m.image_url ||
+      String(m.image_url).startsWith('data:image/') ||
+      !String(m.image_url).includes('#moodboard=');
+    const nextImageUrl = needsImageUpgrade
       ? serializeMysteryImageField(CHRISTMAS_MAIN_COVER_URL, CHRISTMAS_CABIN_MOODBOARD)
-      : m.image_url,
-  };
+      : m.image_url;
+    if (needsImageUpgrade && supabase && m.id && nextImageUrl) {
+      void supabase.from('mysteries').update({ image_url: nextImageUrl }).eq('id', m.id);
+    }
+    return {
+      ...m,
+      title: CHRISTMAS_NIGHTMARE_TITLE,
+      theme: CHRISTMAS_NIGHTMARE_THEME,
+      description: CHRISTMAS_NIGHTMARE_DESCRIPTION,
+      min_players: 6,
+      max_players: 6,
+      complexity: 'medium',
+      spice_level: 'mild',
+      image_url: nextImageUrl,
+    };
+  }
+
+  // Strip multi-hundred-KB inline base64 data:image/ cover strings (e.g. Ringmaster 800KB base64)
+  // and permanently replace them in Supabase so neither Postgres nor RSC serializes 800KB per request.
+  if (typeof m.image_url === 'string' && m.image_url.startsWith('data:image/')) {
+    const combined = `${m.title || ''} ${m.theme || ''}`.toLowerCase();
+    const cleanCoverUrl =
+      combined.includes('ringmaster') || combined.includes('circus')
+        ? '/moodboard/circus/main-cover.jpg'
+        : combined.includes('love on the rocks') || combined.includes('reality')
+        ? '/moodboard/lotr/main-promo-murder.jpg'
+        : '/hero/05-masquerade.png';
+
+    if (supabase && m.id) {
+      void supabase.from('mysteries').update({ image_url: cleanCoverUrl }).eq('id', m.id);
+    }
+    return {
+      ...m,
+      image_url: cleanCoverUrl,
+    };
+  }
+
+  return m;
+}
+
+let cachedAdminMysteries: { data: any[]; fetchedAt: number } | null = null;
+const ADMIN_MYSTERIES_CACHE_TTL_MS = 15_000;
+
+export function invalidateAdminMysteriesCache(): void {
+  cachedAdminMysteries = null;
 }
 
 export async function getMysteries() {
   const { supabase } = await requireAdmin();
+  const now = Date.now();
+  if (cachedAdminMysteries && now - cachedAdminMysteries.fetchedAt < ADMIN_MYSTERIES_CACHE_TTL_MS) {
+    return cachedAdminMysteries.data;
+  }
+
   const { data, error } = (await supabase
     .from('mysteries')
     .select('id, title, theme, status, description, image_url, created_at, min_players, max_players, complexity, spice_level, created_by')
@@ -85,7 +123,7 @@ export async function getMysteries() {
 
   if (error) {
     console.error('Error fetching admin mysteries:', error);
-    return [];
+    return cachedAdminMysteries?.data || [];
   }
 
   // Deduplicate canonical Mystery Bases so customer-cloned instances do not clutter the Studio bases grid
@@ -106,15 +144,15 @@ export async function getMysteries() {
   });
 
   for (const row of sortedRows) {
-    if (customerInstanceIds.has(row.id)) continue;
+    if (!row?.id || String(row.id).includes('__u_') || customerInstanceIds.has(row.id)) continue;
     const titleKey = String(row.title || '').trim().toLowerCase();
     if (titleKey && seenBaseTitles.has(titleKey)) continue;
     if (titleKey) seenBaseTitles.add(titleKey);
     filteredRows.push(row);
   }
 
-  return filteredRows.map((m: any) => {
-    const upgraded = normalizeMysteryCardSummary(m);
+  const result = filteredRows.map((m: any) => {
+    const upgraded = normalizeMysteryCardSummary(m, supabase);
     const qaSummary = readLightweightQaSummary(upgraded.id);
     return {
       ...upgraded,
@@ -124,6 +162,9 @@ export async function getMysteries() {
         : upgraded.description,
     };
   });
+
+  cachedAdminMysteries = { data: result, fetchedAt: now };
+  return result;
 }
 
 export async function createMystery(mystery: MysteryInsert) {
@@ -138,6 +179,7 @@ export async function createMystery(mystery: MysteryInsert) {
     throw new Error(`Error creating mystery: ${error.message}`);
   }
 
+  invalidateAdminMysteriesCache();
   return data;
 }
 
@@ -154,6 +196,7 @@ export async function updateMystery(id: string, updates: Partial<Mystery>) {
     throw new Error(`Error updating mystery: ${error.message}`);
   }
 
+  invalidateAdminMysteriesCache();
   return data;
 }
 

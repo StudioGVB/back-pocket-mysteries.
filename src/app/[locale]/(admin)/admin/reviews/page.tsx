@@ -102,7 +102,7 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
   await params;
   const supabase = await createClient();
 
-  const [mysteriesRes, ordersRes, profilesRes, metaMap] = await Promise.all([
+  const [mysteriesRes, ordersRes, profilesRes, metaMap, rawReviews] = await Promise.all([
     supabase
       .from('mysteries')
       .select('id, title, theme, status, created_by')
@@ -113,6 +113,7 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
       .in('status', ['succeeded', 'qa_verified']),
     supabase.from('profiles').select('id, full_name, email'),
     getReviewMetadataMap(),
+    getAllPlatformReviews(supabase),
   ]);
 
   const dbMysteries = mysteriesRes.data || [];
@@ -135,7 +136,13 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
     }
   }
 
-  const allReviews = await getAllPlatformReviews(supabase, mysteryTitleById);
+  const allReviews = rawReviews.map((r: any) => {
+    if (r.mystery_title) return r;
+    const mId = String(r.mystery_id || '').trim();
+    const baseId = mId.includes('__u_') ? mId.split('__u_')[0] : mId;
+    const resolvedTitle = mysteryTitleById.get(mId) || mysteryTitleById.get(baseId);
+    return resolvedTitle ? { ...r, mystery_title: resolvedTitle } : r;
+  });
 
   const profileById = new Map<string, { id: string; fullName: string; email: string }>();
   const profileNameById = new Map<string, string>();

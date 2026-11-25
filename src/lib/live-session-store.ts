@@ -216,6 +216,22 @@ function writeMysteryCache(data: MysteryCacheData): void {
   }
 }
 
+function sanitizeMysteryCoverUrl(rawUrl: any, title?: any, theme?: any): string | null {
+  if (!rawUrl || typeof rawUrl !== 'string') return rawUrl || null;
+  if (!rawUrl.startsWith('data:image/')) return rawUrl;
+  const combined = `${title || ''} ${theme || ''}`.toLowerCase();
+  if (combined.includes('ringmaster') || combined.includes('circus')) {
+    return '/moodboard/circus/main-cover.jpg';
+  }
+  if (combined.includes('christmas') || combined.includes('holiday') || combined.includes('cabin')) {
+    return '/moodboard/christmas/main-christmas-cabin.jpg';
+  }
+  if (combined.includes('love on the rocks') || combined.includes('reality') || combined.includes('reunion')) {
+    return '/moodboard/lotr/main-promo-murder.jpg';
+  }
+  return '/hero/05-masquerade.png';
+}
+
 export function cacheMysterySnapshot(mysteryId: string, mysteryData: any): void {
   if (!mysteryId || !mysteryData) return;
   const cache = readMysteryCache();
@@ -255,10 +271,14 @@ export function cacheMysterySnapshot(mysteryId: string, mysteryData: any): void 
     });
   }
 
-  // Preserve existing clues/plot_beats/motives if a partial mystery object is passed
-  cache.mysteries[mysteryId] = {
+  const nextEntry = {
     ...(prev || {}),
     ...mysteryData,
+    image_url: sanitizeMysteryCoverUrl(
+      mysteryData.image_url ?? prev?.image_url,
+      mysteryData.title ?? prev?.title,
+      mysteryData.theme ?? prev?.theme
+    ),
     characters: mergedCharacters,
     clues:
       Array.isArray(mysteryData.clues) && mysteryData.clues.length > 0
@@ -269,6 +289,12 @@ export function cacheMysterySnapshot(mysteryId: string, mysteryData: any): void 
         ? mysteryData.plot_beats
         : prev?.plot_beats || mysteryData.plot_beats || [],
   };
+
+  if (prev && JSON.stringify(prev) === JSON.stringify(nextEntry)) {
+    return;
+  }
+
+  cache.mysteries[mysteryId] = nextEntry;
   writeMysteryCache(cache);
 }
 
@@ -305,6 +331,20 @@ export function getAllCachedMysteries(): any[] {
 export function cacheRelationshipsSnapshot(mysteryId: string, relationships: any[]): void {
   if (!mysteryId || !Array.isArray(relationships)) return;
   const cache = readMysteryCache();
+  const prev = cache.relationships[mysteryId];
+  if (
+    Array.isArray(prev) &&
+    prev.length === relationships.length &&
+    prev.every(
+      (r, idx) =>
+        r?.character_a_id === relationships[idx]?.character_a_id &&
+        r?.character_b_id === relationships[idx]?.character_b_id &&
+        r?.dynamics === relationships[idx]?.dynamics &&
+        r?.notes === relationships[idx]?.notes
+    )
+  ) {
+    return;
+  }
   cache.relationships[mysteryId] = relationships;
   writeMysteryCache(cache);
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/utils/admin-auth';
+import { invalidateAdminMysteriesCache } from '@/services/admin';
 import { createMysteryAction } from '../../../(builder)/builder/mysteries/actions';
 
 // Re-export the builder action so admin components can call it directly
@@ -15,6 +16,7 @@ export async function archiveMysteryAction(id: string) {
       .update({ status: 'archived' })
       .eq('id', id);
     if (error) return { success: false, error: error.message };
+    invalidateAdminMysteriesCache();
     revalidatePath('/admin/mysteries');
     revalidatePath('/', 'layout');
     return { success: true };
@@ -31,6 +33,7 @@ export async function unarchiveMysteryAction(id: string) {
       .update({ status: 'draft' })
       .eq('id', id);
     if (error) return { success: false, error: error.message };
+    invalidateAdminMysteriesCache();
     revalidatePath('/admin/mysteries');
     revalidatePath('/', 'layout');
     return { success: true };
@@ -47,6 +50,7 @@ export async function toggleMysteryStatusAction(id: string, nextStatus: 'publish
       .update({ status: nextStatus })
       .eq('id', id);
     if (error) return { success: false, error: error.message };
+    invalidateAdminMysteriesCache();
     revalidatePath('/en/admin/mysteries');
     revalidatePath('/admin/mysteries');
     revalidatePath('/', 'layout');
@@ -77,6 +81,7 @@ export async function deleteMysteryAction(id: string) {
     const { error } = await supabase.from('mysteries').delete().eq('id', id);
     if (error) return { success: false, error: error.message };
     
+    invalidateAdminMysteriesCache();
     revalidatePath('/admin/mysteries');
     revalidatePath('/', 'layout');
     return { success: true };

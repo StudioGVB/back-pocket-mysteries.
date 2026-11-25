@@ -178,6 +178,13 @@ export function isChristmasMystery(theme?: string | null, title?: string | null)
   );
 }
 
+export const CIRCUS_MAIN_COVER_URL = '/moodboard/circus/main-cover.jpg';
+
+export function isCircusMystery(theme?: string | null, title?: string | null): boolean {
+  const combined = `${title || ''} ${theme || ''}`.toLowerCase();
+  return combined.includes('ringmaster') || combined.includes('circus') || combined.includes('carnival');
+}
+
 export function getEffectiveCoverUrl(
   rawImageUrl?: string | null,
   theme?: string | null,
@@ -191,6 +198,14 @@ export function getEffectiveCoverUrl(
     if (!coverUrl || coverUrl.startsWith('data:image/') || coverUrl.includes('ui-avatars.com')) {
       return CHRISTMAS_MAIN_COVER_URL;
     }
+  }
+  if (isCircusMystery(theme, title)) {
+    if (!coverUrl || coverUrl.startsWith('data:image/')) {
+      return CIRCUS_MAIN_COVER_URL;
+    }
+  }
+  if (coverUrl && coverUrl.startsWith('data:image/')) {
+    return '/hero/05-masquerade.png';
   }
   return coverUrl;
 }

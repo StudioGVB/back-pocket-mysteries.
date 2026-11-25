@@ -195,26 +195,36 @@ function getLeadsStorePath(): string {
   }
 }
 
+let cachedLocalLeadsStore: { mtimeMs: number; data: LeadsStoreData } | null = null;
+let cachedMarketingLeads: { fetchedAt: number; data: MarketingLeadRecord[] } | null = null;
+const MARKETING_LEADS_CACHE_TTL_MS = 45_000;
+
 function readLocalLeadsStore(): LeadsStoreData {
   const filePath = getLeadsStorePath();
   try {
-    if (fs.existsSync(filePath)) {
-      const raw = fs.readFileSync(filePath, 'utf8');
-      const parsed = JSON.parse(raw);
-      return {
-        leads: parsed.leads || {},
-      };
+    const stat = fs.statSync(filePath);
+    if (cachedLocalLeadsStore && cachedLocalLeadsStore.mtimeMs === stat.mtimeMs) {
+      return cachedLocalLeadsStore.data;
     }
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    const data: LeadsStoreData = {
+      leads: parsed.leads || {},
+    };
+    cachedLocalLeadsStore = { mtimeMs: stat.mtimeMs, data };
+    return data;
   } catch {
-    // ignore
+    if (cachedLocalLeadsStore) return cachedLocalLeadsStore.data;
   }
   return { leads: {} };
 }
 
 function writeLocalLeadsStore(data: LeadsStoreData): void {
+  cachedMarketingLeads = null;
   const filePath = getLeadsStorePath();
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    cachedLocalLeadsStore = { mtimeMs: fs.statSync(filePath).mtimeMs, data };
   } catch {
     // ignore in read-only serverless environment
   }
@@ -376,6 +386,11 @@ async function upsertResendAudienceContact(lead: MarketingLeadRecord): Promise<v
  * Ordered chronologically by `created_at` so VIP rank #1 -> #50 is 100% deterministic.
  */
 export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[]> {
+  const now = Date.now();
+  if (cachedMarketingLeads && now - cachedMarketingLeads.fetchedAt < MARKETING_LEADS_CACHE_TTL_MS) {
+    return cachedMarketingLeads.data;
+  }
+
   const store = readLocalLeadsStore();
   const byEmail = new Map<string, MarketingLeadRecord>();
 
@@ -475,7 +490,9 @@ export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[
   }
 
   // Return newest first for admin display, while preserving each lead's deterministic vip_rank
-  return [...chronological].reverse();
+  const result = [...chronological].reverse();
+  cachedMarketingLeads = { fetchedAt: Date.now(), data: result };
+  return result;
 }
 
 /**

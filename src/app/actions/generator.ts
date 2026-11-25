@@ -745,18 +745,19 @@ MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARAC
   console.log(`[STAGE 1: STANDARD CHAR PHOTO] Generating canonical reference photo for ${guestName} (${roleTitle})...`);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
 
-  const callGeminiPortrait = async (portraitPromptToRun: string) => {
+  const callGeminiPortrait = async (portraitPromptToRun: string, includeRefParts = true) => {
     let outB64 = '';
     let outUsage: any = null;
     let currentPortraitPrompt = portraitPromptToRun;
 
     for (let attempt = 1; attempt <= 4; attempt++) {
       try {
+        const activeRefParts = includeRefParts && attempt <= 2 ? referenceParts : [];
         const payload = {
           contents: [
             {
               parts: [
-                ...referenceParts,
+                ...activeRefParts,
                 { text: currentPortraitPrompt },
               ],
             },
@@ -818,7 +819,7 @@ MANDATORY CAMERA CROP & UNIFIED BACKDROP GUARDRAILS (MUST MATCH ALL OTHER CHARAC
     return { outB64, outUsage };
   };
 
-  const initialPortrait = await callGeminiPortrait(standardPortraitPrompt);
+  const initialPortrait = await callGeminiPortrait(standardPortraitPrompt, true);
   let base64Image = initialPortrait.outB64;
   let usageMetadata: any = initialPortrait.outUsage;
 
@@ -873,8 +874,17 @@ Respond with valid JSON ONLY:
         console.warn(
           `[STAGE 1: INLINE PORTRAIT CRITIC] Retrying portrait for ${guestName} (${roleTitle}) with directive: "${parsed.correctionDirective}"`
         );
+        const directiveLower = String(parsed.correctionDirective).toLowerCase();
+        const dropRefBecauseBackdropOrBars =
+          directiveLower.includes('white') ||
+          directiveLower.includes('bar') ||
+          directiveLower.includes('border') ||
+          directiveLower.includes('background') ||
+          directiveLower.includes('backdrop') ||
+          directiveLower.includes('full-body') ||
+          directiveLower.includes('legs');
         const retryPrompt = `${standardPortraitPrompt}\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${sanitizePromptForImageSafety(String(parsed.correctionDirective))}`;
-        const retryPortrait = await callGeminiPortrait(retryPrompt);
+        const retryPortrait = await callGeminiPortrait(retryPrompt, !dropRefBecauseBackdropOrBars);
         if (retryPortrait.outB64) {
           base64Image = retryPortrait.outB64;
           usageMetadata = retryPortrait.outUsage || usageMetadata;
