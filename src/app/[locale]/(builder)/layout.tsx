@@ -42,7 +42,7 @@ export default async function BuilderLayout({
   await requireAdminOrRedirect(locale || 'en');
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen md:h-screen bg-slate-50 md:overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen md:h-screen bg-slate-50 overflow-x-hidden md:overflow-hidden">
       <Suspense fallback={<div className="hidden md:flex w-64 bg-slate-900 text-white flex-shrink-0 flex-col shadow-2xl transition-all duration-300 relative z-20"></div>}>
         <BuilderSidebarWithAuth locale={locale || 'en'}>
           <Suspense fallback={<div className="w-full h-[42px] bg-slate-800 border border-slate-700 rounded-lg animate-pulse"></div>}>
@@ -52,8 +52,8 @@ export default async function BuilderLayout({
       </Suspense>
 
       {/* Main Content */}
-      <div className="flex-grow flex flex-col min-w-0 md:overflow-hidden">
-        <main className="flex-grow md:overflow-auto custom-scrollbar bg-[#f8fafc]">
+      <div className="flex-grow flex flex-col min-w-0 overflow-x-hidden md:overflow-hidden">
+        <main className="flex-grow md:overflow-auto custom-scrollbar bg-[#f8fafc] overflow-x-hidden">
           {children}
         </main>
       </div>

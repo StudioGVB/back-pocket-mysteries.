@@ -31,26 +31,33 @@ export function DashboardTrafficWidget({ data, totalVisitors, totalPageviews, is
   });
 
   return (
-    <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-8">
+    <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-[32px] border border-gray-100 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-8">
       <div className="flex-shrink-0 w-full lg:w-auto">
-        <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-1 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          Live Site Traffic
-        </h3>
-        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Last 7 Days</p>
-        
-        <div className="flex items-center gap-8 mt-6">
+        <div className="flex items-center justify-between gap-2">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Visitors</p>
-            <p className="text-3xl font-black text-brand-dark">{totalVisitors.toLocaleString()}</p>
+            <h3 className="text-base sm:text-lg font-black text-brand-dark uppercase tracking-tight mb-0.5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              Live Site Traffic
+            </h3>
+            <p className="text-[11px] sm:text-xs text-gray-400 font-bold uppercase tracking-widest">Last 7 Days</p>
+          </div>
+          <Link href="/en/admin/analytics" className="lg:hidden bg-slate-100 hover:bg-brand-dark hover:text-white text-brand-dark text-[11px] font-black uppercase tracking-widest px-3.5 py-2 rounded-xl transition-all shadow-sm">
+            Full Report →
+          </Link>
+        </div>
+        
+        <div className="flex items-center gap-6 sm:gap-8 mt-4 sm:mt-6">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Visitors</p>
+            <p className="text-2xl sm:text-3xl font-black text-brand-dark">{totalVisitors.toLocaleString()}</p>
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Page Views</p>
-            <p className="text-3xl font-black text-brand-pink">{totalPageviews.toLocaleString()}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-0.5">Page Views</p>
+            <p className="text-2xl sm:text-3xl font-black text-brand-pink">{totalPageviews.toLocaleString()}</p>
           </div>
         </div>
         
-        <div className="mt-6">
+        <div className="hidden lg:block mt-6">
           <Link href="/en/admin/analytics" className="bg-slate-100 hover:bg-brand-dark hover:text-white text-brand-dark text-xs font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-sm inline-block">
             Full Report →
           </Link>

@@ -167,7 +167,7 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
     <>
       <div 
         onClick={handleCardClick}
-        className={`bg-black rounded-[2.5rem] border hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full cursor-pointer relative overflow-hidden text-white ${getCardGlowStyle(currentStatus)}`}
+        className={`bg-black rounded-3xl sm:rounded-[2.5rem] border hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full cursor-pointer relative overflow-hidden text-white ${getCardGlowStyle(currentStatus)}`}
       >
         {/* 1. Cover Image Section */}
         <div className="relative w-full aspect-video bg-neutral-950 overflow-hidden">
@@ -195,14 +195,14 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
                 ? 'Click to switch back to Draft'
                 : 'Click to Publish live to Storefront'
             }
-            className={`absolute top-4 left-4 px-3 py-1 border backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest z-20 transition-all cursor-pointer ${getStatusStyle(currentStatus)}`}
+            className={`absolute top-2.5 left-2.5 sm:top-4 sm:left-4 px-2.5 sm:px-3 py-1 border backdrop-blur-md rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-widest z-20 transition-all cursor-pointer ${getStatusStyle(currentStatus)}`}
           >
             {isPending ? 'Updating…' : currentStatus === 'published' ? '● Published' : currentStatus}
           </button>
 
           {/* Package, Character & Round Count Badge (Top Right) */}
-          <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 border border-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-slate-300 z-20">
-            📦 {pkgInfo.label} • {pkgInfo.requiredCharacters} Chars • {pkgInfo.requiredRounds} Rounds
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 px-2.5 sm:px-3 py-1 bg-black/65 border border-white/10 backdrop-blur-md rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-wider sm:tracking-widest text-slate-200 z-20 max-w-[60%] truncate">
+            📦 {pkgInfo.requiredCharacters} Chars • {pkgInfo.requiredRounds} Rounds
           </div>
 
           {/* 7-Box QA Certification Pill (Bottom Left on Cover) */}
@@ -210,7 +210,7 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
             <a
               href={`/${locale}/builder/mysteries/${mystery.id}/screen`}
               onClick={(e) => e.stopPropagation()}
-              className={`absolute bottom-3 left-4 px-3 py-1.5 rounded-xl border backdrop-blur-md text-[10px] font-black uppercase tracking-widest z-20 flex items-center gap-1.5 shadow-lg transition-colors ${
+              className={`absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-4 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border backdrop-blur-md text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest z-20 flex items-center gap-1 sm:gap-1.5 shadow-lg transition-colors ${
                 qa.certificationStatus === 'certified' || qa.overallReadinessScore >= 90
                   ? 'bg-emerald-950/85 border-emerald-400/50 text-emerald-300 hover:bg-emerald-900'
                   : 'bg-amber-950/85 border-amber-400/50 text-amber-300 hover:bg-amber-900'
@@ -219,7 +219,7 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
             >
               <span>🛡️</span>
               <span>
-                QA {qa.overallReadinessScore}% • {qa.passedBoxes}/{qa.totalBoxes} Boxes
+                QA {qa.overallReadinessScore}% • {qa.passedBoxes}/{qa.totalBoxes}
               </span>
             </a>
           )}
@@ -231,10 +231,10 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
               e.stopPropagation();
               setIsMoodboardOpen(true);
             }}
-            className="absolute bottom-3 right-4 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-brand-pink text-white border border-white/15 backdrop-blur-md text-[10px] font-black uppercase tracking-widest z-20 flex items-center gap-1.5 transition-colors shadow-lg"
+            className="absolute bottom-2.5 right-2.5 sm:bottom-3 sm:right-4 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-black/75 hover:bg-brand-pink text-white border border-white/15 backdrop-blur-md text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest z-20 flex items-center gap-1 sm:gap-1.5 transition-colors shadow-lg"
           >
             <span>📸</span>
-            <span>{moodCount > 0 ? `Mood Board (${moodCount})` : '+ Mood Board'}</span>
+            <span>{moodCount > 0 ? `Mood (${moodCount})` : '+ Mood'}</span>
           </button>
 
           {/* Fade-to-Black Gradient Overlay */}
@@ -242,7 +242,7 @@ export function MysteryCard({ mystery, locale }: MysteryCardProps) {
         </div>
 
         {/* 2. Text Content Area */}
-        <div className="flex-grow flex flex-col p-6 pt-3 bg-black z-10 relative">
+        <div className="flex-grow flex flex-col p-4 sm:p-6 pt-3 bg-black z-10 relative">
           {/* Theme & Spice/Complexity Metadata */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="text-[10px] font-black uppercase tracking-widest text-brand-pink truncate">

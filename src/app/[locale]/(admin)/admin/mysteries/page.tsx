@@ -13,18 +13,19 @@ export default async function AdminMysteries({
   params: Promise<{ locale: string }>;
 }) {
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap justify-between items-center gap-4">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap justify-between sm:items-center gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">Mystery Bases</h2>
-          <p className="text-gray-500 text-sm font-medium">Create and manage the foundation of your murder mysteries</p>
+          <h2 className="text-lg sm:text-xl font-black text-brand-dark uppercase tracking-tight">Mystery Bases</h2>
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">Create and manage the foundation of your murder mysteries</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link
             href="/en/admin/mysteries/architect"
-            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-900 to-slate-900 hover:from-brand-pink hover:to-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-sm transition flex items-center gap-2"
+            className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-900 to-slate-900 hover:from-brand-pink hover:to-rose-600 text-white text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-sm transition flex items-center gap-1.5"
           >
-            <span>✨ OG Base Builder (Yes/No Clue & Subplot Curation)</span>
+            <span>✨ OG Base Builder</span>
+            <span className="hidden lg:inline">(Yes/No Clue &amp; Subplot Curation)</span>
           </Link>
           <BrainstormWorksheetButton variant="admin-pill" />
           <CreateMysteryBaseButton />
@@ -62,7 +63,7 @@ async function AdminMysteriesList({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-8">
       {mysteries.map((item: any) => (
         <MysteryCard key={item.id} mystery={item} locale={locale} />
       ))}

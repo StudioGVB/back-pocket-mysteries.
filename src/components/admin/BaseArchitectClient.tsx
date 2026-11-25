@@ -2657,9 +2657,89 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     );
   };
 
+  // Helper to deterministically weave an under-featured character into existing Red Herring storylines & fake clues
+  const handleAutoWeaveCharacterIntoRedHerrings = (targetRoleTitle: string) => {
+    const cleanRole = targetRoleTitle.replace(/^\{\{|\}\}$/g, '').trim();
+    const charObj = blueprint.characters.find(
+      (c) =>
+        c.roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === cleanRole.toLowerCase()
+    );
+    const victimRole =
+      blueprint.characters.find((c) => c.plotRole === 'victim')?.roleTitle || 'The Prom Queen';
+
+    if (subplots.length === 0) {
+      handleMoveToRedHerrings(true);
+      return;
+    }
+
+    const doesClueHaveRole = (cl: SuggestedClueCandidate) => {
+      const inList = (cl.involvedRoles || []).some(
+        (r) => r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === cleanRole.toLowerCase()
+      );
+      const inText = `${cl.title} ${cl.description} ${cl.pointsTo} ${cl.doubleMeaningNote || ''}`
+        .toLowerCase()
+        .includes(cleanRole.toLowerCase());
+      return inList || inText;
+    };
+
+    let currentCount = allSelectedClues.filter(doesClueHaveRole).length;
+    const TARGET_MIN = 4;
+
+    setSubplots((prev) =>
+      prev.map((sub) => {
+        if (currentCount >= TARGET_MIN) return sub;
+        let updatedSub = { ...sub };
+        if (
+          !updatedSub.involvedRoles.some(
+            (r) => r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === cleanRole.toLowerCase()
+          )
+        ) {
+          updatedSub.involvedRoles = [...updatedSub.involvedRoles, cleanRole];
+        }
+        if (!updatedSub.summary.toLowerCase().includes(cleanRole.toLowerCase())) {
+          updatedSub.summary = `${updatedSub.summary} {{${cleanRole}}} is also entangled in this secret (${
+            charObj?.motiveOrSecret || `hiding a fierce motive against {{${victimRole}}}`
+          }).`;
+        }
+
+        updatedSub.decoyClues = updatedSub.decoyClues.map((dc) => {
+          if (currentCount >= TARGET_MIN || doesClueHaveRole(dc)) return dc;
+          const nextRoles = Array.from(new Set([...(dc.involvedRoles || []), cleanRole]));
+          const nextDesc =
+            dc.format === 'chat'
+              ? `${dc.description}\n[${dc.timestampLabel}] {{${cleanRole}}}: Keep my name out of this—if anyone finds out what {{${victimRole}}} had on us, we're all finished.`
+              : dc.format === 'audio'
+                ? `${dc.description}\n{{${cleanRole}}}: "[whispers] Delete that right now—nobody can know I was upstairs before {{${victimRole}}} fell."`
+                : `${dc.description} Includes an incriminating margin note from {{${cleanRole}}} demanding they keep their alibis straight before {{${victimRole}}} exposes them.`;
+          const nextPointsTo = `${dc.pointsTo} Directly implicates {{${cleanRole}}} in the cover-up.`;
+          if (dc.decision === 'yes') {
+            currentCount++;
+          }
+          return {
+            ...dc,
+            involvedRoles: nextRoles,
+            description: nextDesc,
+            pointsTo: nextPointsTo,
+          };
+        });
+
+        return updatedSub;
+      })
+    );
+
+    setStatusToast(
+      `Balanced {{${cleanRole}}} into your Red-Herring storylines & fake clues (now featured in ${Math.max(
+        TARGET_MIN,
+        currentCount
+      )}/${allSelectedClues.length} clues)!`
+    );
+  };
+
   // IMPROVEMENT #1: Suspect Heat & Table Spotlight Meter (Step 3 & Step 4)
   const renderSuspectHeatAndSpotlightPanel = (cluesPool: SuggestedClueCandidate[]) => {
     if (cluesPool.length === 0) return null;
+
+    const MIN_BALANCED_CLUES = 4;
 
     const charStats = blueprint.characters.map((ch, idx) => {
       const cleanRole = ch.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
@@ -2673,6 +2753,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         return inList || inText;
       });
 
+      const coreCount = matchingClues.filter((c) => !c.isRedHerring).length;
+      const fakeCount = matchingClues.filter((c) => c.isRedHerring).length;
       const r1Count = matchingClues.filter((c) => c.roundNumber === 1).length;
       const r2Count = matchingClues.filter((c) => c.roundNumber === 2).length;
       const r3Count = matchingClues.filter((c) => c.roundNumber >= 3).length;
@@ -2681,6 +2763,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         character: ch,
         pillStyle: CHARACTER_PILL_STYLES[idx % CHARACTER_PILL_STYLES.length],
         totalCount: matchingClues.length,
+        coreCount,
+        fakeCount,
         r1Count,
         r2Count,
         r3Count,
@@ -2689,7 +2773,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     });
 
     const underFeaturedSuspects = charStats.filter(
-      (cs) => cs.character.plotRole !== 'victim' && cs.totalCount < 2
+      (cs) => cs.character.plotRole !== 'victim' && cs.totalCount < MIN_BALANCED_CLUES
     );
     const killerStat = charStats.find((cs) => cs.character.plotRole === 'killer');
     const r1Total = Math.max(1, cluesPool.filter((c) => c.roundNumber === 1).length);
@@ -2701,25 +2785,42 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-              🕵️‍♂️ Suspect Heat &amp; Table Spotlight Meter ({cluesPool.length} Selected Clues)
+              🕵️‍♂️ Primary Character Balance &amp; Table Spotlight ({cluesPool.length} Selected Clues)
             </h3>
             <p className="text-[11px] text-slate-500">
-              Ensures every guest gets accused/involved at the party table (target: 3+ clues per
-              suspect) and keeps early Round 1 heat off the true Killer.
+              Balances Real Beat Clues + Fake Red-Herring Clues so every primary character appears
+              in <strong>at least {MIN_BALANCED_CLUES}–6 clues</strong> across the pack.
             </p>
           </div>
-          {underFeaturedSuspects.length === 0 && !killerTooHotInR1 && (
+          {underFeaturedSuspects.length === 0 && !killerTooHotInR1 ? (
             <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
-              ✓ Balanced Suspect Spotlight
+              ✓ All Primary Characters Balanced ({MIN_BALANCED_CLUES}+ Clues Each)
             </span>
+          ) : (
+            underFeaturedSuspects.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  for (const uf of underFeaturedSuspects) {
+                    handleAutoWeaveCharacterIntoRedHerrings(uf.character.roleTitle);
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-brand-pink hover:bg-pink-600 text-white shadow-xs transition cursor-pointer"
+              >
+                ⚖️ 1-Click Balance All Characters to {MIN_BALANCED_CLUES}+ Clues
+              </button>
+            )
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {charStats.map((cs) => {
             const ch = cs.character;
-            const isLow = ch.plotRole !== 'victim' && cs.totalCount < 2;
-            const pct = Math.min(100, Math.round((cs.totalCount / Math.max(1, cluesPool.length)) * 100));
+            const isLow = ch.plotRole !== 'victim' && cs.totalCount < MIN_BALANCED_CLUES;
+            const pct = Math.min(
+              100,
+              Math.round((cs.totalCount / Math.max(1, cluesPool.length)) * 100)
+            );
 
             return (
               <div
@@ -2735,8 +2836,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     <span className={`w-2 h-2 rounded-full ${cs.pillStyle.dot}`} />
                     <span>{ch.roleTitle}</span>
                   </span>
-                  <span className="text-xs font-black text-slate-800">
-                    {cs.totalCount} Clues ({pct}%)
+                  <span
+                    className={`text-xs font-black ${
+                      isLow ? 'text-amber-800' : 'text-slate-800'
+                    }`}
+                  >
+                    {cs.totalCount} / {cluesPool.length} Clues ({pct}%)
                   </span>
                 </div>
 
@@ -2744,24 +2849,21 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   <div
                     style={{ width: `${Math.min(100, cs.totalCount * 14)}%` }}
                     className={`h-full rounded-full ${
-                      ch.plotRole === 'killer'
-                        ? 'bg-rose-600'
-                        : ch.plotRole === 'assistant'
-                          ? 'bg-amber-500'
-                          : 'bg-indigo-600'
+                      isLow
+                        ? 'bg-amber-500'
+                        : ch.plotRole === 'killer'
+                          ? 'bg-rose-600'
+                          : ch.plotRole === 'assistant'
+                            ? 'bg-amber-500'
+                            : 'bg-indigo-600'
                     }`}
                   />
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
                   <span>
-                    {ch.plotRole === 'victim'
-                      ? '💀 Victim'
-                      : ch.plotRole === 'killer'
-                        ? '🔪 Killer'
-                        : ch.plotRole === 'assistant'
-                          ? '🤝 Accomplice'
-                          : '🕵️ Suspect'}
+                    Real Clues: <strong>{cs.coreCount}</strong> • Fake Clues:{' '}
+                    <strong className="text-indigo-700">+{cs.fakeCount}</strong>
                   </span>
                   <span>
                     R1: <strong>{cs.r1Count}</strong> • R2: <strong>{cs.r2Count}</strong> • R3:{' '}
@@ -2788,31 +2890,42 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
                 >
                   <div className="text-xs font-semibold text-amber-950 flex-1">
-                    💡 <strong>Table Spotlight Suggestion:</strong>{' '}
-                    <strong>{uf.character.roleTitle}</strong> only appears in{' '}
-                    <strong>{uf.totalCount}</strong> selected clue(s). We suggest weaving a
-                    double-meaning twist for <strong>{uf.character.roleTitle}</strong> into{' '}
-                    {targetCoreClue ? `"${targetCoreClue.title}"` : 'a Beat Clue'} so that player is
-                    actively interrogated at the party!
+                    💡 <strong>Character Balance Alert:</strong>{' '}
+                    <strong>{uf.character.roleTitle}</strong> is only in{' '}
+                    <strong>
+                      {uf.totalCount}/{cluesPool.length} clues
+                    </strong>{' '}
+                    ({uf.coreCount} Real + {uf.fakeCount} Fake — target is {MIN_BALANCED_CLUES}+
+                    clues). We suggest weaving <strong>{uf.character.roleTitle}</strong> into your
+                    Red-Herring clues or adding a double-meaning twist!
                   </div>
-                  {targetCoreClue && (
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        handleInjectDoubleMeaningSuspect(
-                          targetCoreClue.beatNumber || 1,
-                          targetCoreClue,
-                          uf.character.roleTitle
-                        )
-                      }
-                      disabled={injectingTwistClueId === targetCoreClue.id}
-                      className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-amber-900 hover:bg-brand-pink text-white transition cursor-pointer whitespace-nowrap disabled:opacity-50"
+                      onClick={() => handleAutoWeaveCharacterIntoRedHerrings(uf.character.roleTitle)}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-brand-pink hover:bg-pink-600 text-white transition cursor-pointer whitespace-nowrap"
                     >
-                      {injectingTwistClueId === targetCoreClue.id
-                        ? 'Weaving Twist...'
-                        : `🎭 Tie ${uf.character.roleTitle} Into "${targetCoreClue.title.slice(0, 24)}..."`}
+                      ⚖️ Boost {uf.character.roleTitle} in Fake Clues (to {MIN_BALANCED_CLUES}+)
                     </button>
-                  )}
+                    {targetCoreClue && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleInjectDoubleMeaningSuspect(
+                            targetCoreClue.beatNumber || 1,
+                            targetCoreClue,
+                            uf.character.roleTitle
+                          )
+                        }
+                        disabled={injectingTwistClueId === targetCoreClue.id}
+                        className="px-3 py-1.5 rounded-xl text-xs font-black bg-amber-900 hover:bg-slate-800 text-white transition cursor-pointer whitespace-nowrap disabled:opacity-50"
+                      >
+                        {injectingTwistClueId === targetCoreClue.id
+                          ? 'Weaving Twist...'
+                          : `🎭 Tie Into Real Clue`}
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}

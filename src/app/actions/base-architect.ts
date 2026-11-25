@@ -2640,10 +2640,50 @@ export async function suggestRedHerringPlotlinesWithCluesAction(params: {
   const coreAudioCount = selectedCoreClues.filter((c) => c.format === 'audio').length;
   const coreTextCount = selectedCoreClues.length - corePhotoCount - coreAudioCount;
 
+  // Helper to check if a clue mentions or involves a character role
+  const doesClueInvolveRole = (clue: SuggestedClueCandidate, roleTitle: string): boolean => {
+    const cleanRole = roleTitle.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase();
+    const inRoles = (clue.involvedRoles || []).some(
+      (r) => r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === cleanRole
+    );
+    const inText = `${clue.title} ${clue.description} ${clue.pointsTo} ${clue.doubleMeaningNote || ''}`
+      .toLowerCase()
+      .includes(cleanRole);
+    return inRoles || inText;
+  };
+
+  // Audit how many of the 10 Selected Core Clues each primary character appears in
+  const MIN_TARGET_CLUES_PER_CHAR = 4;
+  const characterCoreAudit = blueprint.characters
+    .map((ch) => {
+      const cleanRole = ch.roleTitle.replace(/^\{\{|\}\}$/g, '').trim();
+      const coreAppearances = selectedCoreClues.filter((cl) =>
+        doesClueInvolveRole(cl, cleanRole)
+      ).length;
+      const neededInRedHerrings =
+        ch.plotRole === 'victim'
+          ? Math.max(1, MIN_TARGET_CLUES_PER_CHAR - coreAppearances)
+          : Math.max(
+              ch.plotRole === 'innocent' ? 3 : 1,
+              MIN_TARGET_CLUES_PER_CHAR + 1 - coreAppearances
+            );
+      return {
+        character: ch,
+        cleanRole,
+        coreAppearances,
+        neededInRedHerrings: Math.min(5, neededInRedHerrings),
+      };
+    })
+    .sort((a, b) => a.coreAppearances - b.coreAppearances);
+
+  const mostUnderFeaturedRoles = characterCoreAudit
+    .filter((a) => a.character.plotRole !== 'victim' && a.character.plotRole !== 'killer')
+    .sort((a, b) => a.coreAppearances - b.coreAppearances);
+
   try {
-    const prompt = `You are the Master Red-Herring & Double-Meaning Architect for Back Pocket Mysteries.
+    const prompt = `You are the Master Red-Herring & Character-Balance Architect for Back Pocket Mysteries.
 The creator has just locked in their **${selectedCoreClues.length} Selected Core Murder Clues** across the 5 Core Story Beats.
-Now you MUST freshly generate **3 entangled Red-Herring Plotlines** specifically tailored around the creator's **exact selected Core Clues below**, showing each innocent suspect's motive, which of the selected Core Clues their motive hooks into via double-meaning, and **4 Red-Herring Clues per plotline** (the creator will pick 2 per plotline = 6 Red-Herring Clues total).
+Now you MUST freshly generate **3 entangled Red-Herring Plotlines** specifically tailored around the creator's **exact selected Core Clues below**, while **BALANCING PRIMARY CHARACTER SPOTLIGHT** so that characters who were under-featured in the 10 Core Clues get heavy Red-Herring storyline and clue coverage!
 
 MYSTERY CONTEXT:
 - Title: "${blueprint.title}" (${blueprint.theme})
@@ -2659,6 +2699,19 @@ ${blueprint.characters
       `- {{${c.roleTitle}}} (${c.plotRole.toUpperCase()} • ${c.defaultGender}): ${c.conceptNotes} | Motive/Secret: ${c.motiveOrSecret}`
   )
   .join('\n')}
+
+⚖️ PRIMARY CHARACTER CLUE BALANCE AUDIT (CRITICAL — FIX UNDER-FEATURED CHARACTERS!):
+Every primary character in the cast MUST appear in **at least 4 to 6 of the 16 total clues** so no player is sidelined at the party table. Here is each character's current count in the ${selectedCoreClues.length} locked Core Clues:
+${characterCoreAudit
+  .map(
+    (a) =>
+      `- {{${a.cleanRole}}} (${a.character.plotRole.toUpperCase()}): Currently in **${a.coreAppearances}/${selectedCoreClues.length} Core Clues** -> MANDATORY RED-HERRING QUOTA: Must be explicitly named & involved in **at least ${a.neededInRedHerrings} of the 6 pre-selected Red-Herring Clues** (and all 4 options of their plotlines)!`
+  )
+  .join('\n')}
+-> HIGHEST PRIORITY CHARACTERS TO BOOST: ${mostUnderFeaturedRoles
+      .slice(0, 2)
+      .map((a) => `{{${a.cleanRole}}} (only ${a.coreAppearances} core clues!)`)
+      .join(' and ')} MUST be a lead character in **at least 2 of the 3 Red-Herring Plotlines**!
 
 CREATOR'S EXACT SELECTED CORE CLUES (ANCHOR YOUR RED HERRINGS DIRECTLY TO THESE!):
 ${selectedCoreClues
@@ -2688,15 +2741,30 @@ ${spiceDirective}
 
 ${tokenDirective}
 
-RED-HERRING & DOUBLE-MEANING RULES:
-1. Create **3 distinct Red-Herring Plotlines**, each tying together **2+ characters** (focusing on the Innocent Suspects so every innocent character has a strong, incriminating motive for wanting the Victim dead or covering up a scandal with another suspect).
+RED-HERRING & CHARACTER-BALANCE RULES:
+1. Create **3 distinct Red-Herring Plotlines**, each tying together **2–3 characters**.
+   - **MANDATORY PAIRING RULE FOR CHARACTER BALANCE:** The least-featured suspect (${
+     mostUnderFeaturedRoles[0] ? `{{${mostUnderFeaturedRoles[0].cleanRole}}}` : 'the quietest innocent suspect'
+   }) MUST be a primary lead in **at least 2 of the 3 Red-Herring Plotlines** (for example: Plotline #1 pairing ${
+     mostUnderFeaturedRoles[0] ? `{{${mostUnderFeaturedRoles[0].cleanRole}}}` : '{{The Bestie}}'
+   } with ${
+     mostUnderFeaturedRoles[1] ? `{{${mostUnderFeaturedRoles[1].cleanRole}}}` : '{{The Teammate}}'
+   }, Plotline #2 pairing ${
+     mostUnderFeaturedRoles[0] ? `{{${mostUnderFeaturedRoles[0].cleanRole}}}` : '{{The Bestie}}'
+   } with ${
+     mostUnderFeaturedRoles[2] ? `{{${mostUnderFeaturedRoles[2].cleanRole}}}` : '{{The Brother}}'
+   }, and Plotline #3 pairing ${
+     mostUnderFeaturedRoles[1] ? `{{${mostUnderFeaturedRoles[1].cleanRole}}}` : '{{The Brother}}'
+   } with ${
+     mostUnderFeaturedRoles[2] ? `{{${mostUnderFeaturedRoles[2].cleanRole}}}` : '{{The Teammate}}'
+   } + {{${mostUnderFeaturedRoles[0]?.cleanRole || 'The Bestie'}}}).
 2. For each Red-Herring Plotline, include:
    - "title": Punchy subplot title using {{The Role}} tokens.
    - "involvedRoles": The 2–3 character role titles entangled in this subplot.
    - "summary": Clear explanation of their motive against the Victim and their secret side-scheme.
    - "linkedCoreClueTitles": Array of 1–3 exact titles from the **CREATOR'S EXACT SELECTED CORE CLUES** list above that this Red-Herring Plotline directly hooks into!
    - "doubleMeaningCoreClueHook": Explicitly name those selected Core Clues and explain how this innocent suspect's motive creates a suspicious double-meaning interpretation of those real clues!
-   - "decoyClues": Suggest **4 distinct Red-Herring Clue options** for this plotline (mixing "physical_prop" or "cctv" photo clues, "audio" voice note clues, and "chat" / "receipt" / "handwritten_note" / "document" text clues).
+   - "decoyClues": Suggest **4 distinct Red-Herring Clue options** for this plotline (mixing "physical_prop" or "cctv" photo clues, "audio" voice note clues, and "chat" / "receipt" / "handwritten_note" / "document" text clues). Every decoy clue MUST explicitly name the subplot's involved {{The Role}} tokens in its "description" and "involvedRoles"!
    - Each decoy clue MUST also include "strengthTier" and "strengthSummary" explaining how strongly it misdirects table suspicion or creates an alibi puzzle.
    - PHOTO PROMPT RULE: ONLY "physical_prop" and "cctv" clues get a 3-sentence cinematic forensic photo prompt in "generationPrompt". For "chat", "audio", "receipt", "handwritten_note", "search_log", "social_post", and "document", set "generationPrompt" to "" (empty string!).
 3. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names.
@@ -2811,6 +2879,67 @@ Return strict JSON:
         };
       }
     );
+
+    // =========================================================================
+    // POST-GENERATION DETERMINISTIC CHARACTER BALANCE ENFORCER
+    // Guarantees every primary character (especially under-featured suspects like {{The Bestie}})
+    // appears in at least 4 of the 16 selected clues!
+    // =========================================================================
+    const victimRole =
+      blueprint.characters.find((c) => c.plotRole === 'victim')?.roleTitle || 'The Prom Queen';
+
+    for (const audit of characterCoreAudit) {
+      if (audit.character.plotRole === 'victim') continue;
+      const roleTitle = audit.cleanRole;
+      const getSelectedDecoyClues = () =>
+        subplots.flatMap((s) => s.decoyClues.filter((dc) => dc.decision === 'yes'));
+
+      let totalForChar = [
+        ...selectedCoreClues,
+        ...getSelectedDecoyClues(),
+      ].filter((cl) => doesClueInvolveRole(cl, roleTitle)).length;
+
+      if (totalForChar < MIN_TARGET_CLUES_PER_CHAR) {
+        // Weave this under-featured character into subplots & decoy clues that don't yet include them
+        for (const sub of subplots) {
+          if (totalForChar >= MIN_TARGET_CLUES_PER_CHAR) break;
+
+          if (
+            !sub.involvedRoles.some(
+              (r) => r.replace(/^\{\{|\}\}$/g, '').trim().toLowerCase() === roleTitle.toLowerCase()
+            )
+          ) {
+            sub.involvedRoles = [...sub.involvedRoles, roleTitle];
+          }
+          if (!sub.summary.toLowerCase().includes(roleTitle.toLowerCase())) {
+            sub.summary = `${sub.summary} {{${roleTitle}}} is also entangled in this cover-up (${
+              audit.character.motiveOrSecret || `hiding a fierce grudge against {{${victimRole}}}`
+            }).`;
+          }
+
+          for (const dc of sub.decoyClues) {
+            if (!doesClueInvolveRole(dc, roleTitle)) {
+              dc.involvedRoles = Array.from(new Set([...(dc.involvedRoles || []), roleTitle]));
+              if (dc.format === 'chat') {
+                dc.description = `${dc.description}\n[${dc.timestampLabel}] {{${roleTitle}}}: Keep my name out of this—if anyone finds out what {{${victimRole}}} had on us, we're both finished.`;
+              } else if (dc.format === 'audio') {
+                dc.description = `${dc.description}\n{{${roleTitle}}}: "[whispers] Delete that right now—nobody can know I was upstairs before {{${victimRole}}} fell."`;
+              } else {
+                dc.description = `${dc.description} Features a handwritten margin note signed by {{${roleTitle}}} warning them to keep their alibi straight before {{${victimRole}}} exposes their secret.`;
+              }
+              dc.pointsTo = `${dc.pointsTo} Directly implicates {{${roleTitle}}} alongside ${sub.involvedRoles
+                .filter((r) => r !== roleTitle)
+                .map((r) => `{{${r}}}`)
+                .join(' & ')}.`;
+              if (dc.decision === 'yes') {
+                totalForChar++;
+              }
+              if (totalForChar >= MIN_TARGET_CLUES_PER_CHAR) break;
+            }
+          }
+        }
+      }
+    }
 
     return {
       success: true,

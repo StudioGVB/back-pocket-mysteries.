@@ -92,25 +92,27 @@ async function DashboardStats() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-5">
         {statConfig.map((stat, i) => (
           <Link
             key={i}
             href={stat.href}
-            className={`bg-white p-6 rounded-[28px] border shadow-sm hover:shadow-xl transition-all duration-300 block ${
+            className={`bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[28px] border shadow-sm hover:shadow-xl transition-all duration-300 block ${
+              i === statConfig.length - 1 ? 'col-span-2 sm:col-span-1' : ''
+            } ${
               stat.urgent
                 ? 'border-brand-pink/50 ring-2 ring-brand-pink/15'
                 : 'border-gray-100'
             }`}
           >
-            <div className="flex justify-between items-start gap-2 mb-2">
-              <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+            <div className="flex justify-between items-start gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+              <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-gray-400 truncate">
                 {stat.label}
               </p>
               {stat.badge && (
                 <span
-                  className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shrink-0 ${
+                  className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2 sm:px-2.5 py-0.5 rounded-full shrink-0 ${
                     stat.urgent
                       ? 'bg-brand-pink text-white shadow-sm shadow-brand-pink/30 animate-pulse'
                       : 'bg-slate-100 text-slate-600'
@@ -121,7 +123,7 @@ async function DashboardStats() {
               )}
             </div>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-3xl font-black text-brand-dark">{stat.value}</h3>
+              <h3 className="text-xl sm:text-3xl font-black text-brand-dark">{stat.value}</h3>
             </div>
           </Link>
         ))}

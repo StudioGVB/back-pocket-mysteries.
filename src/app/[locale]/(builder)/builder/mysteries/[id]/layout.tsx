@@ -33,8 +33,8 @@ export default async function MysteryStudioLayout({
       </header>
 
       {/* Main Studio Content */}
-      <main className="flex-grow animate-in fade-in duration-500 px-8 lg:px-10 pt-8">
-        <div className="pb-24 max-w-[1500px] mx-auto w-full">{children}</div>
+      <main className="flex-grow animate-in fade-in duration-500 px-3.5 sm:px-6 lg:px-10 pt-4 sm:pt-8 overflow-x-hidden">
+        <div className="pb-20 sm:pb-24 max-w-[1500px] mx-auto w-full">{children}</div>
       </main>
     </div>
   );
@@ -89,10 +89,10 @@ async function MysteryHeader({
   const isLive = mystery.status === 'published';
 
   return (
-    <div className="px-8 lg:px-10 py-3.5 max-w-[1500px] mx-auto w-full flex flex-wrap items-center justify-between gap-4">
+    <div className="px-3.5 sm:px-6 lg:px-10 py-2.5 sm:py-3.5 max-w-[1500px] mx-auto w-full flex flex-wrap items-center justify-between gap-2.5 sm:gap-4">
       {/* Left: Mystery Title & Package / Role / Round Metadata */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight leading-none">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
+        <h1 className="text-sm sm:text-lg font-black text-slate-900 uppercase tracking-tight leading-none truncate">
           {mystery.title}
         </h1>
         <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold text-slate-600 border border-slate-200">

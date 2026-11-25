@@ -24,6 +24,20 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  React.useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
   const mysteryIdMatch = pathname.match(/\/builder\/mysteries\/([^\/]+)/);
   const activeMysteryId =
     mysteryIdMatch && mysteryIdMatch[1] !== 'create' ? mysteryIdMatch[1] : null;
@@ -42,7 +56,7 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
     'px-3 text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1.5';
 
   const getLinkClass = (isActive: boolean) =>
-    `flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all text-[13px] font-bold ${
+    `flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-lg transition-all text-[13px] font-bold ${
       isActive
         ? 'bg-brand-pink text-white shadow-md shadow-brand-pink/20'
         : 'text-slate-300 hover:bg-white/10 hover:text-white'
@@ -188,18 +202,18 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
   const renderSidebarContent = (onNavigate?: () => void) => (
     <>
       {/* Brand Header */}
-      <div className="px-5 pt-5 pb-3 border-b border-white/5 flex items-center justify-between">
+      <div className="px-5 pt-4 pb-3.5 border-b border-white/10 flex items-center justify-between gap-2">
         <div>
           <Link href={dashboardHref} onClick={onNavigate} className="block">
             <Image
               src="/logo-horizontal-white.png"
               alt="Back Pocket Mysteries Studio"
-              width={155}
+              width={150}
               height={30}
-              className="h-7 w-auto object-contain"
+              className="h-6 sm:h-7 w-auto object-contain"
             />
           </Link>
-          <div className="mt-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">
+          <div className="mt-1 text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">
             Mystery Builder Studio
           </div>
         </div>
@@ -208,9 +222,10 @@ export function BuilderSidebar({ children, isAdmin = false }: BuilderSidebarProp
             type="button"
             onClick={onNavigate}
             aria-label="Close builder menu"
-            className="md:hidden w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-black cursor-pointer"
+            className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-brand-pink text-white text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer shrink-0"
           >
-            ✕
+            <span>✕</span>
+            <span>Close</span>
           </button>
         )}
       </div>
