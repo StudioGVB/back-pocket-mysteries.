@@ -1975,7 +1975,7 @@ RULES FOR READING THE DIAGRAM:
    - Pink boxes indicate defaultGender = "female"; Blue boxes indicate defaultGender = "male".
    - If a box has a highlighted border (e.g. blue border in the center like "Leah (Prom queen)" or red border like "Stacy"), assign 1 character as 'victim' and 1 character (such as their enemy/rival) as 'killer', and the rest as 'innocent'.
    - Convert each character into an iconic Role Title starting with "The " (e.g. "Leah (Prom queen)" -> "The Prom Queen", "Stacy" -> "The Girlfriend", "Mia" -> "The Bestie", "Josh" -> "The Brother", "Seb" -> "The Co-Captain", "James" -> "The Teammate"), while keeping a note of their diagram name and ALL connecting relationship lines (e.g. "Siblings", "Exes", "Crush", "Secret romance", "Enemies", "Dating", "Besties", "Co-captains of a sport team", "work together", "friends") inside \`conceptNotes\` using the {{The Role}} tokens!
-3. Suggest a fitting murder weapon/method, killer how & why summary, and 4 chronological story beats if the beats on the diagram are blank or incomplete.
+3. Suggest a fitting murder weapon/method, killer how & why summary, and 5 chronological core murder story beats if the beats on the diagram are blank or incomplete. STRICT BEAT RULE: The 5 beats must ONLY develop the true murder plot progression (never mention decoy or red-herring subplots in the beats).
 
 Return strict JSON:
 {
@@ -1984,7 +1984,7 @@ Return strict JSON:
   "settingDescription": "string",
   "spiceLevel": "Clean" | "Mild" | "Spicy" | "Filthy",
   "complexity": "easy" | "medium" | "hard",
-  "murderTimeWindow": "e.g. 11:45 PM",
+  "murderTimeWindow": "e.g. 11:28 PM",
   "murderWeaponAndMethod": "string",
   "killerHowAndWhySummary": "string",
   "insideJokesOrProps": "string",
@@ -2004,7 +2004,7 @@ Return strict JSON:
     {
       "beatNumber": 1,
       "title": "string",
-      "timeWindow": "e.g. 9:30 PM",
+      "timeWindow": "e.g. 9:15 PM",
       "phase": "pre_crime" | "crime" | "investigation" | "resolution",
       "description": "string"
     }
@@ -2045,7 +2045,7 @@ Return strict JSON:
       spiceLevel: ['Clean', 'Mild', 'Spicy', 'Filthy'].includes(parsed.spiceLevel)
         ? parsed.spiceLevel
         : params.currentBlueprint.spiceLevel,
-      murderTimeWindow: parsed.murderTimeWindow || '11:45 PM',
+      murderTimeWindow: parsed.murderTimeWindow || '11:28 PM',
       murderWeaponAndMethod:
         parsed.murderWeaponAndMethod || params.currentBlueprint.murderWeaponAndMethod,
       killerHowAndWhySummary:
@@ -2092,7 +2092,7 @@ Return strict JSON:
 }
 
 /**
- * Generates 4 chronological story beats + murder method & killer summary from the current cast & relationships.
+ * Generates 5 chronological core murder story beats + murder method & killer summary from the current cast & relationships.
  */
 export async function suggestStoryBeatsForCastAction(params: {
   blueprint: MysteryBlueprintInput;
@@ -2123,7 +2123,11 @@ export async function suggestStoryBeatsForCastAction(params: {
     const tokenDirective = getGenderFlexTokenDirective(blueprint.characters);
 
     const prompt = `You are the Lead Story Architect for Back Pocket Mysteries.
-Based on the Mystery Title, Spice Level, and Character Relationship Web below, generate a tight, dramatic murder method, killer how/why summary, setting description, and 4 chronological story beats.
+Based on the Mystery Title, Spice Level, and Character Relationship Web below, generate a tight, rogue, dramatic murder method, killer how/why summary, setting description, and 5 chronological core murder story beats.
+
+STRICT CORE BEAT RULE:
+- Generate EXACTLY 5 beats.
+- There must be ZERO mention of decoy or red-herring subplots in the 5 beats. Every single beat must strictly develop the true murder plot progression (from the initial leverage/trigger -> confrontation/ultimatum -> isolated struggle -> first strike/accomplice act -> fatal blow & cover-up).
 
 TITLE: "${blueprint.title}"
 THEME: "${blueprint.theme || blueprint.title}"
@@ -2141,37 +2145,44 @@ ${blueprint.characters
 Return strict JSON:
 {
   "settingDescription": "2-3 atmospheric sentences setting the scene for the party.",
-  "murderTimeWindow": "e.g. 11:45 PM",
+  "murderTimeWindow": "e.g. 11:28 PM",
   "murderWeaponAndMethod": "1-2 sentences describing the exact murder weapon, method, and forensic trace.",
-  "killerHowAndWhySummary": "2 sentences explaining why the Killer murdered the Victim and how they pulled it off during the murder time window using {{Role}} tokens.",
+  "killerHowAndWhySummary": "2 sentences explaining why the Killer (and Accomplice, if any) murdered the Victim and how they pulled it off during the murder time window using {{Role}} tokens.",
   "beats": [
     {
       "beatNumber": 1,
-      "title": "Beat 1 Title (Arrival & Public Tension)",
-      "timeWindow": "e.g. 9:30 PM",
+      "title": "Beat 1 Title (The Setup & Stolen Leverage)",
+      "timeWindow": "e.g. 9:15 PM",
       "phase": "pre_crime",
-      "description": "What happens early in the night using {{Role}} tokens."
+      "description": "How the Victim obtains or weaponizes the leverage that triggers the murder plot using {{Role}} tokens."
     },
     {
       "beatNumber": 2,
-      "title": "Beat 2 Title (Secret Confrontations & Alibis)",
-      "timeWindow": "e.g. 11:15 PM",
+      "title": "Beat 2 Title (The Humiliation & Ultimatum)",
+      "timeWindow": "e.g. 10:15 PM",
       "phase": "pre_crime",
-      "description": "Escalating drama right before the murder using {{Role}} tokens."
+      "description": "The private confrontation where the Victim issues the deadline/ultimatum using {{Role}} tokens."
     },
     {
       "beatNumber": 3,
-      "title": "Beat 3 Title (The Murder Window)",
-      "timeWindow": "e.g. 11:45 PM",
-      "phase": "crime",
-      "description": "The fatal strike and where the suspects are during the murder window using {{Role}} tokens."
+      "title": "Beat 3 Title (The Isolated Struggle)",
+      "timeWindow": "e.g. 11:10 PM",
+      "phase": "pre_crime",
+      "description": "The physical confrontation at the crime scene right before the first strike using {{Role}} tokens."
     },
     {
       "beatNumber": 4,
-      "title": "Beat 4 Title (Discovery & Smoking Gun)",
-      "timeWindow": "e.g. 11:55 PM",
-      "phase": "resolution",
-      "description": "The body is found and the key forensic contradiction unmasks the killer using {{Role}} tokens."
+      "title": "Beat 4 Title (The First Strike / Accomplice Escalation)",
+      "timeWindow": "e.g. 11:18 PM",
+      "phase": "crime",
+      "description": "The initial violent strike or incapacitation at the crime scene using {{Role}} tokens."
+    },
+    {
+      "beatNumber": 5,
+      "title": "Beat 5 Title (The Fatal Blow & Cover-Up)",
+      "timeWindow": "e.g. 11:28 PM",
+      "phase": "crime",
+      "description": "The Killer delivers the fatal blow, stages the scene, and establishes the alibi cover-up using {{Role}} tokens."
     }
   ]
 }`;
