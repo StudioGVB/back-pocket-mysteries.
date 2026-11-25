@@ -486,7 +486,7 @@ function getCharacterOutfitDescription(char: any, upperBodyOnly = false): string
 function getCanonicalMysteryPortraitBackdrop(mystery?: any): string {
   const titleAndTheme = `${mystery?.title || ''} ${mystery?.theme || ''}`.toLowerCase();
   if (titleAndTheme.includes('christmas') || titleAndTheme.includes('holiday')) {
-    return 'UNIFIED DARK CHRISTMAS DINNER BACKDROP: A dark, moody charcoal-mahogany candlelit evening dining room background (#181210) with soft out-of-focus warm golden fairy-light bokeh (2700K) softly glowing in the dark background. Strictly NO white studio walls, NO light grey backgrounds, and NO bright icy blue/silver backgrounds.';
+    return 'UNIFIED DARK CANDLELIT DINING ROOM BACKDROP (MUST BE IDENTICAL ACROSS ALL 6 CHARACTER PORTRAITS): A full-bleed edge-to-edge dark, moody charcoal-mahogany candlelit evening dining room background (#181210) with soft out-of-focus warm golden candle flames and fairy-light bokeh circles (2700K) softly glowing at waist-to-shoulder height in the dark background. Strictly NO full Christmas trees with presents on the floor, NO green walls or hanging metallic tinsel curtains, NO plain white studio walls, NO grey/brown solid backdrops, and ZERO white vertical letterbox bars or borders on the left or right edges.';
   }
   if (
     titleAndTheme.includes('love on the rocks') ||
@@ -494,9 +494,9 @@ function getCanonicalMysteryPortraitBackdrop(mystery?: any): string {
     titleAndTheme.includes('island') ||
     titleAndTheme.includes('villa')
   ) {
-    return 'UNIFIED TWILIGHT VILLA TERRACE BACKDROP: A dark, warm twilight luxury tropical villa terrace background (#141824) with deep evening navy sky and soft out-of-focus warm golden string-light and torch bokeh glowing softly behind the subject. Strictly NO white studio walls or bright daylight backgrounds.';
+    return 'UNIFIED TWILIGHT VILLA TERRACE BACKDROP (MUST BE IDENTICAL ACROSS ALL 6 CHARACTER PORTRAITS): A full-bleed edge-to-edge dark, warm twilight luxury tropical villa terrace background (#141824) with deep evening navy sky and soft out-of-focus warm golden string-light and torch bokeh glowing softly behind the subject. Strictly NO white studio walls, NO bright daylight backgrounds, and ZERO white vertical letterbox bars or borders on the left or right edges.';
   }
-  return 'UNIFIED DARK EDITORIAL STUDIO BACKDROP: A dark, moody slate-charcoal candlelit evening portrait backdrop (#16161A) with subtle out-of-focus warm amber bokeh lights softly glowing in the dark background. Strictly NO plain white or light grey backgrounds.';
+  return 'UNIFIED DARK EDITORIAL CANDLELIT BACKDROP (MUST BE IDENTICAL ACROSS ALL 6 CHARACTER PORTRAITS): A full-bleed edge-to-edge dark, moody slate-charcoal candlelit evening portrait backdrop (#16161A) with subtle out-of-focus warm amber candle/bokeh lights softly glowing in the dark background. Strictly NO plain white or light grey backgrounds, and ZERO white vertical letterbox bars or borders on the left or right edges.';
 }
 
 function getDeterministicFacialStructure(seedSource: string) {

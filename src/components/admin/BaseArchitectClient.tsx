@@ -22,6 +22,8 @@ import {
   loadExistingDraftIntoArchitectAction,
   parseDiagramImageIntoBlueprintAction,
   suggestStoryBeatsForCastAction,
+  saveArchitectCloudWorkspaceAction,
+  loadArchitectCloudWorkspaceAction,
 } from '@/app/actions/base-architect';
 import { ClueFormat, CLUE_FORMAT_OPTIONS } from '@/utils/clue-format';
 import { recommendDifficultyFromPlotAndClues } from '@/utils/architect-difficulty-recommender';
@@ -253,11 +255,11 @@ function convertRealNamesToArchetypeTokens(bp: MysteryBlueprintInput): MysteryBl
   };
 }
 
-function createBlankBlueprint(): MysteryBlueprintInput {
+function createBlankBlueprint(customTitle?: string): MysteryBlueprintInput {
   return {
     id: `base-${Date.now()}`,
-    title: '',
-    theme: '',
+    title: customTitle || 'Untitled OG Mystery',
+    theme: 'Private Dinner Party & Secret Scandals',
     settingDescription: '',
     spiceLevel: 'Spicy',
     complexity: 'medium',
@@ -320,28 +322,48 @@ function createBlankBlueprint(): MysteryBlueprintInput {
   };
 }
 
-const STORAGE_KEY = 'bpm_clean_architect_v5';
+export interface OgProjectWorkspace {
+  id: string;
+  updatedAt: string;
+  step: 1 | 2 | 3 | 4;
+  blueprint: MysteryBlueprintInput;
+  beatCluesMap: Record<number, SuggestedClueCandidate[]>;
+  subplots: SuggestedRedHerringSubplot[];
+  roundStrategySummary: Record<number, string>;
+  assembled: AssembledFullMysteryBase | null;
+  transferredMysteryId: string | null;
+}
+
+function createInitialUnibreakProject(): OgProjectWorkspace {
+  return {
+    id: 'og-proj-unibreak',
+    updatedAt: new Date().toISOString(),
+    step: 1,
+    blueprint: createUnibreakCabinBlueprint(),
+    beatCluesMap: {},
+    subplots: [],
+    roundStrategySummary: {},
+    assembled: null,
+    transferredMysteryId: null,
+  };
+}
+
+const STORAGE_KEY = 'bpm_og_projects_list_v1';
 
 export function BaseArchitectClient({ locale }: { locale: string }) {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [blueprint, setBlueprint] = useState<MysteryBlueprintInput>(() =>
-    createUnibreakCabinBlueprint()
-  );
-
-  // Stage 2: Beat-by-Beat Core Clues map: beatNumber (1..5) -> SuggestedClueCandidate[]
-  const [activeBeatNumber, setActiveBeatNumber] = useState<number>(1);
-  const [beatCluesMap, setBeatCluesMap] = useState<Record<number, SuggestedClueCandidate[]>>({});
-  const [beatCustomNote, setBeatCustomNote] = useState<string>('');
-
-  // Stage 3: Red Herring Plotlines
-  const [subplots, setSubplots] = useState<SuggestedRedHerringSubplot[]>([]);
-  const [subplotCustomNote, setSubplotCustomNote] = useState<string>('');
-
-  // Stage 4: Round sorting strategy & assembled full base
-  const [roundStrategySummary, setRoundStrategySummary] = useState<Record<number, string>>({});
-  const [assembled, setAssembled] = useState<AssembledFullMysteryBase | null>(null);
-  const [transferredMysteryId, setTransferredMysteryId] = useState<string | null>(null);
+  // Multi-project state: null = show Projects Hub Grid (just like Mystery Bases page!)
+  const [projects, setProjects] = useState<OgProjectWorkspace[]>(() => [
+    createInitialUnibreakProject(),
+  ]);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+
+  // Active editor UI state
+  const [activeBeatNumber, setActiveBeatNumber] = useState<number>(1);
+  const [beatCustomNote, setBeatCustomNote] = useState<string>('');
+  const [subplotCustomNote, setSubplotCustomNote] = useState<string>('');
+  const [reviewTab, setReviewTab] = useState<'rounds' | 'characters' | 'relationships'>('rounds');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Loading states
   const [isUploadingDiagram, setIsUploadingDiagram] = useState(false);
@@ -353,7 +375,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const [isAutoFixing, setIsAutoFixing] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
 
-  // Load existing draft base dropdown
+  // Import existing base from Supabase modal/dropdown
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [draftList, setDraftList] = useState<
     {
@@ -368,53 +390,142 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   >([]);
   const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
 
-  // Stage 4 review tab
-  const [reviewTab, setReviewTab] = useState<'rounds' | 'characters' | 'relationships'>('rounds');
-
   // Toast / Error banners
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [statusToast, setStatusToast] = useState<string | null>(null);
 
-  // Hydrate from localStorage
+  // Load projects from localStorage + Cloud backup
   useEffect(() => {
+    let loadedLocal = false;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed?.blueprint?.title) {
-          setBlueprint(parsed.blueprint);
-          setBeatCluesMap(parsed.beatCluesMap || {});
-          setSubplots(parsed.subplots || []);
-          setAssembled(parsed.assembled || null);
-          setRoundStrategySummary(parsed.roundStrategySummary || {});
-          setStep(parsed.step || 1);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProjects(parsed);
+          loadedLocal = true;
         }
       }
     } catch {
       // Ignore storage error
-    } finally {
-      setHydrated(true);
     }
+
+    loadArchitectCloudWorkspaceAction()
+      .then((res) => {
+        if (!loadedLocal && res.success && Array.isArray(res.slots) && res.slots.length > 0) {
+          // Ensure they match OgProjectWorkspace shape
+          const valid = res.slots.filter((p: any) => p?.blueprint?.title);
+          if (valid.length > 0) {
+            setProjects(valid);
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setHydrated(true);
+      });
   }, []);
 
+  // Persist projects to localStorage + Cloud backup
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          step,
-          blueprint,
-          beatCluesMap,
-          subplots,
-          assembled,
-          roundStrategySummary,
-        })
-      );
+      const json = JSON.stringify(projects);
+      localStorage.setItem(STORAGE_KEY, json);
+      saveArchitectCloudWorkspaceAction({ slotsJson: json }).catch(() => {});
     } catch {
       // Ignore storage error
     }
-  }, [step, blueprint, beatCluesMap, subplots, assembled, roundStrategySummary, hydrated]);
+  }, [projects, hydrated]);
+
+  const activeProject = useMemo(
+    () => projects.find((p) => p.id === activeProjectId) || null,
+    [projects, activeProjectId]
+  );
+
+  // Helper to update the active project in place
+  const updateActiveProject = (updater: (prev: OgProjectWorkspace) => OgProjectWorkspace) => {
+    if (!activeProjectId) return;
+    setProjects((prevList) =>
+      prevList.map((p) =>
+        p.id === activeProjectId
+          ? { ...updater(p), updatedAt: new Date().toISOString() }
+          : p
+      )
+    );
+  };
+
+  // Shorthand properties for the active project (with safe defaults when on the Hub screen)
+  const step = activeProject?.step || 1;
+  const blueprint = activeProject?.blueprint || createUnibreakCabinBlueprint();
+  const beatCluesMap = activeProject?.beatCluesMap || {};
+  const subplots = activeProject?.subplots || [];
+  const roundStrategySummary = activeProject?.roundStrategySummary || {};
+  const assembled = activeProject?.assembled || null;
+  const transferredMysteryId = activeProject?.transferredMysteryId || null;
+
+  const setStep = (nextStep: 1 | 2 | 3 | 4) => {
+    updateActiveProject((prev) => ({ ...prev, step: nextStep }));
+  };
+
+  const setBlueprint = (
+    nextOrUpdater:
+      | MysteryBlueprintInput
+      | ((prevBp: MysteryBlueprintInput) => MysteryBlueprintInput)
+  ) => {
+    updateActiveProject((prev) => ({
+      ...prev,
+      blueprint:
+        typeof nextOrUpdater === 'function' ? nextOrUpdater(prev.blueprint) : nextOrUpdater,
+    }));
+  };
+
+  const setBeatCluesMap = (
+    nextOrUpdater:
+      | Record<number, SuggestedClueCandidate[]>
+      | ((
+          prevMap: Record<number, SuggestedClueCandidate[]>
+        ) => Record<number, SuggestedClueCandidate[]>)
+  ) => {
+    updateActiveProject((prev) => ({
+      ...prev,
+      beatCluesMap:
+        typeof nextOrUpdater === 'function' ? nextOrUpdater(prev.beatCluesMap) : nextOrUpdater,
+    }));
+  };
+
+  const setSubplots = (
+    nextOrUpdater:
+      | SuggestedRedHerringSubplot[]
+      | ((prevSubs: SuggestedRedHerringSubplot[]) => SuggestedRedHerringSubplot[])
+  ) => {
+    updateActiveProject((prev) => ({
+      ...prev,
+      subplots:
+        typeof nextOrUpdater === 'function' ? nextOrUpdater(prev.subplots) : nextOrUpdater,
+    }));
+  };
+
+  const setRoundStrategySummary = (nextSummary: Record<number, string>) => {
+    updateActiveProject((prev) => ({
+      ...prev,
+      roundStrategySummary: nextSummary,
+    }));
+  };
+
+  const setAssembled = (nextAssembled: AssembledFullMysteryBase | null) => {
+    updateActiveProject((prev) => ({
+      ...prev,
+      assembled: nextAssembled,
+    }));
+  };
+
+  const setTransferredMysteryId = (nextId: string | null) => {
+    updateActiveProject((prev) => ({
+      ...prev,
+      transferredMysteryId: nextId,
+    }));
+  };
 
   const totalRounds = getRoundsForCount(blueprint.characters.length);
 
@@ -448,7 +559,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
   const totalSelectedCluesCount = selectedCoreClues.length + selectedRedHerringClues.length;
 
-  // Live 5-Factor Difficulty Recommender from the 16 clues & plot
   const difficultyRec = useMemo(
     () =>
       recommendDifficultyFromPlotAndClues({
@@ -463,6 +573,112 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     [blueprint, selectedCoreClues, subplots]
   );
 
+  // ============================================================================
+  // HUB ACTIONS: Create New OG Project, Create From Diagram, Delete Project
+  // ============================================================================
+  const handleCreateNewBlankProject = () => {
+    const newProj: OgProjectWorkspace = {
+      id: `og-proj-${Date.now()}`,
+      updatedAt: new Date().toISOString(),
+      step: 1,
+      blueprint: createBlankBlueprint(`New OG Mystery #${projects.length + 1}`),
+      beatCluesMap: {},
+      subplots: [],
+      roundStrategySummary: {},
+      assembled: null,
+      transferredMysteryId: null,
+    };
+    setProjects((prev) => [newProj, ...prev]);
+    setActiveProjectId(newProj.id);
+    setActiveBeatNumber(1);
+    setErrorMessage(null);
+    setStatusToast('Created a new blank OG Mystery project.');
+  };
+
+  const handleCreateUnibreakProject = () => {
+    const existing = projects.find((p) => p.blueprint.id === 'unibreak-at-the-cabin');
+    if (existing) {
+      setActiveProjectId(existing.id);
+      return;
+    }
+    const newProj = createInitialUnibreakProject();
+    newProj.id = `og-proj-unibreak-${Date.now()}`;
+    setProjects((prev) => [newProj, ...prev]);
+    setActiveProjectId(newProj.id);
+    setActiveBeatNumber(1);
+  };
+
+  const handleDeleteProject = (projId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setProjects((prev) => prev.filter((p) => p.id !== projId));
+    if (activeProjectId === projId) {
+      setActiveProjectId(null);
+    }
+    setConfirmDeleteId(null);
+  };
+
+  // Upload diagram directly from the Hub OR inside a project
+  const handleDiagramUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    createNewProjectOnParse: boolean = false
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErrorMessage(null);
+    setIsUploadingDiagram(true);
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Failed to read image file.'));
+      });
+      reader.readAsDataURL(file);
+      const imageBase64 = await base64Promise;
+
+      const baseBp = createNewProjectOnParse ? createBlankBlueprint() : blueprint;
+      const res = await parseDiagramImageIntoBlueprintAction({
+        imageBase64,
+        mimeType: file.type || 'image/png',
+        currentBlueprint: baseBp,
+      });
+
+      if (!res.success || !res.blueprint) {
+        setErrorMessage(res.error || 'Could not parse diagram image.');
+      } else if (createNewProjectOnParse || !activeProjectId) {
+        const newProj: OgProjectWorkspace = {
+          id: `og-proj-${Date.now()}`,
+          updatedAt: new Date().toISOString(),
+          step: 1,
+          blueprint: res.blueprint,
+          beatCluesMap: {},
+          subplots: [],
+          roundStrategySummary: {},
+          assembled: null,
+          transferredMysteryId: null,
+        };
+        setProjects((prev) => [newProj, ...prev]);
+        setActiveProjectId(newProj.id);
+        setActiveBeatNumber(1);
+        setStatusToast(
+          `Created "${res.blueprint.title}" from your diagram (${res.blueprint.characters.length} characters & relationships).`
+        );
+      } else {
+        setBlueprint(res.blueprint);
+        setStatusToast(
+          `Parsed diagram "${res.blueprint.title}" (${res.blueprint.characters.length} characters & relationships).`
+        );
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to parse diagram image.');
+    } finally {
+      setIsUploadingDiagram(false);
+      e.target.value = '';
+    }
+  };
+
+  // ============================================================================
+  // EDITOR ACTIONS
+  // ============================================================================
   const updateBlueprint = (patch: Partial<MysteryBlueprintInput>) => {
     setBlueprint((prev) => ({ ...prev, ...patch }));
   };
@@ -503,68 +719,6 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       }
       return { ...prev, characters: added };
     });
-  };
-
-  const handleLoadUnibreakPreset = () => {
-    setBlueprint(createUnibreakCabinBlueprint());
-    setBeatCluesMap({});
-    setSubplots([]);
-    setAssembled(null);
-    setTransferredMysteryId(null);
-    setActiveBeatNumber(1);
-    setStep(1);
-    setErrorMessage(null);
-    setStatusToast(
-      'Loaded "Unibreak at the Cabin" (Filthy • 6 Archetypes + 5 Locked Core Murder Beats).'
-    );
-  };
-
-  const handleStartBlank = () => {
-    setBlueprint(createBlankBlueprint());
-    setBeatCluesMap({});
-    setSubplots([]);
-    setAssembled(null);
-    setTransferredMysteryId(null);
-    setActiveBeatNumber(1);
-    setStep(1);
-    setErrorMessage(null);
-    setStatusToast('Started a fresh 6-player, 5-beat mystery blueprint.');
-  };
-
-  const handleDiagramUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setErrorMessage(null);
-    setIsUploadingDiagram(true);
-    try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = () => reject(new Error('Failed to read image file.'));
-      });
-      reader.readAsDataURL(file);
-      const imageBase64 = await base64Promise;
-
-      const res = await parseDiagramImageIntoBlueprintAction({
-        imageBase64,
-        mimeType: file.type || 'image/png',
-        currentBlueprint: blueprint,
-      });
-
-      if (!res.success || !res.blueprint) {
-        setErrorMessage(res.error || 'Could not parse diagram image.');
-      } else {
-        setBlueprint(res.blueprint);
-        setStatusToast(
-          `Parsed diagram "${res.blueprint.title}" (${res.blueprint.characters.length} characters & relationships).`
-        );
-      }
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to parse diagram image.');
-    } finally {
-      setIsUploadingDiagram(false);
-      e.target.value = '';
-    }
   };
 
   const handleSuggestBeats = async () => {
@@ -889,7 +1043,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }
   };
 
-  const handleLoadExistingBase = async (mysteryId: string) => {
+  const handleImportExistingBaseAsProject = async (mysteryId: string) => {
     setIsLoadingDrafts(true);
     setErrorMessage(null);
     try {
@@ -897,20 +1051,30 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       if (!res.success || !res.blueprint) {
         setErrorMessage(res.error || 'Failed to load mystery base.');
       } else {
-        setBlueprint(res.blueprint);
         const grouped: Record<number, SuggestedClueCandidate[]> = {};
         (res.coreClues || []).forEach((c, idx) => {
           const bNum = c.beatNumber || (idx % Math.max(1, res.blueprint!.beats.length)) + 1;
           if (!grouped[bNum]) grouped[bNum] = [];
           grouped[bNum].push({ ...c, beatNumber: bNum, decision: 'yes' });
         });
-        setBeatCluesMap(grouped);
-        setSubplots(res.subplots || []);
-        setAssembled(null);
-        setTransferredMysteryId(mysteryId);
+        const importedProj: OgProjectWorkspace = {
+          id: `og-proj-import-${mysteryId}`,
+          updatedAt: new Date().toISOString(),
+          step: 1,
+          blueprint: res.blueprint,
+          beatCluesMap: grouped,
+          subplots: res.subplots || [],
+          roundStrategySummary: {},
+          assembled: null,
+          transferredMysteryId: mysteryId,
+        };
+        setProjects((prev) => [
+          importedProj,
+          ...prev.filter((p) => p.id !== importedProj.id),
+        ]);
+        setActiveProjectId(importedProj.id);
         setShowLoadMenu(false);
-        setStep(1);
-        setStatusToast(`Loaded "${res.blueprint.title}" into OG Base Builder.`);
+        setStatusToast(`Imported "${res.blueprint.title}" into OG Base Builder.`);
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error loading mystery base.');
@@ -933,45 +1097,30 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     [selectedCoreClues, selectedRedHerringClues]
   );
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-20">
-      {/* On-Brand Clean Page Header */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+  // ==========================================================================
+  // VIEW 1: OG BASE BUILDER PROJECTS HUB (Same Layout as Mystery Bases Page!)
+  // ==========================================================================
+  if (!activeProject) {
+    return (
+      <div className="space-y-8 pb-20">
+        {/* Top Header matching /en/admin/mysteries */}
+        <div className="flex flex-wrap justify-between items-center gap-4">
           <div>
-            <div className="flex items-center gap-2.5">
-              <Link
-                href={`/${locale}/admin/mysteries`}
-                className="text-xs font-bold text-slate-400 hover:text-slate-700 transition"
-              >
-                ← Mystery Bases
-              </Link>
-              <span className="text-slate-300">/</span>
-              <span className="text-xs font-black uppercase tracking-widest text-brand-pink">
-                OG Base Builder
-              </span>
-            </div>
-            <h1 className="text-2xl font-black text-brand-dark tracking-tight mt-1">
-              {blueprint.title || 'New Mystery Base'}
-            </h1>
+            <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">
+              OG Base Builder
+            </h2>
+            <p className="text-gray-500 text-sm font-medium">
+              Select a mystery project you&apos;re working on or start a new 5-beat blueprint
+            </p>
           </div>
 
-          {/* Clean Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleLoadUnibreakPreset}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-pink-50 hover:bg-pink-100 text-brand-pink border border-pink-200 transition cursor-pointer"
-            >
-              Load &ldquo;Unibreak at the Cabin&rdquo;
-            </button>
-
-            <label className="cursor-pointer px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-              {isUploadingDiagram ? 'Reading Diagram...' : 'Upload Diagram Image'}
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="cursor-pointer px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-black uppercase tracking-wider shadow-sm transition flex items-center gap-2">
+              <span>{isUploadingDiagram ? 'Reading Diagram...' : '📷 New From Diagram Image'}</span>
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleDiagramUpload}
+                onChange={(e) => handleDiagramUpload(e, true)}
                 disabled={isUploadingDiagram}
                 className="hidden"
               />
@@ -981,14 +1130,14 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               <button
                 type="button"
                 onClick={handleToggleLoadMenu}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition cursor-pointer"
+                className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-black uppercase tracking-wider shadow-sm transition cursor-pointer"
               >
-                Load Existing
+                📂 Import Existing Base
               </button>
               {showLoadMenu && (
                 <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-40 max-h-80 overflow-y-auto">
                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3 py-1.5">
-                    Existing Mystery Bases
+                    Import Existing Mystery Base
                   </div>
                   {isLoadingDrafts ? (
                     <div className="text-xs text-slate-400 p-3">Loading...</div>
@@ -999,7 +1148,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                       <button
                         key={d.id}
                         type="button"
-                        onClick={() => handleLoadExistingBase(d.id)}
+                        onClick={() => handleImportExistingBaseAsProject(d.id)}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 text-xs flex items-center justify-between gap-2 cursor-pointer"
                       >
                         <span className="font-bold text-slate-800 truncate">{d.title}</span>
@@ -1015,10 +1164,269 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
             <button
               type="button"
-              onClick={handleStartBlank}
-              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              onClick={handleCreateNewBlankProject}
+              className="px-5 py-2.5 rounded-2xl bg-brand-pink hover:bg-pink-600 text-white text-xs font-black uppercase tracking-wider shadow-sm transition cursor-pointer"
             >
-              Reset
+              + New OG Mystery
+            </button>
+          </div>
+        </div>
+
+        {/* Feedback Banners */}
+        {errorMessage && (
+          <div className="rounded-2xl bg-red-50 border border-red-200 px-5 py-3.5 text-xs font-medium text-red-700 flex items-center justify-between">
+            <span>{errorMessage}</span>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="text-red-500 hover:text-red-800 ml-4 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {statusToast && (
+          <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-5 py-3.5 text-xs font-medium text-emerald-800 flex items-center justify-between">
+            <span>{statusToast}</span>
+            <button
+              type="button"
+              onClick={() => setStatusToast(null)}
+              className="text-emerald-600 hover:text-emerald-900 ml-4 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Projects Grid (Same 3-column card layout as Mystery Bases page) */}
+        {projects.length === 0 ? (
+          <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden p-16 text-center space-y-4">
+            <h3 className="text-lg font-black text-brand-dark">No Active OG Projects Yet</h3>
+            <p className="text-gray-400 text-sm max-w-md mx-auto">
+              Start a new mystery project from a relationship diagram or load the Unibreak at the
+              Cabin 5-beat blueprint.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleCreateUnibreakProject}
+                className="px-5 py-2.5 rounded-2xl bg-pink-50 hover:bg-pink-100 text-brand-pink border border-pink-200 text-xs font-black uppercase tracking-wider transition cursor-pointer"
+              >
+                Load &ldquo;Unibreak at the Cabin&rdquo;
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateNewBlankProject}
+                className="px-5 py-2.5 rounded-2xl bg-brand-pink hover:bg-pink-600 text-white text-xs font-black uppercase tracking-wider transition cursor-pointer"
+              >
+                + Start Blank OG Mystery
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            {projects.map((proj) => {
+              const bp = proj.blueprint;
+              const roundsCount = getRoundsForCount(bp.characters.length);
+              const coreCount = Object.values(proj.beatCluesMap || {})
+                .flat()
+                .filter((c) => c.decision === 'yes').length;
+              const rhCount = (proj.subplots || [])
+                .filter((s) => s.decision !== 'no')
+                .flatMap((s) => s.decoyClues || [])
+                .filter((dc) => dc.decision === 'yes').length;
+              const totalClues = coreCount + rhCount;
+
+              const killerChar = bp.characters.find((c) => c.plotRole === 'killer');
+              const victimChar = bp.characters.find((c) => c.plotRole === 'victim');
+              const accompliceChar = bp.characters.find((c) => c.plotRole === 'assistant');
+
+              const stepLabels: Record<number, string> = {
+                1: 'Step 1: Plot & 5 Beats',
+                2: 'Step 2: Picking Beat Clues',
+                3: 'Step 3: Red Herrings',
+                4: 'Step 4: Ready to Save Base',
+              };
+
+              return (
+                <div
+                  key={proj.id}
+                  onClick={() => {
+                    setActiveProjectId(proj.id);
+                    setActiveBeatNumber(1);
+                  }}
+                  className="bg-white rounded-[32px] border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-brand-pink/40 transition-all duration-200 overflow-hidden flex flex-col justify-between cursor-pointer group"
+                >
+                  <div>
+                    {/* Top Visual Banner */}
+                    <div className="p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white relative">
+                      <div className="flex items-center justify-between gap-2 mb-4">
+                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/15 text-white backdrop-blur-sm">
+                          {bp.characters.length} Players • {roundsCount} Rounds
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-pink text-white">
+                          {bp.spiceLevel}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xl font-black tracking-tight text-white group-hover:text-pink-200 transition">
+                        {bp.title || 'Untitled OG Mystery'}
+                      </h3>
+                      <p className="text-xs text-slate-300 mt-1 line-clamp-1">
+                        {bp.theme || 'Custom OG Mystery Blueprint'}
+                      </p>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="p-6 space-y-4">
+                      {/* Current Step & Progress */}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-black text-brand-pink uppercase tracking-wider">
+                          {stepLabels[proj.step] || 'Step 1: Plot & 5 Beats'}
+                        </span>
+                        <span className="font-bold text-slate-500">
+                          {totalClues} / 16 Clues
+                        </span>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div
+                          className="h-full bg-brand-pink rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(100, Math.max(15, (totalClues / 16) * 100))}%`,
+                          }}
+                        />
+                      </div>
+
+                      {/* Cast Snapshot */}
+                      <div className="rounded-2xl bg-slate-50 border border-slate-200/70 p-3.5 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 font-bold">Victim:</span>
+                          <span className="font-bold text-slate-800">
+                            {victimChar?.roleTitle || 'Not set'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 font-bold">Killer:</span>
+                          <span className="font-bold text-rose-700">
+                            {killerChar?.roleTitle || 'Not set'}
+                            {accompliceChar ? ` + ${accompliceChar.roleTitle}` : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 font-bold">Core Beats:</span>
+                          <span className="font-bold text-slate-700">
+                            {bp.beats.length} Beats • {coreCount}/10 Core • {rhCount}/6 Red Herring
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Footer */}
+                  <div className="px-6 pb-6 pt-2 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveProjectId(proj.id);
+                        setActiveBeatNumber(1);
+                      }}
+                      className="flex-1 py-3 rounded-2xl bg-slate-900 group-hover:bg-brand-pink text-white text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                    >
+                      Open in OG Builder →
+                    </button>
+
+                    {proj.transferredMysteryId && (
+                      <Link
+                        href={`/${locale}/builder/mysteries/${proj.transferredMysteryId}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-3.5 py-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-black uppercase tracking-wider transition"
+                        title="Open saved Draft in Mystery Builder"
+                      >
+                        Base ↗
+                      </Link>
+                    )}
+
+                    {confirmDeleteId === proj.id ? (
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteProject(proj.id, e)}
+                        className="px-3 py-3 rounded-2xl bg-red-600 text-white text-xs font-black uppercase cursor-pointer"
+                      >
+                        Confirm
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDeleteId(proj.id);
+                        }}
+                        className="p-3 rounded-2xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                        title="Delete project from OG Builder"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // VIEW 2: ACTIVE OG MYSTERY WORKSPACE (4-STAGE BEAT-BY-BEAT FLOW)
+  // ==========================================================================
+  return (
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+      {/* On-Brand Clean Page Header */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveProjectId(null)}
+                className="text-xs font-black uppercase tracking-wider text-brand-pink hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                ← All OG Projects ({projects.length})
+              </button>
+              <span className="text-slate-300">/</span>
+              <span className="text-xs font-bold text-slate-400">
+                {blueprint.characters.length} Players • {totalRounds} Rounds
+              </span>
+            </div>
+            <h1 className="text-2xl font-black text-brand-dark tracking-tight mt-1">
+              {blueprint.title || 'New Mystery Base'}
+            </h1>
+          </div>
+
+          {/* Clean Action Buttons inside Editor */}
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="cursor-pointer px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+              {isUploadingDiagram ? 'Reading Diagram...' : '📷 Update From Diagram'}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleDiagramUpload(e, false)}
+                disabled={isUploadingDiagram}
+                className="hidden"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setActiveProjectId(null)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition cursor-pointer"
+            >
+              Switch Project
             </button>
           </div>
         </div>
@@ -1649,7 +2057,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                         <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2 text-slate-600">
-                          <span className="font-bold text-slate-800">How it explains Beat #{activeBeatNumber}:</span>{' '}
+                          <span className="font-bold text-slate-800">
+                            How it explains Beat #{activeBeatNumber}:
+                          </span>{' '}
                           {clue.pointsTo}
                           {clue.doubleMeaningNote && (
                             <div className="mt-1 text-indigo-700 font-medium">
