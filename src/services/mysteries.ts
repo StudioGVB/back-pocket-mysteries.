@@ -880,27 +880,68 @@ export function ensureUnibreakCabinCanon(mystery: any, supabase?: any): any {
     }
   }
 
-  // Ensure 3 subplots exist
+  // Ensure 3 subplots + subplot_beats exist
   const existingSubplots = Array.isArray(mystery.subplots) ? mystery.subplots : [];
-  if (existingSubplots.length === 0) {
-    const seededSubplots = UNIBREAK_CABIN_SUBPLOTS.map((sSpec, idx) => ({
-      id: mysteryId
-        ? deterministicUuid(`${mysteryId}:unibreak:subplot:${idx + 1}`)
-        : crypto.randomUUID(),
-      mystery_id: mysteryId,
-      title: sSpec.title,
-      theme: sSpec.theme,
-      description: sSpec.description,
-      primary_character_id: charIdByKey[sSpec.primaryKey],
-      secondary_character_id: charIdByKey[sSpec.secondaryKey],
-    }));
+  if (
+    existingSubplots.length === 0 ||
+    existingSubplots.every((s: any) => !Array.isArray(s.subplot_beats) || s.subplot_beats.length === 0)
+  ) {
+    const allSubplotBeatRows: any[] = [];
+    const seededSubplots = UNIBREAK_CABIN_SUBPLOTS.map((sSpec, idx) => {
+      const subplotId =
+        existingSubplots[idx]?.id ||
+        (mysteryId
+          ? deterministicUuid(`${mysteryId}:unibreak:subplot:${idx + 1}`)
+          : crypto.randomUUID());
+
+      const beatSentences = String(sSpec.description || '')
+        .split(/(?<=[.!?])\s+/)
+        .filter(Boolean);
+      const sbList = [
+        beatSentences[0] || sSpec.description,
+        beatSentences.slice(1).join(' ') || `Escalating cover-up in ${sSpec.title}.`,
+      ].map((desc, bIdx) => {
+        const sbRow = {
+          id: mysteryId
+            ? deterministicUuid(`${mysteryId}:unibreak:subplot:${idx + 1}:beat:${bIdx + 1}`)
+            : crypto.randomUUID(),
+          subplot_id: subplotId,
+          beat_number: bIdx + 1,
+          description: desc,
+          linked_plot_beat_id: beatIdByNumber[bIdx + 1] || beatIdByNumber[1] || null,
+          created_at: new Date().toISOString(),
+        };
+        allSubplotBeatRows.push(sbRow);
+        return sbRow;
+      });
+
+      return {
+        id: subplotId,
+        mystery_id: mysteryId,
+        title: sSpec.title,
+        theme: sSpec.theme,
+        description: sSpec.description,
+        primary_character_id: charIdByKey[sSpec.primaryKey],
+        secondary_character_id: charIdByKey[sSpec.secondaryKey],
+        subplot_beats: sbList,
+      };
+    });
     mystery.subplots = seededSubplots;
 
     if (supabase && mysteryId) {
+      const subplotDbRows = seededSubplots.map(({ subplot_beats: _sb, ...rest }) => rest);
       supabase
         .from('subplots')
-        .upsert(seededSubplots as any, { onConflict: 'id' })
-        .then(() => {}, () => {});
+        .upsert(subplotDbRows as any, { onConflict: 'id' })
+        .then(() => {
+          if (allSubplotBeatRows.length > 0) {
+            const sbDbRows = allSubplotBeatRows.map(({ created_at: _c, ...rest }) => rest);
+            supabase
+              .from('subplot_beats')
+              .upsert(sbDbRows as any, { onConflict: 'id' })
+              .then(() => {}, () => {});
+          }
+        }, () => {});
     }
   }
 
@@ -1813,7 +1854,10 @@ export const getMysteryById = cache(async (id: string) => {
         ),
         clues (*),
         plot_beats (*),
-        subplots (*)
+        subplots (
+          *,
+          subplot_beats (*)
+        )
       `)
       .eq('id', id)
       .single() as any,

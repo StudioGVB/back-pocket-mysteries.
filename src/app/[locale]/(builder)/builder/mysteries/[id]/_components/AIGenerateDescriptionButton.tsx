@@ -5,10 +5,16 @@ import { generateDescriptionAction } from '../../actions';
 
 export function AIGenerateDescriptionButton({
   mysteryId,
+  title,
+  theme,
+  spiceLevel,
   onGenerated,
   onError,
 }: {
   mysteryId: string;
+  title?: string;
+  theme?: string;
+  spiceLevel?: string;
   onGenerated?: (newDescription: string) => void;
   onError?: (errorMessage: string | null) => void;
 }) {
@@ -18,7 +24,11 @@ export function AIGenerateDescriptionButton({
     setIsGenerating(true);
     onError?.(null);
     try {
-      const res = await generateDescriptionAction(mysteryId);
+      const res = await generateDescriptionAction(mysteryId, {
+        title,
+        theme,
+        spiceLevel,
+      });
       if (!res?.success || res.error) {
         onError?.(res?.error || 'Could not generate description.');
       } else if (res.description) {
@@ -40,7 +50,7 @@ export function AIGenerateDescriptionButton({
       className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-brand-pink hover:text-brand-blue transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
     >
       <span className={isGenerating ? 'animate-spin' : ''}>✨</span>
-      {isGenerating ? 'Drafting Synopsis...' : 'Auto-fill Description'}
+      {isGenerating ? 'Drafting Scene & Vibe...' : 'Auto-fill Description'}
     </button>
   );
 }

@@ -1511,6 +1511,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   const [titleSuggestions, setTitleSuggestions] = useState<
     { title: string; theme: string; vibeTag: string }[]
   >([]);
+  const [seenSuggestedTitles, setSeenSuggestedTitles] = useState<string[]>([]);
 
   // Loading states
   const [isUploadingDiagram, setIsUploadingDiagram] = useState(false);
@@ -1882,16 +1883,22 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     });
   };
 
-  // AI Mystery Renamer Action
+  // AI Mystery Renamer Action (3 creative title options per refresh)
   const handleSuggestBetterTitles = async () => {
     setErrorMessage(null);
     setIsRenamingTitle(true);
     try {
-      const res = await suggestBetterMysteryTitlesAction({ blueprint });
+      const res = await suggestBetterMysteryTitlesAction({
+        blueprint,
+        previousTitles: seenSuggestedTitles,
+      });
       if (!res.success || !res.suggestions || res.suggestions.length === 0) {
         setErrorMessage(res.error || 'Could not generate title suggestions.');
       } else {
         setTitleSuggestions(res.suggestions);
+        setSeenSuggestedTitles((prev) =>
+          Array.from(new Set([...prev, ...res.suggestions!.map((s) => s.title)]))
+        );
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error suggesting mystery titles.');
@@ -2185,7 +2192,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }
   };
 
-  const handleTurnIntoMysteryBase = async () => {
+  const handleTurnIntoMysteryBase = async (openInBuilderAfterSync = false) => {
     setErrorMessage(null);
     setIsAssembling(true);
     try {
@@ -2195,7 +2202,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
           decision: 'yes' as const,
           decoyClues: s.decoyClues.filter((dc) => dc.decision === 'yes'),
         }))
-        .filter((s) => s.decoyClues.length > 0);
+        .filter((s) => s.decoyClues.length > 0 || s.summary);
 
       const res = await assembleAndProofreadFullBaseAction({
         blueprint: { ...blueprint, complexity: difficultyRec.recommendedTier },
@@ -2213,14 +2220,19 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       setIsTransferring(true);
       const transferRes = await transferBlueprintToDraftMysteryBaseAction({
         assembled: res.assembled,
+        subplots: activeSubplots,
+        existingMysteryId: transferredMysteryId || undefined,
       });
       if (!transferRes.success || !transferRes.mysteryId) {
         setErrorMessage(transferRes.error || 'Assembled base, but failed to save to Mystery Bases.');
       } else {
         setTransferredMysteryId(transferRes.mysteryId);
         setStatusToast(
-          `Created "${res.assembled.title}" (${difficultyRec.recommendedTier.toUpperCase()} • ${res.assembled.clues.length} clues) in Mystery Bases!`
+          `Synced "${res.assembled.title}" (${difficultyRec.recommendedTier.toUpperCase()} • ${res.assembled.characters.length} characters • ${res.assembled.beats.length} timeline beats • ${activeSubplots.length} subplots • ${res.assembled.clues.length} clues) to Mystery Builder!`
         );
+        if (openInBuilderAfterSync && typeof window !== 'undefined') {
+          window.location.href = `/${locale}/builder/mysteries/${transferRes.mysteryId}`;
+        }
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error turning blueprint into Mystery Base.');
@@ -3650,8 +3662,8 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   1. Mystery Title, Package & Spice Level
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Start with a working title or click <strong>✨ AI Rename Mystery</strong> to pitch
-                  5 polished, high-converting titles.
+                  Start with a working title or click <strong>✨ Suggest 3 Creative Titles</strong>{' '}
+                  to get 3 fresh options based on your theme, spice level, and description.
                 </p>
               </div>
               <button
@@ -3662,28 +3674,40 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               >
                 <span>
                   {isRenamingTitle
-                    ? '✨ Pitching 5 Better Titles...'
-                    : '✨ AI Rename Mystery (5 Title Ideas)'}
+                    ? '✨ Suggesting 3 Titles...'
+                    : titleSuggestions.length > 0
+                      ? '🔄 Refresh 3 Title Options'
+                      : '✨ Suggest 3 Creative Titles'}
                 </span>
               </button>
             </div>
 
-            {/* AI Title Suggestions Drawer */}
+            {/* AI Title Suggestions Drawer (3 Options + Refresh) */}
             {titleSuggestions.length > 0 && (
               <div className="rounded-2xl bg-pink-50/50 border border-pink-200 p-4 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-black uppercase tracking-wider text-brand-pink">
-                    ✨ Click Any AI Title Below to Apply It:
+                    ✨ Pick a Creative Title Option (Based on Theme, {blueprint.spiceLevel} Spice &amp; Description):
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setTitleSuggestions([])}
-                    className="text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
-                  >
-                    Close ✕
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSuggestBetterTitles}
+                      disabled={isRenamingTitle}
+                      className="text-xs font-black text-brand-pink hover:text-pink-700 cursor-pointer disabled:opacity-50"
+                    >
+                      {isRenamingTitle ? 'Refreshing...' : '🔄 Refresh 3'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTitleSuggestions([])}
+                      className="text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+                    >
+                      Close ✕
+                    </button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-2.5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                   {titleSuggestions.map((sug, i) => {
                     const isCurrent = blueprint.title === sug.title;
                     return (
@@ -3691,10 +3715,13 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         key={i}
                         type="button"
                         onClick={() => {
-                          updateBlueprint({ title: sug.title, theme: sug.theme });
-                          setStatusToast(`Renamed mystery to "${sug.title}"!`);
+                          updateBlueprint({
+                            title: sug.title,
+                            theme: blueprint.theme || sug.theme,
+                          });
+                          setStatusToast(`Selected title "${sug.title}"!`);
                         }}
-                        className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                        className={`p-3.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
                           isCurrent
                             ? 'bg-brand-pink text-white border-brand-pink shadow-sm'
                             : 'bg-white hover:border-brand-pink border-slate-200 text-slate-800'
@@ -3710,7 +3737,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           >
                             {sug.vibeTag}
                           </span>
-                          <div className="text-xs font-black leading-snug">{sug.title}</div>
+                          <div className="text-sm font-black leading-snug">{sug.title}</div>
                         </div>
                         <div
                           className={`text-[11px] mt-1.5 line-clamp-2 ${
@@ -3728,9 +3755,23 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
-                  Mystery Title (Working or Final)
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Mystery Title (Working or Final)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSuggestBetterTitles}
+                    disabled={isRenamingTitle}
+                    className="text-[11px] font-black text-brand-pink hover:text-pink-700 transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isRenamingTitle
+                      ? '✨ Suggesting...'
+                      : titleSuggestions.length > 0
+                        ? '🔄 Refresh 3 Titles'
+                        : '✨ AI Suggest 3 Titles'}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={blueprint.title}
@@ -5491,25 +5532,35 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                   {isSortingRounds ? 'Re-Sorting...' : '🔀 Re-Sort Rounds'}
                 </button>
 
-                {transferredMysteryId ? (
-                  <Link
-                    href={`/${locale}/builder/mysteries/${transferredMysteryId}`}
-                    className="px-6 py-3 rounded-2xl text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
-                  >
-                    Open in Mystery Builder →
-                  </Link>
-                ) : (
+                {transferredMysteryId && (
                   <button
                     type="button"
-                    onClick={handleTurnIntoMysteryBase}
+                    onClick={() => handleTurnIntoMysteryBase(false)}
                     disabled={isAssembling || isTransferring || totalSelectedCluesCount === 0}
-                    className="px-6 py-3 rounded-2xl text-sm font-black bg-brand-pink hover:bg-pink-600 text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 transition disabled:opacity-50 cursor-pointer"
                   >
                     {isAssembling || isTransferring
-                      ? 'Turning Into Mystery Base...'
-                      : '🚀 Turn Into Mystery Base →'}
+                      ? 'Syncing All 7 Tables...'
+                      : '🔄 Re-Sync to Builder'}
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => handleTurnIntoMysteryBase(true)}
+                  disabled={isAssembling || isTransferring || totalSelectedCluesCount === 0}
+                  className={`px-6 py-3 rounded-2xl text-sm font-black text-white shadow-sm transition disabled:opacity-50 cursor-pointer ${
+                    transferredMysteryId
+                      ? 'bg-emerald-600 hover:bg-emerald-500'
+                      : 'bg-brand-pink hover:bg-pink-600'
+                  }`}
+                >
+                  {isAssembling || isTransferring
+                    ? 'Syncing Plot, Cast, Subplots & Clues...'
+                    : transferredMysteryId
+                      ? '🚀 Sync & Open in Mystery Builder →'
+                      : '🚀 Turn Into Mystery Base →'}
+                </button>
               </div>
             </div>
 

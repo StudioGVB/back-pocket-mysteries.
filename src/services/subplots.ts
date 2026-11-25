@@ -81,10 +81,20 @@ export async function getSubplotsByMysteryId(mysteryId: string) {
 
   if (error) {
     console.error('Error fetching subplots:', error);
-    return [];
   }
 
-  if (!subplots || subplots.length === 0) return [];
+  if (!subplots || subplots.length === 0) {
+    const cachedSnap = getCachedMysterySnapshot(mysteryId);
+    if (cachedSnap && Array.isArray(cachedSnap.subplots) && cachedSnap.subplots.length > 0) {
+      return cachedSnap.subplots;
+    }
+    const { getMysteryById } = await import('@/services/mysteries');
+    const fullMystery = await getMysteryById(mysteryId);
+    if (fullMystery && Array.isArray(fullMystery.subplots) && fullMystery.subplots.length > 0) {
+      return fullMystery.subplots;
+    }
+    return [];
+  }
 
   const subplotIds = subplots.map(s => s.id);
   
