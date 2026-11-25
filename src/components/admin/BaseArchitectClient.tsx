@@ -552,7 +552,36 @@ export function createUnibreakCabinBlueprint(): MysteryBlueprintInput {
 }
 
 /**
+ * Helper: Returns true ONLY for clue formats that actually generate an AI Evidence Photo ('physical_prop' or 'cctv').
+ * All other formats ('chat', 'audio', 'receipt', 'handwritten_note', 'search_log', 'social_post', 'document', 'medical_rx', 'call_sheet')
+ * render as native interactive UI templates or ElevenLabs voice notes and should NOT have an AI photo prompt!
+ */
+function isPhotoClueFormat(fmt: ClueFormat): boolean {
+  return fmt === 'physical_prop' || fmt === 'cctv';
+}
+
+function getClueMediumCategory(fmt: ClueFormat): 'photo' | 'audio' | 'text' {
+  if (fmt === 'physical_prop' || fmt === 'cctv') return 'photo';
+  if (fmt === 'audio') return 'audio';
+  return 'text';
+}
+
+function buildDefaultDetailedPhotoPrompt(clueTitle: string, clueDesc: string, spiceLevel: ArchitectSpiceLevel): string {
+  const cleanTitle = clueTitle.replace(/\{\{[^}]+\}\}/g, 'the suspect');
+  const cleanDesc = clueDesc.replace(/\{\{[^}]+\}\}/g, 'the suspect').slice(0, 140);
+  const mood =
+    spiceLevel === 'Filthy'
+      ? 'Moody after-dark neon-noir rim lighting, deep crimson and amber shadows, sultry luxury party atmosphere, 35mm film grain'
+      : spiceLevel === 'Spicy'
+        ? 'High-contrast dramatic noir lighting, warm tungsten reflections and deep shadows, 35mm film grain'
+        : 'Classic Agatha Christie detective tabletop lighting, warm amber lamplight, crisp forensic clarity, 35mm film grain';
+  return `Close-up 50mm f/1.8 macro forensic crime-scene photograph of ${cleanTitle} (${cleanDesc}). Shot at a 45-degree tabletop angle with shallow depth of field focusing on the physical evidence texture and forensic trace. ${mood}, photorealistic 8k, strictly zero readable text or phone screens.`;
+}
+
+/**
  * Pre-seeded Filthy Core Clues for Beats 1–5 of "Unibreak at the Cabin"
+ * - Non-photo clues ('chat', 'audio', 'handwritten_note', 'search_log', 'social_post', 'document') have generationPrompt: ''
+ * - Photo clues ('physical_prop', 'cctv') have rich 3-sentence forensic camera & lighting briefs
  */
 function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandidate[]> {
   return {
@@ -560,18 +589,17 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
       {
         id: 'uni-b1-c1',
         beatNumber: 1,
-        title: 'Upstairs Bedroom Voice Memo Draft',
-        format: 'chat',
+        title: 'Upstairs Bedroom Voice Memo Recording',
+        format: 'audio',
         roundNumber: 1,
         timestampLabel: '9:18 PM',
         description:
-          'Unsent iMessage audio transcript from {{The Prom Queen}} to {{The Bestie}}: "Lmfao {{The Co-Captain}} is such a gullible fucking puppy. {{The Co-Captain_he}} came straight up to the master bedroom thinking {{The Co-Captain_he}} was finally getting lucky, and while {{The Co-Captain_he}} was pouring tequila shots I pulled the black varsity betting ledger right out of {{The Co-Captain_his}} letterman jacket."',
-        generationPrompt:
-          'Moody after-dark mountain cabin master bedroom, varsity letterman jacket draped over timber chair with an open black leather notebook and glowing smartphone on silk sheets, neon-noir rim lighting, 35mm film grain, no text',
+          'Recording Duration: 21.5 Seconds\n{{The Prom Queen}}: "[laughs] {{The Co-Captain}} is such a gullible fucking puppy. Pour me another tequila shot while I try on your varsity jacket, babe."\n{{The Co-Captain}}: "[whispers] Wait—don\'t dig in the inside pocket, {{The Prom Queen}}, put that black notebook back!"\n{{The Prom Queen}}: "[sarcastic] Relax, your secret betting ledger is safe with me... for now."',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #1: {{The Prom Queen}} lured {{The Co-Captain}} upstairs at 9:15 PM and stole the varsity betting ledger from {{The Co-Captain_his}} jacket.',
         doubleMeaningNote:
-          'Mentions {{The Bestie}} as the recipient of the stolen ledger brag, making {{The Bestie}} look like an active co-conspirator in the blackmail.',
+          'Makes {{The Bestie}} (who is {{The Co-Captain}}\'s jealous ex) look furious that {{The Co-Captain}} was in {{The Prom Queen}}\'s bedroom.',
         involvedRoles: ['The Prom Queen', 'The Co-Captain', 'The Bestie'],
         isRedHerring: false,
         decision: 'pending',
@@ -585,8 +613,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         timestampLabel: '9:20 PM',
         description:
           'A crumpled notebook page found tucked inside {{The Prom Queen}}\'s clutch: lists illegal point-shaving payouts totaling $42,000 signed with the initials of co-captains {{The Co-Captain}} and {{The Teammate}}, plus an unpaid $25,000 tab owed by {{The Brother}}.',
-        generationPrompt:
-          'Close-up forensic macro photograph of a crumpled ledger page beside a rhinestone clutch and spilled tequila glass on a dark timber cabin table, moody noir lighting, no text',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #1: Confirms the exact varsity sports-betting ledger {{The Prom Queen}} stole from {{The Co-Captain}} in the upstairs bedroom.',
         doubleMeaningNote:
@@ -603,11 +630,10 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 1,
         timestampLabel: '9:32 PM',
         description:
-          'iMessage from {{The Co-Captain}} to {{The Teammate}}: "Bro we are so fucked. I just left {{The Prom Queen}}\'s upstairs room and the black ledger is gone from my inside pocket. {{The Prom Queen_he}} was recording on {{The Prom Queen_his}} fucking phone the whole time too."',
-        generationPrompt:
-          'Dark-mode smartphone screen resting beside a silver athletic whistle and varsity bomber sleeve on a wooden cabin bar, moody after-dark lighting, no text',
+          '[9:32 PM] {{The Co-Captain}}: Bro we are so fucked. I just left {{The Prom Queen}}\'s upstairs room and the black ledger is gone from my inside pocket.\n[9:33 PM] {{The Teammate}}: What the fuck were you doing in {{The Prom Queen_his}} room?! Get that fucking book back tonight or we\'re both expelled.\n[Status: SEEN]',
+        generationPrompt: '',
         pointsTo:
-          'Proves Beat #1: {{The Co-Captain}} realized immediately after leaving the upstairs bedroom that {{The Prom Queen}} stole the ledger and recorded {{The Co-Captain_him}}.',
+          'Proves Beat #1: {{The Co-Captain}} realized immediately after leaving the upstairs bedroom that {{The Prom Queen}} stole the ledger.',
         doubleMeaningNote:
           'Puts {{The Teammate}} on notice at 9:32 PM that {{The Teammate_his}} sports career is about to be destroyed too.',
         involvedRoles: ['The Co-Captain', 'The Teammate', 'The Prom Queen'],
@@ -617,19 +643,19 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
       {
         id: 'uni-b1-c4',
         beatNumber: 1,
-        title: 'Polaroid Snap on the Master Bed',
+        title: 'Ransacked Varsity Letterman Jacket on the Master Bed',
         format: 'physical_prop',
         roundNumber: 1,
         timestampLabel: '9:15 PM',
         description:
-          'An instant Polaroid photo left on the upstairs dresser showing {{The Co-Captain}} unbuttoning {{The Co-Captain_his}} varsity jacket on the master bed while {{The Prom Queen}}\'s reflection in the mirror holds up a fanned stack of betting slips behind {{The Co-Captain_his}} back.',
+          'Physical crime-scene exhibit on the upstairs master bed: {{The Co-Captain}}\'s blue varsity letterman bomber jacket turned inside-out on tangled silk sheets beside two crystal tequila shot glasses and a spilled rhinestone tiara headband.',
         generationPrompt:
-          'Vintage instant Polaroid photograph resting on a rustic cabin dresser beside a shot glass and lipstick tube, warm tungsten shadows, cinematic noir, no text',
+          'Close-up 50mm f/1.8 forensic crime-scene photograph of a blue wool varsity letterman bomber jacket lying turned inside-out on rumpled charcoal silk bedsheets in a timber mountain cabin master bedroom. Beside the jacket sit two half-empty crystal tequila shot glasses with lime wedges and a sparkling rhinestone tiara headband. Moody after-dark neon-noir rim lighting with warm amber cabin lamp shadows and 35mm film grain, strictly zero text or phone screens.',
         pointsTo:
-          'Proves Beat #1: Visual proof of {{The Prom Queen}} setting up {{The Co-Captain}} in the upstairs bedroom at 9:15 PM.',
+          'Proves Beat #1: Physical evidence of {{The Prom Queen}} luring {{The Co-Captain}} into the upstairs bedroom and rifling through {{The Co-Captain_his}} jacket pocket at 9:15 PM.',
         doubleMeaningNote:
-          'Makes {{The Bestie}} (who is {{The Co-Captain}}\'s jealous ex) look furious that {{The Co-Captain}} was in {{The Prom Queen}}\'s bed.',
-        involvedRoles: ['The Prom Queen', 'The Co-Captain'],
+          '{{The Teammate}} owns the exact same varsity co-captain letterman jacket.',
+        involvedRoles: ['The Prom Queen', 'The Co-Captain', 'The Teammate'],
         isRedHerring: false,
         decision: 'pending',
       },
@@ -642,8 +668,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         timestampLabel: '9:25 PM',
         description:
           'Cabin Wi-Fi router device log for {{The Prom Queen}}\'s iPhone: created a shared folder titled "VARSITY_FIX_&_BEDROOM_CONFESSION" at 9:25 PM containing 14 high-res photos of the betting ledger and 1 audio file.',
-        generationPrompt:
-          'Glowing laptop and router status lights on a dark cabin desk during a mountain snowstorm outside the window, moody cyan and amber noir lighting, no text',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #1: Digital timestamp confirming {{The Prom Queen}} digitized the stolen ledger and bedroom recording by 9:25 PM.',
         doubleMeaningNote:
@@ -657,14 +682,13 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
       {
         id: 'uni-b2-c1',
         beatNumber: 2,
-        title: 'Hallway Shouted Confrontation Overheard on Smart Speaker',
-        format: 'social_post',
+        title: 'Hallway Shouted Confrontation Captured on Smart Speaker',
+        format: 'audio',
         roundNumber: 1,
         timestampLabel: '10:15 PM',
         description:
-          'Cabin hallway smart-speaker voice-activation snippet at 10:15 PM: {{The Girlfriend}} snarls, "Give my {{The Co-Captain_sibling}} {{The Co-Captain_his}} fucking ledger back, you little snake!" {{The Prom Queen}} laughs: "Ask your partner {{The Teammate}} how my bed feels first, bitch! At midnight the whole uni sees the ledger AND the receipts of me and {{The Teammate}}."',
-        generationPrompt:
-          'Sleek smart speaker glowing red on a dark timber hallway console table beside two half-empty crystal tequila glasses, moody after-dark cabin lighting, no text',
+          'Recording Duration: 24.0 Seconds\n{{The Girlfriend}}: "[angry] Give my {{The Co-Captain_sibling}} {{The Co-Captain_his}} fucking ledger back right now, you little snake!"\n{{The Prom Queen}}: "[laughs] Ask your partner {{The Teammate}} how my bed feels first, bitch! At midnight the whole uni sees the ledger AND the receipts of me and {{The Teammate}}."\n{{The Co-Captain}}: "[angry] You won\'t make it to fucking midnight if you post that!"',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #2: {{The Co-Captain}} and {{The Girlfriend}} confronted {{The Prom Queen}} at 10:15 PM, and {{The Prom Queen}} exposed the affair with {{The Teammate}} plus the midnight leak ultimatum.',
         doubleMeaningNote:
@@ -682,8 +706,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         timestampLabel: '10:22 PM',
         description:
           'Scheduled campus-wide group post queued on {{The Prom Queen}}\'s iPad for 12:00 AM: "Happy Unibreak fuckers! Here is how {{The Co-Captain}} & {{The Teammate}} rigged the varsity season—and here is what {{The Girlfriend}}\'s partner {{The Teammate}} does when {{The Girlfriend_he}}\'s not looking."',
-        generationPrompt:
-          'Glowing tablet screen lying on a faux-fur throw blanket inside a dimly lit mountain cabin lounge, dramatic neon-noir shadows, no text',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #2: Confirms the midnight deadline ultimatum that drove {{The Co-Captain}} and {{The Girlfriend}} into a corner.',
         doubleMeaningNote:
@@ -700,9 +723,8 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 1,
         timestampLabel: '10:19 PM',
         description:
-          'iMessage from {{The Girlfriend}} to {{The Teammate}}: "You\'ve been fucking {{The Prom Queen}} behind my back?! And now {{The Prom Queen_he}}\'s using it to destroy my {{The Co-Captain_sibling}} {{The Co-Captain}} at midnight. Dead to me doesn\'t even fucking cover it."',
-        generationPrompt:
-          'Smartphone screen glowing on a velvet cushion beside a spilled red cocktail stain on a cabin table, moody crimson noir lighting, no text',
+          '[10:19 PM] {{The Girlfriend}}: You\'ve been fucking {{The Prom Queen}} behind my back?! And now {{The Prom Queen_he}}\'s using it to destroy my {{The Co-Captain_sibling}} {{The Co-Captain}} at midnight.\n[10:20 PM] {{The Girlfriend}}: Dead to me doesn\'t even fucking cover it.\n[Status: DELIVERED]',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #2: Shows {{The Girlfriend}}\'s explosive rage at 10:19 PM over both the affair and the threat to {{The Girlfriend_his}} sibling {{The Co-Captain}}.',
         doubleMeaningNote:
@@ -721,7 +743,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         description:
           'Broken crystal shot glass swept under the hallway rug outside the study, stained with dark berry lipstick matching {{The Girlfriend}} and a torn corner of a betting slip from {{The Co-Captain}}\'s ledger.',
         generationPrompt:
-          'Shattered crystal glass shards on a rustic hardwood cabin floor with a smudge of dark berry lipstick on the rim, dramatic noir rim lighting, no text',
+          'Low-angle 85mm macro forensic crime-scene photograph of shattered crystal shot-glass shards scattered across dark rustic pine floorboards beside a woven cabin hallway rug. One curved glass rim bears a distinct dark berry lipstick smudge next to a spilled puddle of amber tequila. Moody after-dark crimson and amber rim lighting with deep noir shadows and 35mm film grain, strictly zero text.',
         pointsTo:
           'Proves Beat #2: Physical evidence of the 10:15 PM confrontation between {{The Girlfriend}}, {{The Co-Captain}}, and {{The Prom Queen}}.',
         doubleMeaningNote:
@@ -738,9 +760,8 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 2,
         timestampLabel: '10:35 PM',
         description:
-          'Deleted message thread between siblings {{The Girlfriend}} and {{The Co-Captain}}: {{The Co-Captain}}: "If {{The Prom Queen}} posts that ledger at midnight I\'m expelled and going to fucking prison." {{The Girlfriend}}: "Get {{The Prom Queen_him}} out on the upstairs balcony before 11:15. We are NOT letting that bitch ruin this family."',
-        generationPrompt:
-          'Two smartphones side by side on a dark stone fireplace mantel in a luxury mountain cabin, warm ember glow, cinematic thriller photography, no text',
+          '[10:35 PM] {{The Co-Captain}}: If {{The Prom Queen}} posts that ledger at midnight I\'m expelled and going to fucking prison.\n[10:36 PM] {{The Girlfriend}}: Get {{The Prom Queen_him}} out on the upstairs balcony before 11:15. We are NOT letting that bitch ruin this family.\n[Status: DELETED]',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #2: Directly links {{The Girlfriend}} and {{The Co-Captain}} in a coordinated plan to corner {{The Prom Queen}} on the balcony before midnight.',
         doubleMeaningNote:
@@ -761,7 +782,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         description:
           'A broken sterling-silver athletic whistle chain tangled in the iron lattice of the second-story balcony railing, alongside three acrylic nail tips belonging to {{The Prom Queen}}.',
         generationPrompt:
-          'Broken silver chain and athletic whistle snagged on a snow-dusted wrought-iron cabin balcony railing at night, forensic flashlight beam, noir photography, no text',
+          'Extreme close-up 50mm macro forensic photograph of a snapped sterling-silver athletic whistle chain snagged on a snow-dusted black wrought-iron cabin balcony railing at night. Beside the broken chain links lie three hot-pink acrylic fingernail tips on the wet timber rail. Illuminated by a crisp angled detective flashlight beam against dark falling snow, 35mm film grain, zero text.',
         pointsTo:
           'Proves Beat #3: Places {{The Co-Captain}} in a violent physical struggle with {{The Prom Queen}} on the upstairs balcony at 11:10–11:12 PM.',
         doubleMeaningNote:
@@ -779,8 +800,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         timestampLabel: '11:14 PM',
         description:
           'Preliminary forensic examination of {{The Prom Queen}}\'s right hand: three broken hot-pink acrylic nails containing fresh skin tissue and blue threads from a varsity letterman bomber collar, matching the three raw claw marks on {{The Co-Captain}}\'s neck.',
-        generationPrompt:
-          'Forensic evidence bag containing fabric fibers and a sterile swab under a magnifying lamp on a dark examination table, clinical noir lighting, no text',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #3: Forensically locks {{The Co-Captain}} as the person {{The Prom Queen}} clawed during the 11:10 PM balcony struggle for the phone.',
         doubleMeaningNote:
@@ -798,8 +818,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         timestampLabel: '11:14 PM',
         description:
           'System log recovered from {{The Prom Queen}}\'s iCloud sync: at 11:14:08 PM on the upstairs balcony Wi-Fi node, the user pressed "SEND NOW" on the blackmail folder—followed 6 seconds later by 3 failed FaceID unlock attempts from another angle.',
-        generationPrompt:
-          'Smartphone diagnostic log displayed on a dark monitor beside a snow-covered cabin balcony window, moody blue cyber-noir lighting, no text',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #3: Confirms {{The Prom Queen}} queued the files to send during the balcony struggle and someone tried to force FaceID open at 11:14 PM.',
         doubleMeaningNote:
@@ -811,18 +830,18 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
       {
         id: 'uni-b3-c4',
         beatNumber: 3,
-        title: 'Muffled Balcony Shouting Captured on Downstairs Patio Cam',
+        title: 'Second-Story Balcony Struggle Captured on Driveway CCTV',
         format: 'cctv',
         roundNumber: 2,
         timestampLabel: '11:11 PM',
         description:
-          'Audio waveform transcript from the cabin driveway security camera at 11:11 PM: a male voice above on the second-story balcony yells, "Give me the fucking phone right now!" followed by {{The Prom Queen}} screaming, "Get off me or I hit send!" and the sound of patio chairs overturning.',
+          'Header: SECURITY CAM STILL • NORTH BALCONY\nTimestamp: 11:11:24 PM\nVisual: Grainy infrared frame looking up at the second-story balcony shows a figure in a varsity letterman bomber pinning {{The Prom Queen}} against the railing while wrestling for a glowing smartphone as patio chairs overturn.',
         generationPrompt:
-          'Exterior night-vision security camera view looking up toward a wooden second-story cabin balcony in falling snow, dramatic high-contrast noir lighting, no text',
+          'High-angle infrared night-vision CCTV surveillance camera still looking up at a snow-covered second-story timber cabin balcony during a storm. Two silhouetted figures are locked in a tense struggle beside an overturned wrought-iron patio chair and a glowing outdoor chiminea, with a bright smartphone light between their hands. High-contrast monochrome green-tinted surveillance aesthetic with subtle scanlines, zero text overlays.',
         pointsTo:
-          'Proves Beat #3: Timestamped audio proof of the 11:10–11:14 PM balcony struggle over the phone.',
+          'Proves Beat #3: Visual CCTV proof of the 11:10–11:14 PM balcony struggle over the phone.',
         doubleMeaningNote:
-          'Because the audio only identifies "a male voice," players initially suspect {{The Teammate}} or {{The Brother}} as well as {{The Co-Captain}}.',
+          'Because the CCTV frame only shows a varsity sleeve silhouette, players initially suspect {{The Teammate}} or {{The Brother}} as well as {{The Co-Captain}}.',
         involvedRoles: ['The Co-Captain', 'The Prom Queen', 'The Teammate', 'The Brother'],
         isRedHerring: false,
         decision: 'pending',
@@ -830,18 +849,17 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
       {
         id: 'uni-b3-c5',
         beatNumber: 3,
-        title: 'Bloodied Collar of {{The Co-Captain}}\'s Compression Shirt',
-        format: 'physical_prop',
+        title: 'Muffled Balcony Shouting Captured on Patio Audio Mic',
+        format: 'audio',
         roundNumber: 2,
-        timestampLabel: '11:15 PM',
+        timestampLabel: '11:13 PM',
         description:
-          'Found stuffed behind the upstairs laundry hamper: a black athletic compression shirt belonging to {{The Co-Captain}} with a stretched collar and three parallel blood smears along the right neck seam.',
-        generationPrompt:
-          'Black athletic shirt crumpled inside a dark wooden cabin laundry closet with a faint crimson smear on the collar, moody detective flashlight lighting, no text',
+          'Recording Duration: 18.5 Seconds\n{{The Co-Captain}}: "[angry] Give me the fucking phone right now, {{The Prom Queen}}!"\n{{The Prom Queen}}: "[angry] Get your hands off me or I hit send to the whole fucking campus!"\n{{The Co-Captain}}: "[whispers] Stop scratching my neck—unlock it!"',
+        generationPrompt: '',
         pointsTo:
-          'Proves Beat #3: Shows {{The Co-Captain}} hid the shirt {{The Prom Queen}} scratched during the 11:10 PM balcony struggle.',
+          'Proves Beat #3: Audio proof that {{The Prom Queen}} scratched {{The Co-Captain}}\'s neck while fighting over the phone on the balcony.',
         doubleMeaningNote:
-          'Found near the bathroom shared by {{The Brother}} and {{The Teammate}}.',
+          'Explains the fresh scratch marks on {{The Co-Captain}}\'s collar.',
         involvedRoles: ['The Co-Captain', 'The Prom Queen'],
         isRedHerring: false,
         decision: 'pending',
@@ -858,7 +876,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         description:
           'The heavy cast-iron fireplace poker from the upstairs balcony chiminea: forensic dusting reveals {{The Co-Captain}}\'s sweaty palm prints mid-shaft (consistent with a panic swing), overlaid at the top handle by crimson velvet fibers matching {{The Girlfriend}}\'s tracksuit sleeve.',
         generationPrompt:
-          'Heavy cast-iron fireplace poker resting beside an outdoor balcony chiminea in the snow, forensic evidence markers, dramatic night noir lighting, no text',
+          'Close-up 50mm f/1.8 forensic crime-scene photograph of a heavy black cast-iron fireplace poker lying diagonally across snow-dusted timber balcony floorboards beside a glowing outdoor iron chiminea. Clinging to the ornate top handle are vivid crimson crushed-velvet fibers and dark wood ash illuminated by an angled forensic UV and flashlight beam. Moody night noir atmosphere, 35mm film grain, zero text.',
         pointsTo:
           'Proves Beat #4 (& #5): Physical weapon linking {{The Co-Captain}}\'s first strike at 11:18 PM and {{The Girlfriend}} gripping the handle afterward.',
         doubleMeaningNote:
@@ -875,9 +893,8 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 2,
         timestampLabel: '11:18 PM',
         description:
-          'Health telemetry recovered from {{The Prom Queen}}\'s Apple Watch: records an impact hard-fall alert onto the second-story balcony deck at 11:18:12 PM—followed by 10 full minutes of a weak, resting pulse (58 BPM) before cardiac arrest at 11:28 PM.',
-        generationPrompt:
-          'Cracked luxury smartwatch on a dark forensic tray showing a glowing red biometric waveform on its face, macro noir photography, no text',
+          'SUBJECT: APPLE WATCH BIOMETRIC TELEMETRY\nDATE: 11:18:12 PM\nSTATUS: FORENSIC EXHIBIT\nHealth telemetry recovered from {{The Prom Queen}}\'s Apple Watch records an impact hard-fall alert onto the second-story balcony deck at 11:18:12 PM, followed by 10 full minutes of a weak resting pulse (58 BPM) before cardiac arrest at 11:28 PM.',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #4: Crucial forensic proof that the 11:18 PM strike by {{The Co-Captain}} only knocked {{The Prom Queen}} unconscious on the deck—{{The Prom Queen_he}} was still alive for 10 minutes until 11:28 PM!',
         doubleMeaningNote:
@@ -890,17 +907,17 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         id: 'uni-b4-c3',
         beatNumber: 4,
         title: 'First-Impact Blood Pool on the Upstairs Balcony Timber Deck',
-        format: 'document',
+        format: 'physical_prop',
         roundNumber: 2,
         timestampLabel: '11:19 PM',
         description:
-          'Crime-scene spatter report on the second-story balcony floorboards: a shallow pool of coagulating blood beside the chiminea shows {{The Prom Queen}} lay unconscious on the upstairs deck for roughly 9–10 minutes before being lifted over the railing.',
+          'Crime-scene spatter exhibit on the second-story balcony floorboards: a shallow pool of coagulating blood beside the chiminea shows {{The Prom Queen}} lay unconscious on the upstairs deck for roughly 9–10 minutes before being lifted over the railing.',
         generationPrompt:
-          'Yellow forensic evidence marker #4 on dark wet timber balcony floorboards beside a wrought-iron railing at night, moody crime-scene photography, no text',
+          'Overhead 35mm forensic crime-scene photograph of dark wet timber balcony floorboards beside a cast-iron chiminea base and snow-dusted railing at night. A dark crimson stain and scattered fireplace ash mark the deck floor beside a brass forensic scale ruler under cold blue moonlight and warm cabin window rim lighting. Cinematic detective noir, 35mm film grain, zero text or numbers.',
         pointsTo:
           'Proves Beat #4: Confirms the two-stage attack (knocked unconscious on the balcony at 11:18 PM, then finished and pushed off 10 minutes later).',
         doubleMeaningNote:
-          'A footprint in the melted snow near the door matches a common size-10 boot worn by both {{The Co-Captain}} and {{The Brother}}.',
+          'A boot impression in the melted snow near the door matches a common size-10 boot worn by both {{The Co-Captain}} and {{The Brother}}.',
         involvedRoles: ['The Co-Captain', 'The Prom Queen', 'The Girlfriend'],
         isRedHerring: false,
         decision: 'pending',
@@ -913,9 +930,8 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 3,
         timestampLabel: '11:19 PM',
         description:
-          'Recovered iCloud text sent from {{The Co-Captain}} to {{The Girlfriend}} at 11:19 PM: "Get up to the balcony right fucking now. I swung the poker to get the phone and {{The Prom Queen}} went down hard. There\'s blood on the deck—I don\'t know what the fuck to do."',
-        generationPrompt:
-          'Cracked smartphone screen glowing in the dark beside a fireplace poker rack, high-tension thriller noir lighting, no text',
+          '[11:19 PM] {{The Co-Captain}}: Get up to the balcony right fucking now. I swung the poker to get the phone and {{The Prom Queen}} went down hard.\n[11:19 PM] {{The Co-Captain}}: There\'s blood on the deck—I don\'t know what the fuck to do.\n[Status: SEEN 11:20 PM]',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #4: Direct confession that {{The Co-Captain}} struck the first blow with the poker at 11:18 PM and summoned {{The Girlfriend}} to the balcony.',
         doubleMeaningNote:
@@ -934,7 +950,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         description:
           'Wood-ash and cast-iron soot transferred across the left temple and faux-fur collar of {{The Prom Queen}}\'s jacket, matching the ash inside the upstairs balcony chiminea stand.',
         generationPrompt:
-          'White faux-fur jacket collar smudged with dark fireplace soot under a forensic UV light, moody noir macro photography, no text',
+          'Macro 85mm forensic photograph of a luxury white faux-fur aprés-ski jacket collar resting on a dark examination table, heavily smudged with black cast-iron soot and grey wood ash along the left shoulder seam. Lit by a crisp side-angled forensic inspection lamp with deep noir shadows and 35mm film grain, zero text.',
         pointsTo:
           'Proves Beat #4: Confirms the murder weapon was the upstairs balcony chiminea poker.',
         doubleMeaningNote:
@@ -955,7 +971,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         description:
           'Forensic tape-lift from the top bar of the second-story balcony railing directly above the patio impact site: contains crimson crushed-velvet microfibers from {{The Girlfriend}}\'s tracksuit sleeve mixed with chiminea poker soot and {{The Prom Queen}}\'s blood.',
         generationPrompt:
-          'Forensic adhesive tape strip lifting crimson velvet fibers from a wet iron balcony railing at night, macro detective photography, no text',
+          'Extreme macro 100mm forensic photograph of a clear adhesive tape-lift pressed against a wet black wrought-iron cabin balcony railing at night, capturing vivid crimson crushed-velvet fabric fibers intertwined with black fireplace soot. Illuminated by a dramatic forensic UV and white ring-light against blurred falling snow, 35mm film grain, zero text.',
         pointsTo:
           'Proves Beat #5: Smoking-gun physical evidence that {{The Girlfriend}} wielded the poker for the final strike and pushed {{The Prom Queen}} over the balcony railing at 11:28 PM.',
         doubleMeaningNote:
@@ -973,8 +989,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         timestampLabel: '11:28 PM',
         description:
           'Cabin smart-home audit log: at 11:25 PM the balcony sliding door opened as {{The Co-Captain}} went downstairs to be seen pouring drinks in the living room, while {{The Girlfriend}}\'s phone remained connected to the upstairs balcony Wi-Fi repeater through 11:29 PM—the exact minute the patio motion floodlight triggered from the body falling.',
-        generationPrompt:
-          'Smart-home security tablet displaying a floorplan sensor timeline of a two-story mountain cabin at night, glowing amber and red indicators, noir style, no text',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #5: Proves {{The Girlfriend}} sent {{The Co-Captain}} downstairs at 11:25 PM to manufacture a living-room alibi while {{The Girlfriend}} stayed on the balcony to finish {{The Prom Queen}} at 11:28 PM.',
         doubleMeaningNote:
@@ -993,7 +1008,7 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         description:
           '{{The Prom Queen}}\'s iPhone recovered from the snowdrift beside the stone patio, crushed by the flat iron base of the fireplace poker; a smear of {{The Girlfriend}}\'s signature dark berry lipstick and a partial thumbprint are pressed onto the inside of the detached phone case.',
         generationPrompt:
-          'Shattered smartphone half-buried in fresh snow beside a stone patio at night, warm cabin window glow in background, cinematic noir crime scene, no text',
+          'Close-up 50mm forensic crime-scene photograph of a crushed pink-gold smartphone and its detached clear case half-buried in a fresh snowbank beside a wet flagstone cabin patio at night. A dark berry lipstick smudge and black iron soot mark the cracked back glass under warm amber cabin window light and cold blue snow shadows, 35mm film grain, zero text.',
         pointsTo:
           'Proves Beat #5: Confirms {{The Girlfriend}} smashed {{The Prom Queen}}\'s phone with the poker on the balcony at 11:28 PM before throwing it into the snowbank.',
         doubleMeaningNote:
@@ -1010,9 +1025,8 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
         roundNumber: 3,
         timestampLabel: '11:28 PM',
         description:
-          'Coroner\'s preliminary report: {{The Prom Queen}} sustained two separate strikes from the cast-iron poker—a non-fatal stunning blow to the left temple (~11:18 PM) and a second, lethal high-velocity strike (~11:28 PM) delivered immediately before the body was pushed dead-weight over the balcony railing.',
-        generationPrompt:
-          'Forensic trajectory diagram and evidence folder on a dark mahogany desk beside a brass lamp, classic detective noir aesthetic, no text',
+          'SUBJECT: PRELIMINARY CORONER & TRAJECTORY REPORT\nDATE: 11:55 PM\nSTATUS: CONFIDENTIAL\n{{The Prom Queen}} sustained two separate strikes from the cast-iron poker: a non-fatal stunning blow to the left temple (~11:18 PM) and a second, lethal high-velocity strike (~11:28 PM) delivered immediately before the body was pushed dead-weight over the balcony railing.',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #5: Medically confirms the 2-person Accomplice + Killer sequence ({{The Co-Captain}} struck first at 11:18 PM; {{The Girlfriend}} delivered the fatal blow at 11:28 PM).',
         doubleMeaningNote:
@@ -1024,14 +1038,13 @@ function createUnibreakInitialBeatCluesMap(): Record<number, SuggestedClueCandid
       {
         id: 'uni-b5-c5',
         beatNumber: 5,
-        title: '11:31 PM Bathroom Sink Bleach & Deleted Alibi Text',
-        format: 'chat',
+        title: '11:31 PM Upstairs Hallway Whispered Alibi Pact',
+        format: 'audio',
         roundNumber: 3,
         timestampLabel: '11:31 PM',
         description:
-          'Unsent draft on {{The Girlfriend}}\'s phone at 11:31 PM to {{The Co-Captain}}: "It\'s done. {{The Prom Queen_he}} started waking up so I finished it with the poker and sent {{The Prom Queen_him}} over the rail. Stick to the fucking story: you were downstairs by 11:25 and I was in the shower."',
-        generationPrompt:
-          'Luxury cabin bathroom sink with running water, a bottle of bleach, and a glowing smartphone on dark marble counter, moody after-dark noir lighting, no text',
+          'Recording Duration: 19.0 Seconds\n{{The Girlfriend}}: "[whispers] Keep your voice down. {{The Prom Queen_he}} started waking up on the deck so I finished it with the poker and sent {{The Prom Queen_him}} over the rail."\n{{The Co-Captain}}: "[whispers] Holy fuck... did anyone see you?!"\n{{The Girlfriend}}: "[angry] No. Stick to the fucking story: you were downstairs by 11:25 and I was in the shower."',
+        generationPrompt: '',
         pointsTo:
           'Proves Beat #5: Irrefutable final-round smoking gun unmasking {{The Girlfriend}} as the Killer and {{The Co-Captain}} as the Accomplice.',
         doubleMeaningNote:
@@ -1188,7 +1201,63 @@ function createInitialUnibreakProject(): OgProjectWorkspace {
   };
 }
 
-const STORAGE_KEY = 'bpm_og_projects_list_v2';
+function normalizeProjectCluesMediaAndPrompts(proj: OgProjectWorkspace): OgProjectWorkspace {
+  const spice = proj?.blueprint?.spiceLevel || 'Filthy';
+  const freshUnibreakMap =
+    proj?.blueprint?.id === 'unibreak-at-the-cabin' ? createUnibreakInitialBeatCluesMap() : null;
+  const freshById = new Map<string, SuggestedClueCandidate>();
+  if (freshUnibreakMap) {
+    Object.values(freshUnibreakMap)
+      .flat()
+      .forEach((c) => freshById.set(c.id, c));
+  }
+
+  const rawMap =
+    proj?.beatCluesMap && Object.keys(proj.beatCluesMap).length > 0
+      ? proj.beatCluesMap
+      : freshUnibreakMap || {};
+
+  const nextBeatCluesMap: Record<number, SuggestedClueCandidate[]> = {};
+  for (const [bKey, list] of Object.entries(rawMap)) {
+    const bNum = Number(bKey);
+    nextBeatCluesMap[bNum] = (list || []).map((c) => {
+      const fresh = freshById.get(c.id);
+      const baseClue = fresh ? { ...fresh, decision: c.decision, roundNumber: c.roundNumber } : c;
+      const isPhoto = isPhotoClueFormat(baseClue.format);
+      return {
+        ...baseClue,
+        generationPrompt: isPhoto
+          ? baseClue.generationPrompt && baseClue.generationPrompt.length >= 90
+            ? baseClue.generationPrompt
+            : buildDefaultDetailedPhotoPrompt(baseClue.title, baseClue.description, spice)
+          : '',
+      };
+    });
+  }
+
+  const nextSubplots: SuggestedRedHerringSubplot[] = (proj?.subplots || []).map((sub) => ({
+    ...sub,
+    decoyClues: (sub.decoyClues || []).map((dc) => {
+      const isPhoto = isPhotoClueFormat(dc.format);
+      return {
+        ...dc,
+        generationPrompt: isPhoto
+          ? dc.generationPrompt && dc.generationPrompt.length >= 90
+            ? dc.generationPrompt
+            : buildDefaultDetailedPhotoPrompt(dc.title, dc.description, spice)
+          : '',
+      };
+    }),
+  }));
+
+  return {
+    ...proj,
+    beatCluesMap: nextBeatCluesMap,
+    subplots: nextSubplots,
+  };
+}
+
+const STORAGE_KEY = 'bpm_og_projects_list_v3';
 
 export function BaseArchitectClient({ locale }: { locale: string }) {
   const [projects, setProjects] = useState<OgProjectWorkspace[]>(() => [
@@ -1245,19 +1314,14 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
   useEffect(() => {
     let loadedLocal = false;
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved =
+        localStorage.getItem(STORAGE_KEY) || localStorage.getItem('bpm_og_projects_list_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const hydratedList = parsed.map((p: OgProjectWorkspace) => {
-            if (
-              p?.blueprint?.id === 'unibreak-at-the-cabin' &&
-              (!p.beatCluesMap || Object.keys(p.beatCluesMap).length === 0)
-            ) {
-              return { ...p, beatCluesMap: createUnibreakInitialBeatCluesMap() };
-            }
-            return p;
-          });
+          const hydratedList = parsed.map((p: OgProjectWorkspace) =>
+            normalizeProjectCluesMediaAndPrompts(p)
+          );
           setProjects(hydratedList);
           loadedLocal = true;
         }
@@ -1271,15 +1335,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
         if (!loadedLocal && res.success && Array.isArray(res.slots) && res.slots.length > 0) {
           const valid = res.slots
             .filter((p: any) => p?.blueprint?.title)
-            .map((p: OgProjectWorkspace) => {
-              if (
-                p?.blueprint?.id === 'unibreak-at-the-cabin' &&
-                (!p.beatCluesMap || Object.keys(p.beatCluesMap).length === 0)
-              ) {
-                return { ...p, beatCluesMap: createUnibreakInitialBeatCluesMap() };
-              }
-              return p;
-            });
+            .map((p: OgProjectWorkspace) => normalizeProjectCluesMediaAndPrompts(p));
           if (valid.length > 0) {
             setProjects(valid);
           }
@@ -1985,6 +2041,195 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     () => [...selectedCoreClues, ...selectedRedHerringClues],
     [selectedCoreClues, selectedRedHerringClues]
   );
+
+  const renderMediaMixBreakdownPanel = (
+    cluesPool: SuggestedClueCandidate[],
+    stageTitle: string
+  ) => {
+    if (cluesPool.length === 0) return null;
+    const total = Math.max(1, cluesPool.length);
+    const photoClues = cluesPool.filter((c) => getClueMediumCategory(c.format) === 'photo');
+    const audioClues = cluesPool.filter((c) => getClueMediumCategory(c.format) === 'audio');
+    const textClues = cluesPool.filter((c) => getClueMediumCategory(c.format) === 'text');
+
+    const photoPct = Math.round((photoClues.length / total) * 100);
+    const audioPct = Math.round((audioClues.length / total) * 100);
+    const textPct = Math.max(0, 100 - photoPct - audioPct);
+
+    const suggestions: {
+      id: string;
+      message: string;
+      buttonLabel: string;
+      onApply: () => void;
+    }[] = [];
+
+    const applyFormatSwitch = (clue: SuggestedClueCandidate, nextFmt: ClueFormat) => {
+      const nextIsPhoto = isPhotoClueFormat(nextFmt);
+      const patch: Partial<SuggestedClueCandidate> = {
+        format: nextFmt,
+        generationPrompt: nextIsPhoto
+          ? clue.generationPrompt && clue.generationPrompt.length >= 90
+            ? clue.generationPrompt
+            : buildDefaultDetailedPhotoPrompt(clue.title, clue.description, blueprint.spiceLevel)
+          : '',
+      };
+      if (clue.isRedHerring && clue.subplotId) {
+        updateRedHerringClueField(clue.subplotId, clue.id, patch);
+      } else if (clue.beatNumber) {
+        updateBeatClueField(clue.beatNumber, clue.id, patch);
+      }
+      setStatusToast(
+        `Switched "${clue.title}" to ${nextFmt.toUpperCase()} for better pack balance!`
+      );
+    };
+
+    if (photoPct < 25 && textClues.length > 0) {
+      const candidate = textClues[0];
+      const idxNum = cluesPool.findIndex((c) => c.id === candidate.id) + 1;
+      suggestions.push({
+        id: `to-photo-${candidate.id}`,
+        message: `You only have ${photoClues.length} Photo clues (${photoPct}%). We suggest you switch Clue #${idxNum} ("${candidate.title}") from ${candidate.format} to a Photo for better balance.`,
+        buttonLabel: `📸 Switch Clue #${idxNum} to Photo`,
+        onApply: () => applyFormatSwitch(candidate, 'physical_prop'),
+      });
+    }
+
+    if (photoPct > 45 && photoClues.length > 2) {
+      const candidate = photoClues[photoClues.length - 1];
+      const idxNum = cluesPool.findIndex((c) => c.id === candidate.id) + 1;
+      suggestions.push({
+        id: `from-photo-${candidate.id}`,
+        message: `Your pack is heavy on Photo clues (${photoClues.length} photos / ${photoPct}%). We suggest you switch Clue #${idxNum} ("${candidate.title}") to a Forensic Document or Note so the pack isn't slammed with photos.`,
+        buttonLabel: `📑 Switch Clue #${idxNum} to Document`,
+        onApply: () => applyFormatSwitch(candidate, 'document'),
+      });
+    }
+
+    if (audioClues.length === 0 || (cluesPool.length >= 8 && audioClues.length < 2)) {
+      const candidate =
+        textClues.find((c) => c.format === 'chat' || c.format === 'social_post') ||
+        textClues[textClues.length - 1];
+      if (candidate) {
+        const idxNum = cluesPool.findIndex((c) => c.id === candidate.id) + 1;
+        suggestions.push({
+          id: `to-audio-${candidate.id}`,
+          message: `You only have ${audioClues.length} Audio voice clue (${audioPct}%). We suggest you switch Clue #${idxNum} ("${candidate.title}") to an Audio Voice Note for better variety.`,
+          buttonLabel: `🎙️ Switch Clue #${idxNum} to Audio Voice Note`,
+          onApply: () => applyFormatSwitch(candidate, 'audio'),
+        });
+      }
+    }
+
+    if (textPct > 62 && textClues.length > 2) {
+      const candidate = textClues[1] || textClues[0];
+      const idxNum = cluesPool.findIndex((c) => c.id === candidate.id) + 1;
+      suggestions.push({
+        id: `text-heavy-${candidate.id}`,
+        message: `Your pack is slammed with Text clues (${textClues.length} text / ${textPct}%). We suggest you switch Clue #${idxNum} ("${candidate.title}") to a CCTV or Physical Prop Photo to break up the reading load.`,
+        buttonLabel: `📹 Switch Clue #${idxNum} to CCTV Photo`,
+        onApply: () => applyFormatSwitch(candidate, 'cctv'),
+      });
+    }
+
+    return (
+      <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+              📊 {stageTitle} ({cluesPool.length} Clues Selected)
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              Target mix so packs aren&apos;t slammed with one medium: ~30–35% Photos • ~15–25%
+              Audio • ~45–50% Text &amp; Digital UI
+            </p>
+          </div>
+          {suggestions.length === 0 && (
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+              ✓ Optimal Media Balance
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl bg-white border border-pink-200 p-3.5 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-black uppercase text-brand-pink">
+                📸 Photos (Prop / CCTV)
+              </div>
+              <div className="text-xs text-slate-500 mt-0.5">
+                {photoClues.length} of {cluesPool.length} Clues (Uses AI Photo Prompt)
+              </div>
+            </div>
+            <span className="text-xl font-black text-brand-pink">{photoPct}%</span>
+          </div>
+
+          <div className="rounded-xl bg-white border border-blue-200 p-3.5 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-black uppercase text-blue-700">
+                🎙️ Audio Voice Notes
+              </div>
+              <div className="text-xs text-slate-500 mt-0.5">
+                {audioClues.length} of {cluesPool.length} Clues (ElevenLabs Audio)
+              </div>
+            </div>
+            <span className="text-xl font-black text-blue-700">{audioPct}%</span>
+          </div>
+
+          <div className="rounded-xl bg-white border border-slate-200 p-3.5 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-black uppercase text-slate-700">
+                💬 Text UI (Chat / Doc / Note)
+              </div>
+              <div className="text-xs text-slate-500 mt-0.5">
+                {textClues.length} of {cluesPool.length} Clues (No Photo Needed)
+              </div>
+            </div>
+            <span className="text-xl font-black text-slate-800">{textPct}%</span>
+          </div>
+        </div>
+
+        <div className="w-full h-3 rounded-full bg-slate-200 overflow-hidden flex">
+          <div
+            style={{ width: `${photoPct}%` }}
+            className="h-full bg-brand-pink transition-all"
+            title={`Photos: ${photoPct}%`}
+          />
+          <div
+            style={{ width: `${audioPct}%` }}
+            className="h-full bg-blue-600 transition-all"
+            title={`Audio: ${audioPct}%`}
+          />
+          <div
+            style={{ width: `${textPct}%` }}
+            className="h-full bg-slate-700 transition-all"
+            title={`Text UI: ${textPct}%`}
+          />
+        </div>
+
+        {suggestions.length > 0 && (
+          <div className="space-y-2 pt-1">
+            {suggestions.map((sug) => (
+              <div
+                key={sug.id}
+                className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+              >
+                <div className="text-xs font-semibold text-amber-950 flex-1">
+                  💡 <strong>Balance Suggestion:</strong> {sug.message}
+                </div>
+                <button
+                  type="button"
+                  onClick={sug.onApply}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-amber-900 hover:bg-brand-pink text-white transition cursor-pointer whitespace-nowrap"
+                >
+                  {sug.buttonLabel}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // ==========================================================================
   // VIEW 1: OG BASE BUILDER PROJECTS HUB
@@ -3048,6 +3293,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
               <div className="space-y-4">
                 {activeBeatCandidates.map((clue, cIdx) => {
                   const isSelected = clue.decision === 'yes';
+                  const isPhotoFormat = isPhotoClueFormat(clue.format);
+                  const mediumType = getClueMediumCategory(clue.format);
+
                   return (
                     <div
                       key={clue.id}
@@ -3064,11 +3312,21 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                           </span>
                           <select
                             value={clue.format}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const nextFmt = e.target.value as ClueFormat;
+                              const nextIsPhoto = isPhotoClueFormat(nextFmt);
                               updateBeatClueField(activeBeatNumber, clue.id, {
-                                format: e.target.value as ClueFormat,
-                              })
-                            }
+                                format: nextFmt,
+                                generationPrompt: nextIsPhoto
+                                  ? clue.generationPrompt ||
+                                    buildDefaultDetailedPhotoPrompt(
+                                      clue.title,
+                                      clue.description,
+                                      blueprint.spiceLevel
+                                    )
+                                  : '',
+                              });
+                            }}
                             className="rounded-xl bg-slate-100 border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-700"
                           >
                             {CLUE_FORMAT_OPTIONS.map((opt) => (
@@ -3077,6 +3335,22 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               </option>
                             ))}
                           </select>
+
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                              mediumType === 'photo'
+                                ? 'bg-pink-100 text-pink-800 border border-pink-200'
+                                : mediumType === 'audio'
+                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
+                          >
+                            {mediumType === 'photo'
+                              ? '📸 AI Photo'
+                              : mediumType === 'audio'
+                                ? '🎙️ Audio Voice'
+                                : '💬 Native Text UI'}
+                          </span>
 
                           <input
                             type="text"
@@ -3117,7 +3391,11 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         minRows={3}
                       />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      <div
+                        className={`grid grid-cols-1 ${
+                          isPhotoFormat ? 'md:grid-cols-2' : ''
+                        } gap-3 text-xs`}
+                      >
                         <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 text-slate-700 space-y-1.5">
                           <div>
                             <span className="font-black text-slate-900">
@@ -3142,27 +3420,61 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                             </div>
                           )}
                         </div>
-                        <div className="rounded-xl bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 text-slate-500">
-                          <span className="font-bold text-slate-800">
-                            AI Evidence Photo Prompt ({blueprint.spiceLevel}):
-                          </span>
-                          <textarea
-                            rows={3}
-                            value={clue.generationPrompt}
-                            onChange={(e) =>
-                              updateBeatClueField(activeBeatNumber, clue.id, {
-                                generationPrompt: e.target.value,
-                              })
-                            }
-                            className="w-full bg-transparent text-xs text-slate-600 focus:outline-none mt-1 leading-relaxed"
-                          />
-                        </div>
+
+                        {/* ONLY show AI Evidence Photo Prompt if this clue is actually a Photo Clue (physical_prop or cctv)! */}
+                        {isPhotoFormat && (
+                          <div className="rounded-xl bg-pink-50/40 border border-pink-200/80 px-3.5 py-2.5 text-slate-700 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-black text-brand-pink">
+                                📸 AI Evidence Photo Prompt ({blueprint.spiceLevel} Noir):
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateBeatClueField(activeBeatNumber, clue.id, {
+                                    generationPrompt: buildDefaultDetailedPhotoPrompt(
+                                      clue.title,
+                                      clue.description,
+                                      blueprint.spiceLevel
+                                    ),
+                                  })
+                                }
+                                className="text-[10px] font-bold text-brand-pink hover:underline cursor-pointer"
+                              >
+                                ✨ Expand Prompt
+                              </button>
+                            </div>
+                            <textarea
+                              rows={4}
+                              value={
+                                clue.generationPrompt ||
+                                buildDefaultDetailedPhotoPrompt(
+                                  clue.title,
+                                  clue.description,
+                                  blueprint.spiceLevel
+                                )
+                              }
+                              onChange={(e) =>
+                                updateBeatClueField(activeBeatNumber, clue.id, {
+                                  generationPrompt: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-lg bg-white border border-pink-200/70 px-2.5 py-2 text-xs text-slate-700 focus:outline-none leading-relaxed"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
+
+            {selectedCoreClues.length >= 2 &&
+              renderMediaMixBreakdownPanel(
+                selectedCoreClues,
+                'Selected Core Clues Media Mix & Balance'
+              )}
 
             {/* Bottom Single-Beat Action Bar */}
             <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
@@ -3362,6 +3674,9 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                     <div className="space-y-3">
                       {activeSubplot.decoyClues.map((dc, dIdx) => {
                         const isPicked = dc.decision === 'yes';
+                        const isPhotoFormat = isPhotoClueFormat(dc.format);
+                        const mediumType = getClueMediumCategory(dc.format);
+
                         return (
                           <div
                             key={dc.id}
@@ -3371,14 +3686,53 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                                 : 'bg-white border-slate-200 hover:border-slate-300'
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-1 min-w-[220px]">
                                 <span className="text-xs font-black text-slate-400">
                                   Option #{dIdx + 1}
                                 </span>
-                                <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700">
-                                  {dc.format}
+                                <select
+                                  value={dc.format}
+                                  onChange={(e) => {
+                                    const nextFmt = e.target.value as ClueFormat;
+                                    const nextIsPhoto = isPhotoClueFormat(nextFmt);
+                                    updateRedHerringClueField(activeSubplot.id, dc.id, {
+                                      format: nextFmt,
+                                      generationPrompt: nextIsPhoto
+                                        ? dc.generationPrompt ||
+                                          buildDefaultDetailedPhotoPrompt(
+                                            dc.title,
+                                            dc.description,
+                                            blueprint.spiceLevel
+                                          )
+                                        : '',
+                                    });
+                                  }}
+                                  className="rounded-xl bg-slate-100 border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-700"
+                                >
+                                  {CLUE_FORMAT_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.shortLabel}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                                    mediumType === 'photo'
+                                      ? 'bg-pink-100 text-pink-800 border border-pink-200'
+                                      : mediumType === 'audio'
+                                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                        : 'bg-slate-100 text-slate-700 border border-slate-200'
+                                  }`}
+                                >
+                                  {mediumType === 'photo'
+                                    ? '📸 AI Photo'
+                                    : mediumType === 'audio'
+                                      ? '🎙️ Audio Voice'
+                                      : '💬 Native Text UI'}
                                 </span>
+
                                 <input
                                   type="text"
                                   value={dc.title}
@@ -3415,6 +3769,32 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                               characters={blueprint.characters}
                               minRows={3}
                             />
+
+                            {/* ONLY show AI Evidence Photo Prompt when this clue is a Photo Clue (physical_prop or cctv) */}
+                            {isPhotoFormat && (
+                              <div className="rounded-xl bg-pink-50/40 border border-pink-200/80 px-3.5 py-2.5 text-xs text-slate-700 space-y-1">
+                                <span className="font-black text-brand-pink">
+                                  📸 AI Evidence Photo Prompt ({blueprint.spiceLevel} Noir):
+                                </span>
+                                <textarea
+                                  rows={3}
+                                  value={
+                                    dc.generationPrompt ||
+                                    buildDefaultDetailedPhotoPrompt(
+                                      dc.title,
+                                      dc.description,
+                                      blueprint.spiceLevel
+                                    )
+                                  }
+                                  onChange={(e) =>
+                                    updateRedHerringClueField(activeSubplot.id, dc.id, {
+                                      generationPrompt: e.target.value,
+                                    })
+                                  }
+                                  className="w-full rounded-lg bg-white border border-pink-200/70 px-2.5 py-2 text-xs text-slate-700 focus:outline-none leading-relaxed"
+                                />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -3423,6 +3803,12 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 )}
               </div>
             )}
+
+            {allSelectedClues.length > 0 &&
+              renderMediaMixBreakdownPanel(
+                allSelectedClues,
+                'Full Pack Media Mix & Rebalance Suggestions'
+              )}
 
             <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-1 min-w-[260px]">
@@ -3459,7 +3845,7 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
       )}
 
       {/* ================================================================= */}
-      {/* STAGE 4: COMPLEXITY ROUND SORTER (16 CLUES) & TURN INTO BASE      */}
+      {/* STAGE 4: COMPLEXITY ROUND SORTER, MEDIA BALANCE & TURN INTO BASE  */}
       {/* ================================================================= */}
       {step === 4 && (
         <div className="space-y-6">
@@ -3514,6 +3900,11 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                 )}
               </div>
             </div>
+
+            {renderMediaMixBreakdownPanel(
+              allSelectedClues,
+              'Pack Media Mix & Pacing Breakdown'
+            )}
 
             {assembled && (
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -3612,69 +4003,131 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
                         </div>
                       ) : (
                         <div className="space-y-2.5">
-                          {roundClues.map((rc) => (
-                            <div
-                              key={rc.id}
-                              className="rounded-xl bg-white border border-slate-200 p-4 text-xs space-y-2"
-                            >
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-black text-slate-900">
-                                    {rc.title}
-                                  </span>
-                                  <span className="text-slate-400 font-semibold">
-                                    ({rc.format} • {rc.timestampLabel})
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${
-                                      rc.isRedHerring
-                                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                    }`}
-                                  >
-                                    {rc.isRedHerring
-                                      ? 'Red Herring'
-                                      : `Core Beat #${rc.beatNumber || '?'}`}
-                                  </span>
+                          {roundClues.map((rc) => {
+                            const globalIdx =
+                              allSelectedClues.findIndex((c) => c.id === rc.id) + 1;
+                            const isPhoto = isPhotoClueFormat(rc.format);
+                            const medium = getClueMediumCategory(rc.format);
 
-                                  <select
-                                    value={rc.roundNumber}
-                                    onChange={(e) => {
-                                      const newR = Number(
-                                        e.target.value
-                                      ) as ArchitectRoundNumber;
-                                      if (rc.isRedHerring && rc.subplotId) {
-                                        updateRedHerringClueField(rc.subplotId, rc.id, {
-                                          roundNumber: newR,
-                                        });
-                                      } else if (rc.beatNumber) {
-                                        updateBeatClueField(rc.beatNumber, rc.id, {
-                                          roundNumber: newR,
-                                        });
-                                      }
-                                    }}
-                                    className="rounded-lg bg-slate-100 border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-700"
-                                  >
-                                    {Array.from({ length: totalRounds }, (_, idx) => idx + 1).map(
-                                      (rOpt) => (
-                                        <option key={rOpt} value={rOpt}>
-                                          Round {rOpt}
+                            return (
+                              <div
+                                key={rc.id}
+                                className="rounded-xl bg-white border border-slate-200 p-4 text-xs space-y-2.5"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-black">
+                                      Clue #{globalIdx}
+                                    </span>
+                                    <span className="text-sm font-black text-slate-900">
+                                      {rc.title}
+                                    </span>
+                                    <span
+                                      className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                                        medium === 'photo'
+                                          ? 'bg-pink-100 text-pink-800'
+                                          : medium === 'audio'
+                                            ? 'bg-blue-100 text-blue-800'
+                                            : 'bg-slate-100 text-slate-700'
+                                      }`}
+                                    >
+                                      {medium === 'photo'
+                                        ? '📸 Photo'
+                                        : medium === 'audio'
+                                          ? '🎙️ Audio'
+                                          : '💬 Text UI'}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                      className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${
+                                        rc.isRedHerring
+                                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      }`}
+                                    >
+                                      {rc.isRedHerring
+                                        ? 'Red Herring'
+                                        : `Core Beat #${rc.beatNumber || '?'}`}
+                                    </span>
+
+                                    {/* Allow switching format right here on Step 4 too! */}
+                                    <select
+                                      value={rc.format}
+                                      onChange={(e) => {
+                                        const nextFmt = e.target.value as ClueFormat;
+                                        const nextIsPhoto = isPhotoClueFormat(nextFmt);
+                                        const patch: Partial<SuggestedClueCandidate> = {
+                                          format: nextFmt,
+                                          generationPrompt: nextIsPhoto
+                                            ? rc.generationPrompt ||
+                                              buildDefaultDetailedPhotoPrompt(
+                                                rc.title,
+                                                rc.description,
+                                                blueprint.spiceLevel
+                                              )
+                                            : '',
+                                        };
+                                        if (rc.isRedHerring && rc.subplotId) {
+                                          updateRedHerringClueField(rc.subplotId, rc.id, patch);
+                                        } else if (rc.beatNumber) {
+                                          updateBeatClueField(rc.beatNumber, rc.id, patch);
+                                        }
+                                      }}
+                                      className="rounded-lg bg-slate-100 border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-700"
+                                    >
+                                      {CLUE_FORMAT_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>
+                                          {opt.shortLabel}
                                         </option>
-                                      )
-                                    )}
-                                  </select>
+                                      ))}
+                                    </select>
+
+                                    <select
+                                      value={rc.roundNumber}
+                                      onChange={(e) => {
+                                        const newR = Number(
+                                          e.target.value
+                                        ) as ArchitectRoundNumber;
+                                        if (rc.isRedHerring && rc.subplotId) {
+                                          updateRedHerringClueField(rc.subplotId, rc.id, {
+                                            roundNumber: newR,
+                                          });
+                                        } else if (rc.beatNumber) {
+                                          updateBeatClueField(rc.beatNumber, rc.id, {
+                                            roundNumber: newR,
+                                          });
+                                        }
+                                      }}
+                                      className="rounded-lg bg-slate-100 border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-700"
+                                    >
+                                      {Array.from({ length: totalRounds }, (_, idx) => idx + 1).map(
+                                        (rOpt) => (
+                                          <option key={rOpt} value={rOpt}>
+                                            Round {rOpt}
+                                          </option>
+                                        )
+                                      )}
+                                    </select>
+                                  </div>
                                 </div>
+                                <div className="text-sm text-slate-800">
+                                  <HighlightedMysteryText
+                                    text={rc.description}
+                                    characters={blueprint.characters}
+                                  />
+                                </div>
+                                {isPhoto && rc.generationPrompt && (
+                                  <div className="rounded-lg bg-pink-50/50 border border-pink-200/70 px-3 py-2 text-[11px] text-slate-600">
+                                    <strong className="text-brand-pink">
+                                      📸 AI Photo Prompt:
+                                    </strong>{' '}
+                                    {rc.generationPrompt}
+                                  </div>
+                                )}
                               </div>
-                              <div className="text-sm text-slate-800">
-                                <HighlightedMysteryText
-                                  text={rc.description}
-                                  characters={blueprint.characters}
-                                />
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>

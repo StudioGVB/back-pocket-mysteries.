@@ -2398,26 +2398,36 @@ ${spiceDirective}
 
 ${tokenDirective}
 
-MANDATORY SPICE & DOUBLE-MEANING CLUE RULES:
-1. Every clue's "description" (the in-world dialogue, chat thread, note, receipt, or forensic observation) AND "generationPrompt" (the AI visual photo/evidence prompt) MUST explicitly reflect the **${blueprint.spiceLevel.toUpperCase()}** spice level:
-   - If Filthy: raw 18+ after-dark dialogue, F-bombs ("fuck", "fucking"), scandalous bedroom/balcony tension, moody after-dark noir photography prompt.
-   - If Spicy: sharp cussing ("bitch", "shit", "wtf"), catfight/scandal tension, dramatic noir evidence photo prompt.
+MANDATORY FORMAT, SPICE & PHOTO-VS-TEXT RULES:
+1. Across the 5 options for Beat #${targetBeat.beatNumber}, include a balanced mix of **3 Medium Types**:
+   - **📸 Photo / Visual Evidence ("physical_prop" or "cctv"):** At least 1–2 options MUST be a "physical_prop" or "cctv" frame. ONLY "physical_prop" and "cctv" clues get an AI Photo Prompt in "generationPrompt"! For these photo clues, "generationPrompt" MUST be a detailed, 3-sentence cinematic forensic photography brief specifying: (a) Exact camera angle, lens (e.g. 50mm macro lens, overhead night-vision CCTV security cam), and framing; (b) The specific physical prop/evidence item and forensic trace (e.g. cast-iron poker, ripped chain, shattered glass, velvet fibers) with ZERO readable text/screens; (c) Moody ${blueprint.spiceLevel}-vibe lighting, color palette, and 35mm film grain.
+   - **🎙️ Audio / Voice Note ("audio"):** At least 1 option MUST be an "audio" clue. Its "description" MUST be a multi-speaker voice transcript formatted with lines like:
+     Recording Duration: 22.0 Seconds
+     {{The Role A}}: "[whispers] First spoken line..."
+     {{The Role B}}: "[angry] Sharp spoken reply..."
+     And its "generationPrompt" MUST be "" (empty string — audio clues use ElevenLabs voice synthesis, NOT a photo!).
+   - **💬 Text / Digital / Paper ("chat", "handwritten_note", "receipt", "search_log", "social_post", "document"):** 2 options should be interactive UI text clues:
+     • If "chat": format "description" as a 3-4 message iMessage/DM thread ('[10:18 PM] {{The Role A}}: "..."' / '[10:19 PM] {{The Role B}}: "..."').
+     • If "receipt" / "document" / "handwritten_note" / "search_log" / "social_post": write the exact in-world text.
+     • For ALL text/UI formats, set "generationPrompt" to "" (empty string — these render as native interactive UI templates, NOT photos!).
+2. Every clue's "description" MUST explicitly reflect the **${blueprint.spiceLevel.toUpperCase()}** spice level:
+   - If Filthy: raw 18+ after-dark dialogue, F-bombs ("fuck", "fucking", "bullshit", "bitch"), scandalous bedroom/balcony tension.
+   - If Spicy: sharp cussing ("bitch", "shit", "wtf"), catfight/scandal tension.
    - If Mild: romantic affair tension with 100% clean PG-13 dialogue (0 cussing).
    - If Clean: 100% SFW high-stakes murder/blackmail with 0 romance affairs and 0 profanity.
-2. Provide a variety of formats across the 5 options ("chat", "search_log", "social_post", "handwritten_note", "receipt", "medical_record", "official_document", "physical_prop").
 3. **DOUBLE-MEANING / AMBIGUOUS HOOK (IDEAL!):** Wherever possible, write the clue so that while it genuinely proves part of Beat #${targetBeat.beatNumber}, it ALSO has an ambiguous double meaning that could make one of the innocent suspects look suspicious (and explain that in "doubleMeaningNote").
-4. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names like Leah, Stacy, Seb, James, Mia, or Josh.
+4. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names.
 
 Return strict JSON:
 {
   "clues": [
     {
       "title": "Punchy in-world clue title",
-      "format": "chat" | "search_log" | "social_post" | "handwritten_note" | "receipt" | "medical_record" | "official_document" | "physical_prop",
+      "format": "chat" | "audio" | "physical_prop" | "cctv" | "handwritten_note" | "receipt" | "search_log" | "social_post" | "document",
       "roundNumber": 1 | 2 | 3,
       "timestampLabel": "${targetBeat.timeWindow}",
-      "description": "Full in-world clue text/dialogue calibrated to ${blueprint.spiceLevel} spice using {{Role}} tokens.",
-      "generationPrompt": "Photorealistic cinematic evidence photo prompt matching ${blueprint.spiceLevel} mood/drama (NO text inside image).",
+      "description": "Full structured in-world clue text/dialogue calibrated to ${blueprint.spiceLevel} spice using {{Role}} tokens.",
+      "generationPrompt": "Leave empty '' for chat/audio/text formats! For physical_prop or cctv ONLY: write a rich 3-sentence cinematic forensic photo prompt (camera/lens + physical objects + ${blueprint.spiceLevel} noir lighting, NO text in image).",
       "pointsTo": "How this clue explains Beat #${targetBeat.beatNumber}.",
       "doubleMeaningNote": "How this clue also looks ambiguous or suspicious toward an innocent suspect's motive.",
       "involvedRoles": ["The Role A", "The Role B"]
@@ -2430,9 +2440,11 @@ Return strict JSON:
       prompt,
       featureName: 'architect_suggest_beat_clues',
     });
+    const PHOTO_FORMATS = new Set<ClueFormat>(['physical_prop', 'cctv']);
     const candidates: SuggestedClueCandidate[] = (parsed.clues || []).map(
       (c: any, idx: number) => {
         const fmt = (c.format as ClueFormat) || 'physical_prop';
+        const isPhoto = PHOTO_FORMATS.has(fmt);
         return {
           id: `beat-${beatNumber}-clue-${Date.now()}-${idx}`,
           title: String(c.title || `Beat #${beatNumber} Clue ${idx + 1}`).trim(),
@@ -2447,7 +2459,9 @@ Return strict JSON:
             blueprint.spiceLevel,
             fmt
           ),
-          generationPrompt: String(c.generationPrompt || c.description || '').trim(),
+          generationPrompt: isPhoto
+            ? String(c.generationPrompt || c.description || '').trim()
+            : '',
           pointsTo: String(c.pointsTo || `Proves Beat #${beatNumber}.`).trim(),
           doubleMeaningNote: String(c.doubleMeaningNote || '').trim(),
           involvedRoles: Array.isArray(c.involvedRoles) ? c.involvedRoles : [],
@@ -2543,7 +2557,8 @@ RED-HERRING & DOUBLE-MEANING RULES:
    - "involvedRoles": The 2–3 character role titles entangled in this subplot.
    - "summary": Clear explanation of their motive against the Victim and their secret side-scheme.
    - "doubleMeaningCoreClueHook": Explicitly name 1 or 2 of the **Locked-In 10 Core Murder Clues** above and explain how that real clue looks ambiguous or double-meaning toward THIS red-herring motive!
-   - "decoyClues": Suggest **4 distinct Red-Herring Clue options** for this plotline (the creator will pick their favorite 2). Every clue's "description" and "generationPrompt" MUST be strictly calibrated to the **${blueprint.spiceLevel.toUpperCase()}** spice level!
+   - "decoyClues": Suggest **4 distinct Red-Herring Clue options** for this plotline (mixing formats: 1 "physical_prop" or "cctv" photo clue, 1 "audio" voice note clue, and 2 "chat" / "receipt" / "handwritten_note" / "document" text clues).
+   - PHOTO PROMPT RULE: ONLY "physical_prop" and "cctv" clues get a 3-sentence cinematic forensic photo prompt in "generationPrompt". For "chat", "audio", "receipt", "handwritten_note", "search_log", "social_post", and "document", set "generationPrompt" to "" (empty string!).
 3. Use ONLY {{The Role}} and {{The Role_he}}/{{The Role_him}}/{{The Role_his}}/{{The Role_sibling}}/{{The Role_spouse}} tokens — NEVER raw real names.
 
 Return strict JSON:
@@ -2565,11 +2580,11 @@ Return strict JSON:
       "decoyClues": [
         {
           "title": "Red herring clue title",
-          "format": "chat" | "search_log" | "social_post" | "handwritten_note" | "receipt" | "medical_record" | "official_document" | "physical_prop",
+          "format": "chat" | "audio" | "physical_prop" | "cctv" | "handwritten_note" | "receipt" | "search_log" | "social_post" | "document",
           "roundNumber": 1 | 2 | 3,
           "timestampLabel": "e.g. 10:45 PM",
           "description": "In-world clue text calibrated to ${blueprint.spiceLevel} spice using {{Role}} tokens.",
-          "generationPrompt": "Photorealistic evidence photo prompt calibrated to ${blueprint.spiceLevel} mood (NO text in image).",
+          "generationPrompt": "Leave empty '' for chat/audio/text formats! For physical_prop or cctv ONLY: 3-sentence forensic photo prompt (NO text in image).",
           "pointsTo": "Why this makes {{The Role}} look guilty (or clears their alibi later).",
           "involvedRoles": ["The Bestie", "The Teammate"]
         }
@@ -2583,12 +2598,14 @@ Return strict JSON:
       prompt,
       featureName: 'architect_suggest_red_herring_plotlines',
     });
+    const PHOTO_FORMATS = new Set<ClueFormat>(['physical_prop', 'cctv']);
     const subplots: SuggestedRedHerringSubplot[] = (parsed.subplots || []).map(
       (s: any, idx: number) => {
         const subId = `rh-plot-${Date.now()}-${idx}`;
         const decoyClues: SuggestedClueCandidate[] = (s.decoyClues || []).map(
           (c: any, cIdx: number) => {
             const fmt = (c.format as ClueFormat) || 'chat';
+            const isPhoto = PHOTO_FORMATS.has(fmt);
             return {
               id: `${subId}-clue-${cIdx}`,
               title: String(c.title || `Red Herring Clue #${cIdx + 1}`).trim(),
@@ -2603,7 +2620,9 @@ Return strict JSON:
                 blueprint.spiceLevel,
                 fmt
               ),
-              generationPrompt: String(c.generationPrompt || c.description || '').trim(),
+              generationPrompt: isPhoto
+                ? String(c.generationPrompt || c.description || '').trim()
+                : '',
               pointsTo: String(c.pointsTo || 'Red-herring motive & misdirection clue.').trim(),
               involvedRoles: Array.isArray(c.involvedRoles)
                 ? c.involvedRoles
