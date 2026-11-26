@@ -7,7 +7,10 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { Resend } from 'resend';
-import { saveDiscountAction } from '@/app/actions/discounts';
+import {
+  saveDiscountAction,
+  mintSingleUseGuestSleuthCodeInternal,
+} from '@/app/actions/discounts';
 import { requireAdmin } from '@/utils/admin-auth';
 import { buildVipWelcomeEmailHtml } from '@/lib/vip-welcome-email';
 import { buildBrandedEmailShell } from '@/lib/branded-email-template';
@@ -385,7 +388,7 @@ async function upsertResendAudienceContact(lead: MarketingLeadRecord): Promise<v
  * 3. Supabase `leads` table (if present)
  * Ordered chronologically by `created_at` so VIP rank #1 -> #50 is 100% deterministic.
  */
-export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[]> {
+async function fetchAllMarketingLeadsInternal(): Promise<MarketingLeadRecord[]> {
   const now = Date.now();
   if (cachedMarketingLeads && now - cachedMarketingLeads.fetchedAt < MARKETING_LEADS_CACHE_TTL_MS) {
     return cachedMarketingLeads.data;
@@ -495,6 +498,11 @@ export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[
   return result;
 }
 
+export async function getAllMarketingLeadsAction(): Promise<MarketingLeadRecord[]> {
+  await requireAdmin();
+  return fetchAllMarketingLeadsInternal();
+}
+
 /**
  * Returns the combined Newsletter Audience:
  * - Separate Newsletter / VIP Waitlist Leads (email-only signups without customer accounts/guests)
@@ -513,7 +521,8 @@ export async function getUnifiedNewsletterDirectoryAction(): Promise<{
   }[];
   combinedActiveEmails: { email: string; full_name: string | null; source_type: 'vip_lead' | 'customer' }[];
 }> {
-  const newsletterLeads = await getAllMarketingLeadsAction();
+  await requireAdmin();
+  const newsletterLeads = await fetchAllMarketingLeadsInternal();
   const leadByEmail = new Map<string, MarketingLeadRecord>();
   for (const l of newsletterLeads) {
     leadByEmail.set(l.email.toLowerCase().trim(), l);
@@ -615,7 +624,7 @@ export async function getLaunchWaitlistStatusAction(): Promise<{
   spotsRemaining: number;
   isFirst50Open: boolean;
 }> {
-  const all = await getAllMarketingLeadsAction();
+  const all = await fetchAllMarketingLeadsInternal();
   const totalLeads = all.length;
   const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - totalLeads);
   return {
@@ -651,7 +660,7 @@ export async function submitEmailLead(
   }
 
   const [all, geoInfo] = await Promise.all([
-    getAllMarketingLeadsAction(),
+    fetchAllMarketingLeadsInternal(),
     detectSubscriberIpAndCountry(),
   ]);
   const existing = all.find((l) => l.email.toLowerCase() === cleanEmail);

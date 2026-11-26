@@ -130,17 +130,11 @@ export async function savePlatformSettingsAction(
   error?: string;
 }> {
   try {
-    const current = await getPlatformSettingsAction();
-    let adminEmail = current.supportEmail || 'hello@backpocketgames.com';
+    const { requireAdmin } = await import('@/utils/admin-auth');
+    const { supabase, user } = await requireAdmin();
 
-    let supabase: any = null;
-    try {
-      supabase = await createClient();
-      const { data } = await supabase.auth.getUser();
-      if (data?.user?.email) {
-        adminEmail = data.user.email;
-      }
-    } catch {}
+    const current = await getPlatformSettingsAction();
+    const adminEmail = user?.email || current.supportEmail || 'hello@backpocketgames.com';
 
     const nowIso = new Date().toISOString();
     const nextSettings: PlatformSettings = {
@@ -229,6 +223,9 @@ export async function resetPlatformSettingsToDefaultsAction(): Promise<{
   success: boolean;
   settings: PlatformSettings;
 }> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  const { supabase } = await requireAdmin();
+
   const fresh: PlatformSettings = {
     ...DEFAULT_PLATFORM_SETTINGS,
     updatedAt: new Date().toISOString(),
@@ -236,7 +233,6 @@ export async function resetPlatformSettingsToDefaultsAction(): Promise<{
   writeLocalSettingsStore(fresh);
 
   try {
-    const supabase = await createClient();
     await (supabase as any).from('platform_settings').upsert(
       {
         id: 'global',
@@ -261,6 +257,9 @@ export async function resetPlatformSettingsToDefaultsAction(): Promise<{
  * Performs a live health and configuration check across all external integrations.
  */
 export async function getIntegrationHealthAction(): Promise<IntegrationHealthReport> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
   const localEnv = readLocalEnvFile();
   const items: IntegrationStatusItem[] = [];
 
@@ -449,6 +448,9 @@ export async function sendTestSupportEmailAction(
   emailId?: string;
   error?: string;
 }> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
   const localEnv = readLocalEnvFile();
   const apiKey = getEnvVar('RESEND_API_KEY', localEnv);
   if (!apiKey) {

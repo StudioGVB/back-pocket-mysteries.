@@ -24,6 +24,7 @@ import {
   getCachedMysterySnapshot,
   cacheMysterySnapshot,
   updateMysteryGenerationInStore,
+  getStoredGameSession,
 } from '@/lib/live-session-store';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
 import {
@@ -74,6 +75,33 @@ const CURATED_GUEST_QUIRKS = [
   'Addicted to crossword puzzles',
 ];
 
+async function verifyMysteryGenerationAccess(mysteryId?: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Unauthorized: You must be signed in to run AI generation.');
+  }
+  const { isUserAdmin } = await import('@/utils/admin-auth');
+  const isAdmin = await isUserAdmin(supabase, user);
+  if (isAdmin) return;
+
+  if (mysteryId) {
+    const cleanId = String(mysteryId).trim();
+    const userPrefix = `__u_${user.id.slice(0, 8).toLowerCase()}`;
+    const storedSession = getStoredGameSession(cleanId);
+    const isSessionOwner =
+      storedSession?.hostUserId === user.id || storedSession?.paidByUserId === user.id;
+    const isIdOwner = cleanId.toLowerCase().includes(userPrefix);
+    if (!isIdOwner && !isSessionOwner) {
+      throw new Error(
+        'Forbidden: You do not have permission to modify or generate media for this mystery.'
+      );
+    }
+  }
+}
+
 export async function generateRandomQuirk(name: string, gender: string, existingQuirks: string[] = []) {
   const normalizedExisting = new Set(existingQuirks.map(q => q.toLowerCase().trim()));
   const pickCuratedFallback = () => {
@@ -81,6 +109,12 @@ export async function generateRandomQuirk(name: string, gender: string, existing
     const pool = available.length > 0 ? available : CURATED_GUEST_QUIRKS;
     return pool[Math.floor(Math.random() * pool.length)];
   };
+
+  try {
+    await verifyMysteryGenerationAccess();
+  } catch {
+    return pickCuratedFallback();
+  }
 
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return pickCuratedFallback();
@@ -122,6 +156,9 @@ Respond with ONLY the quirk itself, no quotes, no period at the end, no em dashe
 }
 
 export async function generateCluePreview(prompt: string, templateText: string) {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
   }
@@ -152,6 +189,9 @@ export async function generateCluePreview(prompt: string, templateText: string) 
 }
 
 export async function suggestCluePrompts(beatTitle: string): Promise<string[]> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
   }
@@ -215,6 +255,9 @@ export async function generateClueDescriptionAction(
   generationPrompt: string,
   format?: string
 ): Promise<string> {
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
+
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new Error('GOOGLE_GENERATIVE_AI_API_KEY is not configured');
   }
@@ -1054,6 +1097,7 @@ export async function applyScreenerCastAssignmentAction(
   assignments: ScreenerCastAssignmentInput[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    await verifyMysteryGenerationAccess(mysteryId);
     const supabase = await createClient();
     const cachedMystery = getCachedMysterySnapshot(mysteryId);
 
@@ -1152,6 +1196,7 @@ export async function generateStandardCharacterPhotoAction(
   }
 
   try {
+    await verifyMysteryGenerationAccess(mysteryId);
     const supabase = await createClient();
     const cachedMystery = getCachedMysterySnapshot(mysteryId);
 
@@ -1349,6 +1394,7 @@ export async function generateClueImageAction(
   }
 
   try {
+    await verifyMysteryGenerationAccess(mysteryId);
     const supabase = await createClient();
     const cachedMystery = getCachedMysterySnapshot(mysteryId);
 
@@ -1997,6 +2043,7 @@ Respond with valid JSON ONLY:
 }
 
 export async function generateProfileBioAction(name: string): Promise<string> {
+  await verifyMysteryGenerationAccess();
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) throw new Error('API key not configured');
   const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
   const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -2018,6 +2065,7 @@ export async function generateProfileBioAction(name: string): Promise<string> {
 }
 
 export async function generateProfileFunFactAction(name: string): Promise<string> {
+  await verifyMysteryGenerationAccess();
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) throw new Error('API key not configured');
   const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
   const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -2161,6 +2209,7 @@ export async function auditAndHealCustomerPackAction(
     };
   }>
 ): Promise<CustomerPackQaGateResult> {
+  await verifyMysteryGenerationAccess(mysteryId);
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
   const result: CustomerPackQaGateResult = {
     passed: true,

@@ -144,6 +144,8 @@ function getVercelConfig() {
 
 export async function getVercelTraffic(days = 30) {
   await connection();
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
   const { token, projectId, teamId } = getVercelConfig();
 
   if (!token) {
@@ -209,6 +211,8 @@ export async function getAnalyticsTimeseries(days = 30): Promise<{
   data: Array<{ key: string; visitors: number; pageviews: number }>;
 }> {
   await connection();
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
   const { token, projectId, teamId } = getVercelConfig();
 
   if (!token) {
@@ -382,6 +386,8 @@ async function fetchVercelAggregateDimension(
   days = 30
 ): Promise<Array<{ key: string; visitors: number; pageviews: number; avgViewSeconds?: number }>> {
   await connection();
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
   const { token, projectId, teamId } = getVercelConfig();
   if (!token) return [];
 
@@ -582,6 +588,8 @@ export interface GscStatsResult {
 
 export async function getGoogleSearchConsoleStats(days = 30): Promise<GscStatsResult> {
   await connection();
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
   const { token, siteUrl, clientEmail } = await getGscAccessToken();
 
   if (!token || !siteUrl) {
@@ -1064,6 +1072,8 @@ export async function getGoogleAnalytics4RealtimeAndGeoStats(
   days = 30
 ): Promise<Ga4StatsResult> {
   await connection();
+  const { requireAdmin } = await import('@/utils/admin-auth');
+  await requireAdmin();
   const cfg = await loadMergedGa4Config();
   const token = await getGa4AccessToken(cfg);
 

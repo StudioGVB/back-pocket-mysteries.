@@ -116,25 +116,6 @@ function getDefaultSeedDiscounts(): Record<string, DiscountRecord> {
       created_at: start,
       updated_at: start,
     },
-    'sleuth15-review-reward': {
-      id: 'sleuth15-review-reward',
-      name: 'Post-Party Review & Photo Reward 15% Off (Guest-to-Next-Host)',
-      code: 'SLEUTH15',
-      auto_apply: false,
-      discount_type: 'percentage',
-      discount_value: 15,
-      applies_to: 'all',
-      target_packages: [],
-      target_mysteries: [],
-      starts_at: start,
-      ends_at: null,
-      usage_limit: 'one_per_customer',
-      max_uses: null,
-      times_used: 0,
-      is_active: true,
-      created_at: start,
-      updated_at: start,
-    },
     'test50-checkout-seed': {
       id: 'test50-checkout-seed',
       name: 'Founder 50% Off Live Checkout Test Code',
@@ -644,11 +625,15 @@ export async function validatePromoCodeAction(params: {
   if (
     cleanCode === 'BPMFREE100' ||
     cleanCode === 'FOUNDERS50' ||
+    cleanCode === 'SLEUTH15' ||
     (cleanCode.startsWith('BPM100-') && cleanCode !== todayRotatingCode && !isGraceYesterday)
   ) {
     return {
       valid: false,
-      error: 'This promo code has expired or is no longer valid.',
+      error:
+        cleanCode === 'SLEUTH15'
+          ? 'This generic code has been retired. Enter your email on the Post-Party Finale screen to generate your personal single-use 15% Off code!'
+          : 'This promo code has expired or is no longer valid.',
     };
   }
 
@@ -737,6 +722,51 @@ export async function validatePromoCodeAction(params: {
         ...match,
         applies_to: 'packages',
         target_packages: ['basic'],
+        usage_limit: 'max_uses',
+        max_uses: 1,
+      };
+    }
+  }
+
+  // 3C. Verify Post-Party Guest Single-Use 15% Off codes (`SLEUTH-XXXXXX`): strictly single-use (`max_uses: 1`)
+  if (cleanCode.startsWith('SLEUTH-')) {
+    if (!match) {
+      try {
+        const { getAllMarketingLeadsAction } = await import('@/app/actions/marketing');
+        const allLeads = await getAllMarketingLeadsAction();
+        const leadWithSleuthCode = allLeads.find(
+          (l) => l.free_mystery_code && l.free_mystery_code.toUpperCase() === cleanCode
+        );
+        if (leadWithSleuthCode) {
+          const nowIso = new Date().toISOString();
+          match = {
+            id: `sleuth-guest-${cleanCode.toLowerCase()}`,
+            name: `Post-Party Guest 15% Off Reward (${leadWithSleuthCode.full_name || leadWithSleuthCode.email})`,
+            code: cleanCode,
+            auto_apply: false,
+            discount_type: 'percentage',
+            discount_value: 15,
+            applies_to: 'all',
+            target_packages: [],
+            target_mysteries: [],
+            starts_at: leadWithSleuthCode.created_at || nowIso,
+            ends_at: null,
+            usage_limit: 'max_uses',
+            max_uses: 1,
+            times_used: 0,
+            is_active: true,
+            created_at: leadWithSleuthCode.created_at || nowIso,
+            updated_at: nowIso,
+          };
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (match) {
+      match = {
+        ...match,
         usage_limit: 'max_uses',
         max_uses: 1,
       };
@@ -881,4 +911,81 @@ export async function generateBatchSingleUseCodesAction(params: {
   };
 }
 
+/**
+ * Mints a unique, random single-use (`max_uses: 1`) 15%-Off Next-Host promo code (`SLEUTH-XXXXXX`)
+ * for a guest who enters their email on the Stage 4 Post-Party Finale screen.
+ * Idempotent per email address so a guest refreshing the page cannot farm multiple codes.
+ */
+export async function mintSingleUseGuestSleuthCodeInternal(params: {
+  email: string;
+  playerName?: string | null;
+  existingCode?: string | null;
+}): Promise<{ code: string; discount: DiscountRecord }> {
+  const cleanEmail = (params.email || '').trim().toLowerCase();
+  const cleanPlayerName = (params.playerName || '').trim() || cleanEmail;
+  const emailHash = crypto.createHash('sha256').update(cleanEmail).digest('hex').slice(0, 10);
+  const discountId = `sleuth-guest-${emailHash}`;
 
+  const local = readLocalStore();
+  const existingRecord = local.discounts[discountId];
+  if (existingRecord && existingRecord.code && existingRecord.code.startsWith('SLEUTH-')) {
+    return { code: existingRecord.code, discount: existingRecord };
+  }
+
+  const randHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const code =
+    params.existingCode && params.existingCode.startsWith('SLEUTH-')
+      ? params.existingCode.toUpperCase()
+      : `SLEUTH-${randHex}`;
+  const nowIso = new Date().toISOString();
+
+  const record: DiscountRecord = {
+    id: discountId,
+    name: `Post-Party Guest 15% Off Reward (${cleanPlayerName} - ${cleanEmail})`,
+    code,
+    auto_apply: false,
+    discount_type: 'percentage',
+    discount_value: 15,
+    applies_to: 'all',
+    target_packages: [],
+    target_mysteries: [],
+    starts_at: nowIso,
+    ends_at: null,
+    usage_limit: 'max_uses',
+    max_uses: 1,
+    times_used: 0,
+    is_active: true,
+    created_at: nowIso,
+    updated_at: nowIso,
+  };
+
+  local.discounts[discountId] = record;
+  local.deletedIds = local.deletedIds.filter((dId) => dId !== discountId);
+  writeLocalStore(local);
+  await syncDiscountsStoreToStorage(local);
+
+  try {
+    const supabase = await createClient();
+    await (supabase as any).from('discounts').insert({
+      name: record.name,
+      code: record.code,
+      auto_apply: record.auto_apply,
+      discount_type: record.discount_type,
+      discount_value: record.discount_value,
+      applies_to: record.applies_to,
+      target_packages: record.target_packages,
+      target_mysteries: record.target_mysteries,
+      starts_at: record.starts_at,
+      ends_at: record.ends_at,
+      usage_limit: record.usage_limit,
+      max_uses: record.max_uses,
+      times_used: record.times_used,
+      is_active: record.is_active,
+      updated_at: record.updated_at,
+    });
+  } catch {
+    // Non-fatal if discounts table is not migrated
+  }
+
+  return { code, discount: record };
+}

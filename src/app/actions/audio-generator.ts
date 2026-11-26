@@ -420,6 +420,12 @@ export async function pregenerateAllAudioCluesForMystery(
 ): Promise<{ generatedCount: number; totalAudioClues: number }> {
   try {
     const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { generatedCount: 0, totalAudioClues: 0 };
+    }
     const { data: cluesData } = await supabase
       .from('clues')
       .select('*')

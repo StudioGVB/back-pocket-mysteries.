@@ -255,7 +255,7 @@ function saveReviewMetadataMap(map: Record<string, ReviewExtraMeta>) {
   }
 }
 
-export async function getReviewMetadataMap(): Promise<Record<string, ReviewExtraMeta>> {
+function readReviewMetadataMapInternal(): Record<string, ReviewExtraMeta> {
   try {
     const stat = fs.statSync(REVIEW_META_PATH);
     if (cachedReviewMetaMap && cachedReviewMetaMap.mtimeMs === stat.mtimeMs) {
@@ -272,13 +272,18 @@ export async function getReviewMetadataMap(): Promise<Record<string, ReviewExtra
   return {};
 }
 
+export async function getReviewMetadataMap(): Promise<Record<string, ReviewExtraMeta>> {
+  await requireAdmin();
+  return readReviewMetadataMapInternal();
+}
+
 export async function assignReviewMysteryBaseAction(
   reviewId: string,
   mysteryTitle: string
 ): Promise<{ success?: boolean; error?: string }> {
   try {
     await requireAdmin();
-    const map = await getReviewMetadataMap();
+    const map = readReviewMetadataMapInternal();
     map[reviewId] = {
       ...(map[reviewId] || {}),
       mysteryTitle: mysteryTitle.trim() || undefined,
@@ -298,12 +303,12 @@ export async function assignReviewMysteryBaseAction(
  * 2. Supabase LIVE_CARRIER_CLUE_TITLE carrier rows (Playroom end-of-game Review Wall submissions)
  * 3. Local .live-game-sessions.json sessions (Playroom end-of-game Review Wall submissions)
  */
-export async function getAllPlatformReviews(
+async function fetchAllPlatformReviewsInternal(
   supabaseClient?: any,
   mysteryTitleById?: Map<string, string>
 ): Promise<any[]> {
   const supabase = supabaseClient || (await createClient());
-  const metaMap = await getReviewMetadataMap();
+  const metaMap = readReviewMetadataMapInternal();
   const byId = new Map<string, any>();
 
   const now = Date.now();
@@ -489,6 +494,14 @@ export async function getAllPlatformReviews(
   );
 }
 
+export async function getAllPlatformReviews(
+  supabaseClient?: any,
+  mysteryTitleById?: Map<string, string>
+): Promise<any[]> {
+  await requireAdmin();
+  return fetchAllPlatformReviewsInternal(supabaseClient, mysteryTitleById);
+}
+
 export interface PublicPublishedReview {
   id: string;
   name: string;
@@ -505,7 +518,7 @@ export async function getPublishedReviewsForPublicDisplay(options?: {
   mysteryId?: string;
   limit?: number;
 }): Promise<PublicPublishedReview[]> {
-  const all = await getAllPlatformReviews();
+  const all = await fetchAllPlatformReviewsInternal();
   const published = all.filter((r) => r.status === 'published');
 
   const formatted: PublicPublishedReview[] = published.map((r) => {
