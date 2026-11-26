@@ -39,6 +39,7 @@ import {
   DetectiveGuestItem,
   PartyEventDetails,
 } from '@/app/actions/customer-mystery';
+import { claimGuestPostPartyRewardAction } from '@/app/actions/marketing';
 import {
   formatPartyDateDisplay,
   getFoodVibeDisplay,
@@ -641,6 +642,10 @@ export function PlayroomClient({
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false);
   const [reviewBonusEarned, setReviewBonusEarned] = useState<boolean>(false);
   const [copiedPromoCode, setCopiedPromoCode] = useState<boolean>(false);
+  const [rewardEmail, setRewardEmail] = useState<string>('');
+  const [personalPromoCode, setPersonalPromoCode] = useState<string | null>(null);
+  const [isClaimingRewardCode, setIsClaimingRewardCode] = useState<boolean>(false);
+  const [rewardCodeError, setRewardCodeError] = useState<string | null>(null);
   const [isStoryCardModalOpen, setIsStoryCardModalOpen] = useState<boolean>(false);
   const [isExportingStoryCard, setIsExportingStoryCard] = useState<boolean>(false);
   const [storyCardUsePartyPhoto, setStoryCardUsePartyPhoto] = useState<boolean>(false);
@@ -672,17 +677,17 @@ export function PlayroomClient({
   }, []);
 
   const handleCopyRewardPromoCode = useCallback(async () => {
-    const code = 'SLEUTH15';
+    if (!personalPromoCode) return;
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(code);
+        await navigator.clipboard.writeText(personalPromoCode);
       }
     } catch {
       // fallback
     }
     setCopiedPromoCode(true);
     setTimeout(() => setCopiedPromoCode(false), 2600);
-  }, []);
+  }, [personalPromoCode]);
 
   // Restore review-unlock status for this device/guest if they already left a review tonight
   useEffect(() => {
@@ -699,6 +704,14 @@ export function PlayroomClient({
       const bonus = window.localStorage.getItem(`bpm_review_bonus_${mystery.id}`);
       if (bonus === '1' || params.get('unlocked') === '1') {
         setReviewBonusEarned(true);
+      }
+      const savedPersonalCode = window.localStorage.getItem(`bpm_guest_reward_code_${mystery.id}`);
+      const savedRewardEmail = window.localStorage.getItem(`bpm_guest_reward_email_${mystery.id}`);
+      if (savedPersonalCode && savedPersonalCode.startsWith('SLEUTH-')) {
+        setPersonalPromoCode(savedPersonalCode);
+      }
+      if (savedRewardEmail) {
+        setRewardEmail(savedRewardEmail);
       }
       if (params.get('story') === '1') {
         setIsStoryCardModalOpen(true);
@@ -6092,12 +6105,14 @@ export function PlayroomClient({
                     </button>
                   </div>
 
-                  {/* Right: 15% OFF Guest-to-Next-Host Reward Code (SLEUTH15) */}
+                  {/* Right: 15% OFF Guest-to-Next-Host Personal Single-Use Reward Code (Email Capture + Random Code Generator) */}
                   <div className="lg:col-span-5 p-5 rounded-3xl bg-gradient-to-br from-amber-500/15 via-slate-900 to-slate-950 border border-amber-400/35 shadow-xl flex flex-col justify-between gap-3">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-widest">
-                          {reviewBonusEarned ? '✓ 15% Off Reward Unlocked' : 'Next-Host Reward'}
+                          {personalPromoCode
+                            ? '✓ Single-Use 15% Off Code Unlocked'
+                            : 'Next-Host Reward • 15% Off'}
                         </span>
                         <Link
                           href={`/${locale}/mysteries`}
@@ -6109,27 +6124,112 @@ export function PlayroomClient({
                       <h3 className="text-sm sm:text-base font-black text-white">
                         Want to Host Your Group&apos;s Next Mystery Night?
                       </h3>
-                      <p className="text-xs text-slate-300">
-                        Use code <strong className="text-amber-300 font-mono">SLEUTH15</strong> at checkout for 15% off any mystery pack.
-                      </p>
+                      {personalPromoCode ? (
+                        <p className="text-xs text-slate-300">
+                          Your personal single-use 15% off code{' '}
+                          <strong className="text-amber-300 font-mono">{personalPromoCode}</strong>{' '}
+                          and Detective Wrapped recap have been emailed to{' '}
+                          <span className="text-white font-semibold">{rewardEmail}</span>.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-300">
+                          Enter your email to generate your personal single-use{' '}
+                          <strong className="text-amber-300">15% Off Host Code</strong> + get your
+                          Detective Wrapped scorecard in your inbox.
+                        </p>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/30 font-mono text-sm font-black tracking-widest text-amber-300 text-center">
-                        SLEUTH15
+                    {personalPromoCode ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/30 font-mono text-sm font-black tracking-widest text-amber-300 text-center">
+                          {personalPromoCode}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleCopyRewardPromoCode}
+                          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                            copiedPromoCode
+                              ? 'bg-emerald-500 text-slate-950'
+                              : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                          }`}
+                        >
+                          {copiedPromoCode ? '✓ Copied!' : 'Copy Code'}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyRewardPromoCode}
-                        className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                          copiedPromoCode
-                            ? 'bg-emerald-500 text-slate-950'
-                            : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
-                        }`}
+                    ) : (
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          setRewardCodeError(null);
+                          const clean = rewardEmail.trim();
+                          if (!clean || !clean.includes('@')) {
+                            setRewardCodeError('Please enter a valid email address.');
+                            return;
+                          }
+                          setIsClaimingRewardCode(true);
+                          try {
+                            const res = await claimGuestPostPartyRewardAction({
+                              email: clean,
+                              playerName: myDetectiveSummary.playerName,
+                              characterRole: myDetectiveSummary.roleLabel,
+                              mysteryTitle: mystery.title,
+                              awardLabel: myDetectiveSummary.awardLabel,
+                              correctVotes: myDetectiveSummary.correctVotes,
+                              totalVotes: myDetectiveSummary.totalVotes,
+                            });
+                            if (!res.success || !res.code) {
+                              setRewardCodeError(res.error || 'Could not generate code.');
+                              return;
+                            }
+                            setPersonalPromoCode(res.code);
+                            try {
+                              window.localStorage.setItem(
+                                `bpm_guest_reward_code_${mystery.id}`,
+                                res.code
+                              );
+                              window.localStorage.setItem(
+                                `bpm_guest_reward_email_${mystery.id}`,
+                                clean
+                              );
+                            } catch {
+                              // ignore
+                            }
+                          } catch {
+                            setRewardCodeError('Network error — please try again.');
+                          } finally {
+                            setIsClaimingRewardCode(false);
+                          }
+                        }}
+                        className="space-y-1.5"
                       >
-                        {copiedPromoCode ? '✓ Copied!' : 'Copy Code'}
-                      </button>
-                    </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="email"
+                            required
+                            value={rewardEmail}
+                            onChange={(e) => setRewardEmail(e.target.value)}
+                            placeholder="your@email.com"
+                            className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-slate-950 border border-amber-400/35 focus:border-amber-300 text-xs text-white placeholder:text-slate-500 outline-none"
+                          />
+                          <button
+                            type="submit"
+                            disabled={isClaimingRewardCode}
+                            className="shrink-0 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-slate-950 text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                          >
+                            {isClaimingRewardCode ? 'Minting…' : '🎁 Get My Code'}
+                          </button>
+                        </div>
+                        {rewardCodeError ? (
+                          <p className="text-[11px] font-bold text-rose-400">{rewardCodeError}</p>
+                        ) : (
+                          <p className="text-[10px] text-slate-400 leading-tight">
+                            Emails your personal single-use code, Detective Scorecard &amp; new
+                            mystery releases. Unsubscribe anytime.
+                          </p>
+                        )}
+                      </form>
+                    )}
                   </div>
                 </div>
 

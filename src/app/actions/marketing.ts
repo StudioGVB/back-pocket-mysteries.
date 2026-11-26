@@ -1037,3 +1037,181 @@ export async function adminSendFreeMysteryCodeToLeadAction(leadEmail: string): P
     code,
   };
 }
+
+/**
+ * Post-Party Guest Finale Action:
+ * When a guest finishes Round 3 and enters their email on the Stage 4 Finale screen,
+ * this action:
+ * 1. Mints a random, strictly single-use (`max_uses: 1`) 15% Off Next-Host promo code (`SLEUTH-XXXXXX`)
+ *    tied to their email (or returns their existing code if they already claimed one).
+ * 2. Adds the guest to the unified Newsletter / Marketing Leads store & Resend Cloud Audience
+ *    with `marketing_consent: true` and `source: 'playroom_finale_guest_reward'`.
+ * 3. Sends them a branded email with their personal single-use promo code and their Detective Wrapped recap.
+ */
+export async function claimGuestPostPartyRewardAction(params: {
+  email: string;
+  playerName?: string | null;
+  characterRole?: string | null;
+  mysteryTitle?: string | null;
+  awardLabel?: string | null;
+  correctVotes?: number;
+  totalVotes?: number;
+}): Promise<{
+  success: boolean;
+  code?: string;
+  email?: string;
+  error?: string;
+}> {
+  const cleanEmail = (params.email || '').trim().toLowerCase();
+  if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+    return { success: false, error: 'Please enter a valid email address.' };
+  }
+
+  const cleanPlayerName = (params.playerName || '').trim() || null;
+  const mysteryTitle = (params.mysteryTitle || '').trim() || 'Back Pocket Mysteries';
+  const characterRole = (params.characterRole || '').trim() || 'Suspect';
+  const awardLabel = (params.awardLabel || '').trim() || 'Certified Detective';
+  const correctVotes = typeof params.correctVotes === 'number' ? params.correctVotes : 0;
+  const totalVotes = typeof params.totalVotes === 'number' ? params.totalVotes : 3;
+
+  try {
+    const [all, geoInfo] = await Promise.all([
+      getAllMarketingLeadsAction(),
+      detectSubscriberIpAndCountry(),
+    ]);
+    const existing = all.find((l) => l.email.toLowerCase() === cleanEmail);
+
+    const existingSleuthCode =
+      existing?.free_mystery_code && existing.free_mystery_code.startsWith('SLEUTH-')
+        ? existing.free_mystery_code
+        : null;
+
+    const { code } = await mintSingleUseGuestSleuthCodeInternal({
+      email: cleanEmail,
+      playerName: cleanPlayerName || existing?.full_name || cleanEmail,
+      existingCode: existingSleuthCode,
+    });
+
+    const nowIso = new Date().toISOString();
+    const store = readLocalLeadsStore();
+    const resolvedCountry = geoInfo.country || existing?.country || null;
+    const resolvedIp = geoInfo.ip_address || existing?.ip_address || null;
+
+    // Preserve VIP50-* code on the lead record if they were already a First 50 VIP Founding Host;
+    // otherwise store their SLEUTH-XXXXXX code in free_mystery_code so it syncs to Resend Cloud Audience.
+    const preservedLeadCode =
+      existing?.free_mystery_code && existing.free_mystery_code.startsWith('VIP50-')
+        ? existing.free_mystery_code
+        : code;
+
+    const leadRecord: MarketingLeadRecord = existing
+      ? {
+          ...existing,
+          full_name: existing.full_name || cleanPlayerName,
+          free_mystery_code: preservedLeadCode,
+          code_sent_at: existing.code_sent_at || nowIso,
+          marketing_consent: true,
+          country: existing.country || resolvedCountry,
+          ip_address: existing.ip_address || resolvedIp,
+        }
+      : {
+          id: crypto.randomUUID(),
+          email: cleanEmail,
+          full_name: cleanPlayerName,
+          source: 'playroom_finale_guest_reward',
+          vip_rank: all.length + 1,
+          qualifies_for_free_mystery: all.length + 1 <= FIRST_50_VIP_CAP,
+          free_mystery_code: code,
+          code_sent_at: nowIso,
+          marketing_consent: true,
+          created_at: nowIso,
+          country: resolvedCountry,
+          ip_address: resolvedIp,
+        };
+
+    store.leads[cleanEmail] = leadRecord;
+    writeLocalLeadsStore(store);
+    await upsertResendAudienceContact(leadRecord);
+
+    try {
+      const supabase = await createClient();
+      if (!existing) {
+        await (supabase as any).from('leads').insert([
+          {
+            email: cleanEmail,
+            full_name: cleanPlayerName,
+            marketing_consent: true,
+          },
+        ]);
+      }
+    } catch {
+      // Non-fatal if leads table is not migrated
+    }
+
+    // Email the guest their single-use 15% Off code + Detective Wrapped scorecard recap
+    if (process.env.RESEND_API_KEY) {
+      const firstName = (cleanPlayerName || existing?.full_name || 'Detective').split(' ')[0];
+      await resend.emails.send({
+        from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+        to: cleanEmail,
+        replyTo: 'Hello@backpocketgames.com',
+        subject: `🎁 Your 15% Off Next-Host Code (${code}) + Detective Wrapped Recap`,
+        html: buildBrandedEmailShell({
+          preheader: `Your personal single-use 15% Off Host Code (${code}) and your Detective Wrapped scorecard from ${mysteryTitle}.`,
+          kicker: `POST-PARTY DETECTIVE REWARD • SINGLE-USE VOUCHER`,
+          headline: `Ready to Host Your Group's Next Mystery Night?`,
+          bodyHtml: `
+            <p style="margin:0 0 14px 0;font-size:16px;font-weight:700;color:#1e191c;">Hi ${firstName},</p>
+            <p style="margin:0 0 20px 0;color:#374151;line-height:1.7;">
+              Thanks for playing <strong>${mysteryTitle}</strong> tonight as <strong>${characterRole}</strong>! Below is your personal single-use <strong>15% Off Next-Host Promo Code</strong> plus your official Detective Wrapped summary.
+            </p>
+
+            <!-- PERSONAL SINGLE-USE PROMO CODE BOX -->
+            <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;border-radius:12px;padding:24px;text-align:center;margin-bottom:22px;">
+              <p style="color:#fe04c6;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2.2px;margin:0 0 8px 0;">
+                YOUR PERSONAL SINGLE-USE 15% OFF HOST CODE
+              </p>
+              <p style="color:#ffffff;font-size:28px;font-weight:900;font-family:monospace;letter-spacing:3px;margin:0 0 8px 0;">
+                ${code}
+              </p>
+              <p style="color:#a1a1aa;font-size:12px;margin:0;">
+                Valid for 15% off any Back Pocket Mysteries package • Single-use • Unlocks any theme
+              </p>
+            </div>
+
+            <!-- DETECTIVE WRAPPED RECAP CARD -->
+            <div style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+              <p style="margin:0 0 6px 0;color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;">
+                TONIGHT'S DETECTIVE WRAPPED SCORECARD
+              </p>
+              <p style="margin:0 0 6px 0;color:#1e191c;font-size:16px;font-weight:900;">
+                ${awardLabel} • ${correctVotes}/${totalVotes} Rounds Correct
+              </p>
+              <p style="margin:0;color:#475569;font-size:13px;line-height:1.6;">
+                Mystery: <strong>${mysteryTitle}</strong> · Role Played: <strong>${characterRole}</strong>
+              </p>
+            </div>
+          `,
+          ctaText: 'Browse Mystery Themes & Host Next →',
+          ctaUrl:
+            'https://backpocketmysteries.com/en/themes?utm_source=playroom_finale&utm_medium=email&utm_campaign=guest_to_host_reward',
+          footerNote:
+            'You are receiving this email because you requested your Detective Wrapped scorecard and Next-Host reward code after playing a Back Pocket Mysteries party.',
+        }),
+      });
+    }
+
+    revalidatePath('/en/admin/leads');
+    return {
+      success: true,
+      code,
+      email: cleanEmail,
+    };
+  } catch (err: any) {
+    console.error('Error claiming guest post-party reward code:', err);
+    return {
+      success: false,
+      error: err?.message || 'Could not generate your reward code. Please try again.',
+    };
+  }
+}
