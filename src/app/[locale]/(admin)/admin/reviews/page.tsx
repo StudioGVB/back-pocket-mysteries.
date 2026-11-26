@@ -3,6 +3,7 @@ import React, { Suspense } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import ReviewsTable from '@/components/admin/ReviewsTable';
 import { getReviewMetadataMap, getAllPlatformReviews } from '@/app/actions/reviews';
+import { getAllMarketingLeadsAction } from '@/app/actions/marketing';
 import { ALL_CANONICAL_MYSTERIES } from '@/data/active-mysteries';
 
 export const unstable_instant = false;
@@ -102,19 +103,34 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
   await params;
   const supabase = await createClient();
 
-  const [mysteriesRes, ordersRes, profilesRes, metaMap, rawReviews] = await Promise.all([
-    supabase
-      .from('mysteries')
-      .select('id, title, theme, status, created_by')
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('orders')
-      .select('id, user_id, mystery_id, status')
-      .in('status', ['succeeded', 'qa_verified']),
-    supabase.from('profiles').select('id, full_name, email'),
-    getReviewMetadataMap(),
-    getAllPlatformReviews(supabase),
-  ]);
+  const [mysteriesRes, ordersRes, profilesRes, metaMap, rawReviews, marketingLeads] =
+    await Promise.all([
+      supabase
+        .from('mysteries')
+        .select('id, title, theme, status, created_by')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('orders')
+        .select('id, user_id, mystery_id, status')
+        .in('status', ['succeeded', 'qa_verified']),
+      supabase.from('profiles').select('id, full_name, email'),
+      getReviewMetadataMap(),
+      getAllPlatformReviews(supabase),
+      getAllMarketingLeadsAction().catch(() => []),
+    ]);
+
+  const leadByNameLower = new Map<string, { email: string; code: string | null }>();
+  for (const lead of marketingLeads || []) {
+    if (lead?.full_name && lead?.email) {
+      const cleanLeadName = lead.full_name.trim().toLowerCase();
+      if (cleanLeadName && !leadByNameLower.has(cleanLeadName)) {
+        leadByNameLower.set(cleanLeadName, {
+          email: lead.email,
+          code: lead.free_mystery_code || null,
+        });
+      }
+    }
+  }
 
   const dbMysteries = mysteriesRes.data || [];
   const mysteryTitleById = new Map<string, string>();
@@ -199,6 +215,7 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
     const directCustomerProfile = rawReviewerName
       ? profileByNameLower.get(rawReviewerName)
       : undefined;
+    const matchedLead = rawReviewerName ? leadByNameLower.get(rawReviewerName) : undefined;
 
     const hostCustomerName =
       r.host_name ||
@@ -218,9 +235,23 @@ async function ReviewsContent({ params }: { params: Promise<{ locale: string }> 
           hostCustomerName.toLowerCase().trim() === rawReviewerName
       ) || Boolean(!r.is_guest_review && directCustomerProfile && !hostProfile);
 
+    const reviewerEmail =
+      r.reviewer_email ||
+      metaMap[r.id]?.reviewerEmail ||
+      matchedLead?.email ||
+      (isSamePersonAsHost ? hostCustomerEmail : undefined) ||
+      undefined;
+    const rewardPromoCode =
+      r.reward_promo_code ||
+      metaMap[r.id]?.rewardPromoCode ||
+      matchedLead?.code ||
+      undefined;
+
     return {
       ...r,
       mysteryBaseTitle: inferMysteryBaseForReview(r, metaMap, knownBases, ordersByReviewerName),
+      reviewerEmail,
+      rewardPromoCode,
       hostCustomerName,
       hostCustomerEmail,
       hostUserId: resolvedHostUserId || directCustomerProfile?.id,

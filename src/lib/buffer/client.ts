@@ -17,6 +17,7 @@ export interface BufferCreateUpdateOptions {
   text: string;
   media?: {
     photo?: string;
+    photos?: string[];
     link?: string;
   };
   scheduledAt?: string;
@@ -117,7 +118,17 @@ export async function createBufferUpdate(options: BufferCreateUpdateOptions) {
       : "addToQueue";
 
     const assets = [];
-    if (options.media?.photo) {
+    if (Array.isArray(options.media?.photos) && options.media!.photos.length > 0) {
+      for (const photoUrl of options.media!.photos) {
+        if (photoUrl) {
+          assets.push({
+            image: {
+              url: photoUrl,
+            },
+          });
+        }
+      }
+    } else if (options.media?.photo) {
       assets.push({
         image: {
           url: options.media.photo,
@@ -141,7 +152,12 @@ export async function createBufferUpdate(options: BufferCreateUpdateOptions) {
     }
 
     if (profile.service.toLowerCase() === "instagram") {
-      input.metadata = { instagram: { type: "post", shouldShareToFeed: true } };
+      input.metadata = {
+        instagram: {
+          type: assets.length > 1 ? "carousel" : "post",
+          shouldShareToFeed: true,
+        },
+      };
     } else if (profile.service.toLowerCase() === "facebook") {
       input.metadata = { facebook: { type: "post" } };
     } else if (profile.service.toLowerCase() === "linkedin" && options.media?.link && assets.length === 0) {

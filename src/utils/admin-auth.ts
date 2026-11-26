@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
-export const ADMIN_EMAIL_ALLOWLIST = ['hello@studiogvb.com'];
+export const ADMIN_EMAIL_ALLOWLIST = ['hello@studiogvb.com', 'g.v.blyth@gmail.com'];
 export const ADMIN_UID_ALLOWLIST = ['4903bd39-e54f-42e4-b679-2af5d128bb8f'];
 export const VALID_ADMIN_ROLES = ['admin', 'superadmin', 'super_admin'];
 

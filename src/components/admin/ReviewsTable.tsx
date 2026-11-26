@@ -146,11 +146,23 @@ export default function ReviewsTable({
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchName = String(review.name || '').toLowerCase().includes(q);
+        const matchReviewerEmail = String(review.reviewerEmail || '').toLowerCase().includes(q);
+        const matchPromoCode = String(review.rewardPromoCode || '').toLowerCase().includes(q);
         const matchText = String(review.review_text || '').toLowerCase().includes(q);
         const matchBase = String(review.mysteryBaseTitle || '').toLowerCase().includes(q);
         const matchHostName = String(review.hostCustomerName || '').toLowerCase().includes(q);
         const matchHostEmail = String(review.hostCustomerEmail || '').toLowerCase().includes(q);
-        if (!matchName && !matchText && !matchBase && !matchHostName && !matchHostEmail) return false;
+        if (
+          !matchName &&
+          !matchReviewerEmail &&
+          !matchPromoCode &&
+          !matchText &&
+          !matchBase &&
+          !matchHostName &&
+          !matchHostEmail
+        ) {
+          return false;
+        }
       }
       return true;
     });
@@ -645,6 +657,24 @@ export default function ReviewsTable({
                     <div className="font-bold text-brand-dark group-hover:text-brand-pink transition-colors">
                       {review.name}
                     </div>
+                    {review.reviewerEmail && (
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                        <a
+                          href={`mailto:${review.reviewerEmail}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-pink hover:underline"
+                          title={`Reviewer email: ${review.reviewerEmail}`}
+                        >
+                          <span>✉️</span>
+                          <span>{review.reviewerEmail}</span>
+                        </a>
+                        {review.rewardPromoCode && (
+                          <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-[9px] font-black text-slate-600">
+                            {review.rewardPromoCode}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {(review.hostCustomerName || review.hostCustomerEmail) ? (
                       <div
                         className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-50 border border-amber-200/70 text-[10px] font-bold text-amber-900 max-w-[240px] truncate"
@@ -816,6 +846,22 @@ export default function ReviewsTable({
                     {selectedReview.is_guest_review ? 'Reviewer (Party Guest)' : 'Customer Name'}
                   </p>
                   <p className="text-base font-bold text-brand-dark">{selectedReview.name}</p>
+                  {selectedReview.reviewerEmail && (
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <a
+                        href={`mailto:${selectedReview.reviewerEmail}`}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-brand-pink hover:underline"
+                      >
+                        <span>✉️</span>
+                        <span>{selectedReview.reviewerEmail}</span>
+                      </a>
+                      {selectedReview.rewardPromoCode && (
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 font-mono text-[10px] font-black text-slate-700">
+                          Reward Code: {selectedReview.rewardPromoCode}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {(selectedReview.hostCustomerName || selectedReview.hostCustomerEmail) && (
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <button
