@@ -103,7 +103,7 @@ Over the last few months, we've been quietly building our biggest project yet...
 
 We hated how old-school murder mystery kits forced the host to print 40 pages of paper, sit out of the game as a referee, and hand out generic stock characters. So we completely reinvented it:
 
-🎭 Your Friends' Real Names & Inside Jokes Woven In: Every character dossier, alibi, and secret motive is custom-hydrated around your actual guest list (for 5 to 16 players)
+🎭 Your Friends' Real Names & Inside Jokes Woven In: Every character dossier, alibi, and secret motive is custom-built around your actual guest list (for 5 to 16 players)
 📹 Real Multimedia Forensic Clues: Unlock grainy CCTV security camera stills (CAM 04 // REC), dark-mode recovered group chats & toxicology lab reports on your phones
 🎙️ Playable Audio Wiretaps: Tap play at the dinner table and hear two suspects whispering your actual friend's name in a leaked voice recording
 🥂 Spoiler-Free Host Mode: Our live 6-digit Game PIN controller hides the killer so the host gets to play, sip, and accuse right alongside everyone else
@@ -116,7 +116,7 @@ Before we open public checkout, the First 50 people to join our VIP Launch List 
 ${SITE}/free-murder-mystery-game
 
 #BackPocketGames #BackPocketMysteries #Prottack #MurderMysteryParty #GameNight`,
-    linkedin: `From Prottack to Back Pocket Mysteries: How We Are Re-Engineering the At-Home Murder Mystery Party With Real-Name Hydration and Multimedia Evidence
+    linkedin: `From Prottack to Back Pocket Mysteries: How We Are Re-Engineering the At-Home Murder Mystery Party With Real-Name Personalisation and Multimedia Evidence
 
 When we first launched our tabletop card game Prottack under Back Pocket Games, our mission was simple: create fast, high-energy social games that get friends off their screens and laughing around the same table. Watching hundreds of game nights unfold taught us something important about how adults socialise today. People are hungry for structured, memorable experiences at home, whether for a birthday dinner, a bachelorette weekend, a Friday office social, or a Saturday night in with six friends.
 
@@ -133,7 +133,7 @@ Introducing Back Pocket Mysteries:
 Over the past several months, we have been building Back Pocket Mysteries, an interactive digital and printable murder mystery platform engineered to take a host from zero to a fully personalised party in under thirty minutes.
 
 Here are the four core product innovations we built into the platform:
-- Dynamic Real-Name and Inside-Joke Hydration: Instead of forcing guests to memorize awkward fictional names, hosts enter their real guests' first names, select adaptable character genders (Male, Female, or Adaptable), and optionally add friend-group inside jokes or guest selfies. Our hydration engine weaves your real friends' names directly into the character dossiers, text logs, and spoken audio dialogue.
+- Dynamic Real-Name and Inside-Joke Personalisation: Instead of forcing guests to memorize awkward fictional names, hosts enter their real guests' first names, select adaptable character genders (Male, Female, or Adaptable), and optionally add friend-group inside jokes or guest selfies. Our story builder weaves your real friends' names directly into the character dossiers, text logs, and spoken audio dialogue.
 - Diegetic Multimedia Forensic Clues: Across three progressive rounds, players unlock high-angle grainy CCTV security camera stills stamped with camera metadata, dark-mode smartphone chat threads with Deleted Message Recovered badges, styled toxicology reports, and multi-speaker ElevenLabs audio wiretaps that make the entire dinner table go silent when played aloud.
 - Spoiler-Free Host Mode via a 6-Digit Game PIN: Inspired by the zero-friction onboarding of Kahoot, guests join the live mobile Playroom in ten seconds via a 6-digit PIN in their browser with zero app downloads required. The host's screen acts as a spoiler-free round controller that conceals the killer and upcoming clues behind timed unlocks so the host plays as a full suspect.
 - Elastic Cast Scaling (5 to 16 Suspects) and One-Click Print Studio: Core mandatory roles anchor the murder timeline while expandable suspect roles can be toggled on or off in sixty seconds. Hosts can run the night 100% paper-free on smartphones or print physical character booklets and Polaroid clue cards from our Print Studio.
@@ -242,7 +242,7 @@ In film and interactive game design, diegetic elements are artifacts that exist 
 Why Audio Clues Solve Late-Round Reading Fatigue:
 By Round 2 of an evening dinner party, room lighting is dim, drinks are flowing, and guests do not want to squint at long paragraphs of small print. Audio evidence solves this immediately across four dimensions:
 1. Collective Room Attention: When one player unlocks a wiretap and taps play, all 8 to 16 guests stop talking and lean in to listen at the exact same moment.
-2. Personalized Name Hydration: When the dialogue script is hydrated with the real guests' names assigned to each character archetype and synthesized via multi-speaker voice models, hearing a suspect whisper a real friend's name across the dinner table creates an unforgettable reaction.
+2. Personalized Name personalisation: When the dialogue script is tailored with the real guests' names assigned to each character archetype and recorded via multi-speaker voice models, hearing a suspect whisper a real friend's name across the dinner table creates an unforgettable reaction.
 3. Low-Light Accessibility: Candlelit dining tables and neon noir setups look atmospheric but make paper booklets hard to read. Backlit chat threads and playable audio clips work effortlessly in dark rooms.
 4. Collapsible Transcripts for Verification: Pairing every 30-second audio clip with a collapsible written transcript lets players listen for dramatic tone first and then skim exact times and dollar figures during final deliberations.
 

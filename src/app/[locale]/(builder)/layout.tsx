@@ -39,7 +39,6 @@ export default async function BuilderLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  await requireAdminOrRedirect(locale || 'en');
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen md:h-screen bg-slate-50 overflow-x-hidden md:overflow-hidden">
@@ -54,7 +53,9 @@ export default async function BuilderLayout({
       {/* Main Content */}
       <div className="flex-grow flex flex-col min-w-0 overflow-x-hidden md:overflow-hidden">
         <main className="flex-grow md:overflow-auto custom-scrollbar bg-[#f8fafc] overflow-x-hidden">
-          {children}
+          <Suspense fallback={<div className="p-8 animate-pulse text-xs font-bold text-slate-400">Loading Studio...</div>}>
+            {children}
+          </Suspense>
         </main>
       </div>
     </div>

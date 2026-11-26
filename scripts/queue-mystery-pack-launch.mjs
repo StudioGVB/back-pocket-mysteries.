@@ -15,11 +15,11 @@ const SITE = "https://backpocketmysteries.com/en";
 const EMAIL_FONT_FAMILY = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 /**
- * Reusable Mystery Base Pack Launch Script:
+ * Reusable Mystery Theme Launch Script:
  * Queues:
  *   1. IG + FB Launch Post (draft, max 5 hashtags, rendered via /api/social-card/[slug])
  *   2. LinkedIn 600–700 Word Launch Post (draft, no photo, link preview card)
- *   3. Appends the New Mystery Base Pack Spotlight section into the latest draft Weekly EDM
+ *   3. Appends the New Mystery Theme Spotlight section into the latest draft Weekly EDM
  *
  * Usage:
  *   node scripts/queue-mystery-pack-launch.mjs [slug] [scheduledAtIso]
@@ -59,14 +59,14 @@ ${themeUrl}
 
 Traditional boxed murder mystery games were built around a very specific formula: Victorian manor houses, rigid gender ratios, and twenty-page paper scripts that take hours for a host to prepare. While classic period mysteries still have a loyal audience, modern party hosts planning bachelorette weekends, 20s and 30s birthdays, and Friday night socials have been asking for contemporary settings where the evidence looks and sounds like the media they consume every day.
 
-Today we are excited to launch our newest Mystery Base Pack on Back Pocket Mysteries: Love On The Rocks, an interactive reality-TV reunion whodunit engineered for 5 to 12 suspects.
+Today we are excited to launch our newest Mystery Theme on Back Pocket Mysteries: Love On The Rocks, an interactive reality-TV reunion whodunit engineered for 5 to 12 suspects.
 
 The Premise and Narrative Architecture:
 Six months after the finale of Season 3's most-watched dating show, the cast, showrunners, and sponsors reunite at a five-star penthouse for the official wrap party. The Star walked away with the crown, the brand deals, and the prize money, leaving a trail of broken alliances and leaked NDAs behind. When The Star collapses mid-champagne-toast in front of rolling cameras, the penthouse goes into lockdown. One suspect planned to kill, another switched the glass, and every guest in the room holds a piece of the timeline.
 
 Four Design Innovations Inside the Pack:
 1. Diegetic Modern Evidence Formats: Instead of handing players generic paragraphs of text, Love On The Rocks delivers clues in the exact formats a reality-TV scandal would produce. Players unlock dark-mode group-chat threads, leaked DM screenshots, backstage multi-speaker audio voice memos, paparazzi security camera stills, and production call sheets directly in their mobile Playroom or as printable Polaroid evidence cards.
-2. Dynamic Guest Personalization: When a host sets up their party, they enter their guests' real names and optional selfies. Our hydration engine weaves every guest's name into the character bios, chat logs, and spoken ElevenLabs audio wiretaps, while incorporating their likeness into the crime scene visual evidence.
+2. Dynamic Guest Personalization: When a host sets up their party, they enter their guests' real names and optional selfies. Our story builder weaves every guest's name into the character bios, chat logs, and spoken ElevenLabs audio wiretaps, while incorporating their likeness into the crime scene visual evidence.
 3. Flexible Player Scaling (5 to 12 Suspects): Group sizes for birthday dinners and bachelorette trips change constantly. Love On The Rocks is architected with five core mandatory roles (The Star, The Ex, The Showrunner, The Bombshell, and The Publicist) and seven expandable suspect roles so a last-minute addition or cancellation never breaks the clue logic.
 4. Spoiler-Free Host Participation: In most party kits, the person who buys and organises the game is forced to act as a non-playing referee because they have seen the solution. Our progressive mobile Playroom controller conceals the killer and round reveals behind timed host triggers, allowing the organiser to play as a full suspect alongside their friends.
 
@@ -79,7 +79,7 @@ What Is Included in Every Customised Kit:
 Why Host Prep Time Matters for Modern Gatherings:
 Our goal with every Back Pocket Mysteries pack is to eliminate the three-hour printing and cutting marathon that stops busy organisers from hosting interactive dinner parties. From entering your guest list to sending out spoiler-free character invites in the group chat, the entire setup takes less than 30 minutes and costs around $2.50 per guest. Whether you are hosting an intimate 6-person apartment dinner or a 12-person weekend away, the entire mystery adapts automatically to your table.
 
-Explore the Love On The Rocks Mystery Base Pack and preview the character line-up:
+Explore the Love On The Rocks Mystery Theme and preview the character line-up:
 ${themeUrl}
 
 #LoveOnTheRocks #BacheloretteParty #MurderMysteryParty #GirlsNightIn #BackPocketMysteries`,
@@ -94,7 +94,7 @@ ${themeUrl}
     shortDesc:
       "Two pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when a sudden 8:19 PM power surge plunges the house into darkness and The Husband is found dead in the Christmas tree corner.",
     included: [
-      "Custom Holiday Character Booklets Named After Your Guests (100% Gender-Flex Ready)",
+      "Custom Holiday Character Booklets Named After Your Guests (Fits Any Group Mix)",
       "Intercepted Lock-Screen Texts, Smart-Home Power Surge Logs & Nursery-Monitor Audio Clips",
       "Crime Scene Reports, Hallway CCTV Stills & Childhood Polaroid Evidence",
     ],
@@ -109,7 +109,7 @@ ${themeUrl}
 
 Two pairs of next-door childhood siblings grew up on the same street. Tonight, beneath the twinkling lights of their annual Christmas dinner party, secret affairs and broken marriages snap when an 8:19 PM power surge plunges the living room into darkness and The Husband is found dead in the Christmas tree corner 👀✨
 
-Built for 6 players (from $19 / ~$3.15 per guest • 100% Gender-Flex for any group ratio):
+Built for 6 players (from $19 / ~$3.15 per guest • flexible for any group mix for any group ratio):
 📱 Intercepted lock-screen texts & smart-home 1,840W power surge logs
 🎙️ Upstairs nursery-monitor audio fights & pocket voicemails on guests' phones
 📸 Personalized hallway CCTV stills, safe break-ins & Polaroid evidence starring your real friends
@@ -119,17 +119,17 @@ Built for 6 players (from $19 / ~$3.15 per guest • 100% Gender-Flex for any gr
 ${themeUrl}
 
 #ChristmasNightmare #ChristmasMurderMystery #FriendsmasParty #MurderMysteryParty #BackPocketMysteries`,
-    linkedin: (themeUrl) => `Product Launch: How We Engineered "Christmas Nightmare" as a Gender-Flexible, Multi-Layered Holiday Dinner Party Murder Mystery for 6 Players
+    linkedin: (themeUrl) => `Product Launch: How We Engineered "Christmas Nightmare" as a flexibleible, Multi-Layered Holiday Dinner Party Murder Mystery for 6 Players
 
 Every December, hosts planning Friendsmas dinners, couples game nights, and holiday cabin weekends run into the same friction with legacy murder mystery kits. Most holiday-themed boxed games rely on campy caricatures, require an exact three-male and three-female guest ratio, and hand players static paper paragraphs that feel disconnected from how modern groups socialize around a dinner table.
 
-Today we are excited to launch our newest Mystery Base Pack on Back Pocket Mysteries: Christmas Nightmare, a high-drama holiday dinner party whodunit architected specifically for a tight-knit table of 6 suspects.
+Today we are excited to launch our newest Mystery Theme on Back Pocket Mysteries: Christmas Nightmare, a high-drama holiday dinner party whodunit architected specifically for a tight-knit table of 6 suspects.
 
 The Narrative Premise and Table Dynamics:
 They all grew up together on the same street: two pairs of next-door childhood siblings whose lives have been intertwined since high school. Tonight, beneath the twinkling lights of their annual Christmas dinner party, years of tangled history, secret affairs, and broken marriages finally snap. At 8:19:12 PM, a 1,840W electrical overload plunges the living room into darkness. When the lights come back on, The Husband is discovered dead in the Christmas tree corner amid a spilled crystal cup of spiced eggnog, a scorched wall outlet, and a tangled 25-foot coil of vintage red-and-green tree lights. Every person at the table is family, a childhood neighbour, a spouse, or a secret lover, and every single one of them is hiding a betrayal.
 
 Four Architectural Innovations Inside Christmas Nightmare:
-1. Bidirectional Gender-Flex Casting for Any Group Ratio: While the six canonical roles (The Husband, The Wife, The Sister-in-Law, The Mistress, The Co-Worker, and The Bestie) match a classic 3M/3F dinner table by default, real-world guest lists rarely stay balanced. Our hydration engine dynamically adapts every character title, pronoun, sibling and spouse relationship token, and AI costume portrait so the exact same mystery plays seamlessly with 4F/2M, an all-female 6F Friendsmas group, or an all-male 6M table with zero pronoun conflicts.
+1. flexible role casting for Any Group Ratio: While the six canonical roles (The Husband, The Wife, The Sister-in-Law, The Mistress, The Co-Worker, and The Bestie) match a classic 3M/3F dinner table by default, real-world guest lists rarely stay balanced. Our story builder dynamically adapts every character title, pronoun, sibling and spouse relationship noun, and AI costume portrait so the exact same mystery plays seamlessly with 4F/2M, an all-female 6F Friendsmas group, or an all-male 6M table with zero pronoun conflicts.
 2. Interlocking Three-Round Forensic Deduction (16 Clues): Across three progressive rounds, players cross-reference 16 distinct pieces of multimedia evidence. Round 1 introduces the coat-closet affair, the stocked-versus-empty utility closet shelves, and the 8:19:12 PM smart-home power log while launching two entangled red-herring subplots (an upstairs study safe heist and a spiked eggnog phone-wipe). Round 2 escalates suspicion with nursery-monitor audio recordings, torn bathroom place cards, and hallway breaker-panel CCTV stills. Round 3 delivers four interlocking alibi and coroner clues that cleanly exonerate the four innocent suspects at the exact 8:19:12 PM timestamp while locking in the true killer.
 3. Personalised Visual and Audio Evidence on the Final Mile: When a host enters their six guests' names and optional selfies, our two-stage identity-locked pipeline generates custom costume portraits and crime-scene photographs featuring the actual players inside the upstairs study, at the kitchen bar, and on the hallway security cameras, paired with multi-speaker ElevenLabs audio clips.
 4. Spoiler-Free Host Mode and Pre-Party Clarity: Pre-party character cards share only warm, spoiler-free childhood, high school, and workplace connections so no plot twists leak before dinner begins. During the party, our mobile Playroom conceals the solution behind timed round unlocks so the host can play as a full suspect.
@@ -142,7 +142,7 @@ What Is Included in Every Customised Kit:
 Designed for Zero-Stress Holiday Hosting:
 From entering your six guests' names to dropping spoiler-free character invites into your group chat, the entire setup takes under 30 minutes and starts from $19 (roughly $3.15 per guest), replacing hours of paper cutting with an unforgettable two-to-three-hour holiday dinner table experience.
 
-Explore the Christmas Nightmare Mystery Base Pack and preview the 6-suspect line-up:
+Explore the Christmas Nightmare Mystery Theme and preview the 6-suspect line-up:
 ${themeUrl}
 
 #ChristmasNightmare #ChristmasMurderMystery #FriendsmasParty #MurderMysteryParty #BackPocketMysteries`,
@@ -175,7 +175,7 @@ export async function queueMysteryPackLaunch(
     : { blog_posts: [], social_posts: [], social_post_captions: [], edm_campaigns: [], edm_events: [] };
 
   const nowIso = new Date().toISOString();
-  const brief = `New Mystery Base Pack Launch: ${pack.title} (${pack.theme})`;
+  const brief = `New Mystery Theme Launch: ${pack.title} (${pack.theme})`;
 
   const existingIdx = store.social_posts.findIndex((p) => p.brief === brief);
   const postId = existingIdx >= 0 ? store.social_posts[existingIdx].id : crypto.randomUUID();
@@ -285,7 +285,7 @@ export async function queueMysteryPackLaunch(
           id: `pack-text-${pack.slug}`,
           type: "text",
           data: {
-            content: `<span style='background-color:#1e191c;color:#fe04c6;font-size:11px;font-weight:800;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px;'>🔥 NEW MYSTERY BASE PACK • ${pack.theme.toUpperCase()}</span><h2 style='font-size:20px;font-weight:800;color:#1e191c;margin:4px 0 10px 0;line-height:1.3;'>${pack.title} (${pack.players} Suspects)</h2><p style='margin:0 0 12px 0;color:#4b5563;font-size:15px;line-height:1.6;'>${pack.shortDesc}</p><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'>${pack.included.map((item) => `<li style='margin-bottom:6px;'><strong>Included:</strong> ${item}</li>`).join("")}</ul>`,
+            content: `<span style='background-color:#1e191c;color:#fe04c6;font-size:11px;font-weight:800;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px;'>🔥 NEW MYSTERY THEME • ${pack.theme.toUpperCase()}</span><h2 style='font-size:20px;font-weight:800;color:#1e191c;margin:4px 0 10px 0;line-height:1.3;'>${pack.title} (${pack.players} Suspects)</h2><p style='margin:0 0 12px 0;color:#4b5563;font-size:15px;line-height:1.6;'>${pack.shortDesc}</p><ul style='margin:0;padding-left:20px;color:#1e191c;line-height:1.7;'>${pack.included.map((item) => `<li style='margin-bottom:6px;'><strong>Included:</strong> ${item}</li>`).join("")}</ul>`,
             fontSize: 15,
             textAlign: "left",
             textColor: "#1e191c",
@@ -368,7 +368,7 @@ export async function queueMysteryPackLaunch(
       )
       .catch(() => {});
   }
-  console.log(`✓ queued Mystery Base Pack launch socials for ${pack.title} → ${scheduledAt}`);
+  console.log(`✓ queued Mystery Theme launch socials for ${pack.title} → ${scheduledAt}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

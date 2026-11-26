@@ -95,7 +95,7 @@ When the host advances the game from Round 1 to Round 2 using the live 6-digit G
 - **Multi-speaker ElevenLabs voice notes and wiretaps** that players can play out loud to the room
 - **Forensic lab and toxicology reports** that narrow down the poison or murder weapon
 
-Because the evidence looks and sounds like real investigative artifacts—and is hydrated with your colleagues' actual first names—teams naturally huddle around tables comparing screenshots and timelines.
+Because the evidence looks and sounds like real investigative artifacts—and is tailored with your colleagues' actual first names—teams naturally huddle around tables comparing screenshots and timelines.
 
 ## Step 3: The 90-Minute Corporate Run Sheet
 
@@ -184,7 +184,7 @@ Sound bypasses late-night reading fatigue. By Round 2 of a dinner party, room li
 
 1. **Shared collective attention.** When one player unlocks an audio wiretap and plays it aloud, all 8 to 16 guests experience the twist at the exact same second. It creates a natural theatrical beat without anyone needing to deliver a memorized monologue.
 2. **Vocal tone carries subtext.** Hesitation, a stammered alibi, background clinking glasses, or a whispered threat in a two-person dialogue recording gives players behavioural cues they can debate across the table.
-3. **Personalized guest name hydration.** When the audio script is dynamically hydrated with the real guests' names assigned to each character archetype, hearing *"Keep your voice down, Marcus is standing right outside the penthouse door!"* produces an immediate eruption of laughter and accusations.
+3. **Personalized guest name casting.** When the audio script is tailored with the real guests' names assigned to each character archetype, hearing *"Keep your voice down, Marcus is standing right outside the penthouse door!"* produces an immediate eruption of laughter and accusations.
 4. **Zero-squint accessibility in low-light rooms.** Candlelit dining rooms and neon noir party setups look atmospheric, but they make paper booklets difficult to read. Playable mobile audio clips and high-contrast backlit chat screens work effortlessly in dim rooms.
 
 ## The 4 Core Multimedia Evidence Templates Explained
@@ -200,14 +200,14 @@ To keep a mystery visually cohesive and easy to scan in the heat of an argument,
 
 ## The Hybrid Sweet Spot: Physical Polaroids + Mobile Playroom
 
-One common concern hosts have about digital-assisted games is that guests will sit silently staring at their phones all night. Research into hybrid tabletop gaming from the [Digital Games Research Association (DiGRA)](http://www.digra.org/) shows that the highest social engagement occurs when **digital devices act strictly as periodic "evidence drops"** while physical tokens anchor eye contact in the room.
+One common concern hosts have about digital-assisted games is that guests will sit silently staring at their phones all night. Research into hybrid tabletop gaming from the [Digital Games Research Association (DiGRA)](http://www.digra.org/) shows that the highest social engagement occurs when **digital devices act strictly as periodic "evidence drops"** while physical props anchor eye contact in the room.
 
 | Game Element | Recommended Medium | Why This Balance Works |
 |---|---|---|
 | Character name badge & core persona | Printed badge or table place card | Keeps everyone's character identity visible across the room at a glance |
 | Round-by-round conversation prompts | Mobile Playroom (` + "`PlayroomClient`" + `) or pocket card | Short 2-sentence objectives that immediately send players off to interrogate others |
 | Crime scene physical evidence | Printed Polaroid clue cards hidden around the room | Gives guests a physical reason to inspect the bar cart, mantelpiece, or hallway |
-| Wiretaps, voicemails, CCTV & chat logs | Mobile Playroom via 6-digit Game PIN | Plays real synthesized audio and renders crisp zoomable chat/CCTV artifacts on tap |
+| Wiretaps, voicemails, CCTV & chat logs | Mobile Playroom via 6-digit Game PIN | Plays real recorded voice audio and renders crisp zoomable chat/CCTV artifacts on tap |
 
 By limiting digital unlocks to **3 or 4 high-impact multimedia artifacts per round**, smartphones act like a detective's encrypted case tablet rather than a screen distraction.
 
@@ -255,7 +255,7 @@ No. Guests simply scan a QR code or enter a 6-digit Game PIN at ` + "`backpocket
 Every multimedia clue—including dark-mode chat logs, CCTV stills, and full audio transcripts—automatically compiles into printable Polaroid evidence cards and dossier sheets in the Print Studio.
 
 **How do personalized character names and photos work on CCTV and audio clues?**
-When you enter your guests' real first names (and optional selfies) in the party setup wizard, the hydration engine weaves their names directly into the spoken ElevenLabs audio scripts, chat logs, and character dossiers while incorporating their likeness and costume style into the noir evidence visuals.
+When you enter your guests' real first names (and optional selfies) in the party setup wizard, the story builder weaves their names directly into the spoken ElevenLabs audio scripts, chat logs, and character dossiers while incorporating their likeness and costume style into the noir evidence visuals.
 
 ## The Bottom Line
 
@@ -420,7 +420,7 @@ Not every December gathering has the same energy. Match your mystery theme to yo
 
 The difference between a generic $30 PDF kit and a custom mystery on **Back Pocket Mysteries** is how personal the evidence feels when guests open it:
 
-1. **Hydrate the story with your guests' real first names.** Instead of forcing friends to memorize clunky fictional names all night, our builder weaves your actual guests' names directly into the character dossiers, leaked text message threads, and spoken ElevenLabs audio wiretaps.
+1. **Personalize the story with your guests' real first names.** Instead of forcing friends to memorize clunky fictional names all night, our builder weaves your actual guests' names directly into the character dossiers, leaked text message threads, and spoken ElevenLabs audio wiretaps.
 2. **Weave 2 or 3 real friend-group jokes from the past year into the prompts.** Mentioning a guest's real-life obsession with Pilates, their infamous holiday travel delay, or their signature drink inside a character's alibi always gets the biggest laugh of the night.
 3. **Use Spoiler-Free Host Mode so you never sit on the sidelines.** You already did the work of hosting and preparing the food—you deserve to play too. Our progressive mobile controller hides the killer and upcoming clues so the host plays as a full suspect.
 4. **Hand out end-of-night superlative awards before midnight.** Awarding *"Sharpest Detective of 2026"*, *"Most Ruthless Alibi"*, and *"Best Red Carpet Costume"* gives everyone a photo moment before the fireworks start.
