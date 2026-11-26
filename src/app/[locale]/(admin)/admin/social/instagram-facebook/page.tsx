@@ -831,6 +831,8 @@ function IgFbPostCard({
     } else {
       params.set("v", "auto");
     }
+    if (scAny.cardTitle) params.set("title", String(scAny.cardTitle));
+    if (scAny.cardCategory) params.set("category", String(scAny.cardCategory));
     if (scAny.ctaText) params.set("cta", String(scAny.ctaText));
     if (scAny.kickerText) params.set("kicker", String(scAny.kickerText));
     if (scAny.stat?.value && scAny.stat?.label) {
@@ -847,7 +849,7 @@ function IgFbPostCard({
   useEffect(() => {
     setRetriedOnce(false);
     setImgSrc(buildCardUrl(selectedTemplate));
-  }, [cardSlug, selectedTemplate]);
+  }, [cardSlug, selectedTemplate, scAny.imageUrl, scAny.cardTitle, scAny.cardCategory]);
 
   // Cap hashtags to a maximum of 5 for Instagram
   const hashtags = (post.caption_data?.hashtags || []).slice(0, 5);
@@ -1192,7 +1194,7 @@ function IgFbPostCard({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {TEMPLATE_LABELS.map((label, idx) => {
-                const tUrl = `/api/social-card/${cardSlug}?t=${idx}`;
+                const tUrl = buildCardUrl(idx);
                 const isSelected = selectedTemplate === idx;
                 return (
                   <div

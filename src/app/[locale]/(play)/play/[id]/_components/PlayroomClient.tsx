@@ -644,6 +644,7 @@ export function PlayroomClient({
   const [copiedPromoCode, setCopiedPromoCode] = useState<boolean>(false);
   const [rewardEmail, setRewardEmail] = useState<string>('');
   const [personalPromoCode, setPersonalPromoCode] = useState<string | null>(null);
+  const [lastSubmittedReviewId, setLastSubmittedReviewId] = useState<string | null>(null);
   const [isClaimingRewardCode, setIsClaimingRewardCode] = useState<boolean>(false);
   const [rewardCodeError, setRewardCodeError] = useState<string | null>(null);
   const [isStoryCardModalOpen, setIsStoryCardModalOpen] = useState<boolean>(false);
@@ -707,11 +708,15 @@ export function PlayroomClient({
       }
       const savedPersonalCode = window.localStorage.getItem(`bpm_guest_reward_code_${mystery.id}`);
       const savedRewardEmail = window.localStorage.getItem(`bpm_guest_reward_email_${mystery.id}`);
+      const savedReviewId = window.localStorage.getItem(`bpm_last_review_id_${mystery.id}`);
       if (savedPersonalCode) {
         setPersonalPromoCode('SENT');
       }
       if (savedRewardEmail) {
         setRewardEmail(savedRewardEmail);
+      }
+      if (savedReviewId) {
+        setLastSubmittedReviewId(savedReviewId);
       }
       if (params.get('story') === '1') {
         setIsStoryCardModalOpen(true);
@@ -1416,6 +1421,9 @@ export function PlayroomClient({
       if (res.reviews) {
         setReviews(res.reviews);
       }
+      if (res.review?.id) {
+        setLastSubmittedReviewId(res.review.id);
+      }
       setReviewSubmitted(true);
       if (earnedBonus) {
         setReviewBonusEarned(true);
@@ -1427,6 +1435,9 @@ export function PlayroomClient({
       if (typeof window !== 'undefined') {
         try {
           window.localStorage.setItem(`bpm_review_unlocked_${mystery.id}`, '1');
+          if (res.review?.id) {
+            window.localStorage.setItem(`bpm_last_review_id_${mystery.id}`, res.review.id);
+          }
           if (earnedBonus) {
             window.localStorage.setItem(`bpm_review_bonus_${mystery.id}`, '1');
           }
@@ -6165,7 +6176,9 @@ export function PlayroomClient({
                           try {
                             const res = await claimGuestPostPartyRewardAction({
                               email: clean,
-                              playerName: myDetectiveSummary.playerName,
+                              mysteryId: mystery.id,
+                              reviewId: lastSubmittedReviewId,
+                              playerName: reviewName.trim() || myDetectiveSummary.playerName,
                               characterRole: myDetectiveSummary.roleLabel,
                               mysteryTitle: mystery.title,
                               awardLabel: myDetectiveSummary.awardLabel,

@@ -231,6 +231,8 @@ export interface ReviewExtraMeta {
   deleted?: boolean;
   featuredOnHomepage?: boolean;
   adminReply?: string;
+  reviewerEmail?: string;
+  rewardPromoCode?: string;
   updatedAt?: string;
 }
 
@@ -270,6 +272,22 @@ function readReviewMetadataMapInternal(): Record<string, ReviewExtraMeta> {
     if (cachedReviewMetaMap) return { ...cachedReviewMetaMap.data };
   }
   return {};
+}
+
+export async function saveReviewGuestEmailMetadataInternal(
+  reviewId: string,
+  reviewerEmail: string,
+  rewardPromoCode?: string | null
+): Promise<void> {
+  if (!reviewId || !reviewerEmail) return;
+  const map = readReviewMetadataMapInternal();
+  map[reviewId] = {
+    ...(map[reviewId] || {}),
+    reviewerEmail: reviewerEmail.trim().toLowerCase(),
+    ...(rewardPromoCode ? { rewardPromoCode: rewardPromoCode.trim().toUpperCase() } : {}),
+    updatedAt: new Date().toISOString(),
+  };
+  saveReviewMetadataMap(map);
 }
 
 export async function getReviewMetadataMap(): Promise<Record<string, ReviewExtraMeta>> {
@@ -357,6 +375,8 @@ async function fetchAllPlatformReviewsInternal(
       ...r,
       status: metaMap[r.id]?.status || r.status || 'pending',
       mystery_title: metaMap[r.id]?.mysteryTitle || r.mystery_title,
+      reviewer_email: metaMap[r.id]?.reviewerEmail || r.reviewer_email || r.email || undefined,
+      reward_promo_code: metaMap[r.id]?.rewardPromoCode || r.reward_promo_code || undefined,
     });
   }
 
@@ -411,6 +431,16 @@ async function fetchAllPlatformReviewsInternal(
       sessionHostMeta?.sessionPin ||
       existing?.session_pin ||
       undefined;
+    const reviewerEmail =
+      rev.reviewerEmail ||
+      metaMap[rev.id]?.reviewerEmail ||
+      existing?.reviewer_email ||
+      undefined;
+    const rewardPromoCode =
+      rev.rewardPromoCode ||
+      metaMap[rev.id]?.rewardPromoCode ||
+      existing?.reward_promo_code ||
+      undefined;
 
     byId.set(rev.id, {
       ...(existing || {}),
@@ -425,6 +455,8 @@ async function fetchAllPlatformReviewsInternal(
       mystery_id: mId,
       mystery_title: resolvedMysteryTitle,
       character_role: rev.characterRole,
+      reviewer_email: reviewerEmail,
+      reward_promo_code: rewardPromoCode,
       host_user_id: hostUserId,
       host_name: hostName,
       host_email: hostEmail,

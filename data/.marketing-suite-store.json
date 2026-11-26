@@ -963,7 +963,7 @@
       },
       "error_message": null,
       "created_at": "2026-11-26T17:10:57.867Z",
-      "updated_at": "2026-11-26T17:27:18.963Z"
+      "updated_at": "2026-11-26T18:44:45.651Z"
     },
     {
       "id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
@@ -990,7 +990,7 @@
       },
       "error_message": null,
       "created_at": "2026-11-22T17:36:36.733Z",
-      "updated_at": "2026-11-25T19:00:00.000Z"
+      "updated_at": "2026-11-26T18:44:45.651Z"
     },
     {
       "id": "a1011111-1111-4111-8111-111111111101",
@@ -1003,7 +1003,7 @@
       "slide_content": {
         "cardSlug": "prelaunch-friends-in-crime-scene",
         "cardTitle": "How Your Actual Friends Get Cast Inside the Crime Scene",
-        "imageUrl": "/blog-images/multimedia-audio-cctv-clues-murder-mystery-party.png",
+        "imageUrl": "/blog-images/prelaunch-friends-in-crime-scene.png",
         "kickerText": "PRE-LAUNCH SNEAK PEEK",
         "ctaText": "CLAIM FREE VIP PACK",
         "templateIndex": 1,
@@ -1017,7 +1017,7 @@
         "/api/social-card/prelaunch-friends-in-crime-scene"
       ],
       "created_at": "2026-11-26T17:40:10.699Z",
-      "updated_at": "2026-11-26T17:40:10.699Z"
+      "updated_at": "2026-11-26T18:44:45.651Z"
     },
     {
       "id": "a1011111-1111-4111-8111-111111111102",
@@ -1030,7 +1030,7 @@
       "slide_content": {
         "cardSlug": "prelaunch-tag-your-suspect-squad",
         "cardTitle": "Tag Your Suspect Squad: Who Would 100% Be the Killer?",
-        "imageUrl": "/blog-images/small-group-murder-mystery-dinner-party-6-to-8-players.png",
+        "imageUrl": "/blog-images/prelaunch-tag-your-suspect-squad.png",
         "kickerText": "TAG YOUR FRIEND GROUP",
         "ctaText": "LOCK IN FREE VIP CODE",
         "templateIndex": 3,
@@ -1044,7 +1044,7 @@
         "/api/social-card/prelaunch-tag-your-suspect-squad"
       ],
       "created_at": "2026-11-26T17:40:10.699Z",
-      "updated_at": "2026-11-26T17:40:10.699Z"
+      "updated_at": "2026-11-26T18:44:45.651Z"
     },
     {
       "id": "a1011111-1111-4111-8111-111111111103",
@@ -1057,10 +1057,10 @@
       "slide_content": {
         "cardSlug": "prelaunch-spot-the-lie-teaser",
         "cardTitle": "Can You Spot the Lie in This 11:02 PM Evidence Drop?",
-        "imageUrl": "/blog-images/spoiler-free-murder-mystery-hosting-how-the-host-plays-along.png",
+        "imageUrl": "/blog-images/prelaunch-spot-the-lie-teaser.png",
         "kickerText": "PRE-LAUNCH CLUE PUZZLE",
         "ctaText": "PLAY FREE MINI-MYSTERY",
-        "templateIndex": 5,
+        "templateIndex": 4,
         "linkUrl": "https://backpocketmysteries.com/en/free-murder-mystery-game",
         "stat": {
           "value": "3 Clues • 1 Lie",
@@ -1071,7 +1071,7 @@
         "/api/social-card/prelaunch-spot-the-lie-teaser"
       ],
       "created_at": "2026-11-26T17:40:10.699Z",
-      "updated_at": "2026-11-26T17:40:10.699Z"
+      "updated_at": "2026-11-26T18:44:45.651Z"
     },
     {
       "id": "a1011111-1111-4111-8111-111111111104",
@@ -1084,10 +1084,10 @@
       "slide_content": {
         "cardSlug": "prelaunch-last-call-50-vip-spots",
         "cardTitle": "Last Call: Claim Your 100% Free Custom Mystery Pack Before Launch",
-        "imageUrl": "/blog-images/claim-free-mystery-before-launch.png",
+        "imageUrl": "/blog-images/prelaunch-last-call-50-vip-spots.png",
         "kickerText": "FINAL PRE-LAUNCH COUNTDOWN",
         "ctaText": "CLAIM FREE MYSTERY NOW",
-        "templateIndex": 0,
+        "templateIndex": 5,
         "linkUrl": "https://backpocketmysteries.com/en/free-murder-mystery-game",
         "stat": {
           "value": "$49 Value • FREE",
@@ -1098,7 +1098,7 @@
         "/api/social-card/prelaunch-last-call-50-vip-spots"
       ],
       "created_at": "2026-11-26T17:40:10.699Z",
-      "updated_at": "2026-11-26T17:40:10.699Z"
+      "updated_at": "2026-11-26T18:44:45.651Z"
     }
   ],
   "social_post_captions": [

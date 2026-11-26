@@ -1740,6 +1740,111 @@ export async function submitGuestMysteryReviewAction(payload: {
 }
 
 /**
+ * Links a guest's email address (and single-use reward code) back to the review they just submitted
+ * in the Playroom Finale so the Admin can see their email against their review in /admin/reviews.
+ */
+export async function attachGuestEmailToReviewAction(payload: {
+  mysteryId?: string | null;
+  reviewId?: string | null;
+  playerName?: string | null;
+  characterRole?: string | null;
+  reviewerEmail: string;
+  rewardPromoCode?: string | null;
+}): Promise<{ matchedReviewIds: string[] }> {
+  const cleanEmail = (payload.reviewerEmail || '').trim().toLowerCase();
+  if (!cleanEmail) return { matchedReviewIds: [] };
+
+  const matchedIds = new Set<string>();
+  const cleanReviewId = (payload.reviewId || '').trim();
+  const cleanPlayerName = (payload.playerName || '').trim().toLowerCase();
+  const cleanRole = (payload.characterRole || '').trim().toLowerCase();
+
+  try {
+    const { saveReviewGuestEmailMetadataInternal } = await import('@/app/actions/reviews');
+
+    if (cleanReviewId) {
+      matchedIds.add(cleanReviewId);
+      await saveReviewGuestEmailMetadataInternal(
+        cleanReviewId,
+        cleanEmail,
+        payload.rewardPromoCode || null
+      );
+    }
+
+    if (payload.mysteryId) {
+      const supabase = await createClient();
+      let { data: characters } = await supabase
+        .from('characters')
+        .select('*')
+        .eq('mystery_id', payload.mysteryId);
+
+      if (!characters || characters.length === 0) {
+        const cached = getCachedMysterySnapshot(payload.mysteryId);
+        characters = cached?.characters || [];
+      }
+
+      const { session, carrierCharacter } = await readSessionFromCharacters(
+        characters || [],
+        payload.mysteryId
+      );
+
+      let updated = false;
+      for (const rev of session.reviews || []) {
+        const idMatches = cleanReviewId && rev.id === cleanReviewId;
+        const nameMatches =
+          cleanPlayerName &&
+          (rev.playerName || '').trim().toLowerCase() === cleanPlayerName;
+        const roleMatches =
+          !cleanPlayerName &&
+          cleanRole &&
+          (rev.characterRole || '').trim().toLowerCase() === cleanRole;
+
+        if (idMatches || nameMatches || roleMatches) {
+          rev.reviewerEmail = cleanEmail;
+          if (payload.rewardPromoCode) {
+            rev.rewardPromoCode = payload.rewardPromoCode;
+          }
+          matchedIds.add(rev.id);
+          updated = true;
+          await saveReviewGuestEmailMetadataInternal(
+            rev.id,
+            cleanEmail,
+            payload.rewardPromoCode || null
+          );
+        }
+      }
+
+      // If no exact name/id matched but there is only 1 review in this session without an email, attach to it
+      if (!updated && Array.isArray(session.reviews) && session.reviews.length === 1) {
+        const singleRev = session.reviews[0];
+        if (singleRev && !singleRev.reviewerEmail) {
+          singleRev.reviewerEmail = cleanEmail;
+          if (payload.rewardPromoCode) {
+            singleRev.rewardPromoCode = payload.rewardPromoCode;
+          }
+          matchedIds.add(singleRev.id);
+          updated = true;
+          await saveReviewGuestEmailMetadataInternal(
+            singleRev.id,
+            cleanEmail,
+            payload.rewardPromoCode || null
+          );
+        }
+      }
+
+      if (updated) {
+        await writeSessionToCarrier(supabase, payload.mysteryId, carrierCharacter, session);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not attach guest email to review:', err);
+  }
+
+  revalidatePath('/en/admin/reviews');
+  return { matchedReviewIds: Array.from(matchedIds) };
+}
+
+/**
  * Polls the server-side 20-minute background generation status for a purchased mystery.
  * Automatically transitions to 'ready' and sends the customer email once the timer completes.
  */

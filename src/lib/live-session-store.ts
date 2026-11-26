@@ -20,6 +20,8 @@ export interface StoredGuestReview {
   mysteryTitle?: string;
   playerName: string;
   characterRole?: string;
+  reviewerEmail?: string;
+  rewardPromoCode?: string;
   rating: number;
   comment: string;
   photoUrl?: string;

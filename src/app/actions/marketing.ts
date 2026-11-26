@@ -1064,6 +1064,8 @@ export async function adminSendFreeMysteryCodeToLeadAction(leadEmail: string): P
  */
 export async function claimGuestPostPartyRewardAction(params: {
   email: string;
+  mysteryId?: string | null;
+  reviewId?: string | null;
   playerName?: string | null;
   characterRole?: string | null;
   mysteryTitle?: string | null;
@@ -1160,6 +1162,23 @@ export async function claimGuestPostPartyRewardAction(params: {
       }
     } catch {
       // Non-fatal if leads table is not migrated
+    }
+
+    // Link this guest's email and single-use promo code back to the review they just left in the Playroom
+    if (params.mysteryId || params.reviewId) {
+      try {
+        const { attachGuestEmailToReviewAction } = await import('@/app/actions/customer-mystery');
+        await attachGuestEmailToReviewAction({
+          mysteryId: params.mysteryId,
+          reviewId: params.reviewId,
+          playerName: cleanPlayerName,
+          characterRole,
+          reviewerEmail: cleanEmail,
+          rewardPromoCode: code,
+        });
+      } catch {
+        // Non-fatal
+      }
     }
 
     // Email the guest their single-use 15% Off code + Detective Wrapped scorecard recap
