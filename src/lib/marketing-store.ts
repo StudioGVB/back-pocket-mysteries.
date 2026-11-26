@@ -102,29 +102,66 @@ function mergeById(baseRows: any[], overrideRows: any[], key = "id"): any[] {
   return Array.from(map.values());
 }
 
-function mergeStores(base: MarketingStoreData, override: MarketingStoreData): MarketingStoreData {
-  const overridePostIdSet =
-    Array.isArray(override.social_posts) && override.social_posts.length > 0
-      ? new Set(override.social_posts.map((p) => String(p.id)))
-      : null;
-  const filteredBaseSocialPosts = overridePostIdSet
-    ? base.social_posts.filter((p) => overridePostIdSet.has(String(p.id)))
-    : base.social_posts;
+function getLatestRowsTimestampMs(rows: any[]): number {
+  let maxMs = 0;
+  for (const r of rows || []) {
+    const ms = getRowTimestampMs(r);
+    if (ms > maxMs) maxMs = ms;
+  }
+  return maxMs;
+}
 
-  const mergedSocialPosts = mergeById(filteredBaseSocialPosts, override.social_posts, "id");
+function mergeStores(base: MarketingStoreData, override: MarketingStoreData): MarketingStoreData {
+  const baseLatestSocialMs = getLatestRowsTimestampMs(base.social_posts);
+  const overrideLatestSocialMs = getLatestRowsTimestampMs(override.social_posts);
+
+  // Whichever snapshot was modified most recently defines the authoritative list of active social_posts IDs
+  // (so deleting posts in either a newer git bundle or a newer Admin UI cloud snapshot never resurrects deleted rows).
+  const authoritativeSocialPosts =
+    baseLatestSocialMs > overrideLatestSocialMs && base.social_posts.length > 0
+      ? base.social_posts
+      : override.social_posts.length > 0
+        ? override.social_posts
+        : base.social_posts;
+
+  const authoritativePostIdSet =
+    authoritativeSocialPosts.length > 0
+      ? new Set(authoritativeSocialPosts.map((p) => String(p.id)))
+      : null;
+
+  const filteredBaseSocialPosts = authoritativePostIdSet
+    ? base.social_posts.filter((p) => authoritativePostIdSet.has(String(p.id)))
+    : base.social_posts;
+  const filteredOverrideSocialPosts = authoritativePostIdSet
+    ? override.social_posts.filter((p) => authoritativePostIdSet.has(String(p.id)))
+    : override.social_posts;
+
+  const mergedSocialPosts = mergeById(
+    filteredBaseSocialPosts,
+    filteredOverrideSocialPosts,
+    "id"
+  );
   const mergedPostIds = new Set(mergedSocialPosts.map((p) => String(p.id)));
 
-  const overridePostIdsWithCaptions = new Set(
-    override.social_post_captions.map((c) => String(c.post_id))
+  const preferBaseCaptions = baseLatestSocialMs > overrideLatestSocialMs;
+  const primaryCaptions = preferBaseCaptions
+    ? base.social_post_captions
+    : override.social_post_captions;
+  const secondaryCaptions = preferBaseCaptions
+    ? override.social_post_captions
+    : base.social_post_captions;
+
+  const primaryPostIdsWithCaptions = new Set(
+    primaryCaptions.map((c) => String(c.post_id))
   );
-  const keptBaseCaptions = base.social_post_captions.filter(
+  const keptSecondaryCaptions = secondaryCaptions.filter(
     (c) =>
       mergedPostIds.has(String(c.post_id)) &&
-      !overridePostIdsWithCaptions.has(String(c.post_id))
+      !primaryPostIdsWithCaptions.has(String(c.post_id))
   );
   const mergedCaptions = [
-    ...keptBaseCaptions,
-    ...override.social_post_captions.filter((c) => mergedPostIds.has(String(c.post_id))),
+    ...keptSecondaryCaptions,
+    ...primaryCaptions.filter((c) => mergedPostIds.has(String(c.post_id))),
   ];
 
   return {
@@ -231,8 +268,13 @@ export async function loadMarketingStore(allowAuthCookies = false): Promise<Mark
         const { data: blob } = await sb.storage.from(STORAGE_BUCKET).download(targetDownloadPath);
         if (blob) {
           const parsed = normalizeStore(JSON.parse(await blob.text()), local.leads);
+          const localSocialMs = getLatestRowsTimestampMs(local.social_posts);
+          const cloudSocialMs = getLatestRowsTimestampMs(parsed.social_posts);
           const merged = mergeStores(local, parsed);
           writeLocalMarketingStore(merged);
+          if (allowAuthCookies && localSocialMs > cloudSocialMs) {
+            saveMarketingStore(merged).catch(() => {});
+          }
           return merged;
         }
       } catch {
