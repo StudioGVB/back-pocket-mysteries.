@@ -36,8 +36,20 @@ export default async function AdminUsers({
 }
 
 async function CustomerCount() {
-  const customers = await getCustomers();
+  const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
+  const [customers, crmMap] = await Promise.all([
+    getCustomers(),
+    getAllCustomerCrmData().catch(() => ({} as Record<string, any>)),
+  ]);
   const newSignupsCount = customers.filter((c: any) => c.isNewSignup).length;
+  const totalCreditsGbp = Object.values(crmMap).reduce(
+    (sum: number, rec: any) => sum + (Number(rec?.creditBalanceGbp ?? rec?.creditBalanceUsd) || 0),
+    0
+  );
+  const customersWithCredits = Object.values(crmMap).filter(
+    (rec: any) => (Number(rec?.creditBalanceGbp ?? rec?.creditBalanceUsd) || 0) > 0
+  ).length;
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       {newSignupsCount > 0 && (
@@ -49,6 +61,12 @@ async function CustomerCount() {
           <p className="text-2xl font-black text-emerald-700">+{newSignupsCount}</p>
         </div>
       )}
+      <div className="bg-brand-pink/5 px-5 py-3 rounded-2xl border border-brand-pink/20 shadow-sm">
+        <p className="text-[10px] font-black uppercase tracking-widest text-brand-pink mb-1">
+          Account Credits ({customersWithCredits} {customersWithCredits === 1 ? 'Host' : 'Hosts'})
+        </p>
+        <p className="text-2xl font-black text-brand-dark">£{totalCreditsGbp.toFixed(2)}</p>
+      </div>
       <div className="bg-white px-6 py-3 rounded-2xl border border-gray-100 shadow-sm">
         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Customers</p>
         <p className="text-2xl font-black text-brand-dark">{customers.length}</p>
@@ -65,13 +83,20 @@ async function CustomerList({
   const { locale } = await params;
   const supabase = await createClient();
   const { getAllCustomerCrmData } = await import('@/app/actions/admin-users');
+  const { getAdminReferralProgramStatsAction } = await import('@/app/actions/referrals');
 
-  // Fetch customers, orders, mysteries & CRM records in parallel
-  const [customers, { data: allOrders }, { data: allMysteries }, crmMap] = await Promise.all([
+  // Fetch customers, orders, mysteries, CRM records & referral stats in parallel
+  const [customers, { data: allOrders }, { data: allMysteries }, crmMap, referralStats] = await Promise.all([
     getCustomers(),
     supabase.from('orders').select('user_id').eq('status', 'succeeded'),
     supabase.from('mysteries').select('created_by'),
     getAllCustomerCrmData(),
+    getAdminReferralProgramStatsAction().catch(() => ({
+      totalReferralsCount: 0,
+      totalCreditsIssuedGbp: 0,
+      redemptions: [],
+      referralsByUserId: {} as Record<string, number>,
+    })),
   ]);
 
   const orderCounts = allOrders?.reduce((acc, order) => {
@@ -87,11 +112,12 @@ async function CustomerList({
   return (
     <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
-      <table className="w-full text-left min-w-[680px]">
+      <table className="w-full text-left min-w-[780px]">
         <thead className="bg-gray-50/50 border-b border-gray-100">
           <tr>
             <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Customer</th>
             <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Purchases Made</th>
+            <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Account Credits (£)</th>
             <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Joined Date</th>
             <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Mysteries Owned</th>
             <th className="px-6 sm:px-8 py-5 sm:py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</th>
@@ -106,6 +132,10 @@ async function CustomerList({
               ).length;
               const purchasesCount = (orderCounts[user.id] || 0) + customPaidOrdersCount;
               const ownedCount = Math.max(orderCounts[user.id] || 0, mysteryCounts[user.id] || 0);
+              const creditBalanceGbp = Number(
+                userCrm?.creditBalanceGbp ?? userCrm?.creditBalanceUsd ?? 0
+              );
+              const referredFriendsCount = referralStats.referralsByUserId[user.id] || 0;
 
               return (
                 <UserRowClient key={user.id} user={user} locale={locale}>
@@ -163,6 +193,24 @@ async function CustomerList({
                     </span>
                   </td>
                   <td className="px-8 py-6">
+                    <div className="flex flex-col items-start gap-1">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          creditBalanceGbp > 0
+                            ? 'bg-brand-pink/10 text-brand-pink border border-brand-pink/25'
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        💷 £{creditBalanceGbp.toFixed(2)}
+                      </span>
+                      {referredFriendsCount > 0 && (
+                        <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600">
+                          🎁 {referredFriendsCount} {referredFriendsCount === 1 ? 'friend' : 'friends'} referred
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
                     <p className="text-sm text-gray-400 font-bold">
                       {new Date(user.created_at).toLocaleDateString('en-GB', {
                         day: 'numeric',
@@ -187,7 +235,7 @@ async function CustomerList({
             })
           ) : (
             <tr>
-              <td colSpan={5} className="px-8 py-20 text-center text-gray-400 font-bold">
+              <td colSpan={6} className="px-8 py-20 text-center text-gray-400 font-bold">
                 No customers found yet.
               </td>
             </tr>
