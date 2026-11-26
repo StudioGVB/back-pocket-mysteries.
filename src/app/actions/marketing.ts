@@ -652,6 +652,20 @@ export async function submitEmailLead(
   spotsRemaining?: number;
   error?: string;
 }> {
+  const { getCallerIpAddress, checkRateLimitBucket } = await import('@/utils/rate-limit');
+  const callerIp = await getCallerIpAddress();
+  const limit = checkRateLimitBucket({
+    key: `lead-form:${callerIp}`,
+    maxCount: 10,
+    windowMs: 60_000,
+  });
+  if (!limit.allowed) {
+    return {
+      success: false,
+      error: `Too many requests in a short window. Please wait ${limit.retryAfterSeconds} seconds and try again.`,
+    };
+  }
+
   const cleanEmail = (email || '').trim().toLowerCase();
   const cleanName = (fullName || '').trim() || null;
 
