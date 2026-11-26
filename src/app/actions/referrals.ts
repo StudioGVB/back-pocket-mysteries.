@@ -4,6 +4,12 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { createClient } from '@/utils/supabase/server';
+import {
+  getSystemCustomerCreditInfo,
+  applySystemCustomerCreditDeltaGbp,
+  CreditLedgerEntry,
+} from '@/app/actions/admin-users';
+import { REFERRAL_CREDIT_GBP } from '@/utils/localization';
 
 export interface ReferralRedemptionRecord {
   id: string;
@@ -15,6 +21,8 @@ export interface ReferralRedemptionRecord {
   orderId?: string;
   mysteryId?: string;
   rewardCodeGenerated: string;
+  friendCreditAwardedGbp?: number;
+  referrerCreditAwardedGbp?: number;
   createdAt: string;
 }
 
@@ -23,6 +31,7 @@ export interface ReferrerRewardVoucher {
   referrerUserId: string;
   referredEmail?: string;
   discountPercent: number;
+  creditAmountGbp?: number;
   used: boolean;
   usedAt?: string;
   usedOrderId?: string;
@@ -39,7 +48,7 @@ export interface PromoCodeUsageEntry {
 }
 
 interface ReferralStoreData {
-  /** Maps canonical referralCode (e.g. "REF-GABRIELLA-4903") -> referrer user info */
+  /** Maps canonical referralCode (e.g. "GABRIELLA5-4903") -> referrer user info */
   referralCodes: Record<
     string,
     {
@@ -50,9 +59,9 @@ interface ReferralStoreData {
       createdAt: string;
     }
   >;
-  /** Tracks every completed referral purchase where a friend used a referrer's code */
+  /** Tracks every completed referral redemption where a friend used a referrer's code */
   redemptions: ReferralRedemptionRecord[];
-  /** Single-use 20% reward vouchers unlocked for the referrer AFTER their friend pays */
+  /** Legacy reward vouchers */
   rewardVouchers: Record<string, ReferrerRewardVoucher>;
   /** Tracks every promo/referral code redemption per user/email so one-per-customer & anti-abuse rules are enforced */
   codeUsages: Array<{
@@ -115,8 +124,8 @@ function writeReferralStore(data: ReferralStoreData): void {
 }
 
 /**
- * Generates a deterministic, clean, unique referral code for any host user:
- * e.g. "FRIEND-GABRIELLA-4903" or "GABRIELLA20-4903"
+ * Generates a deterministic, clean, unique "Give £5, Get £5" referral code for any host user:
+ * e.g. "GABRIELLA5-4903"
  */
 export async function buildUserReferralCode(
   userId: string,
@@ -128,35 +137,90 @@ export async function buildUserReferralCode(
     .toUpperCase()
     .slice(0, 10);
   const cleanBase = rawBase || 'HOST';
-  const shortSuffix = (userId || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 4) || '20';
-  return `${cleanBase}20-${shortSuffix}`;
+  const shortSuffix = (userId || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 4) || '05';
+  return `${cleanBase}5-${shortSuffix}`;
+}
+
+async function resolveReferrerEntryByCode(
+  cleanCode: string,
+  store: ReferralStoreData
+): Promise<{
+  code: string;
+  userId: string;
+  email: string;
+  fullName: string;
+  createdAt: string;
+} | null> {
+  if (store.referralCodes[cleanCode]) {
+    return store.referralCodes[cleanCode];
+  }
+
+  // Match either new NAME5-XXXX or legacy NAME20-XXXX format
+  const suffixMatch = cleanCode.match(/^([A-Z0-9]+?)(?:5|20)-([A-F0-9]{4})$/);
+  if (!suffixMatch) return null;
+
+  // Check if another key in store.referralCodes shares the same 4-char user ID suffix
+  const existingBySuffix = Object.values(store.referralCodes).find((entry) =>
+    (entry.userId || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().startsWith(suffixMatch[2])
+  );
+  if (existingBySuffix) {
+    store.referralCodes[cleanCode] = {
+      ...existingBySuffix,
+      code: cleanCode,
+    };
+    writeReferralStore(store);
+    return store.referralCodes[cleanCode];
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: profiles } = await (supabase as any)
+      .from('profiles')
+      .select('id, email, full_name');
+    const found = (profiles || []).find((p: any) =>
+      (p.id || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().startsWith(suffixMatch[2])
+    );
+    if (found) {
+      const entry = {
+        code: cleanCode,
+        userId: found.id,
+        email: (found.email || '').toLowerCase(),
+        fullName: found.full_name || 'A Friend',
+        createdAt: new Date().toISOString(),
+      };
+      store.referralCodes[cleanCode] = entry;
+      writeReferralStore(store);
+      return entry;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 /**
- * Registers or retrieves the host's personal "Give 20%, Get 20%" referral code and wallet status.
+ * Registers or retrieves the host's personal "Give £5, Get £5" referral code, credit balance, and wallet status.
  */
-export async function getOrRegisterUserReferralWalletAction(
-  preloadedUser?: { id: string; email?: string | null; user_metadata?: any } | null
-): Promise<{
+export async function getOrRegisterUserReferralWalletAction(): Promise<{
   referralCode: string;
   referralLink: string;
+  creditBalanceGbp: number;
+  creditLedger: CreditLedgerEntry[];
   rewardVouchers: ReferrerRewardVoucher[];
   referralsCompletedCount: number;
   appliedSignupPromo?: string | null;
 }> {
-  let user = preloadedUser;
-  if (!user) {
-    const supabase = await createClient();
-    const {
-      data: { user: fetchedUser },
-    } = await supabase.auth.getUser();
-    user = fetchedUser;
-  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return {
-      referralCode: 'FRIEND20',
+      referralCode: 'FRIEND5',
       referralLink: 'https://backpocketmysteries.com/en/login',
+      creditBalanceGbp: 0,
+      creditLedger: [],
       rewardVouchers: [],
       referralsCompletedCount: 0,
     };
@@ -164,8 +228,10 @@ export async function getOrRegisterUserReferralWalletAction(
 
   const fullName = (user.user_metadata?.full_name as string) || '';
   const code = await buildUserReferralCode(user.id, fullName, user.email);
+  const legacyCode = code.replace(/5-([A-F0-9]{4})$/, '20-$1');
 
   const store = readReferralStore();
+  let changed = false;
   if (!store.referralCodes[code]) {
     store.referralCodes[code] = {
       code,
@@ -174,17 +240,51 @@ export async function getOrRegisterUserReferralWalletAction(
       fullName: fullName || user.email || 'Host',
       createdAt: new Date().toISOString(),
     };
+    changed = true;
+  }
+  if (!store.referralCodes[legacyCode]) {
+    store.referralCodes[legacyCode] = {
+      code: legacyCode,
+      userId: user.id,
+      email: (user.email || '').toLowerCase(),
+      fullName: fullName || user.email || 'Host',
+      createdAt: new Date().toISOString(),
+    };
+    changed = true;
+  }
+  if (changed) {
     writeReferralStore(store);
   }
 
-  const myRewards = Object.values(store.rewardVouchers).filter(
+  // If the user signed up with a friend's referral code in user_metadata.promo_code, ensure their £5 credit is claimed
+  const signupPromo = ((user.user_metadata?.promo_code as string) || '').trim().toUpperCase();
+  if (signupPromo && signupPromo !== code && signupPromo !== legacyCode) {
+    const alreadyRedeemed = store.redemptions.some(
+      (r) =>
+        r.referredUserId === user.id ||
+        (user.email && r.referredEmail === user.email.toLowerCase())
+    );
+    if (!alreadyRedeemed) {
+      await claimFriendReferralCodeForCreditInternal({
+        code: signupPromo,
+        buyerUserId: user.id,
+        buyerEmail: user.email || null,
+      }).catch(() => {});
+    }
+  }
+
+  const freshStore = readReferralStore();
+  const myRewards = Object.values(freshStore.rewardVouchers).filter(
     (v) => v.referrerUserId === user.id
   );
-  const myRedemptions = store.redemptions.filter((r) => r.referrerUserId === user.id);
+  const myRedemptions = freshStore.redemptions.filter((r) => r.referrerUserId === user.id);
+  const creditInfo = await getSystemCustomerCreditInfo(user.id);
 
   return {
     referralCode: code,
     referralLink: `https://backpocketmysteries.com/en/login?promo=${encodeURIComponent(code)}&step=signup`,
+    creditBalanceGbp: creditInfo.creditBalanceGbp,
+    creditLedger: creditInfo.creditLedger,
     rewardVouchers: myRewards,
     referralsCompletedCount: myRedemptions.length,
     appliedSignupPromo: (user.user_metadata?.promo_code as string) || null,
@@ -192,17 +292,164 @@ export async function getOrRegisterUserReferralWalletAction(
 }
 
 /**
- * Resolves a potential referral code or referrer reward voucher with strict anti-abuse checks:
- *
- * ANTI-ABUSE SAFEGUARDS:
+ * Claims a friend's "Give £5, Get £5" referral code for the signed-in customer:
+ * - Credits +£5.00 to the customer's account balance
+ * - Credits +£5.00 to the referring friend's ("Giver's") account balance
+ */
+export async function claimFriendReferralCodeForCreditAction(code: string): Promise<{
+  matched: boolean;
+  success: boolean;
+  creditAddedGbp?: number;
+  newCreditBalanceGbp?: number;
+  referrerName?: string;
+  message?: string;
+  error?: string;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      matched: false,
+      success: false,
+      error: 'Please sign in to apply a referral code to your account.',
+    };
+  }
+
+  return claimFriendReferralCodeForCreditInternal({
+    code,
+    buyerUserId: user.id,
+    buyerEmail: user.email || null,
+  });
+}
+
+async function claimFriendReferralCodeForCreditInternal({
+  code,
+  buyerUserId,
+  buyerEmail,
+  orderId,
+  mysteryId,
+}: {
+  code: string;
+  buyerUserId: string;
+  buyerEmail?: string | null;
+  orderId?: string;
+  mysteryId?: string;
+}): Promise<{
+  matched: boolean;
+  success: boolean;
+  creditAddedGbp?: number;
+  newCreditBalanceGbp?: number;
+  referrerName?: string;
+  message?: string;
+  error?: string;
+}> {
+  const cleanCode = (code || '').trim().toUpperCase();
+  if (!cleanCode) return { matched: false, success: false };
+
+  const validation = await validateReferralOrRewardCode({
+    code: cleanCode,
+    currentUserId: buyerUserId,
+    currentUserEmail: buyerEmail,
+  });
+
+  if (!validation.matched) {
+    return { matched: false, success: false };
+  }
+
+  if (!validation.valid) {
+    return {
+      matched: true,
+      success: false,
+      error: validation.error || 'This referral code cannot be applied.',
+    };
+  }
+
+  const store = readReferralStore();
+  const referrerEntry = await resolveReferrerEntryByCode(cleanCode, store);
+  if (!referrerEntry) {
+    return { matched: false, success: false };
+  }
+
+  const normalizedEmail = (buyerEmail || '').trim().toLowerCase();
+  const referrerFirstName = (referrerEntry.fullName || 'Friend').split(' ')[0];
+
+  // Check if this user already claimed a friend referral credit
+  const existingRedemption = store.redemptions.find(
+    (r) =>
+      (buyerUserId && r.referredUserId === buyerUserId) ||
+      (normalizedEmail && r.referredEmail === normalizedEmail)
+  );
+
+  if (existingRedemption) {
+    const info = await getSystemCustomerCreditInfo(buyerUserId);
+    return {
+      matched: true,
+      success: false,
+      newCreditBalanceGbp: info.creditBalanceGbp,
+      error: 'You have already claimed a £5 friend referral credit on your account.',
+    };
+  }
+
+  // 1. Credit +£5.00 to the Friend (Receiver)
+  const friendCreditRes = await applySystemCustomerCreditDeltaGbp({
+    targetUserId: buyerUserId,
+    deltaGbp: REFERRAL_CREDIT_GBP,
+    type: 'referral_received',
+    description: `Give £5, Get £5: Applied ${referrerFirstName}'s referral code (${cleanCode})`,
+    relatedUserId: referrerEntry.userId,
+    relatedEmail: referrerEntry.email,
+    orderId,
+  });
+
+  // 2. Credit +£5.00 to the Giver (Referrer)
+  await applySystemCustomerCreditDeltaGbp({
+    targetUserId: referrerEntry.userId,
+    deltaGbp: REFERRAL_CREDIT_GBP,
+    type: 'referral_given',
+    description: `Give £5, Get £5: Friend ${normalizedEmail || 'a friend'} used your referral code (${cleanCode})`,
+    relatedUserId: buyerUserId,
+    relatedEmail: normalizedEmail || undefined,
+    orderId,
+  });
+
+  // 3. Record redemption in referral store
+  const randSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
+  const rewardTag = `CREDIT5-${randSuffix}`;
+
+  store.redemptions.push({
+    id: crypto.randomUUID(),
+    referralCode: cleanCode,
+    referrerUserId: referrerEntry.userId,
+    referrerEmail: referrerEntry.email,
+    referredUserId: buyerUserId,
+    referredEmail: normalizedEmail || undefined,
+    orderId,
+    mysteryId,
+    rewardCodeGenerated: rewardTag,
+    friendCreditAwardedGbp: REFERRAL_CREDIT_GBP,
+    referrerCreditAwardedGbp: REFERRAL_CREDIT_GBP,
+    createdAt: new Date().toISOString(),
+  });
+
+  writeReferralStore(store);
+
+  return {
+    matched: true,
+    success: true,
+    creditAddedGbp: REFERRAL_CREDIT_GBP,
+    newCreditBalanceGbp: friendCreditRes.creditBalanceGbp,
+    referrerName: referrerFirstName,
+    message: `£${REFERRAL_CREDIT_GBP}.00 referral credit added to your account! ${referrerFirstName} also received £${REFERRAL_CREDIT_GBP}.00 in credits.`,
+  };
+}
+
+/**
+ * Resolves a potential referral code ("Give £5, Get £5") or legacy reward voucher with strict anti-abuse checks:
  * 1. No Self-Referral: Referrer cannot use their own referral code (checked by userId and email).
- * 2. First-Order Only (New Customers Only): A friend referral code ("Give 20% Off") can ONLY be used
- *    by a customer who has 0 prior completed orders and has never redeemed a referral code before.
- * 3. One-Time Use per Customer: Standard `one_per_customer` promo codes and referral codes cannot be
- *    reused by the same userId or email across multiple orders.
- * 4. Referrer Reward Only Unlocks After Friend's Paid Purchase: Referrer gets a unique single-use
- *    `REWARD20-XXXX` code only when their friend completes payment, and that reward code is locked
- *    exclusively to the referrer's account for 1 order.
+ * 2. One Friend Referral Claim per Customer: Each customer can only claim 1 friend referral code.
  */
 export async function validateReferralOrRewardCode({
   code,
@@ -217,6 +464,7 @@ export async function validateReferralOrRewardCode({
   valid: boolean;
   type?: 'friend_referral' | 'referrer_reward';
   discountPercent?: number;
+  discountFixedGbp?: number;
   name?: string;
   referrerUserId?: string;
   error?: string;
@@ -227,7 +475,7 @@ export async function validateReferralOrRewardCode({
   const store = readReferralStore();
   const normalizedEmail = (currentUserEmail || '').trim().toLowerCase();
 
-  // Case A: Is this a single-use Referrer Reward Voucher (e.g. REWARD20-XXXX)?
+  // Case A: Is this a legacy single-use Referrer Reward Voucher (e.g. REWARD20-XXXX)?
   const rewardVoucher = store.rewardVouchers[cleanCode];
   if (rewardVoucher) {
     if (rewardVoucher.used) {
@@ -248,44 +496,15 @@ export async function validateReferralOrRewardCode({
       matched: true,
       valid: true,
       type: 'referrer_reward',
-      discountPercent: rewardVoucher.discountPercent || 20,
-      name: 'Referral Reward (20% Off)',
+      discountFixedGbp: rewardVoucher.creditAmountGbp || REFERRAL_CREDIT_GBP,
+      discountPercent: rewardVoucher.discountPercent || 0,
+      name: `Referral Reward (£${REFERRAL_CREDIT_GBP}.00 Credit)`,
       referrerUserId: rewardVoucher.referrerUserId,
     };
   }
 
-  // Case B: Is this a Host's Referral Code (either registered in store OR matching pattern NAME20-XXXX)?
-  let referrerEntry = store.referralCodes[cleanCode];
-
-  // If not yet in store, check if a profile in Supabase matches the 4-char ID suffix
-  if (!referrerEntry) {
-    const suffixMatch = cleanCode.match(/^([A-Z0-9]+)20-([A-F0-9]{4})$/);
-    if (suffixMatch) {
-      try {
-        const supabase = await createClient();
-        const { data: profiles } = await (supabase as any)
-          .from('profiles')
-          .select('id, email, full_name');
-        const found = (profiles || []).find((p: any) =>
-          (p.id || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().startsWith(suffixMatch[2])
-        );
-        if (found) {
-          referrerEntry = {
-            code: cleanCode,
-            userId: found.id,
-            email: (found.email || '').toLowerCase(),
-            fullName: found.full_name || 'A Friend',
-            createdAt: new Date().toISOString(),
-          };
-          store.referralCodes[cleanCode] = referrerEntry;
-          writeReferralStore(store);
-        }
-      } catch {
-        // ignore
-      }
-    }
-  }
-
+  // Case B: Is this a Host's Referral Code (NAME5-XXXX or legacy NAME20-XXXX)?
+  const referrerEntry = await resolveReferrerEntryByCode(cleanCode, store);
   if (!referrerEntry) {
     return { matched: false, valid: false };
   }
@@ -298,11 +517,11 @@ export async function validateReferralOrRewardCode({
     return {
       matched: true,
       valid: false,
-      error: 'You cannot use your own referral code. Share it with a friend to give 20% & get 20%!',
+      error: 'You cannot use your own referral code. Share it with a friend to give £5 & get £5!',
     };
   }
 
-  // Anti-Abuse 2: Check if this user/email has already used ANY friend referral code before
+  // Anti-Abuse 2: Check if this user/email has already claimed ANY friend referral code before
   const alreadyUsedReferral = store.redemptions.some(
     (r) =>
       (currentUserId && r.referredUserId === currentUserId) ||
@@ -312,30 +531,8 @@ export async function validateReferralOrRewardCode({
     return {
       matched: true,
       valid: false,
-      error: 'Friend referral codes are valid for your first mystery order only.',
+      error: 'You have already claimed a £5 friend referral credit on your account.',
     };
-  }
-
-  // Anti-Abuse 3: Check if this user already has prior completed orders in Supabase
-  if (currentUserId) {
-    try {
-      const supabase = await createClient();
-      const { count } = await supabase
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', currentUserId)
-        .eq('status', 'succeeded');
-
-      if (count && count > 0) {
-        return {
-          matched: true,
-          valid: false,
-          error: 'Friend referral codes are exclusively for new customers on their first order.',
-        };
-      }
-    } catch {
-      // ignore
-    }
   }
 
   const referrerFirstName = (referrerEntry.fullName || 'Friend').split(' ')[0];
@@ -343,8 +540,9 @@ export async function validateReferralOrRewardCode({
     matched: true,
     valid: true,
     type: 'friend_referral',
-    discountPercent: 20,
-    name: `Friend Referral from ${referrerFirstName} (20% Off First Mystery)`,
+    discountFixedGbp: REFERRAL_CREDIT_GBP,
+    discountPercent: 0,
+    name: `Friend Referral from ${referrerFirstName} (£${REFERRAL_CREDIT_GBP}.00 Credit)`,
     referrerUserId: referrerEntry.userId,
   };
 }
@@ -401,10 +599,10 @@ export async function checkPromoUsageAbuse({
 }
 
 /**
- * Called ONLY when an order is actually paid/confirmed.
+ * Called when an order is paid/confirmed.
  * 1. Marks single-use promo/reward codes as used by this customer.
- * 2. If a friend referral code was used, generates a unique single-use 20% off reward voucher
- *    for the referring host ("Give 20%, Get 20%").
+ * 2. If a friend referral code was used directly at checkout (and not yet claimed into credits),
+ *    awards the referring host ("Giver") their +£5.00 account credit and logs the referral redemption.
  */
 export async function recordPromoOrReferralRedemptionOnPaidOrder({
   code,
@@ -442,7 +640,7 @@ export async function recordPromoOrReferralRedemptionOnPaidOrder({
     usedAt: new Date().toISOString(),
   });
 
-  // 1. Was it a Referrer Reward Voucher? Mark it used so it cannot be used a second time.
+  // 1. Was it a legacy Referrer Reward Voucher? Mark it used.
   if (store.rewardVouchers[cleanCode]) {
     store.rewardVouchers[cleanCode].used = true;
     store.rewardVouchers[cleanCode].usedAt = new Date().toISOString();
@@ -451,45 +649,50 @@ export async function recordPromoOrReferralRedemptionOnPaidOrder({
     return {};
   }
 
-  // 2. Was it a Friend Referral Code? Issue the referrer their 20% off reward voucher!
-  const referralCheck = await validateReferralOrRewardCode({
-    code: cleanCode,
-    currentUserId: undefined,
-    currentUserEmail: undefined,
-  });
-
-  const referrerEntry = store.referralCodes[cleanCode];
+  // 2. Was it a Friend Referral Code used directly at checkout?
+  const referrerEntry = await resolveReferrerEntryByCode(cleanCode, store);
   if (referrerEntry && referrerEntry.userId !== buyerUserId) {
-    const randSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
-    const rewardCode = `REWARD20-${randSuffix}`;
+    const alreadyClaimed = store.redemptions.some(
+      (r) =>
+        (buyerUserId && r.referredUserId === buyerUserId) ||
+        (normalizedEmail && r.referredEmail === normalizedEmail)
+    );
 
-    store.rewardVouchers[rewardCode] = {
-      code: rewardCode,
-      referrerUserId: referrerEntry.userId,
-      referredEmail: normalizedEmail || undefined,
-      discountPercent: 20,
-      used: false,
-      createdAt: new Date().toISOString(),
-    };
+    if (!alreadyClaimed) {
+      await applySystemCustomerCreditDeltaGbp({
+        targetUserId: referrerEntry.userId,
+        deltaGbp: REFERRAL_CREDIT_GBP,
+        type: 'referral_given',
+        description: `Give £5, Get £5: Friend ${normalizedEmail || 'a friend'} redeemed your referral code (${cleanCode}) at checkout`,
+        relatedUserId: buyerUserId || undefined,
+        relatedEmail: normalizedEmail || undefined,
+        orderId: orderId || undefined,
+      });
 
-    store.redemptions.push({
-      id: crypto.randomUUID(),
-      referralCode: cleanCode,
-      referrerUserId: referrerEntry.userId,
-      referrerEmail: referrerEntry.email,
-      referredUserId: buyerUserId || undefined,
-      referredEmail: normalizedEmail || undefined,
-      orderId: orderId || undefined,
-      mysteryId: mysteryId || undefined,
-      rewardCodeGenerated: rewardCode,
-      createdAt: new Date().toISOString(),
-    });
+      const randSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
+      const rewardTag = `CREDIT5-${randSuffix}`;
 
-    writeReferralStore(store);
-    return {
-      rewardCodeIssued: rewardCode,
-      referrerUserId: referrerEntry.userId,
-    };
+      store.redemptions.push({
+        id: crypto.randomUUID(),
+        referralCode: cleanCode,
+        referrerUserId: referrerEntry.userId,
+        referrerEmail: referrerEntry.email,
+        referredUserId: buyerUserId || undefined,
+        referredEmail: normalizedEmail || undefined,
+        orderId: orderId || undefined,
+        mysteryId: mysteryId || undefined,
+        rewardCodeGenerated: rewardTag,
+        friendCreditAwardedGbp: REFERRAL_CREDIT_GBP,
+        referrerCreditAwardedGbp: REFERRAL_CREDIT_GBP,
+        createdAt: new Date().toISOString(),
+      });
+
+      writeReferralStore(store);
+      return {
+        rewardCodeIssued: rewardTag,
+        referrerUserId: referrerEntry.userId,
+      };
+    }
   }
 
   // 3. Also increment times_used in the main discounts store if it's a standard discount code
@@ -511,4 +714,34 @@ export async function recordPromoOrReferralRedemptionOnPaidOrder({
 
   writeReferralStore(store);
   return {};
+}
+
+/**
+ * Returns aggregated referral stats for Admin Customers & Conversions pages.
+ */
+export async function getAdminReferralProgramStatsAction(): Promise<{
+  totalReferralsCount: number;
+  totalCreditsIssuedGbp: number;
+  redemptions: ReferralRedemptionRecord[];
+  referralsByUserId: Record<string, number>;
+}> {
+  const store = readReferralStore();
+  const referralsByUserId: Record<string, number> = {};
+  let totalCreditsIssuedGbp = 0;
+
+  for (const r of store.redemptions) {
+    if (r.referrerUserId) {
+      referralsByUserId[r.referrerUserId] = (referralsByUserId[r.referrerUserId] || 0) + 1;
+    }
+    totalCreditsIssuedGbp +=
+      (r.friendCreditAwardedGbp ?? REFERRAL_CREDIT_GBP) +
+      (r.referrerCreditAwardedGbp ?? REFERRAL_CREDIT_GBP);
+  }
+
+  return {
+    totalReferralsCount: store.redemptions.length,
+    totalCreditsIssuedGbp,
+    redemptions: store.redemptions,
+    referralsByUserId,
+  };
 }

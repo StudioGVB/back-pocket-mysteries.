@@ -111,7 +111,7 @@ export default async function CompetitorComparisonPage(props: { params: Promise<
                   While {competitor.name} offers a standard &ldquo;off the shelf&rdquo; experience where every buyer receives the exact same pre-named strangers, <strong>Back Pocket Mysteries</strong> combines human-crafted mystery architecture with AI personalisation.
                 </p>
                 <p className="mb-6">
-                  Every plot, timeline, and clue chain is written by a human mystery writer for complex, watertight logic — then our AI engine tailors the character dossiers, visual CCTV evidence, and audio wiretaps around <em>your</em> cast in ~20 minutes.
+                  Every plot, timeline, and clue chain is written by a human mystery writer for complex, watertight logic — then we tailor the character dossiers, visual CCTV evidence, and audio wiretaps around <em>your</em> cast in ~20 minutes.
                 </p>
                 <ul className="list-disc pl-6 space-y-2 font-bold text-brand-dark">
                   <li>Cast all real friends, a Hybrid mix of friends + fictional suspects, or a 100% fictional cast.</li>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useParams } from 'next/navigation';
 import { signOut } from '@/app/[locale]/(auth)/actions';
-import { buildAvatarUrl } from '@/utils/avatar';
+import { buildAvatarUrl, resolveDisplayAvatarUrl } from '@/utils/avatar';
 
 interface AccountSidebarProps {
   user?: {
@@ -64,7 +64,9 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '?';
 
-  const avatarUrl = user?.avatar_config ? buildAvatarUrl(user.avatar_config, user.name) : undefined;
+  const rawAvatarUrl = user?.avatar_config ? buildAvatarUrl(user.avatar_config, user.name) : undefined;
+  const avatarUrl = rawAvatarUrl ? resolveDisplayAvatarUrl(rawAvatarUrl) || rawAvatarUrl : undefined;
+  const isAiPhoto = Boolean(avatarUrl && !avatarUrl.includes('api.dicebear.com'));
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   // Close mobile drawer automatically when route changes
@@ -128,6 +130,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
             <Link
               key={link.name}
               href={localizedHref}
+              prefetch={true}
               id={onNavigate ? undefined : (link as any).id}
               onClick={onNavigate}
               className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 font-bold text-[13px] ${
@@ -154,6 +157,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
       <div className="p-4 mt-auto space-y-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <Link
           href={`/${locale}/account/profile`}
+          prefetch={true}
           id={onNavigate ? undefined : 'tour-step-profile'}
           onClick={onNavigate}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-white/5 group"
@@ -161,7 +165,11 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
           {avatarUrl ? (
             <div className="w-10 h-10 rounded-full flex-shrink-0 bg-white flex items-center justify-center overflow-hidden shadow-inner">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarUrl} alt={user?.name || 'Avatar'} className="w-9 h-9 object-contain" />
+              <img
+                src={avatarUrl}
+                alt={user?.name || 'Avatar'}
+                className={isAiPhoto ? 'w-full h-full object-cover object-top' : 'w-9 h-9 object-contain'}
+              />
             </div>
           ) : (
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0" style={{ background: '#fe04c6', color: '#fff' }}>
@@ -179,6 +187,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
           {/* Support */}
           <Link
             href={`/${locale}/account/support`}
+            prefetch={true}
             onClick={onNavigate}
             aria-label="Support"
             className="group relative flex-1 hover:flex-[1.8] flex items-center justify-center gap-0 hover:gap-2 h-10 px-2.5 rounded-xl transition-all duration-200"
@@ -210,6 +219,7 @@ export function AccountSidebar({ user }: AccountSidebarProps) {
           {/* Settings */}
           <Link
             href={`/${locale}/account/settings`}
+            prefetch={true}
             onClick={onNavigate}
             aria-label="Settings"
             className="group relative flex-1 hover:flex-[1.8] flex items-center justify-center gap-0 hover:gap-2 h-10 px-2.5 rounded-xl transition-all duration-200"

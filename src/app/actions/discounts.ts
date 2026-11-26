@@ -581,7 +581,7 @@ export async function validatePromoCodeAction(params: {
     checkPromoUsageAbuse,
   } = await import('@/app/actions/referrals');
 
-  // 1. Check if this is a Friend Referral Code ("Give 20%, Get 20%") or Referrer Reward Voucher
+  // 1. Check if this is a Friend Referral Code ("Give £5, Get £5") or Referrer Reward Voucher
   const referralCheck = await validateReferralOrRewardCode({
     code: cleanCode,
     currentUserId,
@@ -593,13 +593,16 @@ export async function validatePromoCodeAction(params: {
       return { valid: false, error: referralCheck.error || 'Invalid referral code.' };
     }
     const nowIso = new Date().toISOString();
+    const isFixedGbp = Boolean(referralCheck.discountFixedGbp && referralCheck.discountFixedGbp > 0);
     const virtualDiscount: DiscountRecord = {
       id: `referral-${cleanCode}`,
-      name: referralCheck.name || 'Friend Referral (20% Off)',
+      name: referralCheck.name || 'Friend Referral (£5.00 Credit)',
       code: cleanCode,
       auto_apply: false,
-      discount_type: 'percentage',
-      discount_value: referralCheck.discountPercent || 20,
+      discount_type: isFixedGbp ? 'fixed' : 'percentage',
+      discount_value: isFixedGbp
+        ? referralCheck.discountFixedGbp!
+        : referralCheck.discountPercent || 20,
       applies_to: 'all',
       target_packages: [],
       target_mysteries: [],

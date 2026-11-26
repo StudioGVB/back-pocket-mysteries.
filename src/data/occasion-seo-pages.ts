@@ -76,7 +76,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       {
         question: 'Can we play a Back Pocket Mystery with an all-female hen party?',
         answer:
-          'Yes! Every character role in our mysteries can be cast as female, male, or adaptable, and our engine automatically adjusts pronouns, portraits, and relationships to match your exact hen party line-up.',
+          'Yes! Every character role in our mysteries can be cast as female, male, or adaptable, and pronouns, portraits, and relationships adjust automatically to match your exact hen party line-up.',
       },
       {
         question: 'Does the Maid of Honour or organizer get spoiled on who the killer is?',
@@ -123,7 +123,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
       {
         title: 'Personalized Inside Jokes & Roasts',
         description:
-          'Add your group’s favourite memories and traits during setup—our story engine embeds them naturally into character dossiers and forensic clues.',
+          'Add your group’s favourite memories and traits during setup—we weave them naturally into character dossiers and forensic clues.',
       },
       {
         title: 'Birthday Host Plays Spoiler-Free',
@@ -216,7 +216,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     title: 'Small Group Murder Mystery',
     titleHighlight: 'Games (4–8 Players)',
     subtitle:
-      'Struggling to find a murder mystery that actually works for 4, 5, 6, 7, or 8 players? Our dynamic story engine scales suspects, alibis, and red herrings to your exact headcount so nobody is left out.',
+      'Struggling to find a murder mystery that actually works for 4, 5, 6, 7, or 8 players? Every story scales suspects, alibis, and red herrings to your exact headcount so nobody is left out.',
     metaTitle:
       'Small Group Murder Mystery Games for 4, 5, 6, 7 or 8 Players | Back Pocket Mysteries',
     metaDescription:
@@ -295,7 +295,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     whyTitle: 'Why a Custom Christmas Murder Mystery Beats Every Board Game',
     whyParagraphs: [
       'Every December, hosts face the same challenge: finding a Christmas party activity that keeps everyone from your competitive brother-in-law to your best friends laughing and engaged between turkey and dessert.',
-      'Our flagship holiday pack, Christmas Nightmare, locks your guests inside a snowbound black-tie Christmas Eve dinner where the host of the manor is found dead by the tree. Because our engine weaves your guests’ real names, traits, and inside jokes into the alibis, leaked texts, and CCTV evidence, everyone is invested from the first glass of mulled wine.',
+      'Our flagship holiday pack, Christmas Nightmare, locks your guests inside a snowbound black-tie Christmas Eve dinner where the host of the manor is found dead by the tree. Because we weave your guests’ real names, traits, and inside jokes into the alibis, leaked texts, and CCTV evidence, everyone is invested from the first glass of mulled wine.',
     ],
     highlights: [
       {

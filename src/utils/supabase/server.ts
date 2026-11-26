@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 import { Database } from '@/types/database'
 import {
   buildSafeCookieOptions,
@@ -10,7 +11,21 @@ import {
   serverProcessLock,
 } from './session-lock'
 
+const getRequestCachedDefaultClient = cache(async () => {
+  return buildSupabaseServerClient(undefined, undefined)
+})
+
 export async function createClient(
+  isPermanentParam?: boolean,
+  clientOptions?: { allowCookieClear?: boolean }
+) {
+  if (isPermanentParam === undefined && !clientOptions) {
+    return getRequestCachedDefaultClient()
+  }
+  return buildSupabaseServerClient(isPermanentParam, clientOptions)
+}
+
+async function buildSupabaseServerClient(
   isPermanentParam?: boolean,
   clientOptions?: { allowCookieClear?: boolean }
 ) {

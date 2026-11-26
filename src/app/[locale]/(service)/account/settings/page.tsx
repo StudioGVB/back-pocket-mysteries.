@@ -41,7 +41,7 @@ export default async function SettingsPage({
       .select('id, name, gender, eye_color, height, ethnicity, traits, bio, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
-    getOrRegisterUserReferralWalletAction(user),
+    getOrRegisterUserReferralWalletAction(),
   ]);
 
   const orders = (rawOrders ?? []).map((o: any) => ({
