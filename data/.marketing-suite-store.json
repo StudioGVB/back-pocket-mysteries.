@@ -939,10 +939,37 @@
   ],
   "social_posts": [
     {
+      "id": "f50a198e-4c7b-48d9-9e12-772b8c410050",
+      "brief": "Pre-Launch VIP Giveaway: Sign Up Before We Launch & Get a Custom Murder Mystery Pack 100% Free",
+      "status": "draft",
+      "scheduled_at": "2026-11-27T09:00:00Z",
+      "timezone": "Australia/Sydney",
+      "posted_at": null,
+      "source_blog_id": null,
+      "content_type": "pre_launch_free_mystery_incentive",
+      "slide_content": {
+        "linkUrl": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+        "stat": {
+          "value": "100% FREE",
+          "label": "Sign Up Before We Launch & Claim A Custom Murder Mystery Pack Free (First 50 VIPs)"
+        },
+        "cardSlug": "claim-free-mystery-before-launch",
+        "cardTitle": "SIGN UP BEFORE WE LAUNCH: Get Your First Custom Murder Mystery Pack 100% Free",
+        "cardCategory": "PRE-LAUNCH VIP OFFER • FIRST 50 SPOTS",
+        "ctaText": "CLAIM YOUR FREE MYSTERY →",
+        "kickerText": "PRE-LAUNCH VIP GIVEAWAY",
+        "imageUrl": "/blog-images/claim-free-mystery-before-launch.png",
+        "templateIndex": 3
+      },
+      "error_message": null,
+      "created_at": "2026-11-26T17:10:57.867Z",
+      "updated_at": "2026-11-26T17:10:57.867Z"
+    },
+    {
       "id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
       "brief": "OG Announcement #1: From Prottack to Back Pocket Mysteries (First 50 VIP Free Pack Giveaway)",
       "status": "draft",
-      "scheduled_at": "2026-11-24T09:00:00Z",
+      "scheduled_at": "2026-11-28T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -963,13 +990,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-22T17:36:36.733Z",
-      "updated_at": "2026-11-24T15:07:08.849Z"
+      "updated_at": "2026-11-26T17:10:57.867Z"
     },
     {
       "id": "09df2532-17e4-49d0-863d-fdc547010189",
       "brief": "OG Announcement #2: Back Pocket Mysteries Is Officially Live! (Love On The Rocks & Christmas Nightmare)",
       "status": "draft",
-      "scheduled_at": "2026-11-24T18:00:00Z",
+      "scheduled_at": "2026-11-29T18:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -990,13 +1017,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-24T15:07:08.849Z",
-      "updated_at": "2026-11-24T15:07:08.849Z"
+      "updated_at": "2026-11-26T17:10:57.867Z"
     },
     {
       "id": "ef1c4c2a-2c27-4280-abf5-10abd6924d4b",
       "brief": "Corporate Team Building Murder Mysteries (8–24 Players)",
       "status": "draft",
-      "scheduled_at": "2026-11-24T09:00:00Z",
+      "scheduled_at": "2026-11-29T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": "4144d209-4c36-4fe5-9972-39b62d9ef8a1",
@@ -1010,13 +1037,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-18T13:07:25.424Z",
-      "updated_at": "2026-11-22T17:45:48.535Z"
+      "updated_at": "2026-11-26T17:10:57.867Z"
     },
     {
       "id": "717b2a0c-f21c-4887-a6b3-a837e1a92935",
       "brief": "Audio Wiretaps, CCTV Stills & Chat Logs in Murder Mysteries",
       "status": "draft",
-      "scheduled_at": "2026-11-26T09:00:00Z",
+      "scheduled_at": "2026-12-01T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": "5be882df-e34b-4529-9402-7296fd840547",
@@ -1030,13 +1057,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-18T13:07:25.424Z",
-      "updated_at": "2026-11-22T17:45:48.535Z"
+      "updated_at": "2026-11-26T17:10:57.867Z"
     },
     {
       "id": "cba64cca-92db-40f3-977e-05b23cdd9633",
       "brief": "Hosting a Small Group Murder Mystery Dinner (6–8 Players)",
       "status": "draft",
-      "scheduled_at": "2026-11-27T09:00:00Z",
+      "scheduled_at": "2026-12-02T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": "fdf2cdaf-d8a1-4d53-b211-cdf7cad22d6e",
@@ -1050,13 +1077,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-18T13:07:25.424Z",
-      "updated_at": "2026-11-22T17:45:48.535Z"
+      "updated_at": "2026-11-26T17:10:57.867Z"
     },
     {
       "id": "14df11cc-a857-4656-8fd5-94046b92cb3f",
       "brief": "Holiday & New Year's Eve Murder Mystery Party Guide",
       "status": "draft",
-      "scheduled_at": "2026-12-01T09:00:00Z",
+      "scheduled_at": "2026-12-03T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": "813eb661-361f-4438-b8b9-1d04c3d21806",
@@ -1070,13 +1097,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-18T13:07:25.424Z",
-      "updated_at": "2026-11-22T17:45:48.535Z"
+      "updated_at": "2026-11-26T17:10:57.867Z"
     },
     {
       "id": "b12f842d-c7e2-40ba-a7a1-c5cc71f1990c",
       "brief": "New Mystery Base Pack Launch: Christmas Nightmare (Holiday Dinner Party)",
       "status": "draft",
-      "scheduled_at": "2026-11-25T18:00:00Z",
+      "scheduled_at": "2026-11-30T18:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -1090,13 +1117,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-24T15:00:52.157Z",
-      "updated_at": "2026-11-24T15:07:40.416Z"
+      "updated_at": "2026-11-26T17:10:57.867Z"
     },
     {
       "id": "0ed5020f-4d18-4a0c-890b-b50cd34136c5",
       "brief": "New Mystery Base Pack Launch: Love On The Rocks (Reality TV Reunion)",
       "status": "draft",
-      "scheduled_at": "2026-11-25T09:00:00Z",
+      "scheduled_at": "2026-11-30T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -1110,7 +1137,7 @@
       },
       "error_message": null,
       "created_at": "2026-11-24T15:07:40.093Z",
-      "updated_at": "2026-11-24T15:07:40.093Z"
+      "updated_at": "2026-11-26T17:10:57.867Z"
     }
   ],
   "social_post_captions": [
@@ -1553,6 +1580,64 @@
       "post_url": "https://backpocketmysteries.com/en/themes/christmas-nightmare",
       "engagement_data": {},
       "created_at": "2026-11-24T15:07:40.416Z"
+    },
+    {
+      "id": "1249883c-3676-485f-871f-936d24c787b1",
+      "post_id": "f50a198e-4c7b-48d9-9e12-772b8c410050",
+      "platform": "instagram",
+      "caption": "🚨 WANT A CUSTOM MURDER MYSTERY PARTY PACK 100% FREE BEFORE WE OFFICIALLY LAUNCH? 🕵️‍♀️🥂\n\nWe are putting the finishing touches on Back Pocket Mysteries, the interactive murder mystery party builder that puts YOUR actual friend group inside the crime scene, and before we open the doors, we are giving our early VIP sign-ups a complete Custom Murder Mystery Pack 100% FREE (up to $49 value)!\n\nWhy you want to lock in your free pack right now before launch:\n🎭 Your Real Friends Cast as the Suspects: Type in your guests’ real names and appearance traits and our engine weaves them directly into the character dossiers, secret motives, alibis, and uniform AI costume portraits\n📹 Real Forensic Phone Clues: Across 3 rounds, your table unlocks grainy CCTV security camera stills, recovered dark-mode group chats, and forensic lab reports\n🎙️ Leaked Audio Wiretaps: Tap play at the dinner table and hear two suspects whispering your actual friend’s name in a recorded voice memo\n🥂 The Host Actually Gets to Play: Our live 6-digit Game PIN controller hides the killer so the host can sip, interrogate, and accuse completely spoiler-free\n🎄 Use It Whenever You Want: Save your 100%-Off VIP code for your next dinner party, birthday, bachelorette, or Christmas get-together (5 to 16 players, ready in 30 minutes)\n\n⚡ HOW TO CLAIM YOUR FREE MYSTERY BEFORE WE LAUNCH (TAKES 10 SECONDS):\n1️⃣ Tap the link in our bio\n2️⃣ Enter your name & email on our Pre-Launch VIP List (limited to the First 50 spots!)\n3️⃣ We will send your 100%-Off Custom Mystery Pack code + instant access to test-drive our free playable mini-mystery tonight\n\n👇 Link in bio to sign up and claim your Free Mystery Pack before the 50 pre-launch spots disappear!\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketMysteries #FreeMurderMystery #MurderMysteryParty #DinnerPartyIdeas #GameNight",
+      "hashtags": [
+        "BackPocketMysteries",
+        "FreeMurderMystery",
+        "MurderMysteryParty",
+        "DinnerPartyIdeas",
+        "GameNight"
+      ],
+      "media_urls": [
+        "/api/social-card/claim-free-mystery-before-launch"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": null,
+      "created_at": "2026-11-26T17:10:57.867Z",
+      "updated_at": "2026-11-26T17:10:57.867Z"
+    },
+    {
+      "id": "c4233c3a-417f-406e-9a7f-cdb5a1dd0bcc",
+      "post_id": "f50a198e-4c7b-48d9-9e12-772b8c410050",
+      "platform": "facebook",
+      "caption": "🚨 WANT A CUSTOM MURDER MYSTERY PARTY PACK 100% FREE BEFORE WE OFFICIALLY LAUNCH? 🕵️‍♀️🥂\n\nWe are putting the finishing touches on Back Pocket Mysteries, the interactive murder mystery party builder that puts YOUR actual friend group inside the crime scene, and before we open the doors, we are giving our early VIP sign-ups a complete Custom Murder Mystery Pack 100% FREE (up to $49 value)!\n\nWhy you want to lock in your free pack right now before launch:\n🎭 Your Real Friends Cast as the Suspects: Type in your guests’ real names and appearance traits and our engine weaves them directly into the character dossiers, secret motives, alibis, and uniform AI costume portraits\n📹 Real Forensic Phone Clues: Across 3 rounds, your table unlocks grainy CCTV security camera stills, recovered dark-mode group chats, and forensic lab reports\n🎙️ Leaked Audio Wiretaps: Tap play at the dinner table and hear two suspects whispering your actual friend’s name in a recorded voice memo\n🥂 The Host Actually Gets to Play: Our live 6-digit Game PIN controller hides the killer so the host can sip, interrogate, and accuse completely spoiler-free\n🎄 Use It Whenever You Want: Save your 100%-Off VIP code for your next dinner party, birthday, bachelorette, or Christmas get-together (5 to 16 players, ready in 30 minutes)\n\n⚡ HOW TO CLAIM YOUR FREE MYSTERY BEFORE WE LAUNCH (TAKES 10 SECONDS):\n1️⃣ Tap the link in our bio\n2️⃣ Enter your name & email on our Pre-Launch VIP List (limited to the First 50 spots!)\n3️⃣ We will send your 100%-Off Custom Mystery Pack code + instant access to test-drive our free playable mini-mystery tonight\n\n👇 Link in bio to sign up and claim your Free Mystery Pack before the 50 pre-launch spots disappear!\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketMysteries #FreeMurderMystery #MurderMysteryParty #DinnerPartyIdeas #GameNight",
+      "hashtags": [
+        "BackPocketMysteries",
+        "FreeMurderMystery",
+        "MurderMysteryParty",
+        "DinnerPartyIdeas",
+        "GameNight"
+      ],
+      "media_urls": [
+        "/api/social-card/claim-free-mystery-before-launch"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": null,
+      "created_at": "2026-11-26T17:10:57.867Z",
+      "updated_at": "2026-11-26T17:10:57.867Z"
+    },
+    {
+      "id": "ef011ca6-e1e6-47e8-babb-ee738d6e9949",
+      "post_id": "f50a198e-4c7b-48d9-9e12-772b8c410050",
+      "platform": "linkedin",
+      "caption": "Why We Are Giving Our Pre-Launch VIP Sign-Ups a Complete Custom Murder Mystery Pack 100% Free Before Official Launch\n\nBefore you open the doors on a new consumer entertainment platform, the most valuable asset you can build is not an ad campaign. It is a founding table of real hosts who put your product through its paces on a Friday or Saturday night with their closest friends.\n\nAs we prepare for the official launch of Back Pocket Mysteries, we are opening a limited Pre-Launch VIP List where early sign-ups receive a complete Custom Murder Mystery Party Pack 100% free (a $19 to $49 retail value), plus instant access to play our interactive mini-mystery online right now.\n\nIf you have ever wanted to host an unforgettable dinner party, birthday celebration, bachelorette weekend, holiday social, or corporate team event for 5 to 16 people without spending three hours printing and cutting paper slips, here is why you should lock in one of our pre-launch spots today.\n\nThe Old Dinner Party Problem We Set Out to Solve:\nTraditional downloadable murder mystery kits cost between $40 and $75, yet they punish the organiser in three ways:\n1. The Host Spoiler Penalty: In a standard PDF kit, the person who buys the game has to read the master solution packet to sort the clue envelopes. That means the person who cooked the meal and invited everyone over already knows who the killer is and cannot participate in the deduction.\n2. Three Hours of Printer Arts and Crafts: Most legacy kits hand you a 45-page PDF that requires hours of printing, folding, and stuffing paper slips into envelopes for Round 1, Round 2, and Round 3.\n3. Generic Stock Characters That Feel Disconnected: Guests spend the first forty minutes staring at name badges trying to remember which friend is pretending to be a fictional baron, and if one guest cancels an hour before dinner, a mandatory clue vanishes and breaks the timeline.\n\nWhat Your Free Custom Murder Mystery Pack Includes:\nWhen you sign up on our Pre-Launch VIP List before we launch, your 100%-off code unlocks a complete custom-hydrated mystery pack built around your real guest list in under 30 minutes:\n- Real-Name and Likeness Hydration: Enter your friends’ real names, personalities, and appearance traits. Every character dossier, secret relationship, alibi, and uniform front-on AI costume portrait is generated specifically for your crew, with automatic gender-flex casting so any role adapts seamlessly to an all-female, all-male, or mixed group.\n- Multi-Format Forensic Evidence Across Three Rounds: Instead of reading walls of paper text, guests examine high-angle CCTV security camera stills stamped with timestamps, dark-mode recovered text message threads, toxicology reports, and playable multi-voice audio wiretaps where suspects name-drop your actual friends at the table.\n- Spoiler-Free Host Mode via a 6-Digit Game PIN: Guests scan a QR code or enter a 6-digit Game PIN on their phones with zero app downloads required. The host controls round timers and evidence drops from a spoiler-free dashboard that conceals the killer until the final accusation vote.\n- Elastic 5 to 16 Player Scaling and Optional Print Studio: Toggle optional suspect roles on or off in 60 seconds if your headcount changes, and choose between running the night 100% paper-free on smartphones or printing physical character booklets and Polaroid clue cards.\n\nHow to Lock In Your Free Mystery Pack Before Launch:\n1. Visit the pre-launch VIP page linked below.\n2. Enter your name and email in ten seconds to reserve one of the First 50 VIP spots.\n3. Receive your 100%-off full custom mystery pack code (valid for any theme pack, including Love On The Rocks or Christmas Nightmare, whenever you are ready to host) along with instant access to our playable mini-mystery.\n\nReserve your free custom murder mystery pack before we launch here:\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketMysteries #FreeMurderMystery #MurderMysteryParty #DinnerPartyIdeas #GameNight",
+      "hashtags": [
+        "BackPocketMysteries",
+        "FreeMurderMystery",
+        "MurderMysteryParty",
+        "DinnerPartyIdeas",
+        "GameNight"
+      ],
+      "media_urls": [],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": null,
+      "created_at": "2026-11-26T17:10:57.867Z",
+      "updated_at": "2026-11-26T17:10:57.867Z"
     }
   ],
   "edm_campaigns": [
@@ -2003,5 +2088,32 @@
       "updated_at": "2026-11-24T15:07:40.093Z"
     }
   ],
-  "edm_events": []
+  "edm_events": [],
+  "leads": [
+    {
+      "id": "01a20451-8de2-7f18-a582-3faf5ba74c30",
+      "email": "gabriellablyth@me.com",
+      "full_name": "Testing",
+      "source": "first_50_vip_modal",
+      "vip_rank": 1,
+      "qualifies_for_free_mystery": true,
+      "free_mystery_code": null,
+      "code_sent_at": null,
+      "marketing_consent": true,
+      "created_at": "2026-11-22T17:33:03.459Z"
+    },
+    {
+      "id": "7c97939f-e4cc-4648-82c4-1f0540e8c21c",
+      "email": "helen@touristcraft.com",
+      "full_name": "Helen",
+      "source": "first_50_vip_modal",
+      "vip_rank": 2,
+      "qualifies_for_free_mystery": true,
+      "free_mystery_code": null,
+      "code_sent_at": null,
+      "marketing_consent": true,
+      "created_at": "2026-11-24T16:25:04.837Z",
+      "resend_contact_id": "7c97939f-e4cc-4648-82c4-1f0540e8c21c"
+    }
+  ]
 }
