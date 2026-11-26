@@ -283,14 +283,6 @@ export default async function ServiceMysteryDetailPage({
               >
                 Select Guests &amp; Lock In Cast →
               </Link>
-              <Link
-                href={`/${locale}/pricing`}
-                className="block w-full py-2.5 rounded-2xl font-bold text-xs text-slate-500 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 text-center transition-colors"
-              >
-                Or unlock all mysteries with Unlimited Monthly Pass (
-                <PriceDisplay tier="subscribe" locale={locale as Locale} className="font-black" />
-                /mo)
-              </Link>
             </div>
           </div>
         </div>

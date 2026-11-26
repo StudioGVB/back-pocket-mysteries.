@@ -332,7 +332,6 @@ export async function getTransactions() {
   const seenMysteryIds = new Set<string>();
 
   const inferPackageTierLabel = (grossGbp: number): string => {
-    if (grossGbp >= 28) return 'Unlimited Pass';
     if (grossGbp >= 23) return 'Grand (4–16)';
     if (grossGbp >= 18) return 'Premium (4–10)';
     return 'Basic (4–6)';

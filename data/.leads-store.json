@@ -11,6 +11,19 @@
       "code_sent_at": null,
       "marketing_consent": true,
       "created_at": "2026-11-22T17:33:03.459Z"
+    },
+    "helen@touristcraft.com": {
+      "id": "7c97939f-e4cc-4648-82c4-1f0540e8c21c",
+      "email": "helen@touristcraft.com",
+      "full_name": "Helen",
+      "source": "first_50_vip_modal",
+      "vip_rank": 2,
+      "qualifies_for_free_mystery": true,
+      "free_mystery_code": null,
+      "code_sent_at": null,
+      "marketing_consent": true,
+      "created_at": "2026-11-24T16:25:04.837Z",
+      "resend_contact_id": "7c97939f-e4cc-4648-82c4-1f0540e8c21c"
     }
   }
 }

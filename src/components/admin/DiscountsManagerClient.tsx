@@ -339,7 +339,6 @@ export default function DiscountsManagerClient({
     { id: 'basic', label: 'Basic ($19)', price: 19 },
     { id: 'premium', label: 'Premium ($25)', price: 25 },
     { id: 'grand', label: 'Grand ($33)', price: 33 },
-    { id: 'subscribe', label: 'Unlimited ($39)', price: 39 },
   ];
 
   const renderTargetsSummary = (d: DiscountRecord) => {

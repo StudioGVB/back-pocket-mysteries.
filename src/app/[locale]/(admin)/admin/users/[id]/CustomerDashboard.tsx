@@ -25,6 +25,7 @@ import {
   adminToggleSuspendAccount,
   adminSendPasswordReset,
   adminDeleteCustomerAccount,
+  adminReinstateCustomerAccount,
   CustomerCrmRecord,
 } from '@/app/actions/admin-users';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -629,6 +630,32 @@ export function CustomerDashboard({
     router.refresh();
   };
 
+  const handleReinstateAccount = async () => {
+    setLoading(true);
+    const res = await adminReinstateCustomerAccount(profile.id);
+    setLoading(false);
+    if (res.error) {
+      showToast(res.error, 'error');
+      return;
+    }
+    showToast('Account & all mysteries reinstated! Welcome-back email sent.');
+    router.refresh();
+  };
+
+  const isSoftDeleted = Boolean(
+    profile?.avatar_config?.soft_deleted || initialCrm?.accountSoftDeleted
+  );
+  const softDeletedAt =
+    profile?.avatar_config?.deleted_at || initialCrm?.deletedAt || null;
+  const purgeAfter =
+    profile?.avatar_config?.purge_after || initialCrm?.purgeAfter || null;
+  const daysUntilPurge =
+    isSoftDeleted && purgeAfter
+      ? Math.max(1, Math.ceil((Date.parse(purgeAfter) - Date.now()) / (1000 * 60 * 60 * 24)))
+      : isSoftDeleted
+      ? 60
+      : null;
+
   const inputClass =
     'w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-brand-dark outline-none focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/10 transition-all';
   const labelClass =
@@ -656,6 +683,38 @@ export function CustomerDashboard({
         </div>
       )}
 
+      {/* 60-Day Soft-Delete Quarantine & 1-Click Reinstatement Banner */}
+      {isSoftDeleted && (
+        <div className="rounded-[28px] bg-gradient-to-r from-rose-950 via-slate-900 to-slate-900 text-white border-2 border-rose-500/40 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-400/30 text-rose-300 text-[10px] font-black uppercase tracking-widest">
+              <span>⏳</span>
+              <span>
+                60-Day Account Recovery Quarantine • {daysUntilPurge ?? 60} Days Remaining
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-white">
+              Customer Self-Deleted Account — Encrypted Backup Held for 60 Days
+            </h3>
+            <p className="text-xs text-slate-300 font-medium leading-relaxed max-w-2xl">
+              Deactivated{softDeletedAt ? ` on ${formatDate(softDeletedAt)}` : ''} and scheduled for permanent purge
+              {purgeAfter ? ` on ${formatDate(purgeAfter)}` : ' after 60 days'}. All purchased mysteries, AI clues, and saved guests are preserved and can be restored in one click.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleReinstateAccount}
+              disabled={loading}
+              className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+            >
+              <span>♻️</span>
+              {loading ? 'Reinstating...' : 'Reinstate Account & Mysteries'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Quick Admin Command Bar */}
       <div className="bg-brand-dark text-white rounded-[28px] p-5 px-7 flex flex-wrap items-center justify-between gap-4 shadow-lg">
         <div className="flex items-center gap-3">
@@ -673,6 +732,16 @@ export function CustomerDashboard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {isSoftDeleted && (
+            <button
+              onClick={handleReinstateAccount}
+              disabled={loading}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-2 cursor-pointer"
+            >
+              <span>♻️</span> Reinstate Account
+            </button>
+          )}
+
           <button
             onClick={() => setIsGiftModalOpen(true)}
             className="px-4 py-2.5 bg-brand-pink hover:bg-brand-pink/90 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-2"
@@ -714,7 +783,7 @@ export function CustomerDashboard({
               disabled={loading}
               className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white shadow-sm"
             >
-              <span>🗑️</span> Delete Account
+              <span>🗑️</span> {isSoftDeleted ? 'Hard Purge Now' : 'Delete Account'}
             </button>
           )}
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { submitReview } from '@/app/actions/reviews';
 import { FileUpload } from '@/components/marketing/FileUpload';
 
@@ -10,17 +10,49 @@ export function ReviewForm() {
   const [rating, setRating] = useState(5);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [reviewText, setReviewText] = useState('');
+  const [prefilledMystery, setPrefilledMystery] = useState('');
+  const [prefilledRole, setPrefilledRole] = useState('');
+  const [prefilledMysteryId, setPrefilledMysteryId] = useState('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qName = (params.get('name') || '').trim();
+      const qEmail = (params.get('email') || '').trim();
+      const qMystery = (params.get('mystery') || '').trim();
+      const qRole = (params.get('role') || '').trim();
+      const qMysteryId = (params.get('mysteryId') || '').trim();
+
+      if (qName) setName(qName);
+      if (qEmail) setEmail(qEmail);
+      if (qMystery) setPrefilledMystery(qMystery);
+      if (qRole) setPrefilledRole(qRole);
+      if (qMysteryId) setPrefilledMysteryId(qMysteryId);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus('loading');
-    
+
     const formData = new FormData(e.currentTarget);
-    formData.append('rating', rating.toString());
+    formData.set('name', name);
+    formData.set('email', email);
+    formData.set('review_text', reviewText);
+    formData.set('rating', rating.toString());
+    if (prefilledMystery) formData.set('mystery_title', prefilledMystery);
+    if (prefilledRole) formData.set('character_role', prefilledRole);
+    if (prefilledMysteryId) formData.set('mystery_id', prefilledMysteryId);
     files.forEach((file) => {
       formData.append('attachments', file);
     });
-    
+
     try {
       const result = await submitReview(formData);
       if (result.error) {
@@ -29,7 +61,7 @@ export function ReviewForm() {
       } else {
         setStatus('success');
       }
-    } catch (err) {
+    } catch {
       setStatus('error');
       setErrorMessage('Something went wrong. Please try again.');
     }
@@ -45,14 +77,12 @@ export function ReviewForm() {
         </div>
         <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight mb-4">Thank You!</h3>
         <p className="text-gray-500 font-bold">Your review has been submitted successfully. We appreciate your feedback!</p>
-        <button 
+        <button
           onClick={() => {
             setStatus('idle');
             setFiles([]);
             setRating(5);
-            if(document.getElementById('review_text')) (document.getElementById('review_text') as HTMLTextAreaElement).value = '';
-            if(document.getElementById('name')) (document.getElementById('name') as HTMLInputElement).value = '';
-            if(document.getElementById('email')) (document.getElementById('email') as HTMLInputElement).value = '';
+            setReviewText('');
           }}
           className="mt-8 text-xs font-black uppercase tracking-widest text-brand-pink hover:text-brand-dark transition-colors"
         >
@@ -69,7 +99,22 @@ export function ReviewForm() {
           {errorMessage}
         </div>
       )}
-      
+
+      {(prefilledMystery || prefilledRole) && (
+        <div className="flex items-center justify-center">
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2 rounded-full bg-brand-dark text-white text-xs font-black uppercase tracking-wider shadow-sm">
+            <span className="text-brand-pink">🎭 Reviewing:</span>
+            <span>{prefilledMystery || 'Back Pocket Mysteries'}</span>
+            {prefilledRole && (
+              <>
+                <span className="text-white/40">•</span>
+                <span className="text-brand-pink">Played {prefilledRole}</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div>
         <label className="block text-[10px] font-black uppercase tracking-widest text-brand-dark mb-4 text-center">Rate your experience</label>
         <div className="flex justify-center gap-2 mb-8">
@@ -82,13 +127,13 @@ export function ReviewForm() {
               onMouseLeave={() => setHoveredRating(0)}
               onClick={() => setRating(star)}
             >
-              <svg 
+              <svg
                 className={`w-12 h-12 transition-colors ${
-                  (hoveredRating || rating) >= star 
-                    ? 'text-brand-pink fill-brand-pink' 
+                  (hoveredRating || rating) >= star
+                    ? 'text-brand-pink fill-brand-pink'
                     : 'text-gray-300 fill-transparent'
-                }`} 
-                stroke="currentColor" 
+                }`}
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -97,14 +142,16 @@ export function ReviewForm() {
           ))}
         </div>
       </div>
-      
+
       <div>
         <label htmlFor="name" className="block text-[10px] font-black uppercase tracking-widest text-brand-dark mb-2 pl-4">Your Name (or Nickname)</label>
-        <input 
-          type="text" 
-          id="name" 
-          name="name" 
+        <input
+          type="text"
+          id="name"
+          name="name"
           required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className="w-full bg-brand-gray border-2 border-transparent rounded-full px-6 py-4 text-brand-dark font-medium focus:outline-none focus:border-brand-pink transition-colors"
           placeholder="e.g. Detective Sarah"
         />
@@ -112,22 +159,26 @@ export function ReviewForm() {
 
       <div>
         <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-widest text-brand-dark mb-2 pl-4">Your Email (to receive a thank you gift!)</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="w-full bg-brand-gray border-2 border-transparent rounded-full px-6 py-4 text-brand-dark font-medium focus:outline-none focus:border-brand-pink transition-colors"
           placeholder="e.g. detective@agency.com"
         />
       </div>
-      
+
       <div>
         <label htmlFor="review_text" className="block text-[10px] font-black uppercase tracking-widest text-brand-dark mb-2 pl-4">Your Review</label>
-        <textarea 
-          id="review_text" 
-          name="review_text" 
+        <textarea
+          id="review_text"
+          name="review_text"
           required
           rows={5}
+          value={reviewText}
+          onChange={(e) => setReviewText(e.target.value)}
           className="w-full bg-brand-gray border-2 border-transparent rounded-[2rem] px-6 py-5 text-brand-dark font-medium focus:outline-none focus:border-brand-pink transition-colors resize-none"
           placeholder="Tell us about your party..."
         ></textarea>
@@ -135,8 +186,8 @@ export function ReviewForm() {
 
       <FileUpload onFilesChange={setFiles} />
 
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         disabled={status === 'loading'}
         className="w-full px-12 py-5 bg-brand-dark text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-pink transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
       >
@@ -145,3 +196,4 @@ export function ReviewForm() {
     </form>
   );
 }
+

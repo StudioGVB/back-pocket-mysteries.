@@ -468,18 +468,6 @@ export function AdminSettingsClient({
                   className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                  Unlimited (£/mo)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={settings.unlimitedPassPriceGbp}
-                  onChange={(e) => updateField('unlimitedPassPriceGbp', Number(e.target.value))}
-                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-pink focus:outline-none text-sm font-black text-slate-900"
-                />
-              </div>
               <div className="col-span-2 sm:col-span-1">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
                   Admin Currency

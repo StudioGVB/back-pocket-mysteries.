@@ -176,7 +176,6 @@ async function writeStore(data: StoredBalanceSheetData): Promise<void> {
 
 function inferTierFromAmount(amount: number, currency: string): string {
   const gbpAmount = convertSync(amount, currency, 'GBP');
-  if (gbpAmount >= 28) return 'Unlimited';
   if (gbpAmount >= 23) return 'Grand';
   if (gbpAmount >= 18) return 'Premium';
   return 'Basic';
