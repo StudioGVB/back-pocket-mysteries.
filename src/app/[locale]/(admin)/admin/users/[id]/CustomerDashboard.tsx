@@ -1018,47 +1018,79 @@ export function CustomerDashboard({
 
               {/* 3. Promos, Discounts & Store Credit Section */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Store Credit Balance */}
-                <div className="rounded-3xl border border-gray-100 p-7 bg-gray-50/60 flex flex-col justify-between">
+                {/* Store Credit Balance (£ GBP) & Credit Ledger */}
+                <div className="rounded-3xl border border-gray-100 p-7 bg-gray-50/60 flex flex-col justify-between space-y-5">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      Account Balance
+                      Account Balance (Give £5, Get £5)
                     </p>
                     <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight mt-0.5 mb-4">
-                      Store <span className="text-brand-pink italic">Credit</span>
+                      Account <span className="text-brand-pink italic">Credits (£)</span>
                     </h3>
                     <div className="bg-white p-5 rounded-2xl border border-gray-100 mb-4 text-center">
                       <p className="text-4xl font-black text-brand-dark">
-                        ${(initialCrm.creditBalanceUsd || 0).toFixed(2)}
+                        £{(initialCrm.creditBalanceGbp ?? initialCrm.creditBalanceUsd ?? 0).toFixed(2)}
                       </p>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">
-                        Available towards next mystery
+                        Available towards next mystery at checkout
                       </p>
                     </div>
+
+                    {Array.isArray(initialCrm.creditLedger) && initialCrm.creditLedger.length > 0 && (
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 mb-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                          Credit &amp; Referral History ({initialCrm.creditLedger.length})
+                        </p>
+                        {initialCrm.creditLedger.slice(0, 8).map((entry: any) => (
+                          <div
+                            key={entry.id}
+                            className="bg-white border border-gray-100 rounded-xl px-3 py-2 flex items-center justify-between gap-2 text-[11px]"
+                          >
+                            <span className="font-bold text-gray-700 truncate" title={entry.description}>
+                              {entry.description}
+                            </span>
+                            <span
+                              className={`font-black shrink-0 ${
+                                entry.amountGbp >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                              }`}
+                            >
+                              {entry.amountGbp >= 0 ? '+' : '-'}£{Math.abs(entry.amountGbp).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2.5">
                     <div className="flex gap-2">
                       <button
+                        onClick={() => handleAdjustCredit(5, 'Give £5, Get £5 referral credit')}
+                        disabled={loading}
+                        className="flex-1 py-2.5 bg-white hover:bg-brand-pink hover:text-white text-brand-pink border border-brand-pink/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                      >
+                        +£5
+                      </button>
+                      <button
                         onClick={() => handleAdjustCredit(10, 'Admin courtesy credit')}
                         disabled={loading}
                         className="flex-1 py-2.5 bg-white hover:bg-brand-dark hover:text-white text-brand-dark border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                       >
-                        +$10
+                        +£10
                       </button>
                       <button
                         onClick={() => handleAdjustCredit(25, 'Admin courtesy credit')}
                         disabled={loading}
                         className="flex-1 py-2.5 bg-white hover:bg-brand-dark hover:text-white text-brand-dark border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                       >
-                        +$25
+                        +£25
                       </button>
-                      {initialCrm.creditBalanceUsd > 0 && (
+                      {(initialCrm.creditBalanceGbp ?? initialCrm.creditBalanceUsd ?? 0) > 0 && (
                         <button
                           onClick={() =>
                             handleAdjustCredit(
-                              -initialCrm.creditBalanceUsd,
-                              'Cleared store credit balance'
+                              -(initialCrm.creditBalanceGbp ?? initialCrm.creditBalanceUsd ?? 0),
+                              'Cleared account credit balance'
                             )
                           }
                           disabled={loading}
@@ -1072,7 +1104,7 @@ export function CustomerDashboard({
                       <input
                         type="number"
                         step="1"
-                        placeholder="Custom $ amount (e.g. 15)"
+                        placeholder="Custom £ amount (e.g. 5 or -5)"
                         value={customCreditDelta}
                         onChange={e => setCustomCreditDelta(e.target.value)}
                         className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-brand-dark outline-none focus:border-brand-pink"

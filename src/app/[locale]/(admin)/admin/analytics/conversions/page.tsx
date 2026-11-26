@@ -107,10 +107,10 @@ async function ConversionsAnalyticsContent({ locale }: { locale: string }) {
         {/* Friend Referral Engine */}
         <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
           <h2 className="text-lg font-black text-brand-dark uppercase tracking-tight mb-1">
-            Friend Referral Program (Give 20%, Get 20%)
+            Friend Referral Program (Give £5, Get £5)
           </h2>
           <p className="text-xs font-bold text-gray-400 mb-6">
-            Real-time tracking of host referral codes &amp; unlocked reward vouchers
+            Real-time tracking of host referral codes &amp; £5 account credits awarded to friends &amp; givers
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
@@ -123,7 +123,7 @@ async function ConversionsAnalyticsContent({ locale }: { locale: string }) {
             </div>
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
               <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                Referred Purchases
+                Referral Claims (£5 + £5)
               </p>
               <p className="text-2xl font-black text-brand-pink mt-1">
                 {data.referrals.friendPurchasesCompleted}
@@ -131,15 +131,15 @@ async function ConversionsAnalyticsContent({ locale }: { locale: string }) {
             </div>
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
               <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                20% Rewards Unlocked
+                Total Referral Credits Issued
               </p>
               <p className="text-2xl font-black text-emerald-600 mt-1">
-                {data.referrals.rewardVouchersIssued}
+                £{(data.referrals.friendPurchasesCompleted * 10).toFixed(2)}
               </p>
             </div>
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
               <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                Rewards Redeemed
+                Credits Redeemed
               </p>
               <p className="text-2xl font-black text-brand-dark mt-1">
                 {data.referrals.rewardVouchersRedeemed}

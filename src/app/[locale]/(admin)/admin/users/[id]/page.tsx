@@ -201,9 +201,9 @@ async function CustomerProfileContent({
             Purchases Made: {mergedOrders.filter((o: any) => o.status !== 'gifted' && o.status !== 'refunded').length}
           </span>
 
-          {crm.creditBalanceUsd > 0 && (
+          {(crm.creditBalanceGbp ?? crm.creditBalanceUsd ?? 0) > 0 && (
             <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-brand-pink/10 text-brand-pink border border-brand-pink/20">
-              Store Credit: ${crm.creditBalanceUsd.toFixed(2)}
+              💷 Account Credit: £{(crm.creditBalanceGbp ?? crm.creditBalanceUsd ?? 0).toFixed(2)}
             </span>
           )}
         </div>
