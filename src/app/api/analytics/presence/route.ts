@@ -80,9 +80,16 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const { requireAdmin } = await import('@/utils/admin-auth');
+    await requireAdmin();
     const snapshot = await getLivePresenceSnapshot();
     return NextResponse.json({ ok: true, snapshot });
-  } catch {
-    return NextResponse.json({ ok: false }, { status: 500 });
+  } catch (err: any) {
+    const isAuthErr =
+      err?.message?.includes('Unauthorized') || err?.message?.includes('Forbidden');
+    return NextResponse.json(
+      { ok: false, error: isAuthErr ? 'Forbidden' : 'Internal error' },
+      { status: isAuthErr ? 403 : 500 }
+    );
   }
 }

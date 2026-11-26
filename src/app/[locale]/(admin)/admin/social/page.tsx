@@ -29,7 +29,10 @@ import {
 import {
   BufferAnalyticsPanel,
   BufferPostItem,
-  PlatformAnalyticsSummary,
+  BrandFilter,
+  TimeRangeFilter,
+  filterBufferPostsByBrandAndTime,
+  computeSummaryFromBufferPosts,
 } from "@/components/admin/social/BufferAnalyticsPanel";
 
 interface SocialPostItem {
@@ -64,18 +67,25 @@ export default function SocialCalendarPage() {
   const [loading, setLoading] = useState(true);
   const [refreshingDates, setRefreshingDates] = useState(false);
   const [bufferPosts, setBufferPosts] = useState<BufferPostItem[]>([]);
-  const [bufferSummaries, setBufferSummaries] = useState<{
-    all: PlatformAnalyticsSummary | null;
-    instagram: PlatformAnalyticsSummary | null;
-    facebook: PlatformAnalyticsSummary | null;
-    linkedin: PlatformAnalyticsSummary | null;
-  }>({
-    all: null,
-    instagram: null,
-    facebook: null,
-    linkedin: null,
-  });
+  const [brandFilter, setBrandFilter] = useState<BrandFilter>("bpm");
+  const [timeRange, setTimeRange] = useState<TimeRangeFilter>("all");
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
+  const filteredSummaries = useMemo(() => {
+    const scoped = filterBufferPostsByBrandAndTime(bufferPosts, brandFilter, timeRange);
+    return {
+      all: computeSummaryFromBufferPosts(scoped),
+      instagram: computeSummaryFromBufferPosts(
+        scoped.filter((p) => p.channelService === "instagram")
+      ),
+      facebook: computeSummaryFromBufferPosts(
+        scoped.filter((p) => p.channelService === "facebook")
+      ),
+      linkedin: computeSummaryFromBufferPosts(
+        scoped.filter((p) => p.channelService === "linkedin")
+      ),
+    };
+  }, [bufferPosts, brandFilter, timeRange]);
 
   const fetchBufferAnalytics = useCallback(async () => {
     try {
@@ -84,12 +94,6 @@ export default function SocialCalendarPage() {
       const json = await res.json();
       if (json?.success) {
         setBufferPosts(json.posts || []);
-        setBufferSummaries({
-          all: json.summaries?.all || null,
-          instagram: json.summaries?.instagram || null,
-          facebook: json.summaries?.facebook || null,
-          linkedin: json.summaries?.linkedin || null,
-        });
       }
     } catch (err) {
       console.error("Failed to fetch Buffer analytics for Overview:", err);
@@ -584,10 +588,14 @@ export default function SocialCalendarPage() {
       <div className="space-y-4">
         <BufferAnalyticsPanel
           title="All-Channel Social Traction & Buffer KPIs"
-          summary={bufferSummaries.all}
+          summary={filteredSummaries.all}
           posts={bufferPosts}
           loading={loadingAnalytics}
           onRefresh={fetchBufferAnalytics}
+          brandFilter={brandFilter}
+          onBrandFilterChange={setBrandFilter}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
         />
 
         {/* Per-Channel Breakdown Cards (Instagram vs Facebook vs LinkedIn) */}
@@ -603,7 +611,10 @@ export default function SocialCalendarPage() {
                   <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
                     Instagram
                   </h3>
-                  <p className="text-[11px] font-bold text-gray-500">@backpocketgames_</p>
+                  <p className="text-[11px] font-bold text-gray-500">
+                    @backpocketgames_ · {filteredSummaries.instagram.sentCount} live ·{" "}
+                    {filteredSummaries.instagram.scheduledCount} queued
+                  </p>
                 </div>
               </div>
               <Link
@@ -618,32 +629,26 @@ export default function SocialCalendarPage() {
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Views</div>
                 <div className="text-sm font-black text-brand-dark">
-                  {bufferSummaries.instagram
-                    ? bufferSummaries.instagram.totalViews.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.instagram.totalViews.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Reach</div>
                 <div className="text-sm font-black text-brand-dark">
-                  {bufferSummaries.instagram
-                    ? bufferSummaries.instagram.totalReach.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.instagram.totalReach.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Likes</div>
                 <div className="text-sm font-black text-brand-pink">
-                  {bufferSummaries.instagram
-                    ? bufferSummaries.instagram.totalReactions.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.instagram.totalReactions.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Eng. %</div>
                 <div className="text-sm font-black text-emerald-600">
-                  {bufferSummaries.instagram && bufferSummaries.instagram.avgEngagementRate > 0
-                    ? `${bufferSummaries.instagram.avgEngagementRate}%`
+                  {filteredSummaries.instagram.avgEngagementRate > 0
+                    ? `${filteredSummaries.instagram.avgEngagementRate}%`
                     : "—"}
                 </div>
               </div>
@@ -661,7 +666,10 @@ export default function SocialCalendarPage() {
                   <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
                     Facebook Page
                   </h3>
-                  <p className="text-[11px] font-bold text-gray-500">Back Pocket Games</p>
+                  <p className="text-[11px] font-bold text-gray-500">
+                    Back Pocket Games · {filteredSummaries.facebook.sentCount} live ·{" "}
+                    {filteredSummaries.facebook.scheduledCount} queued
+                  </p>
                 </div>
               </div>
               <Link
@@ -676,33 +684,25 @@ export default function SocialCalendarPage() {
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Impr.</div>
                 <div className="text-sm font-black text-brand-dark">
-                  {bufferSummaries.facebook
-                    ? bufferSummaries.facebook.totalViews.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.facebook.totalViews.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Reach</div>
                 <div className="text-sm font-black text-brand-dark">
-                  {bufferSummaries.facebook
-                    ? bufferSummaries.facebook.totalReach.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.facebook.totalReach.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Reacts</div>
                 <div className="text-sm font-black text-[#1877F2]">
-                  {bufferSummaries.facebook
-                    ? bufferSummaries.facebook.totalReactions.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.facebook.totalReactions.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Clicks</div>
                 <div className="text-sm font-black text-emerald-600">
-                  {bufferSummaries.facebook
-                    ? bufferSummaries.facebook.totalClicks.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.facebook.totalClicks.toLocaleString()}
                 </div>
               </div>
             </div>
@@ -719,7 +719,10 @@ export default function SocialCalendarPage() {
                   <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
                     LinkedIn Page
                   </h3>
-                  <p className="text-[11px] font-bold text-gray-500">Back Pocket Games</p>
+                  <p className="text-[11px] font-bold text-gray-500">
+                    Back Pocket Games · {filteredSummaries.linkedin.sentCount} live ·{" "}
+                    {filteredSummaries.linkedin.scheduledCount} queued
+                  </p>
                 </div>
               </div>
               <Link
@@ -734,33 +737,25 @@ export default function SocialCalendarPage() {
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Impr.</div>
                 <div className="text-sm font-black text-brand-dark">
-                  {bufferSummaries.linkedin
-                    ? bufferSummaries.linkedin.totalViews.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.linkedin.totalViews.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Reach</div>
                 <div className="text-sm font-black text-brand-dark">
-                  {bufferSummaries.linkedin
-                    ? bufferSummaries.linkedin.totalReach.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.linkedin.totalReach.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Reacts</div>
                 <div className="text-sm font-black text-[#0A66C2]">
-                  {bufferSummaries.linkedin
-                    ? bufferSummaries.linkedin.totalReactions.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.linkedin.totalReactions.toLocaleString()}
                 </div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase">Posted</div>
                 <div className="text-sm font-black text-emerald-600">
-                  {bufferSummaries.linkedin
-                    ? bufferSummaries.linkedin.sentCount.toLocaleString()
-                    : "—"}
+                  {filteredSummaries.linkedin.sentCount.toLocaleString()}
                 </div>
               </div>
             </div>

@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Eye,
   Users,
   Heart,
-  MessageCircle,
   Share2,
-  Bookmark,
   MousePointerClick,
   TrendingUp,
   ExternalLink,
@@ -15,6 +13,8 @@ import {
   ChevronDown,
   ChevronUp,
   BarChart3,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -58,6 +58,9 @@ export interface PlatformAnalyticsSummary {
   avgEngagementRate: number;
 }
 
+export type BrandFilter = "bpm" | "prottack" | "all";
+export type TimeRangeFilter = "7d" | "30d" | "all";
+
 function normalizeTextForMatch(text: string): string {
   return (text || "")
     .toLowerCase()
@@ -65,6 +68,122 @@ function normalizeTextForMatch(text: string): string {
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .slice(0, 75);
+}
+
+/**
+ * Classifies whether a Buffer post belongs to Back Pocket Mysteries ('bpm')
+ * or Prottack / legacy channel history ('prottack').
+ */
+export function classifyBufferPostBrand(post: BufferPostItem): "bpm" | "prottack" {
+  const text = (post.text || "").toLowerCase();
+  const dateStr = post.sentAt || post.dueAt || "";
+  const postYearMonth = dateStr.slice(0, 7); // e.g. "2026-11"
+
+  const hasBpmKeywords =
+    text.includes("back pocket mysteries") ||
+    text.includes("#backpocketmysteries") ||
+    text.includes("backpocketmysteries.com") ||
+    text.includes("#freemurdermystery") ||
+    text.includes("#murdermysteryparty") ||
+    text.includes("murder mystery party") ||
+    text.includes("custom murder mystery") ||
+    text.includes("love on the rocks") ||
+    text.includes("#loveontherocks") ||
+    text.includes("christmas nightmare") ||
+    text.includes("#christmasnightmare") ||
+    text.includes("audio wiretap") ||
+    text.includes("cctv") ||
+    text.includes("crime scene") ||
+    text.includes("spoiler-free host");
+
+  // All Back Pocket Mysteries launch & ongoing campaign posts (Nov 2026+)
+  if (hasBpmKeywords && (!postYearMonth || postYearMonth >= "2026-11")) {
+    return "bpm";
+  }
+
+  return "prottack";
+}
+
+export function computeSummaryFromBufferPosts(
+  posts: BufferPostItem[]
+): PlatformAnalyticsSummary {
+  const sentPosts = posts.filter((p) => p.status === "sent");
+  const scheduledPosts = posts.filter(
+    (p) => p.status === "scheduled" || p.status === "buffer" || p.status === "queued"
+  );
+
+  let totalViews = 0;
+  let totalReach = 0;
+  let totalReactions = 0;
+  let totalComments = 0;
+  let totalShares = 0;
+  let totalSaves = 0;
+  let totalClicks = 0;
+  let totalFollows = 0;
+  let engRateSum = 0;
+  let engRateCount = 0;
+
+  for (const p of sentPosts) {
+    const m = p.parsedMetrics;
+    totalViews += m.views > 0 ? m.views : m.impressions;
+    totalReach += m.reach;
+    totalReactions += m.reactions;
+    totalComments += m.comments;
+    totalShares += m.shares;
+    totalSaves += m.saves;
+    totalClicks += m.clicks;
+    totalFollows += m.follows;
+    if (m.engagementRate > 0) {
+      engRateSum += m.engagementRate;
+      engRateCount += 1;
+    }
+  }
+
+  return {
+    sentCount: sentPosts.length,
+    scheduledCount: scheduledPosts.length,
+    totalViews,
+    totalReach,
+    totalReactions,
+    totalComments,
+    totalShares,
+    totalSaves,
+    totalClicks,
+    totalFollows,
+    avgEngagementRate:
+      engRateCount > 0 ? Number((engRateSum / engRateCount).toFixed(2)) : 0,
+  };
+}
+
+export function filterBufferPostsByBrandAndTime(
+  posts: BufferPostItem[],
+  brand: BrandFilter,
+  timeRange: TimeRangeFilter
+): BufferPostItem[] {
+  const nowMs = Date.now();
+  const cutoffMs =
+    timeRange === "7d"
+      ? nowMs - 7 * 24 * 60 * 60 * 1000
+      : timeRange === "30d"
+      ? nowMs - 30 * 24 * 60 * 60 * 1000
+      : 0;
+
+  return posts.filter((p) => {
+    if (brand !== "all") {
+      const postBrand = classifyBufferPostBrand(p);
+      if (postBrand !== brand) return false;
+    }
+
+    if (cutoffMs > 0) {
+      // Always include future scheduled/queued posts; filter sent posts by cutoff
+      if (p.status === "sent" && p.sentAt) {
+        const sentMs = new Date(p.sentAt).getTime();
+        if (!Number.isNaN(sentMs) && sentMs < cutoffMs) return false;
+      }
+    }
+
+    return true;
+  });
 }
 
 /**
@@ -204,43 +323,106 @@ export function MatchedBufferMetricsBar({
 
 export function BufferAnalyticsPanel({
   title = "Live Buffer Analytics & Traction",
-  summary,
   posts,
   loading,
   onRefresh,
+  brandFilter: controlledBrand,
+  onBrandFilterChange,
+  timeRange: controlledTimeRange,
+  onTimeRangeChange,
 }: {
   title?: string;
-  summary: PlatformAnalyticsSummary | null;
+  summary?: PlatformAnalyticsSummary | null;
   posts: BufferPostItem[];
   loading: boolean;
   onRefresh: () => void;
+  brandFilter?: BrandFilter;
+  onBrandFilterChange?: (b: BrandFilter) => void;
+  timeRange?: TimeRangeFilter;
+  onTimeRangeChange?: (t: TimeRangeFilter) => void;
 }) {
+  const [internalBrand, setInternalBrand] = useState<BrandFilter>("bpm");
+  const [internalTimeRange, setInternalTimeRange] = useState<TimeRangeFilter>("all");
   const [showHistory, setShowHistory] = useState(false);
-  const sentPosts = posts.filter((p) => p.status === "sent");
+
+  const brandFilter = controlledBrand ?? internalBrand;
+  const setBrandFilter = onBrandFilterChange ?? setInternalBrand;
+  const timeRange = controlledTimeRange ?? internalTimeRange;
+  const setTimeRange = onTimeRangeChange ?? setInternalTimeRange;
+
+  const bpmCount = useMemo(
+    () => posts.filter((p) => classifyBufferPostBrand(p) === "bpm").length,
+    [posts]
+  );
+  const prottackCount = useMemo(
+    () => posts.filter((p) => classifyBufferPostBrand(p) === "prottack").length,
+    [posts]
+  );
+
+  const prottackBenchmarkSummary = useMemo(
+    () =>
+      computeSummaryFromBufferPosts(
+        posts.filter((p) => classifyBufferPostBrand(p) === "prottack")
+      ),
+    [posts]
+  );
+
+  const filteredPosts = useMemo(
+    () => filterBufferPostsByBrandAndTime(posts, brandFilter, timeRange),
+    [posts, brandFilter, timeRange]
+  );
+
+  const activeSummary = useMemo(
+    () => computeSummaryFromBufferPosts(filteredPosts),
+    [filteredPosts]
+  );
+
+  const sentPosts = useMemo(
+    () => filteredPosts.filter((p) => p.status === "sent"),
+    [filteredPosts]
+  );
+  const queuedPosts = useMemo(
+    () =>
+      filteredPosts.filter(
+        (p) => p.status === "scheduled" || p.status === "buffer" || p.status === "queued"
+      ),
+    [filteredPosts]
+  );
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-brand-pink/10 text-brand-pink">
+      {/* Top Header Row */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex items-start sm:items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-brand-pink/10 text-brand-pink shrink-0">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-sm font-black uppercase tracking-wider text-brand-dark">
                 {title}
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                ● Live via Buffer GraphQL
+                ● Live via Buffer
               </span>
+              {queuedPosts.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-300 inline-flex items-center gap-1">
+                  <Clock className="h-2.5 w-2.5" />
+                  {queuedPosts.length} Queued Next in Buffer
+                </span>
+              )}
             </div>
-            <p className="text-xs text-gray-500 font-medium">
-              Real-time impressions, reach, reactions, shares, saves, and engagement rate across your connected channels
+            <p className="text-xs text-gray-500 font-medium mt-0.5">
+              {brandFilter === "bpm"
+                ? "Showing Back Pocket Mysteries campaign traction only (excluding historical Prottack posts)"
+                : brandFilter === "prottack"
+                ? "Showing Prottack card game posts on @backpocketgames_ & Back Pocket Games"
+                : "Showing combined @backpocketgames_ channel history (Back Pocket Mysteries + Prottack)"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={onRefresh}
@@ -248,10 +430,10 @@ export function BufferAnalyticsPanel({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-700 cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-            <span>Sync Metrics</span>
+            <span>Sync</span>
           </button>
 
-          {sentPosts.length > 0 && (
+          {(sentPosts.length > 0 || queuedPosts.length > 0) && (
             <button
               type="button"
               onClick={() => setShowHistory((v) => !v)}
@@ -259,8 +441,10 @@ export function BufferAnalyticsPanel({
             >
               <span>
                 {showHistory
-                  ? "Hide Published Post History"
-                  : `View Published Posts (${sentPosts.length})`}
+                  ? "Hide Post Breakdown"
+                  : `View Posts (${sentPosts.length} Live${
+                      queuedPosts.length > 0 ? ` · ${queuedPosts.length} Queued` : ""
+                    })`}
               </span>
               {showHistory ? (
                 <ChevronUp className="h-3.5 w-3.5" />
@@ -272,6 +456,99 @@ export function BufferAnalyticsPanel({
         </div>
       </div>
 
+      {/* Filter Bar: Brand Scope (Back Pocket Mysteries vs Prottack vs All) + Time Window */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-gray-100">
+        {/* Brand Filter Pills */}
+        <div className="inline-flex flex-wrap items-center gap-1 bg-gray-100/90 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setBrandFilter("bpm")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+              brandFilter === "bpm"
+                ? "bg-brand-pink text-white shadow-xs"
+                : "text-gray-600 hover:text-brand-dark"
+            }`}
+          >
+            <span>🕵️‍♀️ Back Pocket Mysteries</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                brandFilter === "bpm"
+                  ? "bg-white/20 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              {bpmCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setBrandFilter("prottack")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+              brandFilter === "prottack"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "text-gray-600 hover:text-brand-dark"
+            }`}
+          >
+            <span>🃏 Prottack</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                brandFilter === "prottack"
+                  ? "bg-white/20 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              {prottackCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setBrandFilter("all")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+              brandFilter === "all"
+                ? "bg-brand-dark text-white shadow-xs"
+                : "text-gray-600 hover:text-brand-dark"
+            }`}
+          >
+            <span>🌐 Combined Account</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                brandFilter === "all"
+                  ? "bg-white/20 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              {posts.length}
+            </span>
+          </button>
+        </div>
+
+        {/* Time Range Pills */}
+        <div className="inline-flex items-center gap-1 bg-gray-100/90 p-1 rounded-xl self-start sm:self-auto">
+          {(
+            [
+              { id: "7d", label: "Last 7 Days" },
+              { id: "30d", label: "Last 30 Days" },
+              { id: "all", label: "All Time" },
+            ] as const
+          ).map((tr) => (
+            <button
+              key={tr.id}
+              type="button"
+              onClick={() => setTimeRange(tr.id)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                timeRange === tr.id
+                  ? "bg-white text-brand-dark shadow-2xs"
+                  : "text-gray-500 hover:text-brand-dark"
+              }`}
+            >
+              {tr.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Aggregate Traction KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="rounded-xl bg-gray-50 border border-gray-200/80 p-3">
@@ -280,10 +557,10 @@ export function BufferAnalyticsPanel({
             <Eye className="h-3.5 w-3.5 text-indigo-500" />
           </div>
           <div className="text-xl font-black text-brand-dark">
-            {summary ? summary.totalViews.toLocaleString() : loading ? "…" : "0"}
+            {loading ? "…" : activeSummary.totalViews.toLocaleString()}
           </div>
           <div className="text-[10px] font-semibold text-gray-500">
-            Across {summary?.sentCount || 0} published posts
+            {activeSummary.sentCount} live · {activeSummary.scheduledCount} queued
           </div>
         </div>
 
@@ -293,7 +570,7 @@ export function BufferAnalyticsPanel({
             <Users className="h-3.5 w-3.5 text-blue-500" />
           </div>
           <div className="text-xl font-black text-brand-dark">
-            {summary ? summary.totalReach.toLocaleString() : loading ? "…" : "0"}
+            {loading ? "…" : activeSummary.totalReach.toLocaleString()}
           </div>
           <div className="text-[10px] font-semibold text-gray-500">Unique accounts reached</div>
         </div>
@@ -304,10 +581,10 @@ export function BufferAnalyticsPanel({
             <Heart className="h-3.5 w-3.5 text-brand-pink" />
           </div>
           <div className="text-xl font-black text-brand-pink">
-            {summary ? summary.totalReactions.toLocaleString() : loading ? "…" : "0"}
+            {loading ? "…" : activeSummary.totalReactions.toLocaleString()}
           </div>
           <div className="text-[10px] font-semibold text-gray-500">
-            +{summary?.totalComments || 0} comments
+            +{activeSummary.totalComments} comments
           </div>
         </div>
 
@@ -317,14 +594,12 @@ export function BufferAnalyticsPanel({
             <Share2 className="h-3.5 w-3.5 text-purple-500" />
           </div>
           <div className="text-xl font-black text-brand-dark">
-            {summary
-              ? (summary.totalShares + summary.totalSaves).toLocaleString()
-              : loading
+            {loading
               ? "…"
-              : "0"}
+              : (activeSummary.totalShares + activeSummary.totalSaves).toLocaleString()}
           </div>
           <div className="text-[10px] font-semibold text-gray-500">
-            {summary?.totalShares || 0} shares · {summary?.totalSaves || 0} saves
+            {activeSummary.totalShares} shares · {activeSummary.totalSaves} saves
           </div>
         </div>
 
@@ -334,14 +609,12 @@ export function BufferAnalyticsPanel({
             <MousePointerClick className="h-3.5 w-3.5 text-amber-500" />
           </div>
           <div className="text-xl font-black text-brand-dark">
-            {summary
-              ? (summary.totalClicks + summary.totalFollows).toLocaleString()
-              : loading
+            {loading
               ? "…"
-              : "0"}
+              : (activeSummary.totalClicks + activeSummary.totalFollows).toLocaleString()}
           </div>
           <div className="text-[10px] font-semibold text-gray-500">
-            {summary?.totalClicks || 0} clicks · +{summary?.totalFollows || 0} follows
+            {activeSummary.totalClicks} clicks · +{activeSummary.totalFollows} follows
           </div>
         </div>
 
@@ -351,24 +624,54 @@ export function BufferAnalyticsPanel({
             <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
           </div>
           <div className="text-xl font-black text-emerald-700">
-            {summary && summary.avgEngagementRate > 0
-              ? `${summary.avgEngagementRate}%`
-              : loading
+            {loading
               ? "…"
+              : activeSummary.avgEngagementRate > 0
+              ? `${activeSummary.avgEngagementRate}%`
               : "0%"}
           </div>
           <div className="text-[10px] font-semibold text-emerald-700">
-            Interactions per reach
+            {brandFilter === "bpm" && prottackBenchmarkSummary.avgEngagementRate > 0
+              ? `vs. ${prottackBenchmarkSummary.avgEngagementRate}% Prottack avg`
+              : "Interactions per reach"}
           </div>
         </div>
       </div>
 
-      {/* Expandable Published Post Performance Table */}
-      {showHistory && sentPosts.length > 0 && (
+      {/* Active Queued in Buffer Strip (so upcoming scheduled posts in Buffer are visible right away) */}
+      {queuedPosts.length > 0 && (
+        <div className="rounded-xl bg-amber-50/60 border border-amber-200/80 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-amber-950">
+            <Sparkles className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+            <span>Upcoming in Buffer Queue ({queuedPosts.length}):</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {queuedPosts.slice(0, 4).map((qp) => (
+              <span
+                key={qp.id}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-[11px] font-bold text-gray-800"
+              >
+                <span className="uppercase font-black text-amber-700">{qp.channelService}</span>
+                <span>•</span>
+                <span>
+                  {qp.dueAt ? format(new Date(qp.dueAt), "EEE, MMM d 'at' h:mm a") : "Queued"}
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Expandable Published & Queued Post Performance Table */}
+      {showHistory && filteredPosts.length > 0 && (
         <div className="pt-3 border-t border-gray-200 space-y-2.5">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">
-              Published Posts &amp; Live Post-Level Traction ({sentPosts.length})
+              {brandFilter === "bpm"
+                ? `Back Pocket Mysteries Posts in Buffer (${filteredPosts.length})`
+                : brandFilter === "prottack"
+                ? `Prottack Posts in Buffer (${filteredPosts.length})`
+                : `All Channel Posts in Buffer (${filteredPosts.length})`}
             </h3>
           </div>
 
@@ -376,8 +679,9 @@ export function BufferAnalyticsPanel({
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <th className="py-2.5 px-3">Brand</th>
                   <th className="py-2.5 px-3">Channel</th>
-                  <th className="py-2.5 px-3">Published</th>
+                  <th className="py-2.5 px-3">Status / Date</th>
                   <th className="py-2.5 px-3">Post Excerpt</th>
                   <th className="py-2.5 px-3 text-right">Views / Impr.</th>
                   <th className="py-2.5 px-3 text-right">Reach</th>
@@ -389,11 +693,24 @@ export function BufferAnalyticsPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {sentPosts.map((bp) => {
+                {filteredPosts.map((bp) => {
                   const m = bp.parsedMetrics;
                   const viewsVal = m.views > 0 ? m.views : m.impressions;
+                  const postBrand = classifyBufferPostBrand(bp);
+                  const isSent = bp.status === "sent";
                   return (
                     <tr key={bp.id} className="hover:bg-gray-50/80">
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black ${
+                            postBrand === "bpm"
+                              ? "bg-brand-pink/10 text-brand-pink border border-brand-pink/30"
+                              : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                          }`}
+                        >
+                          {postBrand === "bpm" ? "🕵️‍♀️ Mysteries" : "🃏 Prottack"}
+                        </span>
+                      </td>
                       <td className="py-2.5 px-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase ${
@@ -408,28 +725,37 @@ export function BufferAnalyticsPanel({
                         </span>
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap text-gray-500 font-semibold">
-                        {bp.sentAt ? format(new Date(bp.sentAt), "MMM d, yyyy") : "—"}
+                        {isSent ? (
+                          <span>
+                            {bp.sentAt ? format(new Date(bp.sentAt), "MMM d, yyyy") : "Sent"}
+                          </span>
+                        ) : (
+                          <span className="text-amber-700 font-bold">
+                            Queued:{" "}
+                            {bp.dueAt ? format(new Date(bp.dueAt), "MMM d, h:mm a") : bp.status}
+                          </span>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 max-w-xs truncate font-medium text-brand-dark">
-                        {bp.text.replace(/\s+/g, " ").slice(0, 85)}
+                        {bp.text.replace(/\s+/g, " ").slice(0, 80)}
                       </td>
                       <td className="py-2.5 px-3 text-right font-black text-brand-dark">
-                        {viewsVal.toLocaleString()}
+                        {isSent ? viewsVal.toLocaleString() : "—"}
                       </td>
                       <td className="py-2.5 px-3 text-right font-bold text-gray-700">
-                        {m.reach.toLocaleString()}
+                        {isSent ? m.reach.toLocaleString() : "—"}
                       </td>
                       <td className="py-2.5 px-3 text-right font-black text-brand-pink">
-                        {m.reactions.toLocaleString()}
+                        {isSent ? m.reactions.toLocaleString() : "—"}
                       </td>
                       <td className="py-2.5 px-3 text-right font-bold text-gray-700">
-                        {m.comments.toLocaleString()}
+                        {isSent ? m.comments.toLocaleString() : "—"}
                       </td>
                       <td className="py-2.5 px-3 text-right font-bold text-gray-700">
-                        {(m.shares + m.saves).toLocaleString()}
+                        {isSent ? (m.shares + m.saves).toLocaleString() : "—"}
                       </td>
                       <td className="py-2.5 px-3 text-right font-black text-emerald-600">
-                        {m.engagementRate > 0 ? `${m.engagementRate.toFixed(1)}%` : "—"}
+                        {isSent && m.engagementRate > 0 ? `${m.engagementRate.toFixed(1)}%` : "—"}
                       </td>
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">
                         {bp.externalLink ? (

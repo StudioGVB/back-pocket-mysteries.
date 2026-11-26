@@ -11,13 +11,11 @@ import { dispatchEdmCampaign } from "@/app/api/admin/edm/send/route";
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    const userAgent = request.headers.get("user-agent") || "";
-    const isVercelCron =
-      Boolean(process.env.CRON_SECRET && authHeader === process.env.CRON_SECRET) ||
-      userAgent.includes("vercel-cron") ||
-      request.headers.get("x-vercel-cron") === "1";
+    const isValidCronSecret = Boolean(
+      process.env.CRON_SECRET && authHeader === process.env.CRON_SECRET
+    );
 
-    if (!isVercelCron && process.env.CRON_SECRET) {
+    if (!isValidCronSecret) {
       await requireAdmin();
     }
 
