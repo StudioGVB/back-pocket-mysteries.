@@ -565,7 +565,7 @@ export default async function PlayOnlineMarketingPage(props: {
               Why Old PDF Kits Fail On Zoom (And Why Live Sync Wins)
             </h2>
             <p className="text-sm sm:text-base text-slate-300 font-medium mt-3">
-              Traditional murder mystery kits were designed in the 1990s to be printed and stuffed into paper envelopes. Trying to run a 60-page PDF over a video call is a nightmare—here is how our digital engine fixes every pain point.
+              Traditional murder mystery kits were designed in the 1990s to be printed and stuffed into paper envelopes. Trying to run a 60-page PDF over a video call is a nightmare—here is how our live mobile Playroom fixes every pain point.
             </p>
           </div>
 
@@ -578,7 +578,7 @@ export default async function PlayOnlineMarketingPage(props: {
                     Old Downloadable PDF Kits on Zoom
                   </th>
                   <th className="p-4 sm:p-5 text-emerald-400 bg-emerald-500/10">
-                    Back Pocket Mysteries Live Digital Engine
+                    Back Pocket Mysteries Live Playroom
                   </th>
                 </tr>
               </thead>
@@ -592,7 +592,7 @@ export default async function PlayOnlineMarketingPage(props: {
                   {
                     feature: 'Spoiler Protection',
                     oldWay: 'Someone inevitably scrolls to page 42 of the PDF and accidentally sees the killer in Round 1',
-                    newWay: 'Future rounds are cryptographically locked until the host unlocks them live on the call',
+                    newWay: 'Future rounds stay locked until the host unlocks them live on the call',
                   },
                   {
                     feature: 'Can the Host Play Without Spoilers?',

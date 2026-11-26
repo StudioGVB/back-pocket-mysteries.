@@ -83,7 +83,7 @@ const HOW_IT_WORKS_STEPS = [
     badge: 'Takes 10 Seconds',
     title: 'Lock In Your VIP Spot (#1–#50)',
     description:
-      'Enter your first name and email address in the VIP claim form. Our system assigns your deterministic timestamped rank (#1 through #50) on the spot and sends an instant confirmation email showing your exact VIP Spot number.',
+      'Enter your first name and email address in the VIP claim form. We lock in your VIP spot (#1 through #50) right away and send an instant confirmation email showing your exact VIP Spot number.',
   },
   {
     step: '02',
@@ -97,7 +97,7 @@ const HOW_IT_WORKS_STEPS = [
     badge: 'Redeem Whenever You Host',
     title: 'Pick Any Theme & Cast Up to 6 Players',
     description:
-      'You do not need your party date or guest list ready today. When you are ready to host, choose any Mystery Base Pack, enter up to 6 guests (4–6 players) with their personalities or inside jokes, and apply your 100%-off code at checkout.',
+      'You do not need your party date or guest list ready today. When you are ready to host, choose any mystery theme, enter up to 6 guests (4–6 players) with their personalities or inside jokes, and apply your 100%-off code at checkout.',
   },
   {
     step: '04',
@@ -257,8 +257,8 @@ export default async function FreeMurderMysteryGamePage(props: {
       text: 'No! Claiming your spot today simply reserves your 100%-off Founding Host voucher code. Once we email your code on launch day, you can redeem it whenever you are ready to host and enter your 4 to 6 guests’ names, traits, and inside jokes at that time.',
     },
     {
-      name: 'How does the custom AI + human-authored murder mystery builder work?',
-      text: 'Every Mystery Base Pack is written by a human mystery author so the crime timeline, motives, alibis, and forensic deductions are airtight. When you enter your friends’ names, jobs, and harmless inside jokes, our AI engine weaves them into the character dossiers and evidence in about 20 minutes.',
+      name: 'How does the custom murder mystery builder work?',
+      text: 'Every story is written by a human mystery author so the crime timeline, motives, alibis, and forensic deductions are airtight. When you enter your friends’ names, jobs, and harmless inside jokes, we weave them into the character dossiers and evidence in about 20 minutes.',
     },
     {
       name: 'Can the host play without knowing who the murderer is?',
@@ -407,7 +407,7 @@ export default async function FreeMurderMysteryGamePage(props: {
               </h1>
 
               <p className="text-lg sm:text-xl text-gray-600 font-medium leading-relaxed max-w-2xl">
-                Looking for a <strong className="text-brand-dark">free custom murder mystery game</strong> for your next dinner party? Every mystery at <strong className="text-brand-dark">Back Pocket Mysteries</strong> is written by a human author for watertight clue logic—then personalised around your actual friends by our AI engine. To celebrate our launch, the{' '}
+                Looking for a <strong className="text-brand-dark">free custom murder mystery game</strong> for your next dinner party? Every mystery at <strong className="text-brand-dark">Back Pocket Mysteries</strong> is written by a human author for watertight clue logic—then personalised around your actual friends. To celebrate our launch, the{' '}
                 <strong className="text-brand-pink">first 50 email sign-ups</strong> get a complete 6-Player (Basic Tier) custom murder mystery party kit (valued at <PriceDisplay tier="basic" locale={locale as Locale} /> for 4–6 players) <strong className="text-brand-dark">100% free</strong>.
               </p>
 
@@ -732,7 +732,7 @@ export default async function FreeMurderMysteryGamePage(props: {
                 <li className="flex items-start gap-2.5">
                   <span className="text-brand-pink font-black">✓</span>
                   <span>
-                    Valid on <strong className="text-white">any launch Mystery Base Pack</strong> + full AI cast personalisation
+                    Valid on <strong className="text-white">any launch mystery theme</strong> + full cast personalisation
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">
@@ -782,7 +782,7 @@ export default async function FreeMurderMysteryGamePage(props: {
                   <li className="flex items-start gap-2.5">
                     <span className="text-brand-pink font-black">✓</span>
                     <span>
-                      First look at new Mystery Base Packs, dinner party menus &amp; hosting guides
+                      First look at new mystery themes, dinner party menus &amp; hosting guides
                     </span>
                   </li>
                 </ul>

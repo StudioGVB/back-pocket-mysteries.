@@ -1176,19 +1176,21 @@ export async function getPublicMarketingMysteryBySlugOrId(
   );
 }
 
-export async function getPublishedMysteries() {
+export const getPublishedMysteries = cache(async () => {
   const supabase = await createClient();
-  const { data, error } = (await supabase
-    .from('mysteries')
-    .select('*, characters(id, name, gender, is_victim, plot_role, archetype, is_mandatory, profile_data)')
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })) as any;
+  const [{ data, error }, publishedCanon] = await Promise.all([
+    supabase
+      .from('mysteries')
+      .select('*, characters(id, name, gender, is_victim, plot_role, archetype, is_mandatory, profile_data)')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false }) as any,
+    getPublicMarketingMysteries(),
+  ]);
 
   if (error) {
     console.error('Error fetching published mysteries:', error);
   }
 
-  const publishedCanon = await getPublicMarketingMysteries();
   const byId = new Map<string, any>();
   const seenSlugs = new Set<string>();
   const slugify = (s: string) =>
@@ -1243,7 +1245,7 @@ export async function getPublishedMysteries() {
   }
 
   return Array.from(byId.values());
-}
+});
 
 export async function getPublishedMysteryByIdOrSlug(idOrSlug: string) {
   const supabase = await createClient();
@@ -1537,6 +1539,27 @@ export function replaceLegacyNamesWithRoleTokens(
   return stripEmDashes(updated);
 }
 
+let cachedGeneratedAvatarFiles: string[] | null = null;
+let cachedGeneratedAvatarFilesAt = 0;
+
+function getLocalGeneratedAvatarFiles(): string[] {
+  const now = Date.now();
+  if (cachedGeneratedAvatarFiles && now - cachedGeneratedAvatarFilesAt < 30000) {
+    return cachedGeneratedAvatarFiles;
+  }
+  try {
+    const dir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'generated-avatars');
+    if (fs.existsSync(dir)) {
+      cachedGeneratedAvatarFiles = fs.readdirSync(dir);
+      cachedGeneratedAvatarFilesAt = now;
+      return cachedGeneratedAvatarFiles;
+    }
+  } catch {
+    // Ignore fs errors
+  }
+  return [];
+}
+
 function normalizeCharacterList(
   characters: any[] | null | undefined,
   supabase?: any,
@@ -1545,17 +1568,7 @@ function normalizeCharacterList(
   if (!Array.isArray(characters)) return [];
   const activeDynamicRules = dynamicRules ?? buildDynamicPlaceholderReplacements(characters);
 
-  let localGeneratedFiles: string[] = [];
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const dir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'generated-avatars');
-    if (fs.existsSync(dir)) {
-      localGeneratedFiles = fs.readdirSync(dir);
-    }
-  } catch {
-    // Ignore fs errors
-  }
+  const localGeneratedFiles = getLocalGeneratedAvatarFiles();
 
   let cachedMysteriesList: any[] = [];
   try {

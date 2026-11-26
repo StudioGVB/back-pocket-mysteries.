@@ -227,6 +227,32 @@ export function getRegionalPrice(tier: PriceTierKey, currency: string) {
   return prices[tier] ?? REGIONAL_PRICES[DEFAULT_CURRENCY][tier]
 }
 
+export const REFERRAL_CREDIT_GBP = 5
+
+/**
+ * Converts a canonical GBP (£) account credit balance into the active checkout currency.
+ * When currency is GBP, 1:1 (£5 -> £5). For other currencies, scales proportionally by basic tier price.
+ */
+export function convertGbpCreditToCurrency(amountGbp: number, targetCurrency: string): number {
+  const cleanGbp = Math.max(0, Number(amountGbp) || 0)
+  if (cleanGbp === 0) return 0
+  const code = (targetCurrency || 'GBP').toUpperCase().trim()
+  if (code === 'GBP') return Number(cleanGbp.toFixed(2))
+  const gbpBase = REGIONAL_PRICES.GBP.basic || 15
+  const targetBase = (REGIONAL_PRICES[code] || REGIONAL_PRICES.GBP).basic || gbpBase
+  return Number(((cleanGbp * targetBase) / gbpBase).toFixed(2))
+}
+
+export function convertCurrencyCreditToGbp(amountInCurrency: number, sourceCurrency: string): number {
+  const cleanAmt = Math.max(0, Number(amountInCurrency) || 0)
+  if (cleanAmt === 0) return 0
+  const code = (sourceCurrency || 'GBP').toUpperCase().trim()
+  if (code === 'GBP') return Number(cleanAmt.toFixed(2))
+  const gbpBase = REGIONAL_PRICES.GBP.basic || 15
+  const sourceBase = (REGIONAL_PRICES[code] || REGIONAL_PRICES.GBP).basic || gbpBase
+  return Number(((cleanAmt * gbpBase) / sourceBase).toFixed(2))
+}
+
 export function formatDateTime(
   date: Date | string,
   locale: string = 'en-US',

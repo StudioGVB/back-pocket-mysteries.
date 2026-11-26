@@ -356,7 +356,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                           Clue Type #3 · AI Voice Wiretap (0:14)
                         </p>
                         <p className="text-[11px] font-bold text-white">
-                          Synthesized in Sarah&apos;s British Accent
+                          Recorded in Sarah&apos;s British Accent
                         </p>
                       </div>
                     </div>
@@ -372,13 +372,13 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
               {/* Right Copy: 3 Clue Type Breakdown */}
               <div className="lg:col-span-5 order-1 lg:order-3 space-y-4">
                 <span className="inline-block text-[11px] font-black uppercase tracking-[0.22em] text-brand-pink">
-                  Step 04 · Custom Clue Engine (~20 Mins)
+                  Step 04 · Custom Clues (~20 Mins)
                 </span>
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-brand-dark uppercase tracking-tight leading-[0.98]">
                   Clues Rendered To <span className="text-brand-pink italic">Look Like Your Guests.</span>
                 </h2>
                 <p className="text-base text-gray-500 font-semibold leading-relaxed">
-                  Hit generate and our engine builds multi-sensory evidence tailored directly to your guest list:
+                  Hit generate and we build custom evidence tailored directly to your guest list:
                 </p>
                 <div className="space-y-2.5 pt-1">
                   {[

@@ -88,7 +88,7 @@ export default async function HomePage(props: {
           name: 'How does a custom murder mystery party game work?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'You pick a published theme (like Christmas Nightmare), enter your guests’ names, traits, and inside jokes, and our AI story engine generates custom character booklets, alibis, crime scene clues, and an interactive Playroom in ~20 minutes.',
+            text: 'You pick a published theme (like Christmas Nightmare), enter your guests’ names, traits, and inside jokes, and we generate custom character booklets, alibis, crime scene clues, and an interactive Playroom in ~20 minutes.',
           },
         },
         {

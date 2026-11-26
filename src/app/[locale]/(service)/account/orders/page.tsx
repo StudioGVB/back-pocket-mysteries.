@@ -23,8 +23,6 @@ import OrdersGeneratingPoller from '@/components/account/OrdersGeneratingPoller'
 import HostTransferModalButton from '@/components/account/HostTransferModalButton';
 import IncomingHostTransferBanner from '@/components/account/IncomingHostTransferBanner';
 
-export const unstable_instant = false;
-
 export default async function OrdersPage({
   params,
   searchParams,
@@ -73,29 +71,37 @@ export default async function OrdersPage({
 
   const cleanUserEmail = (user.email || '').trim().toLowerCase();
 
-  // 0. Sync cross-container live sessions & pending host transfers from Supabase `public.clues` carrier rows
-  try {
-    const { data: carrierRows } = await supabase
+  // Run carrier sync, orders lookup, and mysteries lookup in parallel instead of sequentially
+  const [carrierRes, ordersRes, mysteriesRes] = await Promise.all([
+    supabase
       .from('clues')
       .select('id, description')
-      .eq('title', LIVE_CARRIER_CLUE_TITLE);
+      .eq('title', LIVE_CARRIER_CLUE_TITLE),
+    supabase
+      .from('orders')
+      .select('mystery_id, status, user_id')
+      .eq('status', 'succeeded')
+      .eq('user_id', user.id),
+    supabase
+      .from('mysteries')
+      .select('id, title, theme, status, min_players, max_players, current_round, created_at, created_by')
+      .order('created_at', { ascending: false }),
+  ]);
 
-    for (const row of carrierRows || []) {
-      if (!row?.description) continue;
-      try {
-        const parsed = JSON.parse(row.description);
-        if (parsed?.mysteryId && parsed?.session) {
-          saveStoredGameSession(parsed.mysteryId, {
-            ...parsed.session,
-            mysteryId: parsed.mysteryId,
-          });
-        }
-      } catch {
-        // ignore malformed row
+  // 0. Sync cross-container live sessions & pending host transfers from Supabase `public.clues` carrier rows
+  for (const row of carrierRes?.data || []) {
+    if (!row?.description) continue;
+    try {
+      const parsed = JSON.parse(row.description);
+      if (parsed?.mysteryId && parsed?.session) {
+        saveStoredGameSession(parsed.mysteryId, {
+          ...parsed.session,
+          mysteryId: parsed.mysteryId,
+        });
       }
+    } catch {
+      // ignore malformed row
     }
-  } catch {
-    // non-fatal
   }
 
   // Collect any incoming pending Host ownership transfers addressed to this user (by email or claimTransfer token)
@@ -111,31 +117,17 @@ export default async function OrdersPage({
   );
 
   // 2. Collect unlocked mystery IDs strictly belonging to this user from Supabase `orders` table (status = 'succeeded')
-  try {
-    const { data: ordersData } = await supabase
-      .from('orders')
-      .select('mystery_id, status, user_id')
-      .eq('status', 'succeeded')
-      .eq('user_id', user.id);
-
-    for (const order of ordersData || []) {
-      if (order.mystery_id) {
-        const sess = getStoredGameSession(order.mystery_id);
-        if (!isSessionTransferredAwayFromUser(sess, user.id, user.email)) {
-          unlockedMysteryIds.add(order.mystery_id);
-        }
+  for (const order of ordersRes?.data || []) {
+    if (order.mystery_id) {
+      const sess = getStoredGameSession(order.mystery_id);
+      if (!isSessionTransferredAwayFromUser(sess, user.id, user.email)) {
+        unlockedMysteryIds.add(order.mystery_id);
       }
     }
-  } catch {
-    // non-fatal if orders table or RLS blocks read
   }
 
-  // 3. Fetch mysteries from DB and check carrier character `__game_session.isPaid` ONLY when owned by this user
-  const { data: mysteriesData } = await supabase
-    .from('mysteries')
-    .select('id, title, theme, status, min_players, max_players, current_round, created_at, created_by')
-    .order('created_at', { ascending: false });
-
+  // 3. Check carrier character `__game_session.isPaid` ONLY when owned by this user
+  const mysteriesData = mysteriesRes?.data || [];
   const ownedDbMysteryIds = (mysteriesData || [])
     .filter((m: any) => m.created_by === user.id)
     .map((m: any) => m.id);
@@ -204,36 +196,36 @@ export default async function OrdersPage({
 
   const unlockedMysteries = Array.from(mysteryByIdMap.values());
 
-  // Resolve each unlocked mystery to the customer's own isolated instance
-  // (or keep the exact instance ID if it was transferred to this user!)
-  const isolatedMap = new Map<string, any>();
-  for (const m of unlockedMysteries) {
-    const sess = getStoredGameSession(m.id);
-    const isTransferredToThisUser = Boolean(
-      sess &&
-        (sess.hostUserId === user.id ||
-          (cleanUserEmail &&
-            sess.customerEmail &&
-            sess.customerEmail.trim().toLowerCase() === cleanUserEmail)) &&
-        Array.isArray(sess.previousHostUserIds) &&
-        sess.previousHostUserIds.length > 0
-    );
+  // Resolve all unlocked mysteries in parallel instead of awaiting one by one in a loop
+  const isolatedEntries = await Promise.all(
+    unlockedMysteries.map(async (m) => {
+      const sess = getStoredGameSession(m.id);
+      const isTransferredToThisUser = Boolean(
+        sess &&
+          (sess.hostUserId === user.id ||
+            (cleanUserEmail &&
+              sess.customerEmail &&
+              sess.customerEmail.trim().toLowerCase() === cleanUserEmail)) &&
+          Array.isArray(sess.previousHostUserIds) &&
+          sess.previousHostUserIds.length > 0
+      );
 
-    const [fullMystery, baseRels] = await Promise.all([
-      getMysteryById(m.id),
-      getRelationshipsByMysteryId(m.id),
-    ]);
-    const sourceMystery = fullMystery || m;
-    const isAlreadyIsolatedInstance = Boolean(
-      isTransferredToThisUser ||
-        (sourceMystery.template_mystery_id &&
-          String(sourceMystery.id) !== String(sourceMystery.template_mystery_id) &&
-          sourceMystery.created_by === user.id)
-    );
+      const [fullMystery, baseRels] = await Promise.all([
+        getMysteryById(m.id),
+        getRelationshipsByMysteryId(m.id),
+      ]);
+      const sourceMystery = fullMystery || m;
+      const isAlreadyIsolatedInstance = Boolean(
+        isTransferredToThisUser ||
+          (sourceMystery.template_mystery_id &&
+            String(sourceMystery.id) !== String(sourceMystery.template_mystery_id) &&
+            sourceMystery.created_by === user.id)
+      );
 
-    if (isAlreadyIsolatedInstance) {
-      isolatedMap.set(sourceMystery.id, sourceMystery);
-    } else {
+      if (isAlreadyIsolatedInstance) {
+        return { key: sourceMystery.id, mystery: sourceMystery };
+      }
+
       const instance = ensureIsolatedCustomerMysteryInstance(
         sourceMystery,
         baseRels || [],
@@ -244,9 +236,16 @@ export default async function OrdersPage({
         isSessionTransferredAwayFromUser(instanceSess, user.id, user.email) ||
         (instanceSess?.hostUserId && instanceSess.hostUserId !== user.id)
       ) {
-        continue;
+        return null;
       }
-      isolatedMap.set(instance.instanceId, instance.mystery);
+      return { key: instance.instanceId, mystery: instance.mystery };
+    })
+  );
+
+  const isolatedMap = new Map<string, any>();
+  for (const entry of isolatedEntries) {
+    if (entry) {
+      isolatedMap.set(entry.key, entry.mystery);
     }
   }
 

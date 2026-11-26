@@ -57,6 +57,18 @@ export interface OrderOverride {
   updatedAt: string;
 }
 
+export interface CreditLedgerEntry {
+  id: string;
+  userId: string;
+  amountGbp: number; // +5 for earned referral credit, -5 for spent at checkout, +/- for admin adjustment
+  type: 'referral_received' | 'referral_given' | 'checkout_redemption' | 'admin_adjustment';
+  description: string;
+  relatedUserId?: string;
+  relatedEmail?: string;
+  orderId?: string;
+  createdAt: string;
+}
+
 export interface CustomerCrmRecord {
   userId: string;
   membership: {
@@ -66,7 +78,9 @@ export interface CustomerCrmRecord {
     renewsAt: string | null;
     updatedAt: string | null;
   };
-  creditBalanceUsd: number;
+  creditBalanceUsd: number; // Kept synced with creditBalanceGbp (£)
+  creditBalanceGbp: number; // Canonical £ credit balance
+  creditLedger: CreditLedgerEntry[];
   promos: CustomerPromo[];
   aiQuota: {
     baseImageLimit: number;
@@ -102,6 +116,8 @@ function getDefaultCrmRecord(userId: string): CustomerCrmRecord {
       updatedAt: null,
     },
     creditBalanceUsd: 0,
+    creditBalanceGbp: 0,
+    creditLedger: [],
     promos: [],
     aiQuota: {
       baseImageLimit: 25,
@@ -150,9 +166,21 @@ function loadCustomerCrmSync(userId: string): CustomerCrmRecord {
   const existing = all[userId];
   const defaults = getDefaultCrmRecord(userId);
   if (!existing) return defaults;
+  const resolvedBalance = Number(
+    (
+      typeof existing.creditBalanceGbp === 'number'
+        ? existing.creditBalanceGbp
+        : typeof existing.creditBalanceUsd === 'number'
+        ? existing.creditBalanceUsd
+        : 0
+    ).toFixed(2)
+  );
   return {
     ...defaults,
     ...existing,
+    creditBalanceUsd: resolvedBalance,
+    creditBalanceGbp: resolvedBalance,
+    creditLedger: Array.isArray(existing.creditLedger) ? existing.creditLedger : [],
     membership: { ...defaults.membership, ...(existing.membership || {}) },
     aiQuota: { ...defaults.aiQuota, ...(existing.aiQuota || {}) },
     promos: Array.isArray(existing.promos) ? existing.promos : [],
@@ -196,9 +224,21 @@ export async function getAllCustomerCrmData(): Promise<Record<string, CustomerCr
   const out: Record<string, CustomerCrmRecord> = {};
   for (const [uid, existing] of Object.entries(all)) {
     const defaults = getDefaultCrmRecord(uid);
+    const resolvedBalance = Number(
+      (
+        typeof existing?.creditBalanceGbp === 'number'
+          ? existing.creditBalanceGbp
+          : typeof existing?.creditBalanceUsd === 'number'
+          ? existing.creditBalanceUsd
+          : 0
+      ).toFixed(2)
+    );
     out[uid] = {
       ...defaults,
       ...existing,
+      creditBalanceUsd: resolvedBalance,
+      creditBalanceGbp: resolvedBalance,
+      creditLedger: Array.isArray(existing?.creditLedger) ? existing.creditLedger : [],
       membership: { ...defaults.membership, ...(existing?.membership || {}) },
       aiQuota: { ...defaults.aiQuota, ...(existing?.aiQuota || {}) },
       promos: Array.isArray(existing?.promos) ? existing.promos : [],
@@ -916,28 +956,126 @@ export async function adminDeleteCustomerPromo(targetUserId: string, promoId: st
 
 export async function adminAdjustCreditBalance(
   targetUserId: string,
-  deltaUsd: number,
+  deltaGbp: number,
   reason?: string
 ) {
   try {
     await requireAdmin();
     const record = loadCustomerCrmSync(targetUserId);
-    const nextBalance = Math.max(0, Number((record.creditBalanceUsd + deltaUsd).toFixed(2)));
+    const currentGbp = record.creditBalanceGbp ?? record.creditBalanceUsd ?? 0;
+    const nextBalance = Math.max(0, Number((currentGbp + deltaGbp).toFixed(2)));
+    record.creditBalanceGbp = nextBalance;
     record.creditBalanceUsd = nextBalance;
 
-    const sign = deltaUsd >= 0 ? `+` : `-`;
+    const sign = deltaGbp >= 0 ? `+` : `-`;
+    const description = `${reason || 'Admin credit adjustment'} (${sign}£${Math.abs(deltaGbp).toFixed(2)})`;
+    record.creditLedger = [
+      {
+        id: crypto.randomUUID(),
+        userId: targetUserId,
+        amountGbp: Number(deltaGbp.toFixed(2)),
+        type: 'admin_adjustment',
+        description,
+        createdAt: new Date().toISOString(),
+      },
+      ...(record.creditLedger || []),
+    ];
+
     prependAuditNote(
       record,
-      `Adjusted account store credit by ${sign}$${Math.abs(deltaUsd).toFixed(2)} (New balance: $${nextBalance.toFixed(2)})${reason ? ` - ${reason}` : ''}.`,
+      `Adjusted account store credit by ${sign}£${Math.abs(deltaGbp).toFixed(2)} (New balance: £${nextBalance.toFixed(2)})${reason ? ` - ${reason}` : ''}.`,
       'promo'
     );
 
     saveCustomerCrm(targetUserId, record);
     revalidatePath(`/en/admin/users/${targetUserId}`);
+    revalidatePath(`/en/admin/users`);
     return { success: true, crm: record };
   } catch (err: any) {
     return { error: err.message || 'Failed to adjust credit balance' };
   }
+}
+
+/**
+ * System helper (callable from referral & checkout actions without requiring admin session)
+ * to read a customer's current GBP credit balance and credit ledger.
+ */
+export async function getSystemCustomerCreditInfo(targetUserId: string): Promise<{
+  creditBalanceGbp: number;
+  creditLedger: CreditLedgerEntry[];
+}> {
+  if (!targetUserId) return { creditBalanceGbp: 0, creditLedger: [] };
+  const record = loadCustomerCrmSync(targetUserId);
+  return {
+    creditBalanceGbp: Number((record.creditBalanceGbp ?? record.creditBalanceUsd ?? 0).toFixed(2)),
+    creditLedger: record.creditLedger || [],
+  };
+}
+
+/**
+ * System helper (callable from referral & checkout actions) to add or deduct GBP credits
+ * and record a full ledger entry + audit note in customer-crm.json.
+ */
+export async function applySystemCustomerCreditDeltaGbp({
+  targetUserId,
+  deltaGbp,
+  type,
+  description,
+  relatedUserId,
+  relatedEmail,
+  orderId,
+}: {
+  targetUserId: string;
+  deltaGbp: number;
+  type: CreditLedgerEntry['type'];
+  description: string;
+  relatedUserId?: string;
+  relatedEmail?: string;
+  orderId?: string;
+}): Promise<{ creditBalanceGbp: number; entry?: CreditLedgerEntry }> {
+  if (!targetUserId || !deltaGbp) {
+    const info = await getSystemCustomerCreditInfo(targetUserId);
+    return { creditBalanceGbp: info.creditBalanceGbp };
+  }
+  const record = loadCustomerCrmSync(targetUserId);
+
+  // Deduplicate if orderId + type already recorded
+  if (
+    orderId &&
+    (record.creditLedger || []).some((e) => e.orderId === orderId && e.type === type)
+  ) {
+    return {
+      creditBalanceGbp: Number((record.creditBalanceGbp ?? record.creditBalanceUsd ?? 0).toFixed(2)),
+    };
+  }
+
+  const currentGbp = record.creditBalanceGbp ?? record.creditBalanceUsd ?? 0;
+  const nextBalance = Math.max(0, Number((currentGbp + deltaGbp).toFixed(2)));
+  record.creditBalanceGbp = nextBalance;
+  record.creditBalanceUsd = nextBalance;
+
+  const entry: CreditLedgerEntry = {
+    id: crypto.randomUUID(),
+    userId: targetUserId,
+    amountGbp: Number(deltaGbp.toFixed(2)),
+    type,
+    description,
+    relatedUserId,
+    relatedEmail,
+    orderId,
+    createdAt: new Date().toISOString(),
+  };
+
+  record.creditLedger = [entry, ...(record.creditLedger || [])];
+  const sign = deltaGbp >= 0 ? '+' : '-';
+  prependAuditNote(
+    record,
+    `${description} (${sign}£${Math.abs(deltaGbp).toFixed(2)} • Balance: £${nextBalance.toFixed(2)})`,
+    'promo'
+  );
+
+  saveCustomerCrm(targetUserId, record);
+  return { creditBalanceGbp: nextBalance, entry };
 }
 
 // ============================================================================

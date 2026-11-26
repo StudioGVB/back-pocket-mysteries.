@@ -217,17 +217,82 @@ export async function signOutOtherSessions() {
 
 export async function deleteAccount() {
   const supabase = await createClient(undefined, { allowCookieClear: true });
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
   if (!user || userError) {
     return { error: 'Not authenticated.' };
   }
 
-  // Delete user data first (guests, etc.) - RLS policies will scope this to the user
-  await supabase.from('guests').delete().eq('user_id', user.id);
+  // 1. Safety Lock: Prevent Founder / Admin accounts from self-deleting and wiping master Mystery Base Packs
+  const { isUserAdmin } = await import('@/utils/admin-auth');
+  const isAdmin = await isUserAdmin(supabase, user);
+  if (isAdmin) {
+    return {
+      error:
+        'Safety Lock: Founder & Admin accounts cannot be deleted from Account Settings because they own the master Mystery Base Packs.',
+    };
+  }
 
-  // Sign out first so the session is cleared
+  const PROTECTED_BASE_IDS = [
+    '69b65a91-1cc2-4267-94a4-59297428af28', // Love On The Rocks
+    '61196e53-09c3-427f-8862-30151f2ca75b', // Christmas Nightmare
+  ];
+
+  try {
+    // 2. Find all customer-owned mysteries (never touch canonical base packs)
+    const { data: userMysteries } = await (supabase.from('mysteries') as any)
+      .select('id')
+      .eq('author_id', user.id);
+
+    const mysteryIds: string[] = (userMysteries || [])
+      .map((m: any) => String(m.id))
+      .filter((id: string) => Boolean(id) && !PROTECTED_BASE_IDS.includes(id));
+
+    if (mysteryIds.length > 0) {
+      await Promise.allSettled([
+        supabase.from('clues').delete().in('mystery_id', mysteryIds),
+        supabase.from('relationships').delete().in('mystery_id', mysteryIds),
+        supabase.from('motives').delete().in('mystery_id', mysteryIds),
+        supabase.from('plot_beats').delete().in('mystery_id', mysteryIds),
+        (supabase as any).from('subplots').delete().in('mystery_id', mysteryIds),
+      ]);
+      await supabase.from('characters').delete().in('mystery_id', mysteryIds);
+      await supabase.from('mysteries').delete().in('id', mysteryIds);
+    }
+
+    // 3. Delete saved guests, guest connections, orders, and profile row
+    await Promise.allSettled([
+      (supabase as any).from('guest_connections').delete().eq('user_id', user.id),
+      supabase.from('guests').delete().eq('user_id', user.id),
+      (supabase as any).from('orders').delete().eq('user_id', user.id),
+      supabase.from('profiles').delete().eq('id', user.id),
+    ]);
+
+    // 4. If service role key is configured, also delete the auth.users record
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { createClient: createServiceClient } = await import('@supabase/supabase-js');
+      const adminSb = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      await adminSb.auth.admin.deleteUser(user.id).catch(() => {});
+    }
+  } catch (err) {
+    console.error('Error cleaning up user data during account deletion:', err);
+  }
+
+  // 5. Sign out and clear all auth cookies
   await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  for (const c of cookieStore.getAll()) {
+    if (c.name.startsWith('sb-')) {
+      cookieStore.set(c.name, '', { path: '/', sameSite: 'lax', maxAge: 0 });
+    }
+  }
 
   return { success: true, redirectTo: '/' };
 }
+
