@@ -1,0 +1,41 @@
+{
+  "sessions": {
+    "v_mwxxw8z7_cbwii0": {
+      "sessionId": "v_mwxxw8z7_cbwii0",
+      "path": "/en/reviews?name=Sophie&email=sophie%40example.com&mystery=Love+On+The+Rocks&role=The+Bombshell&utm_source=playroom_finale&utm_medium=email&utm_campaign=guest_review_cta",
+      "stage": "browsing",
+      "stageLabel": "📖 Browsing Site / Blog",
+      "countryCode": "GB",
+      "city": "",
+      "lat": null,
+      "lon": null,
+      "device": "desktop",
+      "referrerSource": "Direct",
+      "firstSeenAt": 1795720960763,
+      "lastSeenAt": 1795720960763
+    },
+    "v_mwxy5qad_a0qus8": {
+      "sessionId": "v_mwxy5qad_a0qus8",
+      "path": "/en/checkout/christmas-nightmare?guests=6",
+      "stage": "checkout",
+      "stageLabel": "💳 In Checkout",
+      "countryCode": "GB",
+      "city": "",
+      "lat": null,
+      "lon": null,
+      "device": "desktop",
+      "referrerSource": "Direct",
+      "firstSeenAt": 1795721403335,
+      "lastSeenAt": 1795721415260
+    }
+  },
+  "cityPins": {},
+  "funnelCounts": {
+    "browsing": 2,
+    "inspecting_mystery": 0,
+    "checkout": 1,
+    "casting_or_prep": 0,
+    "live_playroom": 0
+  },
+  "updatedAt": "2026-11-26T19:30:15.260Z"
+}

@@ -1,0 +1,25 @@
+{
+  "paths": {
+    "/en/reviews": {
+      "totalSeconds": 5,
+      "count": 1,
+      "updatedAt": "2026-11-26T19:22:42.276Z"
+    },
+    "/en/account/settings": {
+      "totalSeconds": 12,
+      "count": 1,
+      "updatedAt": "2026-11-26T19:30:15.110Z"
+    },
+    "/en/checkout/christmas-nightmare": {
+      "totalSeconds": 10,
+      "count": 1,
+      "updatedAt": "2026-11-26T19:30:24.934Z"
+    }
+  },
+  "countries": {},
+  "global": {
+    "totalSeconds": 27,
+    "count": 3,
+    "updatedAt": "2026-11-26T19:30:24.934Z"
+  }
+}

@@ -214,7 +214,7 @@ export function MysterySettings({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Status {!canPublish && <span className="text-amber-600">(Locked to Draft until {maxPlayers} roles added)</span>}
+            Publishing Status {!canPublish && <span className="text-amber-600">(Locked to Draft until {maxPlayers} roles added)</span>}
           </label>
           <input type="hidden" name="status" value={canPublish ? status : status === 'published' ? 'draft' : status} />
           <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
@@ -277,6 +277,46 @@ export function MysterySettings({
           />
         </div>
       </div>
+
+      {/* Launch Marketing Trigger when Published */}
+      {canPublish && status === 'published' && mysteryId && (
+        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black text-emerald-950 uppercase tracking-wider">
+              🟢 Mystery Base Pack Live in Shop — Launch Marketing
+            </p>
+            <p className="text-xs font-medium text-emerald-800 mt-0.5">
+              Queue draft IG/FB social cards, a 600+ word LinkedIn announcement, and add this mystery to Friday&apos;s Weekly EDM spotlight.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              const btn = document.getElementById('overview-launch-mkt-btn');
+              if (btn) btn.textContent = '⏳ Queuing...';
+              try {
+                const res = await fetch('/api/admin/marketing-launch-pack', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ mysteryId }),
+                });
+                const json = await res.json();
+                if (btn) {
+                  btn.textContent = json.ok
+                    ? '✅ Launch Marketing Queued!'
+                    : `⚠️ ${json.error || 'Error'}`;
+                }
+              } catch {
+                if (btn) btn.textContent = '⚠️ Failed to queue';
+              }
+            }}
+            id="overview-launch-mkt-btn"
+            className="shrink-0 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-sm cursor-pointer"
+          >
+            📣 Queue Launch Marketing →
+          </button>
+        </div>
+      )}
     </>
   );
 }

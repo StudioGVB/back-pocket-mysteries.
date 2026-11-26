@@ -3296,6 +3296,27 @@ export function BaseArchitectClient({ locale }: { locale: string }) {
     }
   };
 
+  useEffect(() => {
+    if (!hydrated || typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    const loadId = sp.get('load');
+    if (!loadId) return;
+
+    // Clean the query param from URL so it doesn't re-trigger on refresh
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+
+    const existingProj = projects.find(
+      (p) => p.transferredMysteryId === loadId || p.id === `og-proj-import-${loadId}`
+    );
+    if (existingProj) {
+      setActiveProjectId(existingProj.id);
+      setStatusToast(`Opened "${existingProj.blueprint.title}" in OG Base Builder.`);
+    } else {
+      void handleImportExistingBaseAsProject(loadId);
+    }
+  }, [hydrated]);
+
   const victimCount = blueprint.characters.filter((c) => c.plotRole === 'victim').length;
   const killerCount = blueprint.characters.filter((c) => c.plotRole === 'killer').length;
   const assistantCount = blueprint.characters.filter((c) => c.plotRole === 'assistant').length;

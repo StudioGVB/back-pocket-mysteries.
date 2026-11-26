@@ -1,0 +1,21 @@
+{
+  "referralCodes": {
+    "GABRIELLA5-4903": {
+      "code": "GABRIELLA5-4903",
+      "userId": "4903bd39-e54f-42e4-b679-2af5d128bb8f",
+      "email": "hello@studiogvb.com",
+      "fullName": "Gabriella Blyth",
+      "createdAt": "2026-11-26T19:30:01.915Z"
+    },
+    "GABRIELLA20-4903": {
+      "code": "GABRIELLA20-4903",
+      "userId": "4903bd39-e54f-42e4-b679-2af5d128bb8f",
+      "email": "hello@studiogvb.com",
+      "fullName": "Gabriella Blyth",
+      "createdAt": "2026-11-26T19:30:01.915Z"
+    }
+  },
+  "redemptions": [],
+  "rewardVouchers": {},
+  "codeUsages": []
+}

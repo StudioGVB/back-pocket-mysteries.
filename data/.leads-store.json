@@ -24,6 +24,21 @@
       "marketing_consent": true,
       "created_at": "2026-11-24T16:25:04.837Z",
       "resend_contact_id": "7c97939f-e4cc-4648-82c4-1f0540e8c21c"
+    },
+    "cory.e.ferguson@gmail.com": {
+      "id": "62dfd704-0bd6-43ae-baaf-b326f1812d89",
+      "email": "cory.e.ferguson@gmail.com",
+      "full_name": "Cory",
+      "source": "first_50_vip_modal",
+      "vip_rank": 3,
+      "qualifies_for_free_mystery": true,
+      "free_mystery_code": null,
+      "code_sent_at": null,
+      "marketing_consent": true,
+      "created_at": "2026-11-26T01:42:26.113Z",
+      "resend_contact_id": "62dfd704-0bd6-43ae-baaf-b326f1812d89",
+      "country": "🇦🇺 Australia (Melbourne)",
+      "ip_address": "49.183.163.184"
     }
   }
 }

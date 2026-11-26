@@ -2,9 +2,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { getCharactersByMysteryId, getMysteryById } from '@/services/mysteries';
+import { getRelationshipsByMysteryId } from '@/services/relationships';
 import { AddCharacterQuickForm } from './_components/AddCharacterQuickForm';
 import { CharacterCard } from './_components/CharacterCard';
 import { CastingToolbar } from './_components/CastingToolbar';
+import { RelationshipGraph } from '../relationships/_components/RelationshipGraph';
+import { HighlightedMysteryText, getCharacterPillStyle } from '@/components/builder/HighlightedMysteryText';
+import { getCharacterRoleTitle } from '@/utils/hydration';
 import { Locale } from '@/lib/i18n-config';
 import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 import { createClient } from '@/utils/supabase/server';
@@ -207,13 +211,16 @@ export default async function MysteryCharactersPage({
     }
   }
 
-  // 2. Fetch mystery details and character list
-  const [mystery, characters] = await Promise.all([
+  // 2. Fetch mystery details, character list, and relationships
+  const [mystery, characters, relationships] = await Promise.all([
     getMysteryById(id),
-    getCharactersByMysteryId(id)
+    getCharactersByMysteryId(id),
+    getRelationshipsByMysteryId(id),
   ]);
 
   if (!mystery) return null;
+
+  const totalMotivesCount = characters.reduce((acc, c) => acc + (c.motives?.length || 0), 0);
 
   // Group characters by importance and role
   const victim = characters.find(c => c.is_victim);
@@ -243,7 +250,7 @@ export default async function MysteryCharactersPage({
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex flex-wrap items-center gap-4 mb-1">
-              <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Stage Crew</h1>
+              <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Character &amp; Cast</h1>
               <div className="flex flex-wrap gap-2">
                 <span className="text-[9px] font-black text-slate-900 uppercase tracking-widest bg-slate-200 px-3 py-1 rounded-md">
                   {pkgInfo.label} ({pkgInfo.rangeLabel})
@@ -266,22 +273,22 @@ export default async function MysteryCharactersPage({
               </div>
             </div>
             <p className="text-slate-400 font-medium text-sm">
-              Managing {characters.length} out of {maxCharacters} required characters for this {pkgInfo.label}.
+              Cast &amp; costumes, interactive relationship map, and murder motives generated in the OG Base Builder.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
+              href={`/${locale}/admin/mysteries/architect?load=${id}`}
+              className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200"
+            >
+              ✨ Edit Story &amp; Motives in OG Builder ↗
+            </Link>
+            <Link
               href={`/${locale}/mysteries/${id}/cast`}
               className="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
             >
               👥 Customer Spoiler-Free Cast View →
-            </Link>
-            <Link
-              href={`/${locale}/play/${id}`}
-              className="px-4 py-2.5 rounded-2xl bg-brand-pink hover:opacity-95 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
-            >
-              🎮 Open Live Playroom →
             </Link>
           </div>
         </div>
@@ -439,21 +446,208 @@ export default async function MysteryCharactersPage({
         )}
 
         {/* OPTIONAL CHARACTERS SECTION */}
-        <section className="space-y-6">
-           <div className="flex items-center gap-3">
-             <span className="w-2 h-2 rounded-full bg-slate-300" />
-             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Optional Characters (5+ Players)</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {remainingOptional.map((character) => (
-              <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} guests={guests} />
-            ))}
-            <div className="border-2 border-dashed border-slate-50 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center opacity-20 h-full min-h-[200px]">
-               <span className="text-2xl mb-2">➕</span>
-               <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Add suspect for larger parties</p>
+        {remainingOptional.length > 0 && (
+          <section className="space-y-6">
+             <div className="flex items-center gap-3">
+               <span className="w-2 h-2 rounded-full bg-slate-300" />
+               <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Optional Characters (5+ Players)</h2>
             </div>
-          </div>
-        </section>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {remainingOptional.map((character) => (
+                <CharacterCard key={character.id} character={character} mysteryId={id} allCharacters={characters} guests={guests} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* SECTION 2: INTERACTIVE RELATIONSHIP MAP */}
+        {characters.length >= 2 && (
+          <section className="space-y-6 pt-6 border-t border-slate-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-brand-blue" />
+                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+                    Interactive Relationship Map
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-black uppercase tracking-widest">
+                    {relationships.length} Bonds
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium">
+                  Visual social web connecting all {characters.length} characters. Hover or click any node to inspect their connections.
+                </p>
+              </div>
+              <Link
+                href={`/${locale}/admin/mysteries/architect?load=${id}`}
+                className="shrink-0 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                ✏️ Edit Web in OG Builder ↗
+              </Link>
+            </div>
+
+            <RelationshipGraph characters={characters} relationships={relationships} />
+          </section>
+        )}
+
+        {/* SECTION 3: CHARACTER MOTIVES & MURDER SECRETS (GENERATED IN OG BUILDER) */}
+        {characters.length >= 2 && (
+          <section className="space-y-6 pt-6 border-t border-slate-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">
+                    Character Motives &amp; Murder Secrets
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink text-[10px] font-black uppercase tracking-widest">
+                    {totalMotivesCount} Active Motives
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium">
+                  Why every suspect wanted the victim dead (or what secret they are desperate to hide), synced from the OG Base Builder.
+                </p>
+              </div>
+              <Link
+                href={`/${locale}/admin/mysteries/architect?load=${id}`}
+                className="shrink-0 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                ✏️ Edit Motives in OG Builder ↗
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {characters
+                .filter((c) => !c.is_victim || (c.motives && c.motives.length > 0))
+                .map((character) => {
+                  const roleTitle = getCharacterRoleTitle(character);
+                  const pillStyle = getCharacterPillStyle(characters, character);
+                  const motives = character.motives || [];
+                  const fallbackSecret =
+                    (character.profile_data as any)?.secret ||
+                    (character.profile_data as any)?.motive ||
+                    character.secret_objective ||
+                    '';
+
+                  return (
+                    <div
+                      key={character.id}
+                      className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-4 hover:border-slate-300 transition-all"
+                    >
+                      <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border ${pillStyle.bg} ${pillStyle.text} ${pillStyle.border}`}
+                          >
+                            <span className={`w-2 h-2 rounded-full ${pillStyle.dot}`} />
+                            {roleTitle}
+                          </span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                              character.is_victim
+                                ? 'bg-red-100 text-red-700'
+                                : character.plot_role === 'killer'
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                  : character.plot_role === 'assistant'
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                    : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {character.is_victim
+                              ? '💀 Victim'
+                              : character.plot_role === 'killer'
+                                ? '🔪 The Killer'
+                                : character.plot_role === 'assistant'
+                                  ? '🤝 Accomplice'
+                                  : '🕵️ Suspect'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          {motives.length} {motives.length === 1 ? 'Motive' : 'Motives'}
+                        </span>
+                      </div>
+
+                      {motives.length > 0 ? (
+                        <div className="space-y-3">
+                          {motives.map((motive: any) => {
+                            const targetChar = characters.find(
+                              (c) => c.id === motive.linked_character_id
+                            );
+                            const targetRole = targetChar
+                              ? getCharacterRoleTitle(targetChar)
+                              : victim
+                                ? getCharacterRoleTitle(victim)
+                                : 'The Victim';
+                            const targetStyle = getCharacterPillStyle(
+                              characters,
+                              targetChar || victim || targetRole
+                            );
+
+                            return (
+                              <div
+                                key={motive.id}
+                                className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-2"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="px-2.5 py-0.5 rounded-md bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest">
+                                      {motive.motive_type || 'Motive'}
+                                    </span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                      against
+                                    </span>
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black border ${targetStyle.bg} ${targetStyle.text} ${targetStyle.border}`}
+                                    >
+                                      <span className={`w-1.5 h-1.5 rounded-full ${targetStyle.dot}`} />
+                                      {targetRole}
+                                    </span>
+                                  </div>
+                                  {motive.motive_strength && (
+                                    <span
+                                      className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                                        motive.motive_strength === 'critical' ||
+                                        motive.motive_strength === 'high'
+                                          ? 'bg-rose-100 text-rose-700'
+                                          : 'bg-slate-200 text-slate-700'
+                                      }`}
+                                    >
+                                      {motive.motive_strength} stakes
+                                    </span>
+                                  )}
+                                </div>
+                                {motive.notes && (
+                                  <div className="text-xs text-slate-700 font-medium leading-relaxed">
+                                    <HighlightedMysteryText
+                                      text={motive.notes}
+                                      characters={characters}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : fallbackSecret ? (
+                        <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 text-xs text-slate-700 font-medium leading-relaxed">
+                          <HighlightedMysteryText
+                            text={fallbackSecret}
+                            characters={characters}
+                          />
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center">
+                          <p className="text-[11px] font-bold text-slate-400">
+                            No motive recorded yet — generate or edit motives in the OG Base Builder.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          </section>
+        )}
       </div>
 
       {characters.length === 0 && (
