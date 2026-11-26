@@ -327,6 +327,24 @@ export async function findMysteryByPinAction(pinInput: string): Promise<{
     return { error: 'Please enter a valid 6-digit Game PIN.' };
   }
 
+  // Kahoot-style failed-PIN-only rate limiter:
+  // Valid PIN entries NEVER increment the counter, so 50+ guests on the same living room Wi-Fi
+  // can join simultaneously. Only wrong/failed PIN guesses increment the bucket (max 25 wrong guesses/min).
+  const { getCallerIpAddress, checkRateLimitBucket } = await import('@/utils/rate-limit');
+  const callerIp = await getCallerIpAddress();
+  const failedPinKey = `failed-pin:${callerIp}`;
+  const preCheck = checkRateLimitBucket({
+    key: failedPinKey,
+    maxCount: 25,
+    windowMs: 60_000,
+    increment: false,
+  });
+  if (!preCheck.allowed) {
+    return {
+      error: `Too many incorrect PIN attempts. Please wait ${preCheck.retryAfterSeconds} seconds and check the 6-digit PIN with your host.`,
+    };
+  }
+
   const supabase = await createClient();
 
   // 1. Check cross-container live carrier rows in `public.clues` (accessible to anon guests too!)
@@ -398,6 +416,14 @@ export async function findMysteryByPinAction(pinInput: string): Promise<{
       return { mysteryId: k.id, title: k.title };
     }
   }
+
+  // Increment failed-attempt counter ONLY when the PIN did not match any active game
+  checkRateLimitBucket({
+    key: failedPinKey,
+    maxCount: 25,
+    windowMs: 60_000,
+    increment: true,
+  });
 
   return {
     error: `No active mystery found with PIN ${cleanPin}. Double-check the 6-digit code with your host!`,

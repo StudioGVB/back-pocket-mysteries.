@@ -1204,7 +1204,6 @@ export async function claimGuestPostPartyRewardAction(params: {
     revalidatePath('/en/admin/leads');
     return {
       success: true,
-      code,
       email: cleanEmail,
     };
   } catch (err: any) {

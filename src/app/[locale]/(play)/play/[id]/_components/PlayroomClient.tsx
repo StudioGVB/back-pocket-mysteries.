@@ -707,8 +707,8 @@ export function PlayroomClient({
       }
       const savedPersonalCode = window.localStorage.getItem(`bpm_guest_reward_code_${mystery.id}`);
       const savedRewardEmail = window.localStorage.getItem(`bpm_guest_reward_email_${mystery.id}`);
-      if (savedPersonalCode && savedPersonalCode.startsWith('SLEUTH-')) {
-        setPersonalPromoCode(savedPersonalCode);
+      if (savedPersonalCode) {
+        setPersonalPromoCode('SENT');
       }
       if (savedRewardEmail) {
         setRewardEmail(savedRewardEmail);
@@ -6105,13 +6105,19 @@ export function PlayroomClient({
                     </button>
                   </div>
 
-                  {/* Right: 15% OFF Guest-to-Next-Host Personal Single-Use Reward Code (Email Capture + Random Code Generator) */}
+                  {/* Right: 15% OFF Guest-to-Next-Host Personal Single-Use Reward Code (Email Delivery Only) */}
                   <div className="lg:col-span-5 p-5 rounded-3xl bg-gradient-to-br from-amber-500/15 via-slate-900 to-slate-950 border border-amber-400/35 shadow-xl flex flex-col justify-between gap-3">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-widest">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                            personalPromoCode
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                              : 'bg-amber-400/20 text-amber-300'
+                          }`}
+                        >
                           {personalPromoCode
-                            ? '✓ Single-Use 15% Off Code Unlocked'
+                            ? '✓ Code Sent to Your Email'
                             : 'Next-Host Reward • 15% Off'}
                         </span>
                         <Link
@@ -6122,40 +6128,28 @@ export function PlayroomClient({
                         </Link>
                       </div>
                       <h3 className="text-sm sm:text-base font-black text-white">
-                        Want to Host Your Group&apos;s Next Mystery Night?
+                        {personalPromoCode
+                          ? 'Your Code Has Been Sent to Your Email!'
+                          : "Want to Host Your Group's Next Mystery Night?"}
                       </h3>
                       {personalPromoCode ? (
-                        <p className="text-xs text-slate-300">
-                          Your personal single-use 15% off code{' '}
-                          <strong className="text-amber-300 font-mono">{personalPromoCode}</strong>{' '}
-                          and Detective Wrapped recap have been emailed to{' '}
-                          <span className="text-white font-semibold">{rewardEmail}</span>.
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          Your personal single-use <strong className="text-amber-300">15% Off Host Code</strong> and Detective Wrapped recap have been emailed to{' '}
+                          <span className="text-white font-semibold">{rewardEmail}</span>. Thanks so much for playing tonight!
                         </p>
                       ) : (
                         <p className="text-xs text-slate-300">
-                          Enter your email to generate your personal single-use{' '}
-                          <strong className="text-amber-300">15% Off Host Code</strong> + get your
-                          Detective Wrapped scorecard in your inbox.
+                          Enter your email and we&apos;ll send your personal single-use{' '}
+                          <strong className="text-amber-300">15% Off Host Code</strong> + Detective
+                          Wrapped scorecard straight to your inbox.
                         </p>
                       )}
                     </div>
 
                     {personalPromoCode ? (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-400/30 font-mono text-sm font-black tracking-widest text-amber-300 text-center">
-                          {personalPromoCode}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleCopyRewardPromoCode}
-                          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                            copiedPromoCode
-                              ? 'bg-emerald-500 text-slate-950'
-                              : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
-                          }`}
-                        >
-                          {copiedPromoCode ? '✓ Copied!' : 'Copy Code'}
-                        </button>
+                      <div className="px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 text-center">
+                        <span>✉️</span>
+                        <span>Check your inbox for your single-use 15% Off code!</span>
                       </div>
                     ) : (
                       <form
@@ -6178,15 +6172,15 @@ export function PlayroomClient({
                               correctVotes: myDetectiveSummary.correctVotes,
                               totalVotes: myDetectiveSummary.totalVotes,
                             });
-                            if (!res.success || !res.code) {
-                              setRewardCodeError(res.error || 'Could not generate code.');
+                            if (!res.success) {
+                              setRewardCodeError(res.error || 'Could not send code.');
                               return;
                             }
-                            setPersonalPromoCode(res.code);
+                            setPersonalPromoCode('SENT');
                             try {
                               window.localStorage.setItem(
                                 `bpm_guest_reward_code_${mystery.id}`,
-                                res.code
+                                'SENT'
                               );
                               window.localStorage.setItem(
                                 `bpm_guest_reward_email_${mystery.id}`,
@@ -6217,7 +6211,7 @@ export function PlayroomClient({
                             disabled={isClaimingRewardCode}
                             className="shrink-0 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-slate-950 text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
                           >
-                            {isClaimingRewardCode ? 'Minting…' : '🎁 Get My Code'}
+                            {isClaimingRewardCode ? 'Sending…' : '🎁 Email My Code'}
                           </button>
                         </div>
                         {rewardCodeError ? (

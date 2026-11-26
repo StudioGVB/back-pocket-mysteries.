@@ -16,6 +16,19 @@ function escapeHtml(str: string): string {
 }
 
 export async function submitContactForm(formData: FormData) {
+  const { getCallerIpAddress, checkRateLimitBucket } = await import('@/utils/rate-limit');
+  const callerIp = await getCallerIpAddress();
+  const limit = checkRateLimitBucket({
+    key: `contact-form:${callerIp}`,
+    maxCount: 8,
+    windowMs: 60_000,
+  });
+  if (!limit.allowed) {
+    return {
+      error: `Too many messages sent in a short window. Please wait ${limit.retryAfterSeconds} seconds and try again.`,
+    };
+  }
+
   const name = ((formData.get('name') as string) || '').trim();
   const email = ((formData.get('email') as string) || '').trim();
   const message = ((formData.get('message') as string) || '').trim();
