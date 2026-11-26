@@ -963,13 +963,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-26T17:10:57.867Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-26T17:21:19.808Z"
     },
     {
       "id": "6e398dc3-d6bb-4433-90f8-aec0b855300a",
       "brief": "OG Announcement #1: From Prottack to Back Pocket Mysteries (First 50 VIP Free Pack Giveaway)",
-      "status": "draft",
-      "scheduled_at": "2026-11-28T09:00:00Z",
+      "status": "scheduled",
+      "scheduled_at": "2026-11-25T19:00:00.000Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -990,13 +990,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-22T17:36:36.733Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-25T19:00:00.000Z"
     },
     {
       "id": "09df2532-17e4-49d0-863d-fdc547010189",
       "brief": "OG Announcement #2: Back Pocket Mysteries Is Officially Live! (Love On The Rocks & Christmas Nightmare)",
       "status": "draft",
-      "scheduled_at": "2026-11-29T18:00:00Z",
+      "scheduled_at": "2026-11-28T18:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -1017,13 +1017,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-24T15:07:08.849Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-26T17:21:19.808Z"
     },
     {
       "id": "ef1c4c2a-2c27-4280-abf5-10abd6924d4b",
       "brief": "Corporate Team Building Murder Mysteries (8–24 Players)",
       "status": "draft",
-      "scheduled_at": "2026-11-29T09:00:00Z",
+      "scheduled_at": "2026-11-28T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": "4144d209-4c36-4fe5-9972-39b62d9ef8a1",
@@ -1037,13 +1037,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-18T13:07:25.424Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-26T17:21:19.808Z"
     },
     {
       "id": "717b2a0c-f21c-4887-a6b3-a837e1a92935",
       "brief": "Audio Wiretaps, CCTV Stills & Chat Logs in Murder Mysteries",
       "status": "draft",
-      "scheduled_at": "2026-12-01T09:00:00Z",
+      "scheduled_at": "2026-11-30T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": "5be882df-e34b-4529-9402-7296fd840547",
@@ -1057,13 +1057,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-18T13:07:25.424Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-26T17:21:19.808Z"
     },
     {
       "id": "cba64cca-92db-40f3-977e-05b23cdd9633",
       "brief": "Hosting a Small Group Murder Mystery Dinner (6–8 Players)",
       "status": "draft",
-      "scheduled_at": "2026-12-02T09:00:00Z",
+      "scheduled_at": "2026-12-01T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": "fdf2cdaf-d8a1-4d53-b211-cdf7cad22d6e",
@@ -1077,13 +1077,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-18T13:07:25.424Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-26T17:21:19.808Z"
     },
     {
       "id": "14df11cc-a857-4656-8fd5-94046b92cb3f",
       "brief": "Holiday & New Year's Eve Murder Mystery Party Guide",
       "status": "draft",
-      "scheduled_at": "2026-12-03T09:00:00Z",
+      "scheduled_at": "2026-12-02T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": "813eb661-361f-4438-b8b9-1d04c3d21806",
@@ -1097,13 +1097,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-18T13:07:25.424Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-26T17:21:19.808Z"
     },
     {
       "id": "b12f842d-c7e2-40ba-a7a1-c5cc71f1990c",
       "brief": "New Mystery Base Pack Launch: Christmas Nightmare (Holiday Dinner Party)",
       "status": "draft",
-      "scheduled_at": "2026-11-30T18:00:00Z",
+      "scheduled_at": "2026-11-29T18:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -1117,13 +1117,13 @@
       },
       "error_message": null,
       "created_at": "2026-11-24T15:00:52.157Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-26T17:21:19.808Z"
     },
     {
       "id": "0ed5020f-4d18-4a0c-890b-b50cd34136c5",
       "brief": "New Mystery Base Pack Launch: Love On The Rocks (Reality TV Reunion)",
       "status": "draft",
-      "scheduled_at": "2026-11-30T09:00:00Z",
+      "scheduled_at": "2026-11-29T09:00:00Z",
       "timezone": "Australia/Sydney",
       "posted_at": null,
       "source_blog_id": null,
@@ -1137,7 +1137,7 @@
       },
       "error_message": null,
       "created_at": "2026-11-24T15:07:40.093Z",
-      "updated_at": "2026-11-26T17:10:57.867Z"
+      "updated_at": "2026-11-26T17:21:19.808Z"
     }
   ],
   "social_post_captions": [

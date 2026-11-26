@@ -182,7 +182,7 @@ async function getWriteStorageSupabase() {
   return getReadStorageSupabase();
 }
 
-export async function loadMarketingStore(): Promise<MarketingStoreData> {
+export async function loadMarketingStore(allowAuthCookies = false): Promise<MarketingStoreData> {
   const now = Date.now();
   if (
     globalForMarketing.__marketingStoreCache &&
@@ -198,7 +198,7 @@ export async function loadMarketingStore(): Promise<MarketingStoreData> {
 
   const inflight = (async (): Promise<MarketingStoreData> => {
     const local = readLocalMarketingStore();
-    const sb = getReadStorageSupabase();
+    const sb = allowAuthCookies ? await getWriteStorageSupabase() : getReadStorageSupabase();
     if (sb) {
       try {
         // 1. Check versioned snapshot directory first via POST .list() (bypasses Cloudflare's 15-min path cache!)
@@ -334,7 +334,7 @@ function matchesFilters(row: any, filters: StoreOperation["filters"] = []): bool
 export async function executeStoreOperation(
   op: StoreOperation
 ): Promise<{ data: any; error: any; count?: number }> {
-  const store = await loadMarketingStore();
+  const store = await loadMarketingStore(true);
   const tableRows = store[op.table];
   if (!Array.isArray(tableRows)) {
     return { data: null, error: { message: `Unknown marketing table: ${String(op.table)}` } };
