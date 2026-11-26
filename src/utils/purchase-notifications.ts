@@ -351,12 +351,12 @@ export async function sendCustomerGenerationStartedEmail(
 Thank you for your order! Your custom cast for "${payload.mysteryTitle}" is officially locked in. Our studio is now generating your personalized character dossiers, outfit guides, caught-on-camera clue photos, and voice wiretaps.
 
 SAFE TO CLOSE YOUR BROWSER (~20 MINS)
-Your mystery package takes ~20 minutes to build and QA-verify. We will email you the moment your Pre-Party Host Hub and 6-digit Party PIN are unlocked.
+Your custom mystery package takes ~20 minutes to build. We will email you the moment your Pre-Party Host Hub and 6-digit Party PIN are unlocked.
 
 What Our Studio Is Building for You Right Now:
 1. Custom Character Portraits & Outfit Guides
 2. Caught-on-Camera Clue Photos & Voice Memos
-3. Pre-Delivery Quality Check & Ready Email
+3. Your Pre-Party Host Hub & 6-Digit Party PIN
 
 Open My Mysteries: ${myStoriesUrl}
 
@@ -384,7 +384,7 @@ Back Pocket Mysteries`;
           Ready in ~20 Minutes ☕
         </p>
         <p style="margin:8px 0 0 0;color:#4b5563;font-size:13px;font-weight:600;">
-          Every clue &amp; portrait QA-verified • We will email you the moment it is unlocked
+          Personalised for your cast • We will email you the moment it is unlocked
         </p>
       </div>
 
@@ -396,10 +396,10 @@ Back Pocket Mysteries`;
           <strong style="color:#fe04c6;">1. Custom Character Portraits &amp; Outfit Guides:</strong> Styling every suspect in their signature theme outfit and weaving their names into the story.
         </li>
         <li style="margin-bottom:8px;">
-          <strong style="color:#fe04c6;">2. Caught-on-Camera Clue Photos &amp; Voice Memos:</strong> Placing your cast into visual evidence stills and multi-accent audio recordings.
+          <strong style="color:#fe04c6;">2. Caught-on-Camera Clue Photos &amp; Voice Memos:</strong> Placing your cast into visual evidence stills and voice recordings.
         </li>
         <li style="margin-bottom:0;">
-          <strong style="color:#fe04c6;">3. Pre-Delivery Quality Check &amp; Ready Email:</strong> Every portrait, photo, and audio clip is QA-tested before we email you your 6-digit Party PIN.
+          <strong style="color:#fe04c6;">3. Ready Email &amp; Party PIN:</strong> As soon as your character booklets, clue photos, and audio clips are ready, we email you your 6-digit Party PIN.
         </li>
       </ul>
     `,
@@ -529,7 +529,7 @@ Back Pocket Mysteries`;
           ${formattedPin}
         </p>
         <p style="margin:8px 0 0 0;color:#4b5563;font-size:13px;font-weight:600;">
-          Every clue &amp; portrait QA-verified • Zero app downloads or guest logins required
+          Personalised for your cast • Zero app downloads or guest logins required
         </p>
       </div>
 

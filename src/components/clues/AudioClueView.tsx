@@ -389,7 +389,7 @@ export function AudioClueView({
               />
               <span>
                 {isGenerating
-                  ? 'SYNTHESIZING MULTI-SPEAKER AUDIO...'
+                  ? 'LOADING AUDIO RECORDING...'
                   : isPlaying
                   ? 'AUDIO EXHIBIT • PLAYING...'
                   : hasAudio

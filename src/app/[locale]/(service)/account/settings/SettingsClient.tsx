@@ -224,16 +224,16 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
   const [resendError, setResendError] = useState('');
 
   // 2. Vouchers & Referral
-  const personalReferralCode = user.referralCode || 'FRIEND20';
+  const personalReferralCode = user.referralCode || 'FRIEND5';
   const [voucherCodeInput, setVoucherCodeInput] = useState('');
   const [vouchers, setVouchers] = useState<Array<{ code: string; discount: string; status: string }>>(() => {
     const list: Array<{ code: string; discount: string; status: string }> = [
       {
         code: personalReferralCode,
-        discount: 'Give 20% Off, Get 20% Off (Your Personal Share Code)',
+        discount: 'Give £5, Get £5 (Your Personal Share Code)',
         status: user.referralsCompletedCount
-          ? `${user.referralsCompletedCount} friend(s) referred`
-          : 'Share with friends to unlock 20% off',
+          ? `${user.referralsCompletedCount} friend(s) referred (+£${(user.referralsCompletedCount * 5).toFixed(2)} earned)`
+          : 'Share with friends to give £5 & earn £5 credit',
       },
     ];
     if (user.rewardVouchers && user.rewardVouchers.length > 0) {
@@ -489,9 +489,9 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
     },
     {
       id: 'vouchers-referrals',
-      label: 'Vouchers & Referrals',
-      sublabel: '20% referral link & promo wallet',
-      badge: `${vouchers.length}`,
+      label: 'Credits & Referrals',
+      sublabel: 'Give £5, Get £5 & promo wallet',
+      badge: `£${creditBalanceGbp.toFixed(0)}`,
       icon: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
@@ -863,11 +863,11 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
             {accountError && <p className="text-xs text-red-600 font-bold">{accountError}</p>}
           </Section>
 
-          {/* 2. Vouchers, 20% Referral Rewards & Receipts */}
+          {/* 2. Credits, Give £5 Get £5 Referral Rewards & Vouchers */}
           <Section
             id="vouchers-referrals"
-            title="Vouchers & Referral Rewards"
-            description="Share your personal referral link to give friends 20% off (and earn 20% off), or redeem a promo voucher."
+            title="Account Credits & Referrals (Give £5, Get £5)"
+            description="Share your personal referral code so your friend gets a £5 credit and you get £5 in account credits too."
             icon={
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
@@ -877,24 +877,28 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
               </svg>
             }
             badge={
-              creditBalanceGbp > 0 ? (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
-                  £{creditBalanceGbp.toFixed(2)} Credit
-                </span>
-              ) : undefined
+              <span
+                className={`px-3 py-1 rounded-full text-[11px] font-extrabold border ${
+                  creditBalanceGbp > 0
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                }`}
+              >
+                💷 Available Credit: £{creditBalanceGbp.toFixed(2)}
+              </span>
             }
           >
             {/* Sleek Dark Referral Banner */}
             <div className="rounded-xl bg-[#1e191c] text-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-[#fe04c6]">
-                  <span>✦ Give 20% Off • Get 20% Off</span>
+                  <span>✦ Give £5 • Get £5 Account Credit</span>
                 </div>
                 <p className="text-sm font-bold text-white">
                   Share your personal referral link with friends
                 </p>
                 <p className="text-xs text-white/60">
-                  Code: <span className="font-mono font-bold text-white">{personalReferralCode}</span> • Auto-applies 20% off at checkout
+                  Code: <span className="font-mono font-bold text-white">{personalReferralCode}</span> • Both you &amp; your friend get £5.00 credit towards any mystery
                 </p>
               </div>
               <button
@@ -906,19 +910,19 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
                 }}
                 className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-900 hover:bg-slate-100 transition-colors self-start sm:self-auto flex-shrink-0 cursor-pointer shadow-xs"
               >
-                {referralCopied ? 'Copied Link ✓' : 'Copy Referral Link'}
+                {referralCopied ? 'Copied Link ✓' : 'Copy £5 Referral Link'}
               </button>
             </div>
 
             {/* Redeem Voucher Bar */}
             <div>
               <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
-                Redeem a Promo or Referral Code
+                Redeem a Friend&apos;s Referral Code or Promo Voucher
               </label>
               <div className="flex gap-2">
                 <input
                   className={`${inputClass} uppercase tracking-wider font-semibold`}
-                  placeholder="Enter voucher or promo code"
+                  placeholder="Enter friend's referral code (e.g. FRIEND5-XXXX) or voucher"
                   value={voucherCodeInput}
                   onChange={(e) => setVoucherCodeInput(e.target.value)}
                 />

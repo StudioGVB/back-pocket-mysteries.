@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ClueFormat, inferClueFormat } from '@/utils/clue-format';
+import { ClueFormat, inferClueFormat, stripCustomerFacingTitle } from '@/utils/clue-format';
+import { hydrateTextWithCharacters } from '@/utils/hydration';
 import { ChatClueView, ClueViewProps } from './ChatClueView';
 import { ReceiptClueView } from './ReceiptClueView';
 import { DocumentClueView } from './DocumentClueView';
@@ -14,7 +15,9 @@ import { NoteClueView } from './NoteClueView';
 import { MedicalClueView } from './MedicalClueView';
 import { CallSheetClueView } from './CallSheetClueView';
 
-export interface ClueRendererProps extends ClueViewProps {
+export interface ClueRendererProps extends Partial<ClueViewProps> {
+  clue: any;
+  characters?: any[];
   formatOverride?: ClueFormat | null;
 }
 
@@ -29,16 +32,27 @@ export function ClueRenderer({
 }: ClueRendererProps) {
   const resolvedFormat: ClueFormat =
     formatOverride ||
-    (clue.format as ClueFormat) ||
+    (clue?.format as ClueFormat) ||
     inferClueFormat(clue);
 
   const isPhotoClue =
     resolvedFormat === 'physical_prop' || resolvedFormat === 'cctv';
 
+  const resolvedTitle =
+    hydratedTitle ||
+    stripCustomerFacingTitle(
+      hydrateTextWithCharacters(clue?.title || 'Evidence', characters || [], 'role')
+    ) ||
+    'Evidence';
+
+  const resolvedDescription =
+    hydratedDescription ||
+    hydrateTextWithCharacters(clue?.description || '', characters || [], 'role');
+
   const viewProps = {
     clue,
-    hydratedTitle,
-    hydratedDescription,
+    hydratedTitle: resolvedTitle,
+    hydratedDescription: resolvedDescription,
     characters,
     compact,
     showImage: Boolean(showImage && isPhotoClue),

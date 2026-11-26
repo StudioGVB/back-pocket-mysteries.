@@ -226,17 +226,15 @@ export function OgPlotAndEvidenceStudio({
       ? sortedBeats.find((b) => b.id === clue.linked_plot_beat_id)
       : null;
 
-    const hydratedClueForPreview = {
-      ...clue,
-      title: stripCustomerFacingTitle(
-        hydrateTextWithCharacters(clue.title || '', characters, 'print')
-      ),
-      description: hydrateTextWithCharacters(
-        clue.description || '',
-        characters,
-        'print'
-      ),
-    };
+    const hydratedTitle =
+      stripCustomerFacingTitle(
+        hydrateTextWithCharacters(clue.title || 'Evidence', characters, 'role')
+      ) || 'Evidence';
+    const hydratedDesc = hydrateTextWithCharacters(
+      clue.description || '',
+      characters,
+      'role'
+    );
 
     return (
       <div
@@ -316,11 +314,31 @@ export function OgPlotAndEvidenceStudio({
             )}
           </div>
 
-          {/* Tokenized Story Transcript / Description with Color-Coded Character Pills */}
+          {/* RENDERED CLUE VIEW (Dark Slate-950 Frame - Chat, Receipt, CCTV, Audio, Document, Prop) */}
+          <div className="rounded-3xl bg-slate-950 text-white p-4 border border-slate-800/90 shadow-lg relative overflow-hidden">
+            {isGeneratingThis && (
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center gap-2 p-4 text-center">
+                <div className="w-8 h-8 border-3 border-brand-pink border-t-transparent rounded-full animate-spin" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
+                  {generatingStatus || 'Synthesizing Media...'}
+                </span>
+              </div>
+            )}
+            <ClueRenderer
+              clue={clue as any}
+              hydratedTitle={hydratedTitle}
+              hydratedDescription={hydratedDesc}
+              characters={characters}
+              compact={true}
+              showImage={true}
+            />
+          </div>
+
+          {/* OG Blueprint Tokenized Script / Evidence Copy with Color-Coded Character Pills */}
           {clue.description && (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                OG Blueprint Transcript / Evidence Copy (Tokenized)
+                OG Blueprint Tokenized Script (Color-Coded Roles)
               </div>
               <div className="text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-wrap">
                 <HighlightedMysteryText
@@ -333,7 +351,7 @@ export function OgPlotAndEvidenceStudio({
 
           {/* Visual / Audio Prompt if present */}
           {clue.generation_prompt && (isPhotoClue || isAudioClue) && (
-            <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-1">
+            <div className="p-3 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-1">
               <div className="text-[9px] font-black uppercase tracking-widest text-indigo-500">
                 {isPhotoClue ? '📸 AI Visual Prompt' : '🎙️ Voice Synthesis Prompt'}
               </div>
@@ -345,19 +363,6 @@ export function OgPlotAndEvidenceStudio({
               </div>
             </div>
           )}
-
-          {/* Live Customer-Facing Visual / Audio Container Preview */}
-          <div className="pt-1">
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">
-              Live Player Card Preview
-            </div>
-            <div className="rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-950/5">
-              <ClueRenderer
-                clue={hydratedClueForPreview as any}
-                characters={characters}
-              />
-            </div>
-          </div>
         </div>
 
         {/* Bottom Action Bar: Media Regeneration + OG Builder Link */}
@@ -390,7 +395,7 @@ export function OgPlotAndEvidenceStudio({
             </button>
           ) : (
             <span className="text-[10px] font-bold text-slate-400">
-              ✓ Dynamic Digital Container ({fmtMeta.label})
+              ✓ Dynamic Rendered Clue ({fmtMeta.label})
             </span>
           )}
 

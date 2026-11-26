@@ -14,6 +14,7 @@ import {
 } from '@/utils/localization';
 import { Locale } from '@/lib/i18n-config';
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@/utils/supabase/server';
 import { cookies, headers } from 'next/headers';
 import { Database } from '@/types/database';
 import { revalidatePath } from 'next/cache';
@@ -375,19 +376,7 @@ export async function createPaymentIntentAction({
     const basePrice = getRegionalPrice(tier, currency);
     const subtotal = basePrice;
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      }
-    );
+    const supabase = await createClient();
 
     const [discountInfo, authResult] = await Promise.all([
       resolveDiscountForCheckout({
@@ -575,19 +564,7 @@ export async function confirmMysteryOrderAction({
     const cleanCurrency = sanitizeCurrency(currency);
     const authoritativeTier = await resolveAuthoritativeTier(tier || 'basic', mysteryId, slug);
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      }
-    );
+    const supabase = await createClient();
 
     const {
       data: { user },

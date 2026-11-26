@@ -15,6 +15,8 @@ import { createClient } from '@/utils/supabase/server';
 import { getStaticMockGuests } from '@/utils/mock-guests';
 import { extractAccentFromAvatarUrl } from '@/utils/avatar';
 
+export const unstable_instant = false;
+
 export default async function MysteryCharactersPage({
   params,
 }: {

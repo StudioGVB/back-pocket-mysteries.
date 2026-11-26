@@ -100,26 +100,6 @@ async function buildSupabaseServerClient(
       return origGetUser(jwt)
     }
 
-    if (
-      process.env.NODE_ENV === 'development' &&
-      safeGetAllCookies().some((c) => c.name === 'bpm_local_e2e_admin' && c.value === '1')
-    ) {
-      return {
-        data: {
-          user: {
-            id: '4903bd39-e54f-42e4-b679-2af5d128bb8f',
-            email: 'hello@studiogvb.com',
-            email_confirmed_at: '2026-01-01T00:00:00Z',
-            user_metadata: {
-              full_name: 'Gabriella Blyth',
-              preferred_currency: 'GBP',
-            },
-          },
-        },
-        error: null,
-      } as any
-    }
-
     const activeCookies = getEffectiveAuthCookies(safeGetAllCookies()).filter(
       (c) => c.name.startsWith('sb-') && c.name.includes('-auth-token') && Boolean(c.value)
     )
