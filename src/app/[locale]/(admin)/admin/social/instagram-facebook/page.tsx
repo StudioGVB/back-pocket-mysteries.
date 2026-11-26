@@ -747,7 +747,8 @@ interface IgFbPostCardProps {
     postId: string,
     isScheduled: boolean,
     cleanCopy?: string,
-    imgSrc?: string
+    imgSrc?: string,
+    mediaUrls?: string[]
   ) => void;
   onUpdateScheduledAt: (postId: string, newIsoDate: string) => Promise<void> | void;
   onRefreshPastDates?: () => Promise<void> | void;
@@ -769,6 +770,7 @@ function IgFbPostCard({
 }: IgFbPostCardProps) {
   const [copiedTitle, setCopiedTitle] = useState(false);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const selectedTemplate =
     typeof post.slide_content?.templateIndex === "number"
       ? post.slide_content.templateIndex
@@ -823,7 +825,16 @@ function IgFbPostCard({
   );
 
   const scAny = (post.slide_content || {}) as Record<string, any>;
+  const carouselSlides: Array<Record<string, any>> = Array.isArray(scAny.carouselSlides)
+    ? scAny.carouselSlides
+    : [];
+  const isCarousel = carouselSlides.length > 1;
+  const currentSlide = isCarousel
+    ? carouselSlides[Math.min(activeSlideIndex, carouselSlides.length - 1)] || scAny
+    : scAny;
+
   const fallbackBgUrl =
+    currentSlide.imageUrl ||
     scAny.imageUrl ||
     (initialImageUrl && !initialImageUrl.includes("/api/social-card/")
       ? initialImageUrl
@@ -833,24 +844,35 @@ function IgFbPostCard({
       ? "/moodboard/lotr/main-island-villa.jpg"
       : `/blog-images/${cardSlug}.png`);
 
-  const buildCardUrl = (tIndex: number | null) => {
+  const buildSlideUrl = (slideObj: Record<string, any>, tIndex: number | null) => {
+    const slug = slideObj.cardSlug || cardSlug;
     const params = new URLSearchParams();
     if (typeof tIndex === "number") {
       params.set("t", String(tIndex));
+    } else if (typeof slideObj.templateIndex === "number") {
+      params.set("t", String(slideObj.templateIndex));
     } else {
       params.set("v", "auto");
     }
-    if (scAny.cardTitle) params.set("title", String(scAny.cardTitle));
-    if (scAny.cardCategory) params.set("category", String(scAny.cardCategory));
-    if (scAny.ctaText) params.set("cta", String(scAny.ctaText));
-    if (scAny.kickerText) params.set("kicker", String(scAny.kickerText));
-    if (scAny.stat?.value && scAny.stat?.label) {
-      params.set("statValue", String(scAny.stat.value));
-      params.set("statLabel", String(scAny.stat.label));
+    if (slideObj.cardTitle) params.set("title", String(slideObj.cardTitle));
+    if (slideObj.cardCategory) params.set("category", String(slideObj.cardCategory));
+    if (slideObj.ctaText) params.set("cta", String(slideObj.ctaText));
+    if (slideObj.kickerText) params.set("kicker", String(slideObj.kickerText));
+    if (slideObj.stat?.value && slideObj.stat?.label) {
+      params.set("statValue", String(slideObj.stat.value));
+      params.set("statLabel", String(slideObj.stat.label));
     }
-    if (scAny.imageUrl) params.set("img", String(scAny.imageUrl));
-    return `/api/social-card/${cardSlug}?${params.toString()}`;
+    if (slideObj.imageUrl) params.set("img", String(slideObj.imageUrl));
+    return `/api/social-card/${slug}?${params.toString()}`;
   };
+
+  const buildCardUrl = (tIndex: number | null) => {
+    return buildSlideUrl(currentSlide, tIndex);
+  };
+
+  const allCarouselMediaUrls = isCarousel
+    ? carouselSlides.map((s) => buildSlideUrl(s, selectedTemplate))
+    : undefined;
 
   const [imgSrc, setImgSrc] = useState(() => buildCardUrl(selectedTemplate));
   const [retriedOnce, setRetriedOnce] = useState(false);
@@ -858,7 +880,14 @@ function IgFbPostCard({
   useEffect(() => {
     setRetriedOnce(false);
     setImgSrc(buildCardUrl(selectedTemplate));
-  }, [cardSlug, selectedTemplate, scAny.imageUrl, scAny.cardTitle, scAny.cardCategory]);
+  }, [
+    cardSlug,
+    selectedTemplate,
+    activeSlideIndex,
+    currentSlide.imageUrl,
+    currentSlide.cardTitle,
+    currentSlide.cardCategory,
+  ]);
 
   // Cap hashtags to a maximum of 5 for Instagram
   const hashtags = (post.caption_data?.hashtags || []).slice(0, 5);
@@ -887,14 +916,28 @@ function IgFbPostCard({
     cleanCopy += `\n\n${hashtagString}`;
   }
 
-  const handleDownloadImage = (url: string) => {
+  const handleDownloadImage = (url: string, customName?: string) => {
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${cardSlug}${selectedTemplate !== null ? `-t${selectedTemplate}` : ""}.png`;
+    link.download =
+      customName ||
+      `${currentSlide.cardSlug || cardSlug}${
+        selectedTemplate !== null ? `-t${selectedTemplate}` : ""
+      }.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     toast.success("Downloading 1080×1350 social card PNG...");
+  };
+
+  const handleDownloadAllSlides = async () => {
+    if (!allCarouselMediaUrls || allCarouselMediaUrls.length === 0) return;
+    toast.success(`Downloading all ${allCarouselMediaUrls.length} carousel slides...`);
+    for (let i = 0; i < allCarouselMediaUrls.length; i++) {
+      const sUrl = allCarouselMediaUrls[i];
+      handleDownloadImage(sUrl, `${cardSlug}-slide-${i + 1}.png`);
+      await new Promise((r) => setTimeout(r, 350));
+    }
   };
 
   return (
@@ -906,7 +949,7 @@ function IgFbPostCard({
       }`}
     >
       <div className="flex flex-col lg:flex-row lg:items-start gap-5">
-        {/* Featured 4:5 Social Card Thumbnail */}
+        {/* Featured 4:5 Social Card Thumbnail (with Carousel Controls when multi-slide) */}
         {imgSrc ? (
           <div className="w-full sm:w-56 h-[280px] self-start aspect-[4/5] rounded-xl overflow-hidden shrink-0 bg-gray-900 border border-gray-200 relative group shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -938,6 +981,67 @@ function IgFbPostCard({
               </span>
             </div>
 
+            {isCarousel && (
+              <div className="absolute top-2.5 right-2.5 z-20">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/80 text-white text-[10px] font-black backdrop-blur-xs border border-white/20">
+                  <Layers className="h-2.5 w-2.5 text-brand-pink" />
+                  {activeSlideIndex + 1}/{carouselSlides.length}
+                </span>
+              </div>
+            )}
+
+            {/* Left / Right Swipe Arrows on Carousel Thumbnail */}
+            {isCarousel && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveSlideIndex((prev) =>
+                      prev === 0 ? carouselSlides.length - 1 : prev - 1
+                    );
+                  }}
+                  className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-black/75 hover:bg-brand-pink text-white flex items-center justify-center transition-colors cursor-pointer shadow-md"
+                  title="Previous slide"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveSlideIndex((prev) =>
+                      prev === carouselSlides.length - 1 ? 0 : prev + 1
+                    );
+                  }}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-black/75 hover:bg-brand-pink text-white flex items-center justify-center transition-colors cursor-pointer shadow-md"
+                  title="Next slide"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+
+                {/* Slide Indicator Dots */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 px-2 py-1 rounded-full bg-black/65 backdrop-blur-xs">
+                  {carouselSlides.map((_, sIdx) => (
+                    <button
+                      key={sIdx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveSlideIndex(sIdx);
+                      }}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        sIdx === activeSlideIndex
+                          ? "w-4 bg-brand-pink"
+                          : "w-1.5 bg-white/60 hover:bg-white"
+                      }`}
+                      title={`Go to slide ${sIdx + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
             {/* Hover Overlay Actions */}
             <div className="absolute inset-0 z-10 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3">
               <button
@@ -954,7 +1058,9 @@ function IgFbPostCard({
                 className="w-full py-2 px-3 rounded-lg bg-white/95 text-brand-dark font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer hover:bg-white"
               >
                 <Download className="h-3.5 w-3.5" />
-                Download 1080×1350 PNG
+                {isCarousel
+                  ? `Download Slide ${activeSlideIndex + 1} PNG`
+                  : "Download 1080×1350 PNG"}
               </button>
             </div>
           </div>
@@ -984,6 +1090,13 @@ function IgFbPostCard({
                     ? "Scheduled in Buffer"
                     : "Published"}
                 </span>
+
+                {isCarousel && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-purple-100 text-purple-800 border border-purple-300 inline-flex items-center gap-1">
+                    <Layers className="h-3 w-3 text-purple-600" />
+                    Swipe Carousel ({carouselSlides.length} Slides)
+                  </span>
+                )}
 
                 {isPastDue && (
                   <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-700 border border-rose-300">
@@ -1069,12 +1182,18 @@ function IgFbPostCard({
               </div>
             </div>
 
-            {/* Action Buttons: Checkbox + Copy Caption + Download Image */}
+            {/* Action Buttons: Checkbox + Copy Caption + Download Image(s) */}
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <button
                 type="button"
                 onClick={() =>
-                  onToggleScheduled(post.id, isScheduledOrPosted, cleanCopy, imgSrc)
+                  onToggleScheduled(
+                    post.id,
+                    isScheduledOrPosted,
+                    cleanCopy,
+                    imgSrc,
+                    allCarouselMediaUrls
+                  )
                 }
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all shadow-xs ${
                   isScheduledOrPosted
@@ -1108,21 +1227,56 @@ function IgFbPostCard({
                 {copiedId === post.id ? "Copied!" : "Copy Caption"}
               </button>
 
-              {imgSrc && (
+              {isCarousel ? (
                 <button
                   type="button"
-                  onClick={() => handleDownloadImage(imgSrc)}
+                  onClick={handleDownloadAllSlides}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200 shadow-xs cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Download PNG</span>
+                  <span>Download All {carouselSlides.length} Slides</span>
                 </button>
+              ) : (
+                imgSrc && (
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadImage(imgSrc)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200 shadow-xs cursor-pointer"
+                  >
+                    <Download className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Download PNG</span>
+                  </button>
+                )
               )}
             </div>
           </div>
 
           {matchedBufferPosts && matchedBufferPosts.length > 0 && (
             <MatchedBufferMetricsBar matchedPosts={matchedBufferPosts} />
+          )}
+
+          {/* Carousel Slide Switcher Bar (when multi-slide post) */}
+          {isCarousel && (
+            <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-2.5 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-black text-purple-900 uppercase tracking-wider px-1.5 flex items-center gap-1">
+                <Layers className="h-3.5 w-3.5 text-brand-pink" />
+                Swipe Slides:
+              </span>
+              {carouselSlides.map((slide, sIdx) => (
+                <button
+                  key={sIdx}
+                  type="button"
+                  onClick={() => setActiveSlideIndex(sIdx)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                    activeSlideIndex === sIdx
+                      ? "bg-brand-pink text-white shadow-xs"
+                      : "bg-white text-gray-700 border border-purple-200 hover:border-brand-pink/50"
+                  }`}
+                >
+                  {slide.slideLabel || `Slide ${sIdx + 1}`}
+                </button>
+              ))}
+            </div>
           )}
 
           {/* 8-Template Design Switcher Bar */}

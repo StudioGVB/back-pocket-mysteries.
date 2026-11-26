@@ -58,14 +58,9 @@ export default function MysteriesCatalogClient({
     <div className="container mx-auto px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
-          <div className="flex flex-wrap items-center gap-3 mb-2">
-            <h1 className="text-4xl font-black text-slate-900">Available Stories</h1>
-            <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black uppercase tracking-widest">
-              🛡️ 100% QA-Tested Before Delivery
-            </span>
-          </div>
+          <h1 className="text-4xl font-black text-slate-900 mb-2">Available Stories</h1>
           <p className="text-slate-500 font-medium text-lg">
-            Pick a theme and customize it for your crew, ready in ~20 minutes—every character portrait, crime-scene photo, and voice memo is QA-verified before reaching you.
+            Pick a theme and customize it for your friends—ready to play in ~20 minutes.
           </p>
         </div>
 
@@ -117,6 +112,7 @@ export default function MysteriesCatalogClient({
           </div>
         </div>
       ) : (
+        <>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
           {filteredMysteries.map((mystery) => {
             const isRealityGlam = isRealityReunionMystery(mystery.theme, mystery.title);
@@ -278,6 +274,15 @@ export default function MysteriesCatalogClient({
             );
           })}
         </div>
+        <div className="mt-10 rounded-3xl bg-slate-50 border border-slate-200/80 px-6 py-6 text-center">
+          <p className="text-sm font-black uppercase tracking-widest text-brand-pink mb-1">
+            ✨ More Mysteries Coming Soon!
+          </p>
+          <p className="text-sm text-slate-500 font-medium">
+            We&apos;re releasing brand-new themes and storylines regularly—stay tuned for more!
+          </p>
+        </div>
+        </>
       )}
     </div>
   );

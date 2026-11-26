@@ -467,15 +467,24 @@ async function fetchAllMarketingLeadsInternal(): Promise<MarketingLeadRecord[]> 
     });
   }
 
-  // Sort oldest-first to assign accurate 1..N VIP ranks (#1 -> #50)
+  // Sort oldest-first to assign accurate 1..N VIP ranks (#1 -> #50) ONLY to First 50 VIP Waitlist sign-ups.
+  // Post-party guest 50%-Off sign-ups (`source === 'playroom_finale_guest_reward'`) keep vip_rank = 0
+  // and qualifies_for_free_mystery = false unless they explicitly sign up through the First 50 VIP link.
   const chronological = Array.from(byEmail.values()).sort((a, b) =>
     (a.created_at || '').localeCompare(b.created_at || '')
   );
 
   let updatedLocal = false;
-  chronological.forEach((item, index) => {
-    const rank = index + 1;
-    const qualifies = rank <= FIRST_50_VIP_CAP;
+  let vipCounter = 0;
+  chronological.forEach((item) => {
+    const isPlayroomGuestOnly = item.source === 'playroom_finale_guest_reward';
+    let rank = 0;
+    let qualifies = false;
+    if (!isPlayroomGuestOnly) {
+      vipCounter += 1;
+      rank = vipCounter;
+      qualifies = rank <= FIRST_50_VIP_CAP;
+    }
     if (
       item.vip_rank !== rank ||
       item.qualifies_for_free_mystery !== qualifies ||

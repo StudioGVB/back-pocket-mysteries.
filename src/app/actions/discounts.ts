@@ -728,7 +728,7 @@ export async function validatePromoCodeAction(params: {
     }
   }
 
-  // 3C. Verify Post-Party Guest Single-Use 15% Off codes (`SLEUTH-XXXXXX`): strictly single-use (`max_uses: 1`)
+  // 3C. Verify Post-Party Guest Single-Use 50% Off codes (`SLEUTH-XXXXXX`): strictly single-use (`max_uses: 1`)
   if (cleanCode.startsWith('SLEUTH-')) {
     if (!match) {
       try {
@@ -741,11 +741,11 @@ export async function validatePromoCodeAction(params: {
           const nowIso = new Date().toISOString();
           match = {
             id: `sleuth-guest-${cleanCode.toLowerCase()}`,
-            name: `Post-Party Guest 15% Off Reward (${leadWithSleuthCode.full_name || leadWithSleuthCode.email})`,
+            name: `Post-Party Guest 50% Off Reward (${leadWithSleuthCode.full_name || leadWithSleuthCode.email})`,
             code: cleanCode,
             auto_apply: false,
             discount_type: 'percentage',
-            discount_value: 15,
+            discount_value: 50,
             applies_to: 'all',
             target_packages: [],
             target_mysteries: [],
@@ -767,6 +767,7 @@ export async function validatePromoCodeAction(params: {
     if (match) {
       match = {
         ...match,
+        discount_value: 50,
         usage_limit: 'max_uses',
         max_uses: 1,
       };
@@ -912,7 +913,7 @@ export async function generateBatchSingleUseCodesAction(params: {
 }
 
 /**
- * Mints a unique, random single-use (`max_uses: 1`) 15%-Off Next-Host promo code (`SLEUTH-XXXXXX`)
+ * Mints a unique, random single-use (`max_uses: 1`) 50%-Off Next-Host promo code (`SLEUTH-XXXXXX`)
  * for a guest who enters their email on the Stage 4 Post-Party Finale screen.
  * Idempotent per email address so a guest refreshing the page cannot farm multiple codes.
  */
@@ -929,6 +930,12 @@ export async function mintSingleUseGuestSleuthCodeInternal(params: {
   const local = readLocalStore();
   const existingRecord = local.discounts[discountId];
   if (existingRecord && existingRecord.code && existingRecord.code.startsWith('SLEUTH-')) {
+    if (existingRecord.discount_value !== 50) {
+      existingRecord.discount_value = 50;
+      existingRecord.name = `Post-Party Guest 50% Off Reward (${cleanPlayerName} - ${cleanEmail})`;
+      local.discounts[discountId] = existingRecord;
+      writeLocalStore(local);
+    }
     return { code: existingRecord.code, discount: existingRecord };
   }
 
@@ -941,11 +948,11 @@ export async function mintSingleUseGuestSleuthCodeInternal(params: {
 
   const record: DiscountRecord = {
     id: discountId,
-    name: `Post-Party Guest 15% Off Reward (${cleanPlayerName} - ${cleanEmail})`,
+    name: `Post-Party Guest 50% Off Reward (${cleanPlayerName} - ${cleanEmail})`,
     code,
     auto_apply: false,
     discount_type: 'percentage',
-    discount_value: 15,
+    discount_value: 50,
     applies_to: 'all',
     target_packages: [],
     target_mysteries: [],

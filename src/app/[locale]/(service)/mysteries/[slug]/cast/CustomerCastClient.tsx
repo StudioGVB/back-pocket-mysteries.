@@ -1251,7 +1251,7 @@ export default function CustomerCastClient({
           initialProgress={initialGenerationState?.progress ?? 18}
           initialStepLabel={
             initialGenerationState?.stepLabel ||
-            'Locking cast & hydrating character dossiers with guest names...'
+            'Personalizing character dossiers with your friends’ names...'
           }
           castCount={activeCastCharacters.length}
         />
@@ -2560,26 +2560,6 @@ export default function CustomerCastClient({
                   }
                   className="w-full rounded-xl border-2 border-slate-300 bg-white p-3.5 text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-pink shadow-2xs leading-relaxed"
                 />
-              </div>
-
-              {/* Peace-of-Mind QA Guarantee Banner */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start sm:items-center gap-3">
-                  <span className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
-                    🛡️
-                  </span>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wider text-emerald-900">
-                      100% QA-Tested Before It Reaches You
-                    </p>
-                    <p className="text-xs text-emerald-800/90 font-medium leading-relaxed mt-0.5">
-                      Every character portrait, crime-scene photo, and voice memo is automatically QA-inspected for accuracy before we email you that your mystery pack is ready.
-                    </p>
-                  </div>
-                </div>
-                <span className="px-3 py-1 rounded-full bg-white text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-widest shrink-0 self-start sm:self-center">
-                  ✓ Verified Delivery
-                </span>
               </div>
 
               {/* Lock Cast CTA */}
