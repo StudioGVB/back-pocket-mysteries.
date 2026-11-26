@@ -78,12 +78,12 @@ Whenever creating, editing, hydrating, or stress-testing any Mystery Base Pack, 
 <!-- END:mystery-architecture-and-qa-rules -->
 
 <!-- BEGIN:vercel-deploy-batching-rules -->
-# 8-Minute Vercel Deployment Batching & Quota Protection Rules
+# 2-Minute Vercel Deployment Batching & Auto-Push Rules
 
-1. **Batch Remote Pushes to Once Every 8 Minutes (`480s`):**
+1. **Batch Remote Pushes to Once Every 2 Minutes (`120s`) — Only When Changes Exist:**
    - Always commit code locally (`git add ... && git commit -m "..."`) and verify on `http://localhost:3033`.
-   - `.git/hooks/pre-push` enforces an **8-minute cooldown (480s)** between remote `git push origin main` calls to batch Vercel deployments cleanly.
-   - If `.git/hooks/pre-push` reports that the 8-minute cooldown is active, do **not** bypass it unless the user explicitly asks to deploy live immediately (`FORCE_PUSH=1 git push origin main`).
+   - `.git/hooks/pre-push` and `.git/hooks/post-commit` enforce a **2-minute cooldown (`120s`)** between remote `git push origin main` calls and automatically push queued commits once the 2-minute window elapses (only if unpushed changes exist).
+   - If `.git/hooks/pre-push` reports that the 2-minute cooldown is active, do **not** bypass it unless the user explicitly asks to deploy live immediately (`FORCE_PUSH=1 git push origin main`).
 2. **Single Production Branch (`main` Only):**
    - Never push to `v1-mvp-launch` (`git push origin main:v1-mvp-launch` is blocked by `.git/hooks/pre-push` and disabled in [`vercel.json`](file:///Users/gabriellablyth/Desktop/Coding/back-pocket-mysteries/vercel.json)).
 <!-- END:vercel-deploy-batching-rules -->
