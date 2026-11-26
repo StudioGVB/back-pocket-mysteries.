@@ -9,6 +9,8 @@ import {
   DEFAULT_CURRENCY,
   STRIPE_PRODUCT_IDS,
   STRIPE_PRICE_IDS,
+  convertGbpCreditToCurrency,
+  convertCurrencyCreditToGbp,
 } from '@/utils/localization';
 import { Locale } from '@/lib/i18n-config';
 import { createServerClient } from '@supabase/ssr';
@@ -27,6 +29,10 @@ import {
 import { getMysteryById, getPublishedMysteryByIdOrSlug } from '@/services/mysteries';
 import { sendAdminPurchaseNotificationEmail } from '@/utils/purchase-notifications';
 import { triggerDetachedMysteryGeneration } from '@/lib/background-mystery-generator';
+import {
+  getSystemCustomerCreditInfo,
+  applySystemCustomerCreditDeltaGbp,
+} from '@/app/actions/admin-users';
 
 function isStripeLiveConfigured(): boolean {
   const key = process.env.STRIPE_SECRET_KEY || '';
@@ -345,6 +351,7 @@ export async function createPaymentIntentAction({
   mysteryTitle,
   guests,
   promoCode,
+  useAccountCredits = false,
   skipTierLookup = false,
 }: {
   tier: PriceTierKey;
@@ -356,6 +363,7 @@ export async function createPaymentIntentAction({
   mysteryTitle?: string;
   guests: number;
   promoCode?: string;
+  useAccountCredits?: boolean;
   skipTierLookup?: boolean;
 }) {
   try {
@@ -394,7 +402,36 @@ export async function createPaymentIntentAction({
     ]);
 
     const user = authResult.data?.user;
-    const totalCost = Math.max(0, subtotal - discountInfo.discountAmount);
+    let availableCreditGbp = 0;
+    if (user?.id) {
+      const creditInfo = await getSystemCustomerCreditInfo(user.id);
+      availableCreditGbp = creditInfo.creditBalanceGbp;
+    }
+    const availableCreditInCurrency = convertGbpCreditToCurrency(availableCreditGbp, currency);
+
+    // If the promo code itself is a friend referral code that hasn't been claimed into credits yet,
+    // convert its £5 GBP fixed value into the active checkout currency
+    let effectivePromoDiscountAmount = discountInfo.discountAmount;
+    if (
+      discountInfo.discountCode &&
+      /^([A-Z0-9]+?)(?:5|20)-([A-F0-9]{4})$/.test(discountInfo.discountCode) &&
+      discountInfo.discountAmount === 5 &&
+      currency !== 'GBP'
+    ) {
+      effectivePromoDiscountAmount = Math.min(subtotal, convertGbpCreditToCurrency(5, currency));
+    }
+
+    const afterPromoCost = Math.max(0, Number((subtotal - effectivePromoDiscountAmount).toFixed(2)));
+    const creditAppliedAmount =
+      useAccountCredits && availableCreditInCurrency > 0
+        ? Math.min(afterPromoCost, availableCreditInCurrency)
+        : 0;
+    const creditAppliedGbp =
+      creditAppliedAmount > 0
+        ? Math.min(availableCreditGbp, convertCurrencyCreditToGbp(creditAppliedAmount, currency))
+        : 0;
+
+    const totalCost = Math.max(0, Number((afterPromoCost - creditAppliedAmount).toFixed(2)));
     const amountInCents = Math.max(50, Math.round(totalCost * 100));
 
     const upsertOrderPromise = (async (): Promise<string | undefined> => {
@@ -460,7 +497,10 @@ export async function createPaymentIntentAction({
             stripeProductId: STRIPE_PRODUCT_IDS[tier] || '',
             stripePriceId: STRIPE_PRICE_IDS[tier]?.[currency] || '',
             discountCode: discountInfo.discountCode || '',
-            discountAmount: discountInfo.discountAmount.toString(),
+            discountAmount: effectivePromoDiscountAmount.toString(),
+            useAccountCredits: useAccountCredits ? 'true' : 'false',
+            creditAppliedAmount: creditAppliedAmount.toString(),
+            creditAppliedGbp: creditAppliedGbp.toString(),
           },
           receipt_email: user?.email,
         });
@@ -486,10 +526,14 @@ export async function createPaymentIntentAction({
       subtotal,
       totalCost,
       basePrice,
-      discountAmount: discountInfo.discountAmount,
+      discountAmount: effectivePromoDiscountAmount,
       discountLabel: discountInfo.discountLabel,
       discountCode: discountInfo.discountCode,
       promoError: discountInfo.promoError,
+      availableCreditGbp,
+      availableCreditInCurrency,
+      creditAppliedAmount,
+      creditAppliedGbp,
     };
   } catch (err: unknown) {
     console.error('Error creating payment intent:', err);
@@ -512,6 +556,8 @@ export async function confirmMysteryOrderAction({
   tier,
   amount,
   currency = 'USD',
+  useAccountCredits = false,
+  creditAppliedGbp = 0,
 }: {
   mysteryId: string;
   slug?: string;
@@ -522,6 +568,8 @@ export async function confirmMysteryOrderAction({
   tier?: PriceTierKey;
   amount?: number;
   currency?: string;
+  useAccountCredits?: boolean;
+  creditAppliedGbp?: number;
 }): Promise<{ success: boolean; verified: boolean; error?: string }> {
   try {
     const cleanCurrency = sanitizeCurrency(currency);
@@ -545,6 +593,8 @@ export async function confirmMysteryOrderAction({
       data: { user },
     } = await supabase.auth.getUser();
 
+    let resolvedCreditAppliedGbp = Number(creditAppliedGbp) || 0;
+
     // When live Stripe keys are configured, strictly verify payment on the server
     // before unlocking the mystery (prevents URL spoofing via ?checkout=success).
     if (isStripeLiveConfigured()) {
@@ -557,6 +607,9 @@ export async function confirmMysteryOrderAction({
           const metaMysteryId = pi.metadata?.mysteryId;
           const metaSlug = pi.metadata?.slug;
           const metaUserId = pi.metadata?.userId;
+          if (pi.metadata?.creditAppliedGbp) {
+            resolvedCreditAppliedGbp = Number(pi.metadata.creditAppliedGbp) || resolvedCreditAppliedGbp;
+          }
           const matchesMystery =
             !metaMysteryId ||
             metaMysteryId === mysteryId ||
@@ -609,7 +662,7 @@ export async function confirmMysteryOrderAction({
         }
       }
 
-      // Also allow 100%-off discount / promo codes verified server-side
+      // Also allow 100%-off discount / promo codes or full account credit coverage verified server-side
       if (!verifiedWithStripe) {
         const basePrice = getRegionalPrice(authoritativeTier, cleanCurrency);
         const discountInfo = await resolveDiscountForCheckout({
@@ -619,7 +672,18 @@ export async function confirmMysteryOrderAction({
           mysterySlug: slug || mysteryId,
           promoCode,
         });
-        if (basePrice - discountInfo.discountAmount <= 0) {
+        let creditInCurrency = 0;
+        if (useAccountCredits && user?.id) {
+          const creditInfo = await getSystemCustomerCreditInfo(user.id);
+          creditInCurrency = convertGbpCreditToCurrency(creditInfo.creditBalanceGbp, cleanCurrency);
+          const remainingAfterPromo = Math.max(0, basePrice - discountInfo.discountAmount);
+          const usedInCurrency = Math.min(remainingAfterPromo, creditInCurrency);
+          resolvedCreditAppliedGbp = Math.min(
+            creditInfo.creditBalanceGbp,
+            convertCurrencyCreditToGbp(usedInCurrency, cleanCurrency)
+          );
+        }
+        if (basePrice - discountInfo.discountAmount - creditInCurrency <= 0) {
           verifiedWithStripe = true;
         }
       }
@@ -829,7 +893,35 @@ export async function confirmMysteryOrderAction({
       }
     }
 
-    // Record promo/referral code redemption & unlock "Give 20%, Get 20%" referrer reward voucher if applicable
+    // Deduct applied account credits (£) from customer's credit balance if used on this order
+    if (user?.id && (useAccountCredits || resolvedCreditAppliedGbp > 0)) {
+      try {
+        let toDeductGbp = resolvedCreditAppliedGbp;
+        if (toDeductGbp <= 0 && useAccountCredits) {
+          const creditInfo = await getSystemCustomerCreditInfo(user.id);
+          const basePrice = getRegionalPrice(authoritativeTier, cleanCurrency);
+          const maxGbpForOrder = convertCurrencyCreditToGbp(basePrice, cleanCurrency);
+          toDeductGbp = Math.min(creditInfo.creditBalanceGbp, maxGbpForOrder);
+        }
+        if (toDeductGbp > 0) {
+          await applySystemCustomerCreditDeltaGbp({
+            targetUserId: user.id,
+            deltaGbp: -toDeductGbp,
+            type: 'checkout_redemption',
+            description: `Applied £${toDeductGbp.toFixed(2)} in account credits at checkout for "${resolvedMysteryTitle}"`,
+            orderId:
+              resolvedOrderId ||
+              paymentIntentId ||
+              sessionId ||
+              `${user.id}:${mysteryId}`,
+          });
+        }
+      } catch (creditErr) {
+        console.error('Error deducting account credits on order confirmation:', creditErr);
+      }
+    }
+
+    // Record promo/referral code redemption & unlock "Give £5, Get £5" referrer credit if applicable
     if (promoCode) {
       try {
         const { recordPromoOrReferralRedemptionOnPaidOrder } = await import(

@@ -95,14 +95,33 @@ export default async function CheckoutPage(props: {
     resolvedSearch?.promo?.trim().toUpperCase() ||
     cookieStore.get('BPM_PROMO_CODE')?.value ||
     ''
+  let availableCreditGbp = 0
   try {
-    const { getOrRegisterUserReferralWalletAction } = await import('@/app/actions/referrals')
+    const {
+      getOrRegisterUserReferralWalletAction,
+      claimFriendReferralCodeForCreditAction,
+    } = await import('@/app/actions/referrals')
+    if (initialPromoCode) {
+      const claimRes = await claimFriendReferralCodeForCreditAction(initialPromoCode)
+      if (claimRes.matched) {
+        if (claimRes.success) {
+          initialPromoCode = ''
+        }
+      }
+    }
     const wallet = await getOrRegisterUserReferralWalletAction()
+    availableCreditGbp = wallet.creditBalanceGbp || 0
     const unusedReward = wallet.rewardVouchers.find((v) => !v.used)
     if (!initialPromoCode && unusedReward) {
       initialPromoCode = unusedReward.code
     } else if (!initialPromoCode && wallet.appliedSignupPromo) {
-      initialPromoCode = wallet.appliedSignupPromo
+      // Only use appliedSignupPromo if it wasn't already claimed as a friend referral credit
+      const isReferralFormat = /^([A-Z0-9]+?)(?:5|20)-([A-F0-9]{4})$/.test(
+        wallet.appliedSignupPromo.trim().toUpperCase()
+      )
+      if (!isReferralFormat) {
+        initialPromoCode = wallet.appliedSignupPromo
+      }
     }
   } catch {
     // ignore
@@ -116,6 +135,9 @@ export default async function CheckoutPage(props: {
         discountAmount?: number
         discountLabel?: string | null
         promoError?: string | null
+        availableCreditGbp?: number
+        creditAppliedAmount?: number
+        creditAppliedGbp?: number
       }
     | undefined = undefined
 
@@ -130,8 +152,12 @@ export default async function CheckoutPage(props: {
       mysteryTitle: mystery.title,
       guests,
       promoCode: initialPromoCode || undefined,
+      useAccountCredits: availableCreditGbp > 0,
       skipTierLookup: true,
     })
+    if (typeof piRes.availableCreditGbp === 'number') {
+      availableCreditGbp = piRes.availableCreditGbp
+    }
     initialPaymentIntent = {
       clientSecret: piRes.clientSecret || null,
       orderId: piRes.orderId,
@@ -139,6 +165,9 @@ export default async function CheckoutPage(props: {
       discountAmount: piRes.discountAmount || 0,
       discountLabel: piRes.discountLabel || null,
       promoError: piRes.promoError || null,
+      availableCreditGbp,
+      creditAppliedAmount: piRes.creditAppliedAmount || 0,
+      creditAppliedGbp: piRes.creditAppliedGbp || 0,
     }
   } catch {
     // Non-fatal; CheckoutClient will fall back gracefully
@@ -172,6 +201,7 @@ export default async function CheckoutPage(props: {
         mysteryTitle={mystery.title}
         mysteryTheme={mystery.theme}
         initialPromoCode={initialPromoCode}
+        initialAvailableCreditGbp={availableCreditGbp}
         initialPaymentIntent={initialPaymentIntent}
       />
     </div>

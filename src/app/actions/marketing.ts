@@ -1232,7 +1232,7 @@ export async function claimGuestPostPartyRewardAction(params: {
             </div>
 
             <!-- DETECTIVE WRAPPED RECAP CARD -->
-            <div style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+            <div style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;margin-bottom:18px;">
               <p style="margin:0 0 6px 0;color:#fe04c6;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;">
                 TONIGHT'S DETECTIVE WRAPPED SCORECARD
               </p>
@@ -1242,6 +1242,19 @@ export async function claimGuestPostPartyRewardAction(params: {
               <p style="margin:0;color:#475569;font-size:13px;line-height:1.6;">
                 Mystery: <strong>${mysteryTitle}</strong> · Role Played: <strong>${characterRole}</strong>
               </p>
+            </div>
+
+            <!-- LEAVE A REVIEW & SHARE PARTY PHOTOS CTA CARD -->
+            <div style="background-color:#fff1fa;border:1px solid rgba(254,4,198,0.25);border-radius:12px;padding:18px 20px;text-align:center;margin-bottom:8px;">
+              <p style="margin:0 0 4px 0;color:#fe04c6;font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;">
+                ⭐⭐⭐⭐⭐ HOW DID WE DO TONIGHT?
+              </p>
+              <p style="margin:0 0 12px 0;color:#1e191c;font-size:14px;font-weight:700;line-height:1.5;">
+                Loved the plot twists or snapped a great group costume photo? Leave a quick 30-second review on our wall!
+              </p>
+              <a href="https://backpocketmysteries.com/en/reviews?utm_source=playroom_finale&utm_medium=email&utm_campaign=guest_review_cta" target="_blank" style="display:inline-block;background-color:#141115;color:#ffffff;font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;text-decoration:none;padding:11px 22px;border-radius:999px;">
+                ⭐ Leave a Review &amp; Share Photos →
+              </a>
             </div>
           `,
           ctaText: 'Browse Mystery Themes & Host Next →',
