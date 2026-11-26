@@ -6,7 +6,7 @@ import LegalNav from '@/components/marketing/LegalNav';
 export const metadata: Metadata = {
   title: 'Refund & Cancellation Policy | Back Pocket Mysteries',
   description:
-    'Refund, replacement, and subscription cancellation policy for Back Pocket Mysteries custom digital murder mystery party packs.',
+    'Refund and replacement policy for Back Pocket Mysteries custom digital murder mystery party packs.',
   alternates: {
     canonical: 'https://backpocketmysteries.com/en/refund-policy',
   },
@@ -27,7 +27,7 @@ export default async function RefundPolicyPage(props: { params: Promise<{ locale
             Refund &amp; Cancellation <span className="text-brand-pink italic">Policy.</span>
           </h1>
           <p className="text-base sm:text-lg text-gray-600 font-semibold mt-4 max-w-2xl leading-relaxed">
-            Clear, fair rules for digital mystery pack purchases, AI generation guarantees, and Unlimited Monthly Pass cancellations.
+            Clear, fair rules for digital mystery pack purchases and our Party-Night Guarantee.
           </p>
           <LegalNav locale={locale} />
         </div>
@@ -70,16 +70,7 @@ export default async function RefundPolicyPage(props: { params: Promise<{ locale
 
         <section className="space-y-3">
           <h2 className="text-2xl font-black text-brand-dark uppercase tracking-tight">
-            3. Unlimited Monthly Pass Cancellations
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed">
-            You can cancel your <strong>Unlimited Monthly Pass</strong> at any time in 1 click from your Account Settings or by emailing <a href="mailto:hello@backpocketgames.com" className="text-brand-pink font-bold hover:underline">hello@backpocketgames.com</a>. Your membership benefits will remain active through the end of your current paid billing period, and you will never be charged again. If you forgot to cancel and have not generated any mysteries during the new billing cycle, contact us within 7 days of the renewal charge for a full refund of that renewal.
-          </p>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="text-2xl font-black text-brand-dark uppercase tracking-tight">
-            4. How Refunds Are Processed
+            3. How Refunds Are Processed
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed">
             Approved refunds are issued back to your original payment method via <strong>Stripe</strong> within 1–2 business days (banks typically post the funds within 3–5 business days).

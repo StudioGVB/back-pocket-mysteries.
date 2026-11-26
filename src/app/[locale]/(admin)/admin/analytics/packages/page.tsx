@@ -104,12 +104,12 @@ async function PackagesAnalyticsContent({ locale }: { locale: string }) {
               Package Tier Popularity
             </h2>
             <p className="text-xs font-bold text-gray-400">
-              Comparison of Basic (4–6), Premium (4–10), Grand (4–16), and Monthly Unlimited Pass
+              Comparison of Basic (4–6), Premium (4–10), and Grand (4–16) packages
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {data.packages.map((pkg) => (
             <div
               key={pkg.id}

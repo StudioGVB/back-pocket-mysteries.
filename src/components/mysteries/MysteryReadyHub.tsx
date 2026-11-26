@@ -978,17 +978,14 @@ export function MysteryReadyHub({
                         <span className="text-[11px] font-black uppercase tracking-widest text-brand-pink">
                           😂 Group Lore, Inside Jokes &amp; Roast Material
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-pink-50 border border-pink-200 text-brand-pink text-[9px] font-black uppercase tracking-wider">
-                          ✨ 3-Zone Personality Engine
-                        </span>
                         {insideJokesWeavedNotice && (
                           <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider">
-                            ✓ Weaved Into Bios, Secret Roast Missions &amp; Chat Clues!
+                            ✓ Weaved Into Bios, Secret Missions &amp; Chat Clues!
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                        Drop 1–3 group memories, running jokes, or friend habits below. Our AI weaves them into each player&apos;s First Glance Bio, their secret Party-Night Roast Mission, and leaked Group-Chat Clues:
+                        Drop 1–3 group memories, running jokes, or friend habits below and we&apos;ll weave them into each player&apos;s bio, secret party mission, and group-chat clues:
                       </p>
                     </div>
 

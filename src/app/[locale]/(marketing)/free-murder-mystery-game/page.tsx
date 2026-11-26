@@ -265,8 +265,8 @@ export default async function FreeMurderMysteryGamePage(props: {
       text: 'Yes! Every Back Pocket Mystery is 100% spoiler-free for the host. Our interactive Playroom and voice-acted Inspector audio briefings guide each round and reveal the killer at the end so the host can play as a full suspect.',
     },
     {
-      name: 'Why do you use AI-generated character portraits instead of real photos of our guests? Are our photos stored?',
-      text: 'To protect your guests’ biometric privacy, image rights, and personal data under global privacy and AI likeness laws (including GDPR, CCPA, and the Australian Privacy Principles), Back Pocket Mysteries never stores, hosts, or generates deepfakes from real photographs of your guests. Any photo used with our optional trait scanner is analyzed ephemerally in memory solely to select general appearance checkboxes and is immediately deleted. All roster avatars and mystery character portraits are original, fictional AI-generated illustrations created exclusively for your private game.',
+      name: 'Why do you use illustrated character portraits instead of real photos of our guests? Are our photos stored?',
+      text: 'To protect your friends’ privacy, we never store or use real photographs of your guests in the game. If you use our optional photo trait helper, your photo is only used for a split second to select general appearance traits (like hair colour or glasses) and is immediately deleted. Every character portrait is an original illustration created for your private game.',
     },
     {
       name: 'What happens if I sign up after the first 50 free spots are claimed?',

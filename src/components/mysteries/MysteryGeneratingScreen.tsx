@@ -40,7 +40,7 @@ export default function MysteryGeneratingScreen({
   initialStatus = 'generating',
   initialRemainingSeconds = 20 * 60,
   initialProgress = 18,
-  initialStepLabel = 'Locking cast & hydrating character dossiers with guest names...',
+  initialStepLabel = 'Personalizing character sheets with your friends’ names...',
   castCount = 6,
   onGenerationReady,
 }: MysteryGeneratingScreenProps) {
@@ -141,14 +141,14 @@ export default function MysteryGeneratingScreen({
 
   const stages = [
     {
-      title: '1. Cast Locked & Guest Profiles Hydrated',
-      desc: `All ${castCount} guest names, pronouns, accents, and traits locked into the story.`,
+      title: '1. Cast Locked & Character Profiles Personalized',
+      desc: `All ${castCount} guest names, pronouns, accents, and traits woven into the story.`,
       done: true,
       active: false,
     },
     {
-      title: '2. Standard Character Reference Portraits',
-      desc: 'Generating consistent character reference photos from each guest’s character description.',
+      title: '2. Custom Character Portraits',
+      desc: 'Creating each guest’s character portrait from their appearance traits and outfit.',
       done: status === 'ready' || progress >= 45,
       active: status !== 'ready' && progress < 45,
     },
@@ -159,8 +159,8 @@ export default function MysteryGeneratingScreen({
       active: status !== 'ready' && progress >= 45 && progress < 93,
     },
     {
-      title: '4. Automated Pre-Delivery QA Inspection',
-      desc: 'Every character portrait, crime-scene photo, and voice memo is QA-tested for accuracy before reaching you.',
+      title: '4. Final Polish & Package Assembly',
+      desc: 'Compiling all character booklets, clue cards, and your live mobile Playroom.',
       done: status === 'ready' || progress >= 99,
       active: status !== 'ready' && progress >= 93 && progress < 99,
     },

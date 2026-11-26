@@ -286,7 +286,7 @@ export function PhotoTraitScanner({
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-medium truncate">
-              Scanned in memory &amp; immediately deleted (never stored)
+              Photo is never saved or stored
             </p>
           </div>
         </div>

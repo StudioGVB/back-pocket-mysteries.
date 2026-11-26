@@ -1863,7 +1863,8 @@ export function MysteryPreLaunchQaPanel({
                               showImage={true}
                             />
 
-                            {ec.visualCriticNote && (
+                            {(ec.format === 'physical_prop' || ec.format === 'cctv') &&
+                            ec.visualCriticNote ? (
                               <div
                                 className={`rounded-xl px-3 py-2 text-[11px] border ${
                                   ec.visualCriticPassed === false
@@ -1876,7 +1877,12 @@ export function MysteryPreLaunchQaPanel({
                                 </strong>{' '}
                                 {ec.visualCriticNote}
                               </div>
-                            )}
+                            ) : ec.blindDetectiveNote ? (
+                              <div className="rounded-xl px-3 py-2 text-[11px] border bg-indigo-50/70 border-indigo-200 text-indigo-950">
+                                <strong>🧠 AI Forensic Logic Critic:</strong>{' '}
+                                {ec.blindDetectiveNote}
+                              </div>
+                            ) : null}
 
                             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px]">
                               <span className="text-slate-600">

@@ -1202,7 +1202,20 @@ export async function claimGuestPostPartyRewardAction(params: {
 
     // Email the guest their single-use 50% Off code + Detective Wrapped scorecard recap
     if (process.env.RESEND_API_KEY) {
-      const firstName = (cleanPlayerName || existing?.full_name || 'Detective').split(' ')[0];
+      const fullGuestName = cleanPlayerName || existing?.full_name || 'Detective';
+      const firstName = fullGuestName.split(' ')[0];
+      const reviewParams = new URLSearchParams({
+        name: fullGuestName,
+        email: cleanEmail,
+        mystery: mysteryTitle,
+        role: characterRole,
+        ...(params.mysteryId ? { mysteryId: params.mysteryId } : {}),
+        utm_source: 'playroom_finale',
+        utm_medium: 'email',
+        utm_campaign: 'guest_review_cta',
+      });
+      const reviewCtaUrl = `https://backpocketmysteries.com/en/reviews?${reviewParams.toString()}`;
+
       await resend.emails.send({
         from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
         to: cleanEmail,
@@ -1252,7 +1265,7 @@ export async function claimGuestPostPartyRewardAction(params: {
               <p style="margin:0 0 12px 0;color:#1e191c;font-size:14px;font-weight:700;line-height:1.5;">
                 Loved the plot twists or snapped a great group costume photo? Leave a quick 30-second review on our wall!
               </p>
-              <a href="https://backpocketmysteries.com/en/reviews?utm_source=playroom_finale&utm_medium=email&utm_campaign=guest_review_cta" target="_blank" style="display:inline-block;background-color:#141115;color:#ffffff;font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;text-decoration:none;padding:11px 22px;border-radius:999px;">
+              <a href="${reviewCtaUrl}" target="_blank" style="display:inline-block;background-color:#141115;color:#ffffff;font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;text-decoration:none;padding:11px 22px;border-radius:999px;">
                 ⭐ Leave a Review &amp; Share Photos →
               </a>
             </div>

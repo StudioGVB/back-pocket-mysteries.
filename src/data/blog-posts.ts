@@ -152,7 +152,7 @@ export const blogPosts: BlogPost[] = [
       <div class="bg-brand-dark p-12 rounded-[3rem] text-white my-12 shadow-2xl relative overflow-hidden">
         <div class="relative z-10">
           <h4 class="text-3xl font-black mb-6 uppercase tracking-tighter">Plan your next Offsite</h4>
-          <p class="text-gray-400 mb-8 font-bold">We offer custom packages for groups of 4 to 16 players, plus an Unlimited Monthly Pass for running multiple tables across larger company events.</p>
+          <p class="text-gray-400 mb-8 font-bold">We offer custom one-time packages for groups of up to 6, 10, or 16 suspects—plus free Guest Detective mobile passes for larger company events.</p>
           <a href="/pricing" class="inline-block px-10 py-4 bg-brand-pink rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-pink transition-all">View Package Pricing</a>
         </div>
         <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-brand-blue rounded-full blur-[80px] opacity-20"></div>
@@ -452,16 +452,16 @@ export const blogPosts: BlogPost[] = [
       <h3>The "Mingle" Format is Mandatory</h3>
       <p>For larger groups, you must use a "mingle" or round-based social deduction format. Instead of reading a central script aloud to the room, guests are given individual secrets and objectives for each round, and they roam the room to interrogate each other in small groups. It creates a chaotic, highly energetic atmosphere similar to a bustling cocktail party. <a href="https://www.bizbash.com/" target="_blank" rel="noopener noreferrer" class="text-brand-pink hover:underline font-bold">Event professionals at BizBash</a> frequently recommend mingle formats to maximize networking.</p>
       
-      <h3>Single-Table Grand (Up to 16 Players) vs. Multi-Table Unlimited</h3>
+      <h3>Single-Table Grand (Up to 16 Suspects) vs. Multi-Table Squads</h3>
       <p>When you have a larger group, there are two ways to structure your event so everyone stays deeply involved:</p>
       <ul class="list-disc pl-6 space-y-2 mb-8 text-gray-700">
-        <li><strong>The Grand Package (4–16 Players):</strong> Every single guest receives a full custom suspect role, personalized alibis, and interlocking relationships.</li>
-        <li><strong>Multi-Table Corporate Mode (Unlimited Monthly Pass):</strong> For events with 20+ attendees, split the room into competing tables of 8–12 players, each with its own unique AI-generated mystery and live 6-digit Game PIN lobby!</li>
+        <li><strong>The Grand Package (Up to 16 Suspects):</strong> Every single guest receives a full custom suspect role, personalized alibis, and interlocking relationships.</li>
+        <li><strong>Multi-Table Corporate Mode:</strong> For events with 20+ attendees, split the room into competing tables of 6–10 players, each with its own unique mystery pack and live 6-digit Game PIN lobby!</li>
       </ul>
 
       <div class="bg-brand-dark p-12 rounded-[3rem] text-white my-10 shadow-xl">
-        <h4 class="text-3xl font-black mb-4 uppercase tracking-tighter">Up to 16 Suspects Per Game - Or Unlimited Tables</h4>
-        <p class="text-gray-300 mb-8 font-bold">Our Grand tier supports up to 16 fully customized suspects in a single mystery, while our Unlimited Monthly Pass lets event organizers generate unlimited mysteries for multi-table events.</p>
+        <h4 class="text-3xl font-black mb-4 uppercase tracking-tighter">Up to 16 Suspects Per Game + Free Guest Detectives</h4>
+        <p class="text-gray-300 mb-8 font-bold">Our Grand tier supports up to 16 fully customized suspects in a single mystery, and extra attendees can join the live 6-digit Game PIN lobby on their phones as Guest Detectives to inspect clues and vote on the killer.</p>
         <a href="/pricing" class="inline-block px-8 py-3 bg-brand-pink rounded-full font-black uppercase tracking-widest text-xs hover:bg-white hover:text-brand-pink transition-colors">See Group Pricing</a>
       </div>
 

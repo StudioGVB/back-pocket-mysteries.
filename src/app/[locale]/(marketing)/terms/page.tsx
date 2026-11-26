@@ -6,7 +6,7 @@ import LegalNav from '@/components/marketing/LegalNav';
 export const metadata: Metadata = {
   title: 'Terms of Service | Back Pocket Mysteries',
   description:
-    'Terms of Service and User Agreement for Back Pocket Mysteries custom murder mystery party packs, Live Hosting Playroom, and Unlimited Monthly Pass.',
+    'Terms of Service and User Agreement for Back Pocket Mysteries custom murder mystery party packs and Live Hosting Playroom.',
   alternates: {
     canonical: 'https://backpocketmysteries.com/en/terms',
   },
@@ -77,17 +77,14 @@ export default async function TermsOfServicePage(props: { params: Promise<{ loca
 
         <section className="space-y-3">
           <h2 className="text-2xl font-black text-brand-dark uppercase tracking-tight">
-            3. Packages, Pricing &amp; Unlimited Monthly Pass
+            3. Packages &amp; One-Time Event Pricing
           </h2>
           <ul className="list-disc pl-6 space-y-2 text-sm sm:text-base text-gray-600 font-medium">
             <li>
               <strong>One-Time Mystery Packages (Basic / Premium / Grand):</strong> Grant you permanent access in your account to generate and host one customized mystery party pack for your selected player tier (plus unlimited extra Guest Detectives in the Live Playroom).
             </li>
             <li>
-              <strong>Unlimited Monthly Pass:</strong> Billed monthly via Stripe until cancelled. Grants unlimited custom mystery generations for your own hosted parties plus one (1) transferable Gift Pass per billing cycle. You may cancel your subscription at any time from your Account Settings with zero cancellation fees.
-            </li>
-            <li>
-              <strong>Post-Generation Lock-In:</strong> Because AI generation synthesizes custom portraits, lookalike crime-scene clue images, and regional-accent audio wiretaps tailored to your locked cast, once a mystery pack has been generated for a specific cast, re-casting that pack for a brand-new group requires a new pack or active Unlimited Monthly Pass.
+              <strong>Post-Generation Lock-In:</strong> Because AI generation synthesizes custom portraits, lookalike crime-scene clue images, and regional-accent audio wiretaps tailored to your locked cast, once a mystery pack has been generated for a specific cast, re-casting that pack for a brand-new group requires purchasing a new mystery pack.
             </li>
           </ul>
         </section>

@@ -1049,12 +1049,10 @@ export async function generateTestPackVisualAssets(
     const rawNotes = String(clue.internal_notes || '');
     const fmt = String(clue.format || inferClueFormat(clue) || 'document');
 
-    // Only process visual photo/CCTV/social clues
+    // Only process visual photo/CCTV clues that actually render an image in ClueRenderer
     const isVisualPhotoClue =
-      Boolean(clue.static_image_url) ||
       fmt === 'physical_prop' ||
-      fmt === 'cctv' ||
-      fmt === 'social_post';
+      fmt === 'cctv';
     if (!isVisualPhotoClue || !rawPrompt) continue;
 
     // Identify which active characters are actually depicted in the visual generation prompt
@@ -1428,14 +1426,17 @@ export async function executeSingleQaRun(
       `qa-pack${spec.runNumber}-${clueShortId}.jpg`
     );
 
-    const packSpecificImageUrl =
-      resolvedAssets?.clueImages?.[clue.id] ||
-      (fs.existsSync(onDiskPackClueAbs) ? onDiskPackClueRel : null) ||
-      clue.static_image_url ||
-      null;
-    const visualCrit =
-      resolvedAssets?.visualCriticResults?.[clue.id] ||
-      cachedVisualCritics?.[clue.id];
+    const isRenderedPhotoClue = fmt === 'physical_prop' || fmt === 'cctv';
+    const packSpecificImageUrl = isRenderedPhotoClue
+      ? resolvedAssets?.clueImages?.[clue.id] ||
+        (fs.existsSync(onDiskPackClueAbs) ? onDiskPackClueRel : null) ||
+        clue.static_image_url ||
+        null
+      : null;
+    const visualCrit = isRenderedPhotoClue
+      ? resolvedAssets?.visualCriticResults?.[clue.id] ||
+        cachedVisualCritics?.[clue.id]
+      : undefined;
 
     // Check 1: Unresolved {{...}} or [...] token leaks
     const combinedHydrated = `${hydratedTitle} ${hydratedDescription} ${hydratedPrompt}`;

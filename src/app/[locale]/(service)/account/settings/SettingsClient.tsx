@@ -176,24 +176,26 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
   const [resendLoading, setResendLoading] = useState(false);
   const [resendError, setResendError] = useState('');
 
-  // 2. Vouchers & Referral
-  const personalReferralCode = user.referralCode || 'FRIEND20';
+  // 2. Vouchers & Referral ("Give £5, Get £5")
+  const personalReferralCode = user.referralCode || 'FRIEND5';
   const [voucherCodeInput, setVoucherCodeInput] = useState('');
   const [vouchers, setVouchers] = useState<Array<{ code: string; discount: string; status: string }>>(() => {
     const list: Array<{ code: string; discount: string; status: string }> = [
       {
         code: personalReferralCode,
-        discount: 'Give 20% Off, Get 20% Off (Your Personal Share Code)',
+        discount: 'Give £5, Get £5 (Your Personal Share Code)',
         status: user.referralsCompletedCount
-          ? `${user.referralsCompletedCount} friend(s) referred`
-          : 'Share with friends to unlock 20% off',
+          ? `${user.referralsCompletedCount} friend(s) referred (+£${user.referralsCompletedCount * 5} earned)`
+          : 'Share with friends to give £5 & get £5',
       },
     ];
     if (user.rewardVouchers && user.rewardVouchers.length > 0) {
       for (const rv of user.rewardVouchers) {
         list.unshift({
           code: rv.code,
-          discount: `${rv.discountPercent}% Off Referral Reward`,
+          discount: (rv as any).creditAmountGbp
+            ? `£${(rv as any).creditAmountGbp} Referral Credit`
+            : `${rv.discountPercent}% Off Referral Reward`,
           status: rv.used ? 'Used' : 'Unlocked - Ready for checkout!',
         });
       }
@@ -201,13 +203,17 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
     if (user.appliedSignupPromo) {
       list.unshift({
         code: user.appliedSignupPromo,
-        discount: 'Welcome / Friend Promo Code',
-        status: 'Saved - Auto-applies at checkout',
+        discount: 'Welcome / Friend Referral Code',
+        status: 'Saved to your account',
       });
     }
     return list;
   });
   const [voucherMessage, setVoucherMessage] = useState('');
+  const [voucherError, setVoucherError] = useState('');
+  const [creditBalanceGbp, setCreditBalanceGbp] = useState<number>(
+    (user as any).creditBalanceGbp || 0
+  );
   const [referralCopied, setReferralCopied] = useState(false);
 
   // 3. Email Preferences (2 simplified toggles)
@@ -280,21 +286,61 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
   const handleApplyVoucher = async () => {
     const code = voucherCodeInput.trim().toUpperCase();
     if (!code) return;
+    setVoucherMessage('');
+    setVoucherError('');
+
+    if (code === personalReferralCode) {
+      setVoucherError('You cannot use your own referral code. Share it with a friend to give £5 & get £5!');
+      return;
+    }
+
+    // 1. Check if this is a Friend's "Give £5, Get £5" referral code
+    try {
+      const { claimFriendReferralCodeForCreditAction } = await import('@/app/actions/referrals');
+      const claimRes = await claimFriendReferralCodeForCreditAction(code);
+      if (claimRes.matched) {
+        if (!claimRes.success) {
+          setVoucherError(claimRes.error || 'Could not apply referral code.');
+          return;
+        }
+        if (typeof claimRes.newCreditBalanceGbp === 'number') {
+          setCreditBalanceGbp(claimRes.newCreditBalanceGbp);
+        } else {
+          setCreditBalanceGbp((prev) => prev + (claimRes.creditAddedGbp || 5));
+        }
+        setVouchers((prev) => [
+          {
+            code,
+            discount: `£5.00 Friend Referral Credit (from ${claimRes.referrerName || 'Friend'})`,
+            status: '+£5.00 Added to Account Credits ✓',
+          },
+          ...prev,
+        ]);
+        setVoucherCodeInput('');
+        setVoucherMessage(
+          `✓ ${claimRes.message || '£5.00 referral credit added to your account!'}`
+        );
+        return;
+      }
+    } catch {
+      // Fall through to standard voucher check
+    }
+
     if (vouchers.some((v) => v.code === code)) {
-      setVoucherMessage('This code is already in your wallet.');
+      setVoucherError('This code is already in your wallet.');
       return;
     }
     const { verifySignupPromoCodeAction } = await import('@/app/[locale]/(auth)/actions');
     const res = await verifySignupPromoCodeAction(code);
     if (!res.valid) {
-      setVoucherMessage(res.error || 'Invalid or expired promo code.');
+      setVoucherError(res.error || 'Invalid or expired promo code.');
       return;
     }
     document.cookie = `BPM_PROMO_CODE=${encodeURIComponent(code)}; path=/; max-age=7776000; SameSite=Lax`;
     setVouchers((prev) => [
       {
         code,
-        discount: res.label || '20% Off Voucher',
+        discount: res.label || 'Promo Voucher',
         status: 'Active - Auto-applies at checkout',
       },
       ...prev,
@@ -485,17 +531,23 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
           </div>
         </Section>
 
-        {/* 2. Vouchers, 20% Referral Rewards & Receipts */}
+        {/* 2. Vouchers, £5 Referral Credits & Receipts */}
         <Section
           title="Vouchers & Referral Rewards"
-          description="Share your personal referral link to give friends 20% off (and earn 20% off), or redeem a promo code."
+          description="Share your personal referral link or code to give friends a £5 credit (and earn a £5 credit towards your account), or enter a friend's referral code below."
+          badge={`Account Credits: £${creditBalanceGbp.toFixed(2)}`}
         >
           <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-black text-slate-900">Your 20% Referral Link & Wallet</p>
-                <p className="text-xs text-slate-400">
-                  Active vouchers auto-apply at checkout on your next mystery.
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-black text-slate-900">Your £5 Referral Link &amp; Credit Wallet</p>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider">
+                    💷 Available Credit: £{creditBalanceGbp.toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Give £5, Get £5 — your available credits can be checked on at checkout towards any mystery.
                 </p>
               </div>
               <button
@@ -508,14 +560,14 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
                 className="text-xs font-black px-3.5 py-2 rounded-xl transition-all self-start sm:self-auto cursor-pointer"
                 style={{ background: 'rgba(254,4,198,0.1)', color: '#fe04c6' }}
               >
-                {referralCopied ? 'Copied Referral Link! ✅' : 'Copy My 20% Referral Link 🔗'}
+                {referralCopied ? 'Copied £5 Referral Link! ✅' : 'Copy My £5 Referral Link 🔗'}
               </button>
             </div>
 
             <div className="flex gap-2">
               <input
                 className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold uppercase tracking-wider text-slate-900 focus:border-brand-pink outline-none"
-                placeholder="Enter voucher or promo code"
+                placeholder="Enter friend referral code or promo voucher"
                 value={voucherCodeInput}
                 onChange={(e) => setVoucherCodeInput(e.target.value)}
               />
@@ -528,6 +580,7 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
               </button>
             </div>
             {voucherMessage && <p className="text-xs font-bold text-emerald-600">{voucherMessage}</p>}
+            {voucherError && <p className="text-xs font-bold text-red-500">{voucherError}</p>}
 
             <div className="space-y-2 pt-1">
               {vouchers.map((v) => (
@@ -715,7 +768,7 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
                   <li className="flex items-start gap-2">
                     <span className="font-black text-red-600 shrink-0">•</span>
                     <span>
-                      <strong>Unused Vouchers, Referral Credits &amp; Order Access:</strong> Any unused promo codes or referral rewards will be forfeited. Deleted mysteries cannot be recovered or refunded.
+                      <strong>Unused Vouchers, Referral Credits &amp; 60-Day Quarantine:</strong> Your account will be immediately deactivated and signed out. We hold an encrypted backup for <strong>60 days</strong> in case you contact <span className="underline">hello@backpocketgames.com</span> to request reinstatement, after which all data is permanently purged.
                     </span>
                   </li>
                 </ul>

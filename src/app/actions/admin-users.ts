@@ -93,8 +93,10 @@ export interface CustomerCrmRecord {
   providedReview: boolean;
   accountSuspended: boolean;
   suspendedReason?: string;
+  accountSoftDeleted?: boolean;
   accountDeleted?: boolean;
   deletedAt?: string;
+  purgeAfter?: string;
   notes: CustomerAdminNote[];
   customOrders: CustomCustomerOrder[];
   giftedMysteries: GiftedMysteryEntry[];
@@ -1373,6 +1375,7 @@ export async function adminDeleteCustomerAccount(targetUserId: string) {
     // 5. Mark deleted in local CRM store as well
     const record = loadCustomerCrmSync(targetUserId);
     record.accountDeleted = true;
+    record.accountSoftDeleted = false;
     record.accountSuspended = true;
     record.deletedAt = nowIso;
     record.membership.isActive = false;
@@ -1384,6 +1387,12 @@ export async function adminDeleteCustomerAccount(targetUserId: string) {
     );
     saveCustomerCrm(targetUserId, record);
 
+    // Also remove any 60-day recovery snapshot from Supabase Storage
+    await supabase.storage
+      .from('character-images')
+      .remove([`system/deleted-accounts/${targetUserId}.json`])
+      .catch(() => {});
+
     revalidatePath('/en/admin/users');
     revalidatePath(`/en/admin/users/${targetUserId}`);
     revalidatePath('/en/admin');
@@ -1394,4 +1403,245 @@ export async function adminDeleteCustomerAccount(targetUserId: string) {
     return { error: err.message || 'Failed to delete customer account' };
   }
 }
+
+/**
+ * System helper called when a customer self-deletes their account from /en/account/settings.
+ * Marks the account as soft-deleted in a 60-day quarantine hold inside customer-crm.json.
+ */
+export async function recordSystemCustomerSoftDelete({
+  targetUserId,
+  deletedAt,
+  purgeAfter,
+  mysteriesCount,
+  guestsCount,
+}: {
+  targetUserId: string;
+  deletedAt: string;
+  purgeAfter: string;
+  mysteriesCount: number;
+  guestsCount: number;
+}) {
+  if (!targetUserId) return;
+  const record = loadCustomerCrmSync(targetUserId);
+  record.accountSoftDeleted = true;
+  record.accountDeleted = false;
+  record.accountSuspended = true;
+  record.deletedAt = deletedAt;
+  record.purgeAfter = purgeAfter;
+  record.aiQuota.aiFrozen = true;
+  const purgeDateStr = new Date(purgeAfter).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  prependAuditNote(
+    record,
+    `Customer self-deleted account (60-day recovery quarantine until ${purgeDateStr} • ${mysteriesCount} mysteries, ${guestsCount} guests preserved).`,
+    'security'
+  );
+  saveCustomerCrm(targetUserId, record);
+}
+
+/**
+ * 1-Click Admin Account Reinstatement:
+ * Restores a customer account from the 60-day soft-delete quarantine,
+ * re-hydrates any missing profile/mystery/guest rows from the archived snapshot,
+ * clears the soft_deleted flags, and sends a "Welcome Back" email to the customer.
+ */
+export async function adminReinstateCustomerAccount(targetUserId: string) {
+  try {
+    const { supabase, user } = await requireAdmin();
+
+    if (!targetUserId) {
+      return { error: 'Target user ID is required.' };
+    }
+
+    // 1. Download 60-day snapshot from Supabase Storage if available
+    let snapshot: any = null;
+    try {
+      const { data: blob } = await supabase.storage
+        .from('character-images')
+        .download(`system/deleted-accounts/${targetUserId}.json`);
+      if (blob) {
+        snapshot = JSON.parse(await blob.text());
+      }
+    } catch {
+      // Snapshot optional if DB rows are still intact
+    }
+
+    // 2. Fetch current profile row
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', targetUserId)
+      .maybeSingle();
+
+    const existingConfig =
+      currentProfile &&
+      typeof (currentProfile as any).avatar_config === 'object' &&
+      (currentProfile as any).avatar_config !== null
+        ? { ...(currentProfile as any).avatar_config }
+        : { ...(snapshot?.profile?.avatar_config || {}) };
+
+    delete existingConfig.soft_deleted;
+    delete existingConfig.is_deleted;
+    delete existingConfig.deleted_at;
+    delete existingConfig.purge_after;
+    delete existingConfig.deletion_source;
+    existingConfig.reinstated_at = new Date().toISOString();
+    existingConfig.reinstated_by = user?.email || 'admin';
+
+    const restoredEmail =
+      (currentProfile as any)?.email || snapshot?.email || snapshot?.profile?.email || null;
+    const restoredName =
+      (currentProfile as any)?.full_name &&
+      (currentProfile as any)?.full_name !== '[Deleted Account]'
+        ? (currentProfile as any).full_name
+        : snapshot?.fullName || snapshot?.profile?.full_name || 'Mystery Host';
+
+    // 3. Restore profile row & clear soft_deleted flags
+    await (supabase as any)
+      .from('profiles')
+      .update({
+        full_name: restoredName,
+        email: restoredEmail,
+        bio: (currentProfile as any)?.bio ?? snapshot?.profile?.bio ?? null,
+        country: (currentProfile as any)?.country ?? snapshot?.profile?.country ?? null,
+        how_found_us:
+          (currentProfile as any)?.how_found_us ?? snapshot?.profile?.how_found_us ?? null,
+        avatar_config: existingConfig,
+      })
+      .eq('id', targetUserId);
+
+    // 4. If service role key is configured, clear account_deleted on auth.users.user_metadata
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && serviceRoleKey) {
+      try {
+        const serviceClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        await serviceClient.auth.admin.updateUserById(targetUserId, {
+          user_metadata: {
+            ...(snapshot?.userMetadata || {}),
+            full_name: restoredName,
+            account_deleted: false,
+            deleted_at: null,
+            purge_after: null,
+          },
+        });
+      } catch {
+        // non-fatal
+      }
+    }
+
+    // 5. Re-hydrate any missing guests, mysteries, characters, clues, or orders from the 60-day snapshot
+    if (snapshot) {
+      if (Array.isArray(snapshot.guests) && snapshot.guests.length > 0) {
+        await supabase
+          .from('guests')
+          .upsert(snapshot.guests, { onConflict: 'id' });
+      }
+      if (Array.isArray(snapshot.mysteries) && snapshot.mysteries.length > 0) {
+        await (supabase.from('mysteries') as any)
+          .upsert(snapshot.mysteries, { onConflict: 'id' });
+      }
+      if (Array.isArray(snapshot.characters) && snapshot.characters.length > 0) {
+        await supabase
+          .from('characters')
+          .upsert(snapshot.characters, { onConflict: 'id' });
+      }
+      if (Array.isArray(snapshot.clues) && snapshot.clues.length > 0) {
+        await supabase
+          .from('clues')
+          .upsert(snapshot.clues, { onConflict: 'id' });
+      }
+      if (Array.isArray(snapshot.relationships) && snapshot.relationships.length > 0) {
+        await supabase
+          .from('relationships')
+          .upsert(snapshot.relationships, { onConflict: 'id' });
+      }
+      if (Array.isArray(snapshot.motives) && snapshot.motives.length > 0) {
+        await supabase
+          .from('motives')
+          .upsert(snapshot.motives, { onConflict: 'id' });
+      }
+      if (Array.isArray(snapshot.plotBeats) && snapshot.plotBeats.length > 0) {
+        await supabase
+          .from('plot_beats')
+          .upsert(snapshot.plotBeats, { onConflict: 'id' });
+      }
+      if (Array.isArray(snapshot.orders) && snapshot.orders.length > 0) {
+        await (supabase as any)
+          .from('orders')
+          .upsert(snapshot.orders, { onConflict: 'id' });
+      }
+    }
+
+    // 6. Update CRM record to active
+    const record = loadCustomerCrmSync(targetUserId);
+    record.accountSoftDeleted = false;
+    record.accountDeleted = false;
+    record.accountSuspended = false;
+    record.deletedAt = undefined;
+    record.purgeAfter = undefined;
+    record.aiQuota.aiFrozen = false;
+    prependAuditNote(
+      record,
+      `Account & mysteries REINSTATED from 60-day recovery hold by Admin (${user?.email || 'Admin'}).`,
+      'security'
+    );
+    saveCustomerCrm(targetUserId, record);
+
+    // 7. Send "Welcome Back! Your Account Has Been Reinstated" email to the customer
+    if (process.env.RESEND_API_KEY && restoredEmail) {
+      try {
+        const { Resend } = await import('resend');
+        const { buildBrandedEmailShell } = await import('@/lib/branded-email-template');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
+          to: [restoredEmail],
+          replyTo: 'Hello@backpocketgames.com',
+          subject: `🎉 Welcome Back! Your Back Pocket Mysteries Account & Mysteries Are Restored`,
+          html: buildBrandedEmailShell({
+            preheader: `Your Back Pocket Mysteries account, purchased mysteries, and saved guest roster have been fully reinstated.`,
+            kicker: 'ACCOUNT REINSTATED • ALL MYSTERIES RESTORED',
+            headline: `Welcome Back, ${restoredName}!`,
+            bodyHtml: `
+              <p style="margin:0 0 16px 0;color:#1e191c;font-size:15px;line-height:1.6;">
+                Great news — our team has restored your Back Pocket Mysteries account from our 60-day safety backup!
+              </p>
+              <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #10b981;padding:18px 22px;border-radius:12px;margin-bottom:18px;">
+                <p style="margin:0 0 6px 0;color:#10b981;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;">
+                  FULLY RESTORED &amp; READY TO HOST
+                </p>
+                <p style="margin:0;color:#ffffff;font-size:14px;font-weight:600;line-height:1.6;">
+                  ✓ All of your purchased mystery packs, AI character portraits, crime-scene clues, audio wiretaps, and saved guest profiles are active and waiting in your account.
+                </p>
+              </div>
+              <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.6;">
+                Click below to sign back in and access your mysteries anytime.
+              </p>
+            `,
+            ctaText: 'Sign In to My Mysteries →',
+            ctaUrl: 'https://backpocketmysteries.com/en/login',
+          }),
+        });
+      } catch {
+        // non-fatal
+      }
+    }
+
+    revalidatePath('/en/admin/users');
+    revalidatePath(`/en/admin/users/${targetUserId}`);
+    revalidatePath('/en/admin');
+
+    return { success: true, crm: record };
+  } catch (err: any) {
+    console.error('adminReinstateCustomerAccount error:', err);
+    return { error: err.message || 'Failed to reinstate customer account' };
+  }
+}
+
 

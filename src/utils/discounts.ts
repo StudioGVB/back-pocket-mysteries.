@@ -52,12 +52,6 @@ export const PACKAGE_TIER_OPTIONS: PackageOption[] = [
     subtitle: '4–16 Players • Any Complexity & Spice Level',
     basePriceUsd: '£25',
   },
-  {
-    id: 'subscribe',
-    name: 'Unlimited Monthly Plan',
-    subtitle: 'Unlimited mysteries/mo (4–16 players) + 1 Free Monthly Gift Pass',
-    basePriceUsd: '£30/mo',
-  },
 ];
 
 export interface MysteryPackageOption {

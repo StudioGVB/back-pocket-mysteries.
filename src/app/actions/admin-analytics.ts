@@ -7,7 +7,7 @@ import { getPackageInfoForMaxPlayers } from '@/utils/localization';
 import { getAllPlatformReviews } from '@/app/actions/reviews';
 
 export interface PackagePopularityItem {
-  id: 'basic' | 'premium' | 'grand' | 'subscribe';
+  id: 'basic' | 'premium' | 'grand';
   name: string;
   rangeLabel: string;
   ordersCount: number;
@@ -71,7 +71,7 @@ export async function getMysteriesAndPackagesAnalytics() {
   }
 
   const packageBuckets: Record<
-    'basic' | 'premium' | 'grand' | 'subscribe',
+    'basic' | 'premium' | 'grand',
     PackagePopularityItem
   > = {
     basic: {
@@ -101,15 +101,6 @@ export async function getMysteriesAndPackagesAnalytics() {
       orderSharePercent: 0,
       mysteryBasesCount: 0,
     },
-    subscribe: {
-      id: 'subscribe',
-      name: 'Unlimited Monthly Pass (£30/mo)',
-      rangeLabel: 'Unlimited + Gift Pass',
-      ordersCount: 0,
-      revenue: 0,
-      orderSharePercent: 0,
-      mysteryBasesCount: 0,
-    },
   };
 
   for (const m of mysteries) {
@@ -129,17 +120,8 @@ export async function getMysteriesAndPackagesAnalytics() {
     const m = mysteryById.get(o.mystery_id);
 
     // Infer package tier from mystery max_players or GBP order price points
-    let tierId: 'basic' | 'premium' | 'grand' | 'subscribe' = 'grand';
-    if (
-      rawAmt === 30 ||
-      rawAmt === 39 ||
-      rawAmt === 59 ||
-      rawAmt === 36 ||
-      rawAmt === 65 ||
-      amountGbp >= 28
-    ) {
-      tierId = 'subscribe';
-    } else if (m) {
+    let tierId: 'basic' | 'premium' | 'grand' = 'grand';
+    if (m) {
       const maxP = Number(m.max_players) || 16;
       if (maxP <= 6) tierId = 'basic';
       else if (maxP <= 10) tierId = 'premium';

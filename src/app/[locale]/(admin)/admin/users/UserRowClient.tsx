@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { adminDeleteCustomerAccount } from '@/app/actions/admin-users';
+import {
+  adminDeleteCustomerAccount,
+  adminReinstateCustomerAccount,
+} from '@/app/actions/admin-users';
 
 export default function UserRowClient({
   user,
@@ -15,13 +18,34 @@ export default function UserRowClient({
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [reinstating, setReinstating] = useState(false);
+
+  const handleReinstateClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const label = user.full_name || user.email || 'this customer';
+    if (
+      !confirm(
+        `Reinstate ${label}'s account and restore all of their purchased mysteries and saved guests?`
+      )
+    ) {
+      return;
+    }
+    setReinstating(true);
+    const res = await adminReinstateCustomerAccount(user.id);
+    setReinstating(false);
+    if (res.error) {
+      alert(res.error);
+      return;
+    }
+    router.refresh();
+  };
 
   const handleDeleteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const label = user.full_name || user.email || 'this customer';
     if (
       !confirm(
-        `Permanently delete ${label}? This will remove their profile, guest roster, mysteries, and login access.`
+        `Permanently purge ${label} right now? This bypasses the 60-day recovery window and permanently removes their profile, guest roster, mysteries, and login access.`
       )
     ) {
       return;
@@ -39,11 +63,26 @@ export default function UserRowClient({
   return (
     <tr
       onClick={() => router.push(`/${locale}/admin/users/${user.id}`)}
-      className="hover:bg-brand-pink/5 transition-colors group cursor-pointer"
+      className={`hover:bg-brand-pink/5 transition-colors group cursor-pointer ${
+        user.isSoftDeleted ? 'bg-rose-50/30' : ''
+      }`}
     >
       {children}
       <td className="px-8 py-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2">
+          {user.isSoftDeleted && (
+            <button
+              type="button"
+              disabled={reinstating}
+              onClick={handleReinstateClick}
+              title="Reinstate Account & Mysteries from 60-Day Hold"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm cursor-pointer"
+            >
+              <span>♻️</span>
+              {reinstating ? 'Restoring...' : 'Reinstate'}
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => router.push(`/${locale}/admin/users/${user.id}`)}
@@ -69,11 +108,15 @@ export default function UserRowClient({
               type="button"
               disabled={deleting}
               onClick={handleDeleteClick}
-              title="Delete Customer Account"
+              title={
+                user.isSoftDeleted
+                  ? 'Hard Purge Account Immediately'
+                  : 'Delete Customer Account'
+              }
               className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
             >
               <span>🗑️</span>
-              {deleting ? '...' : 'Delete'}
+              {deleting ? '...' : user.isSoftDeleted ? 'Purge Now' : 'Delete'}
             </button>
           )}
         </div>
@@ -81,3 +124,4 @@ export default function UserRowClient({
     </tr>
   );
 }
+

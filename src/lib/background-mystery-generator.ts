@@ -36,11 +36,11 @@ export interface BackgroundGenerationParams {
 const activeGenerationTimers = new Map<string, NodeJS.Timeout>();
 
 const GENERATION_STEPS = [
-  { threshold: 0.15, label: 'Locking cast & hydrating character dossiers with guest names...' },
-  { threshold: 0.35, label: 'Generating standard character reference portraits...' },
+  { threshold: 0.15, label: 'Personalizing character sheets with your friends’ names...' },
+  { threshold: 0.35, label: 'Creating custom character costume portraits...' },
   { threshold: 0.6, label: 'Placing characters into visual clues, CCTV & crime scene photos...' },
-  { threshold: 0.85, label: 'Synthesizing custom voice memos, accents & round evidence...' },
-  { threshold: 0.95, label: 'Running automated AI QA Critic on character portraits, visual clues & audio...' },
+  { threshold: 0.85, label: 'Recording custom voice memos, accents & round evidence...' },
+  { threshold: 0.95, label: 'Putting the final polish on character portraits, visual clues & audio...' },
   { threshold: 0.99, label: 'Finalizing Pre-Party Host Hub, character dossiers & guest invite links...' },
 ];
 
@@ -472,7 +472,7 @@ export async function advanceMysteryGenerationOneStep(
         (c) => c.__cast_audio_generated && c.audio_url
       ).length;
       const cleanTitle = stripCustomerFacingTitle(nextAudioClue.title) || nextAudioClue.title;
-      const stepLabel = `Synthesizing voice wiretap (${doneAudio + 1}/${audioClues.length}): ${cleanTitle}...`;
+      const stepLabel = `Recording voice wiretap (${doneAudio + 1}/${audioClues.length}): ${cleanTitle}...`;
       const pct = Math.min(90, 75 + Math.round(((doneAudio + 1) / Math.max(1, audioClues.length)) * 15));
 
       updateMysteryGenerationInStore(params.mysteryId, {
@@ -513,11 +513,11 @@ export async function advanceMysteryGenerationOneStep(
       };
     }
 
-    // 4. STAGE 3.5 CHECKPOINT: Run the 4-Gate Multimodal AI QA Critic & Self-Healing Bot if not yet audited
+    // 4. STAGE 3.5 CHECKPOINT: Final check & self-healing pass if not yet audited
     const latestSession = getStoredGameSession(params.mysteryId);
     if (!latestSession?.qaReport) {
       const stepLabel =
-        'Running 4-Gate AI QA Critic on character portraits, side-by-side clue photos & audio wiretaps...';
+        'Putting the final polish on character portraits, clue photos & voice wiretaps...';
       updateMysteryGenerationInStore(params.mysteryId, {
         generationStep: stepLabel,
         generationProgress: 95,
@@ -525,7 +525,7 @@ export async function advanceMysteryGenerationOneStep(
 
       const qaReport = await auditAndHealCustomerPackAction(params.mysteryId);
       updateMysteryGenerationInStore(params.mysteryId, {
-        generationStep: `AI QA Verified (${qaReport.overallScore}/100)! Finalizing Pre-Party Host Hub...`,
+        generationStep: 'Finalizing your Pre-Party Host Hub & guest invite links...',
         generationProgress: 99,
         qaReport,
       });

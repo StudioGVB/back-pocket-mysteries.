@@ -55,6 +55,37 @@ export async function signInAction(formData: FormData) {
 
   const isAdmin = await isUserAdmin(supabase, authData.user)
 
+  // Block login for accounts in the 60-day soft-delete quarantine (unless reinstated by Admin)
+  if (!isAdmin && authData.user) {
+    const { data: profileRow } = await (supabase as any)
+      .from('profiles')
+      .select('avatar_config')
+      .eq('id', authData.user.id)
+      .maybeSingle()
+
+    const cfg = (profileRow?.avatar_config || {}) as any
+    const meta = (authData.user.user_metadata || {}) as any
+    const isSoftDeleted = Boolean(cfg.soft_deleted || cfg.is_deleted || meta.account_deleted)
+
+    if (isSoftDeleted) {
+      await supabase.auth.signOut()
+      const purgeIso = cfg.purge_after || meta.purge_after
+      const purgeLabel = purgeIso
+        ? new Date(purgeIso).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })
+        : '60 days after deletion'
+      const params = new URLSearchParams({
+        error: `This account was deactivated and is in our 60-day recovery hold until ${purgeLabel}. To reinstate your account and purchased mysteries, please email hello@backpocketgames.com.`,
+        email: data.email || '',
+        step: 'login',
+      })
+      return redirect(`/${locale}/login?${params.toString()}`)
+    }
+  }
+
   revalidatePath('/', 'layout')
 
   const isNextAdminRoute = /^\/(en|es|fr|de|it)?\/?(admin|builder)(\/|$)/.test(nextPath)

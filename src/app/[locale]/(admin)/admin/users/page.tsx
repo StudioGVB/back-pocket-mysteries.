@@ -134,7 +134,12 @@ async function CustomerList({
                               🛡️ Admin
                             </span>
                           ) : null}
-                          {user.isNewSignup && (
+                          {user.isSoftDeleted && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 text-[9px] font-black uppercase tracking-widest shadow-sm">
+                              ⏳ Deleted (60-Day Hold • {user.daysUntilPurge ?? 60}d Left)
+                            </span>
+                          )}
+                          {user.isNewSignup && !user.isSoftDeleted && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest shadow-sm">
                               ✨ {user.newSignupBadge || 'New Sign-Up'}
                             </span>

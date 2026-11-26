@@ -669,9 +669,26 @@ export const getCustomers = cache(async () => {
 
   const currentUserId = user?.id || '';
   const currentUserEmail = (user?.email || '').toLowerCase().trim();
+  const nowMs = Date.now();
 
-  return (data || [])
-    .filter((p: any) => !isProfileDeleted(p, crmMap[p.id]))
+  const expiredUserIdsToPurge: string[] = [];
+
+  const rows = (data || [])
+    .filter((p: any) => {
+      if (isProfileDeleted(p, crmMap[p.id])) return false;
+      const cfg = (p?.avatar_config || {}) as any;
+      const crm = crmMap[p.id];
+      const isSoftDeleted = Boolean(cfg.soft_deleted || crm?.accountSoftDeleted);
+      const purgeAfterIso = cfg.purge_after || crm?.purgeAfter || null;
+      if (isSoftDeleted && purgeAfterIso) {
+        const purgeMs = Date.parse(purgeAfterIso);
+        if (!Number.isNaN(purgeMs) && purgeMs <= nowMs) {
+          expiredUserIdsToPurge.push(p.id);
+          return false;
+        }
+      }
+      return true;
+    })
     .map((p: any) => {
       const emailLower = (p.email || '').toLowerCase().trim();
       const dbRole = roleByUserId[p.id] || '';
@@ -687,15 +704,44 @@ export const getCustomers = cache(async () => {
       );
       const signupMeta = computeNewSignupMeta(p.created_at);
 
+      const cfg = (p?.avatar_config || {}) as any;
+      const crm = crmMap[p.id];
+      const isSoftDeleted = Boolean(cfg.soft_deleted || crm?.accountSoftDeleted);
+      const softDeletedAt = cfg.deleted_at || crm?.deletedAt || null;
+      const purgeAfter = cfg.purge_after || crm?.purgeAfter || null;
+      const daysUntilPurge =
+        isSoftDeleted && purgeAfter
+          ? Math.max(1, Math.ceil((Date.parse(purgeAfter) - nowMs) / (1000 * 60 * 60 * 24)))
+          : isSoftDeleted
+          ? 60
+          : null;
+
       return {
         ...p,
         isCurrentUser,
         isSuperAdmin,
         isAdmin,
         adminRoleLabel: isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : null,
+        isSoftDeleted,
+        softDeletedAt,
+        purgeAfter,
+        daysUntilPurge,
         ...signupMeta,
       };
     });
+
+  // Auto-purge any soft-deleted accounts whose 60-day recovery window has expired
+  if (expiredUserIdsToPurge.length > 0) {
+    import('@/app/actions/admin-users')
+      .then(({ adminDeleteCustomerAccount }) => {
+        for (const uid of expiredUserIdsToPurge) {
+          adminDeleteCustomerAccount(uid).catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }
+
+  return rows;
 });
 
 export interface InvitedSuperAdminEntry {

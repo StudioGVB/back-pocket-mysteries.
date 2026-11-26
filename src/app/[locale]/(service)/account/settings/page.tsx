@@ -66,6 +66,8 @@ export default async function SettingsPage({
     timezone: meta.timezone || 'Europe/London',
     referralCode: referralWallet.referralCode,
     referralLink: referralWallet.referralLink,
+    creditBalanceGbp: referralWallet.creditBalanceGbp || 0,
+    creditLedger: referralWallet.creditLedger || [],
     referralsCompletedCount: referralWallet.referralsCompletedCount,
     rewardVouchers: referralWallet.rewardVouchers,
     appliedSignupPromo: referralWallet.appliedSignupPromo || null,

@@ -6,7 +6,7 @@ import PriceDisplay from '@/components/marketing/PriceDisplay'
 import { Locale } from '@/lib/i18n-config'
 
 type Tier = {
-  id: 'basic' | 'premium' | 'grand' | 'subscribe'
+  id: 'basic' | 'premium' | 'grand'
   name: string
   tagline: string
   desc: string
@@ -14,14 +14,13 @@ type Tier = {
   cta: string
   featured: boolean
   bestFor: string
-  billingPeriod: 'event' | 'month'
+  billingPeriod: 'event'
 }
 
 export default function PricingGrid({
   basicTier,
   premiumTier,
   grandTier,
-  subscribeTier,
   locale,
   currency,
   dict
@@ -29,7 +28,6 @@ export default function PricingGrid({
   basicTier: Tier
   premiumTier: Tier
   grandTier: Tier
-  subscribeTier: Tier
   locale: Locale
   currency: string
   dict: any
@@ -60,7 +58,7 @@ export default function PricingGrid({
                     className={`text-7xl font-black tracking-tighter ${tier.featured ? 'text-white' : 'text-brand-dark'}`} 
                   />
                   <span className={`text-xs font-black uppercase tracking-[0.2em] ${tier.featured ? 'text-gray-500' : 'text-gray-400'}`}>
-                    / {tier.billingPeriod === 'month' ? 'MONTH' : 'EVENT'}
+                    / EVENT
                   </span>
                 </div>
                 <p className={`font-bold text-base leading-snug h-16 ${tier.featured ? 'text-gray-400' : 'text-gray-500'}`}>{tier.desc}</p>
@@ -89,49 +87,6 @@ export default function PricingGrid({
             </div>
           )
         })}
-      </div>
-
-      {/* Unlimited Subscription Tier */}
-      <div className="relative p-12 lg:p-16 rounded-[3rem] border-4 bg-brand-pink border-brand-pink shadow-2xl flex flex-col lg:flex-row gap-12 items-center group transition-all duration-500">
-        <div className="absolute top-0 right-12 transform -translate-y-1/2 px-8 py-3 bg-brand-dark text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">
-          FOR EVENT PLANNERS
-        </div>
-        
-        <div className="flex-1">
-          <h3 className="text-5xl lg:text-6xl font-black mb-2 uppercase tracking-tighter text-white">{subscribeTier.name}</h3>
-          <p className="text-sm font-black uppercase tracking-widest mb-6 text-white/80">{subscribeTier.tagline}</p>
-          <div className="flex items-baseline gap-2 mb-6">
-            <PriceDisplay 
-              tier={subscribeTier.id} 
-              locale={locale as Locale} 
-              currency={currency}
-              className="text-7xl lg:text-8xl font-black tracking-tighter text-brand-dark" 
-            />
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-white/80">
-              / {subscribeTier.billingPeriod === 'month' ? 'MONTH' : 'EVENT'}
-            </span>
-          </div>
-          <p className="font-bold text-lg leading-snug text-white/90 max-w-xl">{subscribeTier.desc}</p>
-        </div>
-
-        <div className="flex-1 w-full">
-          <ul className="space-y-4 mb-10 bg-white/10 p-8 rounded-[2rem] border border-white/20">
-            {subscribeTier.features.map((feature, j) => (
-              <li key={j} className="flex items-start gap-4">
-                <div className="mt-0.5 w-6 h-6 rounded-full bg-brand-dark flex items-center justify-center text-white text-xs shrink-0">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <span className="text-sm font-bold leading-snug text-white">{feature}</span>
-              </li>
-            ))}
-          </ul>
-
-          <Link href={`/${locale}/mysteries`} className="btn-pill w-full py-6 text-center text-sm bg-brand-dark text-white hover:bg-white hover:text-brand-dark shadow-2xl">
-            {subscribeTier.cta}
-          </Link>
-        </div>
       </div>
     </div>
   )

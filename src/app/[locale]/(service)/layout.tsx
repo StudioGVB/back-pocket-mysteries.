@@ -70,8 +70,17 @@ async function ServiceSidebarAndWizardLoader() {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (profile?.avatar_config?.is_deleted) {
-    redirect('/en/login?deleted=1');
+  if (
+    profile?.avatar_config?.is_deleted ||
+    profile?.avatar_config?.soft_deleted ||
+    user.user_metadata?.account_deleted
+  ) {
+    redirect(
+      '/en/login?error=' +
+        encodeURIComponent(
+          'This account has been deactivated (60-day recovery window). Contact hello@backpocketgames.com to reinstate your account and mysteries.'
+        )
+    );
   }
 
   const userData = {

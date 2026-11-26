@@ -20,7 +20,13 @@ import {
   updatePartyEventDetailsAction,
   getGameSessionAction,
 } from '@/app/actions/customer-mystery'
-import { formatCurrency, getRegionalPrice, PriceTierKey } from '@/utils/localization'
+import {
+  formatCurrency,
+  getRegionalPrice,
+  PriceTierKey,
+  convertGbpCreditToCurrency,
+  convertCurrencyCreditToGbp,
+} from '@/utils/localization'
 import { Locale } from '@/lib/i18n-config'
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
@@ -60,6 +66,8 @@ function InstantCheckoutForm({
   locale,
   orderId,
   promoCode,
+  useAccountCredits,
+  creditAppliedGbp,
   tier,
   currency,
   totalCost,
@@ -76,6 +84,8 @@ function InstantCheckoutForm({
   locale: Locale
   orderId?: string
   promoCode?: string
+  useAccountCredits?: boolean
+  creditAppliedGbp?: number
   tier: PriceTierKey
   currency: string
   totalCost: number
@@ -176,6 +186,8 @@ function InstantCheckoutForm({
             tier,
             amount: totalCost,
             currency,
+            useAccountCredits,
+            creditAppliedGbp,
           })
           router.push(
             `/${locale}/account/orders?checkout=success&payment_intent=${encodeURIComponent(
@@ -193,7 +205,7 @@ function InstantCheckoutForm({
     return () => {
       mounted = false
     }
-  }, [stripe, currency, totalCost, mysteryTitle, mysteryId, slug, locale, orderId, promoCode, tier, ensureClientSecret, onBeforeConfirmPayment, router])
+  }, [stripe, currency, totalCost, mysteryTitle, mysteryId, slug, locale, orderId, promoCode, useAccountCredits, creditAppliedGbp, tier, ensureClientSecret, onBeforeConfirmPayment, router])
 
   const handleCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -235,6 +247,8 @@ function InstantCheckoutForm({
           tier,
           amount: totalCost,
           currency,
+          useAccountCredits,
+          creditAppliedGbp,
         })
         router.push(
           `/${locale}/account/orders?checkout=success&payment_intent=${encodeURIComponent(
@@ -440,6 +454,7 @@ export default function CheckoutClient({
   mysteryTitle,
   mysteryTheme,
   initialPromoCode,
+  initialAvailableCreditGbp = 0,
   initialPaymentIntent,
 }: {
   mysteryId: string
@@ -452,6 +467,7 @@ export default function CheckoutClient({
   mysteryTitle: string
   mysteryTheme?: string | null
   initialPromoCode?: string
+  initialAvailableCreditGbp?: number
   initialPaymentIntent?: {
     clientSecret: string | null
     orderId?: string
@@ -459,6 +475,9 @@ export default function CheckoutClient({
     discountAmount?: number
     discountLabel?: string | null
     promoError?: string | null
+    availableCreditGbp?: number
+    creditAppliedAmount?: number
+    creditAppliedGbp?: number
   }
 }) {
   const router = useRouter()
@@ -476,6 +495,15 @@ export default function CheckoutClient({
   )
   const [isSimulatingPayment, setIsSimulatingPayment] = useState(false)
   const [paymentMethodTab, setPaymentMethodTab] = useState<'card' | 'apple_pay'>('card')
+
+  // Account Credit Wallet state ("You have £[X] in credits, want to use?")
+  const resolvedInitialCreditGbp =
+    typeof initialAvailableCreditGbp === 'number' && initialAvailableCreditGbp > 0
+      ? initialAvailableCreditGbp
+      : initialPaymentIntent?.availableCreditGbp ?? 0
+  const [availableCreditGbp, setAvailableCreditGbp] = useState<number>(resolvedInitialCreditGbp)
+  const [useAccountCredits, setUseAccountCredits] = useState<boolean>(resolvedInitialCreditGbp > 0)
+  const [creditClaimBanner, setCreditClaimBanner] = useState<string | null>(null)
 
   // Promo code & discount state (collapsible unless a promo code is pre-applied)
   const [showPromoBox, setShowPromoBox] = useState(Boolean(initialPromoCode))
@@ -611,9 +639,21 @@ export default function CheckoutClient({
 
   const activeTier: PriceTierKey = initialTier
   const subtotalCost = getRegionalPrice(initialTier, activeCurrency)
-  const totalCost = Math.max(0, subtotalCost - discountAmount)
+  const availableCreditInCurrency = convertGbpCreditToCurrency(availableCreditGbp, activeCurrency)
+  const afterPromoCost = Math.max(0, Number((subtotalCost - discountAmount).toFixed(2)))
+  const creditAppliedAmount =
+    useAccountCredits && availableCreditInCurrency > 0
+      ? Math.min(afterPromoCost, availableCreditInCurrency)
+      : 0
+  const creditAppliedGbp =
+    creditAppliedAmount > 0
+      ? Math.min(availableCreditGbp, convertCurrencyCreditToGbp(creditAppliedAmount, activeCurrency))
+      : 0
+  const totalCost = Math.max(0, Number((afterPromoCost - creditAppliedAmount).toFixed(2)))
   const formattedSubtotal = formatCurrency(subtotalCost, activeCurrency, locale)
   const formattedTotal = formatCurrency(totalCost, activeCurrency, locale)
+  const formattedAvailableCredit = formatCurrency(availableCreditInCurrency, activeCurrency, locale)
+  const formattedAppliedCredit = formatCurrency(creditAppliedAmount, activeCurrency, locale)
 
   const pendingIntentPromiseRef = useRef<Promise<{
     clientSecret: string | null
@@ -624,10 +664,13 @@ export default function CheckoutClient({
   const refreshPaymentIntent = async (opts?: {
     currencyOverride?: string
     promoOverride?: string | undefined
+    useCreditsOverride?: boolean
   }) => {
     const nextCurrency = opts?.currencyOverride ?? activeCurrency
     const nextPromo =
       opts && 'promoOverride' in opts ? opts.promoOverride : appliedPromoCode
+    const nextUseCredits =
+      opts && 'useCreditsOverride' in opts ? opts.useCreditsOverride : useAccountCredits
 
     const promise = createPaymentIntentAction({
       tier: activeTier,
@@ -638,6 +681,7 @@ export default function CheckoutClient({
       mysteryTitle,
       guests,
       promoCode: nextPromo,
+      useAccountCredits: nextUseCredits,
       skipTierLookup: true,
     })
       .then((res) => {
@@ -647,6 +691,9 @@ export default function CheckoutClient({
         setDiscountAmount(res.discountAmount || 0)
         setDiscountLabel(res.discountLabel || null)
         setPromoError(res.promoError || null)
+        if (typeof res.availableCreditGbp === 'number') {
+          setAvailableCreditGbp(res.availableCreditGbp)
+        }
         setClientSecret(res.clientSecret || null)
         setCheckoutMode(resultMode)
         return {
@@ -701,6 +748,12 @@ export default function CheckoutClient({
     return await refreshPaymentIntent()
   }
 
+  const handleToggleAccountCredits = async (checked: boolean) => {
+    setUseAccountCredits(checked)
+    setClientSecret(null)
+    await refreshPaymentIntent({ useCreditsOverride: checked })
+  }
+
   const handleApplyPromo = async (e: React.FormEvent) => {
     e.preventDefault()
     const cleanCode = promoInput.trim().toUpperCase()
@@ -709,9 +762,40 @@ export default function CheckoutClient({
       return
     }
     setPromoError(null)
+    setCreditClaimBanner(null)
+    setIsApplyingPromo(true)
+
+    try {
+      // First check if this is a Friend's "Give £5, Get £5" referral code to credit their account balance
+      const { claimFriendReferralCodeForCreditAction } = await import('@/app/actions/referrals')
+      const claimRes = await claimFriendReferralCodeForCreditAction(cleanCode)
+      if (claimRes.matched) {
+        if (claimRes.success) {
+          const nextGbp = claimRes.newCreditBalanceGbp ?? availableCreditGbp + 5
+          setAvailableCreditGbp(nextGbp)
+          setUseAccountCredits(true)
+          setPromoInput('')
+          setCreditClaimBanner(
+            claimRes.message || '✓ £5.00 referral credit added to your account & applied!'
+          )
+          setClientSecret(null)
+          await refreshPaymentIntent({ useCreditsOverride: true, promoOverride: appliedPromoCode })
+          setIsApplyingPromo(false)
+          return
+        } else if (claimRes.error && availableCreditGbp > 0) {
+          // Already claimed their £5 credit earlier — make sure the credit checkbox is checked
+          setUseAccountCredits(true)
+          setPromoError(claimRes.error)
+          setIsApplyingPromo(false)
+          return
+        }
+      }
+    } catch {
+      // Fall through to standard promo code validation
+    }
+
     setClientSecret(null)
     setAppliedPromoCode(cleanCode)
-    setIsApplyingPromo(true)
     await refreshPaymentIntent({ promoOverride: cleanCode })
     setIsApplyingPromo(false)
   }
@@ -737,6 +821,8 @@ export default function CheckoutClient({
       tier: activeTier,
       amount: totalCost,
       currency: activeCurrency,
+      useAccountCredits,
+      creditAppliedGbp,
     })
     if (res.verified) {
       router.push(`/${locale}/account/orders?checkout=success`)
@@ -912,11 +998,55 @@ export default function CheckoutClient({
               </div>
             </div>
 
+            {/* Account Credits Checkbox Toggle ("You have [X] in credits, want to use?") */}
+            {availableCreditGbp > 0 && (
+              <label
+                className={`p-4 rounded-2xl border-2 flex items-center justify-between gap-3 cursor-pointer transition-all select-none ${
+                  useAccountCredits
+                    ? 'bg-emerald-50/90 border-emerald-400 shadow-sm'
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={useAccountCredits}
+                    onChange={(e) => void handleToggleAccountCredits(e.target.checked)}
+                    className="w-5 h-5 rounded-md border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-black text-slate-900">
+                      💷 You have{' '}
+                      <span className="text-emerald-700">
+                        £{availableCreditGbp.toFixed(2)}
+                        {activeCurrency !== 'GBP' ? ` (${formattedAvailableCredit})` : ''}
+                      </span>{' '}
+                      in credits, want to use?
+                    </p>
+                    <p className="text-[11px] font-semibold text-slate-500">
+                      {useAccountCredits
+                        ? `✓ Applying -${formattedAppliedCredit} credit to this order`
+                        : 'Check to deduct your referral / account credits from this order'}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-black shrink-0 ${
+                    useAccountCredits
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-200 text-slate-600'
+                  }`}
+                >
+                  {useAccountCredits ? `-${formattedAppliedCredit}` : formattedAvailableCredit}
+                </span>
+              </label>
+            )}
+
             {/* Always-Visible Promo / Gift Code Box inside Complete Your Order */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
               <div className="flex items-center justify-between">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">
-                  🏷️ Promo or Gift Code
+                  🏷️ Promo, Friend Referral, or Gift Code
                 </label>
                 {discountAmount > 0 && (appliedPromoCode || discountLabel) && (
                   <span className="text-[11px] font-black text-emerald-600">
@@ -935,7 +1065,7 @@ export default function CheckoutClient({
                   spellCheck={false}
                   value={promoInput}
                   onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                  placeholder="Enter promo or gift code"
+                  placeholder="Enter promo or friend referral code"
                   className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/15"
                 />
                 {appliedPromoCode ? (
@@ -956,6 +1086,9 @@ export default function CheckoutClient({
                   </button>
                 )}
               </form>
+              {creditClaimBanner && (
+                <p className="text-[11px] font-bold text-emerald-600">{creditClaimBanner}</p>
+              )}
               {promoError && (
                 <p className="text-[11px] font-bold text-red-500">{promoError}</p>
               )}
@@ -965,7 +1098,7 @@ export default function CheckoutClient({
               /* 100% Discount Applied - Free Unlock */
               <form onSubmit={handleTestSimulationSubmit} className="space-y-4">
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-                  🎉 Your promotion reduced the total to {formattedTotal}! Click below to unlock your mystery and 6-digit Kahoot Game PIN immediately.
+                  🎉 Your promotion / credits reduced the total to {formattedTotal}! Click below to unlock your mystery and 6-digit Kahoot Game PIN immediately.
                 </div>
                 <button
                   type="submit"
@@ -990,6 +1123,8 @@ export default function CheckoutClient({
                   locale={locale}
                   orderId={orderId}
                   promoCode={appliedPromoCode}
+                  useAccountCredits={useAccountCredits}
+                  creditAppliedGbp={creditAppliedGbp}
                   tier={activeTier}
                   currency={activeCurrency}
                   totalCost={totalCost}
@@ -1240,6 +1375,22 @@ export default function CheckoutClient({
                   <span>-{formatCurrency(discountAmount, activeCurrency, locale)}</span>
                 </div>
               )}
+              {availableCreditGbp > 0 && (
+                <label className="flex justify-between items-center text-xs font-black text-emerald-400 pt-2 border-t border-white/10 cursor-pointer select-none">
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={useAccountCredits}
+                      onChange={(e) => void handleToggleAccountCredits(e.target.checked)}
+                      className="w-4 h-4 rounded border-white/30 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <span>
+                      💷 You have £{availableCreditGbp.toFixed(2)} in credits, want to use?
+                    </span>
+                  </span>
+                  <span>{useAccountCredits ? `-${formattedAppliedCredit}` : formattedAvailableCredit}</span>
+                </label>
+              )}
             </div>
 
             {/* Total Due */}
@@ -1253,7 +1404,7 @@ export default function CheckoutClient({
                 </span>
               </div>
               <div className="text-right">
-                {discountAmount > 0 && (
+                {(discountAmount > 0 || creditAppliedAmount > 0) && (
                   <span className="block text-sm font-bold text-slate-500 line-through">
                     {formattedSubtotal}
                   </span>

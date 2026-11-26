@@ -63,18 +63,6 @@ interface DashboardClientProps {
   popularMysteries?: PopularMystery[];
   locale: string;
   onboardingCompleted?: boolean;
-  giftPassState?: {
-    isSubscribed: boolean;
-    currentMonthKey: string;
-    currentMonthPass: {
-      monthKey: string;
-      code: string;
-      recipientEmail?: string | null;
-      recipientName?: string | null;
-      personalMessage?: string | null;
-      createdAt: string;
-    } | null;
-  };
 }
 
 export default function DashboardClient({
@@ -85,17 +73,8 @@ export default function DashboardClient({
   popularMysteries = [],
   locale,
   onboardingCompleted = true,
-  giftPassState,
 }: DashboardClientProps) {
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
-  const [giftPass, setGiftPass] = useState(giftPassState?.currentMonthPass || null);
-  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
-  const [giftRecipientName, setGiftRecipientName] = useState('');
-  const [giftRecipientEmail, setGiftRecipientEmail] = useState('');
-  const [giftMessage, setGiftMessage] = useState('');
-  const [isClaimingGift, setIsClaimingGift] = useState(false);
-  const [giftStatusMsg, setGiftStatusMsg] = useState<string | null>(null);
-  const [copiedCode, setCopiedCode] = useState(false);
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const tip = HOST_TIPS[new Date().getDate() % HOST_TIPS.length];
@@ -360,35 +339,27 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Refer a Friend */}
+      {/* Refer a Friend ("Give £5, Get £5") */}
       <div className="rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6" style={{ background: 'linear-gradient(135deg, #fe04c6 0%, #b8008e 100%)', color: 'white' }}>
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <span className="text-2xl">🎁</span>
           </div>
           <div>
-            <h3 className="font-black text-lg">Give 20%, Get 20%</h3>
-            <p className="text-sm text-white/80 font-medium leading-snug mt-1">Share your unique link. When a friend buys a mystery, you both get a 20% off voucher!</p>
+            <h3 className="font-black text-lg">Give £5, Get £5</h3>
+            <p className="text-sm text-white/80 font-medium leading-snug mt-1">Share your referral code with a friend. When they apply it, you both get a £5 credit towards your account!</p>
           </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto bg-black/20 p-2 rounded-xl border border-white/10">
           <code className="text-xs font-bold px-3 py-1 opacity-90 truncate max-w-[200px] sm:max-w-[250px]">
-            https://backpocketmysteries.com/refer?c={user.name?.replace(/\s+/g, '').toLowerCase() || 'guest'}
+            https://backpocketmysteries.com/en/account/settings
           </code>
-          <button 
-            onClick={() => {
-              navigator.clipboard.writeText(`https://backpocketmysteries.com/refer?c=${user.name?.replace(/\s+/g, '').toLowerCase() || 'guest'}`);
-              const btn = document.getElementById('copy-referral-btn');
-              if (btn) {
-                btn.innerText = 'Copied! ✅';
-                setTimeout(() => btn.innerText = 'Copy', 2000);
-              }
-            }}
-            id="copy-referral-btn"
+          <Link
+            href={`/${locale}/account/settings`}
             className="bg-white text-pink-600 text-xs font-black px-4 py-2 rounded-lg hover:scale-105 active:scale-95 transition-all flex-shrink-0"
           >
-            Copy
-          </button>
+            Share &amp; Credits →
+          </Link>
         </div>
       </div>
 
@@ -425,102 +396,6 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Subscriber Monthly Gift Pass OR Upgrade CTA */}
-      {giftPassState?.isSubscribed ? (
-        <div
-          className="rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, #1e191c 0%, #2d1f2b 100%)',
-            border: '1px solid rgba(254,4,198,0.28)',
-          }}
-        >
-          <div className="flex items-start sm:items-center gap-4 relative z-10">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(254,4,198,0.16)', border: '1px solid rgba(254,4,198,0.35)' }}
-            >
-              <span className="text-2xl">🎁</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-black text-lg text-white">Your Monthly Gift Pass</h3>
-                <span
-                  className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full"
-                  style={{
-                    background: giftPass ? 'rgba(16,185,129,0.2)' : 'rgba(254,4,198,0.2)',
-                    color: giftPass ? '#34d399' : '#fe04c6',
-                  }}
-                >
-                  {giftPass ? `Claimed (${giftPass.monthKey})` : '1 Free Mystery Available This Month'}
-                </span>
-              </div>
-              {giftPass ? (
-                <p className="text-sm text-slate-300 font-medium leading-snug mt-1">
-                  100%-Off Gift Code:{' '}
-                  <span className="font-mono font-black text-white bg-white/10 px-2.5 py-0.5 rounded-lg">
-                    {giftPass.code}
-                  </span>
-                  {giftPass.recipientEmail ? ` • Sent to ${giftPass.recipientEmail}` : ' • Share with any friend'}
-                </p>
-              ) : (
-                <p className="text-sm text-slate-300 font-medium leading-snug mt-1">
-                  As an Unlimited member, you get 1 free mystery gift pass every month to send any mystery (up to 16 players) to a friend!
-                </p>
-              )}
-              {giftStatusMsg && (
-                <p className="text-xs font-bold text-emerald-400 mt-1.5">{giftStatusMsg}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto relative z-10">
-            {giftPass ? (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(giftPass.code);
-                  setCopiedCode(true);
-                  setTimeout(() => setCopiedCode(false), 2000);
-                }}
-                className="text-white text-xs font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all w-full sm:w-auto cursor-pointer"
-                style={{ background: '#fe04c6' }}
-              >
-                {copiedCode ? 'Copied Code! ✓' : `Copy Gift Code (${giftPass.code})`}
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsGiftModalOpen(true)}
-                className="text-white text-xs font-black uppercase tracking-widest px-6 py-3 rounded-xl hover:scale-105 active:scale-95 transition-all flex-shrink-0 text-center w-full sm:w-auto cursor-pointer"
-                style={{ background: '#fe04c6', boxShadow: '0 4px 14px 0 rgba(254, 4, 198, 0.35)' }}
-              >
-                🎁 Send Monthly Gift Pass
-              </button>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500 rounded-full blur-3xl opacity-20"></div>
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
-              <span className="text-2xl">🎁</span>
-            </div>
-            <div>
-              <h3 className="font-black text-lg text-white">Upgrade to Unlimited + Get 1 Free Monthly Gift Pass</h3>
-              <p className="text-sm text-slate-300 font-medium leading-snug mt-1">
-                Host unlimited mysteries every month for up to 16 players, plus get 1 Free Monthly Gift Pass to send any mystery to a friend!
-              </p>
-            </div>
-          </div>
-          <Link
-            href={`/${locale}/pricing`}
-            className="bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-black px-6 py-3 rounded-xl hover:scale-105 active:scale-95 transition-all flex-shrink-0 relative z-10 text-center w-full sm:w-auto"
-            style={{ boxShadow: '0 4px 14px 0 rgba(99, 102, 241, 0.39)' }}
-          >
-            View Plans
-          </Link>
-        </div>
-      )}
-
       {/* Host Tip */}
       <div>
         <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Hosting Tip</h2>
@@ -556,111 +431,6 @@ export default function DashboardClient({
           setIsGuestModalOpen(false);
         }}
       />
-
-      {isGiftModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">🎁</span>
-                <h3 className="text-lg font-black text-slate-900">Send Your Monthly Gift Pass</h3>
-              </div>
-              <button
-                onClick={() => setIsGiftModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 font-black text-lg cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Generate your 100%-off Monthly Gift Pass (good for 1 full mystery up to 16 players). Enter a friend&apos;s email to send it directly to their inbox, or leave email blank to copy the code yourself.
-            </p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  Friend&apos;s Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={giftRecipientName}
-                  onChange={(e) => setGiftRecipientName(e.target.value)}
-                  placeholder="e.g. Sarah Jenkins"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-medium text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  Friend&apos;s Email (Optional - emails them the gift code)
-                </label>
-                <input
-                  type="email"
-                  value={giftRecipientEmail}
-                  onChange={(e) => setGiftRecipientEmail(e.target.value)}
-                  placeholder="friend@example.com"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-medium text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                  Personal Note (Optional)
-                </label>
-                <textarea
-                  value={giftMessage}
-                  onChange={(e) => setGiftMessage(e.target.value)}
-                  rows={2}
-                  placeholder="Can't wait to play your murder mystery party!"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-900"
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                onClick={() => setIsGiftModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={isClaimingGift}
-                onClick={async () => {
-                  setIsClaimingGift(true);
-                  try {
-                    const { claimSubscriberMonthlyGiftPassAction } = await import(
-                      '@/app/actions/subscriber-perks'
-                    );
-                    const res = await claimSubscriberMonthlyGiftPassAction({
-                      recipientName: giftRecipientName,
-                      recipientEmail: giftRecipientEmail,
-                      personalMessage: giftMessage,
-                    });
-                    if (res.success && res.pass) {
-                      setGiftPass(res.pass);
-                      setGiftStatusMsg(
-                        res.emailSent
-                          ? `Gift Pass (${res.pass.code}) emailed to ${res.pass.recipientEmail}!`
-                          : `Gift Pass (${res.pass.code}) created! Share it with your friend.`
-                      );
-                      setIsGiftModalOpen(false);
-                    } else if (res.error) {
-                      setGiftStatusMsg(res.error);
-                    }
-                  } finally {
-                    setIsClaimingGift(false);
-                  }
-                }}
-                className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-white cursor-pointer disabled:opacity-50"
-                style={{ background: '#fe04c6' }}
-              >
-                {isClaimingGift
-                  ? 'Creating Gift Pass...'
-                  : giftRecipientEmail.trim()
-                  ? 'Send Gift Pass Email'
-                  : 'Generate Gift Pass Code'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

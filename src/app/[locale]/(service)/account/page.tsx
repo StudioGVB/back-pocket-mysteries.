@@ -2,7 +2,6 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { getPublishedMysteries } from '@/services/mysteries';
-import { getSubscriberGiftPassStateForUser } from '@/app/actions/subscriber-perks';
 import DashboardClient from './DashboardClient';
 
 export default async function AccountDashboardPage({
@@ -18,14 +17,13 @@ export default async function AccountDashboardPage({
     redirect(`/${locale}/login`);
   }
 
-  // Run all 6 dashboard queries in parallel instead of sequentially
+  // Run all 5 dashboard queries in parallel instead of sequentially
   const [
     { count: guestCount },
     { data: guests },
     { count: orderCount },
     publishedMysteries,
     { data: allSales },
-    giftPassState,
   ] = await Promise.all([
     supabase
       .from('guests')
@@ -46,7 +44,6 @@ export default async function AccountDashboardPage({
       .from('orders')
       .select('mystery_id')
       .eq('status', 'succeeded'),
-    getSubscriberGiftPassStateForUser(user.id),
   ]);
 
   const salesCountMap = (allSales ?? []).reduce<Record<string, number>>((acc, sale: any) => {
@@ -72,7 +69,6 @@ export default async function AccountDashboardPage({
       guests={(guests ?? []).map(g => ({ ...g, gender: g.gender ?? undefined, avatar_url: g.avatar_url ?? undefined, traits: g.traits ?? undefined }))}
       popularMysteries={popularMysteries}
       locale={locale}
-      giftPassState={giftPassState}
     />
   );
 }
