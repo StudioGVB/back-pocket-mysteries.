@@ -25,6 +25,7 @@ import {
   cacheMysterySnapshot,
   updateMysteryGenerationInStore,
   getStoredGameSession,
+  syncLiveStateToSupabaseClueCarrier,
 } from '@/lib/live-session-store';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
 import {
@@ -755,14 +756,12 @@ export async function ensureStandardCharacterPhoto(
   const existingStandardHash =
     profile.standard_character_photo_hash || rawProfile.standard_character_photo_hash;
 
-  // Reuse existing standard character photo ONLY when not force-regenerating AND its identityHash
-  // still matches the guest's current face headshot, physical traits, and costume (if the guest edited
-  // their hair/glasses/beard or regenerated their Stage 0 headshot, identityHash changes and we regenerate Stage 1!)
-  const hashMatches = !existingStandardHash || existingStandardHash === identityHash;
-  if (!forceRegenerate && existingStandardUrl && hashMatches) {
+  // Reuse existing standard character photo whenever not explicitly force-regenerating so Stage 2 clue scenes
+  // always use the exact Stage 1 portrait displayed on the Cast Reference Strip.
+  if (!forceRegenerate && existingStandardUrl) {
     return {
       photoUrl: existingStandardUrl,
-      identityHash,
+      identityHash: existingStandardHash || identityHash,
       physicalDesc,
       outfit,
     };
@@ -1108,10 +1107,17 @@ export async function applyScreenerCastAssignmentAction(
       }
     }
 
-    const { data: dbChars } = await supabase
-      .from('characters')
-      .select('id, name, gender, profile_data, is_victim, plot_role')
-      .eq('mystery_id', mysteryId);
+    const [{ data: dbMysteryRow }, { data: dbChars }] = await Promise.all([
+      supabase
+        .from('mysteries')
+        .select('id, created_by, title, theme, description')
+        .eq('id', mysteryId)
+        .maybeSingle(),
+      supabase
+        .from('characters')
+        .select('id, name, gender, profile_data, is_victim, plot_role')
+        .eq('mystery_id', mysteryId),
+    ]);
 
     const sourceChars =
       dbChars && dbChars.length > 0 ? dbChars : cachedMystery?.characters || [];
@@ -1163,13 +1169,24 @@ export async function applyScreenerCastAssignmentAction(
       });
     }
 
-    cacheMysterySnapshot(mysteryId, {
+    const nextSnapshot = {
       ...(cachedMystery || { id: mysteryId }),
+      ...(dbMysteryRow?.title ? { title: dbMysteryRow.title } : {}),
+      ...(dbMysteryRow?.theme ? { theme: dbMysteryRow.theme } : {}),
+      ...(dbMysteryRow?.created_by ? { created_by: dbMysteryRow.created_by } : {}),
+      characters: updatedCharacters,
+    };
+
+    cacheMysterySnapshot(mysteryId, nextSnapshot);
+    await syncLiveStateToSupabaseClueCarrier(mysteryId, {
+      supabase,
+      mystery: nextSnapshot,
       characters: updatedCharacters,
     });
 
     try {
       revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
+      revalidatePath(`/builder/mysteries/${mysteryId}/screen`);
     } catch {
       // ignore outside request context
     }
@@ -1200,11 +1217,18 @@ export async function generateStandardCharacterPhotoAction(
     const supabase = await createClient();
     const cachedMystery = getCachedMysterySnapshot(mysteryId);
 
-    const { data: dbMystery, error: mysteryError } = await supabase
-      .from('mysteries')
-      .select('id, created_by, title, theme, description')
-      .eq('id', mysteryId)
-      .single();
+    const [{ data: dbMystery, error: mysteryError }, { data: dbAllChars, error: charError }] =
+      await Promise.all([
+        supabase
+          .from('mysteries')
+          .select('id, created_by, title, theme, description')
+          .eq('id', mysteryId)
+          .maybeSingle(),
+        supabase
+          .from('characters')
+          .select('id, name, gender, profile_data, is_victim, plot_role')
+          .eq('mystery_id', mysteryId),
+      ]);
 
     const mystery = dbMystery || cachedMystery;
 
@@ -1212,21 +1236,22 @@ export async function generateStandardCharacterPhotoAction(
       return { error: mysteryError?.message || 'Mystery not found' };
     }
 
-    const { data: dbCharData, error: charError } = await supabase
-      .from('characters')
-      .select('id, name, gender, profile_data, is_victim, plot_role')
-      .eq('id', characterId)
-      .eq('mystery_id', mysteryId)
-      .single();
-
+    const dbCharData = (dbAllChars || []).find((c: any) => c.id === characterId) || null;
     const cachedChar = (cachedMystery?.characters || []).find((c: any) => c.id === characterId);
+    const parsedOverrideName = guestOverride?.name
+      ? splitGuestNameParts(guestOverride.name)
+      : null;
+
     const mergedProfileData: Record<string, any> = {
       ...((dbCharData?.profile_data as Record<string, any>) || {}),
       ...(cachedChar?.profile_data || {}),
       ...(guestOverride
         ? {
             guest_id: guestOverride.id,
-            guest_name: guestOverride.name,
+            guest_name: parsedOverrideName?.fullName || guestOverride.name,
+            name: parsedOverrideName?.fullName || guestOverride.name,
+            first_name: parsedOverrideName?.firstName || guestOverride.name,
+            last_name: parsedOverrideName?.lastName || '',
             ...(guestOverride.gender ? { gender: guestOverride.gender } : {}),
             ...(guestOverride.avatar_url || guestOverride.photoUrl
               ? { avatar_url: guestOverride.avatar_url || guestOverride.photoUrl }
@@ -1261,30 +1286,59 @@ export async function generateStandardCharacterPhotoAction(
       return { error: 'Failed to generate standard character photo' };
     }
 
-    const existingCharsList = Array.isArray(cachedMystery?.characters)
-      ? cachedMystery.characters
-      : [charData];
-    const updatedChars = existingCharsList.map((c: any) =>
-      c.id === characterId
-        ? {
-            ...c,
-            profile_data: {
-              ...(c.profile_data || {}),
-              ...mergedProfileData,
-              standard_character_photo_url: result.photoUrl,
-              standard_character_photo_hash: result.identityHash,
-              outfit_image_url: result.photoUrl,
-            },
-          }
-        : c
-    );
-    cacheMysterySnapshot(mysteryId, {
+    const baseCharsList =
+      dbAllChars && dbAllChars.length > 0
+        ? dbAllChars
+        : Array.isArray(cachedMystery?.characters) && cachedMystery.characters.length > 0
+        ? cachedMystery.characters
+        : [charData];
+
+    const cachedCharsMap = new Map<string, any>();
+    for (const cc of cachedMystery?.characters || []) {
+      if (cc?.id) cachedCharsMap.set(cc.id, cc);
+    }
+
+    const updatedChars = baseCharsList.map((c: any) => {
+      const cachedMatch = cachedCharsMap.get(c.id);
+      if (c.id === characterId) {
+        return {
+          ...c,
+          profile_data: {
+            ...(c.profile_data || {}),
+            ...(cachedMatch?.profile_data || {}),
+            ...mergedProfileData,
+            standard_character_photo_url: result.photoUrl,
+            standard_character_photo_hash: result.identityHash,
+            outfit_image_url: result.photoUrl,
+          },
+        };
+      }
+      return {
+        ...c,
+        profile_data: {
+          ...(c.profile_data || {}),
+          ...(cachedMatch?.profile_data || {}),
+        },
+      };
+    });
+
+    const nextSnapshot = {
       ...(cachedMystery || { id: mysteryId, title: mystery.title, theme: mystery.theme }),
+      ...(mystery.title ? { title: mystery.title } : {}),
+      ...(mystery.theme ? { theme: mystery.theme } : {}),
+      characters: updatedChars,
+    };
+
+    cacheMysterySnapshot(mysteryId, nextSnapshot);
+    await syncLiveStateToSupabaseClueCarrier(mysteryId, {
+      supabase,
+      mystery: nextSnapshot,
       characters: updatedChars,
     });
 
     try {
       revalidatePath(`/builder/mysteries/${mysteryId}/characters`);
+      revalidatePath(`/builder/mysteries/${mysteryId}/screen`);
     } catch {
       // ignore
     }

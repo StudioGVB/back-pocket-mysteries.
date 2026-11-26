@@ -504,7 +504,32 @@ export function PackScreenerClient({
     [mystery?.id, rawCharacters, friendAssignments, liveFriends, regeneratingClueIds]
   );
 
-  // Restore any persisted screener clue images from localStorage on mount (never for chat/audio clues)
+  const persistCharPortraitLocal = useCallback(
+    (
+      charId: string,
+      entry: {
+        url: string;
+        hash?: string | null;
+        guestId?: string | null;
+        guestName?: string | null;
+      }
+    ) => {
+      if (typeof window === 'undefined' || !mystery?.id || !entry.url || entry.url.startsWith('data:')) {
+        return;
+      }
+      try {
+        const key = `bpm_screener_char_portraits_v2_${mystery.id}`;
+        const existing = JSON.parse(window.localStorage.getItem(key) || '{}');
+        existing[charId] = entry;
+        window.localStorage.setItem(key, JSON.stringify(existing));
+      } catch {
+        // ignore
+      }
+    },
+    [mystery?.id]
+  );
+
+  // Restore any persisted screener clue images & character portraits from localStorage on mount
   useEffect(() => {
     if (typeof window === 'undefined' || !mystery?.id) return;
     try {
@@ -520,6 +545,33 @@ export function PackScreenerClient({
               return { ...c, static_image_url: null };
             }
             return savedMap[c.id] ? { ...c, static_image_url: savedMap[c.id] } : c;
+          })
+        );
+      }
+
+      const savedCharPortraits = JSON.parse(
+        window.localStorage.getItem(`bpm_screener_char_portraits_v2_${mystery.id}`) || '{}'
+      );
+      if (
+        savedCharPortraits &&
+        typeof savedCharPortraits === 'object' &&
+        Object.keys(savedCharPortraits).length > 0
+      ) {
+        setRawCharacters((prev) =>
+          prev.map((c) => {
+            const saved = savedCharPortraits[c.id];
+            if (!saved?.url) return c;
+            return {
+              ...c,
+              profile_data: {
+                ...(c.profile_data || {}),
+                ...(saved.guestId ? { guest_id: saved.guestId } : {}),
+                ...(saved.guestName ? { guest_name: saved.guestName, name: saved.guestName } : {}),
+                standard_character_photo_url: saved.url,
+                ...(saved.hash ? { standard_character_photo_hash: saved.hash } : {}),
+                outfit_image_url: saved.url,
+              },
+            };
           })
         );
       }
@@ -577,6 +629,12 @@ export function PackScreenerClient({
                 : c
             )
           );
+          persistCharPortraitLocal(characterId, {
+            url: freshPortrait,
+            hash: charRes.identityHash || null,
+            guestId: friend?.id || char.profile_data?.guest_id || null,
+            guestName: friend?.name || char.profile_data?.guest_name || null,
+          });
         }
       } catch (err) {
         console.error('Failed to regenerate single character portrait:', err);
@@ -588,7 +646,7 @@ export function PackScreenerClient({
         });
       }
     },
-    [mystery?.id, regeneratingCharIds, rawCharacters, friendAssignments, liveFriends]
+    [mystery?.id, regeneratingCharIds, rawCharacters, friendAssignments, liveFriends, persistCharPortraitLocal]
   );
 
   const handleGenerateForSelectedCast = useCallback(async () => {
@@ -743,6 +801,12 @@ export function PackScreenerClient({
                 : c
             )
           );
+          persistCharPortraitLocal(item.characterId, {
+            url: freshPortrait,
+            hash: charRes.identityHash || null,
+            guestId: item.friend.id,
+            guestName: item.friend.name,
+          });
         }
 
         if (pIdx < charsToRegenPortrait.length - 1) {
@@ -760,7 +824,7 @@ export function PackScreenerClient({
       const persistClueImgLocal = (cId: string, url: string) => {
         if (typeof window === 'undefined' || url.startsWith('data:')) return;
         try {
-          const key = `bpm_screener_clue_images_${mystery.id}`;
+          const key = `bpm_screener_clue_images_v2_${mystery.id}`;
           const existing = JSON.parse(window.localStorage.getItem(key) || '{}');
           existing[cId] = url;
           window.localStorage.setItem(key, JSON.stringify(existing));
@@ -1041,18 +1105,21 @@ export function PackScreenerClient({
     const rawChar = rawCharacters.find((rc) => rc.id === c?.id);
     const rawGuestId = String(rawChar?.profile_data?.guest_id || '').trim().toLowerCase();
     const rawGuestName = String(rawChar?.profile_data?.guest_name || '').trim().toLowerCase();
+    const rawFirstName = rawGuestName.split(/\s+/)[0] || '';
     const currentGuestId = String(c?.profile_data?.guest_id || '').trim().toLowerCase();
     const currentGuestName = String(
       c?.profile_data?.guest_name || c?.assignedFriend?.name || ''
     )
       .trim()
       .toLowerCase();
+    const currentFirstName = currentGuestName.split(/\s+/)[0] || '';
 
     if (useFriendNames) {
       const hasExplicitRenderedGuest = Boolean(rawGuestId || rawGuestName);
       const isSameGuestAsRendered = hasExplicitRenderedGuest
         ? Boolean(rawGuestId && currentGuestId && rawGuestId === currentGuestId) ||
-          Boolean(rawGuestName && currentGuestName && rawGuestName === currentGuestName)
+          Boolean(rawGuestName && currentGuestName && rawGuestName === currentGuestName) ||
+          Boolean(rawFirstName && currentFirstName && rawFirstName === currentFirstName)
         : true;
 
       if (isSameGuestAsRendered && rawChar?.profile_data?.standard_character_photo_url) {

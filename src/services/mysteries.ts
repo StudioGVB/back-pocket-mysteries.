@@ -175,11 +175,18 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     '3840fd006ed6',
     'c2f4839cd4a1',
     '775b43936533',
+    'b90b57ad1e85',
     'warmwaistup1',
     'goldwaistup1',
+    'synced-candlelit',
+    'mwwbkd7y',
+    'mwwbkpij',
+    'mwwbl5lt',
+    'mwwbljyo',
+    'mwwblx0e',
+    'mwwbm9ec',
+    'mwxxqxj6',
   ];
-  const LUKE_HUSBAND_PORTRAIT =
-    '/generated-avatars/da18ef00-ecdc-41e7-8c71-97d78046e43b-synced-candlelit.jpg';
 
   // Sync characters + motives
   const canonicalChars = CHRISTMAS_NIGHTMARE_CHARACTERS.map((spec) => {
@@ -199,7 +206,6 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       delete baseSpecProfile.last_name;
     }
 
-    const existingGuestName = String(existingProfile.guest_name || '').trim().toLowerCase();
     const hasSupersededPortrait =
       isBaseChristmasTemplate &&
       SUPERSEDED_CHRISTMAS_PORTRAIT_HASHES.some(
@@ -208,18 +214,6 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
           String(existingProfile.outfit_image_url || '').includes(h) ||
           String(existingProfile.avatar_url || '').includes(h)
       );
-
-    const isHusbandAlexMismatch =
-      isBaseChristmasTemplate &&
-      spec.key === 'husband' &&
-      (existingGuestName === 'alex' ||
-        String(existingProfile.standard_character_photo_url || '').includes('b90b57ad1e85'));
-
-    const isHusbandLukeMismatch =
-      isBaseChristmasTemplate &&
-      spec.key === 'husband' &&
-      existingGuestName === 'luke' &&
-      String(existingProfile.standard_character_photo_url || '').includes('b90b57ad1e85');
 
     // Preserve any linked guest info while replacing bio/act/outfit with canonical Christmas Nightmare profile
     const mergedProfile: Record<string, any> = {
@@ -233,22 +227,16 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       act_bullets: spec.profile_data.act_bullets,
       ...(hasSupersededPortrait
         ? {
+            guest_id: spec.profile_data.guest_id,
+            guest_name: spec.profile_data.guest_name,
+            name: spec.profile_data.guest_name,
+            eye_color: spec.profile_data.eye_color,
+            height: spec.profile_data.height,
             standard_character_photo_url: spec.profile_data.standard_character_photo_url,
+            standard_character_photo_hash: spec.profile_data.standard_character_photo_hash,
             outfit_image_url: spec.profile_data.outfit_image_url,
             avatar_url: spec.profile_data.avatar_url,
             friend_photo_url: spec.profile_data.standard_character_photo_url,
-          }
-        : {}),
-      ...(isHusbandAlexMismatch || isHusbandLukeMismatch
-        ? {
-            guest_id: '0370c2e5-a829-4b37-9eff-8251c337aa34',
-            guest_name: 'Luke',
-            gender: 'male',
-            eye_color: 'Blue',
-            height: 'Very Tall',
-            avatar_url: spec.profile_data.avatar_url,
-            standard_character_photo_url: LUKE_HUSBAND_PORTRAIT,
-            outfit_image_url: LUKE_HUSBAND_PORTRAIT,
           }
         : {}),
     };
@@ -299,8 +287,6 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
     const needsCharProfileSync =
       !hasCanonicalNames ||
       hasSupersededPortrait ||
-      isHusbandAlexMismatch ||
-      isHusbandLukeMismatch ||
       strippedStaleBasePortrait ||
       existingProfile.outfit_advice !== spec.profile_data.outfit_advice ||
       JSON.stringify(existingProfile.outfit_reference_images) !== JSON.stringify(spec.profile_data.outfit_reference_images) ||
@@ -483,6 +469,33 @@ export function ensureChristmasNightmareCanon(mystery: any, supabase?: any): any
       '7b350e41e42b',
       '00cc6f5af6b0',
       'mwvwkbo7',
+      'mwvx052e',
+      '6aed0c43dde6',
+      'mwvx1h05',
+      'mwvx1r9s',
+      '7d01fd61bf30',
+      '6c6f2b97ac73',
+      'mwvx497b',
+      'a420608fa3de',
+      'mwvx4pua',
+      'mwwbml6s',
+      'mwwbmsvs',
+      'mwwbn7tt',
+      'mwwbnpov',
+      'mwwbo3tc',
+      'mwwbobe3',
+      'mwwboo8j',
+      'mwwbp3q8',
+      'mwwbpk73',
+      'mww29w0m',
+      'mww2a3i1',
+      'mww2agf3',
+      'mww2at4k',
+      'mww2b8ko',
+      'mww2bimj',
+      'mww2buyu',
+      'mww2c7kx',
+      'mww2clho',
     ];
 
     // Sync clues if present
@@ -1811,6 +1824,31 @@ function normalizeCharacterList(
   });
 }
 
+const SUPERSEDED_CARRIER_PORTRAIT_TOKENS = [
+  '20058bab3911',
+  'b06f3ace7cdf',
+  '63aa0e7355d6',
+  '0b6e029e9a8d',
+  'd468b1b12c33',
+  '1dcd5acb69d9',
+  '28ec1e5263c3',
+  '42f5b08d02',
+  '3840fd006ed6',
+  'c2f4839cd4a1',
+  '775b43936533',
+  'b90b57ad1e85',
+  'warmwaistup1',
+  'goldwaistup1',
+  'synced-candlelit',
+  'mwwbkd7y',
+  'mwwbkpij',
+  'mwwbl5lt',
+  'mwwbljyo',
+  'mwwblx0e',
+  'mwwbm9ec',
+  'mwxxqxj6',
+];
+
 function overlayLiveCarrierCharacters(targetCharacters: any[], carrierCharacters: any[] | null | undefined): any[] {
   if (!Array.isArray(targetCharacters) || !Array.isArray(carrierCharacters) || carrierCharacters.length === 0) {
     return targetCharacters || [];
@@ -1824,6 +1862,16 @@ function overlayLiveCarrierCharacters(targetCharacters: any[], carrierCharacters
     if (!match?.profile_data) return tc;
     const tcPd = tc.profile_data || {};
     const mPd = match.profile_data || {};
+
+    const carrierHasSupersededPortrait = SUPERSEDED_CARRIER_PORTRAIT_TOKENS.some(
+      (token) =>
+        String(mPd.standard_character_photo_url || '').includes(token) ||
+        String(mPd.outfit_image_url || '').includes(token)
+    );
+    if (carrierHasSupersededPortrait && tcPd.standard_character_photo_url) {
+      return tc;
+    }
+
     return {
       ...tc,
       profile_data: {
@@ -1839,7 +1887,7 @@ function overlayLiveCarrierCharacters(targetCharacters: any[], carrierCharacters
         ...(mPd.eye_color ? { eye_color: mPd.eye_color } : {}),
         ...(mPd.height ? { height: mPd.height } : {}),
         ...(mPd.avatar_url ? { avatar_url: mPd.avatar_url } : {}),
-        ...(mPd.standard_character_photo_url
+        ...(mPd.standard_character_photo_url && !carrierHasSupersededPortrait
           ? {
               standard_character_photo_url: mPd.standard_character_photo_url,
               standard_character_photo_hash: mPd.standard_character_photo_hash,
