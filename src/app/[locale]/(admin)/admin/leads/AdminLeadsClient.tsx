@@ -34,9 +34,9 @@ export default function AdminLeadsClient({
   totalCombinedAudienceCount?: number;
 }) {
   const [leads, setLeads] = useState<MarketingLeadRecord[]>(initialLeads);
-  const [filter, setFilter] = useState<'all_leads' | 'vip50' | 'pending_code' | 'customer_accounts'>(
-    'all_leads'
-  );
+  const [filter, setFilter] = useState<
+    'all_leads' | 'vip50' | 'playroom_guests' | 'pending_code' | 'customer_accounts'
+  >('all_leads');
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [sendingBatchCodes, setSendingBatchCodes] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -57,17 +57,21 @@ export default function AdminLeadsClient({
   const [testRecipient, setTestRecipient] = useState<string>('Hello@backpocketgames.com');
   const [sendingTestWelcome, setSendingTestWelcome] = useState<boolean>(false);
 
-  const vipLeads = leads.filter(
-    (l) => l.qualifies_for_free_mystery || l.vip_rank <= FIRST_50_VIP_CAP
-  );
+  const isFirst50VipLead = (l: MarketingLeadRecord) =>
+    l.source !== 'playroom_finale_guest_reward' &&
+    Boolean(l.qualifies_for_free_mystery || (l.vip_rank > 0 && l.vip_rank <= FIRST_50_VIP_CAP));
+
+  const vipLeads = leads.filter(isFirst50VipLead);
+  const playroomGuestLeads = leads.filter((l) => l.source === 'playroom_finale_guest_reward');
   const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - vipLeads.length);
   const codesSentCount = vipLeads.filter((l) => Boolean(l.free_mystery_code)).length;
   const pendingVipLeads = vipLeads.filter((l) => !l.free_mystery_code);
 
   const filteredLeads = leads.filter((l) => {
-    if (filter === 'vip50') return l.qualifies_for_free_mystery || l.vip_rank <= FIRST_50_VIP_CAP;
+    if (filter === 'vip50') return isFirst50VipLead(l);
+    if (filter === 'playroom_guests') return l.source === 'playroom_finale_guest_reward';
     if (filter === 'pending_code') {
-      return (l.qualifies_for_free_mystery || l.vip_rank <= FIRST_50_VIP_CAP) && !l.free_mystery_code;
+      return isFirst50VipLead(l) && !l.free_mystery_code;
     }
     return true;
   });

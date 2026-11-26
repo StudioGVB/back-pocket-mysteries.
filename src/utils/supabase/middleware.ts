@@ -113,9 +113,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Strictly block non-admin authenticated users from /admin and /builder (customers only access /account and public/service flows)
+  // Strictly block non-admin or forged-cookie users from /admin and /builder
   if (user && isAdminOnlyPage) {
-    const isAdmin = await isUserAdmin(supabase, user)
+    const {
+      data: { user: verifiedUser },
+    } = await supabase.auth.getUser()
+    if (!verifiedUser) {
+      const url = request.nextUrl.clone()
+      url.pathname = locale ? `/${locale}/login` : '/login'
+      url.searchParams.set('next', pathname)
+      return NextResponse.redirect(url)
+    }
+
+    const isAdmin = await isUserAdmin(supabase, verifiedUser)
     if (!isAdmin) {
       const url = request.nextUrl.clone()
       url.pathname = locale ? `/${locale}/account` : '/en/account'

@@ -54,41 +54,74 @@ async function ProfileContent({
     // Ignore cookie errors in Server Component render
   }
 
-  // 0B. Clean up any manual_guest_id rows that have already been accepted by a linked friend
-  const { data: acceptedWithManual } = await (supabase as any)
-    .from('guest_invitations')
-    .select('id, manual_guest_id')
-    .eq('inviter_user_id', user.id)
-    .eq('status', 'accepted')
-    .not('manual_guest_id', 'is', null);
+  // Run all 5 profile & guest queries in parallel instead of sequentially
+  const [
+    { data: acceptedWithManual },
+    { data: profile },
+    { data: rawManualGuests },
+    { data: connections },
+    { data: pendingInvites },
+  ] = await Promise.all([
+    (supabase as any)
+      .from('guest_invitations')
+      .select('id, manual_guest_id')
+      .eq('inviter_user_id', user.id)
+      .eq('status', 'accepted')
+      .not('manual_guest_id', 'is', null),
+    (supabase as any)
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('guests')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+    (supabase as any)
+      .from('guest_connections')
+      .select(`
+        id,
+        guest_user_id,
+        profiles!guest_user_id (
+          full_name,
+          bio,
+          location,
+          pronouns,
+          avatar_config,
+          dietary_needs,
+          character_preferences
+        )
+      `)
+      .eq('host_user_id', user.id),
+    (supabase as any)
+      .from('guest_invitations')
+      .select('id, invite_email, invite_token, personal_note, created_at, expires_at, manual_guest_id')
+      .eq('inviter_user_id', user.id)
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString()),
+  ]);
 
-  if (acceptedWithManual && acceptedWithManual.length > 0) {
-    const manualIdsToRemove = acceptedWithManual
+  const manualIdsToRemoveSet = new Set<string>(
+    (acceptedWithManual || [])
       .map((inv: any) => inv.manual_guest_id)
-      .filter(Boolean);
-    if (manualIdsToRemove.length > 0) {
-      await supabase
-        .from('guests')
-        .delete()
-        .in('id', manualIdsToRemove)
-        .eq('user_id', user.id);
-    }
+      .filter(Boolean)
+  );
+  if (manualIdsToRemoveSet.size > 0) {
+    // Non-blocking cleanup of accepted manual_guest_id rows
+    supabase
+      .from('guests')
+      .delete()
+      .in('id', Array.from(manualIdsToRemoveSet))
+      .eq('user_id', user.id)
+      .then(() => {}, () => {});
   }
 
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
+  const filteredManualGuests = (rawManualGuests || []).filter(
+    (g: any) => !manualIdsToRemoveSet.has(g.id)
+  );
 
-  // Fetch manually-created guests
-  const { data: rawManualGuests } = await supabase
-    .from('guests')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  const ownGuestIdSet = new Set((rawManualGuests || []).map((g: any) => String(g.id)));
+  const ownGuestIdSet = new Set(filteredManualGuests.map((g: any) => String(g.id)));
   const cachedMysteries = getAllCachedMysteries();
   const cachedAvatarByGuestId = new Map<string, string>();
   for (const m of Object.values(cachedMysteries || {})) {
@@ -106,67 +139,37 @@ async function ProfileContent({
   }
 
   const { upgradeLegacyCloneAvatarUrl } = await import('@/utils/avatar');
-  const manualGuests = await Promise.all(
-    (rawManualGuests || []).map(async (mg: any) => {
-      let avatarUrl = String(mg.avatar_url || '');
-      if (!avatarUrl.includes('aiPhotoUrl=')) {
-        const cachedUrl = cachedAvatarByGuestId.get(mg.id);
-        if (cachedUrl) {
-          avatarUrl = cachedUrl;
-        }
+  const manualGuests = filteredManualGuests.map((mg: any) => {
+    let avatarUrl = String(mg.avatar_url || '');
+    if (!avatarUrl.includes('aiPhotoUrl=')) {
+      const cachedUrl = cachedAvatarByGuestId.get(mg.id);
+      if (cachedUrl) {
+        avatarUrl = cachedUrl;
       }
-      const upgradedUrl = upgradeLegacyCloneAvatarUrl({
-        id: mg.id,
-        name: mg.name,
-        avatar_url: avatarUrl,
-      });
-      if (upgradedUrl && upgradedUrl !== mg.avatar_url) {
-        await supabase
-          .from('guests')
-          .update({ avatar_url: upgradedUrl })
-          .eq('id', mg.id)
-          .eq('user_id', user.id);
-        return { ...mg, avatar_url: upgradedUrl };
-      }
-      return mg;
-    })
-  );
-
-  // Fetch linked guests (via accepted invitations)
-  const { data: connections } = await (supabase as any)
-    .from('guest_connections')
-    .select(`
-      id,
-      guest_user_id,
-      profiles!guest_user_id (
-        bio,
-        location,
-        pronouns,
-        avatar_config,
-        dietary_needs,
-        character_preferences
-      )
-    `)
-    .eq('host_user_id', user.id);
-
-  // Fetch pending invitations (including invite_token so host can copy link anytime)
-  const { data: pendingInvites } = await (supabase as any)
-    .from('guest_invitations')
-    .select('id, invite_email, invite_token, personal_note, created_at, expires_at, manual_guest_id')
-    .eq('inviter_user_id', user.id)
-    .eq('status', 'pending')
-    .gt('expires_at', new Date().toISOString());
-
-  const linkedGuestIds: string[] = (connections ?? []).map((c: any) => c.guest_user_id);
-  let linkedGuestNames: Record<string, string> = {};
-  if (linkedGuestIds.length > 0) {
-    const { data: linkedProfiles } = await supabase
-      .from('profiles')
-      .select('id, full_name')
-      .in('id', linkedGuestIds);
-    (linkedProfiles ?? []).forEach((p: any) => {
-      linkedGuestNames[p.id] = p.full_name || 'Guest';
+    }
+    const upgradedUrl = upgradeLegacyCloneAvatarUrl({
+      id: mg.id,
+      name: mg.name,
+      avatar_url: avatarUrl,
     });
+    if (upgradedUrl && upgradedUrl !== mg.avatar_url) {
+      // Non-blocking background persistence so page render returns immediately
+      supabase
+        .from('guests')
+        .update({ avatar_url: upgradedUrl })
+        .eq('id', mg.id)
+        .eq('user_id', user.id)
+        .then(() => {}, () => {});
+      return { ...mg, avatar_url: upgradedUrl };
+    }
+    return mg;
+  });
+
+  const linkedGuestNames: Record<string, string> = {};
+  for (const c of connections ?? []) {
+    if (c.guest_user_id && c.profiles?.full_name) {
+      linkedGuestNames[c.guest_user_id] = c.profiles.full_name;
+    }
   }
 
   const linkedGuests = (connections ?? []).map((c: any) => ({
