@@ -405,7 +405,7 @@ export default async function HomePage(props: {
                 num: '04',
                 tag: 'Ready in ~20 Mins',
                 title: 'Generate Custom Clues',
-                desc: 'Our engine generates custom costume portraits, CCTV photos featuring your friends, leaked DMs & voice wiretaps.',
+                desc: 'We generate custom costume portraits, CCTV photos featuring your friends, leaked DMs & voice wiretaps.',
                 style: 'bg-brand-gray text-brand-dark shadow-[6px_6px_0px_#120914]',
                 numStyle: 'bg-brand-pink text-white',
                 tagStyle: 'text-brand-dark',

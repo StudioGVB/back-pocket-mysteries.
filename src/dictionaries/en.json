@@ -29,27 +29,27 @@
   },
   "home": {
     "hero": {
-      "badge": "Human-Written Mysteries • AI-Tailored to Your Guests in ~20 Mins",
+      "badge": "Human-Written Mysteries • Tailored to Your Guests in ~20 Mins",
       "title": "Murder mystery, built around, your people.",
-      "subtitle": "Every plot, clue chain, and alibi is written by human mystery writers for watertight logic—then our AI engine builds your custom package around your friends' real names, traits, and inside jokes in ~20 minutes.",
+      "subtitle": "Every plot, clue chain, and alibi is written by human mystery writers for watertight logic—then we build your custom package around your friends' real names, traits, and inside jokes in ~20 minutes.",
       "ctaPick": "Pick a Theme",
       "ctaHow": "How it Works",
       "priceLabel": "From {{price}}",
       "readyBadge": "Ready in ~20 min"
     },
     "why": {
-      "title": "Human-written plots. AI-tailored to your friends.",
-      "desc": "Generic AI tools hallucinate plot holes and weak endings, while off-the-shelf PDF kits force your friends into rigid stranger templates. At Back Pocket Mysteries, every core mystery is architected by a human writer with airtight forensic logic, interlocking alibis, and multi-layered twists—then our AI customises the character dossiers, CCTV evidence, and audio wiretaps around your actual guest list.",
+      "title": "Human-written plots. Tailored to your friends.",
+      "desc": "Generic AI tools hallucinate plot holes and weak endings, while off-the-shelf PDF kits force your friends into rigid stranger templates. At Back Pocket Mysteries, every core mystery is written by a human author with airtight forensic logic, interlocking alibis, and multi-layered twists—then we customise the character dossiers, CCTV evidence, and audio wiretaps around your actual guest list.",
       "features": {
         "guestStory": {
-          "title": "Human-Architected Mystery Plots",
+          "title": "Human-Written Mystery Plots",
           "desc": "Every storyline, motive, timeline, and plot twist is written and play-tested by human writers first—so the logic is complex, fair, and impossible to guess in Round 1.",
           "badge": "100% Human-Written Plot"
         },
         "evidence": {
-          "title": "AI-Personalised to Your Guests",
-          "desc": "Once you enter your guests' names, traits, and inside jokes, our AI engine tailors the character scripts, leaked DMs, CCTV stills, and voice wiretaps to your exact group.",
-          "badge": "AI-Customised Package"
+          "title": "Personalised to Your Guests",
+          "desc": "Once you enter your guests' names, traits, and inside jokes, we tailor the character scripts, leaked DMs, CCTV stills, and voice wiretaps to your exact group.",
+          "badge": "Customised Package"
         },
         "instant": {
           "title": "100% Online Live Mobile Playroom",
@@ -60,17 +60,17 @@
     },
     "steps": {
       "title": "Your party is sorted in 3 steps.",
-      "subtitle": "Human-crafted story depth. AI-powered personalisation. Zero spoilers for the host.",
+      "subtitle": "Human-crafted story depth. Built around your friends. Zero spoilers for the host.",
       "step1": {
         "title": "Pick a human-written mystery theme",
         "desc": "Every theme is crafted by a human writer with 3 to 5 structured rounds (Basic = 3, Premium = 4, Grand = 5), verified clue logic, and a dramatic final reveal."
       },
       "step2": {
         "title": "Cast your friends & add inside jokes",
-        "desc": "Enter your guests' names, personalities, and relationships so our AI engine can weave them into the human-written plot without breaking a single clue."
+        "desc": "Enter your guests' names, personalities, and relationships so we can weave them into the human-written plot without breaking a single clue."
       },
       "step3": {
-        "title": "AI builds your custom package in ~20 mins",
+        "title": "Your custom package is ready in ~20 mins",
         "desc": "Your personalised suspect dossiers, custom evidence, pre-party guest links, and 6-digit Game PIN live lobby are compiled automatically."
       },
       "cta": "See the full process"
@@ -106,7 +106,7 @@
     },
     "compare": {
       "title": "Etsy takes weeks. We take 20 minutes.",
-      "subtitle": "Human-written mystery complexity combined with AI personalisation—without plot holes or a £150 price tag.",
+      "subtitle": "Human-written mystery complexity personalised for your crew—without plot holes or a £150 price tag.",
       "table": {
         "feature": "Feature",
         "bpm": "Back Pocket Mysteries",
@@ -122,7 +122,7 @@
     },
     "ctaSection": {
       "title": "Your party deserves better than a blank template.",
-      "desc": "Human-written mystery depth, AI-tailored around your people. Packs from {{price}}.",
+      "desc": "Human-written mystery depth, tailored around your people. Packs from {{price}}.",
       "meta": "Rated 16+ · UK, US & AU friendly · 100% Online Live Mobile Playroom"
     }
   },
@@ -161,25 +161,25 @@
     }
   },
   "howItWorks": {
-    "title": "Human-written mysteries, AI-built for your group in ~20 minutes.",
-    "subtitle": "Every core mystery is written by a human writer so the clue logic, alibis, and twists are complex and watertight. Then our AI builds your personalised package—weaving your real guests (or a hybrid/fictional cast) into the character scripts, evidence, and live mobile lobby.",
-    "badge": "Human Plot + AI Personalisation",
+    "title": "Human-written mysteries, built for your group in ~20 minutes.",
+    "subtitle": "Every core mystery is written by a human writer so the clue logic, alibis, and twists are complex and watertight. Then we build your personalised package—weaving your real guests (or a hybrid/fictional cast) into the character scripts, evidence, and live mobile lobby.",
+    "badge": "Human Plot + Custom Personalisation",
     "steps": {
       "pick": {
         "title": "Pick a human-crafted mystery theme",
         "desc": "Browse our active themes and pick the setting, cast size, and spice level that matches your event energy. Every theme is written by a human mystery author with 3 to 5 structured rounds (Basic = 3, Premium = 4, Grand = 5), interlocking alibis, and a dramatic final reveal.",
         "bullets": [
-          "100% human-written plot architecture & watertight clue chains",
+          "100% human-written plot & watertight clue chains",
           "Clear Difficulty & Spice ratings on every theme in our catalog",
           "Play as a full-cast roleplay party OR a solo/couple detective case file"
         ]
       },
       "guests": {
         "title": "Cast real friends, fictional suspects, or a hybrid mix",
-        "desc": "Cast your real friends into every role, use a Hybrid mix of your friends + auto-filled fictional suspects, or generate a 100% fictional cast in one click. Our AI engine adapts the character dossiers and clues without ever altering the underlying clue logic.",
+        "desc": "Cast your real friends into every role, use a Hybrid mix of your friends + auto-filled fictional suspects, or generate a 100% fictional cast in one click. Every character dossier and clue adapts to your cast without ever altering the underlying clue logic.",
         "bullets": [
           "3 Cast Modes: All Friends, Hybrid (Friends + Fictional Strangers), or 100% Fictional",
-          "Zero AI plot holes—every alibi and forensic timestamp stays airtight",
+          "Zero plot holes—every alibi and forensic timestamp stays airtight",
           "Spoiler-Free Host Mode so the host can play as a full suspect"
         ]
       },
@@ -189,7 +189,7 @@
         "bullets": [
           "1-Click Pre-Party First Glance links for character outfits & bios",
           "Kahoot-style 6-digit Game PIN lobby on party night (no guest logins)",
-          "Interactive group-chat texts, visual CCTV & AI audio wiretap clues",
+          "Interactive group-chat texts, visual CCTV & audio wiretap clues",
           "Live Multi-Round Host Controller (3–5 Rounds)"
         ]
       }
@@ -232,7 +232,7 @@
   },
   "themes": {
     "title": "Pick the vibe. We handle the rest.",
-    "subtitle": "Every theme is a complete, human-crafted mystery engine, plot, characters, clues, and evidence, all personalised with your guest list. New themes added regularly.",
+    "subtitle": "Every theme is a complete, human-crafted murder mystery—plot, characters, clues, and evidence, all personalised around your guest list. New themes added regularly.",
     "badge": "Choose Your Theme",
     "viewTheme": "View Theme",
     "guests": "{{count}} Guests",

@@ -159,7 +159,7 @@ function Toggle({
   );
 }
 
-export default function SettingsClient({ user, orders, locale }: SettingsClientProps) {
+export default function SettingsClient({ user, orders, guests, locale }: SettingsClientProps) {
   const router = useRouter();
 
   // 1. Account & Currency

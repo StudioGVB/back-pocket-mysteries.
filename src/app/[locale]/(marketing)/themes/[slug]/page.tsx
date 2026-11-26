@@ -186,7 +186,7 @@ export default async function ThemeDetailPage(props: {
             name: `Why don't the characters in ${mystery.title} have pre-set first names?`,
             acceptedAnswer: {
               '@type': 'Answer',
-              text: `Because every role is named after your actual guests! Instead of playing a generic stranger, your friends are cast into iconic archetypes like The Star, The Ex, The Host, and The Superfan, and our engine weaves their real names, pronouns, avatars, and personal quirks directly into the character booklets and story.`,
+              text: `Because every role is named after your actual guests! Instead of playing a generic stranger, your friends are cast into iconic archetypes like The Star, The Ex, The Host, and The Superfan, and we weave their real names, pronouns, avatars, and personal quirks directly into the character booklets and story.`,
             },
           },
           {
