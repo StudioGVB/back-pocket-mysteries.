@@ -25,6 +25,9 @@ import {
   Maximize2,
   X,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -161,7 +164,8 @@ export default function InstagramFacebookManagementPage() {
     postId: string,
     isCurrentlyScheduled: boolean,
     cleanCopy: string = "",
-    imgSrc: string = ""
+    imgSrc: string = "",
+    mediaUrls?: string[]
   ) => {
     try {
       const post = posts.find((p) => p.id === postId);
@@ -209,7 +213,11 @@ export default function InstagramFacebookManagementPage() {
 
         toast.info("Instagram/Facebook post moved back to To Schedule list.");
       } else {
-        const loadingToast = toast.loading("Sending Instagram/Facebook post to Buffer...");
+        const loadingToast = toast.loading(
+          mediaUrls && mediaUrls.length > 1
+            ? `Sending ${mediaUrls.length}-slide carousel to Buffer...`
+            : "Sending Instagram/Facebook post to Buffer..."
+        );
 
         const response = await fetch("/api/admin/buffer/schedule", {
           method: "POST",
@@ -219,6 +227,7 @@ export default function InstagramFacebookManagementPage() {
             platform: "instagram_facebook",
             text: cleanCopy,
             mediaUrl: imgSrc,
+            mediaUrls: mediaUrls && mediaUrls.length > 1 ? mediaUrls : undefined,
             scheduledAt: post.scheduled_at,
             linkUrl: post.slide_content?.linkUrl || post.caption_data?.post_url,
           }),

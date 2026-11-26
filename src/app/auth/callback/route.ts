@@ -59,11 +59,16 @@ export async function GET(request: NextRequest) {
     console.error('Failed to send OAuth new account notification:', err)
   }
 
+  const isAdmin = await isUserAdmin(supabase, user)
+  const isNextAdminRoute = /^\/(en|es|fr|de|it)?\/?(admin|builder)(\/|$)/.test(next)
+
   if (next && next.startsWith('/') && !next.startsWith('//')) {
+    if (isNextAdminRoute && !isAdmin) {
+      return NextResponse.redirect(`${origin}/${locale}/account`)
+    }
     return NextResponse.redirect(`${origin}${next}`)
   }
 
-  const isAdmin = await isUserAdmin(supabase, user)
   if (isAdmin) {
     return NextResponse.redirect(`${origin}/${locale}/admin`)
   }
