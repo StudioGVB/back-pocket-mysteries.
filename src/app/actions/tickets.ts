@@ -545,7 +545,6 @@ export async function getCustomerTicketsAction(): Promise<{
   user: { id: string; name: string; email: string } | null;
   mysteries: Array<{ id: string; title: string }>;
 }> {
-  const allTickets = await loadAllMergedTickets();
   let user: any = null;
   let supabase: any = null;
 
@@ -555,45 +554,127 @@ export async function getCustomerTicketsAction(): Promise<{
     user = data?.user || null;
   } catch {}
 
-  let profileName = user?.user_metadata?.full_name || '';
-  if (user && supabase) {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (profile?.full_name) profileName = profile.full_name;
-    } catch {}
+  if (!user) {
+    return { tickets: [], user: null, mysteries: [] };
   }
 
-  const userEmail = (user?.email || '').toLowerCase().trim();
+  const userEmail = (user.email || '').toLowerCase().trim();
+  const local = readLocalStore();
+  const deletedSet = new Set(local.deletedIds);
+  const map = new Map<string, SupportTicketRecord>();
 
-  const myTickets = !user
-    ? []
-    : allTickets.filter(
-        (t) =>
-          t.user_id === user.id ||
-          (userEmail && (t.user_email || '').toLowerCase().trim() === userEmail)
+  for (const [id, t] of Object.entries(local.tickets)) {
+    if (deletedSet.has(id)) continue;
+    const matchesUser =
+      t.user_id === user.id ||
+      (userEmail && (t.user_email || '').toLowerCase().trim() === userEmail);
+    if (matchesUser) {
+      map.set(id, {
+        ...t,
+        messages: Array.isArray(t.messages)
+          ? [...t.messages].sort((a, b) => a.created_at.localeCompare(b.created_at))
+          : [],
+      });
+    }
+  }
+
+  const [profileRes, mysRes, dbTicketsRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .maybeSingle()
+      .catch(() => ({ data: null })),
+    supabase
+      .from('mysteries')
+      .select('id, title, status')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(30)
+      .catch(() => ({ data: null })),
+    (supabase as any)
+      .from('support_tickets')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .catch(() => ({ data: null, error: true })),
+  ]);
+
+  const profileName =
+    profileRes?.data?.full_name || user?.user_metadata?.full_name || '';
+
+  let mysteries: Array<{ id: string; title: string }> = [];
+  if (Array.isArray(mysRes?.data)) {
+    mysteries = mysRes.data
+      .filter((m: any) => m.title && m.title.trim().toLowerCase() !== 'testing')
+      .map((m: any) => ({ id: m.id, title: m.title }));
+  }
+
+  const dbTickets = Array.isArray(dbTicketsRes?.data) ? dbTicketsRes.data : [];
+  if (dbTickets.length > 0) {
+    const ticketIds = dbTickets.map((t: any) => t.id);
+    const { data: dbMessages } = await (supabase as any)
+      .from('support_ticket_messages')
+      .select('*')
+      .in('ticket_id', ticketIds)
+      .order('created_at', { ascending: true })
+      .catch(() => ({ data: null }));
+
+    const messagesByTicket = new Map<string, TicketMessageRecord[]>();
+    for (const m of dbMessages || []) {
+      const list = messagesByTicket.get(m.ticket_id) || [];
+      list.push({
+        id: String(m.id),
+        ticket_id: String(m.ticket_id),
+        sender_id: m.sender_id || null,
+        sender_role: (m.sender_role as TicketSenderRole) || 'customer',
+        sender_name: m.sender_name || null,
+        message: String(m.message || ''),
+        attachment_urls: Array.isArray(m.attachment_urls) ? m.attachment_urls : [],
+        status_change_to: (m.status_change_to as TicketStatus) || null,
+        created_at: m.created_at || new Date().toISOString(),
+      });
+      messagesByTicket.set(m.ticket_id, list);
+    }
+
+    for (const row of dbTickets) {
+      if (deletedSet.has(row.id)) continue;
+      const existing = map.get(row.id);
+      const dbMsgList = messagesByTicket.get(row.id) || [];
+      const mergedMessagesMap = new Map<string, TicketMessageRecord>();
+      for (const em of existing?.messages || []) mergedMessagesMap.set(em.id, em);
+      for (const dm of dbMsgList) mergedMessagesMap.set(dm.id, dm);
+      const mergedMessages = Array.from(mergedMessagesMap.values()).sort((a, b) =>
+        a.created_at.localeCompare(b.created_at)
       );
 
-  // Only load PUBLISHED mysteries for the customer selector
-  let mysteries: Array<{ id: string; title: string }> = [];
-  if (supabase) {
-    try {
-      const { data: mysData } = await supabase
-        .from('mysteries')
-        .select('id, title, status')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(30);
-      if (Array.isArray(mysData)) {
-        mysteries = mysData
-          .filter((m: any) => m.title && m.title.trim().toLowerCase() !== 'testing')
-          .map((m: any) => ({ id: m.id, title: m.title }));
-      }
-    } catch {}
+      map.set(String(row.id), {
+        id: String(row.id),
+        ticket_number: Number(row.ticket_number) || existing?.ticket_number || 1001,
+        user_id: row.user_id || existing?.user_id || null,
+        user_name: row.user_name || existing?.user_name || null,
+        user_email: String(row.user_email || existing?.user_email || ''),
+        mystery_id: row.mystery_id || existing?.mystery_id || null,
+        mystery_title: existing?.mystery_title || null,
+        category: (row.category as TicketCategory) || existing?.category || 'general',
+        subject: String(row.subject || existing?.subject || 'Support Request'),
+        severity: (row.severity as TicketSeverity) || existing?.severity || 'medium',
+        status: (row.status as TicketStatus) || existing?.status || 'open',
+        last_reply_by:
+          (row.last_reply_by as 'customer' | 'admin') || existing?.last_reply_by || 'customer',
+        created_at: row.created_at || existing?.created_at || new Date().toISOString(),
+        updated_at:
+          existing && existing.updated_at > (row.updated_at || '')
+            ? existing.updated_at
+            : row.updated_at || new Date().toISOString(),
+        messages: mergedMessages,
+      });
+    }
   }
+
+  const myTickets = Array.from(map.values()).sort((a, b) =>
+    (b.updated_at || '').localeCompare(a.updated_at || '')
+  );
 
   const mysteriesMap = new Map(mysteries.map((m) => [m.id, m.title]));
   for (const t of myTickets) {
@@ -604,13 +685,11 @@ export async function getCustomerTicketsAction(): Promise<{
 
   return {
     tickets: myTickets,
-    user: user
-      ? {
-          id: user.id,
-          name: profileName || user.email?.split('@')[0] || 'Customer',
-          email: user.email || '',
-        }
-      : null,
+    user: {
+      id: user.id,
+      name: profileName || user.email?.split('@')[0] || 'Customer',
+      email: user.email || '',
+    },
     mysteries,
   };
 }

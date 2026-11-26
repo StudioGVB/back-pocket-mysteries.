@@ -436,7 +436,7 @@ export default function AdminLeadsClient({
                 : 'text-gray-500 hover:text-brand-dark'
             }`}
           >
-            Newsletter Sign-Ups ({leads.length})
+            All Newsletter Sign-Ups ({leads.length})
           </button>
           <button
             type="button"
@@ -447,7 +447,18 @@ export default function AdminLeadsClient({
                 : 'text-gray-500 hover:text-brand-pink'
             }`}
           >
-            🎁 First 50 VIP Tally ({vipLeads.length} / 50)
+            🎁 First 50 VIP Tally • 100% Free ({vipLeads.length} / 50)
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter('playroom_guests')}
+            className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+              filter === 'playroom_guests'
+                ? 'bg-emerald-600 text-white'
+                : 'text-gray-500 hover:text-emerald-600'
+            }`}
+          >
+            🎮 Post-Party Guests • 50% Off ({playroomGuestLeads.length})
           </button>
           <button
             type="button"
@@ -458,7 +469,7 @@ export default function AdminLeadsClient({
                 : 'text-gray-500 hover:text-amber-600'
             }`}
           >
-            Awaiting Launch Code ({pendingVipLeads.length})
+            Awaiting First-50 Code ({pendingVipLeads.length})
           </button>
           <button
             type="button"
@@ -469,7 +480,7 @@ export default function AdminLeadsClient({
                 : 'text-gray-500 hover:text-indigo-600'
             }`}
           >
-            Customer Accounts Receiving EDM ({customerSubscribers.length})
+            Customer Accounts ({customerSubscribers.length})
           </button>
         </div>
 
@@ -686,14 +697,18 @@ export default function AdminLeadsClient({
               <tbody className="divide-y divide-gray-50">
                 {filteredLeads.length > 0 ? (
                   filteredLeads.map((lead) => {
-                    const isVip =
-                      lead.qualifies_for_free_mystery || lead.vip_rank <= FIRST_50_VIP_CAP;
+                    const isPlayroomGuestOnly = lead.source === 'playroom_finale_guest_reward';
+                    const isVip = isFirst50VipLead(lead);
                     const isSending = sendingEmail === lead.email;
 
                     return (
                       <tr key={lead.id || lead.email} className="hover:bg-gray-50/40 transition-colors">
                         <td className="px-6 py-5">
-                          {isVip ? (
+                          {isPlayroomGuestOnly ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black">
+                              🎮 Post-Party Guest (50% Off)
+                            </span>
+                          ) : isVip ? (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-pink/10 text-brand-pink text-xs font-black">
                               🎁 Spot #{lead.vip_rank} of 50
                             </span>
@@ -736,7 +751,32 @@ export default function AdminLeadsClient({
                         </td>
 
                         <td className="px-6 py-5">
-                          {isVip ? (
+                          {isPlayroomGuestOnly ? (
+                            <div className="space-y-1">
+                              {lead.free_mystery_code ? (
+                                <div className="inline-flex items-center gap-2">
+                                  <span className="font-mono text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                                    {lead.free_mystery_code} (50% Off)
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(lead.free_mystery_code!);
+                                      setCopiedCode(lead.free_mystery_code!);
+                                      setTimeout(() => setCopiedCode(null), 2000);
+                                    }}
+                                    className="text-[10px] font-black uppercase text-brand-pink hover:underline cursor-pointer"
+                                  >
+                                    {copiedCode === lead.free_mystery_code ? 'Copied!' : 'Copy'}
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-xs font-bold text-emerald-700">
+                                  50% Off Single-Use Guest Code Sent
+                                </span>
+                              )}
+                            </div>
+                          ) : isVip ? (
                             lead.free_mystery_code ? (
                               <div className="space-y-1">
                                 <div className="inline-flex items-center gap-2">
@@ -779,23 +819,29 @@ export default function AdminLeadsClient({
                         </td>
 
                         <td className="px-6 py-5 text-right">
-                          {isVip && (
-                            <button
-                              type="button"
-                              disabled={isSending}
-                              onClick={() => handleSendFreeMysteryCode(lead.email)}
-                              className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer disabled:opacity-50 ${
-                                lead.free_mystery_code
-                                  ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                                  : 'bg-brand-pink hover:bg-brand-dark text-white shadow-sm'
-                              }`}
-                            >
-                              {isSending
-                                ? 'Sending...'
-                                : lead.free_mystery_code
-                                ? 'Resend Free Code'
-                                : 'Send Free Mystery Code ✉️'}
-                            </button>
+                          {isPlayroomGuestOnly ? (
+                            <span className="text-[11px] font-bold text-gray-400">
+                              50% Off Guest List (Not in First 50)
+                            </span>
+                          ) : (
+                            isVip && (
+                              <button
+                                type="button"
+                                disabled={isSending}
+                                onClick={() => handleSendFreeMysteryCode(lead.email)}
+                                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer disabled:opacity-50 ${
+                                  lead.free_mystery_code
+                                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                    : 'bg-brand-pink hover:bg-brand-dark text-white shadow-sm'
+                                }`}
+                              >
+                                {isSending
+                                  ? 'Sending...'
+                                  : lead.free_mystery_code
+                                  ? 'Resend Free Code'
+                                  : 'Send Free Mystery Code ✉️'}
+                              </button>
+                            )
                           )}
                         </td>
                       </tr>

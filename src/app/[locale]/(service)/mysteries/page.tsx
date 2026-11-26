@@ -2,8 +2,6 @@ import React from 'react';
 import { getPublishedMysteries } from '@/services/mysteries';
 import MysteriesCatalogClient from './MysteriesCatalogClient';
 
-export const unstable_instant = false;
-
 export default async function ServiceMysteriesPage({
   params,
 }: {

@@ -2,8 +2,6 @@ import React from 'react';
 import { getCustomerTicketsAction } from '@/app/actions/tickets';
 import { CustomerSupportClient } from '@/components/support/CustomerSupportClient';
 
-export const unstable_instant = false;
-
 export default async function AccountSupportPage({
   searchParams,
 }: {
