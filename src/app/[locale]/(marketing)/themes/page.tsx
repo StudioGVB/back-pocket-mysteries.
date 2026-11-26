@@ -272,16 +272,21 @@ export default async function ThemesPage(props: {
 
                     {/* 2x2 Stats Grid */}
                     <div className="grid grid-cols-2 gap-3 mb-5">
-                      <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 relative">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
                           Players
                         </p>
                         <p className="text-sm font-black text-brand-dark">
                           {mystery.playersLabel} ({mystery.characters.length} Roles)
                         </p>
-                        <p className="text-[10px] font-bold text-sky-600 mt-0.5">
-                          🕵️ + Unlimited Extra Detectives
-                        </p>
+                        <div className="group/detective relative inline-block mt-0.5">
+                          <p className="text-[10px] font-bold text-sky-600 cursor-help border-b border-dashed border-sky-400/70 inline-flex items-center gap-0.5">
+                            🕵️ + Extra Detectives
+                          </p>
+                          <div className="pointer-events-none opacity-0 invisible group-hover/detective:opacity-100 group-hover/detective:visible transition-all duration-150 absolute left-0 bottom-full mb-2 w-64 p-3 rounded-2xl bg-sky-50 border border-sky-200 shadow-xl text-[11px] text-slate-600 font-medium leading-snug z-30">
+                            <strong className="text-slate-900">🕵️ Have more than {mystery.characters.length} guests?</strong> Extra friends join free as <strong className="text-sky-700">&ldquo;Detective [Name]&rdquo;</strong> with interrogation prompts, live clues &amp; voting!
+                          </div>
+                        </div>
                       </div>
                       <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
@@ -313,17 +318,12 @@ export default async function ThemesPage(props: {
                       </div>
                     </div>
 
-                    {/* Best For + Extra Guests Note */}
-                    <div className="bg-brand-gray rounded-2xl px-5 py-4 mb-6 space-y-2">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">
-                          {dict.themes.bestFor}
-                        </p>
-                        <p className="text-sm font-black text-brand-dark">{mystery.bestFor}</p>
-                      </div>
-                      <p className="text-xs font-semibold text-slate-600 pt-2 border-t border-slate-200/70">
-                        <strong className="text-slate-900">🕵️ Have more than {mystery.characters.length} guests?</strong> Extra friends join the live Game PIN free as <strong className="text-sky-700">&ldquo;Detective [Their Name]&rdquo;</strong> with interrogation prompts, live clues &amp; voting!
+                    {/* Best For */}
+                    <div className="bg-brand-gray rounded-2xl px-5 py-4 mb-6">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">
+                        {dict.themes.bestFor}
                       </p>
+                      <p className="text-sm font-black text-brand-dark">{mystery.bestFor}</p>
                     </div>
                   </div>
 

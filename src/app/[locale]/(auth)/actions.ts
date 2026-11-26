@@ -138,7 +138,11 @@ export async function verifyMagicLinkOtpAction(
 
     revalidatePath('/', 'layout')
 
+    const isNextAdminRoute = /^\/(en|es|fr|de|it)?\/?(admin|builder)(\/|$)/.test(nextPath || '')
     if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+      if (isNextAdminRoute && !isAdmin) {
+        return { success: true, redirectTo: `/${locale}/account` }
+      }
       return { success: true, redirectTo: nextPath }
     }
 
@@ -338,7 +342,15 @@ export async function signup(formData: FormData) {
   }
 
   if (hasSession) {
+    const isNextAdminRoute = /^\/(en|es|fr|de|it)?\/?(admin|builder)(\/|$)/.test(nextPath)
     if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+      if (isNextAdminRoute) {
+        const { isUserAdmin } = await import('@/utils/admin-auth')
+        const isAdmin = await isUserAdmin(supabase, signUpData?.user || null)
+        if (!isAdmin) {
+          redirect(`/${locale}/account`)
+        }
+      }
       redirect(nextPath)
     }
     redirect(`/${locale}/account/orders?welcome=1`)

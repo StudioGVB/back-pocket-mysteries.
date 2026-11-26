@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   try {
     await requireAdmin();
     const body = await request.json();
-    const { postId, platform, scheduledAt, text, mediaUrl, linkUrl } = body;
+    const { postId, platform, scheduledAt, text, mediaUrl, mediaUrls, linkUrl } = body;
 
     if (!postId) {
       return NextResponse.json({ error: "Missing postId" }, { status: 400 });
@@ -69,11 +69,18 @@ export async function POST(request: Request) {
 
     const profileIds = targetProfiles.map((p) => p.id);
 
-    // 3. Format full image URL if relative path
+    // 3. Format full image URL(s) if relative path
     let absoluteMediaUrl = mediaUrl;
     if (mediaUrl && mediaUrl.startsWith("/")) {
       absoluteMediaUrl = `${BASE_URL}${mediaUrl}`;
     }
+
+    const absoluteMediaUrls: string[] | undefined =
+      Array.isArray(mediaUrls) && mediaUrls.length > 0
+        ? mediaUrls
+            .filter(Boolean)
+            .map((u: string) => (u.startsWith("/") ? `${BASE_URL}${u}` : u))
+        : undefined;
 
     // 3.5. Ensure scheduledAt is in the future so Buffer never rejects a past dueAt
     let effectiveScheduledAt: string | undefined = scheduledAt || undefined;
@@ -108,6 +115,7 @@ export async function POST(request: Request) {
       text: text || "New update from Back Pocket Mysteries",
       media: {
         photo: absoluteMediaUrl || undefined,
+        photos: absoluteMediaUrls,
         link: linkUrl || undefined,
       },
       scheduledAt: effectiveScheduledAt,

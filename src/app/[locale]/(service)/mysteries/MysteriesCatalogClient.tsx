@@ -232,14 +232,19 @@ export default function MysteriesCatalogClient({
                   <div className="space-y-5">
                     {/* 2x2 Stats Grid (Players, Difficulty, Vibe/Spice, Game Time) */}
                     <div className="grid grid-cols-2 gap-2.5">
-                      <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 relative">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
                           Players
                         </p>
                         <p className="text-xs font-black text-slate-900">{playersLabel}</p>
-                        <p className="text-[9px] font-bold text-sky-600 mt-0.5">
-                          🕵️ + Extra Detectives
-                        </p>
+                        <div className="group/detective relative inline-block mt-0.5">
+                          <p className="text-[9px] font-bold text-sky-600 cursor-help border-b border-dashed border-sky-400/70 inline-flex items-center gap-0.5">
+                            🕵️ + Extra Detectives
+                          </p>
+                          <div className="pointer-events-none opacity-0 invisible group-hover/detective:opacity-100 group-hover/detective:visible transition-all duration-150 absolute left-0 bottom-full mb-2 w-60 p-3 rounded-2xl bg-sky-50 border border-sky-200 shadow-xl text-[11px] text-slate-600 font-medium leading-snug z-30">
+                            <strong className="text-slate-900">🕵️ Have more than {mystery.max_players} guests?</strong> Extra friends join free as <strong className="text-sky-700">&ldquo;Detective [Name]&rdquo;</strong> with interrogation prompts, live clues &amp; voting!
+                          </div>
+                        </div>
                       </div>
                       <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
@@ -259,10 +264,6 @@ export default function MysteriesCatalogClient({
                         </p>
                         <p className="text-xs font-black text-slate-900">{gameTimeLabel}</p>
                       </div>
-                    </div>
-
-                    <div className="p-3 rounded-2xl bg-sky-50/70 border border-sky-200/70 text-[11px] text-slate-600 font-medium leading-snug">
-                      <strong className="text-slate-900">🕵️ Have more than {mystery.max_players} guests?</strong> Extra friends join free as <strong className="text-sky-700">&ldquo;Detective [Name]&rdquo;</strong> with interrogation prompts, live clues &amp; voting!
                     </div>
 
                     <Link

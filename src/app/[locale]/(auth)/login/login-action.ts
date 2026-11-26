@@ -57,7 +57,11 @@ export async function signInAction(formData: FormData) {
 
   revalidatePath('/', 'layout')
 
+  const isNextAdminRoute = /^\/(en|es|fr|de|it)?\/?(admin|builder)(\/|$)/.test(nextPath)
   if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+    if (isNextAdminRoute && !isAdmin) {
+      redirect(`/${locale}/account`)
+    }
     redirect(nextPath)
   }
 
