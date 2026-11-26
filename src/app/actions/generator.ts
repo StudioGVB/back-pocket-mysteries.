@@ -18,6 +18,7 @@ import {
   stripEmDashes,
 } from '@/utils/hydration';
 import { getStaticMockGuests } from '@/utils/mock-guests';
+import { resolveDisplayAvatarUrl } from '@/utils/avatar';
 import { inferClueFormat } from '@/utils/clue-format';
 import {
   getCachedMysterySnapshot,
@@ -405,6 +406,10 @@ function checkHasKnownCharacter(clue: any, characters: any[]) {
 function extractAiPhotoUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
+    const resolved = resolveDisplayAvatarUrl(url);
+    if (resolved && !resolved.includes('api.dicebear.com')) {
+      return resolved;
+    }
     if (url.includes('aiPhotoUrl=')) {
       const match = url.match(/[?&]aiPhotoUrl=([^&]+)/);
       if (match) {
@@ -602,6 +607,47 @@ async function hydrateCharactersWithGuests(characters: any[], hostId: string | n
     }
   }
 
+  // 4. Also check `profiles` table for any remaining assignedGuestIds (e.g., when the Host themselves or a Linked Account friend is cast!)
+  const remainingProfileIds = characters
+    .map((c: any) => c?.profile_data?.guest_id)
+    .filter((gid: any) => gid && !guestMap.has(gid));
+  if (hostId && !guestMap.has(hostId) && !remainingProfileIds.includes(hostId)) {
+    remainingProfileIds.push(hostId);
+  }
+  if (remainingProfileIds.length > 0) {
+    try {
+      const { data: hostOrLinkedProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, pronouns, avatar_url, avatar_config')
+        .in('id', remainingProfileIds);
+      if (Array.isArray(hostOrLinkedProfiles)) {
+        for (const prof of hostOrLinkedProfiles) {
+          const cfg = (prof.avatar_config as Record<string, any>) || {};
+          const pLower = String(prof.pronouns || '').toLowerCase();
+          const profGender = pLower.includes('he/him')
+            ? 'Masculine'
+            : pLower.includes('she')
+            ? 'Feminine'
+            : cfg.gender || undefined;
+          guestMap.set(prof.id, {
+            id: prof.id,
+            name: prof.full_name || 'Host',
+            gender: profGender,
+            avatar_url: prof.avatar_url || undefined,
+            eye_color: cfg.eyeColor || undefined,
+            height: cfg.height || undefined,
+            build: cfg.build || undefined,
+            ethnicity: cfg.ethnicity || undefined,
+            age: cfg.age || undefined,
+            accent: cfg.accent || undefined,
+          });
+        }
+      }
+    } catch {
+      // ignore if profiles query fails
+    }
+  }
+
   return characters.map(char => {
     const rawProfile = (char.profile_data as any) || {};
     const guestId = rawProfile.guest_id;
@@ -661,11 +707,16 @@ export async function ensureStandardCharacterPhoto(
   const outfit = getCharacterOutfitDescription(char);
   const identityHash = computeCharacterIdentityHash(char, mystery);
 
-  const existingStandardUrl = profile.standard_character_photo_url || rawProfile.standard_character_photo_url;
+  const existingStandardUrl =
+    profile.standard_character_photo_url || rawProfile.standard_character_photo_url;
+  const existingStandardHash =
+    profile.standard_character_photo_hash || rawProfile.standard_character_photo_hash;
 
-  // Reuse existing standard character photo whenever not explicitly force-regenerating
-  // (Guest swaps already clear standard_character_photo_url or pass forceRegenerate = true)
-  if (!forceRegenerate && existingStandardUrl) {
+  // Reuse existing standard character photo ONLY when not force-regenerating AND its identityHash
+  // still matches the guest's current face headshot, physical traits, and costume (if the guest edited
+  // their hair/glasses/beard or regenerated their Stage 0 headshot, identityHash changes and we regenerate Stage 1!)
+  const hashMatches = !existingStandardHash || existingStandardHash === identityHash;
+  if (!forceRegenerate && existingStandardUrl && hashMatches) {
     return {
       photoUrl: existingStandardUrl,
       identityHash,

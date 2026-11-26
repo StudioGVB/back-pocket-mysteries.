@@ -26,6 +26,13 @@ import {
   computeRefreshedFutureSchedule,
   isScheduledDateInPast,
 } from "@/utils/marketing-schedule-refresh";
+import {
+  BufferAnalyticsPanel,
+  MatchedBufferMetricsBar,
+  matchBufferPostsForCaption,
+  BufferPostItem,
+  PlatformAnalyticsSummary,
+} from "@/components/admin/social/BufferAnalyticsPanel";
 
 interface SocialPostItem {
   id: string;
@@ -53,9 +60,28 @@ export default function LinkedInManagementPage() {
   const [posts, setPosts] = useState<SocialPostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshingDates, setRefreshingDates] = useState(false);
+  const [bufferPosts, setBufferPosts] = useState<BufferPostItem[]>([]);
+  const [bufferSummary, setBufferSummary] = useState<PlatformAnalyticsSummary | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "to_schedule" | "scheduled">("all");
+
+  const fetchBufferAnalytics = async () => {
+    try {
+      setLoadingAnalytics(true);
+      const res = await fetch("/api/admin/buffer/analytics?platform=linkedin");
+      const json = await res.json();
+      if (json?.success) {
+        setBufferPosts(json.posts || []);
+        setBufferSummary(json.summaries?.linkedin || null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch Buffer analytics:", err);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
 
   const fetchLinkedInPosts = async () => {
     try {
@@ -91,6 +117,7 @@ export default function LinkedInManagementPage() {
 
   useEffect(() => {
     fetchLinkedInPosts();
+    fetchBufferAnalytics();
   }, []);
 
   const handleCopyText = (text: string, id: string) => {
@@ -362,6 +389,15 @@ export default function LinkedInManagementPage() {
         </div>
       </div>
 
+      {/* Live Buffer Analytics & Traction Panel */}
+      <BufferAnalyticsPanel
+        title="LinkedIn Page Traction & Buffer Metrics"
+        summary={bufferSummary}
+        posts={bufferPosts}
+        loading={loadingAnalytics}
+        onRefresh={fetchBufferAnalytics}
+      />
+
       {/* Filter Tabs & Search */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 gap-1">
@@ -484,6 +520,11 @@ export default function LinkedInManagementPage() {
                       onUpdateScheduledAt={handleUpdateScheduledAt}
                       onRefreshPastDates={handleRefreshPastDates}
                       refreshingDates={refreshingDates}
+                      matchedBufferPosts={matchBufferPostsForCaption(
+                        post.caption_data?.caption || post.slide_content?.postCopy || post.brief,
+                        bufferPosts,
+                        ["linkedin"]
+                      )}
                     />
                   ))}
                 </div>
@@ -529,6 +570,11 @@ export default function LinkedInManagementPage() {
                       onUpdateScheduledAt={handleUpdateScheduledAt}
                       onRefreshPastDates={handleRefreshPastDates}
                       refreshingDates={refreshingDates}
+                      matchedBufferPosts={matchBufferPostsForCaption(
+                        post.caption_data?.caption || post.slide_content?.postCopy || post.brief,
+                        bufferPosts,
+                        ["linkedin"]
+                      )}
                     />
                   ))}
                 </div>
@@ -554,6 +600,7 @@ interface PostCardProps {
   onUpdateScheduledAt: (postId: string, newIsoDate: string) => Promise<void> | void;
   onRefreshPastDates?: () => Promise<void> | void;
   refreshingDates?: boolean;
+  matchedBufferPosts?: BufferPostItem[];
 }
 
 function PostCard({
@@ -564,6 +611,7 @@ function PostCard({
   onUpdateScheduledAt,
   onRefreshPastDates,
   refreshingDates,
+  matchedBufferPosts,
 }: PostCardProps) {
   const isScheduledOrPosted =
     post.status === "scheduled" || post.status === "posted" || post.status === "published";
@@ -713,6 +761,10 @@ function PostCard({
             </button>
           </div>
         </div>
+
+        {matchedBufferPosts && matchedBufferPosts.length > 0 && (
+          <MatchedBufferMetricsBar matchedPosts={matchedBufferPosts} />
+        )}
 
         {/* Copy preview */}
         <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs font-mono whitespace-pre-line text-gray-800 max-h-48 overflow-y-auto leading-relaxed select-all">

@@ -33,6 +33,13 @@ import {
   computeRefreshedFutureSchedule,
   isScheduledDateInPast,
 } from "@/utils/marketing-schedule-refresh";
+import {
+  BufferAnalyticsPanel,
+  MatchedBufferMetricsBar,
+  matchBufferPostsForCaption,
+  BufferPostItem,
+  PlatformAnalyticsSummary,
+} from "@/components/admin/social/BufferAnalyticsPanel";
 
 const TEMPLATE_LABELS = [
   "1. Noir Editorial",
@@ -73,9 +80,28 @@ export default function InstagramFacebookManagementPage() {
   const [posts, setPosts] = useState<SocialPostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshingDates, setRefreshingDates] = useState(false);
+  const [bufferPosts, setBufferPosts] = useState<BufferPostItem[]>([]);
+  const [bufferSummary, setBufferSummary] = useState<PlatformAnalyticsSummary | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "to_schedule" | "scheduled">("all");
+
+  const fetchBufferAnalytics = async () => {
+    try {
+      setLoadingAnalytics(true);
+      const res = await fetch("/api/admin/buffer/analytics?platform=instagram_facebook");
+      const json = await res.json();
+      if (json?.success) {
+        setBufferPosts(json.posts || []);
+        setBufferSummary(json.summaries?.instagram_facebook || null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch Buffer analytics:", err);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -111,6 +137,7 @@ export default function InstagramFacebookManagementPage() {
 
   useEffect(() => {
     fetchPosts();
+    fetchBufferAnalytics();
   }, []);
 
   const handleCopyText = (text: string, id: string) => {
@@ -383,6 +410,15 @@ export default function InstagramFacebookManagementPage() {
         </div>
       </div>
 
+      {/* Live Buffer Analytics & Traction Panel */}
+      <BufferAnalyticsPanel
+        title="Instagram & Facebook Traction & Buffer Metrics"
+        summary={bufferSummary}
+        posts={bufferPosts}
+        loading={loadingAnalytics}
+        onRefresh={fetchBufferAnalytics}
+      />
+
       {/* Filter Tabs & Search */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 gap-1">
@@ -510,6 +546,11 @@ export default function InstagramFacebookManagementPage() {
                       onUpdateScheduledAt={handleUpdateScheduledAt}
                       onRefreshPastDates={handleRefreshPastDates}
                       refreshingDates={refreshingDates}
+                      matchedBufferPosts={matchBufferPostsForCaption(
+                        post.caption_data?.caption || post.slide_content?.postCopy || post.brief,
+                        bufferPosts,
+                        ["instagram", "facebook"]
+                      )}
                       onSelectTemplate={async (postId, templateIndex) => {
                         const target = posts.find((p) => p.id === postId);
                         const nextSlideContent = {
@@ -579,6 +620,11 @@ export default function InstagramFacebookManagementPage() {
                       onUpdateScheduledAt={handleUpdateScheduledAt}
                       onRefreshPastDates={handleRefreshPastDates}
                       refreshingDates={refreshingDates}
+                      matchedBufferPosts={matchBufferPostsForCaption(
+                        post.caption_data?.caption || post.slide_content?.postCopy || post.brief,
+                        bufferPosts,
+                        ["instagram", "facebook"]
+                      )}
                       onSelectTemplate={async (postId, templateIndex) => {
                         const target = posts.find((p) => p.id === postId);
                         const nextSlideContent = {
@@ -628,6 +674,7 @@ interface IgFbPostCardProps {
   onUpdateScheduledAt: (postId: string, newIsoDate: string) => Promise<void> | void;
   onRefreshPastDates?: () => Promise<void> | void;
   refreshingDates?: boolean;
+  matchedBufferPosts?: BufferPostItem[];
   onSelectTemplate: (postId: string, templateIndex: number | null) => void;
 }
 
@@ -639,6 +686,7 @@ function IgFbPostCard({
   onUpdateScheduledAt,
   onRefreshPastDates,
   refreshingDates,
+  matchedBufferPosts,
   onSelectTemplate,
 }: IgFbPostCardProps) {
   const [copiedTitle, setCopiedTitle] = useState(false);
@@ -992,6 +1040,10 @@ function IgFbPostCard({
               )}
             </div>
           </div>
+
+          {matchedBufferPosts && matchedBufferPosts.length > 0 && (
+            <MatchedBufferMetricsBar matchedPosts={matchedBufferPosts} />
+          )}
 
           {/* 8-Template Design Switcher Bar */}
           <div className="bg-gray-50/90 border border-gray-200/80 rounded-xl p-2.5 flex flex-wrap items-center gap-1.5">

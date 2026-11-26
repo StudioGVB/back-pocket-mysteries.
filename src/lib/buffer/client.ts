@@ -183,3 +183,183 @@ export async function createBufferUpdate(options: BufferCreateUpdateOptions) {
 
   return results;
 }
+
+export interface BufferPostMetric {
+  type: string;
+  name: string;
+  value: number;
+  unit: string;
+}
+
+export interface ParsedBufferMetrics {
+  views: number;
+  impressions: number;
+  reach: number;
+  reactions: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  clicks: number;
+  follows: number;
+  engagementRate: number;
+}
+
+export interface BufferPostWithMetrics {
+  id: string;
+  status: string;
+  channelService: string;
+  channelId: string;
+  dueAt: string | null;
+  sentAt: string | null;
+  externalLink: string | null;
+  text: string;
+  metricsUpdatedAt: string | null;
+  metrics: BufferPostMetric[];
+  parsedMetrics: ParsedBufferMetrics;
+}
+
+export function parseBufferMetricsList(metrics: BufferPostMetric[] = []): ParsedBufferMetrics {
+  const out: ParsedBufferMetrics = {
+    views: 0,
+    impressions: 0,
+    reach: 0,
+    reactions: 0,
+    comments: 0,
+    shares: 0,
+    saves: 0,
+    clicks: 0,
+    follows: 0,
+    engagementRate: 0,
+  };
+
+  for (const m of metrics) {
+    const val = Number(m?.value || 0);
+    if (!Number.isFinite(val)) continue;
+    switch (m.type) {
+      case "views":
+      case "viewers":
+        out.views = Math.max(out.views, val);
+        break;
+      case "impressions":
+        out.impressions = Math.max(out.impressions, val);
+        break;
+      case "reach":
+        out.reach = Math.max(out.reach, val);
+        break;
+      case "reactions":
+      case "likes":
+        out.reactions = Math.max(out.reactions, val);
+        break;
+      case "comments":
+        out.comments = Math.max(out.comments, val);
+        break;
+      case "shares":
+      case "reposts":
+        out.shares = Math.max(out.shares, val);
+        break;
+      case "saves":
+        out.saves = Math.max(out.saves, val);
+        break;
+      case "clicks":
+        out.clicks = Math.max(out.clicks, val);
+        break;
+      case "follows":
+        out.follows = Math.max(out.follows, val);
+        break;
+      case "engagementRate":
+        out.engagementRate = Math.max(out.engagementRate, val);
+        break;
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Fetch recent posts and live social engagement metrics from Buffer
+ */
+export async function getBufferPostsWithMetrics(first = 60): Promise<{
+  channels: BufferProfile[];
+  posts: BufferPostWithMetrics[];
+}> {
+  const accountData = await fetchGraphQL(`
+    query GetAccountOrgs {
+      account {
+        id
+        organizations {
+          id
+          name
+        }
+      }
+    }
+  `);
+
+  const orgs = accountData?.account?.organizations || [];
+  if (orgs.length === 0) {
+    throw new Error("No Buffer organizations found for this account.");
+  }
+
+  const organizationId = orgs[0].id;
+
+  const data = await fetchGraphQL(
+    `
+      query GetOrgChannelsAndPosts($chInput: ChannelsInput!, $postsInput: PostsInput!, $first: Int) {
+        channels(input: $chInput) {
+          id
+          name
+          displayName
+          service
+          type
+        }
+        posts(input: $postsInput, first: $first) {
+          edges {
+            node {
+              id
+              status
+              channelService
+              channelId
+              dueAt
+              sentAt
+              externalLink
+              text
+              metricsUpdatedAt
+              metrics {
+                type
+                name
+                value
+                unit
+              }
+            }
+          }
+        }
+      }
+    `,
+    {
+      chInput: { organizationId },
+      postsInput: { organizationId },
+      first,
+    }
+  );
+
+  const channels = (data?.channels || []) as BufferProfile[];
+  const edges = data?.posts?.edges || [];
+  const posts: BufferPostWithMetrics[] = edges
+    .map((e: any) => e?.node)
+    .filter(Boolean)
+    .map((node: any) => ({
+      id: node.id,
+      status: node.status || "unknown",
+      channelService: (node.channelService || "").toLowerCase(),
+      channelId: node.channelId || "",
+      dueAt: node.dueAt || null,
+      sentAt: node.sentAt || null,
+      externalLink: node.externalLink || null,
+      text: node.text || "",
+      metricsUpdatedAt: node.metricsUpdatedAt || null,
+      metrics: Array.isArray(node.metrics) ? node.metrics : [],
+      parsedMetrics: parseBufferMetricsList(Array.isArray(node.metrics) ? node.metrics : []),
+    }));
+
+  return { channels, posts };
+}
+

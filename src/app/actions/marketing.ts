@@ -561,24 +561,41 @@ export async function getUnifiedNewsletterDirectoryAction(): Promise<{
     string,
     { email: string; full_name: string | null; source_type: 'vip_lead' | 'customer' }
   >();
+  const unsubscribedEmails = new Set<string>();
 
   for (const lead of newsletterLeads) {
-    if (lead.marketing_consent !== false && lead.email) {
-      combinedMap.set(lead.email.toLowerCase().trim(), {
-        email: lead.email.toLowerCase().trim(),
-        full_name: lead.full_name,
-        source_type: 'vip_lead',
-      });
+    const cleanEmail = (lead.email || '').toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) continue;
+    if (lead.marketing_consent === false) {
+      unsubscribedEmails.add(cleanEmail);
+      continue;
     }
+    combinedMap.set(cleanEmail, {
+      email: cleanEmail,
+      full_name: lead.full_name,
+      source_type: 'vip_lead',
+    });
   }
 
   for (const cust of customerSubscribers) {
-    if (cust.email && !combinedMap.has(cust.email)) {
-      combinedMap.set(cust.email, {
-        email: cust.email,
+    const cleanEmail = (cust.email || '').toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) continue;
+    if (unsubscribedEmails.has(cleanEmail)) continue;
+    if (!combinedMap.has(cleanEmail)) {
+      combinedMap.set(cleanEmail, {
+        email: cleanEmail,
         full_name: cust.full_name,
         source_type: 'customer',
       });
+    } else {
+      // If they are on both lists and the customer profile has a full_name when the lead record didn't, enrich it in place
+      const existing = combinedMap.get(cleanEmail)!;
+      if (!existing.full_name && cust.full_name) {
+        combinedMap.set(cleanEmail, {
+          ...existing,
+          full_name: cust.full_name,
+        });
+      }
     }
   }
 

@@ -817,6 +817,22 @@ export function getGuestPhysicalDescription(profileData: any, gender: string | n
           parts.push(
             `men's shoulder-length,${textureStr} texture ${hairColor.toLowerCase()} hair${styleSuffix}`
           );
+        } else if (!isMasculine && hairLength === 'Very Long') {
+          parts.push(
+            `very long${textureStr} texture ${hairColor.toLowerCase()} hair cascading well past the shoulders and chest${styleSuffix} (strictly long hair worn down — never a bob)`
+          );
+        } else if (!isMasculine && hairLength === 'Long') {
+          parts.push(
+            `long${textureStr} texture ${hairColor.toLowerCase()} hair falling well past the shoulders and collarbones down to the chest${styleSuffix} (strictly long hair worn down past the shoulders — never a short bob)`
+          );
+        } else if (!isMasculine && hairLength === 'Shoulder-Length') {
+          parts.push(
+            `shoulder-length / collarbone-grazing${textureStr} texture ${hairColor.toLowerCase()} hair${styleSuffix}`
+          );
+        } else if (!isMasculine && hairLength === 'Medium') {
+          parts.push(
+            `medium chin-to-neck length${textureStr} texture ${hairColor.toLowerCase()} bob haircut above the shoulders${styleSuffix}`
+          );
         } else {
           parts.push(
             `${hairLength.toLowerCase()} length,${textureStr} texture ${hairColor.toLowerCase()} hair${styleSuffix}`

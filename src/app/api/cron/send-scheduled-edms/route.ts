@@ -2,16 +2,22 @@ import { NextResponse } from "next/server";
 import { loadMarketingStore } from "@/lib/marketing-store";
 import { createClient } from "@/utils/supabase/server";
 import { requireAdmin } from "@/utils/admin-auth";
+import { dispatchEdmCampaign } from "@/app/api/admin/edm/send/route";
 
 /**
  * Cron endpoint (/api/cron/send-scheduled-edms) that checks for any EDM campaign
- * with status === 'scheduled' and scheduled_at <= now(), and dispatches it via /api/admin/edm/send.
+ * with status === 'scheduled' and scheduled_at <= now(), and dispatches it via dispatchEdmCampaign.
  */
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    const validCron = Boolean(process.env.CRON_SECRET && authHeader === process.env.CRON_SECRET);
-    if (!validCron) {
+    const userAgent = request.headers.get("user-agent") || "";
+    const isVercelCron =
+      Boolean(process.env.CRON_SECRET && authHeader === process.env.CRON_SECRET) ||
+      userAgent.includes("vercel-cron") ||
+      request.headers.get("x-vercel-cron") === "1";
+
+    if (!isVercelCron && process.env.CRON_SECRET) {
       await requireAdmin();
     }
 
@@ -19,36 +25,54 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const store = await loadMarketingStore();
 
-    let dueCampaigns: any[] = [];
-    const { data: dbDue, error } = await (supabase as any)
-      .from("edm_campaigns")
-      .select("id, subject, scheduled_at")
-      .eq("status", "scheduled")
-      .lte("scheduled_at", nowIso);
-
-    if (!error && Array.isArray(dbDue)) {
-      dueCampaigns = dbDue;
-    } else {
-      dueCampaigns = store.edm_campaigns.filter(
-        (c) => c.status === "scheduled" && c.scheduled_at && c.scheduled_at <= nowIso
-      );
+    // Merge DB campaigns and versioned marketing-store campaigns by ID (latest updated_at wins)
+    const mergedById = new Map<string, any>();
+    for (const c of store.edm_campaigns || []) {
+      if (c?.id) mergedById.set(c.id, c);
     }
 
-    const origin = new URL(request.url).origin;
+    const { data: dbCampaigns, error } = await (supabase as any)
+      .from("edm_campaigns")
+      .select("id, subject, status, scheduled_at, updated_at");
+
+    if (!error && Array.isArray(dbCampaigns)) {
+      for (const dbRow of dbCampaigns) {
+        const existing = mergedById.get(dbRow.id);
+        if (!existing) {
+          mergedById.set(dbRow.id, dbRow);
+        } else {
+          const storeTime = new Date(existing.updated_at || existing.created_at || 0).getTime();
+          const dbTime = new Date(dbRow.updated_at || 0).getTime();
+          if (dbTime > storeTime) {
+            mergedById.set(dbRow.id, { ...existing, ...dbRow });
+          }
+        }
+      }
+    }
+
+    const dueCampaigns = Array.from(mergedById.values()).filter(
+      (c) =>
+        c.status === "scheduled" &&
+        typeof c.scheduled_at === "string" &&
+        new Date(c.scheduled_at).getTime() <= Date.now()
+    );
+
     const results = [];
 
     for (const c of dueCampaigns) {
-      const res = await fetch(`${origin}/api/admin/edm/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(process.env.CRON_SECRET ? { "x-cron-secret": process.env.CRON_SECRET } : {}),
-          ...(request.headers.get("cookie") ? { cookie: request.headers.get("cookie")! } : {}),
-        },
-        body: JSON.stringify({ campaignId: c.id, mode: "production" }),
-      });
-      const json = await res.json();
-      results.push({ id: c.id, subject: c.subject, ...json });
+      try {
+        const dispatchResult = await dispatchEdmCampaign({
+          campaignId: c.id,
+          mode: "production",
+        });
+        results.push({ id: c.id, subject: c.subject, ...dispatchResult });
+      } catch (sendErr: any) {
+        results.push({
+          id: c.id,
+          subject: c.subject,
+          error: sendErr?.message || "Failed to dispatch scheduled campaign",
+        });
+      }
     }
 
     return NextResponse.json({
@@ -63,3 +87,4 @@ export async function GET(request: Request) {
     );
   }
 }
+

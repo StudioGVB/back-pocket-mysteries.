@@ -33,17 +33,38 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Target specific platform or all matching channels
+    // 2. Strictly target ONLY the requested platform's Buffer channels (never fall back to other platforms!)
     // Buffer service names: 'linkedin', 'instagram', 'facebook'
     let targetProfiles = profiles;
-    if (platform && platform !== "all") {
-      const normalizedPlatform = platform.toLowerCase();
-      targetProfiles = profiles.filter((p) => normalizedPlatform.includes(p.service.toLowerCase()));
+    const normalizedPlatform = (platform || "all").toLowerCase();
+    const isLinkedInRequest = normalizedPlatform === "linkedin";
+    const isIgFbRequest =
+      normalizedPlatform === "instagram_facebook" ||
+      normalizedPlatform === "instagram" ||
+      normalizedPlatform === "facebook";
+
+    if (isLinkedInRequest) {
+      targetProfiles = profiles.filter((p) => p.service.toLowerCase() === "linkedin");
+    } else if (isIgFbRequest) {
+      targetProfiles = profiles.filter((p) => {
+        const svc = p.service.toLowerCase();
+        return svc === "instagram" || svc === "facebook";
+      });
+    } else if (normalizedPlatform !== "all") {
+      targetProfiles = profiles.filter((p) =>
+        normalizedPlatform.includes(p.service.toLowerCase())
+      );
     }
 
     if (targetProfiles.length === 0) {
-      // Fallback to all profiles if no specific profile match
-      targetProfiles = profiles;
+      return NextResponse.json(
+        {
+          error: `No connected Buffer channel found for ${
+            isLinkedInRequest ? "LinkedIn" : isIgFbRequest ? "Instagram / Facebook" : platform
+          }. Please check your connected channels in Buffer.`,
+        },
+        { status: 400 }
+      );
     }
 
     const profileIds = targetProfiles.map((p) => p.id);
@@ -81,7 +102,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Send to Buffer API
+    // 4. Send to Buffer API (ONLY to the matched platform's profiles)
     const result = await createBufferUpdate({
       targetProfiles: targetProfiles.map((p: any) => ({ id: p.id, service: p.service })),
       text: text || "New update from Back Pocket Mysteries",
@@ -92,10 +113,55 @@ export async function POST(request: Request) {
       scheduledAt: effectiveScheduledAt,
     });
 
-    // 5. Update local database status in social_posts to 'scheduled'
+    // 5. Update local database status ONLY for this specific platform so LinkedIn & IG/FB stay completely separate!
     const supabase = await createClient();
+    const platformKey = isLinkedInRequest
+      ? "linkedin"
+      : isIgFbRequest
+        ? "instagram_facebook"
+        : normalizedPlatform;
+
+    const { data: existingPost } = await (supabase as any)
+      .from("social_posts")
+      .select("id, status, slide_content")
+      .eq("id", postId)
+      .single();
+
+    const prevSlideContent =
+      existingPost?.slide_content && typeof existingPost.slide_content === "object"
+        ? existingPost.slide_content
+        : {};
+    const prevPlatformStatuses =
+      prevSlideContent.platform_statuses &&
+      typeof prevSlideContent.platform_statuses === "object"
+        ? prevSlideContent.platform_statuses
+        : {};
+
+    // Preserve the other platform's current status (defaulting to 'draft' if it wasn't explicitly scheduled yet)
+    const otherPlatformKey =
+      platformKey === "linkedin" ? "instagram_facebook" : "linkedin";
+    const otherPlatformStatus =
+      prevPlatformStatuses[otherPlatformKey] || "draft";
+
+    const nextPlatformStatuses = {
+      ...prevPlatformStatuses,
+      [otherPlatformKey]: otherPlatformStatus,
+      [platformKey]: "scheduled",
+    };
+
+    const nextSlideContent = {
+      ...prevSlideContent,
+      platform_statuses: nextPlatformStatuses,
+    };
+
+    // Only mark the parent row 'scheduled' if BOTH platforms are scheduled; otherwise keep parent status independent per platform_statuses
+    const bothScheduled =
+      nextPlatformStatuses.linkedin === "scheduled" &&
+      nextPlatformStatuses.instagram_facebook === "scheduled";
+
     const updatePayload: Record<string, any> = {
-      status: "scheduled",
+      status: bothScheduled ? "scheduled" : existingPost?.status || "draft",
+      slide_content: nextSlideContent,
       updated_at: new Date().toISOString(),
     };
     if (effectiveScheduledAt) {
@@ -107,8 +173,8 @@ export async function POST(request: Request) {
       .update(updatePayload)
       .eq("id", postId);
 
+    const { executeStoreOperation } = await import("@/lib/marketing-store");
     if (dbErr) {
-      const { executeStoreOperation } = await import("@/lib/marketing-store");
       await executeStoreOperation({
         table: "social_posts",
         action: "update",
@@ -117,12 +183,30 @@ export async function POST(request: Request) {
       });
     }
 
+    // Also update the platform-specific social_post_captions rows in the local marketing store
+    const targetCaptionPlatforms = isLinkedInRequest
+      ? ["linkedin"]
+      : ["instagram", "facebook", "instagram_facebook"];
+    await executeStoreOperation({
+      table: "social_post_captions",
+      action: "update",
+      filters: [
+        { type: "eq", column: "post_id", value: postId },
+        { type: "in", column: "platform", value: targetCaptionPlatforms },
+      ],
+      values: { status: "scheduled" },
+    });
+
     return NextResponse.json({
       success: true,
       bufferResult: result,
       scheduledAt: effectiveScheduledAt,
+      platformKey,
+      platformStatuses: nextPlatformStatuses,
       targetChannelsCount: profileIds.length,
-      message: `Pushed post directly to ${profileIds.length} Buffer channel(s)!`,
+      message: `Pushed ${
+        isLinkedInRequest ? "LinkedIn" : "Instagram/Facebook"
+      } post to ${profileIds.length} Buffer channel(s)!`,
     });
   } catch (error: any) {
     console.error("[Buffer Schedule API Error]:", error);

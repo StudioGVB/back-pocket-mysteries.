@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { ACTIVE_MYSTERIES } from "@/data/active-mysteries";
 import { duplicateCampaign } from "../duplicateCampaign";
+import { getUnifiedNewsletterDirectoryAction } from "@/app/actions/marketing";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -120,10 +121,16 @@ export default function EdmCampaignDetailPage() {
   const fetchCampaign = useCallback(async () => {
     try {
       setLoading(true);
-      const { count } = await supabase
-        .from("leads")
-        .select("id", { count: "exact", head: true });
-      setLeadsCount(count || 0);
+      try {
+        const dir = await getUnifiedNewsletterDirectoryAction();
+        setLeadsCount(dir.combinedSubscribers?.length || 0);
+      } catch {
+        const { count } = await supabase
+          .from("leads")
+          .select("id", { count: "exact", head: true });
+        setLeadsCount(count || 0);
+      }
+
 
       if (isNew) {
         const defaultBlocks = [
@@ -658,10 +665,10 @@ export default function EdmCampaignDetailPage() {
                     <Users className="h-3.5 w-3.5 text-brand-pink" />
                     Target Audience
                   </label>
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs font-bold text-gray-700 flex items-center justify-between">
-                    <span>All Newsletter &amp; VIP Leads</span>
-                    <span className="px-2 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink">
-                      {leadsCount} subscribers
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs font-bold text-gray-700 flex items-center justify-between gap-2">
+                    <span>Newsletter + Customers (Deduplicated)</span>
+                    <span className="px-2 py-0.5 rounded-full bg-brand-pink/10 text-brand-pink shrink-0">
+                      {leadsCount} unique
                     </span>
                   </div>
                 </div>

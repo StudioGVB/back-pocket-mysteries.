@@ -872,6 +872,7 @@ The framing MUST show everything from the chest/shoulders up, including the full
             };
             delete nextPd.standard_character_photo_url;
             delete nextPd.standard_character_photo_hash;
+            delete nextPd.outfit_image_url;
             await supabase
               .from('characters')
               .update({ profile_data: nextPd })
@@ -904,6 +905,7 @@ The framing MUST show everything from the chest/shoulders up, including the full
             };
             delete nextPd.standard_character_photo_url;
             delete nextPd.standard_character_photo_hash;
+            delete nextPd.outfit_image_url;
             return { ...c, profile_data: nextPd };
           }
           return c;
