@@ -1,6 +1,8 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
+import { getPublishedMysteries } from '@/services/mysteries';
+import { getSubscriberGiftPassStateForUser } from '@/app/actions/subscriber-perks';
 import DashboardClient from './DashboardClient';
 
 export default async function AccountDashboardPage({
@@ -16,34 +18,36 @@ export default async function AccountDashboardPage({
     redirect(`/${locale}/login`);
   }
 
-  // Fetch guest count
-  const { count: guestCount } = await supabase
-    .from('guests')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
-
-  // Fetch guests for preview row (up to 8)
-  const { data: guests } = await supabase
-    .from('guests')
-    .select('id, name, gender, avatar_url, traits')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(8);
-
-  // Fetch order count
-  const { count: orderCount } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
-
-  // Fetch published mysteries and order counts to rank by most popular selling
-  const { getPublishedMysteries } = await import('@/services/mysteries');
-  const publishedMysteries = await getPublishedMysteries();
-
-  const { data: allSales } = await supabase
-    .from('orders')
-    .select('mystery_id')
-    .eq('status', 'succeeded');
+  // Run all 6 dashboard queries in parallel instead of sequentially
+  const [
+    { count: guestCount },
+    { data: guests },
+    { count: orderCount },
+    publishedMysteries,
+    { data: allSales },
+    giftPassState,
+  ] = await Promise.all([
+    supabase
+      .from('guests')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id),
+    supabase
+      .from('guests')
+      .select('id, name, gender, avatar_url, traits')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(8),
+    supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id),
+    getPublishedMysteries(),
+    supabase
+      .from('orders')
+      .select('mystery_id')
+      .eq('status', 'succeeded'),
+    getSubscriberGiftPassStateForUser(user.id),
+  ]);
 
   const salesCountMap = (allSales ?? []).reduce<Record<string, number>>((acc, sale: any) => {
     if (sale.mystery_id) {
@@ -55,9 +59,6 @@ export default async function AccountDashboardPage({
   const popularMysteries = (publishedMysteries ?? [])
     .sort((a: any, b: any) => (salesCountMap[b.id] || 0) - (salesCountMap[a.id] || 0))
     .slice(0, 3);
-
-  const { getSubscriberGiftPassStateForUser } = await import('@/app/actions/subscriber-perks');
-  const giftPassState = await getSubscriberGiftPassStateForUser(user.id);
 
   return (
     <DashboardClient
