@@ -330,7 +330,7 @@ export default function AdminBlogPostsPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-brand-dark shadow-xs"
           >
             <Calendar className="h-3.5 w-3.5 text-brand-pink" />
-            Campaign Calendar
+            Overview
           </Link>
           <Link
             href="/admin/blog/new"

@@ -19,6 +19,7 @@ import {
   ChevronUp,
   Sparkles,
   BookOpen,
+  Check,
 } from "lucide-react";
 import { LinkedinIcon as Linkedin, InstagramIcon as Instagram } from "@/components/icons/SocialIcons";
 import { cn } from "@/lib/utils";
@@ -136,7 +137,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
       try {
         const { data, error } = await supabase
           .from("social_posts")
-          .select("id, brief, scheduled_at, status, social_post_captions(platform)")
+          .select("id, brief, scheduled_at, posted_at, status, slide_content, social_post_captions(platform)")
           .not("scheduled_at", "is", null)
           .in("status", ["draft", "scheduled", "posted", "published"]);
         if (!error && data) {
@@ -193,15 +194,22 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
         if (plats.includes("instagram") || plats.includes("facebook") || plats.includes("instagram_facebook")) {
           groups.push("igfb");
         }
-        return groups.map((platform) => ({
-          id: `${post.id}-${platform}`,
-          postId: post.id as string,
-          subject: post.brief,
-          type: "social" as const,
-          status: post.status,
-          platform,
-          date: new Date(post.scheduled_at),
-        }));
+        const platformStatuses = post.slide_content?.platform_statuses || {};
+        return groups.map((platform) => {
+          const effectiveStatus =
+            platform === "linkedin"
+              ? platformStatuses.linkedin || (platformStatuses.instagram_facebook ? "draft" : post.status)
+              : platformStatuses.instagram_facebook || (platformStatuses.linkedin ? "draft" : post.status);
+          return {
+            id: `${post.id}-${platform}`,
+            postId: post.id as string,
+            subject: post.brief,
+            type: "social" as const,
+            status: effectiveStatus,
+            platform,
+            date: new Date(post.scheduled_at),
+          };
+        });
       });
   }, [socialPosts]);
 
@@ -692,17 +700,29 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                         const time =
                           (isEdm || isSocial) && event.date ? format(event.date, "h:mm a") : "";
 
+                        const now = new Date();
+                        const isSuccessfullyPosted = isEdm
+                          ? event.status === "sent" ||
+                            (event.status === "scheduled" && event.date <= now)
+                          : isBlog
+                          ? !event.is_draft && event.date <= now
+                          : isSocial
+                          ? event.status === "posted" ||
+                            event.status === "published" ||
+                            (event.status === "scheduled" && event.date <= now)
+                          : false;
+
                         let activeColor = "";
                         if (isEdm) {
                           if (event.status === "draft") {
                             activeColor = colors.draftItem;
-                          } else if (event.status === "sent") {
+                          } else if (isSuccessfullyPosted) {
                             activeColor = colors.sentPosted;
                           } else {
                             activeColor = colors.scheduledEdm;
                           }
                         } else if (isBlog) {
-                          const isFuture = event.date > new Date();
+                          const isFuture = event.date > now;
                           if (event.is_draft) {
                             activeColor = colors.draftItem;
                           } else if (isFuture) {
@@ -713,7 +733,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                         } else if (isSocial) {
                           if (event.status === "draft") {
                             activeColor = colors.draftItem;
-                          } else if (event.status === "posted" || event.status === "published") {
+                          } else if (isSuccessfullyPosted) {
                             activeColor = colors.sentPosted;
                           } else {
                             activeColor = isIgFb ? colors.igFbPost : colors.socialPost;
@@ -736,11 +756,13 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                             type="button"
                             title={`${event.subject} (${
                               isEdm
-                                ? `EDM ${event.status}`
+                                ? `EDM ${isSuccessfullyPosted ? "Sent ✓" : event.status}`
                                 : isSocial
-                                ? `${socialLabel} ${event.status}`
+                                ? `${socialLabel} ${isSuccessfullyPosted ? "Posted ✓" : event.status}`
                                 : isBlog
-                                ? "Blog Post"
+                                ? isSuccessfullyPosted
+                                  ? "Blog Posted ✓"
+                                  : "Blog Post"
                                 : "VIP Lead"
                             }) — Double-click to change date & time`}
                             onClick={() => {
@@ -786,8 +808,9 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                               }
                             }}
                             className={cn(
-                              "text-[10px] p-1 rounded border-l-2 cursor-pointer w-full text-left transition-all",
+                              "relative text-[10px] p-1 rounded border-l-2 cursor-pointer w-full text-left transition-all",
                               "hover:scale-[1.02] active:scale-[0.98] flex flex-col gap-0.5 shadow-xs truncate",
+                              isSuccessfullyPosted && "pr-5",
                               !dynamicStyle &&
                                 (isEdm
                                   ? statusColors[event.status || ""] || "border-gray-300 bg-gray-50"
@@ -795,6 +818,14 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                             )}
                             style={dynamicStyle}
                           >
+                            {isSuccessfullyPosted && (
+                              <span
+                                className="absolute top-1 right-1 inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-emerald-600 text-white shadow-xs shrink-0"
+                                title="Successfully posted"
+                              >
+                                <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                              </span>
+                            )}
                             <div className="flex items-center gap-1 text-[9px] font-bold opacity-90">
                               {isEdm ? (
                                 <Mail
@@ -832,7 +863,7 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
                                   : isBlog
                                   ? event.is_draft
                                     ? "Blog (Draft)"
-                                    : event.date > new Date()
+                                    : event.date > now
                                     ? "Blog (Scheduled)"
                                     : "Blog (Posted)"
                                   : "VIP Lead"}
@@ -909,13 +940,9 @@ export const EdmCalendar = ({ campaigns }: EdmCalendarProps) => {
               <span>Scheduled IG / FB</span>
             </div>
             <div className="flex items-center gap-2">
-              <div
-                className="w-2.5 h-2.5 rounded border-l-2"
-                style={{
-                  borderLeftColor: colors.sentPosted,
-                  backgroundColor: `${colors.sentPosted}20`,
-                }}
-              />
+              <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-emerald-600 text-white shadow-xs">
+                <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+              </span>
               <span>Sent / Published</span>
             </div>
             <div className="flex items-center gap-2">

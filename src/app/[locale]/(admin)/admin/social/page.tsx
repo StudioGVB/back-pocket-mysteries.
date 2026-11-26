@@ -18,6 +18,7 @@ import {
 import {
   LinkedinIcon as Linkedin,
   InstagramIcon as Instagram,
+  FacebookIcon as Facebook,
 } from "@/components/icons/SocialIcons";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -25,6 +26,11 @@ import {
   computeRefreshedFutureSchedule,
   isScheduledDateInPast,
 } from "@/utils/marketing-schedule-refresh";
+import {
+  BufferAnalyticsPanel,
+  BufferPostItem,
+  PlatformAnalyticsSummary,
+} from "@/components/admin/social/BufferAnalyticsPanel";
 
 interface SocialPostItem {
   id: string;
@@ -57,6 +63,40 @@ export default function SocialCalendarPage() {
   const [captions, setCaptions] = useState<CaptionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshingDates, setRefreshingDates] = useState(false);
+  const [bufferPosts, setBufferPosts] = useState<BufferPostItem[]>([]);
+  const [bufferSummaries, setBufferSummaries] = useState<{
+    all: PlatformAnalyticsSummary | null;
+    instagram: PlatformAnalyticsSummary | null;
+    facebook: PlatformAnalyticsSummary | null;
+    linkedin: PlatformAnalyticsSummary | null;
+  }>({
+    all: null,
+    instagram: null,
+    facebook: null,
+    linkedin: null,
+  });
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
+  const fetchBufferAnalytics = useCallback(async () => {
+    try {
+      setLoadingAnalytics(true);
+      const res = await fetch("/api/admin/buffer/analytics?platform=all");
+      const json = await res.json();
+      if (json?.success) {
+        setBufferPosts(json.posts || []);
+        setBufferSummaries({
+          all: json.summaries?.all || null,
+          instagram: json.summaries?.instagram || null,
+          facebook: json.summaries?.facebook || null,
+          linkedin: json.summaries?.linkedin || null,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch Buffer analytics for Overview:", err);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  }, []);
 
   const fetchCalendarData = useCallback(async () => {
     try {
@@ -92,7 +132,8 @@ export default function SocialCalendarPage() {
 
   useEffect(() => {
     fetchCalendarData();
-  }, [fetchCalendarData]);
+    fetchBufferAnalytics();
+  }, [fetchCalendarData, fetchBufferAnalytics]);
 
   const pastDueDraftCount = useMemo(() => {
     const pastSocial = socialPosts.filter(

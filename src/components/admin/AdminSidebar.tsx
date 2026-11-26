@@ -300,7 +300,7 @@ export function AdminSidebar() {
   const marketingItems: NavItem[] = [
     {
       id: 'calendar',
-      label: 'Campaign Calendar',
+      label: 'Overview',
       href: '/admin/social',
       exact: true,
       icon: (

@@ -58,10 +58,10 @@ const HUB_GROUPS: HubGroup[] = [
   },
   {
     id: 'marketing',
-    title: 'Marketing Command Center',
+    title: 'Marketing Overview',
     tabs: [
       {
-        label: '📅 Campaign Calendar',
+        label: '📊 Overview',
         href: '/admin/social',
         exact: true,
       },

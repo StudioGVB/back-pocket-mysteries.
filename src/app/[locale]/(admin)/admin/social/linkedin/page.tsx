@@ -383,7 +383,7 @@ export default function LinkedInManagementPage() {
             className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-brand-dark mb-2"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Campaign Calendar
+            Back to Overview
           </Link>
           <h1 className="text-3xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-2">
             LinkedIn Posts &amp; <span className="text-[#0A66C2] italic">Performance</span>
