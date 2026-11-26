@@ -14,12 +14,24 @@ function escapeHtml(str: string): string {
 
 export async function submitReview(formData: FormData) {
   const name = ((formData.get('name') as string) || '').trim();
+  const email = ((formData.get('email') as string) || '').trim().toLowerCase();
+  const mysteryTitle = ((formData.get('mystery_title') as string) || '').trim();
+  const characterRole = ((formData.get('character_role') as string) || '').trim();
   const rating = parseInt(formData.get('rating') as string, 10);
-  const review_text = ((formData.get('review_text') as string) || '').trim();
+  const rawReviewText = ((formData.get('review_text') as string) || '').trim();
 
-  if (!name || !review_text || isNaN(rating) || rating < 1 || rating > 5) {
+  if (!name || !rawReviewText || isNaN(rating) || rating < 1 || rating > 5) {
     return { error: 'Please provide a valid name, rating (1-5), and review text.' };
   }
+
+  const contextTagParts = [
+    ...(mysteryTitle ? [mysteryTitle] : []),
+    ...(characterRole ? [`Played ${characterRole}`] : []),
+  ];
+  const review_text =
+    contextTagParts.length > 0 && !rawReviewText.startsWith('[')
+      ? `[${contextTagParts.join(' • ')}] ${rawReviewText}`
+      : rawReviewText;
 
   const supabase = await createClient();
   const files = formData.getAll('attachments') as File[];
@@ -54,13 +66,17 @@ export async function submitReview(formData: FormData) {
   }
 
   // Try to insert into reviews table
-  const { error } = await supabase.from('reviews').insert({
-    name,
-    rating,
-    review_text,
-    status: 'pending',
-    attachment_urls
-  });
+  const { data: insertedRow, error } = await supabase
+    .from('reviews')
+    .insert({
+      name,
+      rating,
+      review_text,
+      status: 'pending',
+      attachment_urls,
+    })
+    .select('id')
+    .maybeSingle();
 
   if (error) {
     if (error.code === 'PGRST205') {
@@ -69,6 +85,17 @@ export async function submitReview(formData: FormData) {
       console.error('Review submission error:', error);
       return { error: 'Failed to submit review. Please try again later.' };
     }
+  }
+
+  if (insertedRow?.id && (email || mysteryTitle)) {
+    const map = readReviewMetadataMapInternal();
+    map[String(insertedRow.id)] = {
+      ...(map[String(insertedRow.id)] || {}),
+      ...(email ? { reviewerEmail: email } : {}),
+      ...(mysteryTitle ? { mysteryTitle } : {}),
+      updatedAt: new Date().toISOString(),
+    };
+    saveReviewMetadataMap(map);
   }
 
   // Send email notification for new review

@@ -490,7 +490,7 @@ export async function sendTestSupportEmailAction(
           <div><strong>Support Inbox:</strong> ${settings.supportEmail}</div>
           <div><strong>Sender Display Name:</strong> ${settings.senderDisplayName}</div>
           <div><strong>Ticket Response SLA:</strong> Within ${settings.ticketSlaHours} hours</div>
-          <div><strong>Pricing Defaults (GBP):</strong> Basic £${settings.basicTierPriceGbp} • Premium £${settings.premiumTierPriceGbp} • Grand £${settings.grandTierPriceGbp} • Unlimited £${settings.unlimitedPassPriceGbp}/mo</div>
+          <div><strong>Pricing Defaults (GBP):</strong> Basic £${settings.basicTierPriceGbp} • Premium £${settings.premiumTierPriceGbp} • Grand £${settings.grandTierPriceGbp}</div>
         </div>
         <div style="margin-top:24px;">
           <a href="https://backpocketmysteries.com/en/admin/settings" style="background-color:#fe04c6;border-radius:12px;color:#ffffff;font-size:13px;font-weight:800;text-decoration:none;display:inline-block;padding:12px 24px;">
