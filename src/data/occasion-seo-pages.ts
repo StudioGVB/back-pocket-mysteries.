@@ -304,7 +304,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
           'Hosting family or co-workers? Choose Clean for high-stakes inheritance greed, blackmail, and sabotage with zero romantic affairs or swearing. Hosting close friends? Dial up the festive scandal.',
       },
       {
-        title: 'Bidirectional Gender-Flex Casting for Any Holiday Table',
+        title: 'Flexible Casting for Any Holiday Table',
         description:
           'Whether your Christmas table has 3 men and 3 women, 5 women and 1 man, or an all-female friendsmas group, every character role adapts titles, pronouns, and festive outfits automatically.',
       },
@@ -335,7 +335,7 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     title: 'All-Female Murder Mystery',
     titleHighlight: 'Party Games',
     subtitle:
-      'Finally, a murder mystery where nobody is forced to draw on a fake moustache and play "Lord Reginald." Our Bidirectional Gender-Flex engine adapts every suspect role, pronoun, relationship, and costume portrait for a 100% female cast.',
+      'Finally, a murder mystery where nobody is forced to draw on a fake moustache and play "Lord Reginald." Every suspect role, relationship, and costume portrait adapts automatically for a 100% female cast.',
     metaTitle:
       'All-Female Murder Mystery Party Games (Girls Night & Bachelorette) | Back Pocket Mysteries',
     metaDescription:
@@ -350,38 +350,38 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
     recommendedThemeSlug: 'christmas-nightmare',
     groupSizeLabel: '6 to 16 Female Suspects (+ Extra Detectives)',
     prepTimeLabel: 'Auto-Adapts Titles, Pronouns & Outfits',
-    whyTitle: 'How Our Bidirectional Gender-Flex Casting Solves the All-Female Party Problem',
+    whyTitle: 'How Our Flexible Casting Solves the All-Female Party Problem',
     whyParagraphs: [
-      'Almost every off-the-shelf murder mystery kit is hardcoded for a rigid 50/50 male-female split. If you are hosting a girls’ night in, a birthday dinner, or a bachelorette weekend, half your friends are usually stuck reading male pronouns and wearing awkward masculine costumes.',
-      'Back Pocket Mysteries was architected from the ground up with Bidirectional Gender-Flex Hydration. When you cast an all-female group (or 5 women and 1 man), our engine automatically flexes gendered titles (e.g., The Brother-in-Law becomes The Sister-in-Law), updates every third-person pronoun and relationship token across every round of clues (3 rounds in Basic, 4 in Premium, 5 in Grand), and generates chic feminine AI costume portraits for every guest.',
+      'Almost every off-the-shelf murder mystery kit is written for a rigid 50/50 male-female split. If you are hosting a girls’ night in, a birthday dinner, or a bachelorette weekend, half your friends are usually stuck reading male pronouns and wearing awkward masculine costumes.',
+      'Back Pocket Mysteries was designed from the ground up to adapt to any guest list. When you cast an all-female group (or 5 women and 1 man), the story automatically adapts character titles (e.g., The Brother-in-Law becomes The Sister-in-Law), updates every pronoun and relationship across every round of clues, and generates chic feminine costume portraits for every guest.',
     ],
     highlights: [
       {
         title: 'Zero Awkward Cross-Gender Scripts',
         description:
-          'Every character bio, leaked group-chat message, audio wiretap, and forensic report uses your guests’ actual names and she/her or they/them pronouns naturally.',
+          'Every character bio, leaked group-chat message, audio wiretap, and forensic report uses your guests’ actual names and pronouns naturally.',
       },
       {
-        title: 'Glamorous Costume Guides & AI Portraits',
+        title: 'Glamorous Costume Guides & Portraits',
         description:
-          'Send 1-click WhatsApp character invites before the party with tailored feminine outfit inspiration and custom AI character portraits.',
+          'Send 1-click WhatsApp character invites before the party with tailored feminine outfit inspiration and custom character portraits.',
       },
       {
-        title: 'Pre-Launch Certified on 6F All-Female Casts',
+        title: 'Designed & Tested for All-Female Groups',
         description:
-          'Every Mystery Base Pack in our catalog is stress-tested against an all-female cast permutation before launch to guarantee zero pronoun leaks.',
+          'Every story in our catalog is tested with an all-female cast so every clue, relationship, and alibi reads seamlessly.',
       },
     ],
     faqs: [
       {
         question: 'Does the story still make sense if all 6 to 10 players are women?',
         answer:
-          '100% yes. Our hydration engine dynamically adapts relationship nouns (sister/wife/partner/ex) and pronouns across every single clue, timeline, and motive so the mystery reads as if it were written exclusively for your girls’ night.',
+          '100% yes. Every relationship (sister/wife/partner/ex) and pronoun across every single clue, timeline, and motive adapts automatically so the mystery reads as if it were written exclusively for your girls’ night.',
       },
       {
         question: 'What if we have mostly women and just 1 or 2 men?',
         answer:
-          'It works seamlessly for any ratio—whether 6F/0M, 5F/1M, 7F/2M, or all-male. Each role matches same-gender guests first and auto-flexes the remaining roles to match your exact roster.',
+          'It works seamlessly for any ratio—whether all-female, mostly women, mixed, or all-male. Each role adapts automatically to match your exact guest list.',
       },
     ],
   },
@@ -536,9 +536,9 @@ export const OCCASION_SEO_PAGES: OccasionSeoPageData[] = [
           'Every suspect in a 6-player pack has a serious motive, a secret to hide, and timestamped movements that collide with the other 5 players across Rounds 1, 2, and 3.',
       },
       {
-        title: 'Any Gender Mix Works (3M/3F, 4F/2M, or All-Female 6F)',
+        title: 'Any Group Mix Works (Mixed, Mostly Women, or All-Female)',
         description:
-          'Don’t have an even 3-male / 3-female split? Our Bidirectional Gender-Flex engine adapts titles, pronouns, and outfits to your exact 6 guests.',
+          'Don’t have an even 3-male / 3-female split? Every role automatically adapts titles, pronouns, and outfits to your exact 6 guests.',
       },
       {
         title: 'Flat One-Time Package Price ($0 Per-Guest Add-On Fees)',

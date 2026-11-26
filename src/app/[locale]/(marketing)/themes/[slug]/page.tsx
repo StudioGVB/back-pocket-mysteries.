@@ -417,7 +417,7 @@ export default async function ThemeDetailPage(props: {
               <div className="p-4 rounded-2xl bg-slate-50">
                 <p className="text-xs font-black text-slate-900 mb-1">1. Assign Your Cast</p>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Assign your friends to the {mystery.characters.length} iconic roles below (or auto-cast them in 1 click with Bidirectional Gender-Flex).
+                  Assign your friends to the {mystery.characters.length} iconic roles below (or auto-cast them in 1 click—every role adapts to any guest).
                 </p>
               </div>
               <div className="p-4 rounded-2xl bg-slate-50">

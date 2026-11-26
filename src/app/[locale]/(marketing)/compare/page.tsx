@@ -101,8 +101,8 @@ const FEATURE_COMPARISON_ROWS = [
     actorStatus: 'check',
   },
   {
-    feature: 'Auto Gender-Flex Casting',
-    sublabel: 'Seamlessly adapts for 6F bachelorettes or uneven groups',
+    feature: 'Adapts to Any Group Mix',
+    sublabel: 'Seamlessly adapts for all-female bachelorettes or uneven groups',
     bpm: 'Auto-Adapts Pronouns, Titles & Outfits',
     pdfKits: 'Rigid M/F character ratios',
     etsyPdfs: 'Hardcoded pronouns in static PDFs',
@@ -386,7 +386,7 @@ export default async function CompareHubPage(props: { params: Promise<{ locale: 
                   supported: false,
                 },
                 {
-                  label: 'Auto Gender-Flex for All-Female / Uneven Groups',
+                  label: 'Adapts to All-Female or Uneven Groups',
                   supported: false,
                 },
               ];

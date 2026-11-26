@@ -386,6 +386,16 @@ export default async function ThemesPage(props: {
           </article>
         ))}
 
+        {/* More Mysteries Coming Soon Notice */}
+        <div className="mt-12 rounded-3xl bg-brand-gray border border-slate-200/80 px-6 py-8 text-center">
+          <p className="text-sm font-black uppercase tracking-widest text-brand-pink mb-1">
+            ✨ More Mysteries Coming Soon!
+          </p>
+          <p className="text-sm text-gray-500 font-semibold">
+            We&apos;re releasing brand-new themes and storylines regularly—stay tuned for more!
+          </p>
+        </div>
+
         {/* Custom theme / How It Works callout */}
         <div className="mt-20">
           <div className="bg-brand-gray rounded-[4rem] p-12 lg:p-20 text-center border-4 border-dashed border-gray-200 hover:border-brand-pink transition-colors group">

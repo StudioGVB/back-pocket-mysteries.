@@ -396,7 +396,7 @@ export default async function HomePage(props: {
                 num: '03',
                 tag: 'Match Your Crew',
                 title: 'Assign Your Cast',
-                desc: 'Match your friends to iconic character roles (or auto-cast them in 1 click with automatic Gender-Flex).',
+                desc: 'Match your friends to iconic character roles—every role automatically adapts to fit any group mix.',
                 style: 'bg-white text-brand-dark shadow-[6px_6px_0px_#120914]',
                 numStyle: 'bg-brand-dark text-white',
                 tagStyle: 'text-brand-pink',

@@ -207,7 +207,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                   Assign Your <span className="text-brand-pink italic">Cast.</span>
                 </h2>
                 <p className="text-base text-gray-500 font-semibold leading-relaxed">
-                  Match your friends to iconic character roles—or let our AI auto-cast them in one click. Every role automatically gender-flexes to fit any group mix, and you can auto-fill any empty slots with fictional suspects.
+                  Match your friends to iconic character roles—or let our AI auto-cast them in one click. Every role automatically adapts to fit any group mix, and you can auto-fill any empty slots with fictional suspects.
                 </p>
               </div>
 
@@ -623,7 +623,7 @@ export default async function HowItWorksPage(props: { params: Promise<{ locale: 
                     1 to 16 Players (+ Extra Detectives) · Any Group Mix
                   </span>
                   <h3 className="text-3xl font-black uppercase tracking-tight leading-none">
-                    Gender-Flex Casting &amp; <span className="text-brand-pink italic">Two Ways to Play.</span>
+                    Fits Any Group &amp; <span className="text-brand-pink italic">Two Ways to Play.</span>
                   </h3>
                   <p className="text-sm text-gray-600 font-semibold leading-relaxed">
                     Every character role automatically adapts pronouns, titles, and costume guides to match any guest gender—and you can host a full-cast <strong>Dinner Party Roleplay</strong> or solve all the dossiers together on the sofa in <strong>Couch Detective Mode</strong>.

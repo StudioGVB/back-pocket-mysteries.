@@ -634,7 +634,8 @@ export async function getLaunchWaitlistStatusAction(): Promise<{
   isFirst50Open: boolean;
 }> {
   const all = await fetchAllMarketingLeadsInternal();
-  const totalLeads = all.length;
+  const vipWaitlistLeads = all.filter((l) => l.source !== 'playroom_finale_guest_reward');
+  const totalLeads = vipWaitlistLeads.length;
   const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - totalLeads);
   return {
     totalLeads,
@@ -687,6 +688,7 @@ export async function submitEmailLead(
     detectSubscriberIpAndCountry(),
   ]);
   const existing = all.find((l) => l.email.toLowerCase() === cleanEmail);
+  const currentVipLeads = all.filter((l) => l.source !== 'playroom_finale_guest_reward');
 
   const resolvedCountry = geoInfo.country || existing?.country || null;
   const resolvedIp = geoInfo.ip_address || existing?.ip_address || null;
@@ -760,7 +762,8 @@ export async function submitEmailLead(
     }),
   });
 
-  if (existing) {
+  // If they already signed up via the First 50 VIP Waitlist (not merely as a post-party 50% off guest), return their existing VIP spot
+  if (existing && existing.source !== 'playroom_finale_guest_reward') {
     // Backfill country & IP if not previously recorded
     if ((!existing.country && resolvedCountry) || (!existing.ip_address && resolvedIp)) {
       const updatedExisting: MarketingLeadRecord = {
@@ -774,7 +777,7 @@ export async function submitEmailLead(
       await upsertResendAudienceContact(updatedExisting);
     }
 
-    const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - all.length);
+    const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - currentVipLeads.length);
     try {
       if (process.env.RESEND_API_KEY) {
         const firstName = (cleanName || existing.full_name || '').split(' ')[0] || 'there';
@@ -814,22 +817,29 @@ export async function submitEmailLead(
     };
   }
 
-  const vipRank = all.length + 1;
+  const vipRank = currentVipLeads.length + 1;
   const qualifiesForFreeMystery = vipRank <= FIRST_50_VIP_CAP;
   const spotsRemaining = Math.max(0, FIRST_50_VIP_CAP - vipRank);
   const nowIso = new Date().toISOString();
 
   const newLead: MarketingLeadRecord = {
-    id: crypto.randomUUID(),
+    id: existing?.id || crypto.randomUUID(),
     email: cleanEmail,
-    full_name: cleanName,
-    source,
+    full_name: cleanName || existing?.full_name || null,
+    source: source === 'playroom_finale_guest_reward' ? 'website_vip_waitlist' : source,
     vip_rank: vipRank,
     qualifies_for_free_mystery: qualifiesForFreeMystery,
-    free_mystery_code: null,
-    code_sent_at: null,
+    free_mystery_code:
+      existing?.free_mystery_code && existing.free_mystery_code.startsWith('VIP50-')
+        ? existing.free_mystery_code
+        : null,
+    code_sent_at:
+      existing?.free_mystery_code && existing.free_mystery_code.startsWith('VIP50-')
+        ? existing.code_sent_at
+        : null,
     marketing_consent: true,
     created_at: nowIso,
+    resend_contact_id: existing?.resend_contact_id || null,
     country: resolvedCountry,
     ip_address: resolvedIp,
   };
@@ -1144,8 +1154,8 @@ export async function claimGuestPostPartyRewardAction(params: {
           email: cleanEmail,
           full_name: cleanPlayerName,
           source: 'playroom_finale_guest_reward',
-          vip_rank: all.length + 1,
-          qualifies_for_free_mystery: all.length + 1 <= FIRST_50_VIP_CAP,
+          vip_rank: 0,
+          qualifies_for_free_mystery: false,
           free_mystery_code: code,
           code_sent_at: nowIso,
           marketing_consent: true,
@@ -1190,34 +1200,34 @@ export async function claimGuestPostPartyRewardAction(params: {
       }
     }
 
-    // Email the guest their single-use 15% Off code + Detective Wrapped scorecard recap
+    // Email the guest their single-use 50% Off code + Detective Wrapped scorecard recap
     if (process.env.RESEND_API_KEY) {
       const firstName = (cleanPlayerName || existing?.full_name || 'Detective').split(' ')[0];
       await resend.emails.send({
         from: 'Back Pocket Mysteries <Hello@backpocketgames.com>',
         to: cleanEmail,
         replyTo: 'Hello@backpocketgames.com',
-        subject: `🎁 Your 15% Off Next-Host Code (${code}) + Detective Wrapped Recap`,
+        subject: `🎁 Your 50% Off Next-Host Code (${code}) + Detective Wrapped Recap`,
         html: buildBrandedEmailShell({
-          preheader: `Your personal single-use 15% Off Host Code (${code}) and your Detective Wrapped scorecard from ${mysteryTitle}.`,
+          preheader: `Your personal single-use 50% Off Host Code (${code}) and your Detective Wrapped scorecard from ${mysteryTitle}.`,
           kicker: `POST-PARTY DETECTIVE REWARD • SINGLE-USE VOUCHER`,
           headline: `Ready to Host Your Group's Next Mystery Night?`,
           bodyHtml: `
             <p style="margin:0 0 14px 0;font-size:16px;font-weight:700;color:#1e191c;">Hi ${firstName},</p>
             <p style="margin:0 0 20px 0;color:#374151;line-height:1.7;">
-              Thanks for playing <strong>${mysteryTitle}</strong> tonight as <strong>${characterRole}</strong>! Below is your personal single-use <strong>15% Off Next-Host Promo Code</strong> plus your official Detective Wrapped summary.
+              Thanks for playing <strong>${mysteryTitle}</strong> tonight as <strong>${characterRole}</strong>! Below is your personal single-use <strong>50% Off Next-Host Promo Code</strong> plus your official Detective Wrapped summary.
             </p>
 
             <!-- PERSONAL SINGLE-USE PROMO CODE BOX -->
             <div style="background-color:#141115;border:1px solid #27272a;border-left:4px solid #fe04c6;border-radius:12px;padding:24px;text-align:center;margin-bottom:22px;">
               <p style="color:#fe04c6;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2.2px;margin:0 0 8px 0;">
-                YOUR PERSONAL SINGLE-USE 15% OFF HOST CODE
+                YOUR PERSONAL SINGLE-USE 50% OFF HOST CODE
               </p>
               <p style="color:#ffffff;font-size:28px;font-weight:900;font-family:monospace;letter-spacing:3px;margin:0 0 8px 0;">
                 ${code}
               </p>
               <p style="color:#a1a1aa;font-size:12px;margin:0;">
-                Valid for 15% off any Back Pocket Mysteries package • Single-use • Unlocks any theme
+                Valid for 50% off any Back Pocket Mysteries package • Single-use • Unlocks any theme
               </p>
             </div>
 
