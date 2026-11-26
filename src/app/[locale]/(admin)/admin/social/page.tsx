@@ -392,10 +392,10 @@ export default function SocialCalendarPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-brand-dark uppercase tracking-tighter leading-none mb-2">
-            Marketing <span className="text-brand-pink italic">Command Center</span>
+            Marketing <span className="text-brand-pink italic">Overview</span>
           </h1>
           <p className="text-gray-500 text-xs font-bold">
-            Visualize and manage your bi-weekly blogs, social queues, weekly EDMs, and promo codes in one place
+            Track social traction &amp; Buffer KPIs, content runway, bi-weekly blogs, social queues, and weekly EDMs in one place
           </p>
         </div>
 
@@ -576,6 +576,194 @@ export default function SocialCalendarPage() {
               <span>{kpis.nextStepLinkText}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION: SOCIAL TRACTION & BUFFER CHANNEL KPIS */}
+      <div className="space-y-4">
+        <BufferAnalyticsPanel
+          title="All-Channel Social Traction & Buffer KPIs"
+          summary={bufferSummaries.all}
+          posts={bufferPosts}
+          loading={loadingAnalytics}
+          onRefresh={fetchBufferAnalytics}
+        />
+
+        {/* Per-Channel Breakdown Cards (Instagram vs Facebook vs LinkedIn) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Instagram Channel Card */}
+          <div className="bg-white rounded-2xl border border-pink-200/80 p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white">
+                  <Instagram className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    Instagram
+                  </h3>
+                  <p className="text-[11px] font-bold text-gray-500">@backpocketgames_</p>
+                </div>
+              </div>
+              <Link
+                href="/admin/social/instagram-facebook"
+                className="text-[11px] font-black text-brand-pink hover:underline inline-flex items-center gap-1"
+              >
+                Open Queue <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2 pt-2 border-t border-gray-100 text-center">
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Views</div>
+                <div className="text-sm font-black text-brand-dark">
+                  {bufferSummaries.instagram
+                    ? bufferSummaries.instagram.totalViews.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Reach</div>
+                <div className="text-sm font-black text-brand-dark">
+                  {bufferSummaries.instagram
+                    ? bufferSummaries.instagram.totalReach.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Likes</div>
+                <div className="text-sm font-black text-brand-pink">
+                  {bufferSummaries.instagram
+                    ? bufferSummaries.instagram.totalReactions.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Eng. %</div>
+                <div className="text-sm font-black text-emerald-600">
+                  {bufferSummaries.instagram && bufferSummaries.instagram.avgEngagementRate > 0
+                    ? `${bufferSummaries.instagram.avgEngagementRate}%`
+                    : "—"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Facebook Channel Card */}
+          <div className="bg-white rounded-2xl border border-blue-200/80 p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#1877F2] text-white">
+                  <Facebook className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    Facebook Page
+                  </h3>
+                  <p className="text-[11px] font-bold text-gray-500">Back Pocket Games</p>
+                </div>
+              </div>
+              <Link
+                href="/admin/social/instagram-facebook"
+                className="text-[11px] font-black text-[#1877F2] hover:underline inline-flex items-center gap-1"
+              >
+                Open Queue <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2 pt-2 border-t border-gray-100 text-center">
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Impr.</div>
+                <div className="text-sm font-black text-brand-dark">
+                  {bufferSummaries.facebook
+                    ? bufferSummaries.facebook.totalViews.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Reach</div>
+                <div className="text-sm font-black text-brand-dark">
+                  {bufferSummaries.facebook
+                    ? bufferSummaries.facebook.totalReach.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Reacts</div>
+                <div className="text-sm font-black text-[#1877F2]">
+                  {bufferSummaries.facebook
+                    ? bufferSummaries.facebook.totalReactions.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Clicks</div>
+                <div className="text-sm font-black text-emerald-600">
+                  {bufferSummaries.facebook
+                    ? bufferSummaries.facebook.totalClicks.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* LinkedIn Channel Card */}
+          <div className="bg-white rounded-2xl border border-sky-200/80 p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#0A66C2] text-white">
+                  <Linkedin className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-brand-dark">
+                    LinkedIn Page
+                  </h3>
+                  <p className="text-[11px] font-bold text-gray-500">Back Pocket Games</p>
+                </div>
+              </div>
+              <Link
+                href="/admin/social/linkedin"
+                className="text-[11px] font-black text-[#0A66C2] hover:underline inline-flex items-center gap-1"
+              >
+                Open Queue <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2 pt-2 border-t border-gray-100 text-center">
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Impr.</div>
+                <div className="text-sm font-black text-brand-dark">
+                  {bufferSummaries.linkedin
+                    ? bufferSummaries.linkedin.totalViews.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Reach</div>
+                <div className="text-sm font-black text-brand-dark">
+                  {bufferSummaries.linkedin
+                    ? bufferSummaries.linkedin.totalReach.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Reacts</div>
+                <div className="text-sm font-black text-[#0A66C2]">
+                  {bufferSummaries.linkedin
+                    ? bufferSummaries.linkedin.totalReactions.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Posted</div>
+                <div className="text-sm font-black text-emerald-600">
+                  {bufferSummaries.linkedin
+                    ? bufferSummaries.linkedin.sentCount.toLocaleString()
+                    : "—"}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
