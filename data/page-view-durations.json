@@ -6,20 +6,20 @@
       "updatedAt": "2026-11-26T19:22:42.276Z"
     },
     "/en/account/settings": {
-      "totalSeconds": 12,
-      "count": 1,
-      "updatedAt": "2026-11-26T19:30:15.110Z"
+      "totalSeconds": 30,
+      "count": 3,
+      "updatedAt": "2026-11-26T19:37:34.208Z"
     },
     "/en/checkout/christmas-nightmare": {
-      "totalSeconds": 10,
-      "count": 1,
-      "updatedAt": "2026-11-26T19:30:24.934Z"
+      "totalSeconds": 27,
+      "count": 3,
+      "updatedAt": "2026-11-26T19:37:40.963Z"
     }
   },
   "countries": {},
   "global": {
-    "totalSeconds": 27,
-    "count": 3,
-    "updatedAt": "2026-11-26T19:30:24.934Z"
+    "totalSeconds": 62,
+    "count": 7,
+    "updatedAt": "2026-11-26T19:37:40.963Z"
   }
 }
