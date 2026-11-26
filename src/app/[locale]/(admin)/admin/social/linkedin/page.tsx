@@ -45,6 +45,10 @@ interface SocialPostItem {
     postCopy?: string;
     linkUrl?: string;
     slidesCopy?: string;
+    platform_statuses?: {
+      instagram_facebook?: string;
+      linkedin?: string;
+    };
   } | null;
   caption_data?: {
     caption?: string;
@@ -52,6 +56,7 @@ interface SocialPostItem {
     media_urls?: string[];
     post_url?: string;
     engagement_data?: any;
+    status?: string;
   } | null;
 }
 
