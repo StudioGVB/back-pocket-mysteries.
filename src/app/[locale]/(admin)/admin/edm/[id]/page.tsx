@@ -123,7 +123,7 @@ export default function EdmCampaignDetailPage() {
       setLoading(true);
       try {
         const dir = await getUnifiedNewsletterDirectoryAction();
-        setLeadsCount(dir.combinedSubscribers?.length || 0);
+        setLeadsCount(dir.combinedActiveEmails?.length || 0);
       } catch {
         const { count } = await supabase
           .from("leads")

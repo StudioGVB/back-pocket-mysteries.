@@ -32,6 +32,7 @@ interface SocialPostItem {
   status: string;
   scheduled_at: string | null;
   source_blog_id?: string;
+  slide_content?: any;
 }
 
 interface BlogPostItem {
@@ -45,6 +46,7 @@ interface CaptionItem {
   id: string;
   post_id: string;
   platform: string;
+  status?: string;
 }
 
 export default function SocialCalendarPage() {
@@ -68,13 +70,13 @@ export default function SocialCalendarPage() {
             .order("created_at", { ascending: false }),
           supabase
             .from("social_posts")
-            .select("id, brief, status, scheduled_at, source_blog_id")
+            .select("id, brief, status, scheduled_at, source_blog_id, slide_content")
             .order("scheduled_at", { ascending: true }),
           supabase
             .from("blog_posts")
             .select("id, title, is_draft, publish_date")
             .order("publish_date", { ascending: true }),
-          supabase.from("social_post_captions").select("id, post_id, platform"),
+          supabase.from("social_post_captions").select("id, post_id, platform, status"),
         ]);
 
       setCampaigns((edmData as EdmCampaignCalendarItem[]) || []);
@@ -179,31 +181,44 @@ export default function SocialCalendarPage() {
       });
     };
 
+    const isDoneStatus = (st?: string) =>
+      st === "scheduled" || st === "posted" || st === "published";
+
     const getScheduledLinkedInInRange = (start: Date, end: Date) => {
       return socialPosts.filter((p) => {
-        if (p.status !== "scheduled" && p.status !== "posted" && p.status !== "published")
-          return false;
         if (!p.scheduled_at) return false;
         const d = new Date(p.scheduled_at);
         if (d < start || d > end) return false;
-        return captions.some((c) => c.post_id === p.id && c.platform === "linkedin");
+        const liCap = captions.find((c) => c.post_id === p.id && c.platform === "linkedin");
+        if (!liCap) return false;
+        const pStatuses = p.slide_content?.platform_statuses || {};
+        const liStatus =
+          pStatuses.linkedin ||
+          liCap.status ||
+          (pStatuses.instagram_facebook ? "draft" : p.status);
+        return isDoneStatus(liStatus);
       });
     };
 
     const getScheduledIgFbInRange = (start: Date, end: Date) => {
       return socialPosts.filter((p) => {
-        if (p.status !== "scheduled" && p.status !== "posted" && p.status !== "published")
-          return false;
         if (!p.scheduled_at) return false;
         const d = new Date(p.scheduled_at);
         if (d < start || d > end) return false;
-        return captions.some(
+        const igCap = captions.find(
           (c) =>
             c.post_id === p.id &&
             (c.platform === "instagram" ||
               c.platform === "facebook" ||
               c.platform === "instagram_facebook")
         );
+        if (!igCap) return false;
+        const pStatuses = p.slide_content?.platform_statuses || {};
+        const igFbStatus =
+          pStatuses.instagram_facebook ||
+          igCap.status ||
+          (pStatuses.linkedin ? "draft" : p.status);
+        return isDoneStatus(igFbStatus);
       });
     };
 

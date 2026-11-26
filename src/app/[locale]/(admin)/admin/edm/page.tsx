@@ -102,7 +102,7 @@ export default function EdmCampaignsPage() {
     }
   };
 
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = async (skipDueCheck = false) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -113,6 +113,26 @@ export default function EdmCampaignsPage() {
       if (error) throw error;
       const rows = (data as EdmCampaign[]) || [];
       setCampaigns(rows);
+
+      if (!skipDueCheck) {
+        const hasDueScheduled = rows.some(
+          (c) =>
+            c.status === "scheduled" &&
+            c.scheduled_at &&
+            new Date(c.scheduled_at).getTime() <= Date.now()
+        );
+        if (hasDueScheduled) {
+          fetch("/api/cron/send-scheduled-edms")
+            .then((r) => r.json())
+            .then((res) => {
+              if (res?.dueCount > 0) {
+                toast.success(`Dispatched ${res.dueCount} scheduled EDM campaign(s)!`);
+                fetchCampaigns(true);
+              }
+            })
+            .catch(() => {});
+        }
+      }
 
       if (rows.length > 0) {
         const campaignIds = rows.map((c) => c.id);

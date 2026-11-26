@@ -103,7 +103,15 @@ function mergeById(baseRows: any[], overrideRows: any[], key = "id"): any[] {
 }
 
 function mergeStores(base: MarketingStoreData, override: MarketingStoreData): MarketingStoreData {
-  const mergedSocialPosts = mergeById(base.social_posts, override.social_posts, "id");
+  const overridePostIdSet =
+    Array.isArray(override.social_posts) && override.social_posts.length > 0
+      ? new Set(override.social_posts.map((p) => String(p.id)))
+      : null;
+  const filteredBaseSocialPosts = overridePostIdSet
+    ? base.social_posts.filter((p) => overridePostIdSet.has(String(p.id)))
+    : base.social_posts;
+
+  const mergedSocialPosts = mergeById(filteredBaseSocialPosts, override.social_posts, "id");
   const mergedPostIds = new Set(mergedSocialPosts.map((p) => String(p.id)));
 
   const overridePostIdsWithCaptions = new Set(

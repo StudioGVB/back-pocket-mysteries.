@@ -65,6 +65,7 @@ interface SocialPostItem {
     slidesCopy?: string;
     stat?: { value: string; label: string };
     templateIndex?: number | null;
+    platform_statuses?: Record<string, string>;
   } | null;
   caption_data?: {
     caption?: string;
@@ -121,10 +122,19 @@ export default function InstagramFacebookManagementPage() {
       const captionMap = new Map<string, any>();
       (captionsData || []).forEach((c: any) => captionMap.set(c.post_id, c));
 
-      const merged = (postsData || []).map((p: any) => ({
-        ...p,
-        caption_data: captionMap.get(p.id) || null,
-      }));
+      const merged = (postsData || []).map((p: any) => {
+        const cap = captionMap.get(p.id) || null;
+        const pStatuses = p.slide_content?.platform_statuses || {};
+        const igFbStatus =
+          pStatuses.instagram_facebook ||
+          cap?.status ||
+          (pStatuses.linkedin ? "draft" : p.status);
+        return {
+          ...p,
+          status: igFbStatus,
+          caption_data: cap,
+        };
+      });
 
       setPosts(merged);
     } catch (err) {
@@ -154,22 +164,52 @@ export default function InstagramFacebookManagementPage() {
     imgSrc: string = ""
   ) => {
     try {
+      const post = posts.find((p) => p.id === postId);
+      if (!post) return;
+
       if (isCurrentlyScheduled) {
         const newStatus = "draft";
+        const prevPlatformStatuses = post.slide_content?.platform_statuses || {};
+        const nextPlatformStatuses = {
+          ...prevPlatformStatuses,
+          linkedin: prevPlatformStatuses.linkedin || "draft",
+          instagram_facebook: newStatus,
+        };
+        const nextSlideContent = {
+          ...(post.slide_content || {}),
+          platform_statuses: nextPlatformStatuses,
+        };
+
         setPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, status: newStatus } : p))
+          prev.map((p) =>
+            p.id === postId
+              ? { ...p, status: newStatus, slide_content: nextSlideContent }
+              : p
+          )
         );
         const { error } = await supabase
           .from("social_posts")
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .update({
+            status:
+              nextPlatformStatuses.linkedin === "scheduled" &&
+              nextPlatformStatuses.instagram_facebook === "scheduled"
+                ? "scheduled"
+                : "draft",
+            slide_content: nextSlideContent,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", postId);
         if (error) throw error;
-        toast.info("Moved back to To Schedule list.");
-      } else {
-        const post = posts.find((p) => p.id === postId);
-        if (!post) return;
 
-        const loadingToast = toast.loading("Sending to Buffer...");
+        await supabase
+          .from("social_post_captions")
+          .update({ status: newStatus })
+          .eq("post_id", postId)
+          .in("platform", ["instagram", "facebook", "instagram_facebook"]);
+
+        toast.info("Instagram/Facebook post moved back to To Schedule list.");
+      } else {
+        const loadingToast = toast.loading("Sending Instagram/Facebook post to Buffer...");
 
         const response = await fetch("/api/admin/buffer/schedule", {
           method: "POST",
@@ -192,23 +232,52 @@ export default function InstagramFacebookManagementPage() {
         }
 
         const effectiveScheduledAt = result.scheduledAt || post.scheduled_at;
+        const prevPlatformStatuses = post.slide_content?.platform_statuses || {};
+        const nextPlatformStatuses = {
+          ...prevPlatformStatuses,
+          linkedin: prevPlatformStatuses.linkedin || "draft",
+          instagram_facebook: "scheduled",
+        };
+        const nextSlideContent = {
+          ...(post.slide_content || {}),
+          platform_statuses: nextPlatformStatuses,
+        };
 
         await supabase
           .from("social_posts")
           .update({
-            status: "scheduled",
+            status:
+              nextPlatformStatuses.linkedin === "scheduled" &&
+              nextPlatformStatuses.instagram_facebook === "scheduled"
+                ? "scheduled"
+                : "draft",
+            slide_content: nextSlideContent,
             scheduled_at: effectiveScheduledAt,
             updated_at: new Date().toISOString(),
           })
           .eq("id", postId);
+
+        await supabase
+          .from("social_post_captions")
+          .update({ status: "scheduled" })
+          .eq("post_id", postId)
+          .in("platform", ["instagram", "facebook", "instagram_facebook"]);
+
         setPosts((prev) =>
           prev.map((p) =>
             p.id === postId
-              ? { ...p, status: "scheduled", scheduled_at: effectiveScheduledAt }
+              ? {
+                  ...p,
+                  status: "scheduled",
+                  slide_content: nextSlideContent,
+                  scheduled_at: effectiveScheduledAt,
+                }
               : p
           )
         );
-        toast.success(result.message || "Sent to Buffer successfully! Marked as scheduled.");
+        toast.success(
+          result.message || "Instagram/Facebook post sent to Buffer! (LinkedIn kept separate)."
+        );
       }
     } catch (err: any) {
       console.error("Failed to update status:", err);

@@ -1604,7 +1604,10 @@ export async function generateClueImageAction(
             const name = getCharacterDisplayName(ref.char);
             const zone = spatialZones[idx] || `Zone #${idx + 1}`;
             const phys = (ref.standardPhoto.physicalDesc || '').toLowerCase();
-            const hasBeard = /\b(beard|mustache|goatee)\b/i.test(phys) && !/no beard/i.test(phys);
+            const hasBeard =
+              /\b(beard|mustache|goatee|stubble)\b/i.test(phys) &&
+              !/no beard/i.test(phys) &&
+              !/clean-shaven/i.test(phys);
             const hasGlasses = /\b(glasses|spectacles)\b/i.test(phys) && !/no glasses/i.test(phys);
             const sigColor = (ref.char?.profile_data?.color || ref.standardPhoto.outfit || 'signature outfit').trim();
             return `  * Subject #${ref.referenceId} (${zone}): ${name} — ${hasBeard ? 'WITH facial hair/beard' : 'CLEAN-SHAVEN (STRICTLY NO beard/facial hair)'}, ${hasGlasses ? 'WEARING glasses' : 'NO glasses'}, wearing ${sigColor}.`;

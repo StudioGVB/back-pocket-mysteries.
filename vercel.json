@@ -4,5 +4,11 @@
       "main": true,
       "v1-mvp-launch": false
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/send-scheduled-edms",
+      "schedule": "0 9 * * *"
+    }
+  ]
 }
