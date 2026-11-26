@@ -939,6 +939,141 @@
   ],
   "social_posts": [
     {
+      "id": "a1011111-1111-4111-8111-111111111105",
+      "source_blog_id": null,
+      "format": "carousel",
+      "status": "draft",
+      "scheduled_at": "2026-11-27T09:00:00.000Z",
+      "published_at": null,
+      "brief": "HOW IT WORKS (7-Slide Swipe Carousel): 5 Steps to Put Your Friends in the Crime Scene + First 50 Free VIP Pack",
+      "content_type": "how_it_works_carousel",
+      "slide_content": {
+        "cardSlug": "how-it-works-swipe-cover",
+        "cardTitle": "HOW IT WORKS: How Back Pocket Mysteries Flips Murder Mystery Night On Its Head",
+        "cardCategory": "HOW IT WORKS • 5-STEP SWIPE GUIDE",
+        "kickerText": "SWIPE THROUGH ALL 5 STEPS",
+        "ctaText": "SWIPE FOR STEP 1 →",
+        "imageUrl": "/blog-images/introducing-back-pocket-mysteries.png",
+        "templateIndex": 0,
+        "linkUrl": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+        "stat": {
+          "value": "5 EASY STEPS",
+          "label": "Swipe To See How Your Real Friends Get Cast Inside The Crime Scene"
+        },
+        "carouselSlides": [
+          {
+            "slideLabel": "Slide 1: Cover",
+            "cardSlug": "how-it-works-swipe-cover",
+            "cardCategory": "HOW IT WORKS • 5-STEP SWIPE GUIDE",
+            "cardTitle": "HOW IT WORKS: How Back Pocket Mysteries Flips Murder Mystery Night On Its Head",
+            "kickerText": "SWIPE THROUGH ALL 5 STEPS",
+            "ctaText": "SWIPE FOR STEP 1 →",
+            "imageUrl": "/blog-images/introducing-back-pocket-mysteries.png",
+            "templateIndex": 0,
+            "stat": {
+              "value": "5 EASY STEPS",
+              "label": "Swipe To See How Your Real Friends Get Cast Inside The Crime Scene"
+            }
+          },
+          {
+            "slideLabel": "Slide 2: Step 1",
+            "cardSlug": "how-it-works-step-1-traits",
+            "cardCategory": "🎭 STEP 1 OF 5 • 60-SECOND CASTING",
+            "cardTitle": "Step 1: Enter Your Friends’ Real Names, Personalities & Appearance Traits in 60 Seconds",
+            "kickerText": "STEP 1 • CAST YOUR CREW",
+            "ctaText": "SWIPE FOR STEP 2 →",
+            "imageUrl": "/blog-images/how-it-works-step-1-traits.png",
+            "templateIndex": 1,
+            "stat": {
+              "value": "60 SECONDS",
+              "label": "Glasses, Beard, Hair Colour, Vibe & Automatic Gender-Flex Casting"
+            }
+          },
+          {
+            "slideLabel": "Slide 3: Step 2",
+            "cardSlug": "how-it-works-step-2-portraits",
+            "cardCategory": "🖼️ STEP 2 OF 5 • AI NOIR PORTRAITS",
+            "cardTitle": "Step 2: Render Everyone in Matching Front-On Noir Portraits Dressed for the Theme",
+            "kickerText": "STEP 2 • CUSTOM SUSPECT ART",
+            "ctaText": "SWIPE FOR STEP 3 →",
+            "imageUrl": "/blog-images/prelaunch-friends-in-crime-scene.png",
+            "templateIndex": 2,
+            "stat": {
+              "value": "100% YOUR CREW",
+              "label": "Front-On Noir Character Portraits That Actually Look Like Your Friends"
+            }
+          },
+          {
+            "slideLabel": "Slide 4: Step 3",
+            "cardSlug": "how-it-works-step-3-dossiers",
+            "cardCategory": "📂 STEP 3 OF 5 • HYDRATED PLOT & MOTIVES",
+            "cardTitle": "Step 3: Every Alibi, Secret Affair, Blackmail Motive & Talking Point Weaves In Their Real Names",
+            "kickerText": "STEP 3 • BESPOKE DOSSIERS",
+            "ctaText": "SWIPE FOR STEP 4 →",
+            "imageUrl": "/blog-images/how-it-works-step-3-dossiers.png",
+            "templateIndex": 3,
+            "stat": {
+              "value": "ROUNDS 1–3",
+              "label": "Every Alibi, Affair & Financial Blackmail Motive Names Your Real Friends"
+            }
+          },
+          {
+            "slideLabel": "Slide 5: Step 4",
+            "cardSlug": "how-it-works-step-4-evidence",
+            "cardCategory": "📹 STEP 4 OF 5 • LIVE FORENSIC CLUES",
+            "cardTitle": "Step 4: Unlock Grainy CCTV Stills, Group Chats (With Real Faces) & Audio Wiretaps",
+            "kickerText": "STEP 4 • MULTIMEDIA EVIDENCE",
+            "ctaText": "SWIPE FOR STEP 5 →",
+            "imageUrl": "/blog-images/prelaunch-spot-the-lie-teaser.png",
+            "templateIndex": 4,
+            "stat": {
+              "value": "CCTV + AUDIO",
+              "label": "Suspects Whisper Your Friends’ Actual Names Out Loud In Audio Wiretaps"
+            }
+          },
+          {
+            "slideLabel": "Slide 6: Step 5",
+            "cardSlug": "how-it-works-step-5-pin",
+            "cardCategory": "🥂 STEP 5 OF 5 • SPOILER-FREE HOST MODE",
+            "cardTitle": "Step 5: Run the Whole Night From a 6-Digit Game PIN So Even the Host Plays Spoiler-Free",
+            "kickerText": "STEP 5 • LIVE MOBILE LOBBY",
+            "ctaText": "SWIPE FOR FREE VIP BONUS →",
+            "imageUrl": "/blog-images/prelaunch-last-call-50-vip-spots.png",
+            "templateIndex": 5,
+            "stat": {
+              "value": "6-DIGIT PIN",
+              "label": "Even The Host Plays Along Without Knowing Who The Killer Is"
+            }
+          },
+          {
+            "slideLabel": "Slide 7: Free VIP Bonus",
+            "cardSlug": "how-it-works-vip-bonus",
+            "cardCategory": "🎁 PRE-LAUNCH VIP BONUS • FIRST 50 SPOTS",
+            "cardTitle": "Grab 1 of Our First 50 Pre-Launch VIP Spots for a 100% FREE Custom Mystery Pack ($49 Value)",
+            "kickerText": "FIRST 50 PLAY 100% FREE",
+            "ctaText": "TAP LINK IN BIO • CLAIM FREE PACK",
+            "imageUrl": "/blog-images/claim-free-mystery-before-launch.png",
+            "templateIndex": 6,
+            "stat": {
+              "value": "$49 VALUE • FREE",
+              "label": "Tap Link In Bio Now To Join The Pre-Launch VIP List & Lock In Your Free Pack"
+            }
+          }
+        ]
+      },
+      "image_urls": [
+        "/api/social-card/how-it-works-swipe-cover?t=0&title=HOW+IT+WORKS%3A+How+Back+Pocket+Mysteries+Flips+Murder+Mystery+Night+On+Its+Head&category=HOW+IT+WORKS+%E2%80%A2+5-STEP+SWIPE+GUIDE&cta=SWIPE+FOR+STEP+1+%E2%86%92&kicker=SWIPE+THROUGH+ALL+5+STEPS&statValue=5+EASY+STEPS&statLabel=Swipe+To+See+How+Your+Real+Friends+Get+Cast+Inside+The+Crime+Scene&img=%2Fblog-images%2Fintroducing-back-pocket-mysteries.png",
+        "/api/social-card/how-it-works-step-1-traits?t=1&title=Step+1%3A+Enter+Your+Friends%E2%80%99+Real+Names%2C+Personalities+%26+Appearance+Traits+in+60+Seconds&category=%F0%9F%8E%AD+STEP+1+OF+5+%E2%80%A2+60-SECOND+CASTING&cta=SWIPE+FOR+STEP+2+%E2%86%92&kicker=STEP+1+%E2%80%A2+CAST+YOUR+CREW&statValue=60+SECONDS&statLabel=Glasses%2C+Beard%2C+Hair+Colour%2C+Vibe+%26+Automatic+Gender-Flex+Casting&img=%2Fblog-images%2Fhow-it-works-step-1-traits.png",
+        "/api/social-card/how-it-works-step-2-portraits?t=2&title=Step+2%3A+Render+Everyone+in+Matching+Front-On+Noir+Portraits+Dressed+for+the+Theme&category=%F0%9F%96%BC%EF%B8%8F+STEP+2+OF+5+%E2%80%A2+AI+NOIR+PORTRAITS&cta=SWIPE+FOR+STEP+3+%E2%86%92&kicker=STEP+2+%E2%80%A2+CUSTOM+SUSPECT+ART&statValue=100%25+YOUR+CREW&statLabel=Front-On+Noir+Character+Portraits+That+Actually+Look+Like+Your+Friends&img=%2Fblog-images%2Fprelaunch-friends-in-crime-scene.png",
+        "/api/social-card/how-it-works-step-3-dossiers?t=3&title=Step+3%3A+Every+Alibi%2C+Secret+Affair%2C+Blackmail+Motive+%26+Talking+Point+Weaves+In+Their+Real+Names&category=%F0%9F%93%82+STEP+3+OF+5+%E2%80%A2+HYDRATED+PLOT+%26+MOTIVES&cta=SWIPE+FOR+STEP+4+%E2%86%92&kicker=STEP+3+%E2%80%A2+BESPOKE+DOSSIERS&statValue=ROUNDS+1%E2%80%933&statLabel=Every+Alibi%2C+Affair+%26+Financial+Blackmail+Motive+Names+Your+Real+Friends&img=%2Fblog-images%2Fhow-it-works-step-3-dossiers.png",
+        "/api/social-card/how-it-works-step-4-evidence?t=4&title=Step+4%3A+Unlock+Grainy+CCTV+Stills%2C+Group+Chats+%28With+Real+Faces%29+%26+Audio+Wiretaps&category=%F0%9F%93%B9+STEP+4+OF+5+%E2%80%A2+LIVE+FORENSIC+CLUES&cta=SWIPE+FOR+STEP+5+%E2%86%92&kicker=STEP+4+%E2%80%A2+MULTIMEDIA+EVIDENCE&statValue=CCTV+%2B+AUDIO&statLabel=Suspects+Whisper+Your+Friends%E2%80%99+Actual+Names+Out+Loud+In+Audio+Wiretaps&img=%2Fblog-images%2Fprelaunch-spot-the-lie-teaser.png",
+        "/api/social-card/how-it-works-step-5-pin?t=5&title=Step+5%3A+Run+the+Whole+Night+From+a+6-Digit+Game+PIN+So+Even+the+Host+Plays+Spoiler-Free&category=%F0%9F%A5%82+STEP+5+OF+5+%E2%80%A2+SPOILER-FREE+HOST+MODE&cta=SWIPE+FOR+FREE+VIP+BONUS+%E2%86%92&kicker=STEP+5+%E2%80%A2+LIVE+MOBILE+LOBBY&statValue=6-DIGIT+PIN&statLabel=Even+The+Host+Plays+Along+Without+Knowing+Who+The+Killer+Is&img=%2Fblog-images%2Fprelaunch-last-call-50-vip-spots.png",
+        "/api/social-card/how-it-works-vip-bonus?t=6&title=Grab+1+of+Our+First+50+Pre-Launch+VIP+Spots+for+a+100%25+FREE+Custom+Mystery+Pack+%28%2449+Value%29&category=%F0%9F%8E%81+PRE-LAUNCH+VIP+BONUS+%E2%80%A2+FIRST+50+SPOTS&cta=TAP+LINK+IN+BIO+%E2%80%A2+CLAIM+FREE+PACK&kicker=FIRST+50+PLAY+100%25+FREE&statValue=%2449+VALUE+%E2%80%A2+FREE&statLabel=Tap+Link+In+Bio+Now+To+Join+The+Pre-Launch+VIP+List+%26+Lock+In+Your+Free+Pack&img=%2Fblog-images%2Fclaim-free-mystery-before-launch.png"
+      ],
+      "created_at": "2026-11-26T18:55:32.774Z",
+      "updated_at": "2026-11-26T18:55:32.774Z"
+    },
+    {
       "id": "f50a198e-4c7b-48d9-9e12-772b8c410050",
       "brief": "Pre-Launch VIP Giveaway: Sign Up Before We Launch & Get a Custom Murder Mystery Pack 100% Free",
       "status": "scheduled",
@@ -1102,6 +1237,76 @@
     }
   ],
   "social_post_captions": [
+    {
+      "id": "c5055555-1111-4111-8111-111111111101",
+      "post_id": "a1011111-1111-4111-8111-111111111105",
+      "platform": "instagram",
+      "caption": "HOW IT WORKS 🕵️‍♀️✨ (Swipe through all 5 steps 👉)\n\nHere is how Back Pocket Mysteries flips the entire genre on its head:\n🎭 Step 1: Enter your friends’ real names, personalities, and appearance traits (glasses, beard, hair colour, vibe) in 60 seconds\n🖼️ Step 2: Our engine renders everyone in matching front-on noir character portraits that actually look like your crew dressed for the theme\n📂 Step 3: Every alibi, secret affair, financial blackmail motive, and Round 1-3 talking point weaves your friends’ real names directly into the plot\n📹 Step 4: Unlock grainy CCTV stills, dark-mode group chat screenshots (with your friends’ real faces), and playable audio wiretaps where suspects whisper your actual friends’ names out loud\n🥂 Step 5: Run the whole night from a 6-digit Game PIN so even the host plays along without knowing who the killer is\n\n🎁 PRE-LAUNCH VIP BONUS (FIRST 50 SPOTS):\nBefore we officially launch, you can still grab one of our First 50 Pre-Launch VIP spots to get a complete Custom Murder Mystery Pack 100% FREE (up to $49 value)!\n\n👇 Tap the link in our bio right now to join the Pre-Launch VIP List and lock in your free pack!\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketMysteries #MurderMysteryParty #GameNightIdeas #DinnerPartyIdeas #FreeMurderMystery",
+      "hashtags": [
+        "BackPocketMysteries",
+        "MurderMysteryParty",
+        "GameNightIdeas",
+        "DinnerPartyIdeas",
+        "FreeMurderMystery"
+      ],
+      "media_urls": [
+        "/api/social-card/how-it-works-swipe-cover?t=0&title=HOW+IT+WORKS%3A+How+Back+Pocket+Mysteries+Flips+Murder+Mystery+Night+On+Its+Head&category=HOW+IT+WORKS+%E2%80%A2+5-STEP+SWIPE+GUIDE&cta=SWIPE+FOR+STEP+1+%E2%86%92&kicker=SWIPE+THROUGH+ALL+5+STEPS&statValue=5+EASY+STEPS&statLabel=Swipe+To+See+How+Your+Real+Friends+Get+Cast+Inside+The+Crime+Scene&img=%2Fblog-images%2Fintroducing-back-pocket-mysteries.png",
+        "/api/social-card/how-it-works-step-1-traits?t=1&title=Step+1%3A+Enter+Your+Friends%E2%80%99+Real+Names%2C+Personalities+%26+Appearance+Traits+in+60+Seconds&category=%F0%9F%8E%AD+STEP+1+OF+5+%E2%80%A2+60-SECOND+CASTING&cta=SWIPE+FOR+STEP+2+%E2%86%92&kicker=STEP+1+%E2%80%A2+CAST+YOUR+CREW&statValue=60+SECONDS&statLabel=Glasses%2C+Beard%2C+Hair+Colour%2C+Vibe+%26+Automatic+Gender-Flex+Casting&img=%2Fblog-images%2Fhow-it-works-step-1-traits.png",
+        "/api/social-card/how-it-works-step-2-portraits?t=2&title=Step+2%3A+Render+Everyone+in+Matching+Front-On+Noir+Portraits+Dressed+for+the+Theme&category=%F0%9F%96%BC%EF%B8%8F+STEP+2+OF+5+%E2%80%A2+AI+NOIR+PORTRAITS&cta=SWIPE+FOR+STEP+3+%E2%86%92&kicker=STEP+2+%E2%80%A2+CUSTOM+SUSPECT+ART&statValue=100%25+YOUR+CREW&statLabel=Front-On+Noir+Character+Portraits+That+Actually+Look+Like+Your+Friends&img=%2Fblog-images%2Fprelaunch-friends-in-crime-scene.png",
+        "/api/social-card/how-it-works-step-3-dossiers?t=3&title=Step+3%3A+Every+Alibi%2C+Secret+Affair%2C+Blackmail+Motive+%26+Talking+Point+Weaves+In+Their+Real+Names&category=%F0%9F%93%82+STEP+3+OF+5+%E2%80%A2+HYDRATED+PLOT+%26+MOTIVES&cta=SWIPE+FOR+STEP+4+%E2%86%92&kicker=STEP+3+%E2%80%A2+BESPOKE+DOSSIERS&statValue=ROUNDS+1%E2%80%933&statLabel=Every+Alibi%2C+Affair+%26+Financial+Blackmail+Motive+Names+Your+Real+Friends&img=%2Fblog-images%2Fhow-it-works-step-3-dossiers.png",
+        "/api/social-card/how-it-works-step-4-evidence?t=4&title=Step+4%3A+Unlock+Grainy+CCTV+Stills%2C+Group+Chats+%28With+Real+Faces%29+%26+Audio+Wiretaps&category=%F0%9F%93%B9+STEP+4+OF+5+%E2%80%A2+LIVE+FORENSIC+CLUES&cta=SWIPE+FOR+STEP+5+%E2%86%92&kicker=STEP+4+%E2%80%A2+MULTIMEDIA+EVIDENCE&statValue=CCTV+%2B+AUDIO&statLabel=Suspects+Whisper+Your+Friends%E2%80%99+Actual+Names+Out+Loud+In+Audio+Wiretaps&img=%2Fblog-images%2Fprelaunch-spot-the-lie-teaser.png",
+        "/api/social-card/how-it-works-step-5-pin?t=5&title=Step+5%3A+Run+the+Whole+Night+From+a+6-Digit+Game+PIN+So+Even+the+Host+Plays+Spoiler-Free&category=%F0%9F%A5%82+STEP+5+OF+5+%E2%80%A2+SPOILER-FREE+HOST+MODE&cta=SWIPE+FOR+FREE+VIP+BONUS+%E2%86%92&kicker=STEP+5+%E2%80%A2+LIVE+MOBILE+LOBBY&statValue=6-DIGIT+PIN&statLabel=Even+The+Host+Plays+Along+Without+Knowing+Who+The+Killer+Is&img=%2Fblog-images%2Fprelaunch-last-call-50-vip-spots.png",
+        "/api/social-card/how-it-works-vip-bonus?t=6&title=Grab+1+of+Our+First+50+Pre-Launch+VIP+Spots+for+a+100%25+FREE+Custom+Mystery+Pack+%28%2449+Value%29&category=%F0%9F%8E%81+PRE-LAUNCH+VIP+BONUS+%E2%80%A2+FIRST+50+SPOTS&cta=TAP+LINK+IN+BIO+%E2%80%A2+CLAIM+FREE+PACK&kicker=FIRST+50+PLAY+100%25+FREE&statValue=%2449+VALUE+%E2%80%A2+FREE&statLabel=Tap+Link+In+Bio+Now+To+Join+The+Pre-Launch+VIP+List+%26+Lock+In+Your+Free+Pack&img=%2Fblog-images%2Fclaim-free-mystery-before-launch.png"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": null,
+      "created_at": "2026-11-26T18:55:32.774Z",
+      "updated_at": "2026-11-26T18:55:32.774Z"
+    },
+    {
+      "id": "c5055555-1111-4111-8111-111111111102",
+      "post_id": "a1011111-1111-4111-8111-111111111105",
+      "platform": "facebook",
+      "caption": "HOW IT WORKS 🕵️‍♀️✨ (Swipe through all 5 steps 👉)\n\nHere is how Back Pocket Mysteries flips the entire genre on its head:\n🎭 Step 1: Enter your friends’ real names, personalities, and appearance traits (glasses, beard, hair colour, vibe) in 60 seconds\n🖼️ Step 2: Our engine renders everyone in matching front-on noir character portraits that actually look like your crew dressed for the theme\n📂 Step 3: Every alibi, secret affair, financial blackmail motive, and Round 1-3 talking point weaves your friends’ real names directly into the plot\n📹 Step 4: Unlock grainy CCTV stills, dark-mode group chat screenshots (with your friends’ real faces), and playable audio wiretaps where suspects whisper your actual friends’ names out loud\n🥂 Step 5: Run the whole night from a 6-digit Game PIN so even the host plays along without knowing who the killer is\n\n🎁 PRE-LAUNCH VIP BONUS (FIRST 50 SPOTS):\nBefore we officially launch, you can still grab one of our First 50 Pre-Launch VIP spots to get a complete Custom Murder Mystery Pack 100% FREE (up to $49 value)!\n\n👇 Tap the link in our bio right now to join the Pre-Launch VIP List and lock in your free pack!\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketMysteries #MurderMysteryParty #GameNightIdeas #DinnerPartyIdeas #FreeMurderMystery",
+      "hashtags": [
+        "BackPocketMysteries",
+        "MurderMysteryParty",
+        "GameNightIdeas",
+        "DinnerPartyIdeas",
+        "FreeMurderMystery"
+      ],
+      "media_urls": [
+        "/api/social-card/how-it-works-swipe-cover?t=0&title=HOW+IT+WORKS%3A+How+Back+Pocket+Mysteries+Flips+Murder+Mystery+Night+On+Its+Head&category=HOW+IT+WORKS+%E2%80%A2+5-STEP+SWIPE+GUIDE&cta=SWIPE+FOR+STEP+1+%E2%86%92&kicker=SWIPE+THROUGH+ALL+5+STEPS&statValue=5+EASY+STEPS&statLabel=Swipe+To+See+How+Your+Real+Friends+Get+Cast+Inside+The+Crime+Scene&img=%2Fblog-images%2Fintroducing-back-pocket-mysteries.png",
+        "/api/social-card/how-it-works-step-1-traits?t=1&title=Step+1%3A+Enter+Your+Friends%E2%80%99+Real+Names%2C+Personalities+%26+Appearance+Traits+in+60+Seconds&category=%F0%9F%8E%AD+STEP+1+OF+5+%E2%80%A2+60-SECOND+CASTING&cta=SWIPE+FOR+STEP+2+%E2%86%92&kicker=STEP+1+%E2%80%A2+CAST+YOUR+CREW&statValue=60+SECONDS&statLabel=Glasses%2C+Beard%2C+Hair+Colour%2C+Vibe+%26+Automatic+Gender-Flex+Casting&img=%2Fblog-images%2Fhow-it-works-step-1-traits.png",
+        "/api/social-card/how-it-works-step-2-portraits?t=2&title=Step+2%3A+Render+Everyone+in+Matching+Front-On+Noir+Portraits+Dressed+for+the+Theme&category=%F0%9F%96%BC%EF%B8%8F+STEP+2+OF+5+%E2%80%A2+AI+NOIR+PORTRAITS&cta=SWIPE+FOR+STEP+3+%E2%86%92&kicker=STEP+2+%E2%80%A2+CUSTOM+SUSPECT+ART&statValue=100%25+YOUR+CREW&statLabel=Front-On+Noir+Character+Portraits+That+Actually+Look+Like+Your+Friends&img=%2Fblog-images%2Fprelaunch-friends-in-crime-scene.png",
+        "/api/social-card/how-it-works-step-3-dossiers?t=3&title=Step+3%3A+Every+Alibi%2C+Secret+Affair%2C+Blackmail+Motive+%26+Talking+Point+Weaves+In+Their+Real+Names&category=%F0%9F%93%82+STEP+3+OF+5+%E2%80%A2+HYDRATED+PLOT+%26+MOTIVES&cta=SWIPE+FOR+STEP+4+%E2%86%92&kicker=STEP+3+%E2%80%A2+BESPOKE+DOSSIERS&statValue=ROUNDS+1%E2%80%933&statLabel=Every+Alibi%2C+Affair+%26+Financial+Blackmail+Motive+Names+Your+Real+Friends&img=%2Fblog-images%2Fhow-it-works-step-3-dossiers.png",
+        "/api/social-card/how-it-works-step-4-evidence?t=4&title=Step+4%3A+Unlock+Grainy+CCTV+Stills%2C+Group+Chats+%28With+Real+Faces%29+%26+Audio+Wiretaps&category=%F0%9F%93%B9+STEP+4+OF+5+%E2%80%A2+LIVE+FORENSIC+CLUES&cta=SWIPE+FOR+STEP+5+%E2%86%92&kicker=STEP+4+%E2%80%A2+MULTIMEDIA+EVIDENCE&statValue=CCTV+%2B+AUDIO&statLabel=Suspects+Whisper+Your+Friends%E2%80%99+Actual+Names+Out+Loud+In+Audio+Wiretaps&img=%2Fblog-images%2Fprelaunch-spot-the-lie-teaser.png",
+        "/api/social-card/how-it-works-step-5-pin?t=5&title=Step+5%3A+Run+the+Whole+Night+From+a+6-Digit+Game+PIN+So+Even+the+Host+Plays+Spoiler-Free&category=%F0%9F%A5%82+STEP+5+OF+5+%E2%80%A2+SPOILER-FREE+HOST+MODE&cta=SWIPE+FOR+FREE+VIP+BONUS+%E2%86%92&kicker=STEP+5+%E2%80%A2+LIVE+MOBILE+LOBBY&statValue=6-DIGIT+PIN&statLabel=Even+The+Host+Plays+Along+Without+Knowing+Who+The+Killer+Is&img=%2Fblog-images%2Fprelaunch-last-call-50-vip-spots.png",
+        "/api/social-card/how-it-works-vip-bonus?t=6&title=Grab+1+of+Our+First+50+Pre-Launch+VIP+Spots+for+a+100%25+FREE+Custom+Mystery+Pack+%28%2449+Value%29&category=%F0%9F%8E%81+PRE-LAUNCH+VIP+BONUS+%E2%80%A2+FIRST+50+SPOTS&cta=TAP+LINK+IN+BIO+%E2%80%A2+CLAIM+FREE+PACK&kicker=FIRST+50+PLAY+100%25+FREE&statValue=%2449+VALUE+%E2%80%A2+FREE&statLabel=Tap+Link+In+Bio+Now+To+Join+The+Pre-Launch+VIP+List+%26+Lock+In+Your+Free+Pack&img=%2Fblog-images%2Fclaim-free-mystery-before-launch.png"
+      ],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": null,
+      "created_at": "2026-11-26T18:55:32.774Z",
+      "updated_at": "2026-11-26T18:55:32.774Z"
+    },
+    {
+      "id": "c5055555-1111-4111-8111-111111111103",
+      "post_id": "a1011111-1111-4111-8111-111111111105",
+      "platform": "linkedin",
+      "caption": "HOW IT WORKS: How Back Pocket Mysteries Flips the Entire Murder Mystery Genre on Its Head in 5 Simple Steps\n\nFor decades, hosting an at-home murder mystery party meant buying a static PDF kit, spending three hours at an office printer cutting out paper slips, handing your friends generic character names that nobody could remember across the dinner table, and forcing the host to sit on the sidelines as a non-playing referee because setup spoiled the ending.\n\nWith Back Pocket Mysteries, we rebuilt the entire dinner party format from the ground up around dynamic guest hydration, uniform noir character portraiture, live smartphone forensic drops, and a spoiler-free 6-digit Game PIN lobby. Here is a step-by-step look at how the platform works from initial guest casting to the Round 3 accusation vote.\n\nStep 1: Enter Your Friends’ Real Names, Personalities, and Appearance Traits in 60 Seconds\nInstead of forcing your group into rigid, pre-written stereotypes, you start by entering your actual attendees’ first names, personality styles, and physical appearance details (glasses, beard, hair colour, and personal vibe) in about sixty seconds. Our bidirectional gender-flex casting system matches default character roles first and automatically adapts titles, pronouns, relationship tokens, and outfit descriptions for any group gender balance, whether you are hosting a mixed dinner party, an all-female bachelorette weekend, or a corporate team social.\n\nStep 2: Render Everyone in Matching Front-On Noir Character Portraits\nOnce your guest list is entered, our visual engine renders every player in a cohesive, front-on noir character portrait dressed in period or theme attire that reflects their real-world features. When guests open their digital invitations or pick up their printed place cards at the table, they immediately recognize their own crew inside the story world.\n\nStep 3: Every Alibi, Secret Affair, Financial Blackmail Motive, and Talking Point Weaves in Real Names\nOur hydration engine weaves your friends’ actual names directly into every character dossier, secondary objective, secret relationship, financial blackmail subplot, and Round 1 through Round 3 talking point. Guests never have to squint across the table trying to remember who is playing Lord Harrington; they are interrogating Marcus, Sarah, and Chloe by name while staying immersed in their character motives.\n\nStep 4: Unlock Grainy CCTV Stills, Dark-Mode Group Chats, and Playable Audio Wiretaps\nAcross three structured rounds, the investigation escalates through realistic multimedia evidence delivered straight to players’ phones or printed as tactile Polaroid evidence cards. Players examine high-angle security camera stills stamped with corridor timestamps, inspect dark-mode smartphone group chat screenshots featuring their friends’ character avatars, and tap play on multi-voice audio wiretaps where suspects whisper your actual friends’ names out loud at the dinner table.\n\nStep 5: Run the Whole Night From a 6-Digit Game PIN in Spoiler-Free Host Mode\nEvery player joins the live mobile party room using a simple 6-digit Game PIN with zero app downloads required. Because our progressive host controller locks the killer reveal and upcoming round evidence until the table votes in Round 3, even the host plays along as a full suspect without knowing who committed the murder. And if a guest cancels at the last minute, elastic suspect scaling lets you toggle optional roles on or off in seconds without breaking a single clue chain.\n\nPre-Launch VIP Bonus (First 50 Spots Play 100% Free):\nBefore we officially open public checkout, you can grab one of our First 50 Pre-Launch VIP spots to receive a complete Custom Murder Mystery Pack 100% FREE (up to $49 retail value) that never expires, plus instant access to test-drive our interactive three-suspect online mini-mystery tonight.\n\nJoin the Pre-Launch VIP List and lock in your free pack here:\nhttps://backpocketmysteries.com/en/free-murder-mystery-game\n\n#BackPocketMysteries #MurderMysteryParty #GameNightIdeas #DinnerPartyIdeas #FreeMurderMystery",
+      "hashtags": [
+        "BackPocketMysteries",
+        "MurderMysteryParty",
+        "GameNightIdeas",
+        "DinnerPartyIdeas",
+        "FreeMurderMystery"
+      ],
+      "media_urls": [],
+      "post_url": "https://backpocketmysteries.com/en/free-murder-mystery-game",
+      "engagement_data": null,
+      "created_at": "2026-11-26T18:55:32.774Z",
+      "updated_at": "2026-11-26T18:55:32.774Z"
+    },
     {
       "id": "1249883c-3676-485f-871f-936d24c787b1",
       "post_id": "f50a198e-4c7b-48d9-9e12-772b8c410050",

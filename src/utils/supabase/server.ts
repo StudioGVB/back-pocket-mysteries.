@@ -77,44 +77,49 @@ export async function createClient(
     },
   })
 
-  // Wrap auth.getUser so Server Components and Server Actions resolve the active session
-  // without firing multiple redundant /auth/v1/user network requests that can race or fail.
+  // Wrap auth.getUser so Server Components and Server Actions cryptographically verify
+  // the JWT with Supabase Auth once per token (cached for 60s to prevent concurrent refresh races).
   const origGetUser = client.auth.getUser.bind(client.auth)
   client.auth.getUser = async (jwt?: string) => {
     if (jwt) {
       return origGetUser(jwt)
     }
-    try {
-      const {
-        data: { session },
-      } = await client.auth.getSession()
-      if (session?.user) {
-        return {
-          data: { user: session.user },
-          error: null,
-        } as any
-      }
-    } catch {
-      // fall through
-    }
 
-    if (isPermanent && !clientOptions?.allowCookieClear) {
-      const persistedUser = readPersistedUserFromCookies(safeGetAllCookies())
-      if (persistedUser) {
-        return {
-          data: { user: persistedUser },
-          error: null,
-        } as any
-      }
-    }
-
-    const hasAnyAuthCookie = safeGetAllCookies()
-      .some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token') && Boolean(c.value))
-    if (!hasAnyAuthCookie) {
+    const activeCookies = getEffectiveAuthCookies(safeGetAllCookies()).filter(
+      (c) => c.name.startsWith('sb-') && c.name.includes('-auth-token') && Boolean(c.value)
+    )
+    if (activeCookies.length === 0) {
       return { data: { user: null }, error: null } as any
     }
 
-    return origGetUser()
+    const cookieKey = activeCookies
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((c) => `${c.name}=${c.value}`)
+      .join(';')
+
+    const g = globalThis as unknown as {
+      __bpmVerifiedUserCache?: Map<string, { user: any; expiresAt: number }>
+    }
+    if (!g.__bpmVerifiedUserCache) {
+      g.__bpmVerifiedUserCache = new Map()
+    }
+
+    const now = Date.now()
+    const cached = g.__bpmVerifiedUserCache.get(cookieKey)
+    if (cached && cached.expiresAt > now) {
+      return { data: { user: cached.user }, error: null } as any
+    }
+
+    const verified = await origGetUser()
+    if (verified?.data?.user) {
+      g.__bpmVerifiedUserCache.set(cookieKey, {
+        user: verified.data.user,
+        expiresAt: now + 60_000,
+      })
+      return verified
+    }
+
+    return verified
   }
 
   return client

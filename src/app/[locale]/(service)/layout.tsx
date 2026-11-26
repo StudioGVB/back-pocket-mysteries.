@@ -8,8 +8,6 @@ import { createClient } from '@/utils/supabase/server';
 import { OnboardingWizard } from '@/components/account/OnboardingWizard';
 import CopyrightYear from '@/components/marketing/CopyrightYear';
 
-export const unstable_instant = false;
-
 export const metadata: Metadata = {
   robots: {
     index: false,

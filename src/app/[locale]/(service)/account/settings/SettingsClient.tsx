@@ -550,7 +550,6 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
     { href: '#regional', label: 'Currency & Language' },
     { href: '#billing', label: 'Billing & Vouchers' },
     { href: '#purchase-history', label: 'Purchase History' },
-    { href: '#preferences', label: 'Hosting Defaults' },
     { href: '#notifications', label: 'Notifications' },
     { href: '#security', label: 'Security & Sessions' },
     { href: '#danger-zone', label: 'Privacy & Danger Zone', danger: true },
@@ -561,7 +560,7 @@ export default function SettingsClient({ user, orders, guests, locale }: Setting
       <div className="mb-10">
         <h1 className="text-4xl font-black text-slate-900 mb-2">Settings</h1>
         <p className="text-slate-500 font-medium text-lg">
-          Manage your currency, language, billing, purchase history, and hosting preferences.
+          Manage your currency, language, billing, purchase history, and account security.
         </p>
       </div>
 

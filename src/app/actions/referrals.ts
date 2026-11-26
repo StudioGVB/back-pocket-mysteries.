@@ -135,17 +135,23 @@ export async function buildUserReferralCode(
 /**
  * Registers or retrieves the host's personal "Give 20%, Get 20%" referral code and wallet status.
  */
-export async function getOrRegisterUserReferralWalletAction(): Promise<{
+export async function getOrRegisterUserReferralWalletAction(
+  preloadedUser?: { id: string; email?: string | null; user_metadata?: any } | null
+): Promise<{
   referralCode: string;
   referralLink: string;
   rewardVouchers: ReferrerRewardVoucher[];
   referralsCompletedCount: number;
   appliedSignupPromo?: string | null;
 }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = preloadedUser;
+  if (!user) {
+    const supabase = await createClient();
+    const {
+      data: { user: fetchedUser },
+    } = await supabase.auth.getUser();
+    user = fetchedUser;
+  }
 
   if (!user) {
     return {

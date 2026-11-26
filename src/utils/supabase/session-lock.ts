@@ -213,29 +213,38 @@ export function readPersistedUserFromCookies(
       : combined;
 
     const parsed = JSON.parse(jsonStr);
-    if (parsed?.user?.id) {
-      return parsed.user;
+
+    // Strictly require a real 3-part signed Supabase JWT access_token (never trust a raw user JSON object without a signed JWT)
+    if (typeof parsed?.access_token !== 'string' || typeof parsed?.refresh_token !== 'string') {
+      return null;
     }
 
-    // Fallback: decode JWT payload from access_token if user object wasn't embedded
-    if (typeof parsed?.access_token === 'string') {
-      const parts = parsed.access_token.split('.');
-      if (parts.length === 3) {
-        const jwtPayload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-        if (jwtPayload?.sub) {
-          return {
-            id: jwtPayload.sub,
-            aud: jwtPayload.aud || 'authenticated',
-            role: jwtPayload.role || 'authenticated',
-            email: jwtPayload.email || '',
-            user_metadata: jwtPayload.user_metadata || {},
-            app_metadata: jwtPayload.app_metadata || {},
-          };
-        }
-      }
+    const parts = parsed.access_token.split('.');
+    if (parts.length !== 3 || parts[2].length < 40) {
+      return null;
     }
 
-    return null;
+    const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    const jwtPayload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+
+    if (!header?.alg || header.alg === 'none' || !jwtPayload?.sub) {
+      return null;
+    }
+
+    const expectedUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+    if (expectedUrl && (!jwtPayload.iss || !String(jwtPayload.iss).startsWith(expectedUrl))) {
+      return null;
+    }
+
+    // Derive identity strictly from the signed JWT payload claims, never from unverified outer JSON fields
+    return {
+      id: jwtPayload.sub,
+      aud: jwtPayload.aud || 'authenticated',
+      role: jwtPayload.role || 'authenticated',
+      email: jwtPayload.email || '',
+      user_metadata: jwtPayload.user_metadata || {},
+      app_metadata: jwtPayload.app_metadata || {},
+    };
   } catch {
     return null;
   }

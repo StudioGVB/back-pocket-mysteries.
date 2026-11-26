@@ -2,9 +2,8 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
+import { getOrRegisterUserReferralWalletAction } from '@/app/actions/referrals';
 import SettingsClient from './SettingsClient';
-
-export const unstable_instant = false;
 
 export default async function SettingsPage({
   params,
@@ -12,8 +11,7 @@ export default async function SettingsPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const supabase = await createClient();
-  const cookieStore = await cookies();
+  const [supabase, cookieStore] = await Promise.all([createClient(), cookies()]);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -23,27 +21,28 @@ export default async function SettingsPage({
   const meta = user.user_metadata || {};
   const cookieCurrency = cookieStore.get('NEXT_CURRENCY')?.value;
 
-  // Fetch user's orders for Purchase History
-  const { data: rawOrders } = await (supabase as any)
-    .from('orders')
-    .select(`
-      id,
-      mystery_id,
-      amount,
-      currency,
-      status,
-      created_at,
-      mysteries:mystery_id (title, theme)
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  // Fetch user's guests for Data Export
-  const { data: guests } = await supabase
-    .from('guests')
-    .select('id, name, gender, eye_color, height, ethnicity, traits, bio, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+  // Fetch user's orders, guests, and referral wallet in parallel
+  const [{ data: rawOrders }, { data: guests }, referralWallet] = await Promise.all([
+    (supabase as any)
+      .from('orders')
+      .select(`
+        id,
+        mystery_id,
+        amount,
+        currency,
+        status,
+        created_at,
+        mysteries:mystery_id (title, theme)
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('guests')
+      .select('id, name, gender, eye_color, height, ethnicity, traits, bio, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+    getOrRegisterUserReferralWalletAction(user),
+  ]);
 
   const orders = (rawOrders ?? []).map((o: any) => ({
     id: o.id,
@@ -55,9 +54,6 @@ export default async function SettingsPage({
     status: o.status || 'succeeded',
     createdAt: o.created_at,
   }));
-
-  const { getOrRegisterUserReferralWalletAction } = await import('@/app/actions/referrals');
-  const referralWallet = await getOrRegisterUserReferralWalletAction();
 
   const userData = {
     id: user.id,

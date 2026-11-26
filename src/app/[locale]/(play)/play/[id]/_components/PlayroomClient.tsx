@@ -6023,7 +6023,7 @@ export function PlayroomClient({
                             />
                             <div className="min-w-0">
                               <div className="text-xs font-bold text-emerald-300">
-                                ✓ Party Photo Attached (+15% Off Bonus Unlocked)
+                                ✓ Party Photo Attached (+50% Off Bonus Unlocked)
                               </div>
                               <p className="text-[11px] text-slate-400 truncate">
                                 Ready to include with your review &amp; Detective Scorecard
@@ -6074,9 +6074,9 @@ export function PlayroomClient({
                 </div>
               </section>
             ) : (
-              /* PAGE 2 (UNLOCKED): PARTY VOTING STATISTICS, DETECTIVE WRAPPED STORY CARD & 15% OFF REWARD */
+              /* PAGE 2 (UNLOCKED): PARTY VOTING STATISTICS, DETECTIVE WRAPPED STORY CARD & 50% OFF REWARD */
               <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Top Action Bar: Unlocked Confirmation + Shareable Detective Wrapped Scorecard + 15% OFF Next-Host Reward */}
+                {/* Top Action Bar: Unlocked Confirmation + Shareable Detective Wrapped Scorecard + 50% OFF Next-Host Reward */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                   {/* Left: Shareable "Detective Wrapped" Story Card Trigger */}
                   <div className="lg:col-span-7 p-5 rounded-3xl bg-gradient-to-br from-brand-pink/20 via-slate-900 to-slate-950 border border-brand-pink/40 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -6116,7 +6116,7 @@ export function PlayroomClient({
                     </button>
                   </div>
 
-                  {/* Right: 15% OFF Guest-to-Next-Host Personal Single-Use Reward Code (Email Delivery Only) */}
+                  {/* Right: 50% OFF Guest-to-Next-Host Personal Single-Use Reward Code (Email Delivery Only) */}
                   <div className="lg:col-span-5 p-5 rounded-3xl bg-gradient-to-br from-amber-500/15 via-slate-900 to-slate-950 border border-amber-400/35 shadow-xl flex flex-col justify-between gap-3">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
@@ -6129,7 +6129,7 @@ export function PlayroomClient({
                         >
                           {personalPromoCode
                             ? '✓ Code Sent to Your Email'
-                            : 'Next-Host Reward • 15% Off'}
+                            : 'Next-Host Reward • 50% Off'}
                         </span>
                         <Link
                           href={`/${locale}/mysteries`}
@@ -6145,13 +6145,13 @@ export function PlayroomClient({
                       </h3>
                       {personalPromoCode ? (
                         <p className="text-xs text-slate-300 leading-relaxed">
-                          Your personal single-use <strong className="text-amber-300">15% Off Host Code</strong> and Detective Wrapped recap have been emailed to{' '}
+                          Your personal single-use <strong className="text-amber-300">50% Off Host Code</strong> and Detective Wrapped recap have been emailed to{' '}
                           <span className="text-white font-semibold">{rewardEmail}</span>. Thanks so much for playing tonight!
                         </p>
                       ) : (
                         <p className="text-xs text-slate-300">
                           Enter your email and we&apos;ll send your personal single-use{' '}
-                          <strong className="text-amber-300">15% Off Host Code</strong> + Detective
+                          <strong className="text-amber-300">50% Off Host Code</strong> + Detective
                           Wrapped scorecard straight to your inbox.
                         </p>
                       )}
@@ -6160,7 +6160,7 @@ export function PlayroomClient({
                     {personalPromoCode ? (
                       <div className="px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 text-center">
                         <span>✉️</span>
-                        <span>Check your inbox for your single-use 15% Off code!</span>
+                        <span>Check your inbox for your single-use 50% Off code!</span>
                       </div>
                     ) : (
                       <form
