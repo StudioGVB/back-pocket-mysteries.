@@ -36,6 +36,7 @@ import {
 import {
   verifyAndHealClueText,
   verifyCluePhotoWithProfileReferences,
+  verifyPackBookletsAndBlindDetectiveSolvabilityAction,
 } from '@/app/actions/clue-verifier';
 import {
   sanitizePromptForImageSafety,
@@ -1937,6 +1938,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
         retriedCount: 0,
         summary: 'Verified cast, profile outfits, and scene logic.',
       };
+      let harmonizedPhotoCaption = '';
 
       if (base64Image && !qaCorrectionDirective) {
         let currentDirective = '';
@@ -1959,6 +1961,9 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
             retriedCount: criticAttempt - 1,
             summary: audit.summary,
           };
+          if (audit.passed && audit.harmonizedCaption) {
+            harmonizedPhotoCaption = audit.harmonizedCaption;
+          }
 
           if (audit.passed || !audit.correctionDirective) {
             break;
@@ -2045,16 +2050,19 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
         }
       }
 
-      // Also verify the clue's text description for right character names, right pronouns, and zero fabrications
+      // Also verify the clue's text description for right character names, right pronouns, physical traits, and zero fabrications
+      const baseDescForVerify = harmonizedPhotoCaption || clue.description || '';
       const textVerify = await verifyAndHealClueText({
         clueTitle: clue.title || '',
-        clueDescription: clue.description || '',
+        clueDescription: baseDescForVerify,
         clueFormat,
         mysteryTitle: mystery?.title,
         mysterySetting,
         characters: hydratedCharacters,
         preserveTokens: (clue.description || '').includes('{{'),
       });
+      const captionWasUpdated =
+        textVerify.healed || Boolean(harmonizedPhotoCaption && harmonizedPhotoCaption !== clue.description);
 
       const existingStamp = extractClueVerificationStamp((clue as any).internal_notes);
       const verificationStamp: ClueVerificationStamp = {
@@ -2065,7 +2073,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
           namesValid: textVerify.namesValid,
           pronounsValid: textVerify.pronounsValid,
           plotAligned: textVerify.plotAligned,
-          healed: textVerify.healed,
+          healed: captionWasUpdated,
           summary: textVerify.summary,
         },
         photoCheck: photoCheckResult,
@@ -2080,7 +2088,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
         .from('clues')
         .update({
           static_image_url: finalImageUrl,
-          ...(textVerify.healed ? { description: textVerify.finalDescription } : {}),
+          ...(captionWasUpdated ? { description: textVerify.finalDescription } : {}),
           internal_notes: updatedInternalNotes,
           updated_at: new Date().toISOString(),
         })
@@ -2092,7 +2100,7 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
             ? {
                 ...c,
                 static_image_url: finalImageUrl,
-                ...(textVerify.healed ? { description: textVerify.finalDescription } : {}),
+                ...(captionWasUpdated ? { description: textVerify.finalDescription } : {}),
                 internal_notes: updatedInternalNotes,
               }
             : c
@@ -2598,6 +2606,24 @@ export async function auditAndHealCustomerPackAction(
           }
         })
       );
+    }
+
+    // Run Pack-Wide Clue <-> Character Booklet Round Sync & Blind Detective Round 3 Solvability Proof
+    try {
+      const blindAndBookletRes = await verifyPackBookletsAndBlindDetectiveSolvabilityAction(
+        mysteryId
+      );
+      if (blindAndBookletRes.bookletsHealedCount > 0) {
+        result.textIssuesRepaired += blindAndBookletRes.bookletsHealedCount;
+      }
+      if (blindAndBookletRes.smokingGunClueSharpened) {
+        result.textIssuesRepaired += 1;
+      }
+      if (blindAndBookletRes.summary) {
+        result.narrativeSanityNote = blindAndBookletRes.summary;
+      }
+    } catch (blindErr) {
+      console.warn('[QA GATE 1A-BLIND-DETECTIVE] Non-fatal blind detective warning:', blindErr);
     }
 
     for (const clue of allClues) {

@@ -128,49 +128,47 @@ export default async function HomePage(props: {
       />
       <main className="flex-grow">
       <LightsOut />
-      {/* Hero Section */}
-      <section className="relative pt-8 pb-12 lg:pt-16 lg:pb-20 overflow-hidden bg-white">
-        <div className="container mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-[10px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/5 rounded-full border border-brand-pink/10">
-                <span className="w-1.5 h-1.5 bg-brand-pink rounded-full"></span>
-                {dict.home.hero.badge}
+      {/* Hero Section: Single-Screen Interactive Mini-Mystery Quiz Flow */}
+      <section className="relative pt-3 pb-6 lg:pt-4 lg:pb-8 overflow-hidden bg-white">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+          {/* Compact Hero Top Bar so the entire Hero + Interactive Quiz fits inside 1 screen */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3 mb-3.5">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 mb-1.5 text-[9px] font-black tracking-[0.2em] uppercase text-brand-pink bg-brand-pink/5 rounded-full border border-brand-pink/15">
+                <span className="w-1.5 h-1.5 bg-brand-pink rounded-full animate-pulse"></span>
+                {dict.home.hero.badge} · Try Our Interactive Mini-Mystery Below
               </div>
-              <h1 className="text-4xl sm:text-5xl xl:text-6xl font-black tracking-tighter text-brand-dark mb-4 leading-tight uppercase">
-                {dict.home.hero.title.split(',')[0]},<br />
-                <span className="text-brand-pink italic">{dict.home.hero.title.split(',')[1]}</span> <br />
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tighter text-brand-dark leading-none uppercase">
+                {dict.home.hero.title.split(',')[0]},{' '}
+                <span className="text-brand-pink italic">{dict.home.hero.title.split(',')[1]}</span>{' '}
                 {dict.home.hero.title.split(',')[2]}
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl text-gray-500 mb-8 leading-relaxed font-medium">
-                {dict.home.hero.subtitle}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 w-full">
-                <Link href={`/${locale}/themes`} className="px-8 py-4 bg-brand-pink text-white rounded-full font-black uppercase tracking-widest text-sm hover:bg-brand-dark transition-all shadow-xl hover:translate-y-[-4px] active:scale-95 w-full sm:w-auto text-center">
-                  {dict.home.hero.ctaPick}
-                </Link>
-                <Link href={`/${locale}/how-it-works`} className="px-8 py-4 bg-white text-brand-dark border-2 border-gray-100 rounded-full font-black uppercase tracking-widest text-sm hover:border-brand-pink transition-all hover:translate-y-[-4px] active:scale-95 w-full sm:w-auto text-center">
-                  {dict.home.hero.ctaHow}
-                </Link>
-              </div>
-              <p className="mt-6 text-xs text-gray-400 font-bold">
-                {dict.home.hero.priceLabel.replace('{{price}}', '')} 
-                <PriceDisplay tier="basic" locale={locale as Locale} />
-                {' · Ready in ~20 mins · Unlimited Extra Guest Detectives included'}
+              <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 max-w-3xl">
+                Create a friend below to test our AI suspect portraits, see them appear inside 3 live clues (Text, Photo &amp; Dramatic Voice in their accent), vote the killer &amp; save them to your cast.
               </p>
             </div>
-            
-            <div className="relative group perspective-1000">
-              <div className="absolute -inset-3 bg-brand-pink/5 rounded-[30px] opacity-10 transition-opacity"></div>
-              <div className="relative w-full aspect-[4/3] lg:aspect-square group-hover:scale-[1.02] transition-transform duration-500 flex items-center justify-center p-4 lg:p-8">
-                <HeroImageCarousel alt={dict.home.hero.title} />
-              </div>
-              {/* Badge */}
-              <div className="absolute -top-4 -right-4 lg:-top-6 lg:-right-6 w-20 h-20 lg:w-24 lg:h-24 bg-brand-pink rounded-full flex items-center justify-center text-white font-black uppercase text-[8px] lg:text-[9px] tracking-widest rotate-12 shadow-2xl border-4 border-white pointer-events-none text-center leading-tight p-2">
-                {dict.home.hero.readyBadge}
-              </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Link
+                href={`/${locale}/themes`}
+                className="px-4 py-2 bg-brand-dark text-white rounded-full font-black uppercase tracking-widest text-[10px] hover:bg-brand-pink transition-all shadow-md"
+              >
+                {dict.home.hero.ctaPick}
+              </Link>
+              <a
+                href="#how-it-works"
+                className="px-4 py-2 bg-gray-100 text-brand-dark rounded-full font-black uppercase tracking-widest text-[10px] hover:bg-brand-pink/10 hover:text-brand-pink transition-all"
+              >
+                {dict.home.hero.ctaHow} ↓
+              </a>
+              <span className="hidden xl:inline-block text-[10px] text-gray-400 font-bold pl-1">
+                From <PriceDisplay tier="basic" locale={locale as Locale} /> · Ready in ~20m
+              </span>
             </div>
           </div>
+
+          {/* Unified Single-Screen 4-Step Quiz Mini-Mystery Flow */}
+          <LandingGuestCreator locale={locale} />
         </div>
       </section>
 
@@ -350,14 +348,8 @@ export default async function HomePage(props: {
         </section>
       )}
 
-      {/* Live Interactive AI Guest Creator & Suspect Photo Demo */}
-      <LandingGuestCreator locale={locale} />
-
-      {/* Interactive Product Walkthrough */}
-      <InteractivePackPreview locale={locale} />
-
       {/* How It Works - High-Level 6-Step Flow */}
-      <section className="py-20 lg:py-28 bg-white">
+      <section id="how-it-works" className="py-20 lg:py-28 bg-white">
         <div className="container mx-auto px-6 max-w-6xl">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
             <div>

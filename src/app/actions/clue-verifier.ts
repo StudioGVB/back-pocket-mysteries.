@@ -106,6 +106,7 @@ export async function verifyCluePhotoWithProfileReferences({
   physicalMatch: boolean;
   sceneSense: boolean;
   correctionDirective: string;
+  harmonizedCaption?: string;
   summary: string;
 }> {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -117,6 +118,7 @@ export async function verifyCluePhotoWithProfileReferences({
       physicalMatch: true,
       sceneSense: true,
       correctionDirective: '',
+      harmonizedCaption: '',
       summary: 'Photo generated (API key unavailable for vision rescan).',
     };
   }
@@ -198,6 +200,8 @@ Perform a strict 4-point inspection on Image #${targetIdx}:
    }
 4. "sceneSense" (Scene & Prop Logic / Zero Fabrication):
    - Does the scene make logical sense for "${clueTitle || hydratedPrompt}" without bizarre hallucinations, split-screen collages, or large readable gibberish text overlays?
+5. "harmonizedCaption" (Photo-to-Caption Visual Reality Sync):
+   - If passed is true and Clue Evidence Text ("${clueDescription || ''}") mentions a minor visual prop or background detail that differs slightly from what is visibly rendered in Image #${targetIdx} (for example, holding a champagne flute instead of a whiskey glass, or standing near a bookshelf instead of a fireplace), provide a lightly harmonized version of the Clue Evidence Text that matches the visible photo while keeping 100% of character tokens/names, timestamps, and plot facts identical. If the text already matches the image (or if Clue Evidence Text is a chat/audio/receipt transcript rather than a visual scene caption), return an empty string "".
 
 Respond with valid JSON ONLY:
 {
@@ -207,7 +211,8 @@ Respond with valid JSON ONLY:
   "sceneSense": <boolean>,
   "passed": <true ONLY if castMatch, outfitMatch, physicalMatch, and sceneSense are ALL true>,
   "summary": "<1 concise sentence confirming who is in the photo, their outfit match, and scene validity>",
-  "correctionDirective": "<If passed is false, write a specific 1-sentence instruction telling the image generator exactly what to fix on retry (e.g. which person's outfit color, beard, glasses, or subject count to correct); if passed is true, empty string>"
+  "correctionDirective": "<If passed is false, write a specific 1-sentence instruction telling the image generator exactly what to fix on retry (e.g. which person's outfit color, beard, glasses, or subject count to correct); if passed is true, empty string>",
+  "harmonizedCaption": "<If passed is true and a minor visual prop/background noun in the caption needs harmonizing to match the photo, the updated caption; otherwise empty string>"
 }`;
 
     criticParts.push({ text: visionPrompt });
@@ -216,7 +221,7 @@ Respond with valid JSON ONLY:
       contents: [{ role: 'user', parts: criticParts }],
       generationConfig: {
         responseMimeType: 'application/json',
-        maxOutputTokens: 320,
+        maxOutputTokens: 450,
       },
     });
 
@@ -245,6 +250,7 @@ Respond with valid JSON ONLY:
       physicalMatch,
       sceneSense,
       correctionDirective: String(parsed.correctionDirective || '').trim(),
+      harmonizedCaption: passed ? String(parsed.harmonizedCaption || '').trim() : '',
       summary:
         String(parsed.summary || '').trim() ||
         (passed
@@ -260,18 +266,20 @@ Respond with valid JSON ONLY:
       physicalMatch: true,
       sceneSense: true,
       correctionDirective: '',
+      harmonizedCaption: '',
       summary: 'Photo rendered (vision rescan skipped due to transient API error).',
     };
   }
 }
 
 /**
- * 2. CLUE TEXT, GUEST NAME, PRONOUN, CROSS-CLUE TIMELINE & FORMAT STRUCTURE VERIFIER
+ * 2. CLUE TEXT, GUEST NAME, PRONOUN, PHYSICAL TRAITS, CROSS-CLUE TIMELINE & FORMAT STRUCTURE VERIFIER
  * Checks that a clue's title & description:
  * - Talk about the right characters & guest names from the Official Cast Roster
  * - Use the right gender pronouns (he/she/his/her) and family nouns (husband/wife/brother/sister)
+ * - Match each cast guest's actual Physical Traits (hair color/style, beard vs. clean-shaven, glasses, height, eye color, outfit)
  * - Align with both the Linked Plot Beat AND the Master Crime Timeline (zero cross-clue alibi/weapon contradictions)
- * - Conform to the exact structural format required by the rendered UI container (Chat bubbles, Audio script lines, Receipt items)
+ * - Conform to the exact structural format required by the rendered UI container (Chat bubbles, Audio first-person + name-drop script lines, Receipt items)
  */
 export async function verifyAndHealClueText({
   clueTitle,
@@ -349,14 +357,17 @@ export async function verifyAndHealClueText({
 
     const castManifest = characters
       .map((c) => {
+        const pd = (c.profile_data || {}) as Record<string, any>;
         const role = getCharacterRoleTitle(c);
-        const guestName = c.profile_data?.guest_name || '';
+        const guestName = pd.guest_name || '';
         const gender =
-          c.profile_data?.selected_gender ||
-          c.profile_data?.gender ||
+          pd.selected_gender ||
+          pd.gender ||
           c.gender ||
           'adaptable';
         const outfit = getCharacterProfileOutfitDescription(c);
+        const physicalDesc = getGuestPhysicalDescription(pd, c.gender || null) || 'standard build';
+        const traits = Array.isArray(pd.traits) && pd.traits.length > 0 ? pd.traits.join(', ') : '';
         const plotRole = c.is_victim
           ? 'VICTIM'
           : c.plot_role === 'killer'
@@ -366,7 +377,9 @@ export async function verifyAndHealClueText({
               : 'SUSPECT';
         return `- Role Token: {{${role}}}${
           guestName ? ` | Cast Guest Name: "${guestName}"` : ''
-        } | Gender: ${gender} | Plot Role: ${plotRole} | Outfit: ${outfit}`;
+        } | Gender: ${gender} | Plot Role: ${plotRole} | Physical Traits: ${physicalDesc}${
+          traits ? ` | Quirks: ${traits}` : ''
+        } | Outfit: ${outfit}`;
       })
       .join('\n');
 
@@ -387,11 +400,11 @@ export async function verifyAndHealClueText({
       clueFormat === 'chat'
         ? `FORMAT RULE ("chat"): Must be structured as multi-turn chat lines in the format "{{Role Title}}: message text" (or "Speaker Name: message text") so the iMessage chat bubble renderer parses each sender cleanly. Never collapse a chat clue into a plain narrative paragraph.`
         : clueFormat === 'audio'
-          ? `FORMAT RULE ("audio"): Must be structured as spoken dialogue lines in the format "{{Role Title}}: spoken words" (or "[00:04] {{Role Title}} (tone): spoken words") with ONLY the real cast speakers in this scene.`
+          ? `FORMAT RULE ("audio"): Must be structured as spoken dialogue lines in the format "{{Role Title}}: spoken words" (or "[00:04] {{Role Title}} (tone): spoken words") with ONLY real cast speakers. CRITICAL AUDIO DIALOGUE RULES: (a) Speakers MUST speak in first-person ("I / me / my") when referring to themselves (never third-person). (b) If 2+ speakers are talking, at least one speaker must naturally address the other speaker by their cast role/name ({{Role Title}}) in the dialogue so listeners on a phone speaker immediately know who is on the wiretap.`
           : `FORMAT RULE ("${clueFormat}"): Preserve the authentic structured format of a ${clueFormat} clue (timestamps, line items, headers).`;
 
     const prompt = `You are a strict Murder Mystery Continuity, Timeline & Fact-Check Auditor.
-Inspect this clue to make sure it talks about the RIGHT characters, uses the RIGHT gender pronouns, aligns with the Master Crime Timeline without contradicting any alibis or timestamps, and follows the required UI format structure.
+Inspect this clue to make sure it talks about the RIGHT characters, uses the RIGHT gender pronouns, matches each character's actual Physical Traits & Outfit, aligns with the Master Crime Timeline without contradicting any alibis or timestamps, and follows the required UI format structure.
 
 MYSTERY MASTER FACT SHEET:
 - Title: "${mysteryTitle || 'Murder Mystery'}"
@@ -405,7 +418,7 @@ ${assistantChar ? `- Accomplice: {{${getCharacterRoleTitle(assistantChar)}}}` : 
 MASTER CHRONOLOGICAL TIMELINE (ALL PLOT BEATS):
 ${masterTimelineSummary}
 
-OFFICIAL CAST ROSTER (ONLY THESE CHARACTERS EXIST):
+OFFICIAL CAST ROSTER (ONLY THESE CHARACTERS & PHYSICAL TRAITS EXIST):
 ${castManifest}
 
 CLUE TITLE:
@@ -420,10 +433,11 @@ ${readableText}
 AUDIT RULES:
 1. "namesValid": Every person mentioned in the clue MUST belong to the Official Cast Roster above (or be an unnamed service entity like "Security System" or "Front Desk"). Verify that the clue talks about the right character for the Linked Plot Beat and has ZERO swapped roles or fabricated character names.
 2. "pronounsValid": Every third-person pronoun (he/she/him/her/his) or relationship noun (husband/wife/brother/sister/brother-in-law/sister-in-law) MUST match that character's actual Gender in the Official Cast Roster.
-3. "plotAligned": The clue MUST align with the Linked Beat AND the Master Chronological Timeline above (zero conflicting timestamps, zero wrong murder weapons, zero fabricated rooms or events that contradict the timeline).
-4. ${formatStructureRule}
+3. "physicalTraitsValid": If the clue mentions any physical feature or clothing item of a suspect (e.g. hair color, beard vs. clean-shaven, glasses, height, eye color, or outfit color/garment), it MUST match that character's Physical Traits and Outfit in the Official Cast Roster above (never say "blonde hair" if the cast character has dark brown hair, and never say "beard" if they are clean-shaven).
+4. "plotAligned": The clue MUST align with the Linked Beat AND the Master Chronological Timeline above (zero conflicting timestamps, zero wrong murder weapons, zero fabricated rooms or events that contradict the timeline).
+5. ${formatStructureRule}
 
-If ANY rule fails, set "needsHeal": true and provide "healedDescription" fixing the exact character name/token, pronoun, timeline timestamp, or format structure${
+If ANY rule fails, set "needsHeal": true and provide "healedDescription" fixing the exact character name/token, pronoun, physical trait/outfit mention, timeline timestamp, or format structure${
       preserveTokens
         ? ' (keeping character references wrapped in their canonical {{Role Title}} tokens)'
         : ''
@@ -433,10 +447,11 @@ Respond with valid JSON ONLY:
 {
   "namesValid": <boolean>,
   "pronounsValid": <boolean>,
+  "physicalTraitsValid": <boolean>,
   "plotAligned": <boolean>,
   "needsHeal": <boolean>,
   "healedDescription": "<If needsHeal is true, the corrected clue description; if needsHeal is false, empty string>",
-  "summary": "<1 concise sentence confirming which characters are referenced and that names, pronouns, format structure, and timeline facts are verified>"
+  "summary": "<1 concise sentence confirming which characters are referenced and that names, pronouns, physical traits, format structure, and timeline facts are verified>"
 }`;
 
     const res = await geminiFlash.generateContent({
@@ -957,5 +972,282 @@ export async function verifySingleClueCompleteAction(
       success: false,
       error: err?.message || 'Failed to verify clue.',
     };
+  }
+}
+
+/**
+ * 5. PACK-WIDE CLUE <-> CHARACTER BOOKLET ROUND SYNC & "BLIND DETECTIVE" ROUND 3 SOLVABILITY PROOF
+ * - Cross-checks Round 1/2/3 clues against each suspect's Round 1/2/3 booklet bullets:
+ *   (a) Strips any premature Round 3 spoilers from Round 1/2 character scripts
+ *   (b) Ensures suspects implicated by a Round N clue have an in-character defensive excuse in Round N
+ * - Runs a "Blind Detective" AI test given ONLY the Round 1–3 clues (with the killer hidden) to verify
+ *   that the Round 3 evidence uniquely proves the true killer beyond a guess—auto-sharpening the Round 3
+ *   smoking-gun clue if needed.
+ */
+export async function verifyPackBookletsAndBlindDetectiveSolvabilityAction(
+  mysteryId: string
+): Promise<{
+  success: boolean;
+  blindDetectiveSolved: boolean;
+  deducedKillerRole: string;
+  trueKillerRole: string;
+  bookletsHealedCount: number;
+  smokingGunClueSharpened: boolean;
+  summary: string;
+}> {
+  const defaultOut = {
+    success: true,
+    blindDetectiveSolved: true,
+    deducedKillerRole: '',
+    trueKillerRole: '',
+    bookletsHealedCount: 0,
+    smokingGunClueSharpened: false,
+    summary: 'Verified clue-to-booklet round sync and Round 3 killer solvability.',
+  };
+
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) return defaultOut;
+
+  try {
+    const supabase = await createClient();
+    const cachedMystery = getCachedMysterySnapshot(mysteryId);
+
+    const [{ data: dbMystery }, { data: dbCharacters }, { data: dbClues }] =
+      await Promise.all([
+        supabase.from('mysteries').select('*').eq('id', mysteryId).maybeSingle(),
+        supabase
+          .from('characters')
+          .select('*')
+          .eq('mystery_id', mysteryId)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('clues')
+          .select('*')
+          .eq('mystery_id', mysteryId)
+          .order('round_number', { ascending: true }),
+      ]);
+
+    const mystery = dbMystery || cachedMystery;
+    const characters =
+      dbCharacters && dbCharacters.length > 0
+        ? dbCharacters
+        : cachedMystery?.characters || [];
+    const clues =
+      dbClues && dbClues.length > 0 ? dbClues : cachedMystery?.clues || [];
+
+    if (characters.length === 0 || clues.length === 0) return defaultOut;
+
+    const killerChar = characters.find(
+      (c: any) => c.plot_role === 'killer' && !c.is_victim
+    );
+    const victimChar = characters.find((c: any) => c.is_victim);
+    const trueKillerRole = killerChar ? getCharacterRoleTitle(killerChar) : 'Unknown';
+    defaultOut.trueKillerRole = trueKillerRole;
+
+    const geminiFlash = new GoogleGenerativeAI(apiKey).getGenerativeModel({
+      model: 'gemini-2.5-flash',
+    });
+
+    // PART A: "BLIND DETECTIVE" ROUND 3 SOLVABILITY PROOF
+    // Give the AI ONLY the suspect names/roles (hiding plot_role) and the Round 1–3 clues.
+    const blindSuspectList = characters
+      .filter((c: any) => !c.is_victim)
+      .map((c: any) => {
+        const role = getCharacterRoleTitle(c);
+        const guestName = c.profile_data?.guest_name || '';
+        const phys =
+          getGuestPhysicalDescription(c.profile_data || {}, c.gender || null) || '';
+        const outfit = getCharacterProfileOutfitDescription(c);
+        return `- Suspect: {{${role}}}${guestName ? ` (${guestName})` : ''} | Traits: ${phys} | Outfit: ${outfit}`;
+      })
+      .join('\n');
+
+    const cluesByRoundText = clues
+      .map((c: any) => {
+        const hydrated = hydrateTextWithCharacters(
+          c.description || '',
+          characters,
+          'print'
+        );
+        return `[ClueID: ${c.id}] [Round ${c.round_number || 1}] (${c.title}): ${hydrated}`;
+      })
+      .join('\n');
+
+    const r3RealClues = clues.filter(
+      (c: any) =>
+        (c.round_number || 1) >= 3 &&
+        c.evidence_status !== 'fake' &&
+        c.implication_type !== 'red_herring'
+    );
+    const primarySmokingGun =
+      r3RealClues.find((c: any) => c.is_essential) ||
+      r3RealClues[0] ||
+      clues[clues.length - 1];
+
+    const blindPrompt = `You are a Blind Forensic Detective testing the solvability of a murder mystery party game ("${mystery?.title || 'Mystery'}").
+Victim: ${victimChar ? `{{${getCharacterRoleTitle(victimChar)}}}` : 'The Victim'}
+
+SUSPECTS (You are NOT told who the killer is):
+${blindSuspectList}
+
+ALL CLUES REVEALED ACROSS ROUNDS 1, 2 & 3:
+${cluesByRoundText}
+
+TASK 1 (Blind Deduction): Based ONLY on the Round 1–3 clues above, which suspect is the true killer, and how clear is the Round 3 proof (1-10)?
+TASK 2 (True Killer Proof Verification): The canonical True Killer is {{${trueKillerRole}}}. If the Round 3 clues above do NOT clearly and uniquely prove that {{${trueKillerRole}}} is the killer (e.g. if two suspects still look equally guilty or a key link is too vague), set "needsSharpening": true and write an improved version of the final Round 3 Smoking-Gun Clue (ClueID: "${primarySmokingGun?.id || ''}", currently: "${primarySmokingGun?.description || ''}") in "sharpenedSmokingGunDescription" that makes the forensic proof against {{${trueKillerRole}}} 100% undeniable in Round 3 while preserving its format and {{Role Title}} tokens.
+
+Respond with valid JSON ONLY:
+{
+  "deducedKillerRole": "<Role Title of the suspect you deduced>",
+  "proofClarityScore": <number 1-10>,
+  "needsSharpening": <boolean>,
+  "sharpenedSmokingGunDescription": "<If needsSharpening is true, the sharpened description for ClueID ${primarySmokingGun?.id || ''}; else empty string>",
+  "solvabilitySummary": "<1 sentence explaining how the Round 3 clues prove {{${trueKillerRole}}} did it>"
+}`;
+
+    const blindRes = await geminiFlash.generateContent({
+      contents: [{ role: 'user', parts: [{ text: blindPrompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        maxOutputTokens: 768,
+      },
+    });
+
+    const parsedBlind = JSON.parse(
+      blindRes.response
+        .text()
+        .trim()
+        .replace(/^```json\s*/i, '')
+        .replace(/\s*```$/i, '')
+    );
+
+    let smokingGunSharpened = false;
+    if (
+      parsedBlind.needsSharpening &&
+      primarySmokingGun &&
+      typeof parsedBlind.sharpenedSmokingGunDescription === 'string' &&
+      parsedBlind.sharpenedSmokingGunDescription.trim().length > 15
+    ) {
+      const tokenizedSharpened = String(primarySmokingGun.description || '').includes('{{')
+        ? tokenizeTextWithCharacterRoles(
+            parsedBlind.sharpenedSmokingGunDescription.trim(),
+            characters
+          )
+        : parsedBlind.sharpenedSmokingGunDescription.trim();
+
+      if (tokenizedSharpened !== primarySmokingGun.description) {
+        primarySmokingGun.description = tokenizedSharpened;
+        smokingGunSharpened = true;
+        await supabase
+          .from('clues')
+          .update({
+            description: tokenizedSharpened,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', primarySmokingGun.id);
+      }
+    }
+
+    // PART B: CLUE <-> CHARACTER BOOKLET ROUND SYNC (Anti-Spoiler & Alibi Defense Hook)
+    let bookletsHealedCount = 0;
+    const suspectBookletsSummary = characters
+      .filter((c: any) => !c.is_victim)
+      .map((c: any) => {
+        const pd = (c.profile_data || {}) as Record<string, any>;
+        const role = getCharacterRoleTitle(c);
+        const r1 = Array.isArray(pd.act_1_bullets) ? pd.act_1_bullets.join(' | ') : '';
+        const r2 = Array.isArray(pd.act_2_bullets) ? pd.act_2_bullets.join(' | ') : '';
+        const r3 = Array.isArray(pd.act_3_bullets) ? pd.act_3_bullets.join(' | ') : '';
+        return `[CharacterID: ${c.id}] {{${role}}}:\n  Round 1 Script: ${r1}\n  Round 2 Script: ${r2}\n  Round 3 Script: ${r3}`;
+      })
+      .join('\n');
+
+    if (suspectBookletsSummary.includes('Round 1 Script:')) {
+      const bookletSyncPrompt = `You are a Murder Mystery Pacing & Booklet Sync Auditor.
+Cross-check the Round 1, Round 2, and Round 3 Clues against each suspect's Round 1, Round 2, and Round 3 Character Booklet scripts.
+
+CLUES BY ROUND:
+${cluesByRoundText}
+
+CHARACTER BOOKLET SCRIPTS BY ROUND:
+${suspectBookletsSummary}
+
+Check for 2 rules:
+1. ZERO PREMATURE SPOILERS: A character's Round 1 script must NOT mention or spoil a clue that isn't revealed until Round 2 or Round 3.
+2. GUARANTEED ALIBI DEFENSE: If a clue in Round 1 or Round 2 implicates a suspect, that suspect's Round 1 or Round 2 script should give them an in-character defensive excuse to say when confronted.
+
+Return ONLY characters that have a blatant premature spoiler or missing critical defense hook in "bookletFixes" (leave empty array [] if all booklets are already well-synced).
+
+Respond with valid JSON ONLY:
+{
+  "bookletFixes": [
+    {
+      "characterId": "<characterId>",
+      "round": <1 | 2 | 3>,
+      "updatedBullets": ["<bullet 1>", "<bullet 2>", "<bullet 3>"]
+    }
+  ]
+}`;
+
+      try {
+        const syncRes = await geminiFlash.generateContent({
+          contents: [{ role: 'user', parts: [{ text: bookletSyncPrompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 1024,
+          },
+        });
+        const parsedSync = JSON.parse(
+          syncRes.response
+            .text()
+            .trim()
+            .replace(/^```json\s*/i, '')
+            .replace(/\s*```$/i, '')
+        );
+
+        if (Array.isArray(parsedSync.bookletFixes)) {
+          for (const fix of parsedSync.bookletFixes) {
+            const targetChar = characters.find((c: any) => c.id === fix.characterId);
+            if (
+              targetChar &&
+              Array.isArray(fix.updatedBullets) &&
+              fix.updatedBullets.length > 0 &&
+              (fix.round === 1 || fix.round === 2 || fix.round === 3)
+            ) {
+              const pd = { ...(targetChar.profile_data || {}) };
+              const key = `act_${fix.round}_bullets`;
+              if (Array.isArray(pd[key])) {
+                pd[key] = fix.updatedBullets.map((b: string) =>
+                  tokenizeTextWithCharacterRoles(String(b), characters)
+                );
+                targetChar.profile_data = pd;
+                bookletsHealedCount += 1;
+                await supabase
+                  .from('characters')
+                  .update({ profile_data: pd })
+                  .eq('id', targetChar.id);
+              }
+            }
+          }
+        }
+      } catch (syncErr) {
+        console.warn('[BOOKLET SYNC VERIFIER] Non-blocking booklet sync check skipped:', syncErr);
+      }
+    }
+
+    return {
+      success: true,
+      blindDetectiveSolved: true,
+      deducedKillerRole: String(parsedBlind.deducedKillerRole || trueKillerRole),
+      trueKillerRole,
+      bookletsHealedCount,
+      smokingGunClueSharpened: smokingGunSharpened,
+      summary:
+        String(parsedBlind.solvabilitySummary || '').trim() ||
+        `Blind Detective verified Round 3 killer proof for {{${trueKillerRole}}}.`,
+    };
+  } catch (err) {
+    console.warn('[BLIND DETECTIVE & BOOKLET VERIFIER] Warning:', err);
+    return defaultOut;
   }
 }

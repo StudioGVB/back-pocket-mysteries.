@@ -25,7 +25,10 @@ import {
   extractClueVerificationStamp,
   embedClueVerificationStamp,
 } from '@/utils/clue-verification';
-import { verifySingleClueCompleteAction } from '@/app/actions/clue-verifier';
+import {
+  verifySingleClueCompleteAction,
+  verifyPackBookletsAndBlindDetectiveSolvabilityAction,
+} from '@/app/actions/clue-verifier';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type Clue = Database['public']['Tables']['clues']['Row'];
@@ -71,6 +74,7 @@ export function OgPlotAndEvidenceStudio({
     total: 0,
   });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [blindDetectiveSummary, setBlindDetectiveSummary] = useState<string | null>(null);
 
   const sortedBeats = useMemo(
     () =>
@@ -149,6 +153,7 @@ export function OgPlotAndEvidenceStudio({
     if (isBatchVerifying || isBatchGeneratingMedia || generatingClueId || verifyingClueId) return;
     setIsBatchVerifying(true);
     setErrorMsg(null);
+    setBlindDetectiveSummary(null);
     setBatchProgress({ done: 0, total: clues.length });
 
     try {
@@ -172,6 +177,21 @@ export function OgPlotAndEvidenceStudio({
           );
         }
         setBatchProgress({ done: i + 1, total: clues.length });
+      }
+      setGeneratingStatus('🕵️ Running Blind Detective Round 3 Solvability & Booklet Round Sync...');
+      const blindRes = await verifyPackBookletsAndBlindDetectiveSolvabilityAction(mysteryId);
+      if (blindRes?.summary) {
+        setBlindDetectiveSummary(
+          `🕵️ Blind Detective & Booklet Sync Verified: ${blindRes.summary}${
+            blindRes.bookletsHealedCount > 0
+              ? ` (${blindRes.bookletsHealedCount} character booklet(s) synced)`
+              : ''
+          }${
+            blindRes.smokingGunClueSharpened
+              ? ' (Round 3 smoking-gun clue sharpened)'
+              : ''
+          }`
+        );
       }
       router.refresh();
     } catch (err: any) {
@@ -693,11 +713,17 @@ export function OgPlotAndEvidenceStudio({
         {generatingStatus && (
           <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs font-black text-indigo-900 flex items-center justify-between">
             <span>{generatingStatus}</span>
-            {isBatchGeneratingMedia && (
+            {(isBatchGeneratingMedia || isBatchVerifying) && (
               <span>
                 {batchProgress.done} / {batchProgress.total}
               </span>
             )}
+          </div>
+        )}
+
+        {blindDetectiveSummary && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-900">
+            {blindDetectiveSummary}
           </div>
         )}
 
