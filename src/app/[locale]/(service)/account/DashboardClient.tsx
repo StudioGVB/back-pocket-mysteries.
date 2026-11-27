@@ -75,6 +75,43 @@ export default function DashboardClient({
   onboardingCompleted = true,
 }: DashboardClientProps) {
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [importedLandingGuestName, setImportedLandingGuestName] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const rawPending = window.localStorage.getItem('bpm_pending_landing_guest_v1');
+    if (!rawPending) return;
+
+    try {
+      const pending = JSON.parse(rawPending);
+      window.localStorage.removeItem('bpm_pending_landing_guest_v1');
+      if (!pending || !pending.name) return;
+
+      import('@/app/actions/guests').then(({ saveGuestAction }) => {
+        saveGuestAction({
+          name: pending.name,
+          gender: pending.gender,
+          accent: pending.accent,
+          age: pending.age,
+          eye_color: pending.eye_color,
+          height: pending.height,
+          ethnicity: pending.ethnicity,
+          avatar_url: pending.avatar_url,
+          traits: pending.traits,
+          bio: pending.bio,
+          preserveAiPhoto: true,
+        })
+          .then((res) => {
+            if (res?.guest) {
+              setImportedLandingGuestName(res.guest.name);
+            }
+          })
+          .catch(() => {});
+      });
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const tip = HOST_TIPS[new Date().getDate() % HOST_TIPS.length];
@@ -93,6 +130,35 @@ export default function DashboardClient({
 
   return (
     <div className="w-full space-y-8">
+      {importedLandingGuestName && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-brand-pink/15 via-fuchsia-500/10 to-emerald-500/10 border-2 border-brand-pink/40 flex items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="w-9 h-9 rounded-full bg-brand-pink text-white flex items-center justify-center text-base font-black shrink-0">
+              ✓
+            </span>
+            <div>
+              <p className="text-xs sm:text-sm font-black text-slate-900">
+                🎉 Saved to Your Roster: {importedLandingGuestName}
+              </p>
+              <p className="text-xs text-slate-600 font-medium">
+                We automatically saved <strong>{importedLandingGuestName}</strong> and their AI suspect portrait from the landing page into your{' '}
+                <Link href={`/${locale}/account/guests`} className="text-brand-pink font-bold underline">
+                  My Guests
+                </Link>{' '}
+                roster!
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setImportedLandingGuestName(null)}
+            className="text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Account incomplete nudge */}
       {accountHealth < 100 && (
         <div className="rounded-2xl px-6 py-4 flex items-center justify-between gap-4" style={{ background: 'rgba(254,4,198,0.08)', border: '1px solid rgba(254,4,198,0.2)' }}>

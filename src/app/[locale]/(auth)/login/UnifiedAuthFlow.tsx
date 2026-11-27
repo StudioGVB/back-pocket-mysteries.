@@ -135,6 +135,27 @@ export default function UnifiedAuthFlow({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(true);
+  const [pendingLandingGuest, setPendingLandingGuest] = useState<{
+    name: string;
+    aiPhotoUrl?: string;
+    avatar_url?: string;
+    traits?: string[];
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem('bpm_pending_landing_guest_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.name) {
+          setPendingLandingGuest(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const handleCountryChange = (selectedCountry: string) => {
     setCountry(selectedCountry);
@@ -294,6 +315,34 @@ export default function UnifiedAuthFlow({
           </>
         )}
       </div>
+
+      {/* Pending Landing-Page Guest Auto-Save Preview Banner */}
+      {pendingLandingGuest && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-brand-pink/10 via-fuchsia-500/10 to-brand-pink/5 border-2 border-brand-pink/40 flex items-center gap-3.5 shadow-sm">
+          {(pendingLandingGuest.aiPhotoUrl || pendingLandingGuest.avatar_url) && (
+            <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-brand-pink shrink-0 bg-slate-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={pendingLandingGuest.aiPhotoUrl || pendingLandingGuest.avatar_url}
+                alt={pendingLandingGuest.name}
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+          )}
+          <div className="min-w-0 text-left">
+            <span className="inline-block px-2 py-0.5 rounded-full bg-brand-pink text-white text-[9px] font-black uppercase tracking-widest mb-1">
+              ✨ Ready to Save to Your Roster
+            </span>
+            <p className="text-xs sm:text-sm font-black text-brand-dark truncate">
+              {pendingLandingGuest.name}
+            </p>
+            <p className="text-[11px] text-slate-600 font-medium leading-snug">
+              Complete your free host sign-up below and we&apos;ll automatically save{' '}
+              <strong>{pendingLandingGuest.name}</strong> &amp; their AI portrait to your My Guests list!
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Pre-Launch Note Banner */}
       {(step === 'email' || step === 'signup') && (

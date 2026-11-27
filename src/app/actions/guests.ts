@@ -50,9 +50,29 @@ export async function saveGuestAction(guestData: {
       return { error: 'Not authenticated' };
     }
 
-    const rawAvatarUrl = stripAiPhotoFromAvatarUrl(
-      guestData.avatar_url ?? guestData.avatarUrl
-    );
+    const incomingAvatarUrl = guestData.avatar_url ?? guestData.avatarUrl;
+    const hasPreGeneratedAiPhoto =
+      Boolean(guestData.preserveAiPhoto) &&
+      typeof incomingAvatarUrl === 'string' &&
+      (incomingAvatarUrl.includes('aiPhotoUrl=') ||
+        incomingAvatarUrl.includes('/storage/v1/object/public/') ||
+        incomingAvatarUrl.startsWith('/generated-avatars/'));
+
+    if (guestData.preserveAiPhoto && guestData.name) {
+      const { data: existingMatch } = await supabase
+        .from('guests')
+        .select('*')
+        .eq('user_id', user.id)
+        .ilike('name', guestData.name.trim())
+        .maybeSingle();
+      if (existingMatch) {
+        return { guest: existingMatch };
+      }
+    }
+
+    const rawAvatarUrl = hasPreGeneratedAiPhoto
+      ? incomingAvatarUrl
+      : stripAiPhotoFromAvatarUrl(incomingAvatarUrl);
 
     const insertPayload = {
       user_id: user.id,
@@ -78,9 +98,9 @@ export async function saveGuestAction(guestData: {
       return { error: error.message };
     }
 
-    // Always generate AI standard profile photo when a character/guest is created
+    // Generate AI standard profile photo when a character/guest is created (unless already pre-generated on landing page)
     let finalGuest = data;
-    if (data) {
+    if (data && !hasPreGeneratedAiPhoto) {
       try {
         const aiRes = await generateGuestAvatarAction(data.id, data, {
           forceRegenerate: true,

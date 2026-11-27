@@ -144,8 +144,46 @@ export default function InteractivePackPreview({ locale }: { locale: string }) {
   const [guestTrait, setGuestTrait] = useState(
     'Always 15 minutes late holding an espresso martini & knows everyone’s group-chat gossip'
   );
+  const [guestPhotoUrl, setGuestPhotoUrl] = useState(
+    '/generated-avatars/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-6224c730c6c6.jpg'
+  );
   const [dossierMode, setDossierMode] = useState<'custom' | 'generic'>('custom');
   const [openPromptIdx, setOpenPromptIdx] = useState<number | null>(0);
+
+  // Sync with any guest created in LandingGuestCreator right above this section
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const applyLandingGuest = (payload: any) => {
+      if (!payload || typeof payload !== 'object') return;
+      if (payload.name || payload.first_name) {
+        setGuestName(payload.name || payload.first_name);
+      }
+      if (Array.isArray(payload.traits) && payload.traits.length > 0) {
+        setGuestTrait(payload.traits.join(' · '));
+      }
+      if (payload.aiPhotoUrl) {
+        setGuestPhotoUrl(payload.aiPhotoUrl);
+      }
+    };
+
+    try {
+      const saved = window.localStorage.getItem('bpm_pending_landing_guest_v1');
+      if (saved) {
+        applyLandingGuest(JSON.parse(saved));
+      }
+    } catch {
+      // ignore
+    }
+
+    const handleCustomEvent = (e: Event) => {
+      const ce = e as CustomEvent;
+      if (ce?.detail) {
+        applyLandingGuest(ce.detail);
+      }
+    };
+    window.addEventListener('bpm-landing-guest-updated', handleCustomEvent);
+    return () => window.removeEventListener('bpm-landing-guest-updated', handleCustomEvent);
+  }, []);
 
   // Tab 2 state
   const [selectedClueIdx, setSelectedClueIdx] = useState(0);
@@ -172,7 +210,10 @@ export default function InteractivePackPreview({ locale }: { locale: string }) {
   const activeHostStage = HOST_STAGES[hostStageIdx];
 
   return (
-    <section className="py-20 lg:py-28 bg-brand-gray border-y-2 border-gray-100 relative overflow-hidden">
+    <section
+      id="interactive-pack-preview"
+      className="py-20 lg:py-28 bg-brand-gray border-y-2 border-gray-100 relative overflow-hidden"
+    >
       <div className="container mx-auto px-6 max-w-6xl space-y-10">
         {/* Fun, Punchy Header + Single-Row Rounded Pill Switcher */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -327,7 +368,7 @@ export default function InteractivePackPreview({ locale }: { locale: string }) {
                   <div className="flex items-start gap-4 bg-white/5 rounded-2xl p-4 border border-white/10">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src="/generated-avatars/44d70cd0-9f04-408b-8ac9-e064eb5c31d0-6224c730c6c6.jpg"
+                      src={guestPhotoUrl}
                       alt={cleanName}
                       className="w-16 h-20 object-cover object-top rounded-xl border-2 border-brand-pink shrink-0"
                     />

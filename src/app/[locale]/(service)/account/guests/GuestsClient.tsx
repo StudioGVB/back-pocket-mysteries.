@@ -718,6 +718,48 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
   const [error, setError] = useState<string | null>(null);
 
   const [generatingAvatars, setGeneratingAvatars] = useState<Set<string>>(new Set());
+  const [importedLandingGuestName, setImportedLandingGuestName] = useState<string | null>(null);
+
+  // Auto-import any guest created in the Landing Page Demo Studio when the user signs up / logs in
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const rawPending = window.localStorage.getItem('bpm_pending_landing_guest_v1');
+    if (!rawPending) return;
+
+    try {
+      const pending = JSON.parse(rawPending);
+      window.localStorage.removeItem('bpm_pending_landing_guest_v1');
+      if (!pending || !pending.name) return;
+
+      saveGuestAction({
+        name: pending.name,
+        gender: pending.gender,
+        accent: pending.accent,
+        age: pending.age,
+        eye_color: pending.eye_color,
+        height: pending.height,
+        ethnicity: pending.ethnicity,
+        avatar_url: pending.avatar_url,
+        traits: pending.traits,
+        bio: pending.bio,
+        preserveAiPhoto: true,
+      })
+        .then((res) => {
+          if (res?.guest) {
+            const saved = res.guest as ManualGuest;
+            setGuests((prev) =>
+              prev.some((g) => g.id === saved.id) ? prev : [saved, ...prev]
+            );
+            setImportedLandingGuestName(saved.name);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to auto-import pending landing guest:', err);
+        });
+    } catch {
+      // ignore invalid JSON
+    }
+  }, []);
 
   // Auto-generate AI standard profile pic for any existing guest missing aiPhotoUrl
   useEffect(() => {
@@ -900,6 +942,31 @@ export default function GuestsClient({ initialGuests, linkedGuests: initialLinke
 
   return (
     <div className="w-full">
+      {importedLandingGuestName && (
+        <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-brand-pink/15 via-fuchsia-500/10 to-emerald-500/10 border-2 border-brand-pink/40 flex items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="w-9 h-9 rounded-full bg-brand-pink text-white flex items-center justify-center text-base font-black shrink-0">
+              ✓
+            </span>
+            <div>
+              <p className="text-xs sm:text-sm font-black text-slate-900">
+                🎉 Saved to Your Roster: {importedLandingGuestName}
+              </p>
+              <p className="text-xs text-slate-600 font-medium">
+                We automatically imported <strong>{importedLandingGuestName}</strong> and their AI suspect portrait from the landing page into your My Guests list!
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setImportedLandingGuestName(null)}
+            className="text-xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-8 sm:mb-12">
         <div>

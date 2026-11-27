@@ -8,6 +8,7 @@ import PriceDisplay from '@/components/marketing/PriceDisplay';
 import HeroImageCarousel from '@/components/marketing/HeroImageCarousel';
 import LightsOut from '@/components/marketing/LightsOut';
 import InteractivePackPreview from '@/components/marketing/InteractivePackPreview';
+import LandingGuestCreator from '@/components/marketing/LandingGuestCreator';
 import HowItWorksVideoShowcase from '@/components/marketing/HowItWorksVideoShowcase';
 import { getPublicMarketingMysteries } from '@/services/mysteries';
 
@@ -349,6 +350,9 @@ export default async function HomePage(props: {
         </section>
       )}
 
+      {/* Live Interactive AI Guest Creator & Suspect Photo Demo */}
+      <LandingGuestCreator locale={locale} />
+
       {/* Interactive Product Walkthrough */}
       <InteractivePackPreview locale={locale} />
 
@@ -382,6 +386,8 @@ export default async function HomePage(props: {
                 style: 'bg-white text-brand-dark shadow-[6px_6px_0px_#120914]',
                 numStyle: 'bg-brand-dark text-white',
                 tagStyle: 'text-brand-pink',
+                ctaHref: '#try-guest-creator',
+                ctaLabel: '✨ Try Creating a Guest Live ↑',
               },
               {
                 num: '02',
@@ -451,6 +457,14 @@ export default async function HomePage(props: {
                     {step.desc}
                   </p>
                 </div>
+                {(step as any).ctaHref && (
+                  <a
+                    href={(step as any).ctaHref}
+                    className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-brand-pink hover:text-brand-dark transition-colors pt-2 border-t border-gray-100"
+                  >
+                    {(step as any).ctaLabel}
+                  </a>
+                )}
               </div>
             ))}
           </div>

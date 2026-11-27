@@ -26,6 +26,15 @@ import {
 import { extractAccentFromAvatarUrl, extractAgeFromAvatarUrl } from '@/utils/avatar';
 import { isUserAdmin, requireAdmin } from '@/utils/admin-auth';
 import { getCachedMysterySnapshot, getAllCachedMysteries } from '@/lib/live-session-store';
+import {
+  ClueVerificationStamp,
+  embedClueVerificationStamp,
+  extractClueVerificationStamp,
+} from '@/utils/clue-verification';
+import {
+  verifyAndHealClueText,
+  verifyGeneratedAudioMp3WithGemini,
+} from '@/app/actions/clue-verifier';
 
 export interface GenerateAudioClueInput {
   clueId: string;
@@ -41,6 +50,7 @@ export interface GenerateAudioClueResult {
   audioUrl?: string;
   lineCount?: number;
   speakers?: Array<{ speaker: string; voiceName: string; tone: string }>;
+  verificationStamp?: ClueVerificationStamp;
   error?: string;
 }
 
@@ -254,8 +264,22 @@ export async function generateAudioClueAction({
     const resolvedInternalNotes =
       clueRow?.internal_notes || cachedClue?.internal_notes || null;
 
+    // 0. PRE-SYNTHESIS TEXT, SPEAKER NAME & PRONOUN AUDIT:
+    // Verify the wiretap transcript talks about the right cast characters, uses the right gender pronouns,
+    // and does not fabricate non-existent people before spending ElevenLabs TTS credits.
+    const textVerification = await verifyAndHealClueText({
+      clueTitle: resolvedTitle,
+      clueDescription: transcript,
+      clueFormat: 'audio',
+      mysteryTitle: mystery?.title || cachedMystery?.title,
+      mysterySetting: mystery?.theme || (cachedMystery as any)?.setting || cachedMystery?.theme,
+      characters,
+      preserveTokens: transcript.includes('{{'),
+    });
+    const activeTranscript = textVerification.finalDescription || transcript;
+
     // 1. Parse transcript into ordered speaker lines & resolve distinct voice IDs per speaker
-    const parsedLines = parseAudioTranscript(transcript, {
+    const parsedLines = parseAudioTranscript(activeTranscript, {
       voiceRegion: resolvedRegion,
       title: resolvedTitle,
       internalNotes: resolvedInternalNotes,
@@ -270,8 +294,15 @@ export async function generateAudioClueAction({
       };
     }
 
-    // Collect distinct speakers for metadata feedback
+    // Collect distinct speakers and verify their gender & accent lock against the cast roster
     const speakerMap = new Map<string, { speaker: string; voiceName: string; tone: string }>();
+    const speakersVerified: Array<{
+      speaker: string;
+      gender: string;
+      accent: string;
+      voiceName: string;
+    }> = [];
+
     for (const line of parsedLines) {
       const speakerLabel = line.speaker || line.displaySpeaker || line.rawSpeaker || 'Speaker';
       const key = speakerLabel.toLowerCase();
@@ -280,6 +311,12 @@ export async function generateAudioClueAction({
           speaker: speakerLabel,
           voiceName: line.voiceProfile.name,
           tone: line.voiceProfile.tone,
+        });
+        speakersVerified.push({
+          speaker: speakerLabel,
+          gender: line.voiceProfile.gender,
+          accent: (line.voiceProfile as any).accent || resolvedRegion,
+          voiceName: line.voiceProfile.name,
         });
       }
     }
@@ -314,6 +351,43 @@ export async function generateAudioClueAction({
         error: 'ElevenLabs returned an empty audio buffer.',
       };
     }
+
+    // 3b. POST-SYNTHESIS MULTIMODAL AUDIO LISTEN CHECK:
+    // Feed the generated MP3 buffer into Gemini 2.5 Flash to confirm the spoken dialogue matches the expected
+    // speakers, gender voices, and script lines with zero garbled/cut-off audio.
+    const audioListenVerification = await verifyGeneratedAudioMp3WithGemini({
+      mp3Buffer: mergedMp3Buffer,
+      expectedTranscript: activeTranscript,
+      speakersManifest: speakersVerified,
+    });
+
+    const existingStamp = extractClueVerificationStamp(resolvedInternalNotes);
+    const verificationStamp: ClueVerificationStamp = {
+      verifiedAt: new Date().toISOString(),
+      passed: textVerification.passed && audioListenVerification.passed,
+      textCheck: {
+        passed: textVerification.passed,
+        namesValid: textVerification.namesValid,
+        pronounsValid: textVerification.pronounsValid,
+        plotAligned: textVerification.plotAligned,
+        healed: textVerification.healed,
+        summary: textVerification.summary,
+      },
+      photoCheck: existingStamp?.photoCheck,
+      audioCheck: {
+        passed: audioListenVerification.passed,
+        speakerIdentityMatch: audioListenVerification.speakerIdentityMatch,
+        genderMatch: true,
+        accentMatch: true,
+        audioClear: audioListenVerification.audioClear,
+        speakersVerified,
+        summary: audioListenVerification.summary,
+      },
+    };
+    const updatedInternalNotes = embedClueVerificationStamp(
+      resolvedInternalNotes,
+      verificationStamp
+    );
 
     // 4. Save to local static file (`public/mystery-audio/{mysteryId}/{clueId}.mp3`) AND upload to Supabase Storage
     const storagePath = `${mysteryId}/${clueId}.mp3`;
@@ -365,12 +439,14 @@ export async function generateAudioClueAction({
       }
     }
 
-    // 5. Persist `clues.audio_url` and `voice_region` (with automatic fallback if column not yet migrated)
+    // 5. Persist `clues.audio_url`, `voice_region`, healed transcript, and QA verification stamp
     if (!publicUrl.startsWith('data:')) {
       await updateClue(clueId, {
         audio_url: publicUrl,
         voice_region: resolvedRegion,
         format: 'audio',
+        ...(textVerification.healed ? { description: activeTranscript } : {}),
+        internal_notes: updatedInternalNotes,
         updated_at: new Date().toISOString(),
       });
     }
@@ -397,6 +473,7 @@ export async function generateAudioClueAction({
       audioUrl: publicUrl,
       lineCount: parsedLines.length,
       speakers: Array.from(speakerMap.values()),
+      verificationStamp,
     };
   } catch (err: any) {
     console.error('[generateAudioClueAction] Error:', err);

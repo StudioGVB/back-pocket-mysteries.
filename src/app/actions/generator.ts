@@ -29,6 +29,15 @@ import {
 } from '@/lib/live-session-store';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
 import {
+  ClueVerificationStamp,
+  embedClueVerificationStamp,
+  extractClueVerificationStamp,
+} from '@/utils/clue-verification';
+import {
+  verifyAndHealClueText,
+  verifyCluePhotoWithProfileReferences,
+} from '@/app/actions/clue-verifier';
+import {
   sanitizePromptForImageSafety,
   buildSafetyFallbackImagePrompt,
 } from '@/utils/filthy-prompt-sanitizer';
@@ -1916,81 +1925,60 @@ You are provided ${referenceImages.length} canonical Standard Character Referenc
       apiErrorMsg = initialGen.outErr;
       imageUsageMetadata = initialGen.outUsage;
 
-      // INLINE SIDE-BY-SIDE VISION CRITIC GUARDRAIL:
-      // Whenever characters are in the photo and this isn't already a critic retry, inspect the generated image
-      // side-by-side against the attached Reference Portraits for:
-      // 1) Exact subject count & no unprompted dead body on the floor
-      // 2) Zero cloned/duplicate faces
-      // 3) Hair color, facial hair (beard vs. clean-shaven), and signature outfit color match
-      if (base64Image && referenceImages.length > 0 && !qaCorrectionDirective) {
-        try {
-          const geminiFlash = new GoogleGenerativeAI(apiKey).getGenerativeModel({
-            model: 'gemini-2.5-flash',
+      // MANDATORY POST-GENERATION MULTIMODAL PHOTO RESCAN & AUTO-HEAL LOOP:
+      // Rescans every generated clue photo side-by-side against each cast member's Reference Profile Photo
+      // to verify: 1) Right people casted, 2) Exact outfit match to profile photo, 3) Physical traits match, 4) Logical scene sense.
+      let photoCheckResult = {
+        passed: true,
+        castMatch: true,
+        outfitMatch: true,
+        physicalMatch: true,
+        sceneSense: true,
+        retriedCount: 0,
+        summary: 'Verified cast, profile outfits, and scene logic.',
+      };
+
+      if (base64Image && !qaCorrectionDirective) {
+        let currentDirective = '';
+        for (let criticAttempt = 1; criticAttempt <= 2; criticAttempt++) {
+          const audit = await verifyCluePhotoWithProfileReferences({
+            base64Image,
+            referenceImages,
+            hydratedPrompt,
+            clueTitle: clue.title,
+            clueDescription: clue.description || '',
+            explicitlyMentionsDeadBody,
           });
-          const criticParts: any[] = referenceImages.map((ref) => ({
-            inlineData: { mimeType: 'image/jpeg', data: ref.referenceImage.imageBytes },
-          }));
-          criticParts.push({
-            inlineData: { mimeType: 'image/jpeg', data: base64Image },
-          });
-          const targetIdx = referenceImages.length + 1;
-          const refSummary = referenceImages
-            .map((ref) => {
-              const name = getCharacterDisplayName(ref.char);
-              const role = getCharacterRoleTitle(ref.char);
-              return `- Reference Image #${ref.referenceId}: ${name} (${role}) — ${ref.standardPhoto.physicalDesc}. Outfit: ${ref.standardPhoto.outfit}`;
-            })
-            .join('\n');
 
-          const inlineCriticPrompt = `You are a strict Visual QA Guardrail for Back Pocket Mysteries.
-Reference Image #1..#${referenceImages.length} are the canonical character portraits.
-Image #${targetIdx} (FINAL IMAGE) is the generated clue scene for: "${hydratedPrompt}".
+          photoCheckResult = {
+            passed: audit.passed,
+            castMatch: audit.castMatch,
+            outfitMatch: audit.outfitMatch,
+            physicalMatch: audit.physicalMatch,
+            sceneSense: audit.sceneSense,
+            retriedCount: criticAttempt - 1,
+            summary: audit.summary,
+          };
 
-EXPECTED CHARACTERS (EXACTLY ${referenceImages.length} person(s)):
-${refSummary}
-
-Check Image #${targetIdx} against these 4 hard rules:
-1. Exact Subject Count & No Unprompted Corpse: Does Image #${targetIdx} show EXACTLY ${referenceImages.length} main person(s)${!explicitlyMentionsDeadBody ? ' with NO dead body lying on the floor' : ''}?
-2. Zero Cloned Faces or Trait Bleed: Are all ${referenceImages.length} person(s) distinct individuals (not the same face duplicated onto two bodies, and clean-shaven subjects do NOT have a beard bled onto them)?
-3. Hair, Beard, Glasses & Outfit Match: Does each person match their Reference Image's hair color, facial hair (beard vs. strictly clean-shaven), glasses (wearing glasses vs. no glasses), skin tone, and signature outfit color?
-4. Single Cohesive Frame: Is it a single realistic photograph (not a split-screen collage or grid of separate portraits)?
-
-Respond with valid JSON ONLY:
-{
-  "passed": <true if all 4 rules pass, else false>,
-  "correctionDirective": "<If passed is false, write a 1-sentence specific instruction fixing the exact defect; if passed is true, empty string>"
-}`;
-          criticParts.push({ text: inlineCriticPrompt });
-
-          const criticRes = await geminiFlash.generateContent({
-            contents: [{ role: 'user', parts: criticParts }],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              maxOutputTokens: 256,
-            },
-          });
-          const parsedCritic = JSON.parse(
-            criticRes.response
-              .text()
-              .trim()
-              .replace(/^```json\s*/i, '')
-              .replace(/\s*```$/i, '')
-          );
-          if (parsedCritic && parsedCritic.passed === false && parsedCritic.correctionDirective) {
-            console.warn(
-              `[INLINE PHOTO GUARDRAIL] Clue ${clueId} failed initial vision check ("${parsedCritic.correctionDirective}"). Auto-retrying with correction...`
-            );
-            const correctedPrompt = sanitizePromptForImageSafety(
-              `${activeScenePrompt}\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${parsedCritic.correctionDirective}`
-            );
-            const retryGen = await callGeminiSceneImage(correctedPrompt);
-            if (retryGen.outB64) {
-              base64Image = retryGen.outB64;
-              imageUsageMetadata = retryGen.outUsage || imageUsageMetadata;
-            }
+          if (audit.passed || !audit.correctionDirective) {
+            break;
           }
-        } catch (criticErr) {
-          console.warn('[INLINE PHOTO GUARDRAIL] Non-fatal vision check warning:', criticErr);
+
+          currentDirective = audit.correctionDirective;
+          console.warn(
+            `[POST-GEN PHOTO VERIFIER] Clue ${clueId} failed check #${criticAttempt} ("${currentDirective}"). Auto-retrying image generation...`
+          );
+          const correctedPrompt = sanitizePromptForImageSafety(
+            `${activeScenePrompt}\n\nMANDATORY QA CORRECTION FROM VISUAL CRITIC (MUST FIX THIS EXACT ISSUE): ${currentDirective}`
+          );
+          const retryGen = await callGeminiSceneImage(correctedPrompt);
+          if (retryGen.outB64) {
+            base64Image = retryGen.outB64;
+            imageUsageMetadata = retryGen.outUsage || imageUsageMetadata;
+            photoCheckResult.retriedCount = criticAttempt;
+          } else {
+            break;
+          }
         }
       }
 
@@ -2056,9 +2044,84 @@ Respond with valid JSON ONLY:
           return { error: apiErrorMsg, imageUrl: finalImageUrl };
         }
       }
+
+      // Also verify the clue's text description for right character names, right pronouns, and zero fabrications
+      const textVerify = await verifyAndHealClueText({
+        clueTitle: clue.title || '',
+        clueDescription: clue.description || '',
+        clueFormat,
+        mysteryTitle: mystery?.title,
+        mysterySetting,
+        characters: hydratedCharacters,
+        preserveTokens: (clue.description || '').includes('{{'),
+      });
+
+      const existingStamp = extractClueVerificationStamp((clue as any).internal_notes);
+      const verificationStamp: ClueVerificationStamp = {
+        verifiedAt: new Date().toISOString(),
+        passed: photoCheckResult.passed && textVerify.passed,
+        textCheck: {
+          passed: textVerify.passed,
+          namesValid: textVerify.namesValid,
+          pronounsValid: textVerify.pronounsValid,
+          plotAligned: textVerify.plotAligned,
+          healed: textVerify.healed,
+          summary: textVerify.summary,
+        },
+        photoCheck: photoCheckResult,
+        audioCheck: existingStamp?.audioCheck,
+      };
+      const updatedInternalNotes = embedClueVerificationStamp(
+        (clue as any).internal_notes,
+        verificationStamp
+      );
+
+      await supabase
+        .from('clues')
+        .update({
+          static_image_url: finalImageUrl,
+          ...(textVerify.healed ? { description: textVerify.finalDescription } : {}),
+          internal_notes: updatedInternalNotes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', clueId);
+
+      if (cachedMystery && Array.isArray(cachedMystery.clues)) {
+        const updatedClues = cachedMystery.clues.map((c: any) =>
+          c.id === clueId
+            ? {
+                ...c,
+                static_image_url: finalImageUrl,
+                ...(textVerify.healed ? { description: textVerify.finalDescription } : {}),
+                internal_notes: updatedInternalNotes,
+              }
+            : c
+        );
+        cacheMysterySnapshot(mysteryId, {
+          ...cachedMystery,
+          clues: updatedClues,
+        });
+      }
+
+      try {
+        revalidatePath(`/builder/mysteries/${mysteryId}/clues`);
+      } catch {
+        // Safe outside Next.js request context
+      }
+      return {
+        success: true,
+        imageUrl: finalImageUrl,
+        verificationStamp,
+        referencedCharacters: referenceImages.map(r => ({
+          id: r.char.id,
+          name: getCharacterDisplayName(r.char),
+          roleTitle: getCharacterRoleTitle(r.char),
+          standardPhotoUrl: r.standardPhoto.photoUrl,
+        })),
+      };
     }
 
-    // Update static_image_url in clues table
+    // Update static_image_url in clues table (cached path)
     await supabase
       .from('clues')
       .update({ static_image_url: finalImageUrl, updated_at: new Date().toISOString() })

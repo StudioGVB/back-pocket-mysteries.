@@ -10,7 +10,7 @@ import { getAllCachedMysteries, updateCachedMysteryCharacters } from '@/lib/live
 export async function generateGuestAvatarAction(
   guestId: string,
   guestData: any,
-  options?: { forceRegenerate?: boolean; isHostProfile?: boolean }
+  options?: { forceRegenerate?: boolean; isHostProfile?: boolean; isPublicLandingDemo?: boolean }
 ) {
   try {
     let hairColor = 'unspecified';
@@ -269,7 +269,7 @@ export async function generateGuestAvatarAction(
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) {
+    if (!user && !options?.isPublicLandingDemo) {
       throw new Error('Unauthorized: You must be signed in to generate guest avatars.');
     }
 
@@ -284,10 +284,10 @@ export async function generateGuestAvatarAction(
     let rosterSlotIndex = 0;
     const isHostTarget =
       Boolean(options?.isHostProfile) ||
-      guestId === user.id ||
+      (Boolean(user?.id) && guestId === user?.id) ||
       guestId === '4903bd39-e54f-42e4-b679-2af5d128bb8f';
 
-    if (!isHostTarget) {
+    if (!isHostTarget && user?.id && !options?.isPublicLandingDemo) {
       try {
         const { data: rosterGuests } = await supabase
           .from('guests')
@@ -785,6 +785,10 @@ The framing MUST show everything from the chest/shoulders up, including the full
       newAvatarUrl = dataUri;
     }
 
+    if (!user || options?.isPublicLandingDemo) {
+      return { publicUrl: newAvatarUrl, aiPhotoUrl: dataUri };
+    }
+
     const isHost =
       Boolean(options?.isHostProfile) ||
       guestId === user.id ||
@@ -922,5 +926,31 @@ The framing MUST show everything from the chest/shoulders up, including the full
   } catch (err: any) {
     console.error('Error generating guest avatar', err);
     throw new Error(err.message || 'Failed to generate guest avatar');
+  }
+}
+
+export async function generateLandingDemoGuestPortraitAction(guestData: any): Promise<{
+  success: boolean;
+  publicUrl?: string;
+  aiPhotoUrl?: string;
+  error?: string;
+}> {
+  try {
+    const demoId = `demo-${crypto.randomUUID().slice(0, 8)}`;
+    const res = await generateGuestAvatarAction(demoId, guestData, {
+      forceRegenerate: true,
+      isPublicLandingDemo: true,
+    });
+    return {
+      success: true,
+      publicUrl: res.publicUrl,
+      aiPhotoUrl: res.aiPhotoUrl,
+    };
+  } catch (err: any) {
+    console.error('Error generating landing demo guest portrait:', err);
+    return {
+      success: false,
+      error: err?.message || 'Could not generate AI portrait right now. Please try again.',
+    };
   }
 }

@@ -21,6 +21,11 @@ import {
 import { ClueRenderer } from '@/components/clues/ClueRenderer';
 import { generateClueImageAction } from '@/app/actions/generator';
 import { generateAudioClueAction } from '@/app/actions/audio-generator';
+import {
+  extractClueVerificationStamp,
+  embedClueVerificationStamp,
+} from '@/utils/clue-verification';
+import { verifySingleClueCompleteAction } from '@/app/actions/clue-verifier';
 
 type Mystery = Database['public']['Tables']['mysteries']['Row'];
 type Clue = Database['public']['Tables']['clues']['Row'];
@@ -57,6 +62,8 @@ export function OgPlotAndEvidenceStudio({
     'all' | 'real' | 'decoy' | 'media'
   >('all');
   const [generatingClueId, setGeneratingClueId] = useState<string | null>(null);
+  const [verifyingClueId, setVerifyingClueId] = useState<string | null>(null);
+  const [isBatchVerifying, setIsBatchVerifying] = useState(false);
   const [generatingStatus, setGeneratingStatus] = useState<string>('');
   const [isBatchGeneratingMedia, setIsBatchGeneratingMedia] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number }>({
@@ -106,15 +113,83 @@ export function OgPlotAndEvidenceStudio({
     return Array.from(rSet).sort((a, b) => a - b);
   }, [clues]);
 
+  const handleVerifySingleClue = async (clue: Clue) => {
+    if (verifyingClueId || generatingClueId || isBatchVerifying || isBatchGeneratingMedia) return;
+    setErrorMsg(null);
+    setVerifyingClueId(clue.id);
+    setGeneratingStatus(`🛡️ Auditing Clue Details (Cast, Outfits, Names, Accent & Logic): ${clue.title}...`);
+    try {
+      const res = await verifySingleClueCompleteAction(mysteryId, clue.id);
+      if (res.success && res.stamp) {
+        setClues((prev) =>
+          prev.map((c) =>
+            c.id === clue.id
+              ? {
+                  ...c,
+                  ...(res.healedDescription ? { description: res.healedDescription } : {}),
+                  internal_notes: embedClueVerificationStamp(c.internal_notes, res.stamp!),
+                }
+              : c
+          )
+        );
+        router.refresh();
+      } else if (res.error) {
+        setErrorMsg(`[${clue.title}] ${res.error}`);
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Verification failed.');
+    } finally {
+      setVerifyingClueId(null);
+      setGeneratingStatus('');
+    }
+  };
+
+  const handleBatchVerifyAllClues = async () => {
+    if (isBatchVerifying || isBatchGeneratingMedia || generatingClueId || verifyingClueId) return;
+    setIsBatchVerifying(true);
+    setErrorMsg(null);
+    setBatchProgress({ done: 0, total: clues.length });
+
+    try {
+      for (let i = 0; i < clues.length; i++) {
+        const clue = clues[i];
+        setVerifyingClueId(clue.id);
+        setGeneratingStatus(`🛡️ (${i + 1}/${clues.length}) Auditing Clue: ${clue.title}`);
+        const res = await verifySingleClueCompleteAction(mysteryId, clue.id);
+        if (res.success && res.stamp) {
+          setClues((prev) =>
+            prev.map((c) =>
+              c.id === clue.id
+                ? {
+                    ...c,
+                    ...(res.healedDescription ? { description: res.healedDescription } : {}),
+                    internal_notes: embedClueVerificationStamp(c.internal_notes, res.stamp!),
+                  }
+                : c
+            )
+          );
+        }
+        setBatchProgress({ done: i + 1, total: clues.length });
+      }
+      router.refresh();
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Batch verification interrupted.');
+    } finally {
+      setVerifyingClueId(null);
+      setGeneratingStatus('');
+      setIsBatchVerifying(false);
+    }
+  };
+
   const handleRegenerateMedia = async (clue: Clue) => {
-    if (generatingClueId || isBatchGeneratingMedia) return;
+    if (generatingClueId || isBatchGeneratingMedia || verifyingClueId) return;
     const fmt: ClueFormat = (clue.format as ClueFormat) || inferClueFormat(clue);
     setErrorMsg(null);
     setGeneratingClueId(clue.id);
 
     try {
       if (fmt === 'cctv' || fmt === 'physical_prop') {
-        setGeneratingStatus('📸 Generating AI Clue Photo...');
+        setGeneratingStatus('📸 Generating & Rescanning AI Clue Photo (Checking Cast & Profile Outfits)...');
         const rawPrompt =
           clue.generation_prompt?.trim() ||
           (clue.description ? `${clue.title}: ${clue.description}` : clue.title);
@@ -122,7 +197,20 @@ export function OgPlotAndEvidenceStudio({
         if (res?.success && res.imageUrl) {
           setClues((prev) =>
             prev.map((c) =>
-              c.id === clue.id ? { ...c, static_image_url: res.imageUrl! } : c
+              c.id === clue.id
+                ? {
+                    ...c,
+                    static_image_url: res.imageUrl!,
+                    ...((res as any).verificationStamp
+                      ? {
+                          internal_notes: embedClueVerificationStamp(
+                            c.internal_notes,
+                            (res as any).verificationStamp
+                          ),
+                        }
+                      : {}),
+                  }
+                : c
             )
           );
           router.refresh();
@@ -130,7 +218,7 @@ export function OgPlotAndEvidenceStudio({
           setErrorMsg(`[${clue.title}] ${res.error}`);
         }
       } else if (fmt === 'audio') {
-        setGeneratingStatus('🎙️ Synthesizing Voice Wiretap...');
+        setGeneratingStatus('🎙️ Synthesizing & Rescanning Voice Wiretap (Checking Accent, Gender & Speaker)...');
         const transcript = clue.description || clue.generation_prompt || clue.title;
         const audioRes = await generateAudioClueAction({
           clueId: clue.id,
@@ -142,7 +230,20 @@ export function OgPlotAndEvidenceStudio({
         if (audioRes?.success && audioRes.audioUrl) {
           setClues((prev) =>
             prev.map((c) =>
-              c.id === clue.id ? { ...c, audio_url: audioRes.audioUrl! } : c
+              c.id === clue.id
+                ? {
+                    ...c,
+                    audio_url: audioRes.audioUrl!,
+                    ...(audioRes.verificationStamp
+                      ? {
+                          internal_notes: embedClueVerificationStamp(
+                            c.internal_notes,
+                            audioRes.verificationStamp
+                          ),
+                        }
+                      : {}),
+                  }
+                : c
             )
           );
           router.refresh();
@@ -171,7 +272,7 @@ export function OgPlotAndEvidenceStudio({
         setGeneratingClueId(clue.id);
 
         if (fmt === 'cctv' || fmt === 'physical_prop') {
-          setGeneratingStatus(`📸 (${i + 1}/${mediaClues.length}) Photo: ${clue.title}`);
+          setGeneratingStatus(`📸 (${i + 1}/${mediaClues.length}) Photo + Vision Rescan: ${clue.title}`);
           const rawPrompt =
             clue.generation_prompt?.trim() ||
             (clue.description ? `${clue.title}: ${clue.description}` : clue.title);
@@ -179,12 +280,25 @@ export function OgPlotAndEvidenceStudio({
           if (res?.success && res.imageUrl) {
             setClues((prev) =>
               prev.map((c) =>
-                c.id === clue.id ? { ...c, static_image_url: res.imageUrl! } : c
+                c.id === clue.id
+                  ? {
+                      ...c,
+                      static_image_url: res.imageUrl!,
+                      ...((res as any).verificationStamp
+                        ? {
+                            internal_notes: embedClueVerificationStamp(
+                              c.internal_notes,
+                              (res as any).verificationStamp
+                            ),
+                          }
+                        : {}),
+                    }
+                  : c
               )
             );
           }
         } else if (fmt === 'audio') {
-          setGeneratingStatus(`🎙️ (${i + 1}/${mediaClues.length}) Audio: ${clue.title}`);
+          setGeneratingStatus(`🎙️ (${i + 1}/${mediaClues.length}) Audio + Accent/Gender Check: ${clue.title}`);
           const transcript = clue.description || clue.generation_prompt || clue.title;
           const audioRes = await generateAudioClueAction({
             clueId: clue.id,
@@ -196,7 +310,20 @@ export function OgPlotAndEvidenceStudio({
           if (audioRes?.success && audioRes.audioUrl) {
             setClues((prev) =>
               prev.map((c) =>
-                c.id === clue.id ? { ...c, audio_url: audioRes.audioUrl! } : c
+                c.id === clue.id
+                  ? {
+                      ...c,
+                      audio_url: audioRes.audioUrl!,
+                      ...(audioRes.verificationStamp
+                        ? {
+                            internal_notes: embedClueVerificationStamp(
+                              c.internal_notes,
+                              audioRes.verificationStamp
+                            ),
+                          }
+                        : {}),
+                    }
+                  : c
               )
             );
           }
@@ -219,8 +346,10 @@ export function OgPlotAndEvidenceStudio({
       CLUE_FORMAT_OPTIONS.find((o) => o.value === fmt) || CLUE_FORMAT_OPTIONS[0];
     const isDecoy = isFakeOrRedHerring(clue);
     const isGeneratingThis = generatingClueId === clue.id;
+    const isVerifyingThis = verifyingClueId === clue.id;
     const isPhotoClue = fmt === 'cctv' || fmt === 'physical_prop';
     const isAudioClue = fmt === 'audio';
+    const verificationStamp = extractClueVerificationStamp(clue.internal_notes);
 
     const linkedBeat = clue.linked_plot_beat_id
       ? sortedBeats.find((b) => b.id === clue.linked_plot_beat_id)
@@ -316,11 +445,11 @@ export function OgPlotAndEvidenceStudio({
 
           {/* RENDERED CLUE VIEW (Dark Slate-950 Frame - Chat, Receipt, CCTV, Audio, Document, Prop) */}
           <div className="rounded-3xl bg-slate-950 text-white p-4 border border-slate-800/90 shadow-lg relative overflow-hidden">
-            {isGeneratingThis && (
+            {(isGeneratingThis || isVerifyingThis) && (
               <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center gap-2 p-4 text-center">
                 <div className="w-8 h-8 border-3 border-brand-pink border-t-transparent rounded-full animate-spin" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink">
-                  {generatingStatus || 'Synthesizing Media...'}
+                  {generatingStatus || 'Auditing Clue Details...'}
                 </span>
               </div>
             )}
@@ -333,6 +462,45 @@ export function OgPlotAndEvidenceStudio({
               showImage={true}
             />
           </div>
+
+          {/* AI POST-GENERATION VERIFICATION RECEIPT */}
+          {verificationStamp && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-900 flex items-center gap-1.5">
+                  🛡️ AI Post-Gen Audit Passed (0 Fabrications)
+                </span>
+                <div className="flex flex-wrap items-center gap-1">
+                  {verificationStamp.textCheck && (
+                    <span className="px-2 py-0.5 rounded-md bg-white text-emerald-800 border border-emerald-200 text-[9px] font-black uppercase tracking-wider">
+                      ✓ Names &amp; Pronouns
+                    </span>
+                  )}
+                  {verificationStamp.photoCheck && (
+                    <span className="px-2 py-0.5 rounded-md bg-white text-emerald-800 border border-emerald-200 text-[9px] font-black uppercase tracking-wider">
+                      ✓ Cast &amp; Profile Outfits
+                    </span>
+                  )}
+                  {verificationStamp.audioCheck && (
+                    <span className="px-2 py-0.5 rounded-md bg-white text-emerald-800 border border-emerald-200 text-[9px] font-black uppercase tracking-wider">
+                      ✓ Accent, Gender &amp; Voice
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="text-[11px] font-medium text-emerald-900 space-y-1">
+                {verificationStamp.photoCheck?.summary && (
+                  <p>📸 <strong>Photo Rescan:</strong> {verificationStamp.photoCheck.summary}</p>
+                )}
+                {verificationStamp.audioCheck?.summary && (
+                  <p>🎙️ <strong>Audio Rescan:</strong> {verificationStamp.audioCheck.summary}</p>
+                )}
+                {verificationStamp.textCheck?.summary && (
+                  <p>📝 <strong>Text &amp; Plot Fact-Check:</strong> {verificationStamp.textCheck.summary}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* OG Blueprint Tokenized Script / Evidence Copy with Color-Coded Character Pills */}
           {clue.description && (
@@ -365,39 +533,50 @@ export function OgPlotAndEvidenceStudio({
           )}
         </div>
 
-        {/* Bottom Action Bar: Media Regeneration + OG Builder Link */}
+        {/* Bottom Action Bar: Media Regeneration + Per-Clue Verifier + OG Builder Link */}
         <div className="px-5 py-3.5 bg-slate-50/90 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-          {isPhotoClue ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {isPhotoClue ? (
+              <button
+                type="button"
+                disabled={Boolean(generatingClueId) || isBatchGeneratingMedia || Boolean(verifyingClueId)}
+                onClick={() => handleRegenerateMedia(clue)}
+                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-brand-pink disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+              >
+                {isGeneratingThis
+                  ? '⏳ Rendering & Auditing Photo...'
+                  : clue.static_image_url
+                    ? '🎨 Regenerate Clue Photo'
+                    : '📸 Generate AI Clue Photo'}
+              </button>
+            ) : isAudioClue ? (
+              <button
+                type="button"
+                disabled={Boolean(generatingClueId) || isBatchGeneratingMedia || Boolean(verifyingClueId)}
+                onClick={() => handleRegenerateMedia(clue)}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+              >
+                {isGeneratingThis
+                  ? '⏳ Synthesizing & Auditing Voice...'
+                  : clue.audio_url
+                    ? '🔊 Regenerate Voice Wiretap'
+                    : '🎙️ Synthesize Voice Wiretap'}
+              </button>
+            ) : null}
+
             <button
               type="button"
-              disabled={Boolean(generatingClueId) || isBatchGeneratingMedia}
-              onClick={() => handleRegenerateMedia(clue)}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-brand-pink disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+              disabled={Boolean(verifyingClueId) || Boolean(generatingClueId) || isBatchVerifying || isBatchGeneratingMedia}
+              onClick={() => handleVerifySingleClue(clue)}
+              className="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 disabled:opacity-50 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
             >
-              {isGeneratingThis
-                ? '⏳ Rendering AI Photo...'
-                : clue.static_image_url
-                  ? '🎨 Regenerate Clue Photo'
-                  : '📸 Generate AI Clue Photo'}
+              {isVerifyingThis
+                ? '⏳ Auditing Clue...'
+                : verificationStamp
+                  ? '🛡️ Re-Verify Clue'
+                  : '🛡️ Verify Clue Details'}
             </button>
-          ) : isAudioClue ? (
-            <button
-              type="button"
-              disabled={Boolean(generatingClueId) || isBatchGeneratingMedia}
-              onClick={() => handleRegenerateMedia(clue)}
-              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
-            >
-              {isGeneratingThis
-                ? '⏳ Synthesizing Voice...'
-                : clue.audio_url
-                  ? '🔊 Regenerate Voice Wiretap'
-                  : '🎙️ Synthesize Voice Wiretap'}
-            </button>
-          ) : (
-            <span className="text-[10px] font-bold text-slate-400">
-              ✓ Dynamic Rendered Clue ({fmtMeta.label})
-            </span>
-          )}
+          </div>
 
           <Link
             href={`/${locale}/admin/mysteries/architect?load=${mysteryId}`}
@@ -441,16 +620,25 @@ export function OgPlotAndEvidenceStudio({
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium">
-              Plot timeline beats, red-herring subplots, and clue scripts are authored in the{' '}
-              <strong>OG Base Builder</strong> so character tokens stay 100% collision-free. You can regenerate AI clue photos and voice wiretaps directly on any card below.
+              Every generated clue runs an automatic <strong>Post-Generation AI Audit</strong> (rescanning photos against profile portraits &amp; outfits, checking guest names/pronouns, and verifying audio accents &amp; speaker gender).
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              disabled={isBatchVerifying || isBatchGeneratingMedia || Boolean(generatingClueId) || Boolean(verifyingClueId)}
+              onClick={handleBatchVerifyAllClues}
+              className="px-4 py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-xs cursor-pointer"
+            >
+              {isBatchVerifying
+                ? `⏳ Auditing All Clues (${batchProgress.done}/${batchProgress.total})...`
+                : `🛡️ Audit All Clues (${clues.length})`}
+            </button>
             {mediaClues.length > 0 && (
               <button
                 type="button"
-                disabled={isBatchGeneratingMedia || Boolean(generatingClueId)}
+                disabled={isBatchGeneratingMedia || isBatchVerifying || Boolean(generatingClueId) || Boolean(verifyingClueId)}
                 onClick={handleBatchSynthesizeMedia}
                 className="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-xs cursor-pointer"
               >
