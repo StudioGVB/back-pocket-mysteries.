@@ -693,9 +693,27 @@ export async function generateLandingDemoVoiceClueAction(
 
   const rawAccent = (input.accent || 'Australian').toLowerCase();
   let regionKey: 'au' | 'gb' | 'us' = 'au';
-  if (rawAccent.includes('brit') || rawAccent.includes('uk') || rawAccent.includes('irish') || rawAccent.includes('scot') || rawAccent.includes('euro')) {
+  if (
+    rawAccent.includes('aus') ||
+    rawAccent.includes('kiwi') ||
+    rawAccent.includes('new zealand') ||
+    rawAccent.includes('nz')
+  ) {
+    regionKey = 'au';
+  } else if (
+    rawAccent.includes('brit') ||
+    rawAccent.includes('uk') ||
+    rawAccent.includes('irish') ||
+    rawAccent.includes('scot') ||
+    rawAccent.includes('euro')
+  ) {
     regionKey = 'gb';
-  } else if (rawAccent.includes('amer') || rawAccent.includes('us') || rawAccent.includes('global')) {
+  } else if (
+    rawAccent.includes('amer') ||
+    rawAccent === 'us' ||
+    rawAccent.includes('(us)') ||
+    rawAccent.includes('global')
+  ) {
     regionKey = 'us';
   } else {
     regionKey = 'au';
