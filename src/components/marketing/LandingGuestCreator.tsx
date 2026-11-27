@@ -14,7 +14,10 @@ import {
   PhotoTraitScanner,
   ScannedGuestTraits,
 } from '@/components/account/PhotoTraitScanner';
-import { generateLandingDemoGuestPortraitAction } from '@/app/actions/ai-guests';
+import {
+  generateLandingDemoGuestPortraitAction,
+  generateLandingDemoCluePhotoAction,
+} from '@/app/actions/ai-guests';
 import { generateLandingDemoVoiceClueAction } from '@/app/actions/audio-generator';
 
 export const PENDING_LANDING_GUEST_STORAGE_KEY = 'bpm_pending_landing_guest_v1';
@@ -34,6 +37,7 @@ export interface PendingLandingGuestPayload {
   height?: string;
   avatar_url: string;
   aiPhotoUrl?: string;
+  cluePhotoUrl?: string;
   avatar_config: AvatarConfig;
   traits: string[];
   bio?: string;
@@ -76,6 +80,7 @@ const SAMPLE_QUIRKS = [
 ];
 
 const DEFAULT_DEMO_PORTRAIT = '/generated-avatars/gabriella-blyth-front.jpg';
+const DEFAULT_DEMO_CLUE_SCENE = '/generated-avatars/gabby-demo-clue-scene.jpg';
 
 const OTHER_SUSPECTS = [
   {
@@ -196,11 +201,15 @@ export default function LandingGuestCreator({
 
   const [showPhotoScanner, setShowPhotoScanner] = useState(false);
   const [aiPhotoUrl, setAiPhotoUrl] = useState<string>(DEFAULT_DEMO_PORTRAIT);
+  const [cluePhotoUrl, setCluePhotoUrl] = useState<string>(
+    DEFAULT_DEMO_CLUE_SCENE
+  );
   const [generatedFullAvatarUrl, setGeneratedFullAvatarUrl] =
     useState<string>('');
   const [hasCustomGenerated, setHasCustomGenerated] = useState(false);
   const [genCount, setGenCount] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingCluePhoto, setIsGeneratingCluePhoto] = useState(false);
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -270,6 +279,9 @@ export default function LandingGuestCreator({
             setAiPhotoUrl(parsed.aiPhotoUrl);
             setHasCustomGenerated(true);
           }
+          if (parsed.cluePhotoUrl) {
+            setCluePhotoUrl(parsed.cluePhotoUrl);
+          }
           if (parsed.avatar_url) {
             setGeneratedFullAvatarUrl(parsed.avatar_url);
           }
@@ -294,13 +306,15 @@ export default function LandingGuestCreator({
 
   const persistPendingGuestToStorage = (
     overrideAiPhotoUrl?: string,
-    overrideFullAvatarUrl?: string
+    overrideFullAvatarUrl?: string,
+    overrideCluePhotoUrl?: string
   ) => {
     if (typeof window === 'undefined') return;
     const cleanFirst = firstName.trim() || 'Gabby';
     const cleanLast = lastName.trim() || 'Blyth';
     const full = `${cleanFirst} ${cleanLast}`.trim();
     const activeAiPhoto = overrideAiPhotoUrl ?? aiPhotoUrl;
+    const activeCluePhoto = overrideCluePhotoUrl ?? cluePhotoUrl;
     const builtUrl =
       overrideFullAvatarUrl ||
       generatedFullAvatarUrl ||
@@ -328,6 +342,7 @@ export default function LandingGuestCreator({
       height: avatarConfig.height || 'Average',
       avatar_url: builtUrl || activeAiPhoto || '',
       aiPhotoUrl: activeAiPhoto || undefined,
+      cluePhotoUrl: activeCluePhoto || undefined,
       avatar_config: {
         ...avatarConfig,
         accent,
@@ -355,7 +370,7 @@ export default function LandingGuestCreator({
 
   useEffect(() => {
     if (hasCustomGenerated && aiPhotoUrl) {
-      persistPendingGuestToStorage(aiPhotoUrl);
+      persistPendingGuestToStorage(aiPhotoUrl, undefined, cluePhotoUrl);
     }
   }, [
     firstName,
@@ -366,6 +381,7 @@ export default function LandingGuestCreator({
     trait,
     avatarConfig,
     aiPhotoUrl,
+    cluePhotoUrl,
     hasCustomGenerated,
   ]);
 
@@ -470,6 +486,30 @@ export default function LandingGuestCreator({
     }
   };
 
+  const handleGenerateCluePhotoOnly = async () => {
+    if (isGeneratingCluePhoto) return;
+    setIsGeneratingCluePhoto(true);
+    try {
+      const clueRes = await generateLandingDemoCluePhotoAction({
+        referencePhotoUrl: aiPhotoUrl,
+        name: fullName,
+        gender,
+      });
+      if (clueRes.success && clueRes.cluePhotoUrl) {
+        setCluePhotoUrl(clueRes.cluePhotoUrl);
+        persistPendingGuestToStorage(
+          aiPhotoUrl,
+          generatedFullAvatarUrl,
+          clueRes.cluePhotoUrl
+        );
+      }
+    } catch (err) {
+      console.warn('Clue photo synthesis fallback:', err);
+    } finally {
+      setIsGeneratingCluePhoto(false);
+    }
+  };
+
   const handleGenerateSuspectAndClues = async (advanceToClues = true) => {
     if (isGenerating) return;
     const cleanFirst = firstName.trim() || 'Gabby';
@@ -479,6 +519,7 @@ export default function LandingGuestCreator({
     setErrorMsg(null);
     setIsGenerating(true);
     setIsGeneratingVoice(true);
+    setIsGeneratingCluePhoto(true);
 
     const baseAvatarUrl = buildAvatarUrl(
       {
@@ -518,6 +559,7 @@ export default function LandingGuestCreator({
           : Promise.resolve({
               success: true,
               aiPhotoUrl,
+              cluePhotoUrl,
               publicUrl: generatedFullAvatarUrl || aiPhotoUrl,
               error: undefined,
             }),
@@ -544,8 +586,10 @@ export default function LandingGuestCreator({
           resolveDisplayAvatarUrl(portraitRes.publicUrl) ||
           aiPhotoUrl;
         const freshFullAvatarUrl = portraitRes.publicUrl || freshPhotoUrl;
+        const freshCluePhotoUrl = portraitRes.cluePhotoUrl || cluePhotoUrl;
 
         setAiPhotoUrl(freshPhotoUrl);
+        setCluePhotoUrl(freshCluePhotoUrl);
         setGeneratedFullAvatarUrl(freshFullAvatarUrl);
         setHasCustomGenerated(true);
         setAvatarConfig((prev) => ({
@@ -561,20 +605,25 @@ export default function LandingGuestCreator({
             String(nextCount)
           );
         }
-        persistPendingGuestToStorage(freshPhotoUrl, freshFullAvatarUrl);
+        persistPendingGuestToStorage(
+          freshPhotoUrl,
+          freshFullAvatarUrl,
+          freshCluePhotoUrl
+        );
       } else if (portraitRes.error) {
         setErrorMsg(portraitRes.error);
       }
 
       if (advanceToClues) {
         setQuizStep(2);
-        setActiveClueTab('voice');
+        setActiveClueTab('photo');
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'Unexpected error generating suspect.');
     } finally {
       setIsGenerating(false);
       setIsGeneratingVoice(false);
+      setIsGeneratingCluePhoto(false);
     }
   };
 
@@ -1326,40 +1375,71 @@ export default function LandingGuestCreator({
                       <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-black uppercase tracking-widest">
                         Clue #2 · 📸 Caught on Camera
                       </span>
-                      <span className="text-[9px] font-bold text-rose-400 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
-                        REC 08:04 PM
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGenerateCluePhotoOnly();
+                          }}
+                          disabled={isGeneratingCluePhoto}
+                          title="Generate a custom crime-scene photo featuring your guest portrait"
+                          className="px-2 py-0.5 rounded bg-white/10 hover:bg-brand-pink text-[8px] font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                        >
+                          {isGeneratingCluePhoto ? 'Shooting...' : '🔄 Sync Scene'}
+                        </button>
+                        <span className="text-[9px] font-bold text-rose-400 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                          REC 08:04 PM
+                        </span>
+                      </div>
                     </div>
 
                     <div className="relative h-44 rounded-xl overflow-hidden bg-black border border-white/15">
                       <img
-                        src={aiPhotoUrl}
-                        alt={`${fullName} caught on camera`}
-                        className="w-full h-full object-cover"
+                        src={cluePhotoUrl}
+                        alt={`${fullName} caught on camera outside the study safe`}
+                        className={`w-full h-full object-cover object-[50%_38%] transition-all duration-500 ${
+                          isGeneratingCluePhoto ? 'blur-sm opacity-45 scale-105' : ''
+                        }`}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent" />
                       <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/75 border border-white/20 text-[8px] font-mono uppercase text-emerald-300">
-                        CAM-04 · STUDY CORRIDOR
+                        CAM-04 · STUDY SAFE CORRIDOR
+                      </div>
+                      {/* Forensic Face Match Picture-in-Picture Badge */}
+                      <div className="absolute top-2 right-2 flex items-center gap-1.5 px-1.5 py-1 rounded-lg bg-black/80 border border-brand-pink/50 backdrop-blur-xs">
+                        <img
+                          src={aiPhotoUrl}
+                          alt={fullName}
+                          className="w-5 h-5 rounded-md object-cover border border-brand-pink"
+                        />
+                        <div className="leading-none">
+                          <p className="text-[7px] font-mono uppercase text-emerald-300 font-black">
+                            99.4% MATCH
+                          </p>
+                          <p className="text-[8px] font-black uppercase text-white truncate max-w-[64px]">
+                            {displayFirstName}
+                          </p>
+                        </div>
                       </div>
                       <div className="absolute bottom-2 left-2.5 right-2.5">
                         <p className="text-xs font-black uppercase text-white leading-tight">
-                          {fullName} Spotted Outside Study
+                          {fullName} Caught Opening Study Safe
                         </p>
-                        <p className="text-[10px] text-white/75 font-medium leading-tight mt-0.5">
-                          Holding a crystal coupe glass 11 mins before the
-                          blackout.
+                        <p className="text-[10px] text-white/80 font-medium leading-tight mt-0.5">
+                          Spotted holding a crystal coupe glass at the brass safe 11 mins before blackout.
                         </p>
                       </div>
                     </div>
                   </div>
 
                   <p className="text-[9px] font-bold text-white/50 mt-2.5 pt-2 border-t border-white/10">
-                    ✓ Uses{' '}
+                    ✓ Casts{' '}
                     <strong className="text-white">
                       {displayFirstName}&apos;s
                     </strong>{' '}
-                    custom AI portrait in the evidence pack
+                    AI likeness directly into crime-scene evidence photos
                   </p>
                 </div>
 

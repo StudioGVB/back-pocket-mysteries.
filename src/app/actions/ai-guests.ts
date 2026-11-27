@@ -933,6 +933,7 @@ export async function generateLandingDemoGuestPortraitAction(guestData: any): Pr
   success: boolean;
   publicUrl?: string;
   aiPhotoUrl?: string;
+  cluePhotoUrl?: string;
   error?: string;
 }> {
   try {
@@ -941,10 +942,25 @@ export async function generateLandingDemoGuestPortraitAction(guestData: any): Pr
       forceRegenerate: true,
       isPublicLandingDemo: true,
     });
+
+    // Also generate a caught-on-camera crime scene clue photo using the new headshot as multimodal reference
+    let cluePhotoUrl: string | undefined;
+    if (res.aiPhotoUrl) {
+      const clueRes = await generateLandingDemoCluePhotoAction({
+        referencePhotoUrl: res.aiPhotoUrl,
+        name: guestData?.name || 'Guest',
+        gender: guestData?.gender || 'Feminine',
+      });
+      if (clueRes.success && clueRes.cluePhotoUrl) {
+        cluePhotoUrl = clueRes.cluePhotoUrl;
+      }
+    }
+
     return {
       success: true,
       publicUrl: res.publicUrl,
       aiPhotoUrl: res.aiPhotoUrl,
+      cluePhotoUrl,
     };
   } catch (err: any) {
     console.error('Error generating landing demo guest portrait:', err);
@@ -954,3 +970,114 @@ export async function generateLandingDemoGuestPortraitAction(guestData: any): Pr
     };
   }
 }
+
+export async function generateLandingDemoCluePhotoAction(input: {
+  referencePhotoUrl: string;
+  name?: string;
+  gender?: string;
+}): Promise<{
+  success: boolean;
+  cluePhotoUrl?: string;
+  error?: string;
+}> {
+  try {
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey || !input.referencePhotoUrl) {
+      return { success: false, error: 'Missing API key or reference portrait.' };
+    }
+
+    // Extract base64 bytes from data URI or fetch from URL
+    let refBase64 = '';
+    let mimeType = 'image/jpeg';
+    if (input.referencePhotoUrl.startsWith('data:')) {
+      const match = input.referencePhotoUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if (match) {
+        mimeType = match[1];
+        refBase64 = match[2];
+      }
+    } else if (input.referencePhotoUrl.startsWith('http')) {
+      const imgRes = await fetch(input.referencePhotoUrl);
+      if (imgRes.ok) {
+        const buf = Buffer.from(await imgRes.arrayBuffer());
+        refBase64 = buf.toString('base64');
+      }
+    }
+
+    if (!refBase64) {
+      return { success: false, error: 'Could not read reference portrait.' };
+    }
+
+    const rawGen = (input.gender || '').toLowerCase();
+    const isMale = rawGen.includes('masc') || rawGen === 'male' || rawGen === 'm';
+    const subjectNoun = isMale ? 'man' : 'woman';
+    const outfitDesc = isMale
+      ? 'wearing a sharp tailored dark evening dinner jacket and crisp dress shirt'
+      : 'wearing a glamorous emerald-green evening cocktail dress';
+
+    const prompt = `Using the attached reference portrait for the ${subjectNoun}'s exact face, hair, eyewear, facial hair, and likeness:
+A dramatic, cinematic "Caught on Camera" murder mystery crime-scene evidence photograph taken in a dimly lit, opulent wood-paneled mansion study corridor at night.
+The exact ${subjectNoun} from the reference image (${outfitDesc}) is caught mid-action outside a heavy mahogany study door and an open brass wall safe: holding a crystal coupe glass of pink champagne in one hand while the other hand is reaching into the ajar brass study safe, looking back over their shoulder directly toward the camera lens with a guilty, startled, caught-red-handed expression illuminated by a candid 35mm camera flash and warm candlelight.
+Real live-action DSLR photograph, waist-up medium shot showing the mansion study corridor, open brass safe, and crystal champagne glass, zero text or watermarks on the image.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { inlineData: { mimeType, data: refBase64 } },
+                { text: prompt },
+              ],
+            },
+          ],
+          generationConfig: { responseModalities: ['IMAGE'] },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      return { success: false, error: `Gemini clue image failed (${response.status})` };
+    }
+
+    const data = await response.json();
+    const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+    const b64 = imgPart?.inlineData?.data || '';
+    if (!b64) {
+      return { success: false, error: 'No clue image returned.' };
+    }
+
+    const supabase = await createClient();
+    const buffer = Buffer.from(b64, 'base64');
+    const fileName = `demo-clue-${crypto.randomUUID().slice(0, 12)}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from('character-images')
+      .upload(fileName, buffer, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+
+    if (!uploadError) {
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('character-images').getPublicUrl(fileName);
+      if (publicUrl) {
+        return { success: true, cluePhotoUrl: publicUrl };
+      }
+    }
+
+    return {
+      success: true,
+      cluePhotoUrl: `data:image/jpeg;base64,${b64}`,
+    };
+  } catch (err: any) {
+    console.warn('[generateLandingDemoCluePhotoAction] Fallback:', err?.message);
+    return {
+      success: false,
+      error: err?.message || 'Could not generate crime scene photo.',
+    };
+  }
+}
+
