@@ -2523,13 +2523,82 @@ export async function auditAndHealCustomerPackAction(
       }
     }
 
-    const { data: dbClues } = await supabase
-      .from('clues')
-      .select('*')
-      .eq('mystery_id', mysteryId);
+    const [{ data: dbClues }, { data: dbPlotBeats }] = await Promise.all([
+      supabase.from('clues').select('*').eq('mystery_id', mysteryId),
+      supabase.from('plot_beats').select('*').eq('mystery_id', mysteryId),
+    ]);
 
     const allClues: any[] =
       dbClues && dbClues.length > 0 ? dbClues : cachedMystery?.clues || [];
+    const allPlotBeats: any[] =
+      dbPlotBeats && dbPlotBeats.length > 0
+        ? dbPlotBeats
+        : cachedMystery?.plot_beats || [];
+
+    // Run parallel per-clue verification & auto-heal sweep on all clues that don't yet have a verification stamp
+    const unverifiedClues = allClues.filter(
+      (c: any) => c?.description && !extractClueVerificationStamp(c.internal_notes)
+    );
+
+    if (unverifiedClues.length > 0) {
+      await Promise.all(
+        unverifiedClues.map(async (clue: any) => {
+          try {
+            const fmt = clue.format || inferClueFormat(clue);
+            const linkedBeat = allPlotBeats.find(
+              (b: any) => b.id === clue.linked_plot_beat_id
+            );
+            const textAudit = await verifyAndHealClueText({
+              clueTitle: clue.title || '',
+              clueDescription: clue.description || '',
+              clueFormat: fmt,
+              linkedBeatText:
+                linkedBeat?.description || linkedBeat?.event_title || '',
+              allPlotBeats,
+              mysteryTitle: mystery?.title,
+              mysterySetting: (mystery as any)?.setting || mystery?.theme,
+              characters: hydratedCharacters,
+              preserveTokens: String(clue.description || '').includes('{{'),
+            });
+
+            if (textAudit.healed) {
+              clue.description = textAudit.finalDescription;
+              result.textIssuesRepaired += 1;
+            }
+
+            const stamp: ClueVerificationStamp = {
+              verifiedAt: new Date().toISOString(),
+              passed: textAudit.passed,
+              textCheck: {
+                passed: textAudit.passed,
+                namesValid: textAudit.namesValid,
+                pronounsValid: textAudit.pronounsValid,
+                plotAligned: textAudit.plotAligned,
+                healed: textAudit.healed,
+                summary: textAudit.summary,
+              },
+            };
+            const nextNotes = embedClueVerificationStamp(
+              clue.internal_notes,
+              stamp
+            );
+            clue.internal_notes = nextNotes;
+
+            await supabase
+              .from('clues')
+              .update({
+                ...(textAudit.healed
+                  ? { description: textAudit.finalDescription }
+                  : {}),
+                internal_notes: nextNotes,
+              })
+              .eq('id', clue.id);
+          } catch (sweepErr) {
+            console.warn('[QA GATE 1A-SWEEP] Non-fatal clue text sweep warning:', sweepErr);
+          }
+        })
+      );
+    }
 
     for (const clue of allClues) {
       if (!clue?.description) continue;

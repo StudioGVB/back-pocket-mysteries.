@@ -1,8 +1,8 @@
 {
   "sessions": {
-    "v_mwxxw8z7_cbwii0": {
-      "sessionId": "v_mwxxw8z7_cbwii0",
-      "path": "/en/reviews?name=Sophie&email=sophie%40example.com&mystery=Love+On+The+Rocks&role=The+Bombshell&utm_source=playroom_finale&utm_medium=email&utm_campaign=guest_review_cta",
+    "v_mwz4llkn_372eyy": {
+      "sessionId": "v_mwz4llkn_372eyy",
+      "path": "/en",
       "stage": "browsing",
       "stageLabel": "📖 Browsing Site / Blog",
       "countryCode": "GB",
@@ -11,59 +11,59 @@
       "lon": null,
       "device": "desktop",
       "referrerSource": "Direct",
-      "firstSeenAt": 1795720960763,
-      "lastSeenAt": 1795720960763
+      "firstSeenAt": 1795792687422,
+      "lastSeenAt": 1795792687422
     },
-    "v_mwxy5qad_a0qus8": {
-      "sessionId": "v_mwxy5qad_a0qus8",
-      "path": "/en/checkout/christmas-nightmare?guests=6",
-      "stage": "checkout",
-      "stageLabel": "💳 In Checkout",
+    "v_mwz4seju_hm4d8m": {
+      "sessionId": "v_mwz4seju_hm4d8m",
+      "path": "/en/signup?saveGuest=1&next=%2Fen%2Faccount%2Fguests",
+      "stage": "browsing",
+      "stageLabel": "📖 Browsing Site / Blog",
       "countryCode": "GB",
       "city": "",
       "lat": null,
       "lon": null,
       "device": "desktop",
       "referrerSource": "Direct",
-      "firstSeenAt": 1795721403335,
-      "lastSeenAt": 1795721415260
+      "firstSeenAt": 1795793004742,
+      "lastSeenAt": 1795793019401
     },
-    "v_mwxy9kxd_v0wftv": {
-      "sessionId": "v_mwxy9kxd_v0wftv",
-      "path": "/en/checkout/christmas-nightmare?guests=6",
-      "stage": "checkout",
-      "stageLabel": "💳 In Checkout",
+    "v_mwz4w4cs_9agjpq": {
+      "sessionId": "v_mwz4w4cs_9agjpq",
+      "path": "/en",
+      "stage": "browsing",
+      "stageLabel": "📖 Browsing Site / Blog",
       "countryCode": "GB",
       "city": "",
       "lat": null,
       "lon": null,
       "device": "desktop",
       "referrerSource": "Direct",
-      "firstSeenAt": 1795721582659,
-      "lastSeenAt": 1795721593152
+      "firstSeenAt": 1795793178140,
+      "lastSeenAt": 1795793178140
     },
-    "v_mwxyf8bt_kt8q4n": {
-      "sessionId": "v_mwxyf8bt_kt8q4n",
-      "path": "/en/checkout/christmas-nightmare?guests=6",
-      "stage": "checkout",
-      "stageLabel": "💳 In Checkout",
+    "v_mwz4yvx4_cyqnlq": {
+      "sessionId": "v_mwz4yvx4_cyqnlq",
+      "path": "/en",
+      "stage": "browsing",
+      "stageLabel": "📖 Browsing Site / Blog",
       "countryCode": "GB",
       "city": "",
       "lat": null,
       "lon": null,
       "device": "desktop",
       "referrerSource": "Direct",
-      "firstSeenAt": 1795721846514,
-      "lastSeenAt": 1795721854382
+      "firstSeenAt": 1795793307189,
+      "lastSeenAt": 1795793307189
     }
   },
   "cityPins": {},
   "funnelCounts": {
-    "browsing": 4,
+    "browsing": 8,
     "inspecting_mystery": 0,
     "checkout": 3,
     "casting_or_prep": 0,
     "live_playroom": 0
   },
-  "updatedAt": "2026-11-26T19:37:34.382Z"
+  "updatedAt": "2026-11-27T15:28:27.189Z"
 }

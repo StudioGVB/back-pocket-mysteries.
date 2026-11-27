@@ -14,12 +14,17 @@
       "totalSeconds": 27,
       "count": 3,
       "updatedAt": "2026-11-26T19:37:40.963Z"
+    },
+    "/en": {
+      "totalSeconds": 32,
+      "count": 3,
+      "updatedAt": "2026-11-27T15:26:34.519Z"
     }
   },
   "countries": {},
   "global": {
-    "totalSeconds": 62,
-    "count": 7,
-    "updatedAt": "2026-11-26T19:37:40.963Z"
+    "totalSeconds": 94,
+    "count": 10,
+    "updatedAt": "2026-11-27T15:26:34.519Z"
   }
 }

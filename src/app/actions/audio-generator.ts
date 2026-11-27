@@ -14,6 +14,7 @@ import {
 } from '@/lib/elevenlabs';
 import {
   VoiceRegion,
+  VOICE_PROFILES,
   inferDefaultVoiceRegion,
   parseAudioTranscript,
 } from '@/lib/voices';
@@ -343,7 +344,7 @@ export async function generateAudioClueAction({
     }
 
     // 3. Concatenate MP3 byte buffers sequentially with a 350ms silent gap between speaker turns
-    const mergedMp3Buffer = concatenateMp3Buffers(lineBuffers, 350);
+    let mergedMp3Buffer = concatenateMp3Buffers(lineBuffers, 350);
 
     if (mergedMp3Buffer.length === 0) {
       return {
@@ -352,14 +353,62 @@ export async function generateAudioClueAction({
       };
     }
 
-    // 3b. POST-SYNTHESIS MULTIMODAL AUDIO LISTEN CHECK:
+    // 3b. POST-SYNTHESIS MULTIMODAL AUDIO LISTEN CHECK & AUTO-RETRY LOOP:
     // Feed the generated MP3 buffer into Gemini 2.5 Flash to confirm the spoken dialogue matches the expected
-    // speakers, gender voices, and script lines with zero garbled/cut-off audio.
-    const audioListenVerification = await verifyGeneratedAudioMp3WithGemini({
+    // speakers, gender voices, accents, and script lines with zero garbled/cut-off audio.
+    let audioListenVerification = await verifyGeneratedAudioMp3WithGemini({
       mp3Buffer: mergedMp3Buffer,
       expectedTranscript: activeTranscript,
       speakersManifest: speakersVerified,
     });
+
+    if (!audioListenVerification.passed) {
+      console.warn(
+        `[POST-GEN AUDIO VERIFIER] Audio clue ${clueId} flagged by listener ("${audioListenVerification.summary}"). Auto-retrying with alternate gender/accent-locked voice profiles...`
+      );
+      try {
+        const allProfiles = Object.values(VOICE_PROFILES);
+        const retryBuffers: ArrayBuffer[] = [];
+
+        for (let i = 0; i < parsedLines.length; i++) {
+          const line = parsedLines[i];
+          const targetGender = line.voiceProfile.gender;
+          const targetAccent = (line.voiceProfile as any).accent || resolvedRegion;
+          const altVoice =
+            allProfiles.find(
+              (vp) =>
+                vp.id !== line.voiceId &&
+                vp.gender === targetGender &&
+                vp.accent === targetAccent
+            ) || line.voiceProfile;
+
+          const cleanSpoken = String(line.spokenDialogue || line.dialogue || '')
+            .replace(/\[[^\]]*\]/g, '')
+            .replace(/\([^)]*\)/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          const retryLineAudio = await synthesizeSpeechLine({
+            voiceId: altVoice.id,
+            text: cleanSpoken || line.dialogue,
+            modelId,
+          });
+          retryBuffers.push(retryLineAudio);
+        }
+
+        const retriedMerged = concatenateMp3Buffers(retryBuffers, 350);
+        if (retriedMerged.length > 200) {
+          mergedMp3Buffer = retriedMerged;
+          audioListenVerification = await verifyGeneratedAudioMp3WithGemini({
+            mp3Buffer: mergedMp3Buffer,
+            expectedTranscript: activeTranscript,
+            speakersManifest: speakersVerified,
+          });
+        }
+      } catch (retryAudioErr) {
+        console.warn('[POST-GEN AUDIO VERIFIER] Audio retry fallback warning:', retryAudioErr);
+      }
+    }
 
     const existingStamp = extractClueVerificationStamp(resolvedInternalNotes);
     const verificationStamp: ClueVerificationStamp = {
@@ -377,8 +426,8 @@ export async function generateAudioClueAction({
       audioCheck: {
         passed: audioListenVerification.passed,
         speakerIdentityMatch: audioListenVerification.speakerIdentityMatch,
-        genderMatch: true,
-        accentMatch: true,
+        genderMatch: audioListenVerification.genderMatch,
+        accentMatch: audioListenVerification.accentMatch,
         audioClear: audioListenVerification.audioClear,
         speakersVerified,
         summary: audioListenVerification.summary,
@@ -608,3 +657,152 @@ export async function deleteAudioClueAction({
     };
   }
 }
+
+export interface GenerateLandingDemoVoiceInput {
+  firstName: string;
+  lastName?: string;
+  gender: string;
+  age: string;
+  accent: string;
+  trait: string;
+}
+
+export interface GenerateLandingDemoVoiceResult {
+  success: boolean;
+  audioUrl: string;
+  transcript: string;
+  voiceName: string;
+  voiceBadge: string;
+  error?: string;
+}
+
+/**
+ * Public landing page demo action: synthesizes a dramatic caught-on-mic wiretap audio clue
+ * in the exact voice (Gender, Age, and Regional Accent) of the guest the visitor just created.
+ */
+export async function generateLandingDemoVoiceClueAction(
+  input: GenerateLandingDemoVoiceInput
+): Promise<GenerateLandingDemoVoiceResult> {
+  const firstName = (input.firstName || 'Gabby').trim().slice(0, 32);
+  const rawGender = (input.gender || 'Feminine').toLowerCase();
+  const isMale = rawGender.includes('masc') || rawGender === 'male' || rawGender === 'm';
+  const genderKey: 'male' | 'female' = isMale ? 'male' : 'female';
+
+  const rawAge = (input.age || 'young').toLowerCase();
+  const isYoung = rawAge === 'young' || rawAge.includes('18');
+
+  const rawAccent = (input.accent || 'Australian').toLowerCase();
+  let regionKey: 'au' | 'gb' | 'us' = 'au';
+  if (rawAccent.includes('brit') || rawAccent.includes('uk') || rawAccent.includes('irish') || rawAccent.includes('scot') || rawAccent.includes('euro')) {
+    regionKey = 'gb';
+  } else if (rawAccent.includes('amer') || rawAccent.includes('us') || rawAccent.includes('global')) {
+    regionKey = 'us';
+  } else {
+    regionKey = 'au';
+  }
+
+  const cleanTrait = (input.trait || 'obsessed with espresso martinis')
+    .trim()
+    .replace(/\.$/, '');
+  const traitPhrase = cleanTrait.toLowerCase().startsWith('always ') ||
+    cleanTrait.toLowerCase().startsWith('obsessed ') ||
+    cleanTrait.toLowerCase().startsWith('secretly ') ||
+    cleanTrait.toLowerCase().startsWith('never ')
+    ? cleanTrait.charAt(0).toLowerCase() + cleanTrait.slice(1)
+    : `known for "${cleanTrait}"`;
+
+  const dramaticTranscript = `Keep your voice down! It's ${firstName}. Someone just saw me by the study safe at eight-oh-four—everyone at this table knows I'm ${traitPhrase}, and if they find that poisoned glass by the bar before dessert, I'm going down for this murder! Delete our texts right now!`;
+
+  // Pick the most dramatic curated ElevenLabs voice matching Gender + Age + Accent
+  const voiceMap: Record<string, { id: string; label: string }> = {
+    'au:female:young': {
+      id: 'HMsHSO9iPieho74ZXn8A',
+      label: 'Emma · Dramatic Australian Female (18–29)',
+    },
+    'au:female:adult': {
+      id: 'zMK1eWY5DTw3Jjb8efU8',
+      label: 'Emily · Sharp Australian Female (30+)',
+    },
+    'au:male:young': {
+      id: '9TTaZrP6m0Cc554HW1PP',
+      label: 'Michael · Intense Australian Male (18–29)',
+    },
+    'au:male:adult': {
+      id: 'UVXT2nskVOynYCONC3Iy',
+      label: 'Ryan · Calculating Australian Male (30+)',
+    },
+    'gb:female:young': {
+      id: 'pFZP5JQG7iQjIQuC4Bku',
+      label: 'Lily · Dramatic British Female',
+    },
+    'gb:female:adult': {
+      id: 'Xb7hH8MSUJpSbSDYk0k2',
+      label: 'Alice · Poised British Female',
+    },
+    'gb:male:young': {
+      id: 'JBFqnCBsd6RMkjVDRZzb',
+      label: 'George · Captivating British Male',
+    },
+    'gb:male:adult': {
+      id: 'onwK4e9ZLuTAKqWW03F9',
+      label: 'Daniel · Formal British Male',
+    },
+    'us:female:young': {
+      id: 'EXAVITQu4vr4xnSDxMaL',
+      label: 'Sarah · Dramatic American Female (18–29)',
+    },
+    'us:female:adult': {
+      id: 'XrExE9yKIg1WjnnlVkGX',
+      label: 'Matilda · Sharp American Female (30+)',
+    },
+    'us:male:young': {
+      id: 'TX3LPaxmHKxFdv7VOQHJ',
+      label: 'Liam · Intense American Male (18–29)',
+    },
+    'us:male:adult': {
+      id: 'pNInz6obpgDQGcFmaJgB',
+      label: 'Adam · Dominant American Male (30+)',
+    },
+  };
+
+  const ageBucket = isYoung ? 'young' : 'adult';
+  const lookupKey = `${regionKey}:${genderKey}:${ageBucket}`;
+  const selectedVoice = voiceMap[lookupKey] || voiceMap['au:female:young'];
+  const ageLabel = rawAge === 'old' ? '50+' : isYoung ? '18–29' : '30–49';
+  const voiceBadge = `${isMale ? 'Masculine' : 'Feminine'} · ${input.accent || 'Australian'} · ${ageLabel}`;
+  const fallbackStaticUrl = `/mystery-audio/landing-demo/${genderKey}-${regionKey}.mp3`;
+
+  try {
+    const audioBuffer = await synthesizeSpeechLine({
+      voiceId: selectedVoice.id,
+      text: dramaticTranscript,
+      modelId: DEFAULT_ELEVENLABS_MODEL,
+      voiceSettings: {
+        stability: 0.36,
+        similarity_boost: 0.90,
+        style: 0.45,
+        use_speaker_boost: true,
+      },
+      previousText: '[panicked, hushed urgent whisper into a phone in a dark hallway after a murder]',
+    });
+
+    const base64Audio = Buffer.from(audioBuffer).toString('base64');
+    return {
+      success: true,
+      audioUrl: `data:audio/mpeg;base64,${base64Audio}`,
+      transcript: dramaticTranscript,
+      voiceName: selectedVoice.label,
+      voiceBadge,
+    };
+  } catch (err: any) {
+    console.warn('[generateLandingDemoVoiceClueAction] Falling back to pre-generated dramatic clip:', err?.message);
+    return {
+      success: true,
+      audioUrl: fallbackStaticUrl,
+      transcript: dramaticTranscript,
+      voiceName: selectedVoice.label,
+      voiceBadge,
+    };
+  }
+}
+

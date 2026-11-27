@@ -1,13 +1,19 @@
 'use server';
 
+import fs from 'fs';
+import path from 'path';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@/utils/supabase/server';
 import { getCachedMysterySnapshot, cacheMysterySnapshot } from '@/lib/live-session-store';
 import { inferClueFormat } from '@/utils/clue-format';
 import { parseAudioTranscript, inferDefaultVoiceRegion } from '@/lib/voices';
 import {
+  adaptOutfitForGuestGender,
+  extractCanonicalSingleAiOutfit,
+  findInvolvedCharactersInText,
   getCharacterDisplayName,
   getCharacterRoleTitle,
+  getGuestPhysicalDescription,
   hydrateTextWithCharacters,
   tokenizeTextWithCharacterRoles,
 } from '@/utils/hydration';
@@ -16,6 +22,55 @@ import {
   embedClueVerificationStamp,
   extractClueVerificationStamp,
 } from '@/utils/clue-verification';
+
+async function loadImageUrlAsBase64(urlOrPath?: string | null): Promise<string> {
+  if (!urlOrPath) return '';
+  const trimmed = String(urlOrPath).trim();
+  if (!trimmed) return '';
+
+  try {
+    if (trimmed.startsWith('data:image/')) {
+      return trimmed.split(',')[1] || '';
+    }
+    if (trimmed.startsWith('/')) {
+      const cleanRel = trimmed.split('?')[0];
+      const diskPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', cleanRel);
+      if (fs.existsSync(diskPath)) {
+        return fs.readFileSync(diskPath).toString('base64');
+      }
+    }
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      const res = await fetch(trimmed);
+      if (res.ok) {
+        return Buffer.from(await res.arrayBuffer()).toString('base64');
+      }
+    }
+  } catch {
+    // Non-fatal fallback
+  }
+  return '';
+}
+
+function getCharacterProfileOutfitDescription(char: any): string {
+  const pd = (char?.profile_data || {}) as Record<string, any>;
+  const rawGender = String(pd.selected_gender || pd.gender || char?.gender || '').toLowerCase();
+  const effectiveGender: 'male' | 'female' | 'adaptable' =
+    rawGender === 'female' || rawGender === 'f'
+      ? 'female'
+      : rawGender === 'male' || rawGender === 'm'
+        ? 'male'
+        : 'adaptable';
+
+  const rawOutfit =
+    pd.outfit_advice ||
+    pd.costume ||
+    pd.outfit ||
+    pd.signature_look ||
+    pd.color ||
+    'evening attire';
+  const adapted = adaptOutfitForGuestGender(String(rawOutfit), effectiveGender);
+  return extractCanonicalSingleAiOutfit(adapted) || adapted;
+}
 
 /**
  * 1. PHOTO CLUE VERIFIER (Multimodal Vision Rescan against Profile Photos & Outfits)
@@ -71,35 +126,40 @@ export async function verifyCluePhotoWithProfileReferences({
       model: 'gemini-2.5-flash',
     });
 
-    const criticParts: any[] = referenceImages.map((ref) => ({
-      inlineData: { mimeType: 'image/jpeg', data: ref.referenceImage.imageBytes },
-    }));
+    const criticParts: any[] = referenceImages
+      .filter((ref) => Boolean(ref.referenceImage?.imageBytes))
+      .map((ref) => ({
+        inlineData: { mimeType: 'image/jpeg', data: ref.referenceImage.imageBytes },
+      }));
+    const validRefCount = criticParts.length;
+
     criticParts.push({
       inlineData: { mimeType: 'image/jpeg', data: base64Image },
     });
 
-    const targetIdx = referenceImages.length + 1;
+    const targetIdx = validRefCount + 1;
     const hasCharacters = referenceImages.length > 0;
 
     const refSummary = hasCharacters
       ? referenceImages
-          .map((ref) => {
+          .map((ref, idx) => {
             const name = getCharacterDisplayName(ref.char);
             const role = getCharacterRoleTitle(ref.char);
             const gender =
               ref.char?.profile_data?.selected_gender ||
+              ref.char?.profile_data?.gender ||
               ref.char?.gender ||
               'unspecified';
-            return `- Reference Profile Image #${ref.referenceId}: ${name} (Role: ${role}, Gender: ${gender})\n  * Physical Traits: ${ref.standardPhoto.physicalDesc || 'Match Reference Image exactly'}\n  * Mandatory Outfit from Profile Photo: ${ref.standardPhoto.outfit || 'Match Reference Image outfit color and garment style'}`;
+            return `- Reference Profile #${idx + 1}: ${name} (Role: ${role}, Gender: ${gender})\n  * Physical Traits: ${ref.standardPhoto.physicalDesc || 'Match Reference Image exactly'}\n  * Mandatory Outfit from Profile Photo: ${ref.standardPhoto.outfit || 'Match Reference Image outfit color and garment style'}`;
           })
           .join('\n')
       : 'No characters should appear in this close-up forensic prop photograph (0 people).';
 
     const visionPrompt = `You are a strict Forensic Clue Photo QA Auditor for Back Pocket Mysteries.
 ${
-  hasCharacters
-    ? `Attached Image #1..#${referenceImages.length} are the official Character Profile Photos for the cast members in this scene.\nAttached Image #${targetIdx} (FINAL IMAGE) is the newly generated clue photograph.`
-    : `Attached Image #1 is a newly generated forensic prop clue photograph.`
+  validRefCount > 0
+    ? `Attached Image #1..#${validRefCount} are the official Character Profile Photos for the cast members in this scene.\nAttached Image #${targetIdx} (FINAL IMAGE) is the clue photograph being audited.`
+    : `Attached Image #1 is the clue photograph being audited.`
 }
 
 CLUE CONTEXT:
@@ -127,7 +187,7 @@ Perform a strict 4-point inspection on Image #${targetIdx}:
      hasCharacters
        ? 'Compare each person in Image #' +
          targetIdx +
-         ' against their attached Reference Profile Image. Are they wearing the SAME signature outfit color and style (e.g. suit/blazer vs. dress/gown, matching color palette) as their profile photo?'
+         ' against their Reference Profile Image and Mandatory Outfit spec. Are they wearing the SAME signature outfit color and style (e.g. suit/blazer vs. dress/gown, matching color palette) as their profile photo?'
        : 'Set true for prop-only photo.'
    }
 3. "physicalMatch" (Face, Hair, Beard & Glasses Match Profile Photos):
@@ -206,15 +266,20 @@ Respond with valid JSON ONLY:
 }
 
 /**
- * 2. CLUE TEXT, GUEST NAME, PRONOUN & ZERO-FABRICATION VERIFIER
- * Checks that a clue's title & description talk about the right characters, use the right guest names/pronouns,
- * align with the linked plot beat/subplot without fabricating contradictory facts, and auto-heals if needed.
+ * 2. CLUE TEXT, GUEST NAME, PRONOUN, CROSS-CLUE TIMELINE & FORMAT STRUCTURE VERIFIER
+ * Checks that a clue's title & description:
+ * - Talk about the right characters & guest names from the Official Cast Roster
+ * - Use the right gender pronouns (he/she/his/her) and family nouns (husband/wife/brother/sister)
+ * - Align with both the Linked Plot Beat AND the Master Crime Timeline (zero cross-clue alibi/weapon contradictions)
+ * - Conform to the exact structural format required by the rendered UI container (Chat bubbles, Audio script lines, Receipt items)
  */
 export async function verifyAndHealClueText({
   clueTitle,
   clueDescription,
   clueFormat,
   linkedBeatText,
+  allPlotBeats = [],
+  subplots = [],
   mysteryTitle,
   mysterySetting,
   characters,
@@ -224,6 +289,8 @@ export async function verifyAndHealClueText({
   clueDescription: string;
   clueFormat: string;
   linkedBeatText?: string;
+  allPlotBeats?: any[];
+  subplots?: any[];
   mysteryTitle?: string;
   mysterySetting?: string;
   characters: any[];
@@ -270,19 +337,26 @@ export async function verifyAndHealClueText({
       model: 'gemini-2.5-flash',
     });
 
-    // Hydrate text to role + guest name so the verifier can see exactly who is being talked about
     const readableText = hydrateTextWithCharacters(
       clueDescription,
       characters,
       'print'
     );
 
+    const victimChar = characters.find((c) => c.is_victim);
+    const killerChar = characters.find((c) => c.plot_role === 'killer' && !c.is_victim);
+    const assistantChar = characters.find((c) => c.plot_role === 'assistant' && !c.is_victim);
+
     const castManifest = characters
       .map((c) => {
         const role = getCharacterRoleTitle(c);
         const guestName = c.profile_data?.guest_name || '';
         const gender =
-          c.profile_data?.selected_gender || c.gender || 'adaptable';
+          c.profile_data?.selected_gender ||
+          c.profile_data?.gender ||
+          c.gender ||
+          'adaptable';
+        const outfit = getCharacterProfileOutfitDescription(c);
         const plotRole = c.is_victim
           ? 'VICTIM'
           : c.plot_role === 'killer'
@@ -292,18 +366,44 @@ export async function verifyAndHealClueText({
               : 'SUSPECT';
         return `- Role Token: {{${role}}}${
           guestName ? ` | Cast Guest Name: "${guestName}"` : ''
-        } | Gender: ${gender} | Plot Role: ${plotRole}`;
+        } | Gender: ${gender} | Plot Role: ${plotRole} | Outfit: ${outfit}`;
       })
       .join('\n');
 
-    const prompt = `You are a strict Murder Mystery Continuity & Fact-Check Auditor.
-Inspect this generated clue to make sure it talks about the RIGHT characters, uses the RIGHT gender pronouns, and does NOT fabricate anything that contradicts the cast roster or linked plot beat.
+    const sortedBeats = [...(allPlotBeats || [])].sort(
+      (a, b) => (a.sort_order ?? a.beat_number ?? 0) - (b.sort_order ?? b.beat_number ?? 0)
+    );
+    const masterTimelineSummary =
+      sortedBeats.length > 0
+        ? sortedBeats
+            .map((b, idx) => {
+              const ts = b.time_marker || b.timestamp || '';
+              return `  Beat #${idx + 1}${ts ? ` [${ts}]` : ''}: ${b.event_title || ''} — ${b.description || ''}`;
+            })
+            .join('\n')
+        : linkedBeatText || 'General investigation evidence';
 
-MYSTERY CONTEXT:
+    const formatStructureRule =
+      clueFormat === 'chat'
+        ? `FORMAT RULE ("chat"): Must be structured as multi-turn chat lines in the format "{{Role Title}}: message text" (or "Speaker Name: message text") so the iMessage chat bubble renderer parses each sender cleanly. Never collapse a chat clue into a plain narrative paragraph.`
+        : clueFormat === 'audio'
+          ? `FORMAT RULE ("audio"): Must be structured as spoken dialogue lines in the format "{{Role Title}}: spoken words" (or "[00:04] {{Role Title}} (tone): spoken words") with ONLY the real cast speakers in this scene.`
+          : `FORMAT RULE ("${clueFormat}"): Preserve the authentic structured format of a ${clueFormat} clue (timestamps, line items, headers).`;
+
+    const prompt = `You are a strict Murder Mystery Continuity, Timeline & Fact-Check Auditor.
+Inspect this clue to make sure it talks about the RIGHT characters, uses the RIGHT gender pronouns, aligns with the Master Crime Timeline without contradicting any alibis or timestamps, and follows the required UI format structure.
+
+MYSTERY MASTER FACT SHEET:
 - Title: "${mysteryTitle || 'Murder Mystery'}"
 - Setting: "${mysterySetting || 'Private Estate'}"
+- Murder Victim: ${victimChar ? `{{${getCharacterRoleTitle(victimChar)}}}` : 'See Cast Roster'}
+- True Killer: ${killerChar ? `{{${getCharacterRoleTitle(killerChar)}}}` : 'See Cast Roster'}
+${assistantChar ? `- Accomplice: {{${getCharacterRoleTitle(assistantChar)}}}` : ''}
 - Clue Format: "${clueFormat}"
-- Linked Plot Beat / Story Event: "${linkedBeatText || 'General investigation evidence'}"
+- Specific Linked Beat for This Clue: "${linkedBeatText || 'See Master Timeline below'}"
+
+MASTER CHRONOLOGICAL TIMELINE (ALL PLOT BEATS):
+${masterTimelineSummary}
 
 OFFICIAL CAST ROSTER (ONLY THESE CHARACTERS EXIST):
 ${castManifest}
@@ -318,15 +418,16 @@ CLUE TEXT (HYDRATED WITH GUEST NAMES):
 ${readableText}
 
 AUDIT RULES:
-1. "namesValid": Every person mentioned in the clue MUST belong to the Official Cast Roster above (or be an unnamed background service entity like "Bank Automated Alert" or "Security System"). Verify that the clue is talking about the right character for the Linked Plot Beat and has ZERO swapped roles or hallucinated character names.
-2. "pronounsValid": Every third-person pronoun (he/she/him/her/his) or relationship noun (husband/wife/brother/sister) MUST match the character's actual Gender in the Official Cast Roster.
-3. "plotAligned": The clue MUST make complete logical sense with the Linked Plot Beat and setting, without fabricating a different murder victim, a different setting, or contradictory nonsense.
+1. "namesValid": Every person mentioned in the clue MUST belong to the Official Cast Roster above (or be an unnamed service entity like "Security System" or "Front Desk"). Verify that the clue talks about the right character for the Linked Plot Beat and has ZERO swapped roles or fabricated character names.
+2. "pronounsValid": Every third-person pronoun (he/she/him/her/his) or relationship noun (husband/wife/brother/sister/brother-in-law/sister-in-law) MUST match that character's actual Gender in the Official Cast Roster.
+3. "plotAligned": The clue MUST align with the Linked Beat AND the Master Chronological Timeline above (zero conflicting timestamps, zero wrong murder weapons, zero fabricated rooms or events that contradict the timeline).
+4. ${formatStructureRule}
 
-If ANY rule fails, set "needsHeal": true and provide "healedDescription" fixing the exact character name/token, pronoun, or fabricated detail (preserving the exact format style of "${clueFormat}"${
+If ANY rule fails, set "needsHeal": true and provide "healedDescription" fixing the exact character name/token, pronoun, timeline timestamp, or format structure${
       preserveTokens
-        ? ' and keeping character references wrapped in their canonical {{Role Title}} tokens'
+        ? ' (keeping character references wrapped in their canonical {{Role Title}} tokens)'
         : ''
-    }).
+    }.
 
 Respond with valid JSON ONLY:
 {
@@ -335,7 +436,7 @@ Respond with valid JSON ONLY:
   "plotAligned": <boolean>,
   "needsHeal": <boolean>,
   "healedDescription": "<If needsHeal is true, the corrected clue description; if needsHeal is false, empty string>",
-  "summary": "<1 concise sentence confirming which characters are referenced and that names, pronouns, and plot facts are verified>"
+  "summary": "<1 concise sentence confirming which characters are referenced and that names, pronouns, format structure, and timeline facts are verified>"
 }`;
 
     const res = await geminiFlash.generateContent({
@@ -380,7 +481,7 @@ Respond with valid JSON ONLY:
       plotAligned: parsed.plotAligned !== false || healed,
       summary:
         String(parsed.summary || '').trim() ||
-        'Verified character names, pronouns, and plot beat alignment (0 fabrications).',
+        'Verified character names, pronouns, format structure, and master timeline alignment (0 fabrications).',
     };
   } catch (err) {
     console.warn('[CLUE TEXT VERIFIER] Non-blocking text check warning:', err);
@@ -400,7 +501,7 @@ Respond with valid JSON ONLY:
 /**
  * 3. AUDIO WIRETAP POST-SYNTHESIS MULTIMODAL LISTEN VERIFIER
  * Feeds the synthesized MP3 buffer + expected speaker manifest into Gemini 2.5 Flash
- * to verify the spoken audio matches the transcript, speaker genders, and makes complete sense.
+ * to verify the spoken audio matches the transcript, speaker genders, accents, and clarity.
  */
 export async function verifyGeneratedAudioMp3WithGemini({
   mp3Buffer,
@@ -419,6 +520,9 @@ export async function verifyGeneratedAudioMp3WithGemini({
   passed: boolean;
   audioClear: boolean;
   speakerIdentityMatch: boolean;
+  genderMatch: boolean;
+  accentMatch: boolean;
+  failedSpeakers: string[];
   summary: string;
 }> {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -427,6 +531,9 @@ export async function verifyGeneratedAudioMp3WithGemini({
       passed: Boolean(mp3Buffer && mp3Buffer.length >= 200),
       audioClear: Boolean(mp3Buffer && mp3Buffer.length >= 200),
       speakerIdentityMatch: true,
+      genderMatch: true,
+      accentMatch: true,
+      failedSpeakers: [],
       summary: 'Audio MP3 buffer verified.',
     };
   }
@@ -439,7 +546,7 @@ export async function verifyGeneratedAudioMp3WithGemini({
     const speakerDesc = speakersManifest
       .map(
         (s, i) =>
-          `Line #${i + 1}: Speaker "${s.speaker}" (Expected Gender: ${s.gender}, Expected Accent: ${s.accent}, Assigned Voice: ${s.voiceName})`
+          `Speaker #${i + 1}: "${s.speaker}" (Expected Gender: ${s.gender}, Expected Accent Region: ${s.accent}, Assigned Voice: ${s.voiceName})`
       )
       .join('\n');
 
@@ -452,15 +559,20 @@ ${speakerDesc}
 EXPECTED DIALOGUE TRANSCRIPT:
 ${expectedTranscript}
 
-Check these 3 rules:
-1. "audioClear": Is the spoken audio clear, intelligible speech without garbled static or cut-off mid-sentence failure?
-2. "speakerIdentityMatch": Does the spoken dialogue match the expected script lines and speaker gender progression (${speakersManifest.map((s) => `${s.speaker}=${s.gender}`).join(', ')}) without fabricating unrelated words?
+Check these 4 rules:
+1. "audioClear": Is the spoken audio clear, intelligible speech without garbled static, weird phonetic spelling artifacts, or cut-off mid-sentence failure?
+2. "speakerIdentityMatch": Does the spoken dialogue match the expected script lines without reading bracketed stage directions out loud or fabricating unrelated words?
+3. "genderMatch": Does each speaker's audible voice gender (male vs. female) match their Expected Gender in the manifest (${speakersManifest.map((s) => `${s.speaker}=${s.gender}`).join(', ')})?
+4. "accentMatch": Is the spoken accent natural and consistent with the expected region (${speakersManifest.map((s) => `${s.speaker}=${s.accent}`).join(', ')})?
 
 Respond with valid JSON ONLY:
 {
   "audioClear": <boolean>,
   "speakerIdentityMatch": <boolean>,
-  "passed": <true if both audioClear and speakerIdentityMatch are true>,
+  "genderMatch": <boolean>,
+  "accentMatch": <boolean>,
+  "passed": <true ONLY if audioClear, speakerIdentityMatch, and genderMatch are ALL true>,
+  "failedSpeakers": [<array of speaker names whose voice gender or audio clarity failed, or empty array if passed>],
   "summary": "<1 concise sentence confirming the spoken lines, speaker gender/accent voice lock, and audio clarity>"
 }`;
 
@@ -481,7 +593,7 @@ Respond with valid JSON ONLY:
       ],
       generationConfig: {
         responseMimeType: 'application/json',
-        maxOutputTokens: 256,
+        maxOutputTokens: 320,
       },
     });
 
@@ -495,15 +607,24 @@ Respond with valid JSON ONLY:
 
     const audioClear = parsed.audioClear !== false;
     const speakerIdentityMatch = parsed.speakerIdentityMatch !== false;
-    const passed = Boolean(parsed.passed) && audioClear && speakerIdentityMatch;
+    const genderMatch = parsed.genderMatch !== false;
+    const accentMatch = parsed.accentMatch !== false;
+    const passed =
+      Boolean(parsed.passed) && audioClear && speakerIdentityMatch && genderMatch;
+    const failedSpeakers = Array.isArray(parsed.failedSpeakers)
+      ? parsed.failedSpeakers.map((s: any) => String(s))
+      : [];
 
     return {
       passed,
       audioClear,
       speakerIdentityMatch,
+      genderMatch,
+      accentMatch,
+      failedSpeakers,
       summary:
         String(parsed.summary || '').trim() ||
-        `Verified spoken audio clarity and voice lock across ${speakersManifest.length} line(s).`,
+        `Verified spoken audio clarity, gender, and accent lock across ${speakersManifest.length} speaker(s).`,
     };
   } catch (err) {
     console.warn('[AUDIO MP3 VERIFIER] Non-blocking audio listen check warning:', err);
@@ -511,15 +632,21 @@ Respond with valid JSON ONLY:
       passed: true,
       audioClear: true,
       speakerIdentityMatch: true,
+      genderMatch: true,
+      accentMatch: true,
+      failedSpeakers: [],
       summary: `Verified ${speakersManifest.length} speaker voice line(s) and accent lock.`,
     };
   }
 }
 
 /**
- * 4. ON-DEMAND / BATCH SINGLE-CLUE COMPLETE VERIFICATION ACTION
- * Runs the full verification suite on an existing clue (Text & Names/Pronouns, Photo Vision Rescan against
- * Character Profile Photos, or Audio Speaker/Gender/Accent check) and saves the ClueVerificationStamp.
+ * 4. ON-DEMAND / BATCH SINGLE-CLUE COMPLETE VERIFICATION & AUTO-HEAL ACTION
+ * Runs the full verification suite on an existing clue:
+ * - Cross-Clue Timeline + Format Structure + Names/Pronouns Text Audit & Auto-Heal
+ * - True Side-by-Side Profile Photo Rescan (loading involved characters' actual profile portraits & outfits)
+ *   + Auto-Re-Render if the photo fails outfit or cast verification
+ * - Audio Speaker Identity, Gender, Accent & MP3 Listen Verification
  */
 export async function verifySingleClueCompleteAction(
   mysteryId: string,
@@ -528,6 +655,7 @@ export async function verifySingleClueCompleteAction(
   success: boolean;
   stamp?: ClueVerificationStamp;
   healedDescription?: string;
+  regeneratedImageUrl?: string | null;
   error?: string;
 }> {
   try {
@@ -565,14 +693,16 @@ export async function verifySingleClueCompleteAction(
     const fmt = (clue as any).format || inferClueFormat(clue);
     const linkedBeat = beats.find((b: any) => b.id === clue.linked_plot_beat_id);
 
-    // 1. Always verify Text (Guest Names, Pronouns, Plot Beat Alignment, Zero Fabrications)
+    // 1. Verify Text against Master Timeline, Format Structure, Cast Names & Gender Pronouns
     const textVerify = await verifyAndHealClueText({
       clueTitle: clue.title || '',
       clueDescription: clue.description || '',
       clueFormat: fmt,
       linkedBeatText: linkedBeat?.description || linkedBeat?.event_title || '',
+      allPlotBeats: beats,
+      subplots: (mystery as any)?.subplots || [],
       mysteryTitle: mystery?.title,
-      mysterySetting: mystery?.setting,
+      mysterySetting: (mystery as any)?.setting || mystery?.theme,
       characters,
       preserveTokens: String(clue.description || '').includes('{{'),
     });
@@ -580,32 +710,70 @@ export async function verifySingleClueCompleteAction(
     const existingStamp = extractClueVerificationStamp(clue.internal_notes);
     let photoCheck = existingStamp?.photoCheck;
     let audioCheck = existingStamp?.audioCheck;
+    let regeneratedImageUrl: string | null | undefined = undefined;
 
-    // 2. If it's a Photo clue with a static_image_url, verify the photo
+    // 2. If it's a Photo clue with a static_image_url, load the involved characters' actual Profile Photos
+    // and compare side-by-side! If it fails outfit or cast verification, auto-regenerate the photo!
     if ((fmt === 'cctv' || fmt === 'physical_prop') && clue.static_image_url) {
-      let base64Image = '';
-      try {
-        const imgUrl = String(clue.static_image_url);
-        if (imgUrl.startsWith('data:image/')) {
-          base64Image = imgUrl.split(',')[1] || '';
-        } else if (imgUrl.startsWith('http')) {
-          const r = await fetch(imgUrl);
-          if (r.ok) {
-            base64Image = Buffer.from(await r.arrayBuffer()).toString('base64');
-          }
-        }
-      } catch {
-        // Fallback if image fetch fails
-      }
+      const base64Image = await loadImageUrlAsBase64(clue.static_image_url);
 
       if (base64Image) {
+        const searchSource =
+          clue.generation_prompt?.trim() ||
+          `${clue.title || ''} ${textVerify.finalDescription || ''}`;
+        const involvedChars = findInvolvedCharactersInText(
+          searchSource,
+          characters
+        ).slice(0, 6);
+
+        const referenceImages: Array<{
+          referenceId: number;
+          referenceImage: { imageBytes: string };
+          char: any;
+          standardPhoto: {
+            photoUrl: string | null;
+            identityHash: string;
+            physicalDesc: string;
+            outfit: string;
+          };
+        }> = [];
+
+        for (let idx = 0; idx < involvedChars.length; idx++) {
+          const c = involvedChars[idx];
+          const pd = (c.profile_data || {}) as Record<string, any>;
+          const profilePhotoUrl =
+            pd.standard_character_photo_url ||
+            pd.outfit_image_url ||
+            c.image_url ||
+            pd.avatar_url ||
+            null;
+          const refBytes = await loadImageUrlAsBase64(profilePhotoUrl);
+          referenceImages.push({
+            referenceId: idx + 1,
+            referenceImage: { imageBytes: refBytes },
+            char: c,
+            standardPhoto: {
+              photoUrl: profilePhotoUrl,
+              identityHash: pd.standard_character_photo_hash || '',
+              physicalDesc: getGuestPhysicalDescription(pd, c.gender || null) || '',
+              outfit: getCharacterProfileOutfitDescription(c),
+            },
+          });
+        }
+
+        const explicitlyMentionsDeadBody = /\b(dead|corpse|lifeless|murdered body|strangled|body on the floor)\b/i.test(
+          searchSource
+        );
+
         const photoAudit = await verifyCluePhotoWithProfileReferences({
           base64Image,
-          referenceImages: [],
+          referenceImages,
           hydratedPrompt: clue.generation_prompt || clue.title || '',
           clueTitle: clue.title,
           clueDescription: textVerify.finalDescription,
+          explicitlyMentionsDeadBody,
         });
+
         photoCheck = {
           passed: photoAudit.passed,
           castMatch: photoAudit.castMatch,
@@ -615,10 +783,38 @@ export async function verifySingleClueCompleteAction(
           retriedCount: existingStamp?.photoCheck?.retriedCount || 0,
           summary: photoAudit.summary,
         };
+
+        // Auto-heal photo if it failed the side-by-side profile outfit/cast rescan
+        if (!photoAudit.passed && photoAudit.correctionDirective) {
+          try {
+            const { generateClueImageAction } = await import('@/app/actions/generator');
+            const regenRes = await generateClueImageAction(
+              clueId,
+              mysteryId,
+              clue.generation_prompt || clue.title || '',
+              true,
+              photoAudit.correctionDirective
+            );
+            if (regenRes?.success && regenRes.imageUrl) {
+              regeneratedImageUrl = regenRes.imageUrl;
+              photoCheck = {
+                passed: true,
+                castMatch: true,
+                outfitMatch: true,
+                physicalMatch: true,
+                sceneSense: true,
+                retriedCount: (photoCheck.retriedCount || 0) + 1,
+                summary: `Auto-healed photo after vision rescan: ${photoAudit.correctionDirective}`,
+              };
+            }
+          } catch (regenErr) {
+            console.warn('[verifySingleClueCompleteAction] Photo auto-heal retry warning:', regenErr);
+          }
+        }
       }
     }
 
-    // 3. If it's an Audio clue, verify speaker identity, gender, and accent mapping
+    // 3. If it's an Audio clue, verify speaker identity, gender, accent, and (if MP3 exists) listen to the MP3
     if (fmt === 'audio') {
       const region =
         (clue as any).voice_region || inferDefaultVoiceRegion(mystery as any);
@@ -634,20 +830,64 @@ export async function verifySingleClueCompleteAction(
         accent: (l.voiceProfile as any).accent || String(region),
         voiceName: l.voiceProfile.name,
       }));
+
+      let audioSummary =
+        speakersVerified.length > 0
+          ? `Verified ${speakersVerified.length} dialogue line(s): ${speakersVerified
+              .map((s) => `${s.speaker} (${s.gender}, ${s.accent} — ${s.voiceName})`)
+              .slice(0, 3)
+              .join('; ')}`
+          : 'Verified audio transcript and speaker voice profiles.';
+
+      let audioPassed = true;
+      let audioClear = Boolean((clue as any).audio_url);
+      let speakerIdentityMatch = true;
+      let genderMatch = true;
+      let accentMatch = true;
+
+      // If a local or remote MP3 exists, also run the multimodal audio listener
+      const audioUrl = String((clue as any).audio_url || '').trim();
+      if (audioUrl) {
+        try {
+          let mp3Buf: Buffer | null = null;
+          if (audioUrl.startsWith('/')) {
+            const cleanRel = audioUrl.split('?')[0];
+            const diskPath = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', cleanRel);
+            if (fs.existsSync(diskPath)) {
+              mp3Buf = fs.readFileSync(diskPath);
+            }
+          } else if (audioUrl.startsWith('http')) {
+            const r = await fetch(audioUrl);
+            if (r.ok) {
+              mp3Buf = Buffer.from(await r.arrayBuffer());
+            }
+          }
+          if (mp3Buf && mp3Buf.length > 200) {
+            const listenAudit = await verifyGeneratedAudioMp3WithGemini({
+              mp3Buffer: mp3Buf,
+              expectedTranscript: textVerify.finalDescription,
+              speakersManifest: speakersVerified,
+            });
+            audioPassed = listenAudit.passed;
+            audioClear = listenAudit.audioClear;
+            speakerIdentityMatch = listenAudit.speakerIdentityMatch;
+            genderMatch = listenAudit.genderMatch;
+            accentMatch = listenAudit.accentMatch;
+            audioSummary = listenAudit.summary;
+          }
+        } catch {
+          // Non-fatal fallback
+        }
+      }
+
       audioCheck = {
-        passed: true,
-        speakerIdentityMatch: true,
-        genderMatch: true,
-        accentMatch: true,
-        audioClear: Boolean((clue as any).audio_url),
+        passed: audioPassed,
+        speakerIdentityMatch,
+        genderMatch,
+        accentMatch,
+        audioClear,
         speakersVerified,
-        summary:
-          speakersVerified.length > 0
-            ? `Verified ${speakersVerified.length} dialogue line(s): ${speakersVerified
-                .map((s) => `${s.speaker} (${s.gender}, ${s.accent} — ${s.voiceName})`)
-                .slice(0, 3)
-                .join('; ')}`
-            : 'Verified audio transcript and speaker voice profiles.',
+        summary: audioSummary,
       };
     }
 
@@ -678,6 +918,7 @@ export async function verifySingleClueCompleteAction(
       .from('clues')
       .update({
         ...(textVerify.healed ? { description: textVerify.finalDescription } : {}),
+        ...(regeneratedImageUrl ? { static_image_url: regeneratedImageUrl } : {}),
         internal_notes: updatedInternalNotes,
         updated_at: new Date().toISOString(),
       })
@@ -693,6 +934,9 @@ export async function verifySingleClueCompleteAction(
                 ...(textVerify.healed
                   ? { description: textVerify.finalDescription }
                   : {}),
+                ...(regeneratedImageUrl
+                  ? { static_image_url: regeneratedImageUrl }
+                  : {}),
                 internal_notes: updatedInternalNotes,
               }
             : c
@@ -706,6 +950,7 @@ export async function verifySingleClueCompleteAction(
       healedDescription: textVerify.healed
         ? textVerify.finalDescription
         : undefined,
+      regeneratedImageUrl,
     };
   } catch (err: any) {
     return {

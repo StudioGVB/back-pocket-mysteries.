@@ -127,6 +127,7 @@ export function OgPlotAndEvidenceStudio({
               ? {
                   ...c,
                   ...(res.healedDescription ? { description: res.healedDescription } : {}),
+                  ...(res.regeneratedImageUrl ? { static_image_url: res.regeneratedImageUrl } : {}),
                   internal_notes: embedClueVerificationStamp(c.internal_notes, res.stamp!),
                 }
               : c
@@ -163,6 +164,7 @@ export function OgPlotAndEvidenceStudio({
                 ? {
                     ...c,
                     ...(res.healedDescription ? { description: res.healedDescription } : {}),
+                    ...(res.regeneratedImageUrl ? { static_image_url: res.regeneratedImageUrl } : {}),
                     internal_notes: embedClueVerificationStamp(c.internal_notes, res.stamp!),
                   }
                 : c
