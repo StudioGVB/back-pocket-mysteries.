@@ -42,43 +42,42 @@ export default async function MarketingLayout(props: {
         <First50WaitlistBanner />
       </Suspense>
       <header className="border-b border-gray-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 py-2">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href={`/${locale}`} className="group flex items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 xl:gap-8">
+          <Link href={`/${locale}`} className="group flex items-center shrink-0">
             <Image 
               src="/logo-horizontal.png" 
               alt="Back Pocket Mysteries" 
               width={240} 
               height={40} 
-              className="h-10 w-auto object-contain group-hover:scale-105 transition-all duration-300 origin-left"
+              className="h-9 xl:h-10 w-auto object-contain group-hover:scale-105 transition-all duration-300 origin-left"
               priority
             />
           </Link>
           
-          <nav className="hidden lg:flex items-center gap-6 text-xs font-black uppercase tracking-[0.15em] text-brand-dark/60">
-            <Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.howItWorks}</Link>
-            <Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.themes}</Link>
-            <Link href={`/${locale}/play-online`} className="hover:text-brand-pink transition-all hover:scale-110">Play Online</Link>
-            <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.pricing}</Link>
-            <Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.faq}</Link>
-            <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all hover:scale-110">{dict.common.contact}</Link>
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-7 text-[11px] xl:text-xs font-black uppercase tracking-[0.12em] xl:tracking-[0.15em] text-brand-dark/60 whitespace-nowrap">
+            <Link href={`/${locale}/how-it-works`} className="hover:text-brand-pink transition-all whitespace-nowrap">{dict.common.howItWorks}</Link>
+            <Link href={`/${locale}/themes`} className="hover:text-brand-pink transition-all whitespace-nowrap">{dict.common.themes}</Link>
+            <Link href={`/${locale}/pricing`} className="hover:text-brand-pink transition-all whitespace-nowrap">{dict.common.pricing}</Link>
+            <Link href={`/${locale}/faq`} className="hover:text-brand-pink transition-all whitespace-nowrap">{dict.common.faq}</Link>
+            <Link href={`/${locale}/contact`} className="hover:text-brand-pink transition-all whitespace-nowrap">{dict.common.contact}</Link>
             <Link
               href={`/${locale}/free-murder-mystery-game`}
-              className="px-3.5 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink border border-brand-pink/25 hover:bg-brand-pink hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
+              className="px-3.5 py-1.5 rounded-full bg-brand-pink/10 text-brand-pink border border-brand-pink/25 hover:bg-brand-pink hover:text-white transition-all text-[10px] font-black uppercase tracking-widest whitespace-nowrap shrink-0"
             >
               🎁 Free Giveaway
             </Link>
           </nav>
           
-          <Suspense fallback={<div className="h-12 w-48 bg-slate-100 rounded-full animate-pulse"></div>}>
-            <div className="hidden lg:flex gap-4 items-center">
-              <div className="flex gap-2 items-center">
+          <Suspense fallback={<div className="h-11 w-44 bg-slate-100 rounded-full animate-pulse"></div>}>
+            <div className="hidden lg:flex gap-3 xl:gap-4 items-center shrink-0 whitespace-nowrap">
+              <div className="flex gap-2 items-center shrink-0">
                 <CurrencySwitcher />
               </div>
 
-              <Link href={`/${locale}/login`} className="text-xs font-black uppercase tracking-widest text-brand-dark/60 hover:text-brand-pink px-4 py-2 transition-colors">
+              <Link href={`/${locale}/login`} className="text-[11px] xl:text-xs font-black uppercase tracking-widest text-brand-dark/60 hover:text-brand-pink px-2.5 xl:px-3 py-2 transition-colors whitespace-nowrap">
                 {dict.common.login}
               </Link>
-              <Link href={`/${locale}/login`} className="px-8 py-4 bg-brand-pink text-white rounded-full text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-all duration-300 shadow-xl shadow-brand-pink/10 hover:shadow-brand-pink/20 hover:translate-y-[-2px] active:scale-95">
+              <Link href={`/${locale}/login`} className="px-5 xl:px-7 py-3 xl:py-3.5 bg-brand-pink text-white rounded-full text-[11px] xl:text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-all duration-300 shadow-xl shadow-brand-pink/10 hover:shadow-brand-pink/20 hover:translate-y-[-2px] active:scale-95 whitespace-nowrap shrink-0">
                 {dict.common.getStarted}
               </Link>
             </div>
