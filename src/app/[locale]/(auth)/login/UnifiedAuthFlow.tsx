@@ -338,7 +338,7 @@ export default function UnifiedAuthFlow({
             </p>
             <p className="text-[11px] text-slate-600 font-medium leading-snug">
               Complete your free host sign-up below and we&apos;ll automatically save{' '}
-              <strong>{pendingLandingGuest.name}</strong> &amp; their AI portrait to your My Guests list!
+              <strong>{pendingLandingGuest.name}</strong>{' '}and their AI portrait to your My Guests list!
             </p>
           </div>
         </div>
